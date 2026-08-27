@@ -1,0 +1,3663 @@
+# Korean translations for osparc-simcore package.
+# Copyright (C) 2026 THE osparc-simcore'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the osparc-simcore package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: osparc-simcore\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-27 14:40+0200\n"
+"PO-Revision-Date: 2026-08-27 14:40+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# CTX-SNIPPET:
+#       MSG_BACKEND_SERVICE_UNAVAILABLE: Final[str] = user_message(
+#   >>>     "The service is currently unavailable. Please try again later.", _version=1
+#: services/api-server/src/simcore_service_api_server/_constants.py:6
+msgid "The service is currently unavailable. Please try again later."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE: Final[str] = user_message(
+#   >>>     "Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience.",
+#           _version=2,
+#: services/api-server/src/simcore_service_api_server/_constants.py:10
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_CLIENT_ERROR_USER_FRIENDLY_TEMPLATE: Final[str] = user_message(
+#   >>>     "Something went wrong with your request.",
+#           _version=1,
+#: services/api-server/src/simcore_service_api_server/_constants.py:15
+msgid "Something went wrong with your request."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>>     msg_template = user_message("An error occurred when contacting the backend service.", _version=1)
+#           status_code = status.HTTP_502_BAD_GATEWAY
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:12
+msgid "An error occurred when contacting the backend service."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class BackendTimeoutError(BaseBackEndError):
+#   >>>     msg_template = user_message("The backend request timed out.", _version=1)
+#           status_code = status.HTTP_504_GATEWAY_TIMEOUT
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:23
+msgid "The backend request timed out."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class InvalidInputError(BaseBackEndError):
+#   >>>     msg_template = user_message("The provided input is not valid.", _version=1)
+#           status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:28
+msgid "The provided input is not valid."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The provided encryption inputs {inputs} are not valid. Available node inputs '{node_inputs}'", _version=1
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:34
+#, python-brace-format
+msgid ""
+"The provided encryption inputs {inputs} are not valid. Available node inputs "
+"'{node_inputs}'"
+msgstr ""
+
+# CTX-SNIPPET:
+#       class EncryptionNotConfiguredError(BaseBackEndError):
+#   >>>     msg_template = user_message("Encryption is not available on this deployment. Please contact support.", _version=1)
+#           status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:40
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:52
+msgid "Encryption is not available on this deployment. Please contact support."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The encryption service is temporarily unavailable. Please try again shortly.", _version=1
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:46
+msgid ""
+"The encryption service is temporarily unavailable. Please try again shortly."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ListSolversOrStudiesError(BaseBackEndError):
+#   >>>     msg_template = user_message("Unable to retrieve the list of solvers and projects.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:57
+msgid "Unable to retrieve the list of solvers and projects."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ListJobsError(BaseBackEndError):
+#   >>>     msg_template = user_message("Unable to retrieve the list of jobs.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:62
+msgid "Unable to retrieve the list of jobs."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class PaymentRequiredError(BaseBackEndError):
+#   >>>     msg_template = user_message("Payment is required to proceed.", _version=1)
+#           status_code = status.HTTP_402_PAYMENT_REQUIRED
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:67
+msgid "Payment is required to proceed."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ProfileNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The requested profile could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:72
+msgid "The requested profile could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The program, solver, or project '{name}' version {version} could not be found.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:78
+#, python-brace-format
+msgid ""
+"The program, solver, or project '{name}' version {version} could not be "
+"found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "You do not have permission to access the program, solver, or project '{name}' version {version}.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:86
+#, python-brace-format
+msgid ""
+"You do not have permission to access the program, solver, or project "
+"'{name}' version {version}."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class JobForbiddenAccessError(BaseBackEndError):
+#   >>>     msg_template = user_message("You do not have permission to access job {project_id}.", _version=1)
+#           status_code = status.HTTP_403_FORBIDDEN
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:93
+#, python-brace-format
+msgid "You do not have permission to access job {project_id}."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class BatchJobForbiddenAccessError(BaseBackEndError):
+#   >>>     msg_template = user_message("You do not have permission to access jobs {project_uuids}.", _version=1)
+#           status_code = status.HTTP_403_FORBIDDEN
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:98
+#, python-brace-format
+msgid "You do not have permission to access jobs {project_uuids}."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class JobNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The solver or project job {project_id} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:103
+#, python-brace-format
+msgid "The solver or project job {project_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class BatchJobNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The solver or project jobs {project_uuids} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:108
+#, python-brace-format
+msgid "The solver or project jobs {project_uuids} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The log file for the solver or project job {project_id} could not be found.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:114
+#, python-brace-format
+msgid ""
+"The log file for the solver or project job {project_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class SolverOutputNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The output for project {project_id} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:121
+#, python-brace-format
+msgid "The output for project {project_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ConfigurationError(BaseBackEndError):
+#   >>>     msg_template = user_message("A configuration error occurred.", _version=1)
+#           status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:126
+msgid "A configuration error occurred."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ProductPriceNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The product price could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:131
+msgid "The product price could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class WalletNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The requested wallet could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:136
+msgid "The requested wallet could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ForbiddenWalletError(BaseBackEndError):
+#   >>>     msg_template = user_message("You do not have permission to access this wallet.", _version=1)
+#           status_code = status.HTTP_403_FORBIDDEN
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:141
+msgid "You do not have permission to access this wallet."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ProjectPortsNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The ports for job or project {project_id} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:146
+#, python-brace-format
+msgid "The ports for job or project {project_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ProjectMetadataNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The metadata for job or project {project_id} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:151
+#, python-brace-format
+msgid "The metadata for job or project {project_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class PricingUnitNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The pricing unit could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:156
+msgid "The pricing unit could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class PricingPlanNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("The pricing plan could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:161
+msgid "The pricing plan could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ProjectAlreadyStartedError(BaseBackEndError):
+#   >>>     msg_template = user_message("The project has already been started.", _version=1)
+#           status_code = status.HTTP_200_OK
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:166
+msgid "The project has already been started."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class InsufficientNumberOfSeatsError(BaseBackEndError):
+#   >>>     msg_template = user_message("Not enough available seats for license item {licensed_item_id}.", _version=1)
+#           status_code = status.HTTP_409_CONFLICT
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:171
+#, python-brace-format
+msgid "Not enough available seats for license item {licensed_item_id}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Unable to check out license item {licensed_item_id} because the dynamic service is not running. "
+#               "Current service ID: {service_run_id}.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:177
+#, python-brace-format
+msgid ""
+"Unable to check out license item {licensed_item_id} because the dynamic "
+"service is not running. Current service ID: {service_run_id}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The license item checkout {licensed_item_checkout_id} could not be found.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:186
+#, python-brace-format
+msgid ""
+"The license item checkout {licensed_item_checkout_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class JobAssetsMissingError(BaseBackEndError):
+#   >>>     msg_template = user_message("The assets for job {job_id} are missing.", _version=1)
+#           status_code = status.HTTP_409_CONFLICT
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:193
+#, python-brace-format
+msgid "The assets for job {job_id} are missing."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ChatbotNotAvailableError(BaseBackEndError):
+#   >>>     msg_template = user_message("The chatbot service is not enabled.", _version=1)
+#           status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:198
+msgid "The chatbot service is not enabled."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class CeleryTaskNotFoundError(BaseBackEndError):
+#   >>>     msg_template = user_message("Task {task_uuid} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+#, python-brace-format
+msgid "Task {task_uuid} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Cannot retrieve output for solver job '{job_id}' because it has not completed successfully. "
+#               "Current state: {state}.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for solver job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Solver job '{job_id}' has not stopped yet. Current status: {state}.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
+#, python-brace-format
+msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Cannot retrieve output for project job '{job_id}' because it has not completed successfully. "
+#               "Current state: {state}.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
+#, python-brace-format
+msgid ""
+"Cannot retrieve output for project job '{job_id}' because it has not "
+"completed successfully. Current state: {state}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add credits before requesting solver outputs.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:13
+#, python-brace-format
+msgid ""
+"Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add "
+"credits before requesting solver outputs."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class MissingWalletError(CustomBaseError):
+#   >>>     msg_template = user_message("Job {job_id} does not have an associated wallet.", _version=1)
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:19
+#, python-brace-format
+msgid "Job {job_id} does not have an associated wallet."
+msgstr ""
+
+# CTX-SNIPPET:
+#           detail_msg = user_message(
+#   >>>         "The solver_version parameter is set but solver_id is not. Please provide both parameters or neither.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/custom_errors.py:33
+msgid ""
+"The solver_version parameter is set but solver_id is not. Please provide "
+"both parameters or neither."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class FunctionJobCacheNotFoundError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("No cached function job was found.", _version=1)
+#           status_code: int = 404  # Not Found
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:12
+msgid "No cached function job was found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class FunctionJobProjectMissingError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("Unable to process the function job.", _version=1)
+#           status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR  # Not Found
+#: services/api-server/src/simcore_service_api_server/exceptions/function_errors.py:17
+msgid "Unable to process the function job."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "A stream is already connected to {job_id}. Only one stream can be connected at a time.",
+#               _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/log_streaming_errors.py:16
+#, python-brace-format
+msgid ""
+"A stream is already connected to {job_id}. Only one stream can be connected "
+"at a time."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = user_message(
+#   >>>     "Something went wrong on our end. We've been notified and will resolve this issue"
+#           " as soon as possible. Thank you for your patience. [{}]",
+#           _version=1,
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:21
+msgid ""
+"Something went wrong on our end. We've been notified and will resolve this "
+"issue as soon as possible. Thank you for your patience. [{}]"
+msgstr ""
+
+# CTX-SNIPPET:
+#           }:
+#               status_code = service_error.response.status_code
+#   >>>         detail = user_message("The {service_name} service was unavailable.").format(service_name=service_name)
+#               if retry_after := service_error.response.headers.get("Retry-After"):
+#                   headers["Retry-After"] = retry_after
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:84
+#, python-brace-format
+msgid "The {service_name} service was unavailable."
+msgstr ""
+
+# CTX-SNIPPET:
+#           else:
+#               status_code = status.HTTP_502_BAD_GATEWAY
+#   >>>         detail = user_message("Received unexpected response from {service_name}").format(service_name=service_name)
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:89
+#, python-brace-format
+msgid "Received unexpected response from {service_name}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           except ValidationError as exc:
+#   >>>         detail = user_message("{service_name} service returned invalid response").format(service_name=service_name)
+#               _logger.exception("Invalid data exchanged with %s service. %s", service_name, detail)
+#               raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail, headers=headers) from exc
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:116
+#, python-brace-format
+msgid "{service_name} service returned invalid response"
+msgstr ""
+
+# CTX-SNIPPET:
+#                   raise HTTPException(
+#                       status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+#   >>>                 detail=user_message("Request to backend timed out"),
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:132
+msgid "Request to backend timed out"
+msgstr ""
+
+# CTX-SNIPPET:
+#                   raise HTTPException(
+#                       status_code=status.HTTP_502_BAD_GATEWAY,
+#   >>>                 detail=user_message("Request to backend failed"),
+#: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:144
+msgid "Request to backend failed"
+msgstr ""
+
+# CTX-SNIPPET:
+#       class TaskSchedulerError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("An error occurred in the task scheduler.", _version=1)
+#           status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:8
+msgid "An error occurred in the task scheduler."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class TaskMissingError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("Task {job_id} could not be found.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:13
+#, python-brace-format
+msgid "Task {job_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class TaskResultMissingError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("Task {job_id} has not completed yet.", _version=1)
+#           status_code = status.HTTP_404_NOT_FOUND
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:18
+#, python-brace-format
+msgid "Task {job_id} has not completed yet."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class TaskCancelledError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("Task {job_id} has been cancelled.", _version=1)
+#           status_code = status.HTTP_409_CONFLICT
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:23
+#, python-brace-format
+msgid "Task {job_id} has been cancelled."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class TaskError(BaseBackEndError):
+#   >>>     msg_template: str = user_message("Task '{job_id}' encountered an error.", _version=1)
+#           status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+#: services/api-server/src/simcore_service_api_server/exceptions/task_errors.py:28
+#, python-brace-format
+msgid "Task '{job_id}' encountered an error."
+msgstr ""
+
+# CTX-SNIPPET:
+#                       msg = user_message(
+#   >>>                     "Could not forward log because a logstreamer associated with job_id={job_id} was not registered"
+#: services/api-server/src/simcore_service_api_server/services_http/log_streaming.py:67
+#, python-brace-format
+msgid ""
+"Could not forward log because a logstreamer associated with job_id={job_id} "
+"was not registered"
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version}"
+#               " running in container {container_id} encountered an unexpected error: {error_message}."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:9
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} encountered an unexpected error: {error_message}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version} running in container {container_id} failed with code {exit_code}."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:17
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} failed with code {exit_code}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version}"
+#               " running in container {container_id} ran out of memory and was terminated."
+#               " Current limits are {service_resources}."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:24
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} ran out of memory and was terminated. Current limits are "
+"{service_resources}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version}"
+#               " running in container {container_id} was silent/hanging for longer than {timeout_timedelta} "
+#               "and was terminated."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:33
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} running in container "
+"{container_id} was silent/hanging for longer than {timeout_timedelta} and "
+"was terminated."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class TaskCancelledError(ContainerTaskError):
+#   >>>     msg_template = user_message("The task was cancelled")
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:40
+msgid "The task was cancelled"
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version} {input} uses a file-to-key {file_to_key_map} "
+#               "map but receives zip data instead. "
+#               "TIP: either pass a single file or zip file and remove the file-to-key map parameter."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:45
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} {input} uses a file-to-key "
+"{file_to_key_map} map but receives zip data instead. TIP: either pass a "
+"single file or zip file and remove the file-to-key map parameter."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version} could not securely {operation} "
+#               "the {file_role} file {file_id}: {error_message}. "
+#               "TIP: this usually means the provided encryption key or context does not match "
+#               "the one used to encrypt the data."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:54
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} could not securely {operation} "
+"the {file_role} file {file_id}: {error_message}. TIP: this usually means the "
+"provided encryption key or context does not match the one used to encrypt "
+"the data."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "The service {service_key}:{service_version} requires decryption, but the encryption "
+#               "service is currently unavailable: {error_message}. Please contact support if this persists."
+#: packages/dask-task-models-library/src/dask_task_models_library/container_tasks/errors.py:64
+#, python-brace-format
+msgid ""
+"The service {service_key}:{service_version} requires decryption, but the "
+"encryption service is currently unavailable: {error_message}. Please contact "
+"support if this persists."
+msgstr ""
+
+# CTX-SNIPPET:
+#                       log=user_message(
+#   >>>                     "Project pipeline execution for iteration {iteration} has completed with status: {run_result}",
+#                           _version=1,
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:230
+#, python-brace-format
+msgid ""
+"Project pipeline execution for iteration {iteration} has completed with "
+"status: {run_result}"
+msgstr ""
+
+# CTX-SNIPPET:
+#                       log=user_message(
+#   >>>                     "An unexpected error occurred during task scheduling. "
+#                           "Please contact oSparc support if this issue persists.",
+#                           _version=1,
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:865
+msgid ""
+"An unexpected error occurred during task scheduling. Please contact oSparc "
+"support if this issue persists."
+msgstr ""
+
+# CTX-SNIPPET:
+#                       log=user_message(
+#   >>>                     "Variable resolution timed out during task scheduling, will retry.",
+#                           _version=1,
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
+msgid "Variable resolution timed out during task scheduling, will retry."
+msgstr ""
+
+# CTX-SNIPPET:
+#                   msg = user_message(
+#   >>>                 "The system has timed out while waiting for computational resources. "
+#                       "Please try running your project again or contact oSparc support if this issue persists.",
+#                       _version=1,
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:974
+msgid ""
+"The system has timed out while waiting for computational resources. Please "
+"try running your project again or contact oSparc support if this issue "
+"persists."
+msgstr ""
+
+# CTX-SNIPPET:
+#       {% extends 'email/_base/body_html.j2' %}
+#       {% block title %} {% include 'email/account_added_to_product/subject.j2' %} {% endblock %}
+#       {% block content %}
+#   >>> <p>{% trans first_name=user.first_name or "User" %}Dear {{ first_name }},{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
+msgid "Dear %(first_name)s,"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans product_name=product.display_name %}Your request has been approved and you now have access to {{ product_name
+#         }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
+msgid ""
+"Your request has been approved and you now have access to %(product_name)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#         {% if existing_product %}
+#   >>>   {% trans existing_product=existing_product, product_name=product.display_name %}Since you already have an account on
+#         {{ existing_product }}, please continue logging in to {{ product_name }} with the same email and password.{% endtrans
+#         %}
+#         {% else %}
+#         {% trans product_name=product.display_name %}Since you already have an account, please continue logging in to {{
+#         product_name }} with the same email and password.{% endtrans %}
+#         {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:14
+msgid ""
+"Since you already have an account on\n"
+"  %(existing_product)s, please continue logging in to %(product_name)s with "
+"the same email and password."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#         {% if existing_product %}
+#         {% trans existing_product=existing_product, product_name=product.display_name %}Since you already have an account on
+#         {{ existing_product }}, please continue logging in to {{ product_name }} with the same email and password.{% endtrans
+#         %}
+#         {% else %}
+#   >>>   {% trans product_name=product.display_name %}Since you already have an account, please continue logging in to {{
+#         product_name }} with the same email and password.{% endtrans %}
+#         {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:10
+msgid ""
+"Since you already have an account, please continue logging in to "
+"%(product_name)s with the same email and password."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans login_link=login_link, product_name=product.display_name %}You can access {{ product_name }} here: {{
+#         login_link }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
+msgid "You can access %(product_name)s here: %(login_link)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans support_link=support_link %}If any problem should occur, please feel free to contact us at {{ support_link
+#         }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:18
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
+msgid "Enjoy %(product_name)s!"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans %}Best regards,{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:36
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:7
+msgid "Best regards,"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#   >>> <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:39
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:33
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:26
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:30
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:42
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:12
+msgid "The %(product_name)s Team"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% if existing_product %}
+#   >>> {% trans existing_product=existing_product, product_name=product.display_name %}Since you already have an account on {{
+#       existing_product }}, please continue logging in to {{ product_name }} with the same email and password.{% endtrans %}
+#       {% else %}
+#       {% trans product_name=product.display_name %}Since you already have an account, please continue logging in to {{
+#       product_name }} with the same email and password.{% endtrans %}
+#       {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:7
+msgid ""
+"Since you already have an account on %(existing_product)s, please continue "
+"logging in to %(product_name)s with the same email and password."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans link=product.homepage_url, product_name=product.display_name %}You can access {{ product_name }} here: {{ link
+#       }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
+msgid "You can access %(product_name)s here: %(link)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}If any problem should occur, please feel free to contact us at {{
+#       support_email }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:17
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:9
+msgid ""
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}You Now Have Access to {{ product_name }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/subject.j2:1
+msgid "You Now Have Access to %(product_name)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:3
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. We are pleased to provide "
+"you with a one-time invitation link to register on the platform."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% if trial_account_days is defined and trial_account_days %}
+#   >>> <p>{% trans count=trial_account_days %}Your account includes {{ count }} day trial period.{% pluralize %}Your account includes {{ count }} days trial period.{% endtrans %}</p>
+#       {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
+msgid "Your account includes %(count)s day trial period."
+msgid_plural "Your account includes %(count)s days trial period."
+msgstr[0] ""
+
+# CTX-SNIPPET:
+#       
+#       {% if extra_credits is defined and extra_credits %}
+#   >>> <p>{% trans extra_credits=extra_credits %}You also receive {{ extra_credits }} free credits.{% endtrans %}</p>
+#       {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
+msgid "You also receive %(extra_credits)s free credits."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans register_link=register_link %}Click {{ register_link }} to access the registration page.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:20
+msgid "Click %(register_link)s to access the registration page."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans support_link=support_link %}Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ support_link }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:25
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_link)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans link=link %}Click {{ link }} to access the registration page.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:13
+msgid "Click %(link)s to access the registration page."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}Please follow the on-screen information and proceed with your registration. If any problem should occur, please feel free to contact us at {{ support_email }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:15
+msgid ""
+"Please follow the on-screen information and proceed with your registration. "
+"If any problem should occur, please feel free to contact us at "
+"%(support_email)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}Your Registration Request for {{ product_name }} Has Been Accepted{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Accepted"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans product_name=product.display_name %}Thank you for your interest in {{ product_name }}. Unfortunately, your registration is not eligible for participation in this program.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:3
+msgid ""
+"Thank you for your interest in %(product_name)s. Unfortunately, your "
+"registration is not eligible for participation in this program."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans support_link=support_link %}In case of further interest in this or other solutions we might offer, please contact us at {{ support_link }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_html.j2:12
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_link)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}In case of further interest in this or other solutions we might offer, please contact us at {{ support_email }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/body_text.j2:5
+msgid ""
+"In case of further interest in this or other solutions we might offer, "
+"please contact us at %(support_email)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}Your Registration Request for {{ product_name }} Has Been Denied{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
+msgid "Your Registration Request for %(product_name)s Has Been Denied"
+msgstr ""
+
+# CTX-SNIPPET:
+#       {% extends 'email/_base/body_html.j2' %}
+#       {% block title %} {% include 'email/account_requested/subject.j2' %} {% endblock %}
+#       {% block content %}
+#   >>> <p>{% trans %}Dear Support team,{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:4
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:1
+msgid "Dear Support team,"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans %}We have received the following request form for an account:{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:3
+msgid "We have received the following request form for an account:"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans %}Some details about the requested product follow:{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:10
+msgid "Some details about the requested product follow:"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans %}To validate the request form, here you can get further info on this request:{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:27
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:14
+msgid ""
+"To validate the request form, here you can get further info on this request:"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans %}TIP: Use https://ipinfo.io/ to find out more information on the IP.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/body_text.j2:18
+msgid "TIP: Use https://ipinfo.io/ to find out more information on the IP."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}Request for an Account in {{ product_name }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
+msgid "Request for an Account in %(product_name)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans product_name=product.display_name %}You have requested to change the email address linked to your {{ product_name }} account. Please follow the on-screen information in the link below:{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:3
+msgid ""
+"You have requested to change the email address linked to your "
+"%(product_name)s account. Please follow the on-screen information in the "
+"link below:"
+msgstr ""
+
+# CTX-SNIPPET:
+#             <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#   >>>         {% trans %}Change email{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:14
+msgid "Change email"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#   >>> <p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}
+#       </p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:22
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:38
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further "
+"help."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#       <p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}
+#       </p>
+#   >>> <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_html.j2:23
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:24
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:20
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:15
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:28
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:13
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:40
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:12
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:34
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:11
+msgid "Best Regards,"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:10
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need further "
+"help."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}Change of Your Sign-In Email Address on {{ product_name }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/change_email/subject.j2:1
+msgid "Change of Your Sign-In Email Address on %(product_name)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans %}Dear User,{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:7
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:1
+msgid "Dear User,"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans service_run=service_run, product_name=product.display_name %}We want to inform you that your service run ({{ service_run }}) on {{ product_name }} was affected by a platform issue and was not billed.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:11
+msgid ""
+"We want to inform you that your service run (%(service_run)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans credit_amount=credit_amount %}{{ credit_amount }} credits have been reimbursed to your Credit Account.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:16
+msgid "%(credit_amount)s credits have been reimbursed to your Credit Account."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans %}No action is needed on your part.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_html.j2:19
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:7
+msgid "No action is needed on your part."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans service_run_id=service_run_id, product_name=product.display_name %}We want to inform you that your service run ({{ service_run_id }}) on {{ product_name }} was affected by a platform issue and was not billed.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:3
+msgid ""
+"We want to inform you that your service run (%(service_run_id)s) on "
+"%(product_name)s was affected by a platform issue and was not billed."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans reimbursed_credits=reimbursed_credits %}{{ reimbursed_credits }} credits have been reimbursed to your Credit Account.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/body_text.j2:5
+msgid ""
+"%(reimbursed_credits)s credits have been reimbursed to your Credit Account."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}Your credits have been reimbursed on {{ product_name }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
+msgid "Your credits have been reimbursed on %(product_name)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       {% extends 'email/_base/body_html.j2' %}
+#       {% block title %} {% include 'email/new_2fa_code/subject.j2' %} {% endblock %}
+#       {% block content %}
+#       <p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+#   >>> <p>{% trans host=host %}Please find below the Two-factor Authentication sign-in code for your {{ host }} account.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:5
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:3
+msgid ""
+"Please find below the Two-factor Authentication sign-in code for your "
+"%(host)s account."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans code_display=code_display %}Your code is: {{ code_display }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:9
+msgid "Your code is: %(code_display)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% set code_display %}<b> {{ code }} </b>{% endset %}
+#       <p>
+#         {% trans code_display=code_display %}Your code is: {{ code_display }}{% endtrans %}
+#       </p>
+#   >>> <p>{% trans ttl=ttl %}This code is valid for {{ ttl }} seconds.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:11
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:7
+msgid "This code is valid for %(ttl)s seconds."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#   >>> <p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further
+#         help.{% endtrans %}</p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_html.j2:14
+msgid ""
+"Please don't hesitate to contact us at %(support_link)s if you need further\n"
+"  help."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans code=code %}Your code is: {{ code }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:5
+msgid "Your code is: %(code)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need
+#       further help.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/body_text.j2:9
+msgid ""
+"Please don't hesitate to contact us at %(support_email)s if you need\n"
+"further help."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans code=code, host=host %}{{ code }} is Your 2FA Sign-In Code for {{ host }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_2fa_code/subject.j2:1
+msgid "%(code)s is Your 2FA Sign-In Code for %(host)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#             <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#   >>>         {% trans %}Register{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:11
+msgid "Register"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <!-- Bulletproof button: table-based for maximum email client compatibility -->
+#       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
+#         <tr>
+#           <td style="{{ strong_button_td_style }}">
+#             <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#               {% trans %}Register{% endtrans %}
+#             </a>
+#           </td>
+#         </tr>
+#       </table>
+#   >>> <p>{% trans %}Please follow the on-screen information and proceed with your registration.{% endtrans %}</p>
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#       <p>{% trans support_link=support_link %}If any problem should occur, please feel free to contact us at {{ support_link }}.{% endtrans %}</p>
+#       <p>{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}</p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:16
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:7
+msgid ""
+"Please follow the on-screen information and proceed with your registration."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans link=link %}Click here to access the registration page: {{ link }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:5
+msgid "Click here to access the registration page: %(link)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       <p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+#       {% set price %}<strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong>{% endset %}
+#       {% set credits %}<strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>{% endset %}
+#   >>> <p>{% trans price=price, credits=credits, product_name=product.display_name %}We are delighted to confirm the successful processing of your payment of {{ price }} for the purchase of {{ credits }}. The credits have been added to your {{ product_name }} account, and you are all set to utilize them.{% endtrans %}</p>
+#       {% set receipt_link %}<a href="{{ payment.invoice_url }}">receipt</a>{% endset %}
+#       <p>{% trans receipt_link=receipt_link %}For more details you can view or download your {{ receipt_link }}.{% endtrans %}</p>
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#       <p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:10
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price)s for the purchase of %(credits)s. The credits have been added to "
+"your %(product_name)s account, and you are all set to utilize them."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       <p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+#       {% set price %}<strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong>{% endset %}
+#       {% set credits %}<strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>{% endset %}
+#       <p>{% trans price=price, credits=credits, product_name=product.display_name %}We are delighted to confirm the successful processing of your payment of {{ price }} for the purchase of {{ credits }}. The credits have been added to your {{ product_name }} account, and you are all set to utilize them.{% endtrans %}</p>
+#       {% set receipt_link %}<a href="{{ payment.invoice_url }}">receipt</a>{% endset %}
+#   >>> <p>{% trans receipt_link=receipt_link %}For more details you can view or download your {{ receipt_link }}.{% endtrans %}</p>
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#       <p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
+msgid "For more details you can view or download your %(receipt_link)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans price_dollars=payment.price_dollars, osparc_credits=payment.osparc_credits, product_name=product.display_name %}We are delighted to confirm the successful processing of your payment of {{ price_dollars }} USD for the purchase of {{ osparc_credits }} credits. The credits have been added to your {{ product_name }} account, and you are all set to utilize them.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:3
+msgid ""
+"We are delighted to confirm the successful processing of your payment of "
+"%(price_dollars)s USD for the purchase of %(osparc_credits)s credits. The "
+"credits have been added to your %(product_name)s account, and you are all "
+"set to utilize them."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans invoice_url=payment.invoice_url %}For more details you can view or download your receipt: {{ invoice_url }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
+msgid ""
+"For more details you can view or download your receipt: %(invoice_url)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans price_dollars=payment.price_dollars, osparc_credits=payment.osparc_credits %}Your Payment {{ price_dollars }} USD for {{ osparc_credits }} Credits Was Successful{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/paid/subject.j2:1
+msgid ""
+"Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
+"Successful"
+msgstr ""
+
+# CTX-SNIPPET:
+#       {% extends 'email/_base/body_html.j2' %}
+#       {% block title %} {% include 'email/registered/subject.j2' %} {% endblock %}
+#       {% block content %}
+#       <p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+#   >>> <p>{% trans product_name=product.display_name, host=host %}Thank you for registering with {{ product_name }}. Your
+#         account has been successfully created and you can now sign in to {{ host }}.{% endtrans %}</p>
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#       <p>{% trans support_link=support_link %}If you have any questions or need assistance, please don't hesitate to contact
+#         us at {{ support_link }}.{% endtrans %}</p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:5
+msgid ""
+"Thank you for registering with %(product_name)s. Your\n"
+"  account has been successfully created and you can now sign in to %(host)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       {% extends 'email/_base/body_html.j2' %}
+#       {% block title %} {% include 'email/registered/subject.j2' %} {% endblock %}
+#       {% block content %}
+#       <p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
+#       <p>{% trans product_name=product.display_name, host=host %}Thank you for registering with {{ product_name }}. Your
+#         account has been successfully created and you can now sign in to {{ host }}.{% endtrans %}</p>
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#   >>> <p>{% trans support_link=support_link %}If you have any questions or need assistance, please don't hesitate to contact
+#         us at {{ support_link }}.{% endtrans %}</p>
+#       <p>{% trans %}Best Regards,{% endtrans %}</p>
+#       {% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+#       <p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
+#       {% endblock %}
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_html.j2:8
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to "
+"contact\n"
+"  us at %(support_link)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans product_name=product.display_name, host=host %}Thank you for registering with {{ product_name }}. Your account
+#       has been successfully created and you can now sign in to {{ host }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:3
+msgid ""
+"Thank you for registering with %(product_name)s. Your account\n"
+"has been successfully created and you can now sign in to %(host)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}If you have any questions or need assistance, please don't hesitate to
+#       contact us at {{ support_email }}.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/body_text.j2:6
+msgid ""
+"If you have any questions or need assistance, please don't hesitate to\n"
+"contact us at %(support_email)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans product_name=product.display_name %}Welcome to {{ product_name }}!{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/registered/subject.j2:1
+msgid "Welcome to %(product_name)s!"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans host=host %}A request to reset your {{ host }} password has been made.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
+msgid "A request to reset your %(host)s password has been made."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% if success %}
+#   >>> <p>{% trans %}To complete the process, please click the link below:{% endtrans %}</p>
+#       <!-- Bulletproof button: table-based for maximum email client compatibility -->
+#       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
+#         <tr>
+#           <td style="{{ strong_button_td_style }}">
+#             <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#               {% trans %}Reset Password{% endtrans %}
+#             </a>
+#           </td>
+#         </tr>
+#       </table>
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:9
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:5
+msgid "To complete the process, please click the link below:"
+msgstr ""
+
+# CTX-SNIPPET:
+#             <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#   >>>         {% trans %}Reset Password{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:15
+msgid "Reset Password"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-top: 10px; margin-bottom: 10px;">
+#         <tr>
+#           <td style="{{ strong_button_td_style }}">
+#             <a href="{{ link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#               {% trans %}Reset Password{% endtrans %}
+#             </a>
+#           </td>
+#         </tr>
+#       </table>
+#       {% else %}
+#   >>> <p>{% trans %}It could not be completed due to the following reason:{% endtrans %}</p>
+#       <p><strong> {{ reason }} </strong></p>
+#       {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:21
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:8
+msgid "It could not be completed due to the following reason:"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+#   >>> <p>{% trans support_link=support_link %}If you did not request this, please contact us immediately at {{ support_link }} for security reasons.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:26
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_link)s for security reasons."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% trans host=host %}A request to reset your {{ host }} password has been made.{% endtrans %}
+#       {% if success %}
+#       {% trans %}To complete the process, please click the link below:{% endtrans %}
+#       {{ link }}
+#       {% else %}
+#       {% trans %}It could not be completed due to the following reason:{% endtrans %}
+#       {{ reason }}
+#       {% endif %}
+#   >>> {% trans support_email=product.support_email %}If you did not request this, please contact us immediately at {{ support_email }} for security reasons.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:11
+msgid ""
+"If you did not request this, please contact us immediately at "
+"%(support_email)s for security reasons."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans host=host %}Reset Password on {{ host }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
+msgid "Reset Password on %(host)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans sharer_name=sharer.user_name, product_name=product.display_name %}Great news! {{ sharer_name }} has shared a project with you on {{ product_name }}.{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:3
+msgid ""
+"Great news! %(sharer_name)s has shared a project with you on "
+"%(product_name)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> <p>{% trans %}To view the project and accept the sharing, follow below:{% endtrans %}</p>
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:8
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_text.j2:5
+msgid "To view the project and accept the sharing, follow below:"
+msgstr ""
+
+# CTX-SNIPPET:
+#               <a href="{{ accept_link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#   >>>           {% trans %}Open{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/body_html.j2:30
+msgid "Open"
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans host=host %}A project was shared with you on {{ host }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/share_project/subject.j2:1
+msgid "A project was shared with you on %(host)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% if conversation_name %}
+#       {% set convo_name_display %}<i>"{{ conversation_name }}"</i>{% endset %}
+#   >>> <p>{% trans convo_name=convo_name_display %}There is a new reply in the Support conversation {{ convo_name }}.{% endtrans %}</p>
+#       {% else %}
+#       <p>{% trans %}There is a new reply in the Support conversation.{% endtrans %}</p>
+#       {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
+msgid "There is a new reply in the Support conversation %(convo_name)s."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       {% if conversation_name %}
+#       {% set convo_name_display %}<i>"{{ conversation_name }}"</i>{% endset %}
+#       <p>{% trans convo_name=convo_name_display %}There is a new reply in the Support conversation {{ convo_name }}.{% endtrans %}</p>
+#       {% else %}
+#   >>> <p>{% trans %}There is a new reply in the Support conversation.{% endtrans %}</p>
+#       {% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:10
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid "There is a new reply in the Support conversation."
+msgstr ""
+
+# CTX-SNIPPET:
+#             <a href="{{ conversation_url }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
+#   >>>         {% trans %}Go to the Conversation{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:28
+msgid "Go to the Conversation"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% if conversation_name %}{% trans conversation_name=conversation_name %}There is a new reply in the Support conversation "{{ conversation_name }}".{% endtrans %}{% else %}{% trans %}There is a new reply in the Support conversation.{% endtrans %}{% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
+msgid ""
+"There is a new reply in the Support conversation \"%(conversation_name)s\"."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans conversation_url=conversation_url %}View the conversation: {{ conversation_url }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:8
+msgid "View the conversation: %(conversation_url)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% if conversation_name %}{% trans conversation_name=conversation_name %}New reply in your Support Center "{{ conversation_name }}" conversation{% endtrans %}{% else %}{% trans %}New reply in your Support Center conversation{% endtrans %}{% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% if conversation_name %}{% trans conversation_name=conversation_name %}New reply in your Support Center "{{ conversation_name }}" conversation{% endtrans %}{% else %}{% trans %}New reply in your Support Center conversation{% endtrans %}{% endif %}
+#: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
+msgid "New reply in your Support Center conversation"
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans %}We have received your account closure request, and we want to say thank you for being a part of our platform. While we're sad to see you go, we respect your decision.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:6
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:3
+msgid ""
+"We have received your account closure request, and we want to say thank you "
+"for being a part of our platform. While we're sad to see you go, we respect "
+"your decision."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans retention_days=retention_days, support_link=support_link %}Your projects and data will be securely retained for {{ retention_days }} days. Within that period if you ever decide to return, you can reactivate your account by sending us an email to {{ support_link }}. Afterwards it will be completely deleted from our system.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:10
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_link)s. Afterwards it will "
+"be completely deleted from our system."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans support_link=support_link %}Our support team is here to help with anything you need. Please feel free to contact us to {{ support_link }} in case of questions or any required assistance.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:14
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to "
+"contact us to %(support_link)s in case of questions or any required "
+"assistance."
+msgstr ""
+
+# CTX-SNIPPET:
+#       <p>
+#   >>>   {% trans %}We wish you all the best in your future endeavors.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:9
+msgid "We wish you all the best in your future endeavors."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans retention_days=retention_days, support_email=product.support_email %}Your projects and data will be securely retained for {{ retention_days }} days. Within that period, if you ever decide to return, you can reactivate your account by sending us an email to {{ support_email }}. Afterwards, it will be completely deleted from our system.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:5
+msgid ""
+"Your projects and data will be securely retained for %(retention_days)s "
+"days. Within that period, if you ever decide to return, you can reactivate "
+"your account by sending us an email to %(support_email)s. Afterwards, it "
+"will be completely deleted from our system."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> {% trans support_email=product.support_email %}Our support team is here to help with anything you need. Please feel free to contact us at {{ support_email }} in case of questions or any required assistance.{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:7
+msgid ""
+"Our support team is here to help with anything you need. Please feel free to "
+"contact us at %(support_email)s in case of questions or any required "
+"assistance."
+msgstr ""
+
+# CTX-SNIPPET:
+#   >>> {% trans host=host %}Closing Your Account in {{ host }}{% endtrans %}
+#: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
+msgid "Closing Your Account in %(host)s"
+msgstr ""
+
+# CTX-SNIPPET:
+#           ApiKeyDuplicatedDisplayNameError: HttpErrorInfo(
+#               status.HTTP_409_CONFLICT,
+#   >>>         user_message("An API key with this display name already exists", _version=1),
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:15
+msgid "An API key with this display name already exists"
+msgstr ""
+
+# CTX-SNIPPET:
+#           ApiKeyNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested API key could not be found", _version=1),
+#: services/web/server/src/simcore_service_webserver/api_keys/_controller/rest_exceptions.py:19
+msgid "The requested API key could not be found"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_CATALOG_SERVICE_UNAVAILABLE: Final[str] = user_message(
+#           # Most likely the director service is down or misconfigured so the user is asked to try again later.
+#   >>>     "The catalog service is currently unavailable. This issue has been logged and will be investigated. "
+#           + MSG_TRY_AGAIN_OR_SUPPORT,
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/catalog/_constants.py:9
+msgid ""
+"The catalog service is currently unavailable. This issue has been logged and "
+"will be investigated. "
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The catalog service is temporarily unavailable. Please try again later.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:84
+msgid "The catalog service is temporarily unavailable. Please try again later."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Access denied: You don't have permission to view this catalog item.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:91
+msgid "Access denied: You don't have permission to view this catalog item."
+msgstr ""
+
+# CTX-SNIPPET:
+#           CatalogItemNotFoundRpcError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("This catalog item does not exist or has been removed.", _version=2),
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:97
+msgid "This catalog item does not exist or has been removed."
+msgstr ""
+
+# CTX-SNIPPET:
+#           DefaultPricingPlanNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("No default pricing plan is available for this operation.", _version=2),
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:101
+msgid "No default pricing plan is available for this operation."
+msgstr ""
+
+# CTX-SNIPPET:
+#           DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("No default pricing unit is defined for this service.", _version=2),
+#: services/web/server/src/simcore_service_webserver/catalog/_controller_rest_exceptions.py:105
+msgid "No default pricing unit is defined for this service."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_UNDER_DEVELOPMENT: Final[str] = user_message(
+#   >>>     "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
+#: services/web/server/src/simcore_service_webserver/constants.py:39
+msgid ""
+"Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current "
+"implementation"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
+#   >>>     "Please try again shortly. If the issue persists, contact support.", _version=1
+#: services/web/server/src/simcore_service_webserver/constants.py:47
+msgid "Please try again shortly. If the issue persists, contact support."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Conversation not found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:27
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:34
+msgid "Conversation not found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unsupported conversation type.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/conversations/_controller/_rest_exceptions.py:41
+msgid "Unsupported conversation type."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_msg = user_message(
+#                   # Most likely the director service is down or misconfigured so the user is asked to try again later.
+#   >>>             "This service is temporarily unavailable. The incident has been logged and will be investigated. "
+#                   + MSG_TRY_AGAIN_OR_SUPPORT,
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:45
+msgid ""
+"This service is temporarily unavailable. The incident has been logged and "
+"will be investigated. "
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "A default wallet is required for running computations but could not be found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:83
+msgid ""
+"A default wallet is required for running computations but could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Your wallet does not have sufficient credits to run this computation: {details}",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/director_v2/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Your wallet does not have sufficient credits to run this computation: "
+"{details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           FolderNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested folder could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:35
+msgid "The requested folder could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           WorkspaceNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested workspace could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:39
+msgid "The requested workspace could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           FolderAccessForbiddenError: HttpErrorInfo(
+#               status.HTTP_403_FORBIDDEN,
+#   >>>         user_message("You do not have permission to access this folder.", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:43
+msgid "You do not have permission to access this folder."
+msgstr ""
+
+# CTX-SNIPPET:
+#           WorkspaceAccessForbiddenError: HttpErrorInfo(
+#               status.HTTP_403_FORBIDDEN,
+#   >>>         user_message("You do not have permission to access this workspace.", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:47
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:32
+msgid "You do not have permission to access this workspace."
+msgstr ""
+
+# CTX-SNIPPET:
+#           WorkspaceFolderInconsistencyError: HttpErrorInfo(
+#               status.HTTP_403_FORBIDDEN,
+#   >>>         user_message("This folder is not available in the selected workspace.", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:51
+msgid "This folder is not available in the selected workspace."
+msgstr ""
+
+# CTX-SNIPPET:
+#           FolderValueNotPermittedError: HttpErrorInfo(
+#               status.HTTP_409_CONFLICT,
+#   >>>         user_message("The folder operation cannot be completed: {details}", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:55
+#, python-brace-format
+msgid "The folder operation cannot be completed: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           FoldersValueError: HttpErrorInfo(
+#               status.HTTP_409_CONFLICT,
+#   >>>         user_message("The folder configuration is invalid: {details}", _version=1),
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:59
+#, python-brace-format
+msgid "The folder configuration is invalid: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You do not have permission to move the project with UUID: {project_uuid}. To locate this project, copy and paste the UUID into the search bar.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:64
+#, python-brace-format
+msgid ""
+"You do not have permission to move the project with UUID: {project_uuid}. To "
+"locate this project, copy and paste the UUID into the search bar."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Cannot move folder to trash because it contains projects that are currently running. Please stop all running services first and try again.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:72
+msgid ""
+"Cannot move folder to trash because it contains projects that are currently "
+"running. Please stop all running services first and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Something went wrong while stopping running services in projects within this folder before trashing. Aborting trash.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/folders/_common/exceptions_handlers.py:79
+msgid ""
+"Something went wrong while stopping running services in projects within this "
+"folder before trashing. Aborting trash."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Group access rights could not be found for Function '{function_id}' in product '{product_name}'."
+#: services/web/server/src/simcore_service_webserver/functions/_functions_exceptions.py:23
+#, python-brace-format
+msgid ""
+"Group access rights could not be found for Function '{function_id}' in "
+"product '{product_name}'."
+msgstr ""
+
+# CTX-SNIPPET:
+#           UserNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The user with ID {uid} or email {email} could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:27
+#, python-brace-format
+msgid "The user with ID {uid} or email {email} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           GroupNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The group with ID {gid} could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:31
+#, python-brace-format
+msgid "The group with ID {gid} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           UserInGroupNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The user is not a member of group {gid}.", _version=1),
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:35
+#, python-brace-format
+msgid "The user is not a member of group {gid}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           UserAlreadyInGroupError: HttpErrorInfo(
+#               status.HTTP_409_CONFLICT,
+#   >>>         user_message("The user is already a member of group {gid}.", _version=1),
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:39
+#, python-brace-format
+msgid "The user is already a member of group {gid}."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You do not have sufficient rights for {permission} access to group {gid}.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:44
+#, python-brace-format
+msgid ""
+"You do not have sufficient rights for {permission} access to group {gid}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           InvalidRRIDError: HttpErrorInfo(
+#               status.HTTP_409_CONFLICT,
+#   >>>         user_message("The RRID {rrid} is not valid.", _version=1),
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:51
+#, python-brace-format
+msgid "The RRID {rrid} is not valid."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unable to retrieve RRID information because the scicrunch.org service is currently unavailable.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:56
+msgid ""
+"Unable to retrieve RRID information because the scicrunch.org service is "
+"currently unavailable."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> MSG_INVALID_INVITATION_URL = user_message("The invitation link appears to be corrupted or incomplete.", _version=1)
+#       MSG_INVITATION_ALREADY_USED = user_message(
+#           "This invitation has already been used and cannot be used again.", _version=1
+#       )
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:9
+msgid "The invitation link appears to be corrupted or incomplete."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_INVITATION_ALREADY_USED = user_message(
+#   >>>     "This invitation has already been used and cannot be used again.", _version=1
+#: services/web/server/src/simcore_service_webserver/invitations/errors.py:11
+msgid "This invitation has already been used and cannot be used again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The requested market item '{licensed_item_id}' could not be found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:22
+#, python-brace-format
+msgid "The requested market item '{licensed_item_id}' could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You do not have permission to access credit account '{wallet_id}'.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:29
+#, python-brace-format
+msgid "You do not have permission to access credit account '{wallet_id}'."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Your credit account does not have sufficient funds to complete this purchase.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:36
+msgid ""
+"Your credit account does not have sufficient funds to complete this purchase."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The selected pricing plan is not valid for this licensed item. Please choose a different plan.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/licenses/_common/exceptions_handlers.py:43
+msgid ""
+"The selected pricing plan is not valid for this licensed item. Please choose "
+"a different plan."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "An account for the email {email} was already submitted. "
+#                   "If you haven't received any updates, please contact support.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/_rest_exceptions.py:38
+#, python-brace-format
+msgid ""
+"An account for the email {email} was already submitted. If you haven't "
+"received any updates, please contact support."
+msgstr ""
+
+# CTX-SNIPPET:
+#               raise web.HTTPServiceUnavailable(
+#   >>>             text=user_message("2FA login is not available"),
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/auth.py:210
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:49
+msgid "2FA login is not available"
+msgstr ""
+
+# CTX-SNIPPET:
+#                   raise web.HTTPBadRequest(
+#   >>>                 text=user_message("Registration requires a valid invitation code."),
+#                       content_type=MIMETYPE_APPLICATION_JSON,
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+msgid "Registration requires a valid invitation code."
+msgstr ""
+
+# CTX-SNIPPET:
+#               if not user_phone_number:
+#   >>>             raise web.HTTPBadRequest(text=user_message("User does not have a phone number registered"))
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
+msgid "User does not have a phone number registered"
+msgstr ""
+
+# CTX-SNIPPET:
+#                       user_message(
+#   >>>                     "Dear {first_name}, your verification code is {code}",
+#                           _hint="SMS message of at most 70 characters",
+#                           _version=1,
+#. @TRANSLATOR SMS message of at most 70 characters
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#, python-brace-format
+msgid "Dear {first_name}, your verification code is {code}"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> MSG_2FA_CODE_SENT: Final[str] = user_message("A verification code has been sent via SMS to {phone_number}.", _version=1)
+#       MSG_2FA_UNAVAILABLE: Final[str] = user_message(
+#           "The two-factor authentication service is currently unavailable. Please try again in a few minutes.",
+#           _version=2,
+#       )
+#       MSG_ACTIVATED: Final[str] = user_message("Your account has been successfully activated.", _version=1)
+#       MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
+#           "Please activate your account using the activation link we sent to your email before logging in.",
+#           _version=1,
+#       )
+#       MSG_REGISTRATION_SUCCESS: Final[str] = user_message(
+#: services/web/server/src/simcore_service_webserver/login/constants.py:5
+#, python-brace-format
+msgid "A verification code has been sent via SMS to {phone_number}."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_2FA_UNAVAILABLE: Final[str] = user_message(
+#   >>>     "The two-factor authentication service is currently unavailable. Please try again in a few minutes.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:7
+msgid ""
+"The two-factor authentication service is currently unavailable. Please try "
+"again in a few minutes."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       MSG_2FA_CODE_SENT: Final[str] = user_message("A verification code has been sent via SMS to {phone_number}.", _version=1)
+#       MSG_2FA_UNAVAILABLE: Final[str] = user_message(
+#           "The two-factor authentication service is currently unavailable. Please try again in a few minutes.",
+#           _version=2,
+#       )
+#   >>> MSG_ACTIVATED: Final[str] = user_message("Your account has been successfully activated.", _version=1)
+#       MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
+#           "Please activate your account using the activation link we sent to your email before logging in.",
+#           _version=1,
+#       )
+#       MSG_REGISTRATION_SUCCESS: Final[str] = user_message(
+#           "Welcome! Your account has been created. You can now sign in as {email}.",
+#           _version=3,
+#       )
+#       MSG_AUTH_FAILED: Final[str] = user_message(
+#           "The provided credentials are incorrect. Please verify your email and password.",
+#: services/web/server/src/simcore_service_webserver/login/constants.py:10
+msgid "Your account has been successfully activated."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
+#   >>>     "Please activate your account using the activation link we sent to your email before logging in.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:12
+msgid ""
+"Please activate your account using the activation link we sent to your email "
+"before logging in."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_REGISTRATION_SUCCESS: Final[str] = user_message(
+#   >>>     "Welcome! Your account has been created. You can now sign in as {email}.",
+#           _version=3,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:16
+#, python-brace-format
+msgid "Welcome! Your account has been created. You can now sign in as {email}."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_AUTH_FAILED: Final[str] = user_message(
+#   >>>     "The provided credentials are incorrect. Please verify your email and password.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:20
+msgid ""
+"The provided credentials are incorrect. Please verify your email and "
+"password."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_CANT_SEND_MAIL: Final[str] = user_message(
+#   >>>     "We're unable to send emails at this time. Please try again later.", _version=1
+#: services/web/server/src/simcore_service_webserver/login/constants.py:24
+msgid "We're unable to send emails at this time. Please try again later."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_CHANGE_EMAIL_REQUESTED: Final[str] = user_message(
+#   >>>     "Please check your new email address and click the verification link we sent you.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:27
+msgid ""
+"Please check your new email address and click the verification link we sent "
+"you."
+msgstr ""
+
+# CTX-SNIPPET:
+#           "The provided credentials are incorrect. Please verify your email and password.",
+#           _version=2,
+#       )
+#       MSG_CANT_SEND_MAIL: Final[str] = user_message(
+#           "We're unable to send emails at this time. Please try again later.", _version=1
+#       )
+#       MSG_CHANGE_EMAIL_REQUESTED: Final[str] = user_message(
+#           "Please check your new email address and click the verification link we sent you.",
+#           _version=1,
+#       )
+#   >>> MSG_EMAIL_CHANGED: Final[str] = user_message("Your email address has been successfully updated.", _version=1)
+#       MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
+#           "This email address is already associated with an account. Please sign in or use a different email address.",
+#           _version=1,
+#       )
+#       MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with further instructions.", _version=1)
+#       MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
+#       MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
+#       MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
+#           "You've recently requested a password reset. "
+#           "Please check your email for the reset link or wait before requesting another one.",
+#: services/web/server/src/simcore_service_webserver/login/constants.py:30
+msgid "Your email address has been successfully updated."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
+#   >>>     "This email address is already associated with an account. Please sign in or use a different email address.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:32
+msgid ""
+"This email address is already associated with an account. Please sign in or "
+"use a different email address."
+msgstr ""
+
+# CTX-SNIPPET:
+#       )
+#       MSG_CHANGE_EMAIL_REQUESTED: Final[str] = user_message(
+#           "Please check your new email address and click the verification link we sent you.",
+#           _version=1,
+#       )
+#       MSG_EMAIL_CHANGED: Final[str] = user_message("Your email address has been successfully updated.", _version=1)
+#       MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
+#           "This email address is already associated with an account. Please sign in or use a different email address.",
+#           _version=1,
+#       )
+#   >>> MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with further instructions.", _version=1)
+#       MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
+#       MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
+#       MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
+#           "You've recently requested a password reset. "
+#           "Please check your email for the reset link or wait before requesting another one.",
+#           _version=1,
+#       )
+#       MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
+#           "Unable to reset password. Permissions may have expired or been removed. "
+#           "Please try again, or contact support if the problem continues: {support_email}",
+#: services/web/server/src/simcore_service_webserver/login/constants.py:35
+#, python-brace-format
+msgid "We've sent an email to {email} with further instructions."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_CHANGE_EMAIL_REQUESTED: Final[str] = user_message(
+#           "Please check your new email address and click the verification link we sent you.",
+#           _version=1,
+#       )
+#       MSG_EMAIL_CHANGED: Final[str] = user_message("Your email address has been successfully updated.", _version=1)
+#       MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
+#           "This email address is already associated with an account. Please sign in or use a different email address.",
+#           _version=1,
+#       )
+#       MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with further instructions.", _version=1)
+#   >>> MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
+#       MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
+#       MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
+#           "You've recently requested a password reset. "
+#           "Please check your email for the reset link or wait before requesting another one.",
+#           _version=1,
+#       )
+#       MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
+#           "Unable to reset password. Permissions may have expired or been removed. "
+#           "Please try again, or contact support if the problem continues: {support_email}",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:36
+msgid "You have successfully signed in."
+msgstr ""
+
+# CTX-SNIPPET:
+#           "Please check your new email address and click the verification link we sent you.",
+#           _version=1,
+#       )
+#       MSG_EMAIL_CHANGED: Final[str] = user_message("Your email address has been successfully updated.", _version=1)
+#       MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
+#           "This email address is already associated with an account. Please sign in or use a different email address.",
+#           _version=1,
+#       )
+#       MSG_EMAIL_SENT: Final[str] = user_message("We've sent an email to {email} with further instructions.", _version=1)
+#       MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
+#   >>> MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
+#       MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
+#           "You've recently requested a password reset. "
+#           "Please check your email for the reset link or wait before requesting another one.",
+#           _version=1,
+#       )
+#       MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
+#           "Unable to reset password. Permissions may have expired or been removed. "
+#           "Please try again, or contact support if the problem continues: {support_email}",
+#           _version=1,
+#       )
+#: services/web/server/src/simcore_service_webserver/login/constants.py:37
+msgid "You have successfully signed out."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
+#   >>>     "You've recently requested a password reset. "
+#           "Please check your email for the reset link or wait before requesting another one.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:39
+msgid ""
+"You've recently requested a password reset. Please check your email for the "
+"reset link or wait before requesting another one."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
+#   >>>     "Unable to reset password. Permissions may have expired or been removed. "
+#           "Please try again, or contact support if the problem continues: {support_email}",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:44
+#, python-brace-format
+msgid ""
+"Unable to reset password. Permissions may have expired or been removed. "
+"Please try again, or contact support if the problem continues: "
+"{support_email}"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
+#           "You've recently requested a password reset. "
+#           "Please check your email for the reset link or wait before requesting another one.",
+#           _version=1,
+#       )
+#       MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
+#           "Unable to reset password. Permissions may have expired or been removed. "
+#           "Please try again, or contact support if the problem continues: {support_email}",
+#           _version=1,
+#       )
+#   >>> MSG_PASSWORD_CHANGED: Final[str] = user_message("Your password has been updated.", _version=1)
+#       MSG_PASSWORD_MISMATCH: Final[str] = user_message(
+#           "Password and confirmation do not match. Please try again.", _version=1
+#       )
+#       MSG_PHONE_MISSING: Final[str] = user_message("No phone number is associated with this account.", _version=1)
+#       MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
+#           "You can no longer resend the verification code. Please restart the verification process.",
+#           _version=2,
+#       )
+#       MSG_UNAUTHORIZED_LOGIN_2FA: Final[str] = user_message(
+#           "You can no longer submit a verification code. Please restart the login process.",
+#: services/web/server/src/simcore_service_webserver/login/constants.py:48
+msgid "Your password has been updated."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_PASSWORD_MISMATCH: Final[str] = user_message(
+#   >>>     "Password and confirmation do not match. Please try again.", _version=1
+#: services/web/server/src/simcore_service_webserver/login/constants.py:50
+msgid "Password and confirmation do not match. Please try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#       )
+#       MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
+#           "Unable to reset password. Permissions may have expired or been removed. "
+#           "Please try again, or contact support if the problem continues: {support_email}",
+#           _version=1,
+#       )
+#       MSG_PASSWORD_CHANGED: Final[str] = user_message("Your password has been updated.", _version=1)
+#       MSG_PASSWORD_MISMATCH: Final[str] = user_message(
+#           "Password and confirmation do not match. Please try again.", _version=1
+#       )
+#   >>> MSG_PHONE_MISSING: Final[str] = user_message("No phone number is associated with this account.", _version=1)
+#       MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
+#           "You can no longer resend the verification code. Please restart the verification process.",
+#           _version=2,
+#       )
+#       MSG_UNAUTHORIZED_LOGIN_2FA: Final[str] = user_message(
+#           "You can no longer submit a verification code. Please restart the login process.",
+#           _version=2,
+#       )
+#       MSG_UNAUTHORIZED_REGISTER_PHONE: Final[str] = user_message(
+#           "Phone registration is no longer allowed. Please restart the registration process.",
+#: services/web/server/src/simcore_service_webserver/login/constants.py:52
+msgid "No phone number is associated with this account."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
+#   >>>     "You can no longer resend the verification code. Please restart the verification process.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:54
+msgid ""
+"You can no longer resend the verification code. Please restart the "
+"verification process."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_UNAUTHORIZED_LOGIN_2FA: Final[str] = user_message(
+#   >>>     "You can no longer submit a verification code. Please restart the login process.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:58
+msgid ""
+"You can no longer submit a verification code. Please restart the login "
+"process."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_UNAUTHORIZED_REGISTER_PHONE: Final[str] = user_message(
+#   >>>     "Phone registration is no longer allowed. Please restart the registration process.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:62
+msgid ""
+"Phone registration is no longer allowed. Please restart the registration "
+"process."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[str] = user_message(
+#   >>>     "You can no longer submit a verification code. Please restart the confirmation process.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:66
+msgid ""
+"You can no longer submit a verification code. Please restart the "
+"confirmation process."
+msgstr ""
+
+# CTX-SNIPPET:
+#           _version=2,
+#       )
+#       MSG_UNAUTHORIZED_REGISTER_PHONE: Final[str] = user_message(
+#           "Phone registration is no longer allowed. Please restart the registration process.",
+#           _version=1,
+#       )
+#       MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[str] = user_message(
+#           "You can no longer submit a verification code. Please restart the confirmation process.",
+#           _version=2,
+#       )
+#   >>> MSG_UNKNOWN_EMAIL: Final[str] = user_message("This email address is not registered.", _version=1)
+#       MSG_USER_DELETED: Final[str] = user_message(
+#           "This account is scheduled for deletion. "
+#           "To reactivate it or for more information, please contact support: {support_email}",
+#           _version=1,
+#       )
+#       MSG_USER_BANNED: Final[str] = user_message(
+#           "Access to this account is no longer available. Please contact support for more information: {support_email}",
+#           _version=1,
+#       )
+#       MSG_USER_EXPIRED: Final[str] = user_message(
+#: services/web/server/src/simcore_service_webserver/login/constants.py:69
+msgid "This email address is not registered."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_USER_DELETED: Final[str] = user_message(
+#   >>>     "This account is scheduled for deletion. "
+#           "To reactivate it or for more information, please contact support: {support_email}",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:71
+#, python-brace-format
+msgid ""
+"This account is scheduled for deletion. To reactivate it or for more "
+"information, please contact support: {support_email}"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_USER_BANNED: Final[str] = user_message(
+#   >>>     "Access to this account is no longer available. Please contact support for more information: {support_email}",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:76
+#, python-brace-format
+msgid ""
+"Access to this account is no longer available. Please contact support for "
+"more information: {support_email}"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_USER_EXPIRED: Final[str] = user_message(
+#   >>>     "This account has expired and access is no longer available. "
+#           "Please contact support for assistance: {support_email}",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:80
+#, python-brace-format
+msgid ""
+"This account has expired and access is no longer available. Please contact "
+"support for assistance: {support_email}"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_USER_DISABLED: Final[str] = user_message(
+#   >>>     "This account has been disabled and cannot be registered again. "
+#           "Please contact support for details: {support_email}",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:85
+#, python-brace-format
+msgid ""
+"This account has been disabled and cannot be registered again. Please "
+"contact support for details: {support_email}"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_WRONG_2FA_CODE__INVALID: Final[str] = user_message(
+#   >>>     "The verification code entered is not valid. Please enter a valid verification code or generate a new one.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:90
+msgid ""
+"The verification code entered is not valid. Please enter a valid "
+"verification code or generate a new one."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = user_message(
+#   >>>     "The verification code has expired or is incorrect. Please request a new code and try again.",
+#           _version=4,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:94
+msgid ""
+"The verification code has expired or is incorrect. Please request a new code "
+"and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#           _version=1,
+#       )
+#       MSG_WRONG_2FA_CODE__INVALID: Final[str] = user_message(
+#           "The verification code entered is not valid. Please enter a valid verification code or generate a new one.",
+#           _version=2,
+#       )
+#       MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = user_message(
+#           "The verification code has expired or is incorrect. Please request a new code and try again.",
+#           _version=4,
+#       )
+#   >>> MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message("The CAPTCHA entered is incorrect. Please try again.", _version=1)
+#       MSG_WRONG_PASSWORD: Final[str] = user_message(
+#           "The password does not match the one associated with this email address. Please try again.",
+#           _version=3,
+#       )
+#       MSG_WRONG_PASSWORD_MERGED_ACCOUNTS: Final[str] = user_message(
+#           "The password does not match the one associated with this email address."
+#           "TIP: Your accounts across multiple platforms have been unified into a single login."
+#           " Please try using the password from your {suggested_product} account.",
+#           _version=1,
+#       )
+#: services/web/server/src/simcore_service_webserver/login/constants.py:97
+msgid "The CAPTCHA entered is incorrect. Please try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_WRONG_PASSWORD: Final[str] = user_message(
+#   >>>     "The password does not match the one associated with this email address. Please try again.",
+#           _version=3,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:99
+msgid ""
+"The password does not match the one associated with this email address. "
+"Please try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_WRONG_PASSWORD_MERGED_ACCOUNTS: Final[str] = user_message(
+#   >>>     "The password does not match the one associated with this email address."
+#           "TIP: Your accounts across multiple platforms have been unified into a single login."
+#           " Please try using the password from your {suggested_product} account.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:103
+#, python-brace-format
+msgid ""
+"The password does not match the one associated with this email address.TIP: "
+"Your accounts across multiple platforms have been unified into a single "
+"login. Please try using the password from your {suggested_product} account."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_WEAK_PASSWORD: Final[str] = user_message(
+#   >>>     "Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters for security.",
+#           _version=2,
+#: services/web/server/src/simcore_service_webserver/login/constants.py:109
+#, python-brace-format
+msgid ""
+"Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters "
+"for security."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_INVITATIONS_CONTACT_SUFFIX: Final[str] = user_message(
+#   >>>     "Please contact our support team to request a new invitation.", _version=1
+#: services/web/server/src/simcore_service_webserver/login/constants.py:113
+msgid "Please contact our support team to request a new invitation."
+msgstr ""
+
+# CTX-SNIPPET:
+#           with handle_validation_as_http_error(
+#   >>>         error_msg_template=user_message("The form contains invalid information: '{failed}'", _version=1),
+#               resource_name=request.rel_url.path,
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:92
+#, python-brace-format
+msgid "The form contains invalid information: '{failed}'"
+msgstr ""
+
+# CTX-SNIPPET:
+#           ):
+#   >>>         raise web.HTTPConflict(text=user_message("Wrong email or password. Please try again to delete this account"))
+#: services/web/server/src/simcore_service_webserver/login_accounts/_controller_rest.py:131
+msgid "Wrong email or password. Please try again to delete this account"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "No active recipients selected.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:23
+msgid "No active recipients selected."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Email settings for product '{product_name}' are not configured.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:30
+#, python-brace-format
+msgid "Email settings for product '{product_name}' are not configured."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Validation of context failed for notification template '{template_name}'.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:37
+#, python-brace-format
+msgid ""
+"Validation of context failed for notification template '{template_name}'."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Notification template '{template_name}' for channel '{channel}' not found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:44
+#, python-brace-format
+msgid ""
+"Notification template '{template_name}' for channel '{channel}' not found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Notification channel '{channel}' is not supported.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:51
+#, python-brace-format
+msgid "Notification channel '{channel}' is not supported."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The number of recipients ({num_recipients}) exceeds the maximum of {max_recipients}. "
+#                   "Please reduce the number of recipients and try again.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/notifications/_controller/_rest_exceptions.py:58
+#, python-brace-format
+msgid ""
+"The number of recipients ({num_recipients}) exceeds the maximum of "
+"{max_recipients}. Please reduce the number of recipients and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_WALLET_NO_ACCESS_ERROR = user_message(
+#   >>>     "You do not have the necessary permissions to make payments to wallet {wallet_id}.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/payments/_onetime_api.py:40
+#, python-brace-format
+msgid ""
+"You do not have the necessary permissions to make payments to wallet "
+"{wallet_id}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ProductNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("This product could not be found." + MSG_TRY_AGAIN_OR_SUPPORT, _version=1),
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:16
+msgid "This product could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "This service is temporarily unavailable due to a configuration issue. " + MSG_TRY_AGAIN_OR_SUPPORT,
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/products/_controller/rest_exceptions.py:21
+msgid "This service is temporarily unavailable due to a configuration issue. "
+msgstr ""
+
+# CTX-SNIPPET:
+#           FolderAccessForbiddenError: HttpErrorInfo(
+#               status.HTTP_403_FORBIDDEN,
+#   >>>         user_message("Access to this folder is forbidden.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:61
+msgid "Access to this folder is forbidden."
+msgstr ""
+
+# CTX-SNIPPET:
+#           FolderNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested folder could not be found", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:65
+msgid "The requested folder could not be found"
+msgstr ""
+
+# CTX-SNIPPET:
+#           NodeNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("Node '{node_uuid}' was not found in project '{project_uuid}'.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:73
+#, python-brace-format
+msgid "Node '{node_uuid}' was not found in project '{project_uuid}'."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ParentNodeNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("Parent node '{node_uuid}' was not found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:77
+#, python-brace-format
+msgid "Parent node '{node_uuid}' was not found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
+#               status.HTTP_409_CONFLICT,
+#   >>>         user_message("Required input values for this project node have not been set.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:81
+msgid "Required input values for this project node have not been set."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Cannot duplicate project {project_uuid} because it is in the trash. Restore it first and try again.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:90
+#, python-brace-format
+msgid ""
+"Cannot duplicate project {project_uuid} because it is in the trash. Restore "
+"it first and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unable to complete deletion of project '{project_uuid}': {details}",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:97
+#, python-brace-format
+msgid "Unable to complete deletion of project '{project_uuid}': {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           ProjectGroupNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested project group could not be found: {details}", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:103
+#, python-brace-format
+msgid "The requested project group could not be found: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You do not have sufficient access rights to perform this action on project {project_uuid}.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:108
+#, python-brace-format
+msgid ""
+"You do not have sufficient access rights to perform this action on project "
+"{project_uuid}."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You do not have sufficient permissions to update the project template type.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:115
+msgid ""
+"You do not have sufficient permissions to update the project template type."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ProjectInvalidUsageError: HttpErrorInfo(
+#               status.HTTP_422_UNPROCESSABLE_ENTITY,
+#   >>>         user_message("The project cannot be used in this way.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:121
+msgid "The project cannot be used in this way."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The project cannot contain more than {max_num_nodes} nodes. Requested: {requested_num_nodes}.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:126
+#, python-brace-format
+msgid ""
+"The project cannot contain more than {max_num_nodes} nodes. Requested: "
+"{requested_num_nodes}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ProjectNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("Project {project_uuid} could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:132
+#, python-brace-format
+msgid "Project {project_uuid} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You cannot open more than {max_num_projects} project/s at once. Please close another project and retry.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:137
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_projects} project/s at once. Please close "
+"another project and retry."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The maximum number of concurrently running dynamic services has been reached. "
+#                   "Please manually stop a service and retry.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:144
+msgid ""
+"The maximum number of concurrently running dynamic services has been "
+"reached. Please manually stop a service and retry."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "This project has pending transactions. Changing the wallet is currently not allowed.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:152
+msgid ""
+"This project has pending transactions. Changing the wallet is currently not "
+"allowed."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You cannot open more than {max_num_sessions} session(s) for the same project at once."
+#                   " Please close another session and retry.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:159
+#, python-brace-format
+msgid ""
+"You cannot open more than {max_num_sessions} session(s) for the same project "
+"at once. Please close another session and retry."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unable to change the credit account linked to the project."
+#                   " The project is embargoed because the last transaction of {debt_amount} resulted "
+#                   "in the credit account going negative.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:167
+#, python-brace-format
+msgid ""
+"Unable to change the credit account linked to the project. The project is "
+"embargoed because the last transaction of {debt_amount} resulted in the "
+"credit account going negative."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unable to open the project. The project is embargoed because the last transaction of {debt_amount}"
+#                   " resulted in the credit account going negative.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:176
+#, python-brace-format
+msgid ""
+"Unable to open the project. The project is embargoed because the last "
+"transaction of {debt_amount} resulted in the credit account going negative."
+msgstr ""
+
+# CTX-SNIPPET:
+#           WrongTagIdsInQueryError: HttpErrorInfo(
+#               status.HTTP_400_BAD_REQUEST,
+#   >>>         user_message("Invalid tag IDs were provided in the request.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:183
+msgid "Invalid tag IDs were provided in the request."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The project type and template type combination is not valid",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:188
+msgid "The project type and template type combination is not valid"
+msgstr ""
+
+# CTX-SNIPPET:
+#           WorkspaceAccessForbiddenError: HttpErrorInfo(
+#               status.HTTP_403_FORBIDDEN,
+#   >>>         user_message("Access to this workspace is forbidden: {details}", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:198
+#, python-brace-format
+msgid "Access to this workspace is forbidden: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           WorkspaceNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested workspace could not be found: {details}", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:202
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:36
+#, python-brace-format
+msgid "The requested workspace could not be found: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           UserDefaultWalletNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested wallet could not be found: {details}", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:210
+#, python-brace-format
+msgid "The requested wallet could not be found: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Payment is required, but you do not have access to the project's linked wallet: {details}",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:215
+#, python-brace-format
+msgid ""
+"Payment is required, but you do not have access to the project's linked "
+"wallet: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The wallet does not have enough credits to complete this operation: {details}",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:222
+#, python-brace-format
+msgid ""
+"The wallet does not have enough credits to complete this operation: {details}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           DefaultPricingPlanNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The default pricing plan could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:232
+msgid "The default pricing plan could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           DefaultPricingUnitNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The default pricing unit could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:236
+msgid "The default pricing unit could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ConversationErrorNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested conversation could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:244
+msgid "The requested conversation could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ConversationMessageErrorNotFoundError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested conversation message could not be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:248
+msgid "The requested conversation message could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           CatalogNotAvailableRpcError: HttpErrorInfo(
+#               status.HTTP_503_SERVICE_UNAVAILABLE,
+#   >>>         user_message("The catalog service is currently unavailable.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:256
+msgid "The catalog service is currently unavailable."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ClustersKeeperNotAvailableError: HttpErrorInfo(
+#               status.HTTP_503_SERVICE_UNAVAILABLE,
+#   >>>         user_message("The clusters-keeper service is currently unavailable.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:260
+msgid "The clusters-keeper service is currently unavailable."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Access denied: You do not have sufficient permissions for {name}.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:265
+#, python-brace-format
+msgid "Access denied: You do not have sufficient permissions for {name}."
+msgstr ""
+
+# CTX-SNIPPET:
+#           CatalogItemNotFoundRpcError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested item '{name}' was not found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:271
+#, python-brace-format
+msgid "The requested item '{name}' was not found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           CatalogBatchNotFoundRpcError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("None of these items '{name}' could be found.", _version=1),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:275
+#, python-brace-format
+msgid "None of these items '{name}' could be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#           except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
+#               error_code = getattr(exc, "error_code", None) or create_error_code(exc)
+#   >>>         user_error_msg = user_message("Could not stop dynamic service {project_id}.{node_id}").format(
+#                   project_id=dynamic_service_stop.project_id,
+#                   node_id=dynamic_service_stop.node_id,
+#               )
+#               _logger.debug(
+#                   **create_troubleshooting_log_kwargs(
+#                       user_error_msg,
+#                       error=exc,
+#                       error_code=error_code,
+#                       error_context={
+#                           "project_id": dynamic_service_stop.project_id,
+#: services/web/server/src/simcore_service_webserver/projects/_controller/nodes_rest.py:311
+#, python-brace-format
+msgid "Could not stop dynamic service {project_id}.{node_id}"
+msgstr ""
+
+# CTX-SNIPPET:
+#                       text=user_message(
+#   >>>                     "Data corruption detected: unable to identify your session (socket_id missing). "
+#                           "Please refresh the page and try again. If the problem persists, contact support."
+#: services/web/server/src/simcore_service_webserver/projects/_controller/projects_states_rest.py:115
+msgid ""
+"Data corruption detected: unable to identify your session (socket_id "
+"missing). Please refresh the page and try again. If the problem persists, "
+"contact support."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again"  # noqa: E501
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:30
+#, python-brace-format
+msgid ""
+"Current study is in use and cannot be trashed [project_id={project_uuid}]. "
+"Please stop all services first and try again"
+msgstr ""
+
+# CTX-SNIPPET:
+#           ProjectStoppingError: HttpErrorInfo(
+#               status.HTTP_503_SERVICE_UNAVAILABLE,
+#   >>>         user_message("Something went wrong while stopping services before trashing. Aborting trash."),
+#: services/web/server/src/simcore_service_webserver/projects/_controller/trash_rest.py:35
+msgid ""
+"Something went wrong while stopping services before trashing. Aborting trash."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE: Final[str] = user_message(
+#   >>>     "The resource usage tracking service is temporarily unavailable. Please try again in a few moments.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:8
+msgid ""
+"The resource usage tracking service is temporarily unavailable. Please try "
+"again in a few moments."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_RESOURCE_USAGE_TRACKER_NOT_FOUND: Final[str] = user_message(
+#   >>>     "The requested resource usage information could not be found.", _version=1
+#: services/web/server/src/simcore_service_webserver/resource_usage/_constants.py:13
+msgid "The requested resource usage information could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> MSG_UNAUTHORIZED: Final[str] = user_message("Unauthorized")
+#       MSG_AUTH_NOT_AVAILABLE: Final[str] = user_message("Authentication service is temporary unavailable")
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:5
+msgid "Unauthorized"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       MSG_UNAUTHORIZED: Final[str] = user_message("Unauthorized")
+#   >>> MSG_AUTH_NOT_AVAILABLE: Final[str] = user_message("Authentication service is temporary unavailable")
+#: services/web/server/src/simcore_service_webserver/security/_constants.py:6
+msgid "Authentication service is temporary unavailable"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_LOGIN_REQUIRED: Final[str] = user_message(
+#   >>>     "You must be logged in to access this study. Please log in and try again.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:11
+msgid ""
+"You must be logged in to access this study. Please log in and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> MSG_PROJECT_NOT_FOUND: Final[str] = user_message("The project with ID '{project_id}' could not be found.", _version=1)
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:15
+#, python-brace-format
+msgid "The project with ID '{project_id}' could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_PROJECT_NOT_PUBLISHED: Final[str] = user_message(
+#   >>>     "The project with ID '{project_id}' is not available or not shared.", _version=1
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:19
+#, python-brace-format
+msgid "The project with ID '{project_id}' is not available or not shared."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_PUBLIC_PROJECT_NOT_PUBLISHED: Final[str] = user_message(
+#   >>>     "This project is only available for registered users.<br/><br/>"
+#           "Please log in and try again.<br/><br/>"
+#           "If you don't have an account, please request one at {support_email}.<br/><br/>",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:24
+#, python-brace-format
+msgid ""
+"This project is only available for registered users.<br/><br/>Please log in "
+"and try again.<br/><br/>If you don't have an account, please request one at "
+"{support_email}.<br/><br/>"
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_TOO_MANY_GUESTS: Final[str] = user_message(
+#   >>>     "We have reached the maximum number of anonymous users allowed on the platform. "
+#           "Please try again later or log in with a registered account.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:32
+msgid ""
+"We have reached the maximum number of anonymous users allowed on the "
+"platform. Please try again later or log in with a registered account."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_UNEXPECTED_DISPATCH_ERROR: Final[str] = user_message(
+#   >>>     "Sorry, something unexpected went wrong! "
+#           "We track these errors automatically, but if the problem persists please contact us. "
+#           "In the meantime, try refreshing the page.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_constants.py:38
+msgid ""
+"Sorry, something unexpected went wrong! We track these errors automatically, "
+"but if the problem persists please contact us. In the meantime, try "
+"refreshing the page."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#           WARNING: note that the `public_error` is exposed as-is in the user-message
+#           """
+#   >>>     user_error_msg = user_message("Unable to open your project: {public_error}", _version=1).format(
+#               public_error=public_error
+#           )
+#           return _create_redirect_response_to_error_page(
+#               request.app,
+#               message=user_error_msg,
+#               status_code=status_code,
+#           )
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:81
+#, python-brace-format
+msgid "Unable to open your project: {public_error}"
+msgstr ""
+
+# CTX-SNIPPET:
+#                       message=user_message(
+#   >>>                     "Access is restricted to registered users.<br/><br/>"
+#                           "If you don't have an account, please contact support to request one.<br/><br/>",
+#                           _version=2,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:109
+msgid ""
+"Access is restricted to registered users.<br/><br/>If you don't have an "
+"account, please contact support to request one.<br/><br/>"
+msgstr ""
+
+# CTX-SNIPPET:
+#                       message=user_message(
+#   >>>                     "The link you provided is invalid because it doesn't contain valid "
+#                           "information related to data or a service. "
+#                           "Please check the link and make sure it is correct.",
+#                           _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_controller/rest/redirects_exceptions.py:143
+msgid ""
+"The link you provided is invalid because it doesn't contain valid "
+"information related to data or a service. Please check the link and make "
+"sure it is correct."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class IncompatibleServiceError(StudyDispatcherError):
+#   >>>     msg_template = user_message("None of the registered services can handle '{file_type}' files.", _version=1)
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:10
+#, python-brace-format
+msgid "None of the registered services can handle '{file_type}' files."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class FileToLargeError(StudyDispatcherError):
+#   >>>     msg_template = user_message("File size {file_size_in_mb} MB exceeds the allowed limit.", _version=1)
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:14
+#, python-brace-format
+msgid "File size {file_size_in_mb} MB exceeds the allowed limit."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class ServiceNotFoundError(StudyDispatcherError):
+#   >>>     msg_template = user_message("Service {service_key}:{service_version} could not be found.", _version=1)
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:18
+#, python-brace-format
+msgid "Service {service_key}:{service_version} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class InvalidRedirectionParamsError(StudyDispatcherError):
+#   >>>     msg_template = user_message("The provided link is invalid or incomplete.", _version=1)
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:22
+msgid "The provided link is invalid or incomplete."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Maximum number of guest users has been reached. Please log in with a registered account or try again later.",
+#               _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:27
+msgid ""
+"Maximum number of guest users has been reached. Please log in with a "
+"registered account or try again later."
+msgstr ""
+
+# CTX-SNIPPET:
+#       class GuestUserNotAllowedError(StudyDispatcherError):
+#   >>>     msg_template = user_message("Guest users are not allowed to access this resource.", _version=1)
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:33
+msgid "Guest users are not allowed to access this resource."
+msgstr ""
+
+# CTX-SNIPPET:
+#           msg_template = user_message(
+#   >>>         "Project {project_uuid} appears to be corrupted and cannot be accessed properly.",
+#               _version=1,
+#: services/web/server/src/simcore_service_webserver/studies_dispatcher/_errors.py:38
+#, python-brace-format
+msgid ""
+"Project {project_uuid} appears to be corrupted and cannot be accessed "
+"properly."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The tag '{tag_id}' could not be found or you don't have access to it.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:40
+#, python-brace-format
+msgid "The tag '{tag_id}' could not be found or you don't have access to it."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unable to {operation} tag '{tag_id}'. The tag was not found or you don't have sufficient access.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:47
+#, python-brace-format
+msgid ""
+"Unable to {operation} tag '{tag_id}'. The tag was not found or you don't "
+"have sufficient access."
+msgstr ""
+
+# CTX-SNIPPET:
+#           ShareTagWithEveryoneNotAllowedError: HttpErrorInfo(
+#               status.HTTP_403_FORBIDDEN,
+#   >>>         user_message("Sharing with everyone is not allowed.", _version=1),
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:53
+msgid "Sharing with everyone is not allowed."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Sharing with all users is only allowed for admin users (e.g. testers, POs, ...).",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:58
+msgid ""
+"Sharing with all users is only allowed for admin users (e.g. testers, "
+"POs, ...)."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "You don't have sufficient access rights to share (or unshare) tag '{tag_id}'.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/tags/_rest.py:65
+#, python-brace-format
+msgid ""
+"You don't have sufficient access rights to share (or unshare) tag '{tag_id}'."
+msgstr ""
+
+# CTX-SNIPPET:
+#           InvalidFileIdentifierError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The file with identifier {file_id} could not be found", _version=2),
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:26
+#, python-brace-format
+msgid "The file with identifier {file_id} could not be found"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Permission denied: You (user {user_id}) don't have the necessary rights to access file {file_id} "
+#                   "in location {location_id}",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:31
+#, python-brace-format
+msgid ""
+"Permission denied: You (user {user_id}) don't have the necessary rights to "
+"access file {file_id} in location {location_id}"
+msgstr ""
+
+# CTX-SNIPPET:
+#           JobAbortedError: HttpErrorInfo(
+#               status.HTTP_410_GONE,
+#   >>>         user_message("Task {job_id} was terminated before completion", _version=2),
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:38
+#, python-brace-format
+msgid "Task {job_id} was terminated before completion"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Task '{job_id}' encountered an error: {exc_msg} (error type: '{exc_type}')",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:43
+#, python-brace-format
+msgid ""
+"Task '{job_id}' encountered an error: {exc_msg} (error type: '{exc_type}')"
+msgstr ""
+
+# CTX-SNIPPET:
+#           JobNotDoneError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("Task {job_id} is still running and has not completed yet", _version=2),
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:49
+#, python-brace-format
+msgid "Task {job_id} is still running and has not completed yet"
+msgstr ""
+
+# CTX-SNIPPET:
+#           JobMissingError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("The requested task with ID {job_id} does not exist", _version=2),
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:53
+#, python-brace-format
+msgid "The requested task with ID {job_id} does not exist"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The task scheduling system encountered an error. Please try again later",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:58
+msgid "The task scheduling system encountered an error. Please try again later"
+msgstr ""
+
+# CTX-SNIPPET:
+#           JobStatusError: HttpErrorInfo(
+#               status.HTTP_500_INTERNAL_SERVER_ERROR,
+#   >>>         user_message("Unable to get the current status for task {job_id}", _version=2),
+#: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:64
+#, python-brace-format
+msgid "Unable to get the current status for task {job_id}"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The project is currently in use and cannot be moved to trash. Please stop all running services first and try again.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:30
+msgid ""
+"The project is currently in use and cannot be moved to trash. Please stop "
+"all running services first and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "An error occurred while stopping services before moving to trash. The operation has been cancelled.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/trash/_rest.py:37
+msgid ""
+"An error occurred while stopping services before moving to trash. The "
+"operation has been cancelled."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Could not create or modify preferences",
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+msgid "Could not create or modify preferences"
+msgstr ""
+
+# CTX-SNIPPET:
+#           FrontendUserPreferenceIsNotDefinedError: HttpErrorInfo(
+#               status.HTTP_404_NOT_FOUND,
+#   >>>         user_message("Provided {frontend_preference_name} not found"),
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+#, python-brace-format
+msgid "Provided {frontend_preference_name} not found"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The API token for '{service}' could not be found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/user_tokens/_controller/rest/_rest_exceptions.py:16
+#, python-brace-format
+msgid "The API token for '{service}' could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "No pending registration request found for email {email} in {product_name}.",
+#                   _version=2,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:32
+#, python-brace-format
+msgid ""
+"No pending registration request found for email {email} in {product_name}."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The requested user could not be found. "
+#                   "This may be because the user is not registered or has privacy settings enabled.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:39
+msgid ""
+"The requested user could not be found. This may be because the user is not "
+"registered or has privacy settings enabled."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The username '{user_name}' is already in use. Please try '{alternative_user_name}' instead.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:47
+#, python-brace-format
+msgid ""
+"The username '{user_name}' is already in use. Please try "
+"'{alternative_user_name}' instead."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Found {num_found} existing account(s) for '{email}'. Unable to pre-register an existing user.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:54
+#, python-brace-format
+msgid ""
+"Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
+"an existing user."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "This product is currently being configured and is not yet ready for use. Please try again later.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:61
+msgid ""
+"This product is currently being configured and is not yet ready for use. "
+"Please try again later."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "No pending phone registration found. Please start the phone registration process first.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:68
+msgid ""
+"No pending phone registration found. Please start the phone registration "
+"process first."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Your phone registration session is invalid or has expired. "
+#                   "Please start the phone registration process again.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:75
+msgid ""
+"Your phone registration session is invalid or has expired. Please start the "
+"phone registration process again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The confirmation code you entered is incorrect. Please check and try again.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:83
+msgid ""
+"The confirmation code you entered is incorrect. Please check and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The requested product could not be found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:90
+msgid "The requested product could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The requested pre-registration was not found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:97
+msgid "The requested pre-registration was not found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "This request was already reviewed and cannot be moved.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:104
+msgid "This request was already reviewed and cannot be moved."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "This request is already linked to a created account and cannot be moved.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:111
+msgid ""
+"This request is already linked to a created account and cannot be moved."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "A request with this email already exists in the target product.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:118
+msgid "A request with this email already exists in the target product."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "This user's account is not active ({status}) and cannot be granted access to a new product.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:125
+#, python-brace-format
+msgid ""
+"This user's account is not active ({status}) and cannot be granted access to "
+"a new product."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "An invitation URL is required to approve {email}.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:132
+#, python-brace-format
+msgid "An invitation URL is required to approve {email}."
+msgstr ""
+
+# CTX-SNIPPET:
+#                       text=user_message(
+#   >>>                     "Invalid product '{product_name}'. The specified product does not exist.",
+#                           _version=1,
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:72
+#: services/web/server/src/simcore_service_webserver/users/_controller/rest/accounts_rest.py:205
+#, python-brace-format
+msgid "Invalid product '{product_name}'. The specified product does not exist."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_TOO_MANY_REQUESTS: Final[str] = user_message(
+#   >>>     "Requests are being made too frequently. Please wait a moment before trying again."
+#: services/web/server/src/simcore_service_webserver/utils_rate_limiting.py:20
+msgid ""
+"Requests are being made too frequently. Please wait a moment before trying "
+"again."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_PRICE_NOT_DEFINED_ERROR: Final[str] = user_message(
+#   >>>     "Payments are not currently available for this product as pricing has not been configured.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:6
+msgid ""
+"Payments are not currently available for this product as pricing has not "
+"been configured."
+msgstr ""
+
+# CTX-SNIPPET:
+#       MSG_BILLING_DETAILS_NOT_DEFINED_ERROR: Final[str] = user_message(
+#   >>>     "Unable to process payment because required billing information (such as country for tax purposes) is missing from your account. "
+#           "Please contact support to complete your billing setup.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/wallets/_constants.py:11
+msgid ""
+"Unable to process payment because required billing information (such as "
+"country for tax purposes) is missing from your account. Please contact "
+"support to complete your billing setup."
+msgstr ""
+
+# CTX-SNIPPET:
+#       _MSG_PAYMENT_SERVICE_FAILURE: Final = user_message(
+#   >>>     "Payment processing is currently unavailable. "
+#           "Please hold off on retrying and contact support for help completing your payment. "
+#           "Our team has been notified and is already looking into it.",
+#           _version=1,
+#: services/web/server/src/simcore_service_webserver/wallets/_handlers.py:88
+msgid ""
+"Payment processing is currently unavailable. Please hold off on retrying and "
+"contact support for help completing your payment. Our team has been notified "
+"and is already looking into it."
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#   >>> _MSG_INVALID_PATH = user_message("Invalid parameter/s '{failed}' in request path")
+#       _MSG_INVALID_QUERY = user_message("Invalid parameter/s '{failed}' in request query")
+#       _MSG_INVALID_HEADERS = user_message("Invalid parameter/s '{failed}' in request headers")
+#       _MSG_INVALID_BODY = user_message("Invalid field/s '{failed}' in request body")
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:24
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request path"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       _MSG_INVALID_PATH = user_message("Invalid parameter/s '{failed}' in request path")
+#   >>> _MSG_INVALID_QUERY = user_message("Invalid parameter/s '{failed}' in request query")
+#       _MSG_INVALID_HEADERS = user_message("Invalid parameter/s '{failed}' in request headers")
+#       _MSG_INVALID_BODY = user_message("Invalid field/s '{failed}' in request body")
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:25
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request query"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       _MSG_INVALID_PATH = user_message("Invalid parameter/s '{failed}' in request path")
+#       _MSG_INVALID_QUERY = user_message("Invalid parameter/s '{failed}' in request query")
+#   >>> _MSG_INVALID_HEADERS = user_message("Invalid parameter/s '{failed}' in request headers")
+#       _MSG_INVALID_BODY = user_message("Invalid field/s '{failed}' in request body")
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:26
+#, python-brace-format
+msgid "Invalid parameter/s '{failed}' in request headers"
+msgstr ""
+
+# CTX-SNIPPET:
+#       
+#       _MSG_INVALID_PATH = user_message("Invalid parameter/s '{failed}' in request path")
+#       _MSG_INVALID_QUERY = user_message("Invalid parameter/s '{failed}' in request query")
+#       _MSG_INVALID_HEADERS = user_message("Invalid parameter/s '{failed}' in request headers")
+#   >>> _MSG_INVALID_BODY = user_message("Invalid field/s '{failed}' in request body")
+#: services/web/server/src/simcore_service_webserver/web_requests_validation.py:27
+#, python-brace-format
+msgid "Invalid field/s '{failed}' in request body"
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "The requested workspace {workspace_id} group {group_id} could not be found.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:26
+#, python-brace-format
+msgid ""
+"The requested workspace {workspace_id} group {group_id} could not be found."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Unable to delete workspace because one or more projects are currently running. Please stop all running services and try again.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:42
+msgid ""
+"Unable to delete workspace because one or more projects are currently "
+"running. Please stop all running services and try again."
+msgstr ""
+
+# CTX-SNIPPET:
+#               user_message(
+#   >>>             "Something went wrong while stopping running services in projects within this workspace before trashing. Aborting trash.",
+#                   _version=1,
+#: services/web/server/src/simcore_service_webserver/workspaces/_common/exceptions_handlers.py:49
+msgid ""
+"Something went wrong while stopping running services in projects within this "
+"workspace before trashing. Aborting trash."
+msgstr ""
+
+# CTX-SNIPPET:
+#       _FMSG_INTERNAL_ERROR_USER_FRIENDLY = user_message(
+#   >>>     "We apologize for the inconvenience. The issue has been recorded, please report it if it persists.",
+#           _version=1,
+#: packages/service-library/src/servicelib/aiohttp/rest_middlewares.py:37
+msgid ""
+"We apologize for the inconvenience. The issue has been recorded, please "
+"report it if it persists."
+msgstr ""
