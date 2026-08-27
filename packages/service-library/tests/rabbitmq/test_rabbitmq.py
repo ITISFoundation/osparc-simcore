@@ -707,6 +707,57 @@ async def test_unsubscribe_consumer(
         await client.unsubscribe(queue_name)
 
 
+async def _wait_until_stable(
+    get_value: Callable[[], int], *, stable_polls: int = 3, poll_interval_s: float = 0.1, timeout_s: float = 5
+) -> int:
+    """Polls `get_value()` until it returns the same value `stable_polls` times in a row,
+    then returns that value. Deterministic replacement for a fixed sleep when waiting for
+    an asynchronous background process (e.g. draining a queue) to become quiescent."""
+    deadline = asyncio.get_running_loop().time() + timeout_s
+    last_value = get_value()
+    stable_count = 1
+    while stable_count < stable_polls:
+        if asyncio.get_running_loop().time() > deadline:
+            msg = f"value did not stabilize within {timeout_s}s (last seen: {last_value})"
+            raise TimeoutError(msg)
+        await asyncio.sleep(poll_interval_s)
+        current_value = get_value()
+        if current_value == last_value:
+            stable_count += 1
+        else:
+            last_value = current_value
+            stable_count = 1
+    return last_value
+
+
+async def _wait_until_queue_drained(
+    connection_pool: aio_pika.pool.Pool, queue_name: QueueName, *, timeout_s: float = 5
+) -> None:
+    """Polls a queue's ready-message count via passive declare until it reaches zero, using a
+    dedicated channel (not the client's shared channel pool, to avoid interleaving with active
+    consumer traffic). Deterministic replacement for a fixed sleep before closing a connection.
+
+    NOTE: not suitable for queues that ever hit `x-max-length` overflow (drop-head): RabbitMQ's
+    reported `message_count` can remain permanently off-by-N after such truncation even though the
+    queue is physically empty (confirmed independently via `basic.get`); for those, poll an
+    application-level counter (e.g. the handler's own received-count) instead.
+    """
+    async with connection_pool.acquire() as connection:
+        channel = await connection.channel()
+        try:
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.05),
+                stop=stop_after_delay(timeout_s),
+                retry=retry_if_exception_type(AssertionError),
+                reraise=True,
+            ):
+                with attempt:
+                    declared = await channel.declare_queue(queue_name, passive=True)
+                    assert declared.declaration_result.message_count == 0
+        finally:
+            await channel.close()
+
+
 async def test_subscribe_with_max_length_drops_oldest_ready_messages(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -730,6 +781,11 @@ async def test_subscribe_with_max_length_drops_oldest_ready_messages(
         _blocking_handler,
         prefetch_count=1,
         max_length=max_length,
+        # NOTE: RabbitMQ dead-letters messages dropped by `x-max-length` overflow too (reason
+        # "maxlen"), not just nacked/expired ones. Without this, dropped messages bounce forever
+        # between this queue and its delay queue until RabbitMQ's own dead-letter-cycle detector
+        # catches it - exactly why the two are always paired in production (see subscribe()'s docs)
+        enable_dead_letter_requeue=False,
     )
 
     num_messages = max_length + 10
@@ -758,7 +814,18 @@ async def test_subscribe_with_max_length_drops_oldest_ready_messages(
         await channel.close()
 
     block_processing.set()
-    await asyncio.sleep(0.5)
+    # NOTE: deliberately NOT using `_wait_until_queue_drained` here: RabbitMQ's reported
+    # `message_count` can get permanently stuck above zero after `x-max-length`/drop-head
+    # truncation, even though the queue is physically empty. Polling the handler's own
+    # received-count is the reliable, deterministic ground truth for "processing finished".
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.05),
+        stop=stop_after_delay(5),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert len(received) == max_length + 1
     # only the unacked message plus at most max_length ready ones ever got delivered
     assert 1 <= len(received) <= max_length + 1
     assert len(received) < num_messages
@@ -786,7 +853,7 @@ async def test_subscribe_prefetch_count_limits_concurrent_deliveries(
         return True
 
     prefetch_count = 4
-    await consumer.subscribe(exchange_name, _handler, prefetch_count=prefetch_count)
+    queue_name, _consumer_tag = await consumer.subscribe(exchange_name, _handler, prefetch_count=prefetch_count)
 
     messages = [random_rabbit_message() for _ in range(prefetch_count * 3)]
     await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages))
@@ -805,6 +872,9 @@ async def test_subscribe_prefetch_count_limits_concurrent_deliveries(
     assert max_in_flight == prefetch_count
 
     release_processing.set()
+    # deterministically wait for the queue to drain (all messages acked) before closing
+    assert consumer._connection_pool  # noqa: SLF001
+    await _wait_until_queue_drained(consumer._connection_pool, queue_name)  # noqa: SLF001
 
 
 async def test_subscribe_enable_dead_letter_requeue_false_drops_failed_messages(
@@ -848,12 +918,15 @@ async def test_subscribe_backlog_monitor_warns_when_consumer_falls_behind(
     exchange_name = random_exchange_name()
 
     block_processing = asyncio.Event()
+    processed_count = 0
 
     async def _blocking_handler(_: bytes) -> bool:
+        nonlocal processed_count
         await block_processing.wait()
+        processed_count += 1
         return True
 
-    await consumer.subscribe(
+    _queue_name, _consumer_tag = await consumer.subscribe(
         exchange_name,
         _blocking_handler,
         prefetch_count=1,
@@ -882,5 +955,9 @@ async def test_subscribe_backlog_monitor_warns_when_consumer_falls_behind(
         stop_publishing.set()
         await publish_task
         block_processing.set()
-        # let the now-unblocked handler actually ack before the client connection is closed
-        await asyncio.sleep(0.5)
+        # NOTE: deliberately NOT using `_wait_until_queue_drained` here: this queue's
+        # `max_length` overflow (drop-head) can leave RabbitMQ's reported `message_count`
+        # permanently stuck above zero even once the queue is physically empty. Polling the
+        # handler's own processed-count until it stops growing is the reliable, deterministic
+        # way to know the consumer has caught up before closing the connection.
+        await _wait_until_stable(lambda: processed_count, timeout_s=10)

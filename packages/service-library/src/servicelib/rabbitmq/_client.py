@@ -302,7 +302,11 @@ class RabbitMQClient(RabbitMQClientBase):
                 "dropped (`x-overflow: drop-head`) to make room for new ones, protecting the "
                 "broker from unbounded memory growth if `message_handler` ever falls behind "
                 "the publish rate. None (default) leaves the queue unbounded; only set this "
-                "for exchanges where losing old messages is preferable to broker instability"
+                "for exchanges where losing old messages is preferable to broker instability. "
+                "NOTE: RabbitMQ dead-letters messages dropped this way too (reason `maxlen`), same "
+                "as nacked/expired ones; pair this with `enable_dead_letter_requeue=False`, or the "
+                "dropped messages will bounce forever between this queue and its delay queue until "
+                "RabbitMQ's own dead-letter-cycle detector catches it"
             ),
         ] = None,
         prefetch_count: Annotated[
