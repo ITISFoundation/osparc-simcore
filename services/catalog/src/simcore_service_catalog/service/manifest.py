@@ -39,6 +39,7 @@ from models_library.function_services_catalog.api import iter_service_docker_dat
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
+from redis.exceptions import RedisError
 from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
@@ -90,19 +91,22 @@ async def get_services_map(
                 )
                 _error_already_logged.add(errored_service)
 
-    await service_cache.multi_set(
-        [
-            (
-                _build_service_cache_key(
-                    key=service.key,
-                    version=service.version,
-                ),
-                service,
-            )
-            for service in services.values()
-        ],
-        ttl=DIRECTOR_CACHING_TTL,
-    )
+    try:
+        await service_cache.multi_set(
+            [
+                (
+                    _build_service_cache_key(
+                        key=service.key,
+                        version=service.version,
+                    ),
+                    service.model_dump(mode="json", by_alias=True),
+                )
+                for service in services.values()
+            ],
+            ttl=DIRECTOR_CACHING_TTL,
+        )
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
     return services
 
 
@@ -119,15 +123,25 @@ async def get_service(
     raises if does not exist or if validation fails
     """
     cache_key = _build_service_cache_key(key=key, version=version)
-    if cached_service := await service_cache.get(cache_key):
-        return cast(ServiceMetaDataPublished, cached_service)
+    try:
+        if (cached_service := await service_cache.get(cache_key)) is not None:
+            return ServiceMetaDataPublished.model_validate(cached_service)
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to read '%s' from the service manifest cache", cache_key, exc_info=True)
 
     if is_function_service(key):
         service = get_function_service(key=key, version=version)
     else:
         service = await director_client.get_service(service_key=key, service_version=version)
 
-    await service_cache.set(cache_key, service, ttl=DIRECTOR_CACHING_TTL)
+    try:
+        await service_cache.set(
+            cache_key,
+            service.model_dump(mode="json", by_alias=True),
+            ttl=DIRECTOR_CACHING_TTL,
+        )
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to write '%s' to the service manifest cache", cache_key, exc_info=True)
     return service
 
 

@@ -6,18 +6,23 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+from unittest.mock import Mock
+
 import pytest
 import toolz
+from aiocache import SimpleMemoryCache  # type: ignore[import-untyped]
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
+from aiocache.serializers import JsonSerializer  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import is_function_service
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from redis.exceptions import ConnectionError as RedisConnectionError
 from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.service import manifest
-from simcore_service_catalog.service.manifest_cache import get_service_manifest_cache
 
 
 @pytest.fixture
@@ -53,8 +58,12 @@ async def all_services_map(
 
 
 @pytest.fixture
-def service_manifest_cache(app: FastAPI) -> BaseCache:
-    return get_service_manifest_cache(app)
+async def service_manifest_cache() -> AsyncIterator[BaseCache]:
+    cache = SimpleMemoryCache(serializer=JsonSerializer())
+    try:
+        yield cache
+    finally:
+        await cache.close()
 
 
 async def test_get_services_map(
@@ -73,6 +82,19 @@ async def test_get_services_map(
 
     services_image_digest = {s.image_digest for s in all_services_map.values() if s.image_digest}
     assert len(services_image_digest) < len(all_services_map)
+
+
+async def test_get_services_map_succeeds_when_cache_is_unavailable(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+):
+    unavailable_cache = Mock(spec=BaseCache)
+    unavailable_cache.multi_set.side_effect = RedisConnectionError("Redis is unavailable")
+
+    all_services_map = await manifest.get_services_map(director_client, unavailable_cache)
+
+    assert all_services_map
+    assert mocked_director_rest_api["list_services"].call_count == 1
 
 
 async def test_get_service(
@@ -112,6 +134,27 @@ async def test_get_service_cache_miss_calls_director_then_caches(
         )
         assert service == expected_service
 
+    assert mocked_director_rest_api["get_service"].call_count == 1
+
+
+async def test_get_service_falls_back_to_director_when_cache_is_unavailable(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    expected_service = next(service for service in all_services_map.values() if not is_function_service(service.key))
+    unavailable_cache = Mock(spec=BaseCache)
+    unavailable_cache.get.side_effect = RedisConnectionError("Redis is unavailable")
+    unavailable_cache.set.side_effect = RedisConnectionError("Redis is unavailable")
+
+    service = await manifest.get_service(
+        key=expected_service.key,
+        version=expected_service.version,
+        director_client=director_client,
+        service_cache=unavailable_cache,
+    )
+
+    assert service == expected_service
     assert mocked_director_rest_api["get_service"].call_count == 1
 
 
