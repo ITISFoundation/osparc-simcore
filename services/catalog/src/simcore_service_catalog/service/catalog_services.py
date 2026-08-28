@@ -377,6 +377,32 @@ async def list_latest_catalog_services(
     return total_count, items
 
 
+async def _get_service_access_rights_or_raise(
+    repo: ServicesRepository,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    connection: AsyncConnection | None = None,
+) -> list[ServiceAccessRightsDB]:
+    access_rights = await repo.get_service_access_rights(
+        key=service_key,
+        version=service_version,
+        product_name=product_name,
+        connection=connection,
+    )
+    if not access_rights:
+        raise CatalogItemNotFoundRpcError(
+            name=f"{service_key}:{service_version}",
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            product_name=product_name,
+        )
+    return access_rights
+
+
 async def get_catalog_service(
     repo: ServicesRepository,
     director_api: DirectorClient,
@@ -386,13 +412,12 @@ async def get_catalog_service(
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
     async with pass_or_acquire_connection(repo.db_engine) as connection:
-        access_rights = await check_catalog_service_permissions(
+        access_rights = await _get_service_access_rights_or_raise(
             repo=repo,
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,
             service_version=service_version,
-            permission="read",
             connection=connection,
         )
 
@@ -534,20 +559,14 @@ async def check_catalog_service_permissions(
         CatalogForbiddenError: insufficient access rights to get the requested access
     """
 
-    access_rights = await repo.get_service_access_rights(
-        key=service_key,
-        version=service_version,
+    access_rights = await _get_service_access_rights_or_raise(
+        repo=repo,
         product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
         connection=connection,
     )
-    if not access_rights:
-        raise CatalogItemNotFoundRpcError(
-            name=f"{service_key}:{service_version}",
-            service_key=service_key,
-            service_version=service_version,
-            user_id=user_id,
-            product_name=product_name,
-        )
 
     has_permission = False
     if permission == "read":
