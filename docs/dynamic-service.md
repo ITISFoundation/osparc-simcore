@@ -1,16 +1,36 @@
-# Dynamic services: CPU/RAM resource allocation
+# Dynamic services
 
-Answers: *"how do we define CPU/RAM resources for a dynamic service and its helper
-containers, for both billable and non-billable products?"* (raised in review by
-@sanderegg on PR `pr-osparc-properly-allocate-extra-container-resources`).
+## Definitions
 
-Written as user stories, mirroring how the question was originally asked. Only
-one of the two flows below runs per project/node, depending on whether the
-product charges credits for compute
+### legacy dynamic service:
+    is managed by the director-v0
+    can be 1 or more docker services that can run anywhere in the cluster
+### modern dynamic service:
+    the service is managed via the dynamic-sidecar by the director-v2
+    is composed of at least a dynamic-sidecar that act as a pod controller
+    is composed of at least a reverse-proxy that act as the service web entrypoint
+    can be 1 or more docker containers that run on the same node as the dynamic-sidecar
+
+## How to determine if a service is legacy or not
+
+A service is modern if its docker image carries the `simcore.service.paths-mapping`
+label; everything else is legacy. If the modern service also carries a
+`simcore.service.compose-spec` label, the services listed there are its sidecar
+containers, not standalone services in their own right.
+
+At runtime, a running modern service can also be spotted by its docker service
+name matching `dy[-_]sidecar.+` (e.g. `dy-sidecar_<node-uuid>`), since only
+modern services are wrapped by a dynamic-sidecar.
+
+## CPU/RAM resource allocation
+
+A dynamic service is made of 1 to N docker containers with reservations/limits
+defined. Depending on whether the product charges credits for compute
 ([`_projects_service.py`](../services/web/server/src/simcore_service_webserver/projects/_projects_service.py),
-"Get wallet/pricing/hardware information" block).
+"Get wallet/pricing/hardware information" block), one of the two flows below
+applies per project/node.
 
-## 1. Billable
+### Billable
 
 - As a user I have a service made of 1 or X containers that have some
   reservations/limits defined
@@ -34,7 +54,7 @@ product charges credits for compute
   ([`_add_helper_containers_resources_to_service_resources()`](../services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/scheduler/_core/_event_create_sidecars.py#L97)),
   so the final ask matches what was already validated to fit.
 
-## 2. Non-Billable
+### Non-Billable
 
 - As a user I have a service made of 1 or X containers that have some
   reservations/limits defined: same catalog-declared resources as above, used
@@ -49,8 +69,3 @@ product charges credits for compute
 - As a platform I then scale up accordingly and try to find an EC2 that can
   cope. It will fail at that point if there are no EC2 able to fit: correct —
   there is no pre-check equivalent to the billable path's error here.
-
-## Known gap
-
-The "raise an error if the plan can't fit" step only exists for the **billable**
-path. Flagged here for a possible follow-up, not addressed by this PR.
