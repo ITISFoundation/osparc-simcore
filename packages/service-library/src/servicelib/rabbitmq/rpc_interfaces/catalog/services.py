@@ -25,6 +25,10 @@ from models_library.api_schemas_catalog.services import (
     ServiceUpdateV2,
 )
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecificationsGet,
+)
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rest_pagination import PageOffsetInt
@@ -34,6 +38,7 @@ from models_library.rpc_pagination import (
     PageRpc,
 )
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
@@ -276,6 +281,81 @@ async def get_service_labels(
         service_version=service_version,
     )
     return TypeAdapter(SimcoreServiceLabels).validate_python(result)
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_service_extras(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceExtras:
+    """Gets the extra metadata (e.g. node requirements) of a specific service version
+
+    Raises:
+        ValidationError: on invalid arguments
+    """
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_service_extras"),
+        service_key=service_key,
+        service_version=service_version,
+    )
+    return TypeAdapter(ServiceExtras).validate_python(result)
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_service_resources(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceResourcesDict:
+    """Gets the resources (and boot-modes) required to run a specific service version
+
+    Raises:
+        ValidationError: on invalid arguments
+    """
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_service_resources"),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    return TypeAdapter(ServiceResourcesDict).validate_python(result)
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_service_specifications(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceSpecificationsGet:
+    """Gets the user/group specific schedule-time specifications of a service version
+
+    Raises:
+        ValidationError: on invalid arguments
+        CatalogForbiddenError: not access rights to read this service
+    """
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_service_specifications"),
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    return TypeAdapter(ServiceSpecificationsGet).validate_python(result)
 
 
 @validate_call(config={"arbitrary_types_allowed": True})

@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import Any
+from typing import Any, Final
 
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
@@ -27,8 +27,10 @@ from models_library.utils.docker_compose import (
     MATCH_IMAGE_START,
     MATCH_SERVICE_VERSION,
 )
+from pydantic import NonNegativeInt
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 
-from ....modules.catalog import CatalogClient
 from ..errors import DynamicSidecarError
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
@@ -59,13 +61,16 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
     return mounts
 
 
+_EXPACTED_PARTS: Final[NonNegativeInt] = 2
+
+
 def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
     for s in settings:
         log.debug("Retrieved env settings %s", s)
         if "=" in s:
             parts = s.split("=")
-            if len(parts) == 2:
+            if len(parts) == _EXPACTED_PARTS:
                 # will be forwarded to dynamic-sidecar spawned containers
                 envs[f"FORWARD_ENV_{parts[0]}"] = parts[1]
 
@@ -167,7 +172,7 @@ def _assemble_key(service_key: str, service_tag: str) -> str:
 
 
 async def _extract_osparc_involved_service_labels(
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     service_key: str,
     service_tag: str,
     service_labels: SimcoreServiceLabels,
@@ -217,8 +222,10 @@ async def _extract_osparc_involved_service_labels(
         involved_key = _assemble_key(service_key=current_service_key, service_tag=current_service_tag)
         reverse_mapping[involved_key] = compose_service_key
 
-        simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
-            current_service_key, current_service_tag
+        simcore_service_labels: SimcoreServiceLabels = await catalog_rpc.get_service_labels(
+            rpc_client,
+            service_key=current_service_key,
+            service_version=current_service_tag,
         )
         docker_image_name_by_services[involved_key] = simcore_service_labels
 
@@ -377,18 +384,20 @@ def _assemble_env_vars_for_boot_options(
 
 
 async def get_labels_for_involved_services(
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     service_key: ServiceKey,
     service_tag: ServiceVersion,
 ) -> dict[str, SimcoreServiceLabels]:
-    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(service_key, service_tag)
+    simcore_service_labels: SimcoreServiceLabels = await catalog_rpc.get_service_labels(
+        rpc_client, service_key=service_key, service_version=service_tag
+    )
     log.info("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels)
 
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
 
     labels_for_involved_services: dict[str, SimcoreServiceLabels] = await _extract_osparc_involved_service_labels(
-        catalog_client=catalog_client,
+        rpc_client=rpc_client,
         service_key=service_key,
         service_tag=service_tag,
         service_labels=simcore_service_labels,
@@ -398,7 +407,7 @@ async def get_labels_for_involved_services(
 
 
 async def merge_settings_before_use(
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     *,
     service_key: ServiceKey,
     service_tag: ServiceVersion,
@@ -408,7 +417,7 @@ async def merge_settings_before_use(
     has_machine_specific_resources: bool,
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
-        catalog_client=catalog_client,
+        rpc_client=rpc_client,
         service_key=service_key,
         service_tag=service_tag,
     )

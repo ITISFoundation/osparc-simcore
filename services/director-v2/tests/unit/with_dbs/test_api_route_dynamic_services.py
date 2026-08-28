@@ -7,7 +7,6 @@
 import json
 import logging
 import os
-import urllib.parse
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from typing import Any, NamedTuple
@@ -19,6 +18,7 @@ import respx
 from faker import Faker
 from fastapi import FastAPI
 from httpx import URL, QueryParams
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,
@@ -221,27 +221,27 @@ async def mock_retrieve_features(
 
 @pytest.fixture
 def mocked_catalog_service_api(
-    minimal_app: FastAPI, service: dict[str, Any], service_labels: dict[str, Any]
-) -> Iterator[MockRouter]:
-    # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        # get services labels
-        respx_mock.get(
-            f"/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}/labels",
-            name="service labels",
-        ).respond(json=service_labels)
-
-        # get service metadata (e.g. version_display)
-        respx_mock.get(
-            f"/services/{urllib.parse.quote_plus(service['key'])}/{service['version']}",
-            name="get service",
-        ).respond(json={"version_display": "Test Release"})
-
-        yield respx_mock
+    mocker: MockerFixture, service: dict[str, Any], service_labels: dict[str, Any]
+) -> dict[str, AsyncMock]:
+    return {
+        "get_service_labels": mocker.patch(
+            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service_labels",
+            autospec=True,
+            return_value=SimcoreServiceLabels.model_validate(service_labels),
+        ),
+        "get_service": mocker.patch(
+            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service",
+            autospec=True,
+            return_value=ServiceGetV2.model_validate(
+                {
+                    **ServiceGetV2.model_json_schema()["examples"][0],
+                    "key": service["key"],
+                    "version": service["version"],
+                    "version_display": "Test Release",
+                }
+            ),
+        ),
+    }
 
 
 @pytest.fixture
@@ -350,7 +350,7 @@ def test_create_dynamic_services(
     mock_user_extra_properties_repo: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_service_api: dict[str, AsyncMock],
     mocked_director_v2_scheduler: None,
     client: TestClient,
     dynamic_sidecar_headers: dict[str, str],
@@ -422,7 +422,7 @@ def test_create_dynamic_services(
 )
 def test_get_service_status(
     mocked_director_v0_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_service_api: dict[str, AsyncMock],
     mocked_director_v2_scheduler: None,
     client: TestClient,
     service: dict[str, Any],
@@ -480,7 +480,7 @@ def test_get_service_status(
 def test_delete_service(  # pylint:disable=too-many-arguments
     docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_service_api: dict[str, AsyncMock],
     mocked_director_v2_scheduler: None,
     mocked_service_awaits_manual_interventions: None,
     client: TestClient,
@@ -529,7 +529,7 @@ def test_delete_service_waiting_for_manual_intervention(
     mock_user_extra_properties_repo: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_service_api: dict[str, AsyncMock],
     mocked_director_v2_scheduler: None,
     client: TestClient,
     dynamic_sidecar_headers: dict[str, str],
@@ -597,7 +597,7 @@ def test_retrieve(
     minimal_config: None,
     mock_retrieve_features: MockRouter | None,
     mocked_director_v0_service_api: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_service_api: dict[str, AsyncMock],
     mocked_director_v2_scheduler: None,
     client: TestClient,
     service: dict[str, Any],

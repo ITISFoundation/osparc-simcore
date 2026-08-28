@@ -159,7 +159,7 @@ def mock_scheduler() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_catalog_client() -> AsyncMock:
+def mock_rpc_client() -> AsyncMock:
     return AsyncMock()
 
 
@@ -228,7 +228,7 @@ async def test_send_network_configuration_to_dynamic_sidecar(
 
 
 async def test_get_networks_with_aliases_for_default_network_is_json_serializable(
-    mock_catalog_client: AsyncMock,
+    mock_rpc_client: AsyncMock,
     fake_project_id: ProjectID,
     dy_workbench_with_networkable_labels: dict[str, Any],
     user_id: PositiveInt,
@@ -239,6 +239,6 @@ async def test_get_networks_with_aliases_for_default_network_is_json_serializabl
         project_id=fake_project_id,
         user_id=user_id,
         new_workbench=dy_workbench_with_networkable_labels,
-        catalog_client=mock_catalog_client,
+        rpc_client=mock_rpc_client,
         rabbitmq_client=rabbitmq_client,
     )

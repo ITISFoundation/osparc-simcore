@@ -8,7 +8,7 @@ from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from dask_task_models_library.resource_constraints import (
     estimate_dask_worker_resources_from_ec2_instance,
 )
-from models_library.api_schemas_catalog.services import ServiceGet
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
@@ -44,6 +44,7 @@ from servicelib.rabbitmq import (
     RemoteMethodNotRegisteredError,
     RPCServerError,
 )
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
@@ -58,7 +59,6 @@ from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....models.pricing import PricingInfo
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
-from ....catalog import CatalogClient
 from ....comp_scheduler._utils import COMPLETED_STATES
 from ...tables import NodeClass
 
@@ -79,19 +79,18 @@ _FRONTEND_SERVICES_CATALOG: dict[str, ServiceMetaDataPublished] = {
 
 
 async def _get_service_details(
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> ServiceMetaDataPublished:
-    service_details = await catalog_client.get_service(
-        user_id,
-        node.key,
-        node.version,
-        product_name,
+) -> ServiceGetV2:
+    return await catalog_rpc.get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=node.key,
+        service_version=node.version,
     )
-    obj: ServiceMetaDataPublished = ServiceGet(**service_details)
-    return obj
 
 
 def _compute_node_requirements(
@@ -130,11 +129,15 @@ def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
 
 
 async def _get_node_infos(
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> tuple[ServiceMetaDataPublished | None, ServiceExtras | None, SimcoreServiceLabels | None]:
+) -> tuple[
+    ServiceMetaDataPublished | ServiceGetV2 | None,
+    ServiceExtras | None,
+    SimcoreServiceLabels | None,
+]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
             _FRONTEND_SERVICES_CATALOG.get(node.key, None),
@@ -142,17 +145,17 @@ async def _get_node_infos(
             None,
         )
 
-    result: tuple[ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels] = await asyncio.gather(
-        _get_service_details(catalog_client, user_id, product_name, node),
-        catalog_client.get_service_extras(node.key, node.version),
-        catalog_client.get_service_labels(node.key, node.version),
+    result: tuple[ServiceGetV2, ServiceExtras, SimcoreServiceLabels] = await asyncio.gather(
+        _get_service_details(rpc_client, user_id, product_name, node),
+        catalog_rpc.get_service_extras(rpc_client, service_key=node.key, service_version=node.version),
+        catalog_rpc.get_service_labels(rpc_client, service_key=node.key, service_version=node.version),
     )
     return result
 
 
 async def _generate_task_image(
     *,
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     connection: AsyncConnection,
     user_id: UserID,
     product_name: str,
@@ -171,7 +174,13 @@ async def _generate_task_image(
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
     node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
     if not node_resources:
-        node_resources = await catalog_client.get_service_resources(user_id, node.key, node.version, product_name)
+        node_resources = await catalog_rpc.get_service_resources(
+            rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=node.key,
+            service_version=node.version,
+        )
 
     if node_resources:
         data.update(node_requirements=_compute_node_requirements(node_resources))
@@ -303,7 +312,6 @@ async def generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
     project_nodes: NodesDict,
-    catalog_client: CatalogClient,
     published_nodes: list[NodeID],
     user_id: UserID,
     product_name: str,
@@ -326,7 +334,7 @@ async def generate_tasks_list_from_project(
 
     key_version_to_node_infos = {
         key_version: await _get_node_infos(
-            catalog_client,
+            rabbitmq_rpc_client,
             user_id,
             product_name,
             key_version,
@@ -393,7 +401,7 @@ async def generate_tasks_list_from_project(
         )
 
         image = await _generate_task_image(
-            catalog_client=catalog_client,
+            rpc_client=rabbitmq_rpc_client,
             connection=connection,
             user_id=user_id,
             product_name=product_name,

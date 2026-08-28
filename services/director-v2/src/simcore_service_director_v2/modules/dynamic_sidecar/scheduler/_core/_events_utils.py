@@ -36,6 +36,7 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.tracing import (
     TracingConfig,
     create_standard_attributes,
@@ -60,7 +61,6 @@ from .....models.dynamic_services_scheduler import (
     SchedulerData,
 )
 from .....utils.db import get_repository
-from ....catalog import CatalogClient
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
 from ....db.repositories.projects_nodes import ProjectsNodesRepository
 from ....db.repositories.user_preferences_frontend import (
@@ -583,9 +583,11 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
     await limited_gather(*tasks, limit=3)
 
     # inside this directory create the missing dirs, fetch those form the labels
-    catalog_client = CatalogClient.instance(app)
-    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
-        scheduler_data.key, scheduler_data.version
+    rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
+    simcore_service_labels: SimcoreServiceLabels = await catalog_rpc.get_service_labels(
+        rpc_client,
+        service_key=scheduler_data.key,
+        service_version=scheduler_data.version,
     )
     service_outputs_labels = json_loads(simcore_service_labels.model_dump().get("io.simcore.outputs", "{}")).get(
         "outputs", {}
