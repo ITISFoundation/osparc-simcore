@@ -28,7 +28,7 @@ from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
 )
 from pydantic import ByteSize, TypeAdapter
-from settings_library.r_clone import SimcoreSDKMountSettings
+from settings_library.r_clone import RCloneSimcoreSDKMountSettings
 
 from ....core.dynamic_services_settings import DynamicServicesSettings
 from ....modules.catalog import CatalogClient
@@ -51,7 +51,7 @@ def get_max_user_service_container_memory(service_resources: ServiceResourcesDic
 
 
 def get_max_rclone_container_memory_limit(
-    mount_settings: SimcoreSDKMountSettings, max_user_service_container_memory: ByteSize
+    mount_settings: RCloneSimcoreSDKMountSettings, max_user_service_container_memory: ByteSize
 ) -> ByteSize:
     """
     returns a clapped value between max and min limits

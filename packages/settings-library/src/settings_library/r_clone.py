@@ -32,7 +32,7 @@ type EditArguments = dict[SearchArgument, ReplaceArgument]
 type RemoveArguments = list[tuple[SearchArgument, ElementsToRemove]]
 
 
-class SimcoreSDKMountSettings(BaseCustomSettings):
+class RCloneSimcoreSDKMountSettings(BaseCustomSettings):
     R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: Annotated[
         timedelta,
         Field(
@@ -124,7 +124,7 @@ class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
     R_CLONE_PROVIDER: S3Provider
 
-    R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: SimcoreSDKMountSettings = Field(
+    R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: RCloneSimcoreSDKMountSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
     R_CLONE_SIMCORE_SDK_SYNC_SETTINGS: SimcoreSDKSyncSettings = Field(json_schema_extra={"auto_default_from_env": True})
