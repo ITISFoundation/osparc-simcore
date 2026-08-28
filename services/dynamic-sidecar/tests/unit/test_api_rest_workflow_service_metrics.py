@@ -44,9 +44,9 @@ from pytest_simcore.helpers.long_running_tasks import (
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
@@ -116,11 +116,11 @@ async def mock_environment(
 
 @pytest.fixture
 async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
-    local_app = create_app()
-    # add the client setup to the same application
+    # add the client configuration to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    client_setup(local_app)
+    local_app = create_app()
+    configure_client(local_app)
 
     async with LifespanManager(local_app):
         yield local_app

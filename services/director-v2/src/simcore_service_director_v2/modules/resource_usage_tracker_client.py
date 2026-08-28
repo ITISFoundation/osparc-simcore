@@ -2,11 +2,13 @@
 
 import contextlib
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import cast
 
 import httpx
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
@@ -157,28 +159,16 @@ class ResourceUsageTrackerClient:
     def get_from_state(cls, app: FastAPI) -> "ResourceUsageTrackerClient":
         return cast("ResourceUsageTrackerClient", app.state.resource_usage_api)
 
-    @classmethod
-    def setup(cls, app: FastAPI):
-        assert app.state  # nosec
-        if exists := getattr(app.state, "resource_usage_api", None):
-            _logger.warning("Skipping setup. Cannot setup more than once %s: %s", cls, exists)
-            return
 
-        assert not hasattr(app.state, "resource_usage_api")  # nosec
-        app_settings: AppSettings = app.state.settings
-
-        app.state.resource_usage_api = api = cls.create(app, app_settings)
-
-        async def on_startup():
-            await api.start()
-
-        async def on_shutdown():
-            await api.close()
-
-        app.add_event_handler("startup", on_startup)
-        app.add_event_handler("shutdown", on_shutdown)
+async def _resource_usage_tracker_client_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app_settings: AppSettings = app.state.settings
+    app.state.resource_usage_api = api = ResourceUsageTrackerClient.create(app, app_settings)
+    await api.start()
+    try:
+        yield
+    finally:
+        await api.close()
 
 
-def setup(app: FastAPI):
-    assert app.state  # nosec
-    ResourceUsageTrackerClient.setup(app)
+def configure_resource_usage_tracker_client(app_lifespan: LifespanManager) -> None:
+    app_lifespan.add(_resource_usage_tracker_client_lifespan)

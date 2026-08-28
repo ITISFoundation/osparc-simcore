@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicator", {
       if (credits !== null) {
         const label = this.getChildControl("credits-text");
         label.set({
-          value: credits === null ? "-" : osparc.desktop.credits.Utils.creditsToFixed(credits) + this.tr(" credits"),
+          value: credits === null ? "-" : this.tr("%1 credits", osparc.desktop.credits.Utils.creditsToFixed(credits)),
           textColor: osparc.desktop.credits.Utils.creditsToColor(credits, "text")
         });
 

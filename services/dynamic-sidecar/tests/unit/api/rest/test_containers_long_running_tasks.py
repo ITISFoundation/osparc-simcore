@@ -42,15 +42,16 @@ from pytest_simcore.helpers.long_running_tasks import (
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import ProgressCallback, TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
 from settings_library.rabbit import RabbitSettings
 from simcore_sdk.node_ports_common.exceptions import NodeNotFoundError
 from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import long_running_tasks as sidecar_lrts
@@ -207,16 +208,18 @@ def mock_environment(
 
 @pytest.fixture
 async def app(
-    app: FastAPI,
     fast_long_running_tasks_cancellation: None,
+    mock_environment: EnvVarsDict,
+    mock_registry_service: AsyncMock,
 ) -> AsyncIterable[FastAPI]:
-    # add the client setup to the same application
+    # add the client configuration to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    client_setup(app)
-    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
-        _print_routes(app)
-        yield app
+    local_app = create_app()
+    configure_client(local_app)
+    async with LifespanManager(local_app, startup_timeout=30, shutdown_timeout=30):
+        _print_routes(local_app)
+        yield local_app
 
 
 @pytest.fixture

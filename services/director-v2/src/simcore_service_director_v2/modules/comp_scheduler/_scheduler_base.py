@@ -45,6 +45,7 @@ from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     ComputationalRunNotFoundError,
     ComputationalSchedulerChangedError,
+    ComputationalTaskJobIdAlreadySetError,
     DaskClientAcquisisitonError,
     InvalidPipelineError,
 )
@@ -320,6 +321,37 @@ class BaseCompScheduler(ABC):
             for task in running_tasks:
                 await comp_tasks_repo.update_project_task_last_heartbeat(project_id, task.node_id, run_id, utc_now)
 
+    async def _fix_tasks_stuck_pending_without_job_id(
+        self,
+        project_id: ProjectID,
+        run_id: RunID,
+        comp_tasks: dict[NodeIDStr, CompTaskAtDB],
+    ) -> dict[NodeIDStr, CompTaskAtDB]:
+        """safety-net for https://github.com/ITISFoundation/private-issues/issues/648:
+        resets tasks stuck in PENDING without a job_id back to PUBLISHED so they get restarted."""
+        stuck_node_ids = [
+            NodeID(node_id)
+            for node_id, task in comp_tasks.items()
+            if task.state is RunningState.PENDING and task.job_id is None
+        ]
+        if not stuck_node_ids:
+            return comp_tasks
+
+        _logger.warning(
+            "found %d task(s) stuck in PENDING without a job_id, resetting them to PUBLISHED so they get restarted: %s",
+            len(stuck_node_ids),
+            stuck_node_ids,
+        )
+        await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+            project_id,
+            run_id,
+            stuck_node_ids,
+            RunningState.PUBLISHED,
+        )
+        for node_id in stuck_node_ids:
+            comp_tasks[f"{node_id}"].state = RunningState.PUBLISHED
+        return comp_tasks
+
     async def _get_changed_tasks_from_backend(
         self,
         user_id: UserID,
@@ -566,6 +598,8 @@ class BaseCompScheduler(ABC):
                 await self._update_states_from_comp_backend(user_id, project_id, iteration, dag, comp_run)
                 # 1.1. get the updated tasks NOTE: we need to get them again as some states might have changed
                 comp_tasks = await self._get_pipeline_tasks(project_id, dag)
+                # 1.2. safety-net: repair any task stuck PENDING without a job_id (see docstring)
+                comp_tasks = await self._fix_tasks_stuck_pending_without_job_id(project_id, comp_run.run_id, comp_tasks)
                 # 2. timeout if waiting for cluster has been there for more than X minutes
                 comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
                     user_id, project_id, comp_run, comp_tasks
@@ -741,7 +775,7 @@ class BaseCompScheduler(ABC):
 
         return comp_tasks
 
-    async def _schedule_tasks_to_start(
+    async def _schedule_tasks_to_start(  # noqa: C901
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -873,6 +907,16 @@ class BaseCompScheduler(ABC):
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
 
+        except ComputationalTaskJobIdAlreadySetError as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Unexpected: a task selected to start already had a job_id set. Left untouched, "
+                    "will be re-evaluated on the next scheduling pass.",
+                    error=exc,
+                    error_context=log_error_context,
+                    tip="This is likely a transient issue. The task will be re-evaluated on the next scheduling cycle.",
+                )
+            )
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
