@@ -8,6 +8,7 @@
 
 import pytest
 import toolz
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import is_function_service
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -16,6 +17,7 @@ from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.service import manifest
+from simcore_service_catalog.service.manifest_cache import get_service_manifest_cache
 
 
 @pytest.fixture
@@ -45,15 +47,22 @@ async def director_client(
 @pytest.fixture
 async def all_services_map(
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
 ) -> manifest.ServiceMetaDataPublishedDict:
-    return await manifest.get_services_map(director_client)
+    return await manifest.get_services_map(director_client, service_manifest_cache)
+
+
+@pytest.fixture
+def service_manifest_cache(app: FastAPI) -> BaseCache:
+    return get_service_manifest_cache(app)
 
 
 async def test_get_services_map(
     mocked_director_rest_api: MockRouter,
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
 ):
-    all_services_map = await manifest.get_services_map(director_client)
+    all_services_map = await manifest.get_services_map(director_client, service_manifest_cache)
     assert mocked_director_rest_api["list_services"].called
 
     for service in all_services_map.values():
@@ -69,6 +78,7 @@ async def test_get_services_map(
 async def test_get_service(
     mocked_director_rest_api: MockRouter,
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
     for expected_service in all_services_map.values():
@@ -76,15 +86,17 @@ async def test_get_service(
             key=expected_service.key,
             version=expected_service.version,
             director_client=director_client,
+            service_cache=service_manifest_cache,
         )
 
         assert service == expected_service
-        if not is_function_service(service.key):
-            assert mocked_director_rest_api["get_service"].called
+
+    assert not mocked_director_rest_api["get_service"].called
 
 
 async def test_get_service_ports(
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
     for expected_service in all_services_map.values():
@@ -92,6 +104,7 @@ async def test_get_service_ports(
             key=expected_service.key,
             version=expected_service.version,
             director_client=director_client,
+            service_cache=service_manifest_cache,
         )
 
         # Verify all ports are properly retrieved
@@ -119,15 +132,23 @@ async def test_get_service_ports(
 
 
 async def test_get_batch_services(
+    mocked_director_rest_api: MockRouter,
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
     for expected_services in toolz.partition(2, all_services_map.values()):
         selection = [(s.key, s.version) for s in expected_services]
-        got_services = await manifest.get_batch_services(selection, director_client)
+        got_services = await manifest.get_batch_services(
+            selection,
+            director_client,
+            service_manifest_cache,
+        )
 
         assert [(s.key, s.version) for s in got_services] == selection
 
         # NOTE: simpler to visualize
         for got, expected in zip(got_services, expected_services, strict=True):
             assert got == expected
+
+    assert not mocked_director_rest_api["get_service"].called

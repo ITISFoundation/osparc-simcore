@@ -17,6 +17,7 @@ from ...core.settings import ApplicationSettings
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import manifest
+from ...service.manifest_cache import get_service_manifest_cache
 from .director import get_director_client
 from .repository import get_repository
 
@@ -82,6 +83,7 @@ async def check_service_read_access(
 async def get_service_from_manifest(
     service_key: ServiceKey,
     service_version: ServiceVersion,
+    app: Annotated[FastAPI, Depends(get_app)],
     director_client: Annotated[DirectorClient, Depends(get_director_client)],
 ) -> ServiceMetaDataPublished:
     """
@@ -92,6 +94,7 @@ async def get_service_from_manifest(
             ServiceMetaDataPublished,
             await manifest.get_service(
                 director_client=director_client,
+                service_cache=get_service_manifest_cache(app),
                 key=service_key,
                 version=service_version,
             ),

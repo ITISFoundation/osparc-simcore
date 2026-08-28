@@ -4,6 +4,7 @@ import logging
 from contextlib import suppress
 from typing import Literal, TypeVar
 
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
@@ -195,6 +196,7 @@ async def _get_services_manifests(
     services: list[ServiceWithHistoryDBGet] | list[ServiceMetaDataDBGet],
     access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]],
     director_api: DirectorClient,
+    service_cache: BaseCache,
     product_name: ProductName,
     user_id: UserID,
     filters: ServiceDBFilters | None,
@@ -223,6 +225,7 @@ async def _get_services_manifests(
     got = await manifest.get_batch_services(
         [(sc.key, sc.version) for sc in services if access_rights.get((sc.key, sc.version))],
         director_api,
+        service_cache,
     )
     service_manifest = {(sc.key, sc.version): sc for sc in got if isinstance(sc, ServiceMetaDataPublished)}
 
@@ -256,6 +259,7 @@ async def _get_services_manifests(
 async def list_all_service_summaries(
     repo: ServicesRepository,
     director_api: DirectorClient,
+    service_cache: BaseCache,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -295,6 +299,7 @@ async def list_all_service_summaries(
         services,
         access_rights,
         director_api,
+        service_cache,
         product_name,
         user_id,
         filters,
@@ -320,6 +325,7 @@ async def list_all_service_summaries(
 async def list_latest_catalog_services(
     repo: ServicesRepository,
     director_api: DirectorClient,
+    service_cache: BaseCache,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -356,6 +362,7 @@ async def list_latest_catalog_services(
         services,
         access_rights,
         director_api,
+        service_cache,
         product_name,
         user_id,
         filters,
@@ -406,6 +413,7 @@ async def _get_service_access_rights_or_raise(
 async def get_catalog_service(
     repo: ServicesRepository,
     director_api: DirectorClient,
+    service_cache: BaseCache,
     product_name: ProductName,
     user_id: UserID,
     service_key: ServiceKey,
@@ -442,6 +450,7 @@ async def get_catalog_service(
         key=service_key,
         version=service_version,
         director_client=director_api,
+        service_cache=service_cache,
     )
 
     compatibility_map = await evaluate_service_compatibility_map(
@@ -457,6 +466,7 @@ async def get_catalog_service(
 async def update_catalog_service(
     repo: ServicesRepository,
     director_api: DirectorClient,
+    service_cache: BaseCache,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -527,6 +537,7 @@ async def update_catalog_service(
     return await get_catalog_service(
         repo=repo,
         director_api=director_api,
+        service_cache=service_cache,
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -812,6 +823,7 @@ async def list_user_service_release_history(
 async def get_user_services_ports(
     repo: ServicesRepository,
     director_api: DirectorClient,
+    service_cache: BaseCache,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -838,6 +850,7 @@ async def get_user_services_ports(
     # Get service ports from manifest
     return await manifest.get_service_ports(
         director_client=director_api,
+        service_cache=service_cache,
         key=service_key,
         version=service_version,
     )

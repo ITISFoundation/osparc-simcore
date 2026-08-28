@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import MyServiceGet, ServiceSummary
 from models_library.products import ProductName
@@ -21,7 +22,8 @@ from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.errors import BatchNotFoundError
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
-from simcore_service_catalog.service import catalog_services, manifest
+from simcore_service_catalog.service import catalog_services
+from simcore_service_catalog.service.manifest_cache import get_service_manifest_cache
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -98,13 +100,14 @@ async def background_sync_task_mocked(
 
 @pytest.fixture
 async def director_client(app: FastAPI) -> DirectorClient:
-    director_api = get_director_client(app)
+    return get_director_client(app)
 
-    # ensures manifest API cache is reset
-    assert hasattr(manifest.get_service, "cache")
-    assert await manifest.get_service.cache.clear()
 
-    return director_api
+@pytest.fixture
+async def service_manifest_cache(app: FastAPI) -> BaseCache:
+    cache = get_service_manifest_cache(app)
+    assert await cache.clear()
+    return cache
 
 
 async def test_list_latest_catalog_services(
@@ -115,6 +118,7 @@ async def test_list_latest_catalog_services(
     services_repo: ServicesRepository,
     user_id: UserID,
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
     num_services: int,
 ):
     offset = 1
@@ -126,6 +130,7 @@ async def test_list_latest_catalog_services(
     total_count, page_found_items = await catalog_services.list_latest_catalog_services(
         services_repo,
         director_client,
+        service_manifest_cache,
         product_name=target_product,
         user_id=user_id,
         limit=limit,
@@ -145,6 +150,7 @@ async def test_list_latest_catalog_services(
         got = await catalog_services.get_catalog_service(
             services_repo,
             director_client,
+            service_manifest_cache,
             product_name=target_product,
             user_id=user_id,
             service_key=item.key,
@@ -456,6 +462,7 @@ async def test_list_all_vs_latest_services(
     services_repo: ServicesRepository,
     user_id: UserID,
     director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
     num_services: int,
     num_versions_per_service: int,
 ):
@@ -470,6 +477,7 @@ async def test_list_all_vs_latest_services(
     latest_total_count, latest_found_items = await catalog_services.list_latest_catalog_services(
         services_repo,
         director_client,
+        service_manifest_cache,
         product_name=target_product,
         user_id=user_id,
         limit=limit,
@@ -480,6 +488,7 @@ async def test_list_all_vs_latest_services(
     all_total_count, all_found_items = await catalog_services.list_all_service_summaries(
         services_repo,
         director_client,
+        service_manifest_cache,
         product_name=target_product,
         user_id=user_id,
         limit=limit,

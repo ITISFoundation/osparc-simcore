@@ -34,6 +34,7 @@ from ..repository.groups import GroupsRepository
 from ..repository.projects import ProjectsRepository
 from ..repository.services import ServicesRepository
 from ..service import access_rights, manifest
+from ..service.manifest_cache import get_service_manifest_cache
 
 _logger = logging.getLogger(__name__)
 
@@ -115,7 +116,10 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     Notice that a services here refers to a 2-tuple (key, version)
     """
     director_api = get_director_client(app)
-    services_in_manifest_map = await manifest.get_services_map(director_api)
+    services_in_manifest_map = await manifest.get_services_map(
+        director_api,
+        get_service_manifest_cache(app),
+    )
 
     services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)
 
