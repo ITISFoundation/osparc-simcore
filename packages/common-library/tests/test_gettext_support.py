@@ -16,7 +16,7 @@ from common_library.gettext_support import (
 )
 
 # Locales that have a compiled .po catalog (excludes "en": prose-as-key, no catalog needed)
-_TRANSLATED_LOCALES: Final = ["es_ES", "zh_CN"]
+_TRANSLATED_LOCALES: Final = ["es_ES", "ko_KR", "zh_CN"]
 
 
 @pytest.mark.parametrize("locale", _TRANSLATED_LOCALES)
@@ -52,7 +52,7 @@ def test_supported_locale_catalog_alignment() -> None:
             )
 
 
-@pytest.mark.parametrize("locale", ["en", "es_ES", "zh_CN", "unknown"])
+@pytest.mark.parametrize("locale", ["en", "es_ES", "ko_KR", "zh_CN", "unknown"])
 def test_get_translator_returns_pass_through(locale: str) -> None:
     translator = get_translator(locale)
     assert translator.gettext("hello") == "hello"
