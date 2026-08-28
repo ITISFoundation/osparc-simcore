@@ -174,7 +174,7 @@ async def _get_services_with_access_rights(
         Dictionary mapping (key, version) to list of access rights
 
     Raises:
-        CatalogForbiddenError: If no access rights are found for any service
+        CatalogForbiddenRpcError: If no access rights are found for any service
     """
     if not services:
         return {}
@@ -529,7 +529,7 @@ async def check_catalog_service_permissions(
 
     Raises:
         CatalogItemNotFoundError: service (key,version) not found
-        CatalogForbiddenError: insufficient access rights to get the requested access
+        CatalogForbiddenRpcError: insufficient access rights to get the requested access
     """
 
     access_rights = await repo.get_service_access_rights(
@@ -798,7 +798,7 @@ async def get_user_services_ports(
 
     Raises:
         CatalogItemNotFoundError: When service is not found
-        CatalogForbiddenError: When user doesn't have access rights
+        CatalogForbiddenRpcError: When user doesn't have access rights
     """
 
     # Check access rights first
@@ -845,7 +845,7 @@ async def get_catalog_service_specifications(
     """Returns the user/group specific schedule-time specifications of a service
 
     Raises:
-        CatalogForbiddenError: When user doesn't have access rights
+        CatalogForbiddenRpcError: When user doesn't have access rights
     """
     if is_function_service(service_key):
         # There is no specification for these, return empty specs

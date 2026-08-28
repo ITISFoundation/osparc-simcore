@@ -63,7 +63,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     """
     Raises:
         ValidationError: on invalid arguments
-        CatalogForbiddenError: no access-rights to list services
+        CatalogForbiddenRpcError: no access-rights to list services
     """
 
     result = await rpc_client.request(
@@ -97,7 +97,7 @@ async def get_service(
     Raises:
         ValidationError: on invalid arguments
         CatalogItemNotFoundError: service not found in catalog
-        CatalogForbiddenError: not access rights to read this service
+        CatalogForbiddenRpcError: not access rights to read this service
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -128,7 +128,7 @@ async def update_service(
     Raises:
         ValidationError: on invalid arguments
         CatalogItemNotFoundError: service not found in catalog
-        CatalogForbiddenError: not access rights to read this service
+        CatalogForbiddenRpcError: not access rights to read this service
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -158,7 +158,7 @@ async def check_for_service(
     Raises:
         ValidationError: on invalid arguments
         CatalogItemNotFoundError: service not found in catalog
-        CatalogForbiddenError: not access rights to read this service
+        CatalogForbiddenRpcError: not access rights to read this service
     """
     await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -187,7 +187,7 @@ async def batch_get_my_services(
     """
     Raises:
         ValidationError: on invalid arguments
-        CatalogForbiddenError: no access-rights to list services
+        CatalogForbiddenRpcError: no access-rights to list services
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -247,7 +247,7 @@ async def get_service_ports(
     Raises:
         ValidationError: on invalid arguments
         CatalogItemNotFoundError: service not found in catalog
-        CatalogForbiddenError: not access rights to read this service
+        CatalogForbiddenRpcError: not access rights to read this service
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -345,7 +345,7 @@ async def get_service_specifications(
 
     Raises:
         ValidationError: on invalid arguments
-        CatalogForbiddenError: not access rights to read this service
+        CatalogForbiddenRpcError: not access rights to read this service
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
@@ -385,7 +385,7 @@ async def list_all_services_summaries_paginated(  # pylint: disable=too-many-arg
 
     Raises:
         ValidationError: on invalid arguments
-        CatalogForbiddenError: no access-rights to list services
+        CatalogForbiddenRpcError: no access-rights to list services
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
