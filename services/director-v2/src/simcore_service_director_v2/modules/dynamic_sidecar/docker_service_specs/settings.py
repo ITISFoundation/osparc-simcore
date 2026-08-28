@@ -61,7 +61,7 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
     return mounts
 
 
-_EXPACTED_PARTS: Final[NonNegativeInt] = 2
+_EXPECTED_PARTS: Final[NonNegativeInt] = 2
 
 
 def _parse_env_settings(settings: list[str]) -> dict:
@@ -70,7 +70,7 @@ def _parse_env_settings(settings: list[str]) -> dict:
         log.debug("Retrieved env settings %s", s)
         if "=" in s:
             parts = s.split("=")
-            if len(parts) == _EXPACTED_PARTS:
+            if len(parts) == _EXPECTED_PARTS:
                 # will be forwarded to dynamic-sidecar spawned containers
                 envs[f"FORWARD_ENV_{parts[0]}"] = parts[1]
 
