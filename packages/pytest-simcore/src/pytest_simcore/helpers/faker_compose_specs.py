@@ -27,10 +27,7 @@ def generate_fake_docker_compose(faker: Faker, num_services: int | None = None) 
     """
     faker = Faker()
 
-    docker_compose = {
-        "version": "3",
-        "services": {},
-    }
+    docker_compose = {"services": {}}
 
     # SEE https://faker.readthedocs.io/en/master/providers/baseprovider.html?highlight=random
 
