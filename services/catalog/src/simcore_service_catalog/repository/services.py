@@ -613,7 +613,8 @@ class ServicesRepository(BaseRepository):
         query = sa.select(services_access_rights).where(search_expression)
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return [ServiceAccessRightsDB.model_validate(row) async for row in await conn.stream(query)]
+            result = await conn.execute(query)
+            return [ServiceAccessRightsDB.model_validate(row) for row in result]
 
     async def batch_get_services_access_rights_or_none(
         self,
