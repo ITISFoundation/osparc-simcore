@@ -94,6 +94,27 @@ async def test_get_service(
     assert not mocked_director_rest_api["get_service"].called
 
 
+async def test_get_service_cache_miss_calls_director_then_caches(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    expected_service = next(service for service in all_services_map.values() if not is_function_service(service.key))
+    assert await service_manifest_cache.clear()
+
+    for _ in range(2):
+        service = await manifest.get_service(
+            key=expected_service.key,
+            version=expected_service.version,
+            director_client=director_client,
+            service_cache=service_manifest_cache,
+        )
+        assert service == expected_service
+
+    assert mocked_director_rest_api["get_service"].call_count == 1
+
+
 async def test_get_service_ports(
     director_client: DirectorClient,
     service_manifest_cache: BaseCache,

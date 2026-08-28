@@ -10,7 +10,7 @@ def create_service_manifest_cache() -> BaseCache:
     return SimpleMemoryCache(namespace=__name__)
 
 
-async def _manifest_cache_lifespan(app: FastAPI) -> AsyncIterator[State]:
+async def manifest_cache_lifespan(app: FastAPI) -> AsyncIterator[State]:
     service_manifest_cache = create_service_manifest_cache()
     app.state.service_manifest_cache = service_manifest_cache
     try:
@@ -27,4 +27,4 @@ def get_service_manifest_cache(app: FastAPI) -> BaseCache:
 
 
 def configure_manifest_cache(app_lifespan: LifespanManager) -> None:
-    app_lifespan.add(_manifest_cache_lifespan)
+    app_lifespan.add(manifest_cache_lifespan)
