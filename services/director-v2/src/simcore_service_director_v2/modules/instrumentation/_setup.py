@@ -21,7 +21,7 @@ def configure_instrumentation(app: FastAPI, app_lifespan: LifespanManager) -> No
 
 def get_instrumentation(app: FastAPI) -> DirectorV2Instrumentation:
     if not has_instrumentation(app):
-        raise ConfigurationError(msg="Instrumentation not setup. Please check the configuration.")
+        raise ConfigurationError(msg="Instrumentation is not set up. Please check the configuration.")
     return cast(DirectorV2Instrumentation, app.state.instrumentation)
 
 
