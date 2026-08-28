@@ -32,6 +32,7 @@ from simcore_postgres_database.utils_services import create_select_latest_servic
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..models.services_db import (
     ReleaseDBGet,
@@ -256,9 +257,10 @@ class ServicesRepository(BaseRepository):
         # get args
         key: ServiceKey,
         version: ServiceVersion,
+        connection: AsyncConnection | None = None,
     ) -> bool:
         """Returns False if it cannot get the service i.e. not found or does not have access"""
-        async with self.db_engine.begin() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 _services_sql.can_get_service_stmt(
                     product_name=product_name,
@@ -278,8 +280,9 @@ class ServicesRepository(BaseRepository):
         # get args
         key: ServiceKey,
         version: ServiceVersion,
+        connection: AsyncConnection | None = None,
     ) -> bool:
-        async with self.db_engine.begin() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 _services_sql.can_get_service_stmt(
                     product_name=product_name,
@@ -299,6 +302,7 @@ class ServicesRepository(BaseRepository):
         # get args
         key: ServiceKey,
         version: ServiceVersion,
+        connection: AsyncConnection | None = None,
     ) -> ServiceWithHistoryDBGet | None:
         stmt_get = _services_sql.get_service_stmt(
             product_name=product_name,
@@ -308,21 +312,21 @@ class ServicesRepository(BaseRepository):
             service_version=version,
         )
 
-        async with self.db_engine.begin() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(stmt_get)
             row = result.one_or_none()
 
-        if row:
-            stmt_history = _services_sql.get_service_history_stmt(
-                product_name=product_name,
-                user_id=user_id,
-                access_rights=AccessRightsClauses.can_read,
-                service_key=key,
-            )
-            async with self.db_engine.begin() as conn:
+            if row:
+                stmt_history = _services_sql.get_service_history_stmt(
+                    product_name=product_name,
+                    user_id=user_id,
+                    access_rights=AccessRightsClauses.can_read,
+                    service_key=key,
+                )
                 result = await conn.execute(stmt_history)
                 row_h = result.one_or_none()
 
+        if row:
             return ServiceWithHistoryDBGet(
                 key=row.key,
                 version=row.version,
@@ -597,6 +601,7 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         product_name: str | None = None,
+        connection: AsyncConnection | None = None,
     ) -> list[ServiceAccessRightsDB]:
         """
         - If product_name is not specified, then all are considered in the query
@@ -607,7 +612,7 @@ class ServicesRepository(BaseRepository):
 
         query = sa.select(services_access_rights).where(search_expression)
 
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             return [ServiceAccessRightsDB.model_validate(row) async for row in await conn.stream(query)]
 
     async def batch_get_services_access_rights_or_none(

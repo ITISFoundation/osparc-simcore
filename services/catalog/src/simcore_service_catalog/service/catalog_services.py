@@ -30,6 +30,8 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogInconsistentRpcError,
     CatalogItemNotFoundRpcError,
 )
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..clients.director import DirectorClient
 from ..errors import BatchNotFoundError
@@ -383,21 +385,24 @@ async def get_catalog_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
-    access_rights = await check_catalog_service_permissions(
-        repo=repo,
-        product_name=product_name,
-        user_id=user_id,
-        service_key=service_key,
-        service_version=service_version,
-        permission="read",
-    )
+    async with pass_or_acquire_connection(repo.db_engine) as connection:
+        access_rights = await check_catalog_service_permissions(
+            repo=repo,
+            product_name=product_name,
+            user_id=user_id,
+            service_key=service_key,
+            service_version=service_version,
+            permission="read",
+            connection=connection,
+        )
 
-    service = await repo.get_service_with_history(
-        product_name=product_name,
-        user_id=user_id,
-        key=service_key,
-        version=service_version,
-    )
+        service = await repo.get_service_with_history(
+            product_name=product_name,
+            user_id=user_id,
+            key=service_key,
+            version=service_version,
+            connection=connection,
+        )
     if not service:
         # no service found provided `access_rights`
         raise CatalogForbiddenRpcError(
@@ -512,6 +517,7 @@ async def check_catalog_service_permissions(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     permission: Literal["read", "write"],
+    connection: AsyncConnection | None = None,
 ) -> list[ServiceAccessRightsDB]:
     """Raises if the service cannot be accessed with the specified permission level
 
@@ -532,6 +538,7 @@ async def check_catalog_service_permissions(
         key=service_key,
         version=service_version,
         product_name=product_name,
+        connection=connection,
     )
     if not access_rights:
         raise CatalogItemNotFoundRpcError(
@@ -549,6 +556,7 @@ async def check_catalog_service_permissions(
             user_id=user_id,
             key=service_key,
             version=service_version,
+            connection=connection,
         )
     elif permission == "write":
         has_permission = await repo.can_update_service(
@@ -556,6 +564,7 @@ async def check_catalog_service_permissions(
             user_id=user_id,
             key=service_key,
             version=service_version,
+            connection=connection,
         )
 
     if not has_permission:
