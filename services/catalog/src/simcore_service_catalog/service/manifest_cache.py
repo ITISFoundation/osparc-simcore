@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
-from typing import Any, Final, cast
+from typing import Any, Final
 
-from aiocache import Cache  # type: ignore[import-untyped]
+from aiocache.backends.redis import RedisCache  # type: ignore[import-untyped]
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
@@ -11,23 +11,18 @@ _CACHE_NAMESPACE: Final[str] = "catalog:service_manifest:v1"
 
 
 def create_service_manifest_cache(redis_settings: RedisSettings) -> BaseCache:
-    assert Cache.REDIS is not None  # nosec
     connection_pool_kwargs: dict[str, Any] = {}
     if redis_settings.REDIS_USER:
         connection_pool_kwargs["username"] = redis_settings.REDIS_USER
 
-    return cast(
-        BaseCache,
-        Cache(
-            Cache.REDIS,
-            endpoint=redis_settings.REDIS_HOST,
-            port=redis_settings.REDIS_PORT,
-            db=int(RedisDatabase.AIOCACHE),
-            password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
-            ssl=redis_settings.REDIS_SECURE,
-            connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
-            namespace=_CACHE_NAMESPACE,
-        ),
+    return RedisCache(
+        endpoint=redis_settings.REDIS_HOST,
+        port=redis_settings.REDIS_PORT,
+        db=int(RedisDatabase.AIOCACHE),
+        password=(redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
+        ssl=redis_settings.REDIS_SECURE,
+        connection_pool_kwargs=connection_pool_kwargs if connection_pool_kwargs else None,
+        namespace=_CACHE_NAMESPACE,
     )
 
 
