@@ -1,7 +1,8 @@
 from models_library.basic_types import PortInt
-from pydantic import ByteSize, Field, NonNegativeFloat, TypeAdapter
+from pydantic import ByteSize, Field, TypeAdapter
 from servicelib.utils_secrets import secure_randint
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import CpuCores
 
 
 class DynamicSidecarProxySettings(BaseCustomSettings):
@@ -28,11 +29,11 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
         description="memory limit for the proxy container",
     )
 
-    DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION: NonNegativeFloat = Field(
+    DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION: CpuCores = Field(
         default=0.1,
         description="CPU cores reservation for the proxy container",
     )
-    DYNAMIC_SIDECAR_PROXY_CPU_LIMIT: NonNegativeFloat = Field(
+    DYNAMIC_SIDECAR_PROXY_CPU_LIMIT: CpuCores = Field(
         default=1,
         description="CPU cores limit for the proxy container",
     )

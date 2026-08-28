@@ -5,6 +5,7 @@ from typing import Annotated
 from pydantic import ByteSize, Field, TypeAdapter
 
 from .base import BaseCustomSettings
+from .basic_types import CpuCores
 
 
 class EnvoyLogLevel(StrEnum):
@@ -34,5 +35,5 @@ class EgressProxySettings(BaseCustomSettings):
     ] = TypeAdapter(ByteSize).validate_python("128MiB")
 
     DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT: Annotated[
-        float, Field(description="CPU cores limit for the envoy egress proxy container")
+        CpuCores, Field(description="CPU cores limit for the envoy egress proxy container")
     ] = 0.1

@@ -5,6 +5,7 @@ from common_library.pydantic_validators import validate_numeric_string_as_timede
 from pydantic import ByteSize, Field, TypeAdapter
 
 from .base import BaseCustomSettings
+from .basic_types import CpuCores
 
 
 class UserServicesTracingSettings(BaseCustomSettings):
@@ -35,7 +36,7 @@ class UserServicesTracingSettings(BaseCustomSettings):
         Field(description="memory limit for the OTEL collector containers"),
     ] = TypeAdapter(ByteSize).validate_python("256MiB")
     USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT: Annotated[
-        float,
+        CpuCores,
         Field(description="CPU cores limit for the OTEL collector containers"),
     ] = 0.25
 

@@ -20,6 +20,11 @@ type PortInt = Annotated[int, Field(gt=0, lt=65535)]
 type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
 
 
+# CPU cores allocated to a container. 0 is excluded: docker interprets it as "unlimited",
+# which would silently disagree with any code accounting for a container's cost.
+type CpuCores = Annotated[float, Field(gt=0)]
+
+
 # e.g. 'v5'
 type VersionTag = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
