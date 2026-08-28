@@ -152,15 +152,28 @@ def _make_service_get_v2(
 
 
 @pytest.fixture
+def catalog_service_retired_at(request: pytest.FixtureRequest) -> dt.datetime | None:
+    """override indirectly to simulate services that were retired (i.e. deprecated)"""
+    retired: dt.datetime | None = getattr(request, "param", None)
+    return retired
+
+
+@pytest.fixture
 def mocked_catalog_service_fcts(
     mocker: MockerFixture,
     fake_service_details: ServiceMetaDataPublished,
     fake_service_resources: ServiceResourcesDict,
     fake_service_labels: dict[str, Any],
     fake_service_extras: ServiceExtras,
+    catalog_service_retired_at: dt.datetime | None,
 ) -> dict[str, mock.AsyncMock]:
     async def _mocked_service_details(_rpc_client, *, service_key, service_version, **kwargs) -> ServiceGetV2:
-        return _make_service_get_v2(service_key, service_version, fake_service_details)
+        return _make_service_get_v2(
+            service_key,
+            service_version,
+            fake_service_details,
+            retired=catalog_service_retired_at,
+        )
 
     return {
         "get_service": mocker.patch(
@@ -182,25 +195,6 @@ def mocked_catalog_service_fcts(
             "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service_extras",
             autospec=True,
             return_value=fake_service_extras,
-        ),
-    }
-
-
-@pytest.fixture
-def mocked_catalog_service_fcts_deprecated(
-    mocker: MockerFixture,
-    fake_service_details: ServiceMetaDataPublished,
-) -> dict[str, mock.AsyncMock]:
-    yesterday = dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
-
-    async def _mocked_service_details(_rpc_client, *, service_key, service_version, **kwargs) -> ServiceGetV2:
-        return _make_service_get_v2(service_key, service_version, fake_service_details, retired=yesterday)
-
-    return {
-        "get_service": mocker.patch(
-            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service",
-            autospec=True,
-            side_effect=_mocked_service_details,
         ),
     }
 
@@ -764,10 +758,16 @@ async def test_start_computation_with_project_node_resources_defined(
     assert mocked_get_service_resources.call_count == 0
 
 
+@pytest.mark.parametrize(
+    "catalog_service_retired_at",
+    [dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)],
+    ids=["retired_yesterday"],
+    indirect=True,
+)
 async def test_start_computation_with_deprecated_services_raises_409(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts_deprecated: dict[str, mock.AsyncMock],
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
