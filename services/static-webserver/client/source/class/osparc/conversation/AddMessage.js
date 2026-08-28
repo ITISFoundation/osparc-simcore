@@ -168,7 +168,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
           break;
         case "notify-user-button":
-          control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
+          control = new qx.ui.form.Button(this.tr("🔔 Notify user")).set({
             appearance: "form-button",
             allowGrowX: false,
             alignX: "right",

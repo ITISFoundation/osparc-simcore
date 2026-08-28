@@ -56,6 +56,7 @@ from .....modules.instrumentation import (
     get_instrumentation,
     get_metrics_labels,
     get_rate,
+    get_running_services_labels,
 )
 from .....utils.db import get_repository
 from ...api_client import SidecarsClient, get_sidecars_client
@@ -552,6 +553,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             async with self._lock:
                 for service_name in self._to_observe:
                     self._enqueue_observation_from_service_name(service_name)
+                get_instrumentation(self.app).dynamic_sidecar_metrics.update_running_services_count(
+                    get_running_services_labels(scheduler_data) for scheduler_data in self._to_observe.values()
+                )
         except Exception:  # pylint: disable=broad-except
             _logger.exception("Unexpected error while scheduling sidecars observation")
 

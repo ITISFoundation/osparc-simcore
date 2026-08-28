@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.16.0"
+    "version": "0.16.1"
   },
   "paths": {
     "/v0/meta": {
@@ -13377,6 +13377,7 @@
         "enum": [
           "en",
           "es_ES",
+          "ko_KR",
           "zh_CN"
         ]
       },

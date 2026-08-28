@@ -29,7 +29,7 @@ async def _scheduler_lifespan(app: FastAPI) -> AsyncIterator[None]:
 def configure_dynamic_sidecar(app: FastAPI, app_lifespan: LifespanManager) -> None:
     settings: AppSettings = app.state.settings
 
-    long_running_tasks_client.configure_client(app_lifespan)
+    long_running_tasks_client.configure_client(app)
     long_running_tasks_server.configure_server(
         app,
         app_lifespan,

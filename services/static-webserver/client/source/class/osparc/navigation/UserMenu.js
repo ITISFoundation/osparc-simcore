@@ -115,7 +115,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           osparc.utils.Utils.setIdToWidget(control, "userMenuAboutProductBtn");
           const displayName = osparc.store.StaticInfo.getDisplayName();
           control.getChildControl("label").setRich(true);
-          control.setLabel(this.tr("About ") + displayName);
+          control.setLabel(this.tr("About %1", displayName));
           control.addListener("execute", () => osparc.product.AboutProduct.getInstance().open());
           this.add(control);
           break;

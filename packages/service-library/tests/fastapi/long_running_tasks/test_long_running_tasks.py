@@ -17,20 +17,19 @@ from typing import Annotated, Final
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
-from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
-from servicelib.fastapi.long_running_tasks.client import setup as setup_client
+from servicelib.fastapi.long_running_tasks.client import configure_client
 from servicelib.fastapi.long_running_tasks.server import (
     configure_server,
     get_long_running_manager,
 )
-from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.models import (
     TaskGet,
@@ -60,7 +59,7 @@ class _TestingError(Exception):
 
 async def test_configure_server_uses_application_lifespan(mocker: MockerFixture):
     app = FastAPI()
-    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
     long_running_manager = AsyncMock(spec=FastAPILongRunningManager)
     mocker.patch(
         "servicelib.fastapi.long_running_tasks._server.FastAPILongRunningManager",
@@ -85,7 +84,7 @@ async def test_configure_server_uses_application_lifespan(mocker: MockerFixture)
 
 async def test_configure_server_cleans_up_after_startup_failure(mocker: MockerFixture):
     app = FastAPI()
-    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
     long_running_manager = AsyncMock(spec=FastAPILongRunningManager)
     long_running_manager.setup.side_effect = _TestingError
     mocker.patch(
@@ -159,16 +158,18 @@ async def app(
     rabbit_service: RabbitSettings,
 ) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
-    app = FastAPI(title="test app")
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    app = FastAPI(title="test app", lifespan=app_lifespan)
     app.include_router(server_routes)
-    setup_server(
+    configure_server(
         app,
+        app_lifespan,
         redis_settings=use_in_memory_redis,
         rabbit_settings=rabbit_service,
         lrt_namespace="test",
     )
-    setup_client(app)
-    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
+    configure_client(app)
+    async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
