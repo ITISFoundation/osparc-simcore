@@ -17,13 +17,15 @@ def test_opencor(
 ) -> None:
     url = f"{anonymous_study_url}?stimulation_mode=1&stimulation_level=0.5"
     opened_study = open_study_link(url)
-    study_id = opened_study.project_data["uuid"]
+    project_data = opened_study.project_data
+    study_id = project_data["uuid"]
 
     run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
 
     check_node_outputs(
         page,
         study_id=study_id,
+        workbench=project_data["workbench"],
         node_position=0,
         expected_file_names=["results.json", "logs.zip", "membrane-potential.csv"],
     )

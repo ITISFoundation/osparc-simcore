@@ -190,3 +190,6 @@ repo*.config*
 
 # graphify
 /**/graphify-out/*
+
+# playwright CLI outputs
+.playwright-cli/*

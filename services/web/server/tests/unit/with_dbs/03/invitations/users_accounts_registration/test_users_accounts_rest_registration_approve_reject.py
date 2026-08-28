@@ -392,7 +392,13 @@ async def test_approve_user_account_without_invitation_url_fails(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
 ):
-    """Test approving user account without invitationUrl is rejected (field required)"""
+    """Test approving a NEW (not yet registered) user without invitationUrl is rejected.
+
+    NOTE: invitationUrl is optional at the REST schema level (an already-registered
+    user is approved without one, see
+    test_approve_user_account_skips_invitation_for_already_registered_user), but it
+    is still required by the service to approve a genuinely new user.
+    """
     assert client.app
 
     test_email = faker.email()
@@ -412,7 +418,7 @@ async def test_approve_user_account_without_invitation_url_fails(
     )
     await assert_status(resp, status.HTTP_200_OK)
 
-    # 2. Attempt to approve without invitationUrl — should fail with 422
+    # 2. Attempt to approve without invitationUrl — should fail with 400
     url = client.app.router["approve_user_account"].url_for()
     assert url.path == "/v0/admin/user-accounts:approve"
     resp = await client.post(
@@ -420,7 +426,7 @@ async def test_approve_user_account_without_invitation_url_fails(
         headers={X_PRODUCT_NAME_HEADER: product_name},
         json={"email": test_email},
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
 
 
 async def test_create_user_auto_approves_pre_registration_with_recovery_metadata(
@@ -518,3 +524,81 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
 
     # 6. Verify original form extras are preserved (not overwritten)
     assert "application" in extras or "description" in extras or "privacyPolicy" in extras
+
+
+async def test_approve_user_account_skips_invitation_for_already_registered_user(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_send_message: AsyncMock,
+    mock_notifications_preview_template: AsyncMock,
+):
+    """An already-registered user granted access to a new product must be added
+    directly to that product's group, with no invitation generated.
+
+    SEE decision: https://github.com/ITISFoundation/private-issues/issues/461#issuecomment-4981796351
+    : invitation-based password redefinition confused users who already had an account.
+    """
+    assert client.app
+
+    test_email = account_request_form["email"]
+
+    # 1. Create a registered (ACTIVE) user with that email, NOT yet a member of `product_name`
+    from simcore_postgres_database.utils_users import UsersRepo  # noqa: PLC0415
+    from simcore_service_webserver.security import security_service  # noqa: PLC0415
+
+    engine = get_asyncpg_engine(client.app)
+    repo = UsersRepo(engine)
+    new_user = await repo.new_user(
+        email=test_email,
+        password_hash=security_service.encrypt_password(DEFAULT_TEST_PASSWORD),
+        status=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    # 2. Admin pre-registers that same email for `product_name` (the user has no access yet)
+    url = client.app.router["pre_register_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json=account_request_form,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 3. Preview approval: no invitation should be generated for a registered user
+    preview_url = client.app.router["preview_approval_user_account"].url_for()
+    resp = await client.post(
+        f"{preview_url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": test_email, "invitation": {}},
+    )
+    preview_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert preview_data.get("invitationUrl") is None
+    message_content = preview_data["messageContent"]
+
+    # 4. Approve without an invitationUrl
+    resp = await client.post(
+        f"{client.app.router['approve_user_account'].url_for()}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": test_email, "messageContent": message_content},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 5. The user is now a member of the product, request is APPROVED
+    url = client.app.router["search_user_accounts"].url_for()
+    resp = await client.get(
+        f"{url}",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+    user_data = found[0]
+    assert user_data["accountRequestStatus"] == "APPROVED"
+    assert user_data["userId"] == new_user.id
+    assert product_name in user_data["products"]
+
+    # 6. Notification was sent using the "added to product" template, not "approved"
+    mock_notifications_send_message.assert_called_once()

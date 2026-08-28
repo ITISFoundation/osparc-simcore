@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, ClassVar
 
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager, State
@@ -30,7 +30,7 @@ from ._thin_client import DirectorV2ThinClient
 
 
 class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
-    app_state_name: str = "director_v2_client"
+    app_state_name: ClassVar[str] = "director_v2_client"
 
     def __init__(self, app: FastAPI) -> None:
         self.thin_client = DirectorV2ThinClient(app)
@@ -109,9 +109,17 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         port_keys: list[ServicePortKey],
         timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> RetrieveDataOutEnveloped:
-        response = await self.thin_client.dynamic_service_retrieve(
-            node_id=node_id, port_keys=port_keys, timeout=timeout
-        )
+        try:
+            response = await self.thin_client.dynamic_service_retrieve(
+                node_id=node_id, port_keys=port_keys, timeout=timeout
+            )
+        except UnexpectedStatusError as e:
+            if (
+                e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
+                == status.HTTP_404_NOT_FOUND
+            ):
+                raise ServiceWasNotFoundError(node_id=node_id) from None
+            raise
         dict_response: dict[str, Any] = response.json()
         return TypeAdapter(RetrieveDataOutEnveloped).validate_python(dict_response)
 
@@ -137,12 +145,15 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
 
 
 async def _director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    public_client = DirectorV2Client(app)
-    public_client.set_to_app_state(app)
-
-    yield {}
-
-    public_client.pop_from_app_state(app)
+    public_client: DirectorV2Client | None = None
+    try:
+        public_client = DirectorV2Client(app)
+        public_client.set_to_app_state(app)
+        async with public_client.lifespan():
+            yield {}
+    finally:
+        if public_client is not None and getattr(app.state, DirectorV2Client.app_state_name, None) is public_client:
+            public_client.pop_from_app_state(app)
 
 
 def configure_director_v2(app_lifespan: LifespanManager[FastAPI]) -> None:

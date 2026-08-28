@@ -337,22 +337,12 @@ async def test_project_listing_inside_of_private_folder(
 
 
 @pytest.fixture
-def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
+def mock_storage_delete_data_folders(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mocker: MockerFixture,
+) -> mock.Mock:
     mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.stop_pipeline",
-        autospec=True,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.is_pipeline_running",
-        autospec=True,
-        return_value=False,
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service_delete.director_v2_service.delete_pipeline",
         autospec=True,
     )
     return mocker.patch(

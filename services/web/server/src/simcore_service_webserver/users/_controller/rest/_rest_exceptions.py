@@ -10,6 +10,7 @@ from ....exception_handling import (
 from ....products.errors import ProductNotFoundError
 from ...errors import (
     AlreadyPreRegisteredError,
+    InvitationUrlRequiredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,
     PhoneRegistrationCodeInvalidError,
@@ -19,6 +20,7 @@ from ...errors import (
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
     PreRegistrationNotFoundError,
+    UserAccountNotActiveError,
     UserNameDuplicateError,
     UserNotFoundError,
 )
@@ -114,6 +116,20 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "A request with this email already exists in the target product.",
+            _version=1,
+        ),
+    ),
+    UserAccountNotActiveError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "This user's account is not active ({status}) and cannot be granted access to a new product.",
+            _version=1,
+        ),
+    ),
+    InvitationUrlRequiredError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "An invitation URL is required to approve {email}.",
             _version=1,
         ),
     ),

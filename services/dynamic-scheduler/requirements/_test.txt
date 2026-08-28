@@ -42,11 +42,11 @@ h11==0.16.0
     #   httpcore
     #   hypercorn
     #   wsproto
-h2==4.3.0
+h2==4.4.1
     # via
     #   -c requirements/_base.txt
     #   hypercorn
-hpack==4.1.0
+hpack==4.2.0
     # via
     #   -c requirements/_base.txt
     #   h2

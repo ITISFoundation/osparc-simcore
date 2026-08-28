@@ -65,12 +65,14 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
+    ComputationalBackendTaskResultsReleaseError,
     ComputationalSchedulerChangedError,
     InsufficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
 from simcore_service_director_v2.models.comp_runs import (
     JobEncryptionRunMetadataDict,
+    RunID,
     RunMetadataDict,
 )
 from simcore_service_director_v2.models.comp_tasks import Image
@@ -498,6 +500,7 @@ async def test_send_computation_task(
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
@@ -601,6 +604,7 @@ async def test_send_computation_task_propagates_encryption_context(
         metadata=metadata_with_encryption,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert len(node_id_to_job_ids) == 1
     published_computation_task = node_id_to_job_ids[0]
@@ -665,6 +669,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -701,6 +706,76 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert task_result.get("some_output_key") == 123
     # try to create another future and this one is already done
     assert distributed.Future(published_computation_task[0].job_id, client=dask_client.backend.client).done()
+
+
+async def test_resubmitting_same_run_id_does_not_recompute_the_task(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    image_params: ImageParams,
+    _mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    mocked_storage_service_api: respx.MockRouter,
+    faker: Faker,
+    comp_run_metadata: RunMetadataDict,
+    empty_hardware_info: HardwareInfo,
+    resource_tracking_run_id: ServiceRunID,
+):
+    """Regression test for https://github.com/ITISFoundation/private-issues/issues/648:
+    resubmitting the same (node, run_id) must reuse the same dask key and must NOT
+    recompute the task, since generate_dask_job_id makes the key deterministic for that
+    purpose."""
+    _DASK_COUNTER_NAME = faker.pystr()
+    counter_var = distributed.Variable(_DASK_COUNTER_NAME, client=dask_client.backend.client)
+    await counter_var.set(0)  # type: ignore
+
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    def fake_remote_fct(
+        task_parameters: ContainerTaskParameters,
+        docker_auth: DockerBasicAuth,
+        log_file_url: LogFileUploadURL,
+        s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
+    ) -> TaskOutputData:
+        var = distributed.Variable(_DASK_COUNTER_NAME)
+        var.set(var.get() + 1)
+        return TaskOutputData.model_validate({"some_output_key": 123})
+
+    run_id = RunID(1)
+    first_submission = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        tasks=image_params.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=fake_remote_fct,
+        metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
+        run_id=run_id,
+    )
+    assert len(first_submission) == 1
+    await _assert_wait_for_task_status(first_submission[0].job_id, dask_client, RunningState.SUCCESS)
+
+    # NOTE: same node/user/project/run_id -> same deterministic job_id (simulates a retry
+    # after e.g. a DB write failure that happened right after a successful dask submission)
+    second_submission = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        tasks=image_params.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=fake_remote_fct,
+        metadata=comp_run_metadata,
+        hardware_info=empty_hardware_info,
+        resource_tracking_run_id=resource_tracking_run_id,
+        run_id=run_id,
+    )
+    assert len(second_submission) == 1
+    assert second_submission[0].job_id == first_submission[0].job_id
+    await _assert_wait_for_task_status(second_submission[0].job_id, dask_client, RunningState.SUCCESS)
+
+    # the remote function must have executed exactly once: dask deduplicated the resubmission by key
+    assert await counter_var.get() == 1  # type: ignore
 
 
 async def test_abort_computation_tasks(
@@ -755,6 +830,7 @@ async def test_abort_computation_tasks(
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -832,6 +908,7 @@ async def test_failed_task_returns_exceptions(
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -855,6 +932,24 @@ async def test_failed_task_returns_exceptions(
     assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore
     await dask_client.release_task_result(published_computation_task[0].job_id)
     assert len(await dask_client.backend.client.list_datasets()) == 0  # type: ignore
+
+
+async def test_release_task_result_timeouts_raises(
+    dask_client: DaskClient,
+    mocker: MockerFixture,
+):
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client._DASK_DEFAULT_TIMEOUT_S",
+        0.1,
+    )
+
+    async def _never_completes(*args, **kwargs) -> None:
+        await asyncio.sleep(10)
+
+    mocker.patch.object(dask_client.backend.client, "get_dataset", side_effect=_never_completes)
+
+    with pytest.raises(ComputationalBackendTaskResultsReleaseError):
+        await dask_client.release_task_result("some-unknown-job-id")
 
 
 # currently in the case of a dask-gateway we do not check for missing resources
@@ -896,6 +991,7 @@ async def test_send_computation_task_with_missing_resources_raises(
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
             resource_tracking_run_id=resource_tracking_run_id,
+            run_id=RunID(1),
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -925,6 +1021,7 @@ async def test_send_computation_task_with_hardware_info_raises(
             metadata=comp_run_metadata,
             hardware_info=hardware_info,
             resource_tracking_run_id=resource_tracking_run_id,
+            run_id=RunID(1),
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -965,6 +1062,7 @@ async def test_too_many_resources_send_computation_task(
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
             resource_tracking_run_id=resource_tracking_run_id,
+            run_id=RunID(1),
         )
 
     mocked_user_completed_cb.assert_not_called()
@@ -995,6 +1093,7 @@ async def test_disconnected_backend_raises_exception(
             metadata=comp_run_metadata,
             hardware_info=empty_hardware_info,
             resource_tracking_run_id=resource_tracking_run_id,
+            run_id=RunID(1),
         )
     mocked_user_completed_cb.assert_not_called()
 
@@ -1041,6 +1140,7 @@ async def test_changed_scheduler_raises_exception(
                 metadata=comp_run_metadata,
                 hardware_info=empty_hardware_info,
                 resource_tracking_run_id=resource_tracking_run_id,
+                run_id=RunID(1),
             )
     mocked_user_completed_cb.assert_not_called()
 
@@ -1088,6 +1188,7 @@ async def test_get_tasks_status(
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert published_computation_task
     assert len(published_computation_task) == 1
@@ -1169,6 +1270,7 @@ async def test_dask_sub_handlers(
         metadata=comp_run_metadata,
         hardware_info=empty_hardware_info,
         resource_tracking_run_id=resource_tracking_run_id,
+        run_id=RunID(1),
     )
     assert published_computation_task
     assert len(published_computation_task) == 1

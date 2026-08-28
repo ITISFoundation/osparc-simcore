@@ -2,6 +2,7 @@
 
 import re
 import types
+from collections.abc import Iterator
 from typing import Any
 
 from fastapi.applications import FastAPI
@@ -42,7 +43,15 @@ def get_common_oas_options(*, is_devel_mode: bool) -> dict[str, Any]:
     }
 
 
-def set_operation_id_as_handler_function_name(router: APIRouter):
+def _iter_api_routes(router: APIRouter) -> Iterator[APIRoute]:
+    for route in router.routes:
+        if isinstance(route, APIRoute):
+            yield route
+        elif isinstance(included_router := getattr(route, "original_router", None), APIRouter):
+            yield from _iter_api_routes(included_router)
+
+
+def set_operation_id_as_handler_function_name(router: APIRouter) -> None:
     """
     Overrides default operation_ids assigning the same name as the handler function
 
@@ -51,10 +60,9 @@ def set_operation_id_as_handler_function_name(router: APIRouter):
     PROS: auto-generated client has one-to-one correspondence and human readable names
     CONS: highly coupled. Changes in server handler names will change client
     """
-    for route in router.routes:
-        if isinstance(route, APIRoute):
-            assert isinstance(route.endpoint, types.FunctionType)  # nosec
-            route.operation_id = route.endpoint.__name__
+    for route in _iter_api_routes(router):
+        assert isinstance(route.endpoint, types.FunctionType)  # nosec
+        route.operation_id = route.endpoint.__name__
 
 
 # https://swagger.io/docs/specification/data-models/data-types/#numbers

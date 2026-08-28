@@ -71,6 +71,10 @@ class ComputationalTaskNotFoundError(DirectorError):
     msg_template = "Computational task {node_id} not found"
 
 
+class ComputationalTaskJobIdAlreadySetError(DirectorError):
+    msg_template = "Computational task {node_id} in project {project_id} already has a job_id set"
+
+
 class WalletNotEnoughCreditsError(DirectorError):
     msg_template = "Wallet '{wallet_name}' has {wallet_credit_amount} credits."
 
@@ -152,6 +156,10 @@ class ComputationalBackendTaskNotFoundError(ComputationalSchedulerError):
 
 class ComputationalBackendTaskResultsNotReadyError(ComputationalSchedulerError):
     msg_template = "The task result is not ready yet for job '{job_id}'"
+
+
+class ComputationalBackendTaskResultsReleaseError(ComputationalSchedulerError):
+    msg_template = "Releasing the task result for job '{job_id}' timed-out"
 
 
 class ClustersKeeperNotAvailableError(ComputationalSchedulerError):

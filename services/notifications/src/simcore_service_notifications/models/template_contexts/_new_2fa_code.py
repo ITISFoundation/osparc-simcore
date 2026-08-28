@@ -16,3 +16,4 @@ class New2faCodeTemplateContext(BaseTemplateContext):
     user: User
     host: str
     code: str
+    ttl: int

@@ -8,6 +8,7 @@ loads(dumps(my_object))
 
 """
 
+import asyncio
 import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -73,10 +74,11 @@ from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
+    ComputationalBackendTaskResultsReleaseError,
     TaskSchedulingError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
-from ..models.comp_runs import RunMetadataDict
+from ..models.comp_runs import RunID, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
@@ -249,7 +251,15 @@ class DaskClient:
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
 
-            await dask_utils.wrap_client_async_routine(self.backend.client.publish_dataset(task_future, name=job_id))
+            try:
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.publish_dataset(task_future, name=job_id)
+                )
+            except KeyError as exc:
+                if "already exists" not in f"{exc}":
+                    raise
+                # NOTE: job_id (stable per run_id) was already published -> resubmission is a no-op.
+                _logger.info("dask task %s was already published, this should not happen but is harmless", f"{job_id=}")
 
             _logger.info(
                 "Dask task %s started [%s] with encryption [%s]",
@@ -275,9 +285,12 @@ class DaskClient:
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
         resource_tracking_run_id: ServiceRunID,
+        run_id: RunID,
     ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started.
+
+        `run_id` makes the job_id stable for a given (project_id, node_id, run_id), enabling idempotent resubmission.
 
         Raises:
           - ComputationalBackendNoS3AccessError when storage is not accessible
@@ -297,6 +310,7 @@ class DaskClient:
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
+                run_id=run_id,
             )
             assert node_image.node_requirements  # nosec
             dask_resources = dask_utils.from_node_reqs_to_dask_resources(node_image.node_requirements)
@@ -544,11 +558,15 @@ class DaskClient:
 
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
-        try:
+
+        async def _get_and_unpublish_dataset() -> None:
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(self.backend.client.get_dataset(name=job_id))
-
             await dask_utils.wrap_client_async_routine(self.backend.client.unpublish_dataset(name=job_id))
 
+        try:
+            await asyncio.wait_for(_get_and_unpublish_dataset(), timeout=_DASK_DEFAULT_TIMEOUT_S)
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+        except TimeoutError as exc:
+            raise ComputationalBackendTaskResultsReleaseError(job_id=job_id) from exc

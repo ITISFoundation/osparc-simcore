@@ -51,6 +51,7 @@ async def _request_clone_project(client: TestClient, url: URL) -> ProjectGet:
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_clone_project_user_permissions(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, Any],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -82,6 +83,7 @@ async def test_clone_project_user_permissions(
 )
 async def test_clone_project(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, Any],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

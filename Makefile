@@ -159,10 +159,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-.PHONY: help
-
-help: ## help on rule's targets
-	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
+include scripts/makefiles/help.mk
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
@@ -176,7 +173,7 @@ _check_venv_active:
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
-## DOCKER BUILD -------------------------------
+##@ Docker Build
 #
 # - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
@@ -279,7 +276,7 @@ shell:
 	docker run -it local/$(target):production /bin/sh
 
 
-## DOCKER SWARM -------------------------------
+##@ Docker Swarm
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
 #
@@ -557,7 +554,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 
-## DOCKER TAGS  -------------------------------
+##@ Docker Tags
 
 .PHONY: tag-local tag-version tag-latest
 
@@ -579,7 +576,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 
-## DOCKER PULL/PUSH  -------------------------------
+##@ Docker Pull/Push
 
 .PHONY: pull-version
 
@@ -617,8 +614,7 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 
 
-
-## ENVIRONMENT -------------------------------
+##@ Environment
 
 .PHONY: devenv devenv-all node-env
 
@@ -676,7 +672,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 
-## TOOLS -------------------------------
+##@ Tools
 
 .PHONY: pylint
 
@@ -766,7 +762,7 @@ postgres-upgrade: ## initialize or upgrade postgres db to latest state
 CITATION-validate: ## validates CITATION.cff file
 	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
-## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
+##@ Local Docker Registry (local-dev)
 
 LOCAL_REGISTRY_HOSTNAME := registry
 LOCAL_REGISTRY_VOLUME   := $(LOCAL_REGISTRY_HOSTNAME)
@@ -856,7 +852,7 @@ info-registry: ## info on local registry (if any)
 	@echo No target set)
 
 
-## INFO -------------------------------
+##@ Info
 
 .PHONY: info info-images info-swarm
 info: ## displays setup information
@@ -922,7 +918,7 @@ endif
 
 
 
-## CLEAN -------------------------------
+##@ Clean
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
 
@@ -974,7 +970,8 @@ reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
 
 
-# RELEASE --------------------------------------------------------------------------------------------------------------------------------------------
+
+##@ Release
 
 staging_prefix := staging_
 prod_prefix := v
@@ -1010,6 +1007,8 @@ define create_github_release_url
 	echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)" && \
 	echo -e "\e[34m$(_prettify_logs)"
 endef
+
+
 
 .PHONY: release-staging release-prod
 release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)

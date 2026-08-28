@@ -147,6 +147,8 @@ async def dy_static_file_server_project(
     uuid_legacy: str,
     uuid_dynamic_sidecar: str,
     uuid_dynamic_sidecar_compose: str,
+    osparc_product_name: str,
+    grant_service_access_rights: Callable[..., dict[str, Any]],
 ) -> ProjectAtDB:
     def _assemble_node_data(spec: dict, label: str) -> dict[str, str]:
         return {
@@ -154,6 +156,18 @@ async def dy_static_file_server_project(
             "version": spec["image"]["tag"],
             "label": label,
         }
+
+    for spec in (
+        dy_static_file_server_service,
+        dy_static_file_server_dynamic_sidecar_service,
+        dy_static_file_server_dynamic_sidecar_compose_spec_service,
+    ):
+        grant_service_access_rights(
+            group_id=user_dict["primary_gid"],
+            service_key=spec["image"]["name"],
+            service_version=spec["image"]["tag"],
+            product_name=osparc_product_name,
+        )
 
     return await create_project(
         user=user_dict,

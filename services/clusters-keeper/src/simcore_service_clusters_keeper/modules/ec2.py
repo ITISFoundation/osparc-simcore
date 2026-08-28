@@ -1,12 +1,18 @@
 from typing import cast
 
-from aws_library.ec2 import SimcoreEC2API
+from aws_library.ec2 import SimcoreEC2API, create_instrumented_ec2_client
 from aws_library.ec2 import configure_ec2_client as _configure_ec2_client
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from settings_library.ec2 import EC2Settings
 
 from ..core.errors import ConfigurationError
+from .instrumentation import get_instrumentation, has_instrumentation
+
+
+async def _create_ec2_client(app: FastAPI, settings: EC2Settings) -> SimcoreEC2API:
+    ec2_client_metrics = get_instrumentation(app).ec2_client_metrics if has_instrumentation(app) else None
+    return await create_instrumented_ec2_client(settings, ec2_client_metrics)
 
 
 def configure_ec2_client(
@@ -18,6 +24,7 @@ def configure_ec2_client(
         app_lifespan,
         settings=settings,
         client_name="clusters_keeper",
+        client_factory=_create_ec2_client,
     )
 
 

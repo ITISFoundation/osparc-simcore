@@ -24,6 +24,7 @@ from .._meta import (
 from ..api.routes import setup_api_routes
 from ..modules.clusters_management_task import configure_clusters_management
 from ..modules.ec2 import configure_ec2_client
+from ..modules.instrumentation import configure_clusters_keeper_instrumentation
 from ..modules.rabbitmq import configure_rabbitmq_client
 from ..modules.redis import configure_redis_client
 from ..modules.ssm import configure_ssm_client
@@ -41,13 +42,15 @@ def _configure_plugins(
 ) -> None:
     configure_redis_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_REDIS)
     configure_rabbitmq_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_RABBITMQ)
+
+    if settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        configure_prometheus_instrumentation(app, app_lifespan)
+        configure_clusters_keeper_instrumentation(app_lifespan)
+
     configure_ec2_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_EC2_ACCESS)
     configure_ssm_client(app_lifespan, settings=settings.CLUSTERS_KEEPER_SSM_ACCESS)
     configure_rpc_routes(app_lifespan)
     configure_clusters_management(app_lifespan, settings=settings)
-
-    if settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        configure_prometheus_instrumentation(app, app_lifespan)
 
     if tracing_config.tracing_enabled:
         configure_fastapi_app_tracing(

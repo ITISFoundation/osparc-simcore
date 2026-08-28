@@ -9,6 +9,7 @@ property of the service, not something the user should have to configure per run
 """
 
 import datetime
+import json
 import logging
 import re
 import urllib.parse
@@ -130,7 +131,7 @@ def open_study_link(page: Page, anonymous_open_timeout: int) -> Callable[..., Op
             log_context(
                 logging.INFO,
                 f"Opening anonymous study link {url=} (timeout {datetime.timedelta(milliseconds=timeout)})",
-            ),
+            ) as ctx,
             page.expect_websocket(timeout=timeout) as ws_info,
             page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=timeout) as response_info,
         ):
@@ -150,6 +151,8 @@ def open_study_link(page: Page, anonymous_open_timeout: int) -> Callable[..., Op
 
         assert response_info.value.ok, f"{response_info.value.json()}"
         project_data = response_info.value.json()["data"]
+        ctx.logger.info("%s", f"{project_data['uuid']=}")
+        ctx.logger.info("project_workbench=%s", f"{json.dumps(project_data['workbench'], indent=2)}")
 
         assert not ws_info.value.is_closed()
         websocket = RobustWebSocket(page, ws_info.value)

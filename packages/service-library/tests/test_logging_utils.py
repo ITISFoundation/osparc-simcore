@@ -65,6 +65,23 @@ def _to_level_name(lvl: int) -> str:
     return logging.getLevelName(lvl)
 
 
+def test_log_decorator_warns_and_omits_filename_when_stack_frames_are_unavailable(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr("servicelib.logging_utils.currentframe", lambda: None)
+
+    @log_decorator(_logger, logging.INFO)
+    def _decorated_function() -> int:
+        return 42
+
+    assert _decorated_function() == 42
+    assert len(caplog.records) == 3
+    assert caplog.records[0].levelno == logging.WARNING
+    assert "filename override will be omitted" in caplog.records[0].message
+    assert all("file_name_override" not in record.__dict__ for record in caplog.records)
+
+
 @pytest.mark.parametrize("logger", [None, _logger])
 async def test_error_regression_async_def(
     caplog: pytest.LogCaptureFixture, logger: logging.Logger | None, faker: Faker
@@ -100,6 +117,7 @@ async def test_error_regression_async_def(
     assert result == 0
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
+    assert info_record.__dict__["file_name_override"] == Path(log_decorator.__code__.co_filename).name
     assert info_record.levelno == logging.INFO
     assert (
         f"{_not_raising_fct.__module__.split('.')[-1]}:"

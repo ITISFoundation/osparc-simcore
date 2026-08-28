@@ -1,0 +1,24 @@
+{% trans first_name=user.first_name or "User" %}Dear {{ first_name }},{% endtrans %}
+
+{% trans product_name=product.display_name %}Your request has been approved and you now have access to {{ product_name
+}}.{% endtrans %}
+
+{% if existing_product %}
+{% trans existing_product=existing_product, product_name=product.display_name %}Since you already have an account on {{
+existing_product }}, please continue logging in to {{ product_name }} with the same email and password.{% endtrans %}
+{% else %}
+{% trans product_name=product.display_name %}Since you already have an account, please continue logging in to {{
+product_name }} with the same email and password.{% endtrans %}
+{% endif %}
+
+{% trans link=product.homepage_url, product_name=product.display_name %}You can access {{ product_name }} here: {{ link
+}}{% endtrans %}
+
+{% trans support_email=product.support_email %}If any problem should occur, please feel free to contact us at {{
+support_email }}.{% endtrans %}
+
+{% trans product_name=product.display_name %}Enjoy {{ product_name }}!{% endtrans %}
+
+{% trans %}Best regards,{% endtrans %}
+
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

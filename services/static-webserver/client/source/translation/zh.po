@@ -8,14 +8,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-07-30T14:21:13Z\n"
+"X-Translation-Date: 2026-08-27T13:09:22Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About " appears as part of a label or title,
 # likely indicating a section or information related to "About" within a user
 # interface, possibly in a product or application introduction.
 #: services/static-webserver/client/source/class/osparc/About.js:24
-#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
 msgid "About "
 msgstr "关于 "
@@ -965,7 +964,7 @@ msgstr "应用程序"
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:176
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:296
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:317
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:469
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:470
 msgid "Other"
 msgstr "其他"
 
@@ -987,7 +986,7 @@ msgstr "数据分析"
 # interface related to account management or product selection, likely within
 # a context of personalized medicine options.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:185
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:499
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:500
 msgid "Personalized Medicine"
 msgstr "个性化医疗"
 
@@ -996,7 +995,7 @@ msgstr "个性化医疗"
 # a scientific simulation application, where it refers to a specific type of
 # neurostimulation.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:188
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:496
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:497
 msgid "Neurostimulation"
 msgstr "神经刺激"
 
@@ -1005,7 +1004,7 @@ msgstr "神经刺激"
 # scientific simulation application, where users can evaluate the safety and
 # effectiveness of a product or account.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:191
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:478
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:479
 msgid "Safety & Efficacy Assessment"
 msgstr "安全与有效性评估"
 
@@ -1021,7 +1020,7 @@ msgstr "设备设计与优化"
 # account management, likely displaying the name of a magnetic resonance
 # imaging (MRI) related feature or service.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:197
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:493
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:494
 msgid "Magnetic Resonance Imaging"
 msgstr "磁共振成像"
 
@@ -1302,10 +1301,16 @@ msgstr "按回车键发送 · 按 Shift+回车键创建新行"
 msgid "Only users with write access can add comments."
 msgstr "只有具有写入权限的用户才能添加评论。"
 
+# CTX-INTERPRETATION: The string "🔔 Notify user" is used as the label for a
+# button within the AddMessage component, likely to notify a user about a new
+# message or action.
+#: services/static-webserver/client/source/class/osparc/conversation/AddMessage.js:171
+msgid "🔔 Notify user"
+msgstr "🔔 通知用户"
+
 # CTX-INTERPRETATION: The string "Notify user" appears within the AddMessage
 # component, likely indicating a button or control that triggers a
 # notification to a user, possibly related to a conversation or message.
-#: services/static-webserver/client/source/class/osparc/conversation/AddMessage.js:171
 #: services/static-webserver/client/source/class/osparc/conversation/AddMessage.js:247
 msgid "Notify user"
 msgstr "通知用户"
@@ -1407,11 +1412,11 @@ msgstr "删除消息？"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:750
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1338
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1724
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2262
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2288
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2572
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2596
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2266
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2292
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2576
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2577
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2600
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:231
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:222
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:310
@@ -1524,14 +1529,13 @@ msgstr "共享"
 msgid "App mode"
 msgstr "应用模式"
 
-# CTX-INTERPRETATION: The string "Hits: " is used within a scientific
-# simulation application, likely within a user interface element, to label a
-# numerical value representing the number of hits or occurrences detected in a
-# simulation.
+# CTX-INTERPRETATION: The string "Hits: %1" is used within a UI component to
+# display the number of hits associated with a specific service, likely in a
+# dashboard or overview.
 #: services/static-webserver/client/source/class/osparc/dashboard/CardBase.js:733
 #: services/static-webserver/client/source/class/osparc/service/ServiceListItem.js:90
-msgid "Hits: "
-msgstr "命中数： "
+msgid "Hits: %1"
+msgstr "命中数：%1"
 
 # CTX-INTERPRETATION: The string "Unknown service(s)" appears in the
 # CardBase.js file, likely within a UI component that displays information
@@ -1683,7 +1687,7 @@ msgstr "最后修改"
 # user-friendly way to navigate the file system.
 #: services/static-webserver/client/source/class/osparc/dashboard/FileButtonItem.js:131
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:294
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2033
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2037
 msgid "Open location"
 msgstr "打开位置"
 
@@ -1701,7 +1705,7 @@ msgstr "已删除"
 # a context menu, likely used to rename a folder or study within a scientific
 # simulation application's user interface.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:289
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2041
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2045
 #: services/static-webserver/client/source/class/osparc/support/ConversationOptionsMenu.js:73
 msgid "Rename..."
 msgstr "重命名..."
@@ -1712,8 +1716,8 @@ msgstr "重命名..."
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:306
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:701
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1691
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2105
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2111
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2109
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2115
 msgid "Move to..."
 msgstr "移动到..."
 
@@ -1721,7 +1725,7 @@ msgstr "移动到..."
 # element, likely a button, to allow a user to recover a deleted or trashed
 # folder within a study or workspace.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:317
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2278
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2282
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:226
 msgid "Restore"
 msgstr "恢复"
@@ -1736,8 +1740,8 @@ msgstr "重命名文件夹"
 # within the 'Delete Folder' functionality, prompting the user to confirm the
 # deletion of a folder, likely within a study or workspace browser.
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:374
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2558
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2592
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2562
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2596
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:324
 msgid "Are you sure you want to delete"
 msgstr "您确定要删除吗？"
@@ -1755,8 +1759,8 @@ msgstr "删除文件夹"
 #: services/static-webserver/client/source/class/osparc/dashboard/FolderButtonItem.js:377
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1343
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1738
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2259
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2597
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2263
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2601
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowserHeader.js:232
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:232
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:328
@@ -1889,7 +1893,7 @@ msgstr " - 文件夹： "
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:690
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:691
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1333
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:485
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:495
 msgid "Move"
 msgstr "移动"
 
@@ -2098,9 +2102,9 @@ msgstr "您确定要删除吗？ "
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:878
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:902
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceBrowserBase.js:1001
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1819
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1834
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1848
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1823
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1838
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1852
 msgid "Creating "
 msgstr "正在创建 "
 
@@ -2447,7 +2451,6 @@ msgstr "过时的服务"
 # search component, possibly related to displaying all results or options.
 #: services/static-webserver/client/source/class/osparc/dashboard/SearchBarFilter.js:82
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:84
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:228
 msgid "All"
 msgstr "全部"
 
@@ -2685,8 +2688,8 @@ msgstr "未找到文件"
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:627
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:737
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:777
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2323
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2474
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2327
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2478
 msgid "Successfully deleted"
 msgstr "已成功删除"
 
@@ -2695,7 +2698,7 @@ msgstr "已成功删除"
 # successfully restored or reloaded after an operation.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:616
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:766
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2447
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2451
 msgid "Successfully restored"
 msgstr "已成功恢复"
 
@@ -2773,21 +2776,21 @@ msgstr "移动到"
 # CTX-INTERPRETATION: The string "Cancel Selection" appears in the
 # StudyBrowser component, likely used to disable or remove a selection made by
 # the user, possibly in a dialog or confirmation process.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1758
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1762
 msgid "Cancel Selection"
 msgstr "取消选择"
 
-# CTX-INTERPRETATION: The string "Select " is part of a function that
-# dynamically generates a label for a button, likely used in a study selection
-# interface, indicating the user is about to select a study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1758
-msgid "Select "
-msgstr "选择 "
+# CTX-INTERPRETATION: The string "Select %1" is used within the StudyBrowser
+# component to display a label for a 'select' button, indicating the currently
+# selected study alias.
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1762
+msgid "Select %1"
+msgstr "选择 %1"
 
 # CTX-INTERPRETATION: The string "Rename " is part of a UI element that allows
 # users to rename a study, likely within a study browser or management
 # interface.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2043
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2047
 #: services/static-webserver/client/source/class/osparc/info/MergedLarge.js:339
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:257
 #: services/static-webserver/client/source/class/osparc/widget/NodesTree.js:275
@@ -2797,7 +2800,7 @@ msgstr "重命名 "
 # CTX-INTERPRETATION: This string appears within a renaming function, likely
 # used in a user interface to inform the user when a study renaming operation
 # fails.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2059
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2063
 #: services/static-webserver/client/source/class/osparc/study/StudyOptions.js:110
 msgid "Something went wrong while renaming"
 msgstr "重命名时发生错误"
@@ -2805,36 +2808,36 @@ msgstr "重命名时发生错误"
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component,
 # specifically within a `catch` block, indicating an error occurred during
 # thumbnail updating and providing a user-friendly message.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2065
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2069
 msgid "Something went wrong while updating the thumbnail"
 msgstr "在更新缩略图时发生错误"
 
 # CTX-INTERPRETATION: The string " files..." is part of a button label in a
 # study browser, likely used to open or access files associated with a
 # specific study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2069
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2073
 msgid " files..."
 msgstr " 文件..."
 
 # CTX-INTERPRETATION: The string "Billing Settings..." is used to label a
 # button within a study billing settings menu, likely allowing users to manage
 # billing information related to a specific study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2077
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2081
 msgid "Billing Settings..."
 msgstr "账单设置..."
 
 # CTX-INTERPRETATION: The string "Duplicate" appears as the label for a button
 # in a study browser, likely allowing the user to create a copy of the
 # currently selected study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2144
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2148
 msgid "Duplicate"
 msgstr "复制"
 
 # CTX-INTERPRETATION: The string "Convert to Pipeline" appears as the label
 # for a button in a user interface, likely used to initiate a process of
 # converting a study or data into a pipeline workflow.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2151
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2164
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2155
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2168
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:80
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:205
 msgid "Convert to Pipeline"
@@ -2843,7 +2846,7 @@ msgstr "转换为流程"
 # CTX-INTERPRETATION: The string appears in a study browser, prompting the
 # user to convert a project to a pipeline or create a copy and convert the
 # copy.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2160
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2164
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:201
 msgid "Would you like to convert this project to a pipeline?"
 msgstr "您是否希望将此项目转换为一个流程？"
@@ -2851,7 +2854,7 @@ msgstr "您是否希望将此项目转换为一个流程？"
 # CTX-INTERPRETATION: This string appears in a confirmation dialog, offering
 # an alternative method to convert a project to a pipeline by creating a copy
 # and converting the copy.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2161
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2165
 msgid ""
 "Alternatively, you can create a copy of the project and convert the copy "
 "instead."
@@ -2860,7 +2863,7 @@ msgstr "或者，您还可以创建项目的副本，然后转换副本。"
 # CTX-INTERPRETATION: The string "Convert" appears as a confirmation button
 # label within a user interface, likely prompting the user to finalize a
 # conversion process, possibly related to data pipelines or study settings.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2165
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2169
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:206
 msgid "Convert"
 msgstr "转换"
@@ -2868,14 +2871,14 @@ msgstr "转换"
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # within a function related to creating a copy of a study and converting it to
 # a different format, providing a user-friendly label for this action.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2172
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2176
 msgid "Create a copy and convert it"
 msgstr "创建副本并将其转换为其他格式"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser and
 # StudyTitleWOptions classes, likely indicating a successful conversion of a
 # study to a pipeline workflow.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2178
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2182
 #: services/static-webserver/client/source/class/osparc/navigation/StudyTitleWOptions.js:213
 msgid "Project converted to pipeline"
 msgstr "项目已转换为流程"
@@ -2883,36 +2886,36 @@ msgstr "项目已转换为流程"
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # within a function that handles the conversion of a study to a pipeline,
 # indicating an error occurred during this process.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2179
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2183
 msgid "Something went wrong while converting to pipeline"
 msgstr "在将项目转换为管道时，发生了一些错误"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # indicating a successful conversion of a project's copy to a pipeline,
 # providing feedback to the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2189
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2193
 msgid "Project's copy converted to pipeline"
 msgstr "项目副本已转换为管道"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # indicating an error message when the user attempts to convert a study to a
 # pipeline, providing user feedback.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2190
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2194
 msgid "Something went wrong while converting the copy to pipeline"
 msgstr "在将项目转换为管道时，发生了一些错误。"
 
 # CTX-INTERPRETATION: The string "Export cMIS" appears as the label for a
 # button in the StudyBrowser, likely allowing users to export data related to
 # a cMIS (Clinical Metadata Information System) study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2205
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2209
 msgid "Export cMIS"
 msgstr "导出 cMIS"
 
 # CTX-INTERPRETATION: The string "Remove" is used as a label for a button
 # within the StudyBrowser, likely to delete a study or related item.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2265
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2583
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2584
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2269
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2587
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2588
 #: services/static-webserver/client/source/class/osparc/form/json/JsonSchemaFormHeader.js:35
 msgid "Remove"
 msgstr "删除"
@@ -2921,150 +2924,150 @@ msgstr "删除"
 # StudyBrowser.js file, specifically in a function that displays a
 # confirmation window before deleting a function, likely within a scientific
 # simulation application.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2301
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2305
 msgid "Delete function"
 msgstr "删除函数"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # prompting the user to confirm the deletion of a function that has associated
 # jobs, possibly within a scientific simulation context.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2306
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2310
 msgid "The function has associated jobs. Are you sure you want to delete it?"
 msgstr "该函数与关联的任务相关。您确定要删除它吗？"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component,
 # likely within a user interface element that displays a message to the user
 # when an error occurs during the study duplication process.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2345
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2349
 msgid "Something went wrong while duplicating"
 msgstr "在复制研究时出现问题"
 
 # CTX-INTERPRETATION: The string "Preparing files" appears as a subtitle
 # within a study browser, likely indicating that the application is in the
 # process of exporting files related to a specific study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2350
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2354
 msgid "Preparing files"
 msgstr "正在准备文件"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component,
 # indicating that the export process has been initiated and is now running in
 # the background.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2354
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2358
 msgid "Exporting process started and added to the background tasks"
 msgstr "导出过程已启动，并已添加到后台任务中。"
 
 # CTX-INTERPRETATION: The string "Download started" is displayed as a subtitle
 # in the StudyBrowser UI, indicating that a download operation has commenced.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2359
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2363
 msgid "Download started"
 msgstr "下载已开始"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component,
 # likely indicating an error during the study export process, providing a
 # user-friendly message.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2364
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2368
 msgid "Something went wrong while exporting the study"
 msgstr "在导出研究时出现问题"
 
 # CTX-INTERPRETATION: The string "Uploading file" appears as a label within a
 # file import UI, likely indicating the progress of uploading a file to a
 # study.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2370
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2374
 msgid "Uploading file"
 msgstr "正在上传文件"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component,
 # indicating that a background task related to importing has been initiated
 # and is now managed.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2376
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2380
 msgid "Importing process started and added to the background tasks"
 msgstr "导入过程已启动，并已添加到后台任务中"
 
 # CTX-INTERPRETATION: The string "Importing Study..." is used as a title for a
 # task card in a study browser, indicating that a study is currently being
 # imported.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2379
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2383
 msgid "Importing Study..."
 msgstr "导入研究..."
 
 # CTX-INTERPRETATION: The string "Processing study" appears in the
 # StudyBrowser component, likely indicating that a study is currently being
 # processed or analyzed.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2398
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2410
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2402
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2414
 msgid "Processing study"
 msgstr "正在处理研究"
 
 # CTX-INTERPRETATION: This string appears within a JavaScript function that
 # handles errors during the retrieval of a study from a database, specifically
 # within the StudyBrowser component of the Osparc dashboard.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2417
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2421
 msgid "Something went wrong while fetching the study"
 msgstr "在尝试获取研究时发生错误"
 
 # CTX-INTERPRETATION: This string appears within the StudyBrowser component,
 # likely indicating an error during a study import operation, providing a
 # user-friendly message.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2423
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2430
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2436
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2427
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2434
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2440
 msgid "Something went wrong while importing the study"
 msgstr "导入研究时出现问题"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser component,
 # indicating that a study has been successfully removed from a list, likely
 # after a user action.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2463
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2467
 msgid "Successfully removed"
 msgstr "已成功移除"
 
 # CTX-INTERPRETATION: The string appears in the StudyBrowser.js file, likely
 # within a function that handles project deletion, indicating a permission
 # check.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2524
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2528
 msgid "You don't have permissions to delete or remove this project."
 msgstr "您没有删除或移除此项目的权限。"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # within a function that displays information about studies and their deletion
 # settings.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2567
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2571
 msgid "They will be permanently deleted after %1 days."
 msgstr "它们将在%1天后永久删除。"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
 # within a function related to managing data deletion or retention policies
 # for studies.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2569
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
 msgid "It will be permanently deleted after %1 days."
 msgstr "它将在%1天后永久删除。"
 
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # specifically when a user confirms the removal of a study from their list,
 # informing them that collaborators will retain access.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2581
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2585
 msgid ""
 "'%1' will be removed from your list. Collaborators will still have access."
-msgstr "\"%1' 将从您的列表中移除。 合作者仍将拥有访问权限。"
+msgstr "'%1' 将从您的列表中移除。 合作者仍将拥有访问权限。"
 
 # CTX-INTERPRETATION: The string "Duplicating " is part of a user interface
 # element, likely a button or label, used to indicate that a study is being
 # duplicated.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2619
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2623
 msgid "Duplicating "
 msgstr "复制 "
 
 # CTX-INTERPRETATION: The string "Duplication completed" appears in the
 # StudyBrowser.js file, likely indicating that a study duplication process has
 # finished successfully.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2635
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2639
 msgid "Duplication completed"
 msgstr "复制完成"
 
 # CTX-INTERPRETATION: The string "Duplication cancelled" appears in the
 # StudyBrowser.js file, likely within a function that handles the cancellation
 # of a task duplication operation, providing feedback to the user.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2640
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2644
 msgid "Duplication cancelled"
 msgstr "复制已取消"
 
@@ -4385,7 +4388,6 @@ msgstr "服务数据"
 #: services/static-webserver/client/source/class/osparc/desktop/WorkbenchView.js:1197
 #: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:194
 #: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:217
-#: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:433
 msgid "Outputs"
 msgstr "输出"
 
@@ -5140,12 +5142,12 @@ msgstr "持续时间"
 msgid "Seats"
 msgstr "座位"
 
-# CTX-INTERPRETATION: This string is part of a function that formats and
-# displays the user's credits balance, appending 'credits' to the formatted
-# value.
+# CTX-INTERPRETATION: The string is used to display the user's available
+# credits in a CreditsIndicator component, formatting them with commas and
+# converting them to a specific color based on their value.
 #: services/static-webserver/client/source/class/osparc/desktop/credits/CreditsIndicator.js:84
-msgid " credits"
-msgstr " 信用"
+msgid "%1 credits"
+msgstr "%1 积分"
 
 # CTX-INTERPRETATION: The string "No usage records found" appears within a UI
 # element, likely a label, indicating that no usage records are available for
@@ -5177,12 +5179,12 @@ msgstr "上周"
 msgid "Last month"
 msgstr "上个月"
 
-# CTX-INTERPRETATION: This string is part of a function that converts a
-# numerical value representing used credits into a human-readable string,
-# likely displaying the number of used credits to the user.
+# CTX-INTERPRETATION: The string is used within the CurrentUsageIndicator
+# component to display the number of credits a user has consumed, formatted as
+# "X used", where X represents the number of credits.
 #: services/static-webserver/client/source/class/osparc/desktop/credits/CurrentUsageIndicator.js:87
-msgid " used"
-msgstr " 已使用的"
+msgid "%1 used"
+msgstr "已使用 %1"
 
 # CTX-INTERPRETATION: The string "PurchaseId" is a label used in a table
 # displaying purchase information, likely for identifying individual
@@ -5198,7 +5200,6 @@ msgstr "购买ID"
 #: services/static-webserver/client/source/class/osparc/desktop/credits/TransactionsTableModel.js:17
 #: services/static-webserver/client/source/class/osparc/desktop/credits/UsageTable.js:109
 #: services/static-webserver/client/source/class/osparc/jobs/SubRunsTable.js:111
-#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:77
 msgid "Credits"
 msgstr "积分"
 
@@ -5713,42 +5714,42 @@ msgstr "自动连接端口"
 # CTX-INTERPRETATION: The string "Language" appears as the title of a section
 # within a user preferences page, likely allowing the user to select their
 # preferred language for the application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:55
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:86
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:66
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:97
 msgid "Language"
 msgstr "语言"
 
 # CTX-INTERPRETATION: This string appears in the GeneralPage.js file, likely
 # within a user interface element that informs users about the AI-generated
 # nature of translations and potential inaccuracies.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:57
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:68
 msgid "Translations are AI-generated and may contain errors."
 msgstr "这些翻译由人工智能生成，可能包含错误。"
 
 # CTX-INTERPRETATION: The string "Credits Indicator" is used as a label for a
 # section within the GeneralPage settings, likely indicating a visual or
 # functional setting related to displaying or managing credits.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:94
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:105
 msgid "Credits Indicator"
 msgstr "信用指示器"
 
 # CTX-INTERPRETATION: The string "Always" appears in the GeneralPage.js file,
 # likely within a user interface element that allows the user to persistently
 # enable a specific feature or setting.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:106
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:117
 msgid "Always"
 msgstr "始终"
 
 # CTX-INTERPRETATION: The string "Warning" is used as a label within a user
 # interface, likely indicating a potential issue or caution to the user.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:109
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:120
 msgid "Warning"
 msgstr "警告"
 
 # CTX-INTERPRETATION: The string "Show indicator" is used as a label for a
 # button or checkbox within a user interface, likely controlling the
 # visibility of a wallet indicator on a preferences page.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:135
 msgid "Show indicator"
 msgstr "显示指示器"
 
@@ -5756,27 +5757,27 @@ msgstr "显示指示器"
 # within a user interface element that allows the user to set a threshold for
 # displaying a warning message when the user's credit balance falls below a
 # specified value.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:134
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:145
 msgid "Show warning when credits below"
 msgstr "在信用余额低于指定值时显示警告"
 
 # CTX-INTERPRETATION: This string appears in the 'GeneralPage' of the osparc
 # desktop preferences, likely related to configuring automatic shutdown
 # behavior for inactive simulation instances.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:142
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:153
 msgid "Automatic Shutdown of Idle Instances"
 msgstr "自动关闭闲置实例"
 
 # CTX-INTERPRETATION: This string is used in a user interface to specify the
 # inactivity time (in minutes) before the application closes automatically.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:156
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:167
 msgid "Idle time before closing (in minutes)"
 msgstr "在关闭前的闲置时间 (分钟)"
 
 # CTX-INTERPRETATION: The string "Low Disk Space Threshold" appears as a label
 # for a setting within a user interface, likely related to configuring a
 # warning threshold for low disk space availability.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:164
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:175
 msgid "Low Disk Space Threshold"
 msgstr "低磁盘空间阈值"
 
@@ -5784,35 +5785,35 @@ msgstr "低磁盘空间阈值"
 # likely as a tooltip or label associated with a setting that allows the user
 # to define a threshold for low disk space, indicating when a warning should
 # be displayed.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:165
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:176
 msgid "Set the warning Threshold for Low Disk Space availability"
 msgstr "设置低磁盘空间可用性的警告阈值"
 
 # CTX-INTERPRETATION: The string "Threshold (in GB)" is a label for a UI
 # element, likely a slider or input field, that allows the user to set a
 # threshold for disk usage in gigabytes within a preferences dialog.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:179
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:190
 msgid "Threshold (in GB)"
 msgstr "阈值 (以 GB 为单位)"
 
 # CTX-INTERPRETATION: The string "Privacy Settings" appears as the title of a
 # section within the general preferences settings page, allowing users to
 # manage their privacy options.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:185
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:196
 msgid "Privacy Settings"
 msgstr "隐私设置"
 
 # CTX-INTERPRETATION: The string appears within a user preferences page,
 # likely prompting the user to provide feedback or contribute to improving the
 # Sim4Life application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:186
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:197
 msgid "Help us improve Sim4Life user experience"
 msgstr "帮助我们改进 Sim4Life 用户体验"
 
 # CTX-INTERPRETATION: The string "Share usage data" appears as the label for a
 # checkbox within a user preferences settings page, allowing the user to opt-
 # in to sharing their application usage data.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:190
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:201
 msgid "Share usage data"
 msgstr "分享使用数据"
 
@@ -6818,6 +6819,15 @@ msgstr "编辑标签"
 #: services/static-webserver/client/source/class/osparc/form/tag/TagManager.js:42
 msgid "Apply Tags"
 msgstr "应用标签"
+
+# CTX-INTERPRETATION: This string appears within the TagManager class,
+# providing instructions to users on how to manage and apply tags for
+# organizing their data within the application.
+#: services/static-webserver/client/source/class/osparc/form/tag/TagManager.js:150
+msgid ""
+"Manage and apply tags to better organize your %1. Select from existing tags "
+"or create new ones, then save your changes when ready."
+msgstr "管理和应用标签，以便更好地组织您的数据 %1。从现有标签中选择或创建新的标签，然后随时保存更改。"
 
 # CTX-INTERPRETATION: The string "Function Id" appears as the label for a
 # button that copies the UUID of a function, likely within a user interface
@@ -8002,6 +8012,14 @@ msgstr "关于 oSPARC"
 msgid "About Product"
 msgstr "关于产品"
 
+# CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
+# menu item to display a customized message indicating the product name,
+# allowing users to access information about the specific product they are
+# using.
+#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
+msgid "About %1"
+msgstr "关于 %1"
+
 # CTX-INTERPRETATION: The string "License" is used as the label for a button
 # in a user menu, likely providing access to licensing information or a
 # license agreement.
@@ -8074,6 +8092,13 @@ msgstr "说明"
 #: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:237
 msgid "Preparing Inputs"
 msgstr "准备输入"
+
+# CTX-INTERPRETATION: The string "Outputs (%1)" is used within a slideshow
+# node to display the number of valid outputs processed, providing feedback to
+# the user.
+#: services/static-webserver/client/source/class/osparc/node/slideshow/BaseNodeView.js:433
+msgid "Outputs (%1)"
+msgstr "输出 (%1)"
 
 # CTX-INTERPRETATION: The string "New Outputs generated" appears in the
 # BaseNodeView class, likely indicating that new simulation outputs have been
@@ -8380,7 +8405,7 @@ msgstr "拒绝并发送"
 # CTX-INTERPRETATION: The string "Please enter a subject" appears in a form
 # related to sending emails or previewing approval/rejection processes,
 # prompting the user to provide a subject for the email or preview.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:211
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:215
 #: services/static-webserver/client/source/class/osparc/po/SendEmail.js:131
 msgid "Please enter a subject"
 msgstr "请输入主题"
@@ -8388,7 +8413,7 @@ msgstr "请输入主题"
 # CTX-INTERPRETATION: The string appears in the email content editor,
 # prompting the user to preview the email before sending, likely to avoid
 # errors or unintended consequences.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:218
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:222
 #: services/static-webserver/client/source/class/osparc/po/SendEmail.js:138
 msgid "Please preview the email before sending"
 msgstr "在发送之前，请预览电子邮件内容。"
@@ -8396,28 +8421,28 @@ msgstr "在发送之前，请预览电子邮件内容。"
 # CTX-INTERPRETATION: This string appears in the PreviewApprovalRejection.js
 # file, likely indicating that a user has approved a preview and an email
 # notification has been successfully sent.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:254
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:258
 msgid "User approved and email sent"
 msgstr "用户已批准并已发送电子邮件"
 
 # CTX-INTERPRETATION: This string appears in the PreviewApprovalRejection.js
 # file, likely indicating that a user has rejected a preview and an email
 # notification has been sent to the relevant parties.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:282
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:286
 msgid "User rejected and email sent"
 msgstr "用户已拒绝并已发送电子邮件"
 
 # CTX-INTERPRETATION: The string "User approved" appears in the context of a
 # user approving a preview or action within a scientific simulation
 # application, likely displayed in a user interface.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:300
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:304
 msgid "User approved"
 msgstr "用户已批准"
 
 # CTX-INTERPRETATION: The string "User rejected" appears in the context of a
 # user rejecting a preview or approval, likely within a user interface for a
 # scientific simulation application.
-#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:316
+#: services/static-webserver/client/source/class/osparc/po/PreviewApprovalRejection.js:320
 msgid "User rejected"
 msgstr "用户已拒绝"
 
@@ -8537,36 +8562,36 @@ msgstr "拒绝"
 # CTX-INTERPRETATION: The string "Preview Approve" appears as the label for a
 # button within a dialog window, likely used to preview an approval request
 # before formally approving it.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:401
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:409
 msgid "Preview Approve"
 msgstr "预览批准"
 
 # CTX-INTERPRETATION: This string is used as a title for a preview window that
 # displays an email invitation, likely within a user interface for managing
 # pending invitations.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:456
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:573
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:466
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:583
 msgid "Preview email"
 msgstr "预览邮件"
 
 # CTX-INTERPRETATION: The string "Move to another product" appears as a
 # tooltip for a button, likely used within a user interface for managing
 # products or items, possibly related to inventory or order processing.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:465
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:475
 msgid "Move to another product"
 msgstr "移动到另一个产品"
 
 # CTX-INTERPRETATION: The string "Select the target product:" appears within a
 # user interface, likely a form or dialog, where the user is prompted to
 # choose a specific product from a list or selection mechanism.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:476
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:486
 msgid "Select the target product:"
 msgstr "选择目标产品："
 
 # CTX-INTERPRETATION: The string "Move to Product" is used within a user
 # interface element, likely a dialog or window, to indicate the action of
 # assigning a user to a specific product.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:494
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:504
 msgid "Move to Product"
 msgstr "将用户添加到产品"
 
@@ -8574,7 +8599,7 @@ msgstr "将用户添加到产品"
 # specifically within the 'UsersPending' component, indicating that a user has
 # been successfully moved or transitioned to a different state within the
 # application.
-#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:534
+#: services/static-webserver/client/source/class/osparc/po/UsersPending.js:544
 msgid "User moved successfully"
 msgstr "用户已成功移动"
 
@@ -9036,7 +9061,7 @@ msgstr "研究小组/组织"
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface, possibly related to antenna design or wireless communication
 # settings within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:472
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:473
 msgid "Antenna Design for Wireless Communication"
 msgstr "无线通信的天线设计"
 
@@ -9044,56 +9069,56 @@ msgstr "无线通信的天线设计"
 # section related to bioelectronics, electroceuticals, and neuroprosthetics
 # within a scientific simulation application, possibly displayed in a user
 # interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:475
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:476
 msgid "Bioelectronics, Electroceuticals & Neuroprosthetics"
 msgstr "生物电子学、电疗和神经假肢"
 
 # CTX-INTERPRETATION: This string likely represents a category or section
 # title within a user interface, possibly related to managing exposure and
 # compliance settings within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:481
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:482
 msgid "Exposure & Compliance"
 msgstr "暴露与合规"
 
 # CTX-INTERPRETATION: The string "Focused Ultrasound" is likely a label or
 # identifier for a feature or setting related to focused ultrasound within the
 # application, possibly displayed in a user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:484
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:485
 msgid "Focused Ultrasound"
 msgstr "聚焦超声"
 
 # CTX-INTERPRETATION: This string is used within a user interface element,
 # likely a button or link, to refer to a section or feature related to 'In
 # Silico Trials' within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:487
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:488
 msgid "In <i>Silico</i> Trials"
 msgstr "在<i>体外</i>试验"
 
 # CTX-INTERPRETATION: The string "Implant Design" is likely a label or title
 # used within a user interface, possibly related to designing or configuring
 # medical implants, as indicated by the file path and surrounding code.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:490
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:491
 msgid "Implant Design"
 msgstr "植入物设计"
 
 # CTX-INTERPRETATION: This string is likely a label or title used within a
 # user interface, possibly related to thermal therapies or treatments, within
 # the Osparc product.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:502
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:503
 msgid "Thermal Therapies"
 msgstr "热疗法"
 
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface, possibly related to a section or feature describing wireless
 # power transfer systems, as indicated by the file path and surrounding code.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:505
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:506
 msgid "Wireless Power Transfer Systems"
 msgstr "无线电源传输系统"
 
 # CTX-INTERPRETATION: This string appears in a user interface element, likely
 # a label or title, related to vascular flow and perfusion analysis within a
 # scientific simulation application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:508
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:509
 msgid "Vascular Flow & Perfusion"
 msgstr "血管流量与灌注"
 
@@ -9808,6 +9833,16 @@ msgstr "任何拥有该链接的人都可以访问此资源 "
 msgid "Any logged-in user with the link can copy and open this "
 msgstr "任何已登录的用户，只要拥有该链接，就可以复制并打开这个。 "
 
+# CTX-INTERPRETATION: This string appears in the Collaborators.js file,
+# describing a section that displays user and organization access information,
+# including roles.
+#: services/static-webserver/client/source/class/osparc/share/Collaborators.js:305
+msgid ""
+"This section provides an overview of all users and organizations who have "
+"access to the %1 and their assigned roles. Depending on your permissions, "
+"you may be able to modify access or update roles."
+msgstr "此部分提供所有具有对%1及其分配角色的用户和组织的概述。根据您的权限，您可能可以修改访问或更新角色。"
+
 # CTX-INTERPRETATION: The string "Shared with:" appears within a user
 # interface element, likely indicating the collaborators or users with whom a
 # specific resource or data is shared.
@@ -10359,12 +10394,12 @@ msgstr "目前还没有消息"
 msgid "1 Message"
 msgstr "1条消息"
 
-# CTX-INTERPRETATION: The string " Messages" is used within the
-# ConversationPage.js file to dynamically update a label indicating the number
-# of messages in a conversation, likely for a user interface element.
+# CTX-INTERPRETATION: The string is used within the ConversationPage.js file
+# to display the number of messages in a conversation, likely as part of a
+# user interface element.
 #: services/static-webserver/client/source/class/osparc/study/ConversationPage.js:190
-msgid " Messages"
-msgstr "条信息"
+msgid "%1 Messages"
+msgstr "%1 条消息"
 
 # CTX-INTERPRETATION: The string "Add new conversation" appears as a tooltip
 # for a button that allows the user to create a new conversation within a
@@ -10384,12 +10419,7 @@ msgid ""
 "      - at least one computational app\n"
 "      - no dynamic apps\n"
 "    "
-msgstr ""
-"为了创建函数，流程需要：\n"
-"- 至少有一个参数和一个探测器（数字）\n"
-"- 至少有一个计算应用程序\n"
-"- 没有动态应用程序\n"
-"    "
+msgstr "\n为了创建函数，流程需要：\n- 至少有一个参数和一个探测器（数字）\n- 至少有一个计算应用程序\n- 没有动态应用程序\n    "
 
 # CTX-INTERPRETATION: The string "Exposed" is used in a UI component for a
 # scientific simulation application, likely indicating whether a specific
@@ -10458,6 +10488,13 @@ msgstr "有效期: 1 年"
 msgid "Rent"
 msgstr "租用"
 
+# CTX-INTERPRETATION: The string is used within a PricingUnitLicense class to
+# display the number of credits associated with a license, formatted for user-
+# friendly presentation.
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:77
+msgid "Credits: %1"
+msgstr "积分：%1"
+
 # CTX-INTERPRETATION: This string is part of a function that constructs a
 # message informing the user about the availability of a rental unit,
 # specifically the expiration date of the license.
@@ -10472,12 +10509,12 @@ msgstr "将在...可用 "
 msgid "Selected"
 msgstr "已选择"
 
-# CTX-INTERPRETATION: The string "Credits/h" is used within a pricing unit
-# tier, likely to display the cost of a service in terms of credits per hour,
-# based on the surrounding code context.
+# CTX-INTERPRETATION: This string is used within the `PricingUnitTier` class
+# to display a cost value in terms of 'Credits/h', using a localized format
+# with a placeholder for the numerical value.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:96
-msgid "Credits/h"
-msgstr "每小时信用"
+msgid "Credits/h: %1"
+msgstr "积分/小时：%1"
 
 # CTX-INTERPRETATION: The string "EC2" is used within a function to format and
 # display EC2-related pricing information, likely as part of a user interface
@@ -10673,7 +10710,7 @@ msgstr "预约电话"
 msgid ""
 "\n"
 "- Topic: %1"
-msgstr "- 主题: %1"
+msgstr "\n- 主题: %1"
 
 # CTX-INTERPRETATION: This string is used within the Conversation.js file to
 # display additional information related to a call, specifically when
@@ -10682,7 +10719,7 @@ msgstr "- 主题: %1"
 msgid ""
 "\n"
 "- Extra Info: %1"
-msgstr "- 额外信息：%1"
+msgstr "\n- 额外信息：%1"
 
 # CTX-INTERPRETATION: This string is part of a greeting message used in a
 # conversational interface within the osparc application, likely to initiate a
@@ -10734,7 +10771,6 @@ msgstr ""
 # application.
 #: services/static-webserver/client/source/class/osparc/support/ConversationListItem.js:89
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:94
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:231
 msgid "Unread"
 msgstr "未读"
 
@@ -10742,7 +10778,6 @@ msgstr "未读"
 # indicating a conversation or chat that has been archived.
 #: services/static-webserver/client/source/class/osparc/support/ConversationListItem.js:98
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:112
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:237
 msgid "Archived"
 msgstr "已存档"
 
@@ -10839,7 +10874,7 @@ msgstr "项目ID：%1"
 # referencing or tracking related issues.
 #: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:227
 msgid "Fogbugz Case: %1"
-msgstr "\"Fogbugz 案例：%1\""
+msgstr "Fogbugz 案例：%1"
 
 # CTX-INTERPRETATION: The string "Show all conversations" is likely a tooltip
 # or label associated with a button or control that allows the user to view
@@ -10861,7 +10896,6 @@ msgstr "仅显示未读对话"
 # button that allows users to filter conversations based on their active
 # status.
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:103
-#: services/static-webserver/client/source/class/osparc/support/Conversations.js:234
 msgid "Active"
 msgstr "活动"
 
@@ -10914,6 +10948,34 @@ msgstr "无活动对话"
 #: services/static-webserver/client/source/class/osparc/support/Conversations.js:210
 msgid "No archived conversations"
 msgstr "没有存档的对话"
+
+# CTX-INTERPRETATION: The string "All (%1)" is used within the 'Conversations'
+# class to display the number of all conversations in a filtered view, likely
+# as a label for a button or control.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:228
+msgid "All (%1)"
+msgstr "全部 (%1)"
+
+# CTX-INTERPRETATION: The string "Unread (%1)" is used within the
+# Conversations.js file to display a label for an 'Unread' filter button,
+# indicating the number of unread messages.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:231
+msgid "Unread (%1)"
+msgstr "未读 (%1)"
+
+# CTX-INTERPRETATION: The string "Active (%1)" is used to display the active
+# status of a filter within a user interface, likely indicating whether a
+# specific filter or setting is currently enabled.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:234
+msgid "Active (%1)"
+msgstr "活动 (%1)"
+
+# CTX-INTERPRETATION: This string is used within the Conversations.js file to
+# display the number of archived conversations in a user interface element,
+# likely for filtering or displaying related information.
+#: services/static-webserver/client/source/class/osparc/support/Conversations.js:237
+msgid "Archived (%1)"
+msgstr "已存档 (%1)"
 
 # CTX-INTERPRETATION: The string "Learning" is used as a label for a section
 # within a user interface, likely indicating a section related to learning or
@@ -11113,12 +11175,12 @@ msgstr "跳过"
 msgid "To Tours"
 msgstr "前往旅游"
 
-# CTX-INTERPRETATION: The string "Step: " is part of a function that displays
-# the current simulation step and the total number of steps in a simplified
-# Chinese user interface, likely for a scientific simulation application.
+# CTX-INTERPRETATION: The string is used within the 'Step.js' file to display
+# the current step number and total steps in a tour or simulation interface,
+# likely for user guidance.
 #: services/static-webserver/client/source/class/osparc/tours/Step.js:209
-msgid "Step: "
-msgstr "步骤： "
+msgid "Step: %1/%2"
+msgstr "步骤：%1/%2"
 
 # CTX-INTERPRETATION: The string "by" likely represents the author or
 # contributor of a data record or result, appearing within a UI element
@@ -11142,12 +11204,11 @@ msgstr "由我"
 msgid "Select a file"
 msgstr "选择一个文件"
 
-# CTX-INTERPRETATION: This string is part of a tooltip indicating the software
-# is powered by OSPARC, likely displayed when a user interacts with a specific
-# UI element or section of the application.
+# CTX-INTERPRETATION: This string is part of the 'PoweredByOsparc' component,
+# likely used to display attribution information for the OSPARC software.
 #: services/static-webserver/client/source/class/osparc/ui/basic/PoweredByOsparc.js:32
-msgid "powered by "
-msgstr "由 OSPARC 提供支持 "
+msgid "powered by %1"
+msgstr "由 %1 提供支持"
 
 # CTX-INTERPRETATION: The string "Minimum items: " is used within a form field
 # to display the minimum number of items required for a specific data type,
@@ -11363,7 +11424,7 @@ msgstr "机构"
 # CTX-INTERPRETATION: This string appears within the LanguageManager class,
 # indicating a failure during a language update operation, likely within a
 # web-based user interface.
-#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:136
+#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:140
 msgid "Unsuccessful language update"
 msgstr "语言更新失败"
 
@@ -12530,6 +12591,12 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "一旦付款验证成功，信用额将添加到您的信用账户中，并可立即使用。"
+
+# CTX-INTERPRETATION: The string " Messages" is used within the
+# ConversationPage.js file to dynamically update a label indicating the number
+# of messages in a conversation, likely for a user interface element.
+#~ msgid " Messages"
+#~ msgstr "条信息"
 
 # CTX-INTERPRETATION: The string appears within the OrganizationsList
 # component, explaining the concept of an organization and its features to the

@@ -38,7 +38,7 @@ class ResponseObjectType(StrEnum):
     RESPONSE = "response"
 
 
-ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2"]
+ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2", "gpt-5.6-sol"]
 
 
 class ResponseFormatTextType(StrEnum):

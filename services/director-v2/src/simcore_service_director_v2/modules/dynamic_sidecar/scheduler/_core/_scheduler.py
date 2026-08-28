@@ -56,6 +56,7 @@ from .....modules.instrumentation import (
     get_instrumentation,
     get_metrics_labels,
     get_rate,
+    get_running_services_labels,
 )
 from .....utils.db import get_repository
 from ...api_client import SidecarsClient, get_sidecars_client
@@ -223,6 +224,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         request_simcore_user_agent: str,
         *,
         can_save: bool,
+        version_display: str | None = None,
     ) -> None:
         """Invoked before the service is started"""
         groups_extra_properties = get_repository(self.app, GroupsExtraPropertiesRepository)
@@ -239,6 +241,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
             requires_data_mounting=user_extra_properties.mount_data,
+            version_display=version_display,
         )
         scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = arrow.utcnow().datetime
 
@@ -550,6 +553,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             async with self._lock:
                 for service_name in self._to_observe:
                     self._enqueue_observation_from_service_name(service_name)
+                get_instrumentation(self.app).dynamic_sidecar_metrics.update_running_services_count(
+                    get_running_services_labels(scheduler_data) for scheduler_data in self._to_observe.values()
+                )
         except Exception:  # pylint: disable=broad-except
             _logger.exception("Unexpected error while scheduling sidecars observation")
 

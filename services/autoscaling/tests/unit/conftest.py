@@ -898,6 +898,7 @@ def fake_dask_job_id(
             user_id=user_id,
             project_id=project_id,
             node_id=faker.uuid4(cast_to=None),
+            run_id=faker.pyint(min_value=1),
         )
 
     return _

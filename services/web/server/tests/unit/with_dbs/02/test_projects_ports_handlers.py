@@ -244,6 +244,7 @@ async def test_io_workflow(
 )
 async def test_clone_project_and_set_inputs(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, Any],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

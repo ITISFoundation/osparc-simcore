@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import RunMetadataDict
+from ...models.comp_runs import Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.rabbitmq import publish_pipeline_scheduling_state, publish_project_log
 from ..db import get_db_engine
@@ -115,7 +115,7 @@ async def stop_pipeline(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    iteration: int | None = None,
+    iteration: Iteration | None = None,
 ) -> None:
     """Stops a pipeline
 

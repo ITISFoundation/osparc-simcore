@@ -5,11 +5,20 @@
 # pylint: disable=no-member
 
 
+import pickle
 from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from common_library.errors_classes import OsparcErrorMixin
+
+
+class _PickleableError(OsparcErrorMixin, Exception):
+    msg_template = "Failed for {resource_id}"
+
+    def __init__(self, *, resource_id: str, **ctx: Any) -> None:
+        super().__init__(**ctx)
+        self.resource_id = resource_id
 
 
 def test_get_full_class_name():
@@ -98,6 +107,16 @@ def test_error_with_constructor():
     # the autocompletion does not see this
     assert hasattr(error, "something_else")
     assert error.something_else == "yes"
+
+
+def test_error_with_keyword_only_constructor_is_pickleable():
+    error = _PickleableError(resource_id="resource-42", operation="copy")
+
+    reconstructed_error = pickle.loads(pickle.dumps(error))  # noqa: S301
+
+    assert type(reconstructed_error) is type(error)
+    assert str(reconstructed_error) == str(error)
+    assert reconstructed_error.error_context() == error.error_context()
 
 
 @pytest.mark.parametrize(

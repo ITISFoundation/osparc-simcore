@@ -9,7 +9,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi_pagination import Page, Params
+from fastapi_pagination import LimitOffsetPage, LimitOffsetParams
 from servicelib.aiohttp import status
 from simcore_service_storage.modules.datcore_adapter.datcore_adapter_settings import (
     DatcoreAdapterSettings,
@@ -41,7 +41,9 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
         list_datasets_re = re.compile(r"/datasets")
         respx_mocker.get(list_datasets_re, name="list_datasets").respond(
             status.HTTP_200_OK,
-            json=Page.create(items=[], params=Params(size=10), total=0).model_dump(mode="json"),
+            json=LimitOffsetPage.create(items=[], params=LimitOffsetParams(limit=10, offset=0), total=0).model_dump(
+                mode="json"
+            ),
         )
 
         def _create_download_link(request, file_id):

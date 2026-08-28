@@ -12,7 +12,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import LegacyState
+from models_library.service_settings_labels import LegacyState, UserPreferencesVersionSource
 from models_library.services import DynamicServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
 from pydantic import (
@@ -137,6 +137,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DY_SIDECAR_USER_PREFERENCES_PATH: Annotated[
         Path | None, Field(description="path where the user preferences should be saved")
     ] = None
+    DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE: Annotated[
+        UserPreferencesVersionSource,
+        Field(description="selects which resolved version is used to namespace saved user preferences"),
+    ]
     DY_SIDECAR_STATE_EXCLUDE: Annotated[
         set[str], Field(description="list of patterns to exclude files when saving states")
     ]
@@ -179,6 +183,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DY_SIDECAR_SERVICE_KEY: DynamicServiceKey | None = None
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
+    DY_SIDECAR_SERVICE_VERSION_DISPLAY: str | None = None
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
     NODE_PORTS_STORAGE_AUTH: Annotated[

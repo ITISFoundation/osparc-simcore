@@ -4,17 +4,21 @@
 
 
 from collections.abc import AsyncIterable, Callable
+from contextlib import suppress
 
 import pytest
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.fastapi.rabbitmq import get_rabbitmq_client, setup_rabbit
+from servicelib.fastapi.errors import ApplicationStateError
+from servicelib.fastapi.rabbitmq import get_rabbitmq_client
+from servicelib.fastapi.rabbitmq_lifespan import configure_rabbitmq_client
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from tenacity import AsyncRetrying
@@ -71,14 +75,19 @@ def enabled_rabbitmq(rabbit_env_vars_dict: EnvVarsDict, monkeypatch: pytest.Monk
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterable[FastAPI]:
+async def initialized_app(is_pdb_enabled: bool) -> AsyncIterable[FastAPI]:
     rabbit_settings: RabbitSettings | None = None
-    try:
+    with suppress(ValidationError):
         rabbit_settings = RabbitSettings.create_from_envs()
-        setup_rabbit(app=app, settings=rabbit_settings, name="my_rabbitmq_client")
-    except ValidationError:
-        pass
-    async with LifespanManager(
+
+    app_lifespan = LifespanManager()
+    configure_rabbitmq_client(
+        app_lifespan,
+        settings=rabbit_settings,
+        client_name="my_rabbitmq_client",
+    )
+    app = FastAPI(lifespan=app_lifespan)
+    async with ASGILifespanManager(
         app=app,
         startup_timeout=None if is_pdb_enabled else 10,
         shutdown_timeout=None if is_pdb_enabled else 10,
@@ -90,7 +99,8 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
     disabled_rabbitmq: None,
     initialized_app: FastAPI,
 ):
-    with pytest.raises(AttributeError):
+    assert initialized_app.state.rabbitmq_client is None
+    with pytest.raises(ApplicationStateError):
         get_rabbitmq_client(initialized_app)
 
 
@@ -125,7 +135,8 @@ async def test_post_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")

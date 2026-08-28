@@ -14,10 +14,15 @@ This is a multi-project monorepo with two main groups of projects in the folders
 - Do not use `class Test...` containers for grouping tests.
 - When flattening or adding tests, use descriptive function name prefixes (e.g. `test_ordering_query_params_defaults_*`) to preserve grouping intent.
 - Do not add return type annotations to `test_*` functions. All non-test helpers must be fully annotated.
+- Prefer a weak DRY approach in tests: reduce repetition when it helps readability, but DO NOT ABSTRACT AWAY INTENT.
+  - When multiple tests differ only by inputs/expected outputs, consider `pytest.mark.parametrize` if the case table makes it clearer what behavior is being verified.
+  - Keep separate explicit tests when parametrization would hide the scenario or make failures harder to understand. Prefer clarity over maximal DRY.
 
 ### Fixtures
 
 - Reuse existing fixtures and helpers before creating new ones. Check `packages/pytest-simcore` first.
+- When the same setup/arrange block is repeated across tests, extract it into a fixture with a descriptive name so intent is clear at the call site.
+- Small inline repetition is acceptable when extracting a fixture would add indirection and make the individual test harder to read. Prefer clarity over maximal DRY.
 - If a fixture is used across multiple files within the same project, move it to the local `conftest.py`.
 - If a fixture is useful across multiple projects, move it to `pytest-simcore` instead.
 
@@ -49,4 +54,4 @@ This is a multi-project monorepo with two main groups of projects in the folders
 See the [`run-python-tests`](../skills/run-python-tests/SKILL.md) skill for the full step-by-step procedure.
 
 ---
-*Last updated: 2026-04-23*
+*Last updated: 2026-08-19*

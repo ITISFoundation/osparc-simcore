@@ -1,8 +1,9 @@
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
@@ -35,6 +36,12 @@ def _on_app_shutdown(
     return _stop
 
 
-def setup(app: FastAPI) -> None:
-    app.add_event_handler("startup", _on_app_startup(app))
-    app.add_event_handler("shutdown", _on_app_shutdown(app))
+def configure_fire_and_forget(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _fire_and_forget_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        try:
+            await _on_app_startup(app)()
+            yield {}
+        finally:
+            await _on_app_shutdown(app)()
+
+    app_lifespan.add(_fire_and_forget_lifespan)

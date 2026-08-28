@@ -13,6 +13,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from deepdiff import DeepDiff
+from models_library.projects_nodes import PartialNode
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -23,6 +24,10 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects import (
+    _projects_nodes_repository as projects_nodes_repository,
+)
+from simcore_service_webserver.projects import _projects_service as projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 
 API_PREFIX = "/" + api_version_prefix
@@ -240,6 +245,65 @@ async def test_patch_project_node_ui_remove_marker(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_computational_project_node_notifies_only_updated_node(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mocked_notify_project_node_update,
+):
+    node_id = next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"])
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+
+    resp = await client.patch(f"{base_url}", json={"label": "updated label", "runHash": None})
+
+    await assert_status(resp, expected)
+    mocked_notify_project_node_update.assert_awaited_once()
+    notified_project = mocked_notify_project_node_update.await_args.args[1]
+    assert set(notified_project["workbench"]) == {node_id}
+    assert notified_project["workbench"][node_id]["label"] == "updated label"
+    assert notified_project["workbench"][node_id]["runHash"] is None
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_project_node_notifies_outputs_updated_during_pipeline_sync(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mocked_notify_project_node_update,
+):
+    node_id = next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"])
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    outputs_updated_during_pipeline_sync = {"output_1": 42}
+
+    async def _update_outputs_during_pipeline_sync(*args: object, **kwargs: object) -> None:
+        await projects_nodes_repository.update(
+            client.app,
+            project_id=user_project["uuid"],
+            node_id=node_id,
+            partial_node=PartialNode.model_construct(outputs=outputs_updated_during_pipeline_sync),
+        )
+
+    mocked_dynamic_services_interface[
+        "director_v2.api.create_or_update_pipeline"
+    ].side_effect = _update_outputs_during_pipeline_sync
+
+    resp = await client.patch(f"{base_url}", json={"label": "updated label"})
+
+    await assert_status(resp, expected)
+    mocked_notify_project_node_update.assert_awaited_once()
+    notified_project = mocked_notify_project_node_update.await_args.args[1]
+    assert notified_project["workbench"][node_id]["outputs"] == outputs_updated_during_pipeline_sync
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_notifies(
     mocker: MockerFixture,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -271,16 +335,21 @@ async def test_patch_project_node_notifies(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_inputs_notifies(
+    mocker: MockerFixture,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mocked_notify_project_node_update,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+    notify_project_nodes_update = mocker.spy(projects_service, "notify_project_nodes_update")
+    list_project_groups = mocker.spy(
+        projects_service._groups_service,  # noqa: SLF001
+        "list_project_groups_by_project_without_checking_permissions",
+    )
 
     # inputs
     _patch_inputs = {
@@ -296,10 +365,11 @@ async def test_patch_project_node_inputs_notifies(
         data=json.dumps(_patch_inputs),
     )
     await assert_status(resp, expected)
-    assert mocked_notify_project_node_update.call_count > 1
-    # 1 message per node updated
+    notify_project_nodes_update.assert_awaited_once()
+    list_project_groups.assert_awaited_once()
+    assert notify_project_nodes_update.await_args is not None
     assert not DeepDiff(
-        [call_args[0][2] for call_args in mocked_notify_project_node_update.await_args_list],
+        [f"{node_id}" for node_id in notify_project_nodes_update.await_args.args[2]],
         list(user_project["workbench"].keys()),
         ignore_order=True,
     )

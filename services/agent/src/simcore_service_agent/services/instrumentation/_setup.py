@@ -1,23 +1,32 @@
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.fastapi.monitoring import (
-    setup_prometheus_instrumentation,
+    configure_prometheus_instrumentation,
 )
 
 from ...core.settings import ApplicationSettings
 from ._models import AgentInstrumentation
 
 
-def setup_instrumentation(app: FastAPI) -> None:
+def configure_instrumentation(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+) -> None:
     settings: ApplicationSettings = app.state.settings
     if not settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
         return
 
-    registry = setup_prometheus_instrumentation(app)
+    async def _instrumentation_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
+        app.state.instrumentation = AgentInstrumentation(registry=lifespan_app.state.prometheus_metrics.registry)
+        yield {}
 
-    async def on_startup() -> None:
-        app.state.instrumentation = AgentInstrumentation(registry=registry)
-
-    app.add_event_handler("startup", on_startup)
+    configure_prometheus_instrumentation(
+        app,
+        app_lifespan,
+        _instrumentation_lifespan,
+    )
 
 
 def get_instrumentation(app: FastAPI) -> AgentInstrumentation:

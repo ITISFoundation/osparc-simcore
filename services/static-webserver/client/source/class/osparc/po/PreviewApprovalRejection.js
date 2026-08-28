@@ -43,7 +43,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
 
     invitationUrl: {
       check: "String",
-      nullable: false,
+      nullable: true,
       init: null,
       apply: "__applyInvitationUrl",
     },
@@ -183,8 +183,12 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
     },
 
     __applyInvitationUrl: function(value) {
-      const invitationUrlField = this.getChildControl("invitation-url");
-      invitationUrlField.setValue(value);
+      const invitationUrlContainer = this.getChildControl("invitation-url-container");
+      invitationUrlContainer.setVisibility(value ? "visible" : "excluded");
+      if (value) {
+        const invitationUrlField = this.getChildControl("invitation-url");
+        invitationUrlField.setValue(value);
+      }
     },
 
     __applySubject: function(value) {

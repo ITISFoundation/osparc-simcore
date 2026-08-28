@@ -74,7 +74,7 @@ qx.Class.define("osparc.study.PricingUnitLicense", {
       // add price info
       const price = this.getChildControl("price");
       pricingUnit.bind("cost", price, "value", {
-        converter: v => this.tr("Credits") + ": " + osparc.utils.Utils.addWhiteSpaces(v)
+        converter: v => this.tr("Credits: %1", osparc.utils.Utils.addWhiteSpaces(v))
       });
 
       // add edit button

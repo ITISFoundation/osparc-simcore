@@ -75,6 +75,7 @@ from simcore_service_webserver.constants import (
     INDEX_RESOURCE_NAME,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
@@ -457,9 +458,22 @@ async def mocked_dynamic_services_interface(
         )
 
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
+        f"{director_v2_service.__name__}.create_or_update_pipeline",
         autospec=True,
         return_value=None,
+    )
+    mock["director_v2.api.delete_pipeline"] = mocker.patch(
+        f"{director_v2_service.__name__}.delete_pipeline",
+        autospec=True,
+    )
+    mock["director_v2.api.is_pipeline_running"] = mocker.patch(
+        f"{director_v2_service.__name__}.is_pipeline_running",
+        autospec=True,
+        return_value=False,
+    )
+    mock["director_v2.api.stop_pipeline"] = mocker.patch(
+        f"{director_v2_service.__name__}.stop_pipeline",
+        autospec=True,
     )
     return mock
 

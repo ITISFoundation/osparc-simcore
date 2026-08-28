@@ -28,6 +28,7 @@ from ..modules.clusters import (
     get_cluster_workers,
     set_instance_heartbeat,
 )
+from ..modules.instrumentation import get_instrumentation, has_instrumentation
 from ..utils.clusters import create_deploy_cluster_stack_script
 from ..utils.dask import get_scheduler_auth, get_scheduler_url
 from ..utils.ec2 import (
@@ -274,3 +275,8 @@ async def check_clusters(app: FastAPI) -> None:
 
     broken = disconnected - starting
     await _handle_broken_clusters(app, broken)
+
+    if has_instrumentation(app):
+        get_instrumentation(app).primary_instances_metrics.update_from_clusters(
+            starting=starting, connected=connected, busy=busy_instances, broken=broken
+        )

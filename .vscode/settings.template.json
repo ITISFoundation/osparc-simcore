@@ -60,6 +60,11 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
+  "[jinja-html]": {
+    "editor.formatOnSave": false,
+    "editor.rulers": [],
+    "editor.wordWrap": "off"
+  },
   "eslint.useFlatConfig": false,
   "eslint.validate": [
     "javascript"

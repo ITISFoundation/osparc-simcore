@@ -179,6 +179,7 @@ async def login(request: web.Request):
         user_name=user["name"],
         product_name=product.name,
         host=request.host,
+        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         user_id=user["id"],
         locale=get_locale_or_none(request),
     )

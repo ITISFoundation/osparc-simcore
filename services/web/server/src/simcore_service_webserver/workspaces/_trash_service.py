@@ -101,6 +101,7 @@ async def _list_root_child_projects(
             app,
             user_id=user_id,
             product_name=product_name,
+            include_states=False,
             show_hidden=False,
             workspace_id=workspace_id,
             project_type=ProjectTypeAPI.all,

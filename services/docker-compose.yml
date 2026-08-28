@@ -888,8 +888,6 @@ services:
         - *redis_settings
         - *tracing_open_telemetry_environments
 
-      CATALOG_HOST: ${CATALOG_HOST}
-      CATALOG_PORT: ${CATALOG_PORT}
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
 
