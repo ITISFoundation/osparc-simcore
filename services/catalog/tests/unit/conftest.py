@@ -55,7 +55,6 @@ pytest_plugins = [
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
-    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
 
