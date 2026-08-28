@@ -573,7 +573,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
             assert isinstance(sorted_dict["task_template"]["container_spec"]["env"][key], str)
             unsorted_list = json.loads(sorted_dict["task_template"]["container_spec"]["env"][key])
             assert isinstance(unsorted_list, list)
-            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(unsorted_list.sort())
+            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(sorted(unsorted_list))
     assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
 
     assert fake_service_specifications
