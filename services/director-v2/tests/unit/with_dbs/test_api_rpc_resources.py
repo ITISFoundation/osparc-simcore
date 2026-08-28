@@ -153,7 +153,7 @@ async def test_rpc_get_helper_containers_resource_limits(
         with_rclone=True,
         max_user_service_container_memory=max_user_service_container_memory,
     )
-    assert cpu == expected_cpu
+    assert cpu.cores == expected_cpu
     assert ram == expected_ram
-    assert cpu > 0
+    assert cpu.cores > 0
     assert ram > 0

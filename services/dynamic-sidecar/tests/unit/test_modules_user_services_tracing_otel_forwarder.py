@@ -148,8 +148,9 @@ def test_build_forwarder_container_config(
     assert host_config["RestartPolicy"] == {"Name": "unless-stopped"}
     # resource caps (Docker Engine API equivalents of compose mem_limit/cpus/cpu_shares)
     assert host_config["Memory"] == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT
-    assert host_config["NanoCpus"] == int(
-        user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _otel_forwarder._NANO_CPUS_PER_CORE  # noqa: SLF001
+    assert (
+        host_config["NanoCpus"]
+        == user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT.to_nano_cpus()
     )
     assert config["Env"] == [
         f"OTEL_COLLECTOR_CONFIG={_otel_forwarder._generate_forwarder_config(platform_tracing_settings_stub)}"  # noqa: SLF001

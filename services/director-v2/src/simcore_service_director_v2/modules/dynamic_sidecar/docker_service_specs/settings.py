@@ -87,13 +87,13 @@ def compute_helper_containers_resources(
     ram = 0
 
     egress_proxy_settings = dynamic_services_settings.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
-    cpu += egress_proxy_count * egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT
+    cpu += egress_proxy_count * egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT.cores
     ram += egress_proxy_count * int(egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT)
 
     if with_tracing:
         tracing_settings = dynamic_services_settings.DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG
         # otel collector (injected in compose) + otel forwarder (created via docker API)
-        cpu += 2 * tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT
+        cpu += 2 * tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT.cores
         ram += 2 * int(tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT)
 
     if with_rclone:

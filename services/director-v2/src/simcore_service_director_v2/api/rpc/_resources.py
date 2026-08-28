@@ -9,6 +9,7 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2.resources import (
     HelperContainersCpuLimit,
     HelperContainersRamLimit,
 )
+from settings_library.basic_types import TotalCpuCores
 
 from ...core.settings import AppSettings
 from ...modules.catalog import CatalogClient
@@ -61,4 +62,4 @@ async def get_helper_containers_resource_limits(
         with_rclone=user_extra_properties.mount_data,
         max_user_service_container_memory=max_user_service_container_memory,
     )
-    return cpu, TypeAdapter(ByteSize).validate_python(ram)
+    return TotalCpuCores(cores=cpu), TypeAdapter(ByteSize).validate_python(ram)

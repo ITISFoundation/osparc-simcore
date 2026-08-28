@@ -1,8 +1,15 @@
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Any, Final
 
 from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from pydantic import Field, StringConstraints
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    model_serializer,
+    model_validator,
+)
 
 assert issubclass(LogLevel, Enum)  # nosec
 assert issubclass(BootModeEnum, Enum)  # nosec
@@ -20,12 +27,45 @@ type PortInt = Annotated[int, Field(gt=0, lt=65535)]
 type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
 
 
-# CPU cores allocated to a container. 0 is excluded: docker interprets it as "unlimited",
-# which would silently disagree with any code accounting for a container's cost.
-type CpuCores = Annotated[float, Field(gt=0)]
+_NANO_CPUS_PER_CORE: Final[int] = 10**9
 
-# same unit, for sums over a set of containers, where 0 means "no containers"
-type TotalCpuCores = Annotated[float, Field(ge=0)]
+
+class CpuCores(BaseModel):
+    """CPU cores allocated to a container.
+
+    0 is excluded: docker interprets it as "unlimited", which would silently
+    disagree with any code accounting for a container's cost.
+    """
+
+    cores: Annotated[float, Field(gt=0)]
+
+    model_config = ConfigDict(frozen=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_plain_number(cls, value: Any) -> Any:
+        # settings arrive from env vars as scalars, e.g. DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT=0.1
+        if isinstance(value, int | float | str):
+            return {"cores": value}
+        return value
+
+    @model_serializer
+    def _serialize_as_number(self) -> float:
+        # keeps env-var/JSON round-trips scalar, e.g. {"..._CPU_LIMIT": 0.1}
+        return self.cores
+
+    def to_nano_cpus(self) -> int:
+        """the docker API expresses a CPU quota as NanoCPUs; labels and compose `cpus` stay in cores"""
+        return int(self.cores * _NANO_CPUS_PER_CORE)
+
+    def __str__(self) -> str:
+        return f"{self.cores}"
+
+
+class TotalCpuCores(CpuCores):
+    """Same unit, for sums over a set of containers, where 0 means "no containers"."""
+
+    cores: Annotated[float, Field(ge=0)]
 
 
 # e.g. 'v5'

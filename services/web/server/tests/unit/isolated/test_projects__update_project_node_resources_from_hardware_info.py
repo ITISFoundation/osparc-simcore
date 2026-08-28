@@ -18,6 +18,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.docker_utils import estimate_dynamic_sidecar_resources_from_ec2_instance
+from settings_library.basic_types import TotalCpuCores
 from simcore_service_webserver.projects._projects_service import (
     update_project_node_resources_from_hardware_info,
 )
@@ -93,9 +94,15 @@ def mock_rpc_calls(
 @pytest.mark.parametrize(
     "helper_containers_overhead",
     [
-        pytest.param((7.5, TypeAdapter(ByteSize).validate_python("1MiB")), id="cpu_overhead_too_large"),
-        pytest.param((0.1, TypeAdapter(ByteSize).validate_python("13GiB")), id="ram_overhead_too_large"),
-        pytest.param((7.5, TypeAdapter(ByteSize).validate_python("13GiB")), id="both_overheads_too_large"),
+        pytest.param(
+            (TotalCpuCores(cores=7.5), TypeAdapter(ByteSize).validate_python("1MiB")), id="cpu_overhead_too_large"
+        ),
+        pytest.param(
+            (TotalCpuCores(cores=0.1), TypeAdapter(ByteSize).validate_python("13GiB")), id="ram_overhead_too_large"
+        ),
+        pytest.param(
+            (TotalCpuCores(cores=7.5), TypeAdapter(ByteSize).validate_python("13GiB")), id="both_overheads_too_large"
+        ),
     ],
 )
 async def test_raises_when_helper_containers_leave_insufficient_resources(

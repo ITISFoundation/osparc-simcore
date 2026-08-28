@@ -24,6 +24,7 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
+from settings_library.basic_types import TotalCpuCores
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -139,7 +140,7 @@ def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixtu
 def mocked_director_v2_service_get_helper_containers_resource_limits(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_webserver.projects._projects_service.get_helper_containers_resource_limits",
-        return_value=(0.1, TypeAdapter(ByteSize).validate_python("256MiB")),
+        return_value=(TotalCpuCores(cores=0.1), TypeAdapter(ByteSize).validate_python("256MiB")),
     )
 
 

@@ -836,7 +836,7 @@ async def update_project_node_resources_from_hardware_info(
             service_version=service_version,
             max_user_service_container_memory=TypeAdapter(ByteSize).validate_python(new_ram_value),
         )
-        new_cpus_value = new_cpus_value - cpu_overhead
+        new_cpus_value = new_cpus_value - cpu_overhead.cores
         new_ram_value = int(new_ram_value - ram_overhead)
 
         if new_cpus_value < _MIN_NUM_CPUS_AFTER_HELPER_CONTAINERS or new_ram_value < _MIN_RAM_AFTER_HELPER_CONTAINERS:

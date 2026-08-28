@@ -1,7 +1,6 @@
 from typing import Any
 
 from models_library.services_metadata_runtime import SimcoreContainerLabels
-from models_library.services_resources import GIGA
 from servicelib.common_headers import X_SIMCORE_USER_AGENT
 from settings_library import webserver
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -137,7 +136,7 @@ def get_dynamic_proxy_spec(
             simcore_user_agent=scheduler_data.request_simcore_user_agent,
             swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
             memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT,
-            cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT,
+            cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT.cores,
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
         "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
@@ -158,7 +157,7 @@ def get_dynamic_proxy_spec(
                     simcore_user_agent=scheduler_data.request_simcore_user_agent,
                     swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
                     memory_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT,
-                    cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT * GIGA,
+                    cpu_limit=proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT.cores,
                 ).to_simcore_runtime_docker_labels(),
                 "Command": [
                     "sh",
@@ -182,11 +181,11 @@ def get_dynamic_proxy_spec(
             "Resources": {
                 "Reservations": {
                     "MemoryBytes": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION),
-                    "NanoCPUs": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION * GIGA),
+                    "NanoCPUs": proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION.to_nano_cpus(),
                 },
                 "Limits": {
                     "MemoryBytes": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT),
-                    "NanoCPUs": int(proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT * GIGA),
+                    "NanoCPUs": proxy_settings.DYNAMIC_SIDECAR_PROXY_CPU_LIMIT.to_nano_cpus(),
                 },
             },
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
