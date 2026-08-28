@@ -118,7 +118,7 @@ async def enable_data_mounting(
         )
 
 
-async def test_rpc_get_helper_containers_resources(
+async def test_rpc_get_helper_containers_resource_limits(
     initialized_app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     create_registered_user: Callable[..., dict[str, Any]],
@@ -132,7 +132,7 @@ async def test_rpc_get_helper_containers_resources(
 
     max_user_service_container_memory = TypeAdapter(ByteSize).validate_python("2GiB")
 
-    cpu, ram = await rpc_resources.get_helper_containers_resources(
+    cpu, ram = await rpc_resources.get_helper_containers_resource_limits(
         rpc_client,
         user_id=user["id"],
         product_name=product_name,

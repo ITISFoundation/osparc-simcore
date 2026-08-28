@@ -136,9 +136,9 @@ def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixtu
 
 
 @pytest.fixture
-def mocked_director_v2_service_get_helper_containers_resources(mocker: MockerFixture) -> None:
+def mocked_director_v2_service_get_helper_containers_resource_limits(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service.get_helper_containers_resources",
+        "simcore_service_webserver.projects._projects_service.get_helper_containers_resource_limits",
         return_value=(0.1, TypeAdapter(ByteSize).validate_python("256MiB")),
     )
 
@@ -151,7 +151,7 @@ async def test_project_wallets_full_workflow(
     expected: HTTPStatus,
     mock_rut_api_responses: AioResponsesMock,
     mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
-    mocked_director_v2_service_get_helper_containers_resources: None,
+    mocked_director_v2_service_get_helper_containers_resource_limits: None,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app

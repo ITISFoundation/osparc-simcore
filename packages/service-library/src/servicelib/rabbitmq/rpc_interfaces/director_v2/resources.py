@@ -20,9 +20,12 @@ _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 
+type HelperContainersCpuLimit = NonNegativeFloat
+type HelperContainersRamLimit = ByteSize
+
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_helper_containers_resources(
+async def get_helper_containers_resource_limits(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
@@ -30,10 +33,13 @@ async def get_helper_containers_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     max_user_service_container_memory: ByteSize,
-) -> tuple[NonNegativeFloat, ByteSize]:
+) -> tuple[HelperContainersCpuLimit, HelperContainersRamLimit]:
+    """Combined CPU/RAM requirement of the egress-proxy, tracing and rclone helper
+    containers director-v2 will add for this service.
+    """
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_helper_containers_resources"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_helper_containers_resource_limits"),
         user_id=user_id,
         product_name=product_name,
         service_key=service_key,

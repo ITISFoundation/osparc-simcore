@@ -85,7 +85,7 @@ def mock_rpc_calls(
         AsyncMock(return_value=node_resources),
     )
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service.get_helper_containers_resources",
+        "simcore_service_webserver.projects._projects_service.get_helper_containers_resource_limits",
         AsyncMock(return_value=helper_containers_overhead),
     )
 

@@ -101,7 +101,7 @@ from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
 from servicelib.rabbitmq.rpc_interfaces.director_v2.resources import (
-    get_helper_containers_resources,
+    get_helper_containers_resource_limits,
 )
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -828,7 +828,7 @@ async def update_project_node_resources_from_hardware_info(
         # subtract the resources director-v2 will later ADD BACK for the helper
         # containers (egress-proxy/tracing/rclone) it creates for the dynamic-sidecar,
         # so the total (main service + helpers) fits the selected EC2 instance
-        cpu_overhead, ram_overhead = await get_helper_containers_resources(
+        cpu_overhead, ram_overhead = await get_helper_containers_resource_limits(
             rabbitmq_rpc_client,
             user_id=user_id,
             product_name=product_name,
