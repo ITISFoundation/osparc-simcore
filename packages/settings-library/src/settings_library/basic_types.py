@@ -24,6 +24,9 @@ type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
 # which would silently disagree with any code accounting for a container's cost.
 type CpuCores = Annotated[float, Field(gt=0)]
 
+# same unit, for sums over a set of containers, where 0 means "no containers"
+type TotalCpuCores = Annotated[float, Field(ge=0)]
+
 
 # e.g. 'v5'
 type VersionTag = Annotated[str, StringConstraints(pattern=r"^v\d$")]

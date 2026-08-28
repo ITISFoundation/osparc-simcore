@@ -8,7 +8,8 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, TypeAdapter
+from pydantic import ByteSize, NonNegativeInt, TypeAdapter
+from settings_library.basic_types import TotalCpuCores
 
 from ....logging_utils import log_decorator
 from ... import RabbitMQRPCClient
@@ -20,7 +21,8 @@ _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 
-type HelperContainersCpuLimit = NonNegativeFloat
+# a total, not a per-container allocation: 0 means "nothing extra needed"
+type HelperContainersCpuLimit = TotalCpuCores
 type HelperContainersRamLimit = ByteSize
 
 
