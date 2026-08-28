@@ -22,6 +22,12 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._controller.projects_slot import (
+    _on_user_disconnected,
+)
+from simcore_service_webserver.projects._projects_service import (
+    close_project_for_user,
+)
 from test_projects_states_handlers import _close_project, _open_project
 
 
@@ -158,10 +164,6 @@ async def test_close_project_for_user_still_unsubscribes_when_notify_state_updat
         side_effect=RuntimeError("injected failure"),
     )
 
-    from simcore_service_webserver.projects._projects_service import (  # noqa: PLC0415
-        close_project_for_user,
-    )
-
     with pytest.raises(RuntimeError, match="injected failure"):
         await close_project_for_user(
             user_id=logged_user["id"],
@@ -206,10 +208,6 @@ async def test_on_user_disconnected_still_unsubscribes_when_locked_state_notific
     mocked_unsubscribe = mocker.patch(
         "simcore_service_webserver.projects._controller.projects_slot.conditionally_unsubscribe_project_logs_across_replicas",
         autospec=True,
-    )
-
-    from simcore_service_webserver.projects._controller.projects_slot import (  # noqa: PLC0415
-        _on_user_disconnected,
     )
 
     # logged_gather(..., reraise=False) swallows the injected failure: this must not raise
