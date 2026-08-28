@@ -36,6 +36,7 @@ async def get_helper_containers_resource_limits(
 ) -> tuple[HelperContainersCpuLimit, HelperContainersRamLimit]:
     """Combined CPU/RAM requirement of the egress-proxy, tracing and rclone helper
     containers director-v2 will add for this service.
+    Used as both reservation and limit, 0 cpu, means no helper containers are used.
     """
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,

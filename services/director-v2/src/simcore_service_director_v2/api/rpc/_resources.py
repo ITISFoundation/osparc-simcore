@@ -39,6 +39,7 @@ async def get_helper_containers_resource_limits(
     """Combined CPU/RAM requirement of the egress-proxy, tracing and rclone helper
     containers director-v2 will later add on top of the user-service resources,
     so that callers (e.g. the webserver) can subtract it in advance.
+    Used as both reservation and limit, 0 cpu, means no helper containers are used.
     """
     app_settings: AppSettings = app.state.settings
     catalog_client = CatalogClient.instance(app)
