@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Any, Final, TypeAlias
+from typing import Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -13,8 +13,8 @@ from pydantic import (
 )
 
 from .docker import DockerGenericTag
+from .generics import DictModel
 from .utils.enums import StrAutoEnum
-from .utils.fastapi_encoders import jsonable_encoder
 
 ResourceName = str
 
@@ -56,7 +56,7 @@ class ResourceValue(BaseModel, validate_assignment=True):
         self.limit = self.reservation = value
 
 
-ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]  # noqa: UP040
 
 
 class BootMode(StrAutoEnum):
@@ -104,34 +104,27 @@ class ImageResources(BaseModel):
     )
 
 
-ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]
-
-
-class ServiceResourcesDictHelpers:
-    @staticmethod
+class ServiceResourcesDict(DictModel[DockerGenericTag, ImageResources]):
+    @classmethod
     def create_from_single_service(
+        cls,
         image: DockerGenericTag,
         resources: ResourcesDict,
         boot_modes: list[BootMode] | None = None,
-    ) -> ServiceResourcesDict:
-        if boot_modes is None:
-            boot_modes = [BootMode.CPU]
-        return TypeAdapter(ServiceResourcesDict).validate_python(
+    ) -> "ServiceResourcesDict":
+        return cls.model_validate(
             {
                 DEFAULT_SINGLE_SERVICE_NAME: {
                     "image": image,
                     "resources": resources,
-                    "boot_modes": boot_modes,
+                    "boot_modes": boot_modes if boot_modes is not None else [BootMode.CPU],
                 }
             },
         )
 
-    @staticmethod
-    def create_jsonable(
-        service_resources: ServiceResourcesDict,
-    ) -> dict[DockerGenericTag, Any]:
-        output: dict[DockerGenericTag, Any] = jsonable_encoder(service_resources)
-        return output
+    def set_reservation_same_as_limit(self) -> None:
+        for image_resources in self.values():
+            image_resources.set_reservation_same_as_limit()
 
     model_config = ConfigDict(
         json_schema_extra={

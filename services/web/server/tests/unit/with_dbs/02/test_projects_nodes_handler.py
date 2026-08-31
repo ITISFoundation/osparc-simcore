@@ -37,7 +37,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
@@ -95,11 +94,11 @@ async def test_get_node_resources(
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = ServiceResourcesDict.model_validate(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert {k: v.model_dump() for k, v in node_resources.items()} == next(
-                iter(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
+                iter(ServiceResourcesDict.model_json_schema()["examples"])
             )  # type: ignore
         else:
             assert not data
@@ -160,17 +159,19 @@ async def test_replace_node_resources_is_forbidden_by_default(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
-            ),
+            json=ServiceResourcesDict.model_validate(
+                ServiceResourcesDict.model_json_schema()["examples"][0]
+            ).model_dump(mode="json"),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = ServiceResourcesDict.model_validate(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert node_resources == ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            assert node_resources == ServiceResourcesDict.model_validate(
+                ServiceResourcesDict.model_json_schema()["examples"][0]
+            )
 
 
 @pytest.mark.parametrize(
@@ -193,19 +194,19 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
-            ),
+            json=ServiceResourcesDict.model_validate(
+                ServiceResourcesDict.model_json_schema()["examples"][0]
+            ).model_dump(mode="json"),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = ServiceResourcesDict.model_validate(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == ServiceResourcesDictHelpers.model_config[
-                "json_schema_extra"
-            ]["examples"][0]
+            assert {k: v.model_dump() for k, v in node_resources.items()} == ServiceResourcesDict.model_json_schema()[
+                "examples"
+            ][0]
 
 
 @pytest.mark.parametrize(
@@ -224,10 +225,10 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
+            json=ServiceResourcesDict.model_validate(
                 # NOTE: we apply a different resource set
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][1]
-            ),
+                ServiceResourcesDict.model_config["json_schema_extra"]["examples"][1]
+            ).model_dump(mode="json"),
         )
         await assert_status(response, expected)
 

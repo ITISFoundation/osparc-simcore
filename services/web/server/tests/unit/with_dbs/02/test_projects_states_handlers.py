@@ -49,7 +49,6 @@ from models_library.projects_state import (
 from models_library.services_enums import ServiceState
 from models_library.services_resources import (
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -494,7 +493,7 @@ async def test_open_project(
                         can_save=save_state,
                         product_name=osparc_product_name,
                         product_api_base_url=osparc_product_api_base_url,
-                        service_resources=ServiceResourcesDictHelpers.create_jsonable(mock_service_resources),
+                        service_resources=mock_service_resources,
                         wallet_info=None,
                         pricing_info=None,
                         hardware_info=None,
@@ -643,7 +642,7 @@ async def test_open_template_project_for_edition(
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
                         can_save=save_state,
-                        service_resources=ServiceResourcesDictHelpers.create_jsonable(mock_service_resources),
+                        service_resources=mock_service_resources,
                         product_name=osparc_product_name,
                         product_api_base_url=osparc_product_api_base_url,
                         wallet_info=None,

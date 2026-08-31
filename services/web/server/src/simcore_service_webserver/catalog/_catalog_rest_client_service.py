@@ -20,7 +20,6 @@ from models_library.products import ProductName
 from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from yarl import URL
@@ -129,9 +128,9 @@ async def get_services_for_user_in_product(
 
 @cached(
     ttl=_CACHE_TTL,
-    key_builder=lambda _f,
-    *_args,
-    **kw: f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}",
+    key_builder=lambda _f, *_args, **kw: (
+        f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}"
+    ),
     cache=Cache.MEMORY,
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
 )
@@ -179,7 +178,7 @@ async def get_service_resources(
         async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
             resp.raise_for_status()
             dict_response = await resp.json()
-            return TypeAdapter(ServiceResourcesDict).validate_python(dict_response)
+            return ServiceResourcesDict.model_validate(dict_response)
 
 
 async def get_service_access_rights(

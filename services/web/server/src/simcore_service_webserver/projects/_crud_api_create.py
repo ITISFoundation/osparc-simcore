@@ -318,11 +318,11 @@ async def _compose_project_data(
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
             }  # pyright: ignore[reportAssignmentType]
-            create_kwargs["required_resources"] = jsonable_encoder(
+            create_kwargs["required_resources"] = (
                 await catalog_service.get_service_resources(
                     app, user_id, node_data["key"], node_data["version"], product_name
                 )
-            )
+            ).model_dump(mode="json")
             project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 
         new_project = predefined_project

@@ -14,7 +14,7 @@ from aiohttp.test_utils import TestClient
 from common_library.dict_tools import remap_keys
 from deepdiff import DeepDiff
 from models_library.projects_nodes_io import NodeID
-from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.services_resources import ServiceResourcesDict
 from simcore_postgres_database import webserver_models
 from simcore_postgres_database.utils_projects_nodes import (
     WORKBENCH_NODE_ALIAS_TO_COLUMN,
@@ -90,9 +90,7 @@ async def create_project(
     # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
     valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
-    fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][
-        0
-    ]
+    fake_required_resources: dict[str, Any] = ServiceResourcesDict.model_json_schema()["examples"][0]
 
     project_nodes = {
         NodeID(node_id): ProjectNodeCreate(
@@ -164,7 +162,7 @@ async def delete_all_projects(app: web.Application):
 
 
 @asynccontextmanager
-async def NewProject(
+async def NewProject(  # noqa: N802
     params_override: dict | None = None,
     app: web.Application | None = None,
     *,

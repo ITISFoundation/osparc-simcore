@@ -49,7 +49,6 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
@@ -102,8 +101,8 @@ def fake_service_extras() -> ServiceExtras:
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+    return ServiceResourcesDict.model_validate(
+        ServiceResourcesDict.model_config["json_schema_extra"]["examples"][0],  # type: ignore
     )
 
 
@@ -441,12 +440,7 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
-assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
-assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
-assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list)
-
-
-@pytest.fixture(params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
+@pytest.fixture(params=ServiceResourcesDict.model_json_schema()["examples"])
 def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
@@ -772,14 +766,9 @@ async def test_start_computation_with_project_node_resources_defined(
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
-    assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
-    assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
-    assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list)
     proj = await create_project(
         user,
-        project_nodes_overrides={
-            "required_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
-        },
+        project_nodes_overrides={"required_resources": ServiceResourcesDict.model_json_schema()["examples"][0]},
         workbench=fake_workbench_without_outputs,
     )
     create_computation_url = httpx.URL("/v2/computations")

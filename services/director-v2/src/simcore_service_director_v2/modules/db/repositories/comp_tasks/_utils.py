@@ -34,11 +34,9 @@ from models_library.services_resources import (
     BootMode,
     ImageResources,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS, WalletInfo
-from pydantic import TypeAdapter
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -169,7 +167,7 @@ async def _generate_task_image(
     }
     project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
-    node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+    node_resources = ServiceResourcesDict.model_validate(project_node.required_resources)
     if not node_resources:
         node_resources = await catalog_client.get_service_resources(user_id, node.key, node.version, product_name)
 
@@ -268,7 +266,7 @@ async def _update_project_node_resources_from_hardware_info(
         # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
-        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(node.required_resources)
+        node_resources = ServiceResourcesDict.model_validate(node.required_resources)
         if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
             image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
             adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
@@ -281,7 +279,7 @@ async def _update_project_node_resources_from_hardware_info(
             await project_nodes_repo.update(
                 connection,
                 node_id=node_id,
-                required_resources=ServiceResourcesDictHelpers.create_jsonable(node_resources),
+                required_resources=node_resources.model_dump(mode="json"),
             )
         else:
             _logger.warning("Services resource override not implemented yet for multi-container services!!!")

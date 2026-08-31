@@ -77,7 +77,6 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID, UserIDAdapter
@@ -163,7 +162,7 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._nodes_utils import validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
@@ -828,7 +827,7 @@ async def update_project_node_resources_from_hardware_info(
             project_id,
             node_id,
             product_name,
-            required_resources=ServiceResourcesDictHelpers.create_jsonable(node_resources),
+            required_resources=node_resources.model_dump(mode="json"),
             check_update_allowed=False,
         )
     except StopIteration as exc:
@@ -2174,7 +2173,7 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        node_resources = ServiceResourcesDict.model_validate(project_node.required_resources)
         if not node_resources:
             # get default resources
             node_resources = await catalog_service.get_service_resources(
@@ -2200,7 +2199,7 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources = TypeAdapter(ServiceResourcesDict).validate_python(current_project_node.required_resources)
+        current_resources = ServiceResourcesDict.model_validate(current_project_node.required_resources)
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
@@ -2209,17 +2208,17 @@ async def update_project_node_resources(
             )
 
         validate_new_service_resources(current_resources, new_resources=resources)
-        set_reservation_same_as_limit(resources)
+        resources.set_reservation_same_as_limit()
 
         project_node = await db.update_project_node(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             product_name=product_name,
-            required_resources=jsonable_encoder(resources),
+            required_resources=resources.model_dump(mode="json"),
             check_update_allowed=True,
         )
-        return TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        return ServiceResourcesDict.model_validate(project_node.required_resources)
     except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}") from exc
 

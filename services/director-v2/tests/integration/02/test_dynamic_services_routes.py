@@ -22,7 +22,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
@@ -170,7 +169,7 @@ def start_request_data(
             "outputs_path": "/tmp/outputs",  # noqa: S108
             "inputs_path": "/tmp/inputs",  # noqa: S108
         },
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(service_resources),
+        "service_resources": service_resources.model_dump(mode="json"),
     }
 
 

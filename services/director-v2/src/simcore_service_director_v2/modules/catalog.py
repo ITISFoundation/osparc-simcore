@@ -12,7 +12,6 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.tracing import setup_httpx_client_tracing
@@ -113,8 +112,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(resp.json())
-            return json_response
+            return ServiceResourcesDict.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_labels(

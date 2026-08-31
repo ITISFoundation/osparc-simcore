@@ -21,7 +21,6 @@ from models_library.services_resources import (
     ServiceResourcesDict,
 )
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
@@ -50,16 +49,16 @@ environment:
 
     assert isinstance(compose_as_list_str["environment"], list)
 
-    assert docker_compose_specs._EnvironmentSection.parse(
+    assert docker_compose_specs._EnvironmentSection.parse(  # noqa: SLF001
         compose_as_dict["environment"]
-    ) == docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])
+    ) == docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])  # noqa: SLF001
 
     assert (
-        docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])
+        docker_compose_specs._EnvironmentSection.parse(compose_as_list_str["environment"])  # noqa: SLF001
         == compose_as_dict["environment"]
     )
 
-    envs = docker_compose_specs._EnvironmentSection.export_as_list(compose_as_dict["environment"])
+    envs = docker_compose_specs._EnvironmentSection.export_as_list(compose_as_dict["environment"])  # noqa: SLF001
     assert envs == compose_as_list_str["environment"]
 
 
@@ -68,7 +67,7 @@ environment:
     [
         pytest.param(
             {"version": "2.3", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            TypeAdapter(ServiceResourcesDict).validate_python(
+            ServiceResourcesDict.model_validate(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -83,7 +82,7 @@ environment:
         ),
         pytest.param(
             {"version": "3.7", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            TypeAdapter(ServiceResourcesDict).validate_python(
+            ServiceResourcesDict.model_validate(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -102,7 +101,7 @@ async def test_inject_resource_limits_and_reservations(
     service_spec: dict[str, Any],
     service_resources: ServiceResourcesDict,
 ) -> None:
-    docker_compose_specs._update_resource_limits_and_reservations(
+    docker_compose_specs._update_resource_limits_and_reservations(  # noqa: SLF001
         service_spec=service_spec, service_resources=service_resources
     )
 
@@ -164,7 +163,7 @@ def test_update_service_quotas_storage(
 ):
     assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
     if not has_quota_support:
-        docker_compose_specs._strip_service_quotas(service_spec=compose_spec)
+        docker_compose_specs._strip_service_quotas(service_spec=compose_spec)  # noqa: SLF001
 
     if has_quota_support:
         assert json.dumps(compose_spec).count("storage_opt") == storage_opt_count
@@ -177,10 +176,10 @@ def test_regression_service_has_no_reservations():
         "version": "3.7",
         "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
     }
-    service_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python({})
+    service_resources = ServiceResourcesDict.model_validate({})
 
     spec_before = deepcopy(service_spec)
-    docker_compose_specs._update_resource_limits_and_reservations(
+    docker_compose_specs._update_resource_limits_and_reservations(  # noqa: SLF001
         service_spec=service_spec, service_resources=service_resources
     )
     assert spec_before == service_spec
@@ -231,7 +230,7 @@ EXPECTED_LABELS: list[str] = sorted(
     ],
 )
 async def test_update_container_labels(service_spec: dict[str, Any], expected_result: dict[str, Any]):
-    docker_compose_specs._update_container_labels(
+    docker_compose_specs._update_container_labels(  # noqa: SLF001
         service_spec,
         USER_ID,
         PROJECT_ID,

@@ -25,7 +25,6 @@ from models_library.projects_nodes import Node, NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -52,8 +51,8 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
 
 @pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
+    return ServiceResourcesDict.model_validate(
+        ServiceResourcesDict.model_json_schema()["examples"][0],
     )
 
 
