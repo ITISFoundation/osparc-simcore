@@ -41,6 +41,7 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from redis.exceptions import RedisError
+from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
 from servicelib.utils import limited_gather
 
@@ -108,6 +109,7 @@ async def get_services_map(
             ],
             ttl=DIRECTOR_CACHING_TTL,
         )
+        _logger.info("Refreshed the service manifest cache with %d entries", len(services))
     except (RedisError, TimeoutError):
         _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
     return services
@@ -137,6 +139,7 @@ async def get_service(
     except ValidationError:
         _logger.warning("Discarding invalid entry '%s' from the service manifest cache", cache_key, exc_info=True)
 
+    _logger.debug("Cache miss for '%s', falling back to the director", cache_key)
     service = await director_client.get_service(service_key=key, service_version=version)
 
     try:
@@ -197,9 +200,12 @@ async def _prewarm_service_cache(
     service_cache: BaseCache,
 ) -> None:
     del lock_client
-    cached_services = await service_cache.multi_get(cache_keys)
-    if any(cached_service is None for cached_service in cached_services):
-        await get_services_map(director_client, service_cache)
+    with log_context(_logger, logging.INFO, "prewarming service manifest cache for %d entries", len(cache_keys)):
+        cached_services = await service_cache.multi_get(cache_keys)
+        if any(cached_service is None for cached_service in cached_services):
+            await get_services_map(director_client, service_cache)
+        else:
+            _logger.info("Service manifest cache was already prewarmed by another replica")
 
 
 async def get_batch_services(
@@ -222,8 +228,10 @@ async def get_batch_services(
         _logger.warning("Failed to read a batch from the service manifest cache", exc_info=True)
         cached_services = [None] * len(selection)
 
+    cache_hits = sum(1 for cached_service in cached_services if cached_service is not None)
+
     services_map: ServiceMetaDataPublishedDict = {}
-    if any(cached_service is None for cached_service in cached_services):
+    if cache_hits < len(selection):
         try:
             try:
                 if lock_client is None:
@@ -241,6 +249,14 @@ async def get_batch_services(
                 services_map = await get_services_map(director_client, service_cache)
         except HTTPException:
             _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
+
+    _logger.debug(
+        "Service manifest batch of %d: %d cache hits, %d after prewarming, %d from the registry snapshot",
+        len(selection),
+        cache_hits,
+        sum(1 for cached_service in cached_services if cached_service is not None),
+        len(services_map),
+    )
 
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
         *(

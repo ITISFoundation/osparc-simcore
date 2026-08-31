@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from typing import Any, Final
 
@@ -10,6 +11,8 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from .._meta import APP_NAME
+
+_logger = logging.getLogger(__name__)
 
 _CACHE_NAMESPACE: Final[str] = "catalog:service_manifest:v1"
 _LOCK_CLIENT_STATE_ATTR: Final[str] = "service_manifest_lock_client"
@@ -32,8 +35,16 @@ def create_service_manifest_cache(redis_settings: RedisSettings) -> BaseCache:
 
 
 async def _manifest_cache_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    service_manifest_cache = create_service_manifest_cache(app.state.settings.CATALOG_REDIS)
+    redis_settings: RedisSettings = app.state.settings.CATALOG_REDIS
+    service_manifest_cache = create_service_manifest_cache(redis_settings)
     app.state.service_manifest_cache = service_manifest_cache
+    _logger.info(
+        "Service manifest cache enabled on redis %s:%s db=%s namespace='%s'",
+        redis_settings.REDIS_HOST,
+        redis_settings.REDIS_PORT,
+        int(RedisDatabase.AIOCACHE),
+        _CACHE_NAMESPACE,
+    )
     try:
         yield {}
     finally:
