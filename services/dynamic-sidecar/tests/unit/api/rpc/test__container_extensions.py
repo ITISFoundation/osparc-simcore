@@ -178,7 +178,7 @@ def dynamic_sidecar_network_name() -> str:
 @pytest.fixture
 def compose_spec(dynamic_sidecar_network_name: str) -> ContainersComposeSpec:
     return ContainersComposeSpec(
-        docker_compose_yaml=yaml.dump(
+        docker_compose_yaml=yaml.safe_dump(
             inject_container_resources(
                 {
                     "version": "3",
@@ -208,7 +208,7 @@ def compose_spec(dynamic_sidecar_network_name: str) -> ContainersComposeSpec:
 @pytest.fixture
 def compose_spec_single_service() -> ContainersComposeSpec:
     return ContainersComposeSpec(
-        docker_compose_yaml=yaml.dump(
+        docker_compose_yaml=yaml.safe_dump(
             inject_container_resources(
                 {
                     "version": "3",

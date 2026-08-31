@@ -15,6 +15,7 @@ import aiodocker
 import faker
 import pytest
 import sqlalchemy as sa
+import yaml
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
@@ -181,7 +182,7 @@ def dynamic_sidecar_network_name() -> str:
 )
 def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
-    return json.dumps(inject_container_resources(spec_dict))
+    return yaml.safe_dump(inject_container_resources(spec_dict))
 
 
 @pytest.fixture

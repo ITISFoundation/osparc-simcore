@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock
 
 import aiodocker
 import pytest
+import yaml
 from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
@@ -87,7 +88,7 @@ def raw_compose_spec(container_names: list[str]) -> dict[str, Any]:
 
 @pytest.fixture
 def compose_spec(raw_compose_spec: dict[str, Any]) -> DockerComposeYamlStr:
-    return json.dumps(inject_container_resources(raw_compose_spec))
+    return yaml.safe_dump(inject_container_resources(raw_compose_spec))
 
 
 @pytest.fixture

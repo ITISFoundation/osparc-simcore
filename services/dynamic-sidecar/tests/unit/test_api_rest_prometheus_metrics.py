@@ -7,6 +7,7 @@ from collections.abc import AsyncIterable
 from typing import Final
 
 import pytest
+import yaml
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
@@ -104,7 +105,7 @@ def http_client(app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyH
 
 @pytest.fixture
 def compose_spec() -> DockerComposeYamlStr:
-    return json.dumps(
+    return yaml.safe_dump(
         inject_container_resources(
             {
                 "version": "3",

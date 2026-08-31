@@ -7,6 +7,7 @@ import pytest
 import yaml
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.services_types import ServiceRunID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
@@ -96,8 +97,8 @@ def fake_mounted_volumes(tmp_path: Path, faker: Faker) -> MountedVolumes:
 
 
 @pytest.fixture
-def simple_compose_spec() -> str:
-    return yaml.dump(
+def simple_compose_spec() -> DockerComposeYamlStr:
+    return yaml.safe_dump(
         inject_container_resources(
             {
                 "version": "3.7",
@@ -249,7 +250,7 @@ async def test_validate_compose_spec_with_tracing_injects_otel(
     mock_get_volume_by_label: None,
     app_with_tracing: FastAPI,
     app_settings_with_tracing: ApplicationSettings,
-    simple_compose_spec: str,
+    simple_compose_spec: DockerComposeYamlStr,
     fake_mounted_volumes: MountedVolumes,
 ):
     assert app_settings_with_tracing.DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN
@@ -281,7 +282,7 @@ async def test_validate_compose_spec_with_tracing_injects_otel(
 async def test_validate_compose_spec_without_tracing_no_otel(
     mock_get_volume_by_label: None,
     app: FastAPI,
-    simple_compose_spec: str,
+    simple_compose_spec: DockerComposeYamlStr,
     fake_mounted_volumes: MountedVolumes,
 ):
     """Without tracing settings, no OTEL collector should be injected."""
