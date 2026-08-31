@@ -757,52 +757,52 @@ async def update_project_node_resources_from_hardware_info(
         return
     # NOTE: with the current implementation, there is no use to get the instance past the first one
     requested_instance_type = hardware_info.aws_ec2_instances[0]
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
     try:
-        rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = await get_instance_type_details(
             rabbitmq_rpc_client,
             instance_type_names=set(hardware_info.aws_ec2_instances),
         )
-
-        assert unordered_list_ec2_instance_types  # nosec
-
-        selected_ec2_instance_type = next(
-            (ec2 for ec2 in unordered_list_ec2_instance_types if ec2.name == requested_instance_type),
-            None,
-        )
-        if selected_ec2_instance_type is None:
-            raise InvalidEC2TypeInResourcesSpecsError(
-                ec2_type=requested_instance_type,
-                available_ec2_types=sorted(ec2.name for ec2 in unordered_list_ec2_instance_types),
-            )
-
-        node_resources = await get_project_node_resources(
-            app, user_id, project_id, node_id, service_key, service_version, product_name
-        )
-        # director-v2 owns the resource model of a dynamic service: it knows what the
-        # dynamic-sidecar and its helper containers need on top of the user services
-        scaled_node_resources = await scale_service_resources_for_instance_type(
-            rabbitmq_rpc_client,
-            user_id=user_id,
-            product_name=product_name,
-            service_key=service_key,
-            service_version=service_version,
-            service_resources=node_resources,
-            instance_cpus=selected_ec2_instance_type.cpus,
-            instance_ram=selected_ec2_instance_type.ram,
-        )
-
-        db = ProjectDBAPI.get_from_app_context(app)
-        await db.update_project_node(
-            user_id,
-            project_id,
-            node_id,
-            product_name,
-            required_resources=ServiceResourcesDictHelpers.create_jsonable(scaled_node_resources),
-            check_update_allowed=False,
-        )
     except (TimeoutError, RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc
+
+    assert unordered_list_ec2_instance_types  # nosec
+
+    selected_ec2_instance_type = next(
+        (ec2 for ec2 in unordered_list_ec2_instance_types if ec2.name == requested_instance_type),
+        None,
+    )
+    if selected_ec2_instance_type is None:
+        raise InvalidEC2TypeInResourcesSpecsError(
+            ec2_type=requested_instance_type,
+            available_ec2_types=sorted(ec2.name for ec2 in unordered_list_ec2_instance_types),
+        )
+
+    node_resources = await get_project_node_resources(
+        app, user_id, project_id, node_id, service_key, service_version, product_name
+    )
+    # director-v2 owns the resource model of a dynamic service: it knows what the
+    # dynamic-sidecar and its helper containers need on top of the user services
+    scaled_node_resources = await scale_service_resources_for_instance_type(
+        rabbitmq_rpc_client,
+        user_id=user_id,
+        product_name=product_name,
+        service_key=service_key,
+        service_version=service_version,
+        service_resources=node_resources,
+        instance_cpus=selected_ec2_instance_type.cpus,
+        instance_ram=selected_ec2_instance_type.ram,
+    )
+
+    db = ProjectDBAPI.get_from_app_context(app)
+    await db.update_project_node(
+        user_id,
+        project_id,
+        node_id,
+        product_name,
+        required_resources=ServiceResourcesDictHelpers.create_jsonable(scaled_node_resources),
+        check_update_allowed=False,
+    )
 
 
 async def _check_project_node_has_all_required_inputs(  # noqa: C901
