@@ -17,6 +17,7 @@ asgi_lifespan
 click
 docker
 Faker
+fakeredis
 jsonschema # 'services/catalog/tests/unit' dependencies
 ptvsd
 pytest
