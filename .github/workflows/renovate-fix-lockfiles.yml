@@ -71,7 +71,7 @@ jobs:
             fi
 
             echo "::group::make -C $dir reqs upgrade=\"$PKGS\""
-            make -C "$dir" reqs upgrade="$PKGS"
+            make -C "$dir" touch reqs upgrade="$PKGS"
             echo "::endgroup::"
           done <<< "$DIRS"
 
