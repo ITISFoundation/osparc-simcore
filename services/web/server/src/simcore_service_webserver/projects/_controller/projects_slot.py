@@ -69,12 +69,14 @@ async def _on_user_disconnected(
 
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
+    # NOTE: both groups of tasks run concurrently and independently (reraise=False) so a
+    # failure notifying the project-locked state (e.g. an RPC timeout) can never prevent
+    # the log-unsubscription from running, which would otherwise leak a topic binding
     await logged_gather(
-        *[retrieve_and_notify_project_locked_state(user_id, prj, app, notify_only_prj_user=True) for prj in projects]
+        *[retrieve_and_notify_project_locked_state(user_id, prj, app, notify_only_prj_user=True) for prj in projects],
+        *[conditionally_unsubscribe_project_logs_across_replicas(app, ProjectID(prj), user_id) for prj in projects],
+        reraise=False,
     )
-
-    for _project_id in projects:  # At the moment, only 1 is expected
-        await conditionally_unsubscribe_project_logs_across_replicas(app, ProjectID(_project_id), user_id)
 
 
 def setup_project_observer_events(app: web.Application) -> None:

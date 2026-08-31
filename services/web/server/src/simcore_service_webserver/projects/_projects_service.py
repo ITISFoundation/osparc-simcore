@@ -1863,31 +1863,34 @@ async def close_project_for_user(
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
     _logger.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
-    if not all_user_sessions_with_project:
-        # NOTE: depending on the garbage collector speed, it might already be removing it
-        remove_services_task = remove_project_dynamic_services(
-            user_id, project_uuid, app, simcore_user_agent, product_name
-        )
-        if wait_for_service_closed:
-            # wait for the task to finish
-            await remove_services_task
-        else:
-            fire_and_forget_task(
-                remove_services_task,
-                task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
-                fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    try:
+        if not all_user_sessions_with_project:
+            # NOTE: depending on the garbage collector speed, it might already be removing it
+            remove_services_task = remove_project_dynamic_services(
+                user_id, project_uuid, app, simcore_user_agent, product_name
             )
-    else:
-        # when the project is still opened by other users, we just notify the project state update
-        project = await get_project_for_user(
-            app,
-            f"{project_uuid}",
-            user_id,
-            include_state=True,
-        )
-        await notify_project_state_update(app, project)
-
-    await conditionally_unsubscribe_project_logs_across_replicas(app, project_uuid, user_id)
+            if wait_for_service_closed:
+                # wait for the task to finish
+                await remove_services_task
+            else:
+                fire_and_forget_task(
+                    remove_services_task,
+                    task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+                    fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+                )
+        else:
+            # when the project is still opened by other users, we just notify the project state update
+            project = await get_project_for_user(
+                app,
+                f"{project_uuid}",
+                user_id,
+                include_state=True,
+            )
+            await notify_project_state_update(app, project)
+    finally:
+        # NOTE: always unsubscribe, even if the above raised (e.g. an RPC timeout), so a
+        # failure here can never leak this project's log topic binding on this replica
+        await conditionally_unsubscribe_project_logs_across_replicas(app, project_uuid, user_id)
 
 
 async def _get_project_share_state(
