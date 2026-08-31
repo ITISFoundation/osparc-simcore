@@ -6,6 +6,8 @@
 #
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 
+# Without this, bare `make` would default to the first target below (check) instead of help
+.DEFAULT_GOAL := help
 
 .PHONY: touch reqs check clean help
 
