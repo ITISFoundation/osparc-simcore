@@ -270,7 +270,6 @@ def ops_services_selection(request) -> list[str]:
     return getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
 
 
-# every other service of the ops stack is a UI to inspect the deployment by hand and has no use in the CI
 _CI_ALLOWED_OPS_SERVICE_NAMES: Final[tuple[str, ...]] = ("minio",)
 
 
