@@ -143,6 +143,5 @@ async def test_raises_when_director_v2_reports_machine_too_small(
     with pytest.raises(InsufficientInstanceResourcesError):
         await _call(mocked_app, hardware_info)
 
-    mock_project_db_api.update_project_node.assert_not_called()
     # the project must NOT be updated when there are insufficient resources
     mock_project_db_api.update_project_node.assert_not_called()

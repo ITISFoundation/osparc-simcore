@@ -61,10 +61,7 @@ def get_max_user_service_container_memory(service_resources: ServiceResourcesDic
 def get_max_rclone_container_memory_limit(
     mount_settings: RCloneSimcoreSDKMountSettings, max_user_service_container_memory: ByteSize
 ) -> ByteSize:
-    """
-    returns a clapped value between max and min limits
-    max is a percentage of the max_user_service_container_memory value
-    """
+    """percentage of `max_user_service_container_memory`, clamped between the configured min/max limits"""
     max_user_service_limit = int(
         max_user_service_container_memory
         * mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_PERCENT_OF_MAX_USER_SERVICE
