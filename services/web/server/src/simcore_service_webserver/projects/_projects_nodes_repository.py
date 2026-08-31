@@ -86,6 +86,44 @@ async def add(
         await conn.execute(projects_nodes.insert().values(project_uuid=f"{project_id}", node_id=f"{node_id}", **values))
 
 
+async def _remove_references_to_node(conn: AsyncConnection, *, project_id: ProjectID, node_id: NodeID) -> None:
+    """Prunes port-links in `inputs` and entries in `input_nodes` of the sibling nodes
+    that still point to `node_id`"""
+    deleted_node_id = f"{node_id}"
+
+    result = await conn.execute(
+        sa.select(
+            projects_nodes.c.node_id,
+            projects_nodes.c.inputs,
+            projects_nodes.c.input_nodes,
+        ).where(projects_nodes.c.project_uuid == f"{project_id}")
+    )
+
+    for row in result.all():
+        values: dict[str, Any] = {}
+
+        inputs = row.inputs or {}
+        pruned_inputs = {
+            port_key: port_value
+            for port_key, port_value in inputs.items()
+            if not (isinstance(port_value, dict) and f"{port_value.get('nodeUuid')}" == deleted_node_id)
+        }
+        if len(pruned_inputs) != len(inputs):
+            values["inputs"] = pruned_inputs
+
+        input_nodes = row.input_nodes or []
+        pruned_input_nodes = [nid for nid in input_nodes if f"{nid}" != deleted_node_id]
+        if len(pruned_input_nodes) != len(input_nodes):
+            values["input_nodes"] = pruned_input_nodes
+
+        if values:
+            await conn.execute(
+                projects_nodes.update()
+                .values(**values)
+                .where((projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == row.node_id))
+            )
+
+
 async def delete(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -101,6 +139,8 @@ async def delete(
         )
         if result.rowcount == 0:
             raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
+
+        await _remove_references_to_node(conn, project_id=project_id, node_id=node_id)
 
 
 async def get(
