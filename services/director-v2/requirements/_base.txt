@@ -6,6 +6,7 @@ aio-pika==9.6.2
     #   -r requirements/_base.in
 aiocache==0.12.3
     # via
+    #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
@@ -157,7 +158,7 @@ httpx==0.28.1
     #   fastapi-cloud-cli
 hyperframe==6.1.0
     # via h2
-idna==3.11
+idna==3.15
     # via
     #   anyio
     #   email-validator
