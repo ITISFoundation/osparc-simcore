@@ -49,6 +49,7 @@ from dask_task_models_library.models import (
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
@@ -157,7 +158,7 @@ class DaskClient:
                     )
                     _logger.info(
                         "Scheduler info:\n%s",
-                        json_dumps(backend.client.scheduler_info(), indent=2),
+                        json_dumps(await get_scheduler_details(backend.client), indent=2),
                     )
                     return instance
         # this is to satisfy pylance
@@ -329,7 +330,7 @@ class DaskClient:
                 dask_utils.check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
-                    scheduler_info=self.backend.client.scheduler_info(),
+                    scheduler_info=await get_scheduler_details(self.backend.client),
                     task_resources=dask_resources,
                     node_image=node_image,
                 )
