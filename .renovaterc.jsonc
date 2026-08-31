@@ -8,6 +8,9 @@
   "prCreation": "approval",
   "platformAutomerge": false,
   "automerge": false,
+  // Pinned explicitly (matches the default) so CI can gate on this exact prefix,
+  // e.g. .github/workflows/renovate-fix-lockfiles.yml
+  "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   "labels": [
     "t:maintenance"
@@ -56,6 +59,24 @@
       "groupSlug": "{{packageFileDir}}"
     },
     {
+      "description": "_test.txt/_tools.txt use `-c _base.txt` as a pip-compile constraint (see requirements/Makefile), but Renovate's pip-compile manager recompiles each output file independently and can process them out of that order, producing an inconsistent lockfile. Re-run `make reqs` after Renovate's edits so the Makefile's prerequisite order (_base -> _test -> _tools) is enforced. NOTE: requires the bot admin to allow the `make ... reqs` command in the global allowedCommands config, otherwise this task is silently skipped.",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "make -C {{packageFileDir}} reqs"
+        ],
+        "executionMode": "branch",
+        "fileFilters": [
+          "{{packageFileDir}}/*.txt"
+        ],
+        "installTools": {
+          "uv": {}
+        }
+      }
+    },
+    {
       "description": "Shared packages: upgrade faster (smaller blast radius)",
       "matchFileNames": [
         "packages/**/requirements/**"
@@ -92,6 +113,13 @@
         "api/tests/requirements.txt",
         "ci/helpers/requirements/requirements.txt",
         "tests/environment-setup/requirements/requirements.txt"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "setup.py install_requires reference internal, unpublished simcore-* packages (from packages/) as version-pinned strings (e.g. simcore-sdk>=1.1.0). These never exist on PyPI, so pip_setup lookups always 404; disable the manager entirely",
+      "matchManagers": [
+        "pip_setup"
       ],
       "enabled": false
     },
