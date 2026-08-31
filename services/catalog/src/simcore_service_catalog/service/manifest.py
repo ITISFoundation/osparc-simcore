@@ -32,7 +32,6 @@ This ensures data integrity and consistency across the system.
 """
 
 import logging
-from datetime import timedelta
 from typing import Any, cast
 
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
@@ -180,7 +179,6 @@ def _get_lock_client(*_args: Any, lock_client: RedisClientSDK, **_kwargs: Any) -
     _get_lock_client,
     lock_key=_SERVICE_CACHE_PREWARM_LOCK_KEY,
     blocking=True,
-    blocking_timeout=timedelta(seconds=20),
 )
 async def _prewarm_service_cache(
     *,
