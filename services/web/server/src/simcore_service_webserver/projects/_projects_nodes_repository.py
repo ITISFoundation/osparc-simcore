@@ -91,8 +91,11 @@ async def add(
 
 
 async def _remove_references_to_node(conn: AsyncConnection, *, project_id: ProjectID, node_id: NodeID) -> None:
+    """Prunes, in the sibling nodes, the `inputs` port-links and `input_nodes` entries pointing to `node_id`"""
     deleted_node_id = f"{node_id}"
 
+    # NOTE: a set-returning function in a sub-select FROM is implicitly LATERAL in postgres,
+    # i.e. it expands the `projects_nodes` row currently being updated
     linked_ports = sa.func.jsonb_each(projects_nodes.c.inputs).table_valued("key", "value")
     linked_port_node_id = linked_ports.c.value.op("->>", return_type=sa.Text)("nodeUuid")
     input_node_ids = sa.func.jsonb_array_elements(projects_nodes.c.input_nodes).table_valued("value")
@@ -101,6 +104,7 @@ async def _remove_references_to_node(conn: AsyncConnection, *, project_id: Proje
         sa.select(
             sa.func.coalesce(sa.func.jsonb_object_agg(linked_ports.c.key, linked_ports.c.value), _EMPTY_JSONB_OBJ)
         )
+        # NOTE: IS DISTINCT FROM keeps plain (non port-link) values, for which `->>` yields NULL
         .where(linked_port_node_id.is_distinct_from(deleted_node_id))
         .correlate(projects_nodes)
         .scalar_subquery()
