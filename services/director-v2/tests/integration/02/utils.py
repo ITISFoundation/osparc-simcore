@@ -7,7 +7,7 @@ import os
 import urllib.parse
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
-from typing import Any, Final
+from typing import Any
 
 import aiodocker
 import httpx
@@ -28,6 +28,7 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.logging_utils import log_context
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -305,9 +306,6 @@ async def _handle_redirection(redirection_response: httpx.Response, *, method: s
         return response
 
 
-_MIN_CPU: Final[float] = 1.0
-
-
 async def assert_start_service(  # pylint: disable=too-many-arguments
     director_v2_client: httpx.AsyncClient,
     product_name: str,
@@ -329,20 +327,6 @@ async def assert_start_service(  # pylint: disable=too-many-arguments
             product_name=product_name,
         )
 
-    for image_key, image_resources in service_resources.items():
-        cpu = image_resources.resources.get("CPU")
-        if cpu is not None and float(cpu.limit) < _MIN_CPU:
-            _logger.warning(
-                "%s: CPU.limit=%s is below the %s-core floor for %s, forcing it to %s "
-                "(older test images may ship with CPU.limit=0 in their labels)",
-                service_key,
-                cpu.limit,
-                _MIN_CPU,
-                image_key,
-                _MIN_CPU,
-            )
-            cpu.limit = _MIN_CPU
-            cpu.reservation = _MIN_CPU
     data = {
         "user_id": user_id,
         "project_id": project_id,
@@ -360,19 +344,18 @@ async def assert_start_service(  # pylint: disable=too-many-arguments
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
         X_SIMCORE_USER_AGENT: "",
     }
-    print(f"Remaining start-service request payload: {data}")
+    with log_context(_logger, logging.INFO, f"start-service request payload: {data}"):
+        response = await director_v2_client.post(
+            "/v2/dynamic_services",
+            json=data,
+            headers=headers,
+            follow_redirects=False,
+            timeout=30,
+        )
 
-    response = await director_v2_client.post(
-        "/v2/dynamic_services",
-        json=data,
-        headers=headers,
-        follow_redirects=False,
-        timeout=30,
-    )
-
-    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
-        response = await _handle_redirection(response, method="POST", json=data, headers=headers, timeout=30)
-    response.raise_for_status()
+        if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+            response = await _handle_redirection(response, method="POST", json=data, headers=headers, timeout=30)
+        response.raise_for_status()
 
     assert response.status_code == httpx.codes.CREATED, response.text
 
