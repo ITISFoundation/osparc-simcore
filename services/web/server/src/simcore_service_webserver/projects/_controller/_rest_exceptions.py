@@ -12,6 +12,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     InsufficientInstanceResourcesError,
+    MissingServiceResourceKeysError,
 )
 
 from ...catalog._controller_rest_exceptions import catalog_exceptions_handlers_map
@@ -36,7 +37,6 @@ from ..exceptions import (
     DefaultPricingUnitNotFoundError,
     InsufficientRoleForProjectTemplateTypeUpdateError,
     InvalidEC2TypeInResourcesSpecsError,
-    InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
@@ -97,7 +97,7 @@ _NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
             _version=1,
         ),
     ),
-    InvalidKeysInResourcesSpecsError: HttpErrorInfo(
+    MissingServiceResourceKeysError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message(
             "The service '{service_key}:{service_version}' does not define the CPU/RAM it needs and cannot start."

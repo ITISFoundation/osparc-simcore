@@ -10,6 +10,8 @@ from typing import Final
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     SIDECAR_HELPERS_RESOURCE_KEY,
+    ImageResources,
+    ResourceValue,
     ServiceResourcesDict,
 )
 from pydantic import ByteSize, TypeAdapter
@@ -31,6 +33,19 @@ _MIN_SUB_SERVICE_RAM: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1
 class NotEnoughInstanceResourcesError(Exception):
     cpus: float
     ram: int
+
+
+@dataclass(frozen=True)
+class MissingResourceKeysError(Exception):
+    container_name: str
+    missing_key: str
+
+
+def _get_resource(image_resources: ImageResources, key: str, *, container_name: str) -> ResourceValue:
+    try:
+        return image_resources.resources[key]
+    except KeyError as exc:
+        raise MissingResourceKeysError(container_name=container_name, missing_key=key) from exc
 
 
 def get_max_user_service_container_memory(service_resources: ServiceResourcesDict) -> ByteSize:
@@ -121,15 +136,17 @@ def scale_service_resources_to_instance_type(
         # scale the most memory-hungry sub-service and leave the others untouched
         scalable_service_name, _ = max(
             service_resources.items(),
-            key=lambda name_to_resources: int(name_to_resources[1].resources["RAM"].limit),
+            key=lambda name_to_resources: int(
+                _get_resource(name_to_resources[1], "RAM", container_name=name_to_resources[0]).limit
+            ),
         )
         other_services = Counter({"RAM": 0, "CPU": 0})
         for service_name, sub_service_resources in service_resources.items():
             if service_name != scalable_service_name:
                 other_services.update(
                     {
-                        "RAM": sub_service_resources.resources["RAM"].limit,
-                        "CPU": sub_service_resources.resources["CPU"].limit,
+                        "RAM": _get_resource(sub_service_resources, "RAM", container_name=service_name).limit,
+                        "CPU": _get_resource(sub_service_resources, "CPU", container_name=service_name).limit,
                     }
                 )
         available_cpus = max(available_cpus - other_services["CPU"], DYNAMIC_SIDECAR_MIN_CPUS)
@@ -149,6 +166,7 @@ def scale_service_resources_to_instance_type(
     if available_cpus < _MIN_USER_SERVICE_CPUS or available_ram < _MIN_USER_SERVICE_RAM:
         raise NotEnoughInstanceResourcesError(cpus=available_cpus, ram=available_ram)
 
-    service_resources[scalable_service_name].resources["CPU"].set_value(available_cpus)
-    service_resources[scalable_service_name].resources["RAM"].set_value(available_ram)
+    scalable = service_resources[scalable_service_name]
+    _get_resource(scalable, "CPU", container_name=scalable_service_name).set_value(available_cpus)
+    _get_resource(scalable, "RAM", container_name=scalable_service_name).set_value(available_ram)
     return service_resources

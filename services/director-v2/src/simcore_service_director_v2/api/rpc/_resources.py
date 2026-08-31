@@ -8,6 +8,7 @@ from pydantic import ByteSize
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     InsufficientInstanceResourcesError,
+    MissingServiceResourceKeysError,
 )
 
 from ...core.settings import AppSettings
@@ -19,6 +20,7 @@ from ...modules.dynamic_sidecar.docker_compose_egress_config import (
     count_required_egress_proxies,
 )
 from ...modules.dynamic_sidecar.docker_service_specs.resources import (
+    MissingResourceKeysError,
     NotEnoughInstanceResourcesError,
     scale_service_resources_to_instance_type,
 )
@@ -27,7 +29,7 @@ from ...utils.db import get_repository
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(InsufficientInstanceResourcesError,))
+@router.expose(reraise_if_error_type=(InsufficientInstanceResourcesError, MissingServiceResourceKeysError))
 async def scale_service_resources_for_instance_type(
     app: FastAPI,
     *,
@@ -72,4 +74,11 @@ async def scale_service_resources_for_instance_type(
             instance_ram=instance_ram,
             cpus=exc.cpus,
             ram=exc.ram,
+        ) from exc
+    except MissingResourceKeysError as exc:
+        raise MissingServiceResourceKeysError(
+            service_key=service_key,
+            service_version=service_version,
+            container_name=exc.container_name,
+            missing_key=exc.missing_key,
         ) from exc

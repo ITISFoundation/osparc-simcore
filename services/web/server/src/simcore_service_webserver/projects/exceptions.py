@@ -220,17 +220,11 @@ class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
     msg_template = "Incompatible '{image_name}' cannot be applied on {container_name}:{expected_image}"
 
 
-class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = "Service {service_key}:{service_version} is missing RAM/CPU resource keys ({missing_key})!"
-
-
 class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
-
-    def __init__(self, *, cpus: float, ram: int, **ctx):
-        super().__init__(**ctx)
-        self.cpus = cpus
-        self.ram = ram
+    msg_template = (
+        "Machine type '{ec2_type}' selected by the pricing plan is not available."
+        " Available types: {available_ec2_types}. TIP: adjust product configuration"
+    )
 
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...
