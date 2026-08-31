@@ -97,9 +97,9 @@ async def test_get_node_resources(
             node_resources = ServiceResourcesDict.model_validate(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == next(
+            assert node_resources.model_dump(mode="json") == next(
                 iter(ServiceResourcesDict.model_json_schema()["examples"])
-            )  # type: ignore
+            )
         else:
             assert not data
             assert error
@@ -204,9 +204,7 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
             node_resources = ServiceResourcesDict.model_validate(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == ServiceResourcesDict.model_json_schema()[
-                "examples"
-            ][0]
+            assert node_resources.model_dump(mode="json") == ServiceResourcesDict.model_json_schema()["examples"][0]
 
 
 @pytest.mark.parametrize(
@@ -227,7 +225,7 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
             f"{url}",
             json=ServiceResourcesDict.model_validate(
                 # NOTE: we apply a different resource set
-                ServiceResourcesDict.model_config["json_schema_extra"]["examples"][1]
+                ServiceResourcesDict.model_json_schema()["examples"][1]
             ).model_dump(mode="json"),
         )
         await assert_status(response, expected)
