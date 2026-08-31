@@ -104,12 +104,12 @@ def _add_helper_containers_resources_to_service_resources(
     with_tracing: bool,
     with_rclone: bool,
 ) -> None:
-    """Adds a synthetic entry to `service_resources` summing the footprint of helper
-    containers (envoy egress-proxies, otel collector/forwarder, rclone mount) that the
-    dynamic-sidecar creates but which are NOT their own Swarm services, so that Swarm/
-    autoscaling correctly sizes the dynamic-sidecar's own Swarm service. dy-proxy (caddy)
-    is excluded: it already runs as its own separate Swarm service with its own
-    dedicated resources.
+    """Adds a synthetic entry to `service_resources` covering everything that runs inside
+    the dynamic-sidecar's Swarm task but is invisible to Swarm: the dynamic-sidecar process
+    itself plus the helper containers it creates (envoy egress-proxies, otel collector/
+    forwarder, rclone mount). Without this the task books only the user services and the
+    sidecar has to squeeze into their allocation. dy-proxy (caddy) is excluded: it already
+    runs as its own separate Swarm service with its own dedicated resources.
     """
     cpu, ram = compute_helper_containers_resources(
         dynamic_services_settings=dynamic_services_settings,
@@ -119,8 +119,9 @@ def _add_helper_containers_resources_to_service_resources(
         max_user_service_container_memory=get_max_user_service_container_memory(service_resources),
     )
 
-    if cpu <= 0 and ram <= 0:
-        return
+    sidecar_settings = dynamic_services_settings.DYNAMIC_SIDECAR
+    cpu += sidecar_settings.DYNAMIC_SIDECAR_OWN_CPU_LIMIT.cores
+    ram += int(sidecar_settings.DYNAMIC_SIDECAR_OWN_MEMORY_LIMIT)
 
     service_resources[SIDECAR_HELPERS_RESOURCE_KEY] = ImageResources(
         image=SIDECAR_HELPERS_RESOURCE_KEY,
@@ -245,9 +246,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_user_selection_boot_options=boot_options,
             service_resources=scheduler_data.service_resources,
             placement_substitutions=dynamic_services_placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS,
-            has_machine_specific_resources=bool(
-                scheduler_data.hardware_info and scheduler_data.hardware_info.aws_ec2_instances
-            ),
         )
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
