@@ -221,7 +221,7 @@ class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
 
 
 class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
+    msg_template = "Service {service_key}:{service_version} is missing RAM/CPU resource keys ({missing_key})!"
 
 
 class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
@@ -230,7 +230,7 @@ class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
 
 class InsufficientResourcesForHelperContainersError(ProjectNodeResourcesInvalidError):
     msg_template = (
-        "After reserving resources for helper containers (egress-proxy/tracing/rclone), the selected EC2 instance"
+        "After reserving resources for the dynamic-sidecar and its helper containers, the selected EC2 instance"
         " does not leave enough capacity for the service itself ({cpus} CPUs, {ram} RAM). TIP: select a larger"
         " EC2 instance type."
     )

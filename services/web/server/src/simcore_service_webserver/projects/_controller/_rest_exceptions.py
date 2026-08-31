@@ -90,23 +90,24 @@ _NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
     InvalidEC2TypeInResourcesSpecsError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message(
-            "Invalid EC2 instance type(s) selected: {ec2_types}. TIP: adjust the product configuration.",
+            "This service cannot start because its pricing plan requests a machine type that is not available."
+            " TIP: select another pricing unit or contact support.",
             _version=1,
         ),
     ),
     InvalidKeysInResourcesSpecsError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message(
-            "The service is missing required RAM/CPU resource keys ({missing_key}).",
+            "The service '{service_key}:{service_version}' does not define the CPU/RAM it needs and cannot start."
+            " TIP: contact support.",
             _version=1,
         ),
     ),
     InsufficientResourcesForHelperContainersError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message(
-            "After reserving resources for helper containers (egress-proxy/tracing/rclone), the selected EC2"
-            " instance does not leave enough capacity for the service itself ({cpus} CPUs, {ram} RAM). TIP:"
-            " select a larger EC2 instance type.",
+            "The machine selected for this service is too small to run it. TIP: select a pricing unit with a"
+            " larger machine.",
             _version=1,
         ),
     ),

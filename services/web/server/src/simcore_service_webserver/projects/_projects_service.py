@@ -858,7 +858,9 @@ async def update_project_node_resources_from_hardware_info(
         raise InvalidEC2TypeInResourcesSpecsError(ec2_types=set(hardware_info.aws_ec2_instances)) from exc
 
     except KeyError as exc:
-        raise InvalidKeysInResourcesSpecsError(missing_key=f"{exc}") from exc
+        raise InvalidKeysInResourcesSpecsError(
+            missing_key=f"{exc}", service_key=service_key, service_version=service_version
+        ) from exc
     except (TimeoutError, RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableError from exc
 
