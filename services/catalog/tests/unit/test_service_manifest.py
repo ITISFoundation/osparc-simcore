@@ -167,6 +167,45 @@ async def test_get_service_falls_back_to_director_when_cache_is_unavailable(
     assert mocked_director_rest_api["get_service"].call_count == 1
 
 
+async def test_get_service_recovers_from_invalid_cache_entry(
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    expected_service = next(service for service in all_services_map.values() if not is_function_service(service.key))
+    cache_key = manifest._build_service_cache_key(key=expected_service.key, version=expected_service.version)
+    assert await service_manifest_cache.set(cache_key, {"key": expected_service.key})
+
+    service = await manifest.get_service(
+        key=expected_service.key,
+        version=expected_service.version,
+        director_client=director_client,
+        service_cache=service_manifest_cache,
+    )
+
+    assert service == expected_service
+    assert mocked_director_rest_api["get_service"].call_count == 1
+
+
+async def test_get_batch_services_recovers_from_invalid_cache_entry(
+    director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
+    all_services_map: manifest.ServiceMetaDataPublishedDict,
+):
+    expected_service = next(service for service in all_services_map.values() if not is_function_service(service.key))
+    cache_key = manifest._build_service_cache_key(key=expected_service.key, version=expected_service.version)
+    assert await service_manifest_cache.set(cache_key, {"key": expected_service.key})
+
+    got_services = await manifest.get_batch_services(
+        [(expected_service.key, expected_service.version)],
+        director_client,
+        service_manifest_cache,
+    )
+
+    assert got_services == [expected_service]
+
+
 async def test_get_service_ports(
     director_client: DirectorClient,
     service_manifest_cache: BaseCache,

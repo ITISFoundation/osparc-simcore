@@ -125,17 +125,19 @@ async def get_service(
 
     raises if does not exist or if validation fails
     """
+    if is_function_service(key):
+        return get_function_service(key=key, version=version)
+
     cache_key = _build_service_cache_key(key=key, version=version)
     try:
         if (cached_service := await service_cache.get(cache_key)) is not None:
             return ServiceMetaDataPublished.model_validate(cached_service)
     except (RedisError, TimeoutError):
         _logger.warning("Failed to read '%s' from the service manifest cache", cache_key, exc_info=True)
+    except ValidationError:
+        _logger.warning("Discarding invalid entry '%s' from the service manifest cache", cache_key, exc_info=True)
 
-    if is_function_service(key):
-        service = get_function_service(key=key, version=version)
-    else:
-        service = await director_client.get_service(service_key=key, service_version=version)
+    service = await director_client.get_service(service_key=key, service_version=version)
 
     try:
         await service_cache.set(
@@ -158,7 +160,14 @@ async def _resolve_batch_service(
     service_cache: BaseCache,
 ) -> ServiceMetaDataPublished:
     if cached_service is not None:
-        return ServiceMetaDataPublished.model_validate(cached_service)
+        try:
+            return ServiceMetaDataPublished.model_validate(cached_service)
+        except ValidationError:
+            _logger.warning(
+                "Discarding invalid entry '%s' from the service manifest cache",
+                _build_service_cache_key(key=key, version=version),
+                exc_info=True,
+            )
 
     if service := services_map.get((key, version)):
         return service
