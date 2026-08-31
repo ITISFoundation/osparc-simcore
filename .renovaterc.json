@@ -96,6 +96,13 @@
       "enabled": false
     },
     {
+      "description": "setup.py install_requires reference internal, unpublished simcore-* packages (from packages/) as version-pinned strings (e.g. simcore-sdk>=1.1.0). These never exist on PyPI, so pip_setup lookups always 404; disable the manager entirely",
+      "matchManagers": [
+        "pip_setup"
+      ],
+      "enabled": false
+    },
+    {
       "matchDatasources": [
         "docker"
       ],
