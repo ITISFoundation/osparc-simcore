@@ -38,6 +38,6 @@ class UserServicesTracingSettings(BaseCustomSettings):
     USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT: Annotated[
         CpuCores,
         Field(description="CPU cores limit for the OTEL collector containers"),
-    ] = 0.25
+    ] = CpuCores(cores=0.25)
 
     _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")

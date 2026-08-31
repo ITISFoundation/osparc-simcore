@@ -5,15 +5,13 @@ from typing import Annotated, Final
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import ByteSize, Field, NonNegativeFloat, NonNegativeInt, PositiveInt, TypeAdapter
+from pydantic import ByteSize, Field, NonNegativeFloat, PositiveInt, TypeAdapter
 
 from .base import BaseCustomSettings
+from .basic_types import CpuCores
 from .s3 import S3Settings
 
 DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
-
-
-_ONE_CPU: Final[NonNegativeInt] = int(1e9)
 
 
 class S3Provider(StrEnum):
@@ -93,9 +91,9 @@ class RCloneSimcoreSDKMountSettings(BaseCustomSettings):
         ),
     ] = 0.1
 
-    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS: Annotated[
-        NonNegativeInt, Field(description="CPU limit for the rclone mount container")
-    ] = 1 * _ONE_CPU
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CPU_LIMIT: Annotated[
+        CpuCores, Field(description="CPU cores limit for the rclone mount container")
+    ] = CpuCores(cores=1.0)
 
     R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS: Annotated[
         EditArguments,

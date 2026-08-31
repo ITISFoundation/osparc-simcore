@@ -4,7 +4,6 @@ Kept free of docker/catalog dependencies so it can be tested in isolation.
 """
 
 from models_library.services_resources import (
-    GIGA,
     SIDECAR_HELPERS_RESOURCE_KEY,
     ServiceResourcesDict,
 )
@@ -73,7 +72,7 @@ def compute_helper_containers_resources(
     if with_rclone:
         r_clone_settings = dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
         mount_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
-        cpu += mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS / GIGA
+        cpu += mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CPU_LIMIT.cores
         ram += int(get_max_rclone_container_memory_limit(mount_settings, max_user_service_container_memory))
 
     return cpu, ram

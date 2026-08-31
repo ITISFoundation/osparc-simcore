@@ -30,10 +30,10 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION: CpuCores = Field(
-        default=0.1,
+        default=CpuCores(cores=0.1),
         description="CPU cores reservation for the proxy container",
     )
     DYNAMIC_SIDECAR_PROXY_CPU_LIMIT: CpuCores = Field(
-        default=1,
+        default=CpuCores(cores=1.0),
         description="CPU cores limit for the proxy container",
     )

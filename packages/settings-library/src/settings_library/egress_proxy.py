@@ -36,4 +36,4 @@ class EgressProxySettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT: Annotated[
         CpuCores, Field(description="CPU cores limit for the envoy egress proxy container")
-    ] = 0.1
+    ] = CpuCores(cores=0.1)
