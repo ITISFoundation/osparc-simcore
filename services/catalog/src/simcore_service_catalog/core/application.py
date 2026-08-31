@@ -84,7 +84,7 @@ def create_app(
         shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
-            debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+            debug=settings.SC_BOOT_MODE in {BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL},
             title=PROJECT_NAME,
             description=SUMMARY,
             version=API_VERSION,
