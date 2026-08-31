@@ -133,7 +133,7 @@ hypothesis==6.151.9
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
-idna==3.3
+idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
