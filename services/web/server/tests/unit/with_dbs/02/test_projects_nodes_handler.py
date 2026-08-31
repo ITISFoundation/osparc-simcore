@@ -681,6 +681,54 @@ async def test_delete_node(
             assert result.scalar() is None
 
 
+@pytest.mark.parametrize(*standard_user_role())
+async def test_delete_node_removes_references_in_connected_nodes(
+    mock_dynamic_scheduler: None,
+    client: TestClient,
+    logged_user: dict,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    storage_subsystem_mock: MockedStorageSubsystem,
+    postgres_db: sa.engine.Engine,
+):
+    assert client.app
+    workbench = user_project["workbench"]
+    assert isinstance(workbench, dict)
+
+    # find a node that is referenced by at least another one
+    deleted_node_id = next(
+        node_id
+        for node_id in workbench
+        if any(node_id in (other.get("inputNodes") or []) for other in workbench.values())
+    )
+    dependent_node_ids = [
+        node_id for node_id, node_data in workbench.items() if deleted_node_id in (node_data.get("inputNodes") or [])
+    ]
+    assert dependent_node_ids
+
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=deleted_node_id)
+    response = await client.delete(url.path)
+    await assert_status(response, expected.no_content)
+
+    with postgres_db.connect() as conn:
+        rows = conn.execute(
+            sa.select(
+                projects_nodes.c.node_id,
+                projects_nodes.c.inputs,
+                projects_nodes.c.input_nodes,
+            ).where(projects_nodes.c.project_uuid == user_project["uuid"])
+        ).fetchall()
+
+    assert {row.node_id for row in rows} == set(workbench) - {deleted_node_id}
+    for row in rows:
+        assert deleted_node_id not in (row.input_nodes or [])
+        for port_value in (row.inputs or {}).values():
+            if isinstance(port_value, dict):
+                assert port_value.get("nodeUuid") != deleted_node_id
+
+
 @pytest.fixture
 async def socket_io_node_updated_mock(
     mocker: MockerFixture,
