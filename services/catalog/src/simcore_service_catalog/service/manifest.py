@@ -32,6 +32,7 @@ This ensures data integrity and consistency across the system.
 """
 
 import logging
+from datetime import UTC, datetime
 from itertools import batched
 from typing import Any, Final, cast
 
@@ -59,6 +60,7 @@ type ServiceMetaDataPublishedDict = dict[tuple[ServiceKey, ServiceVersion], Serv
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
 _SERVICE_CACHE_PREWARM_LOCK_KEY = "catalog:service_manifest:prewarm"
+_SERVICE_CACHE_SNAPSHOT_KEY: Final[str] = "services_map_snapshot"
 
 # NOTE: bounds each atomic MULTI/EXEC so bulk writes do not stall the shared redis
 _SERVICE_CACHE_WRITE_CHUNK_SIZE: Final[int] = 500
@@ -70,6 +72,15 @@ def _build_service_cache_key(
     version: ServiceVersion,
 ) -> str:
     return f"get_service/{key}/{version}"
+
+
+async def _is_snapshot_fresh(service_cache: BaseCache) -> bool:
+    """Tells whether the last full registry snapshot is still cached"""
+    try:
+        return await service_cache.get(_SERVICE_CACHE_SNAPSHOT_KEY) is not None
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to read the service manifest cache snapshot marker", exc_info=True)
+        return False
 
 
 async def get_services_map(
@@ -112,6 +123,12 @@ async def get_services_map(
     try:
         for chunk in batched(cache_entries, _SERVICE_CACHE_WRITE_CHUNK_SIZE, strict=False):
             await service_cache.multi_set(list(chunk), ttl=DIRECTOR_CACHING_TTL)
+        # NOTE: only this marker's presence matters, its ttl defines how long a snapshot stays fresh
+        await service_cache.set(
+            _SERVICE_CACHE_SNAPSHOT_KEY,
+            datetime.now(UTC).isoformat(),
+            ttl=DIRECTOR_CACHING_TTL,
+        )
         _logger.info("Refreshed the service manifest cache with %d entries", len(cache_entries))
     except (RedisError, TimeoutError):
         _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
@@ -198,17 +215,15 @@ def _get_lock_client(*_args: Any, lock_client: RedisClientSDK, **_kwargs: Any) -
 async def _prewarm_service_cache(
     *,
     lock_client: RedisClientSDK,
-    cache_keys: list[str],
     director_client: DirectorClient,
     service_cache: BaseCache,
 ) -> None:
     del lock_client
-    with log_context(_logger, logging.INFO, "prewarming service manifest cache for %d entries", len(cache_keys)):
-        cached_services = await service_cache.multi_get(cache_keys)
-        if any(cached_service is None for cached_service in cached_services):
-            await get_services_map(director_client, service_cache)
-        else:
+    with log_context(_logger, logging.INFO, "prewarming service manifest cache"):
+        if await _is_snapshot_fresh(service_cache):
             _logger.info("Service manifest cache was already prewarmed by another replica")
+        else:
+            await get_services_map(director_client, service_cache)
 
 
 async def get_batch_services(
@@ -234,7 +249,9 @@ async def get_batch_services(
     cache_hits = sum(1 for cached_service in cached_services if cached_service is not None)
 
     services_map: ServiceMetaDataPublishedDict = {}
-    if cache_hits < len(selection):
+    # NOTE: only a stale snapshot justifies a full refresh: services dropped from the registry are
+    # never cached, so keying off missing entries would refresh on every request
+    if cache_hits < len(selection) and not await _is_snapshot_fresh(service_cache):
         try:
             try:
                 if lock_client is None:
@@ -242,7 +259,6 @@ async def get_batch_services(
                 else:
                     await _prewarm_service_cache(
                         lock_client=lock_client,
-                        cache_keys=cache_keys,
                         director_client=director_client,
                         service_cache=service_cache,
                     )

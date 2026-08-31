@@ -316,6 +316,7 @@ async def test_get_batch_services_falls_back_to_director_when_cache_is_unavailab
         ServiceMetaDataPublished.model_validate(service) for service in expected_director_rest_api_list_services[:2]
     ]
     unavailable_cache = Mock(spec=BaseCache)
+    unavailable_cache.get.side_effect = RedisConnectionError("Redis is unavailable")
     unavailable_cache.multi_get.side_effect = RedisConnectionError("Redis is unavailable")
     unavailable_cache.multi_set.side_effect = RedisConnectionError("Redis is unavailable")
 
@@ -351,6 +352,29 @@ async def test_get_batch_services_does_not_raise_when_cache_lock_and_director_ar
     )
 
     assert [type(service) for service in got_services] == [HTTPException]
+
+
+async def test_get_batch_services_refreshes_once_when_a_service_is_absent_from_the_registry(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    service_manifest_cache: BaseCache,
+):
+    # a service removed from the registry but still in the db can never be cached
+    director_client = Mock(spec=DirectorClient)
+    director_client.get.return_value = expected_director_rest_api_list_services
+    director_client.get_service.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    published_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[0])
+    selection = [
+        (published_service.key, published_service.version),
+        ("simcore/services/comp/absent-from-registry", "1.0.0"),
+    ]
+
+    for _ in range(3):
+        got_services = await manifest.get_batch_services(selection, director_client, service_manifest_cache)
+        assert got_services[0] == published_service
+        assert isinstance(got_services[1], HTTPException)
+
+    assert director_client.get.await_count == 1
 
 
 async def test_get_batch_services_empty_selection_skips_cache_and_director():
