@@ -388,11 +388,7 @@ class RabbitMQClient(RabbitMQClientBase):
 
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            qos_value = (
-                prefetch_count
-                if prefetch_count is not None
-                else (1 if exclusive_queue is False else _DEFAULT_PREFETCH_VALUE)
-            )
+            qos_value = self.configure_qos_policy(exclusive_queue, prefetch_count)
             await channel.set_qos(qos_value)
 
             exchange = await channel.declare_exchange(
@@ -457,6 +453,18 @@ class RabbitMQClient(RabbitMQClientBase):
             if max_length is not None:
                 self._start_backlog_monitor(queue.name, exchange_name, max_length)
             return queue.name, consumer_tag
+
+    def configure_qos_policy(
+        self,
+        *,
+        exclusive_queue: bool,
+        prefetch_count: int | None,
+    ) -> int:
+        return (
+            prefetch_count
+            if prefetch_count is not None
+            else (1 if exclusive_queue is False else _DEFAULT_PREFETCH_VALUE)
+        )
 
     async def add_topics(
         self,
