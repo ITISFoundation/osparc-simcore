@@ -19,7 +19,7 @@ from ...modules.db.repositories.groups_extra_properties import (
 from ...modules.dynamic_sidecar.docker_compose_egress_config import (
     count_required_egress_proxies,
 )
-from ...modules.dynamic_sidecar.docker_service_specs.settings import (
+from ...modules.dynamic_sidecar.docker_service_specs.resources import (
     compute_helper_containers_resources,
 )
 from ...utils.db import get_repository

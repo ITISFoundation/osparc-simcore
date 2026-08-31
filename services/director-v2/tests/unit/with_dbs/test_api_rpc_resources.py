@@ -23,7 +23,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.settings import (
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.resources import (
     compute_helper_containers_resources,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine

@@ -58,9 +58,11 @@ from ...docker_service_specs import (
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
 )
-from ...docker_service_specs.settings import (
+from ...docker_service_specs.resources import (
     compute_helper_containers_resources,
     get_max_user_service_container_memory,
+)
+from ...docker_service_specs.settings import (
     merge_settings_before_use,
 )
 from ._abc import DynamicSchedulerEvent

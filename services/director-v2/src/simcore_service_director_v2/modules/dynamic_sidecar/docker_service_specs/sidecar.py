@@ -34,10 +34,12 @@ from ....modules.db.repositories.groups_extra_properties import UserExtraPropert
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
-from .settings import (
-    extract_service_port_from_settings,
+from .resources import (
     get_max_rclone_container_memory_limit,
     get_max_user_service_container_memory,
+)
+from .settings import (
+    extract_service_port_from_settings,
     update_service_params_from_settings,
 )
 

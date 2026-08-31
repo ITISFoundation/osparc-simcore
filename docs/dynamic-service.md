@@ -42,7 +42,7 @@ applies per project/node.
   ([`estimate_dynamic_sidecar_resources_from_ec2_instance()`](../packages/service-library/src/servicelib/docker_utils.py#L454)).
 - As a platform I define some minimal resources for the sidecars, subtracted
   upfront via RPC
-  ([`compute_helper_containers_resources()`](../services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/docker_service_specs/settings.py#L76),
+  ([`compute_helper_containers_resources()`](../services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/docker_service_specs/resources.py),
   exposed in [`api/rpc/_resources.py`](../services/director-v2/src/simcore_service_director_v2/api/rpc/_resources.py)).
 - As a platform I can directly check that the chosen pricing plan is usable or
   not and raise an error in case it is not: `InsufficientResourcesForHelperContainersError`,
@@ -61,7 +61,7 @@ applies per project/node.
   as-is — `update_project_node_resources_from_hardware_info()` is never called
   on this path.
 - As a platform I define some minimal resources for the sidecars: the exact
-  same [`compute_helper_containers_resources()`](../services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/docker_service_specs/settings.py#L76)
+  same [`compute_helper_containers_resources()`](../services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/docker_service_specs/resources.py)
   as the billable path — no separate definition, no scaling factor.
 - As a platform I then start the services with the defined resources: same
   [`_add_helper_containers_resources_to_service_resources()`](../services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/scheduler/_core/_event_create_sidecars.py#L97)
