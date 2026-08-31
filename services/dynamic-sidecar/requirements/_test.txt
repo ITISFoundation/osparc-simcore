@@ -68,7 +68,7 @@ greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-idna==3.10
+idna==3.19
     # via
     #   -c requirements/_base.txt
     #   requests
