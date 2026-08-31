@@ -3,6 +3,7 @@ from typing import Any
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter
 from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
+from settings_library.basic_types import CpuCores
 
 
 def _range(faker: Faker, num_items: int | None = None, min_: int = 1, max_: int = 4) -> range:
@@ -42,7 +43,7 @@ def generate_fake_docker_compose(faker: Faker, num_services: int | None = None) 
 def inject_container_resources(
     compose_spec: dict[str, Any],
     *,
-    nano_cpus: int = int(1.0 * 1e9),
+    nano_cpus: int = CpuCores(cores=1.0).to_nano_cpus(),
     memory_bytes: int = TypeAdapter(ByteSize).validate_python("1GiB"),
 ) -> dict[str, Any]:
     """Injects SIMCORE resource env vars and deploy limits into every service of a compose spec"""
