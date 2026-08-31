@@ -36,7 +36,6 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.modules.dask import (
     DaskMonitoringSettings,
     DaskTask,
-    _get_scheduler_identity,
     _scheduler_client,
     add_instance_generic_resources,
     compute_cluster_total_resources,
@@ -459,7 +458,12 @@ async def test_is_worker_retired(
 
 
 @pytest.fixture
-def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
+def more_than_5_num_workers(faker: Faker) -> int:
+    return faker.random.randint(6, 10)  # more than the default scheduler_info(n_workers=5) cap
+
+
+@pytest.fixture
+def dask_workers_config_with_more_than_5_workers(more_than_5_num_workers: int) -> dict[str, Any]:
     """Creates 6 workers - more than the scheduler_info(n_workers=5) default cap."""
     local_ip = get_localhost_ip().replace(".", "-")
     return {
@@ -471,22 +475,22 @@ def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
                 "name": f"dask-sidecar_ip-{local_ip}_{utcnow()}_worker{i}",
             },
         }
-        for i in range(6)
+        for i in range(more_than_5_num_workers)
     }
 
 
-async def test_get_scheduler_identity_returns_all_workers_reliably(
+async def test_get_scheduler_info_returns_all_workers_reliably(
+    more_than_5_num_workers: int,
     dask_workers_config_with_more_than_5_workers: dict[str, Any],
     dask_scheduler_config: dict[str, Any],
 ):
     """Regression test: client.scheduler_info() is a local cache that (a) used to cap results at
     5 workers for async clients (fixed in distributed>=2026.7.0, see distributed#9308) and (b) can
     still be empty/incomplete immediately after connecting, since it is only synced once the
-    scheduler pushes its periodic broadcast. _get_scheduler_identity() uses a live RPC instead and
-    must always return all connected workers, regardless of client-side cache state."""
-    _NUM_WORKERS: Final[int] = 6
-    assert len(dask_workers_config_with_more_than_5_workers) == _NUM_WORKERS
-
+    scheduler pushes its periodic broadcast."""
+    assert len(dask_workers_config_with_more_than_5_workers) == more_than_5_num_workers, (
+        f"Expected {more_than_5_num_workers} workers, got {len(dask_workers_config_with_more_than_5_workers)}"
+    )
     async with (
         distributed.SpecCluster(
             workers=dask_workers_config_with_more_than_5_workers,
@@ -497,7 +501,7 @@ async def test_get_scheduler_identity_returns_all_workers_reliably(
     ):
         # _get_scheduler_identity() must return all workers right away, unlike scheduler_info()
         # which relies on a local cache that may not be synced yet right after connecting.
-        identity = await _get_scheduler_identity(client)
-        assert len(identity["workers"]) == _NUM_WORKERS, (
-            f"_get_scheduler_identity() must return all {_NUM_WORKERS} workers"
+        identity = client.scheduler_info()
+        assert len(identity["workers"]) == more_than_5_num_workers, (
+            f"_get_scheduler_identity() must return all {more_than_5_num_workers} workers"
         )
