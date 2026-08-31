@@ -225,9 +225,6 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         catalog_client = CatalogClient.instance(app)
 
-        # fetched early (again, later re-fetched in SendUserServicesSpec) so the exact
-        # count of egress-proxy helper containers is known before the dynamic-sidecar's
-        # own Swarm service resources are computed below
         simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
             scheduler_data.key, scheduler_data.version
         )
