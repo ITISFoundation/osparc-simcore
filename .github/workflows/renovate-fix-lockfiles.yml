@@ -1,0 +1,88 @@
+# Renovate's pip-compile manager recompiles each requirements/*.txt file independently
+# and can process them out of the Makefile's prerequisite order (_base -> _test -> _tools,
+# see scripts/makefiles/requirements.mk), producing an inconsistent lockfile.
+# This re-runs `make reqs upgrade="<changed packages>"` per affected requirements
+# directory on Renovate's own PR branch (targeting only the package(s) Renovate itself
+# bumped, never a bare `make reqs` which upgrades everything) and pushes a fixup commit
+# if the Makefile-ordered recompile produced a diff.
+name: Fix Renovate lockfiles
+
+on:
+  pull_request:
+    paths:
+      - "**/requirements/*.txt"
+      - "api/tests/requirements.txt"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  fix-lockfiles:
+    # Only act on Renovate's own same-repo branches (matches .renovaterc.jsonc branchPrefix)
+    if: >
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'renovate/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: checkout PR branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: setup python environment
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          version: "0.11.x"
+          enable-cache: false
+
+      - name: re-run make reqs per changed directory, targeting only the packages Renovate bumped
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          DIRS=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | xargs -r -n1 dirname | sort -u)
+
+          while IFS= read -r dir; do
+            [ -n "$dir" ] || continue
+
+            # Extract only the top-level pinned package names that actually changed
+            # version in this dir (excludes indented "# via ..." provenance comments)
+            PKGS=$(git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- "$dir" \
+              | grep -E '^[+-][A-Za-z0-9_.-]+==' \
+              | sed -E 's/^[+-]([A-Za-z0-9_.-]+)==.*/\1/' \
+              | sort -u \
+              | tr '\n' ' ')
+            PKGS="${PKGS% }"
+
+            if [ -z "$PKGS" ]; then
+              echo "No top-level version changes detected in $dir, skipping"
+              continue
+            fi
+
+            echo "::group::make -C $dir reqs upgrade=\"$PKGS\""
+            make -C "$dir" reqs upgrade="$PKGS"
+            echo "::endgroup::"
+          done <<< "$DIRS"
+
+      - name: commit and push fix, if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "fix(requirements): resync pip-compile lockfiles"
+            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          else
+            echo "Lockfiles already consistent, nothing to fix"
+          fi

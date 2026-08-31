@@ -34,10 +34,11 @@ help: ## This colorful help
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "Examples:"
-	@echo "  make reqs                   # Upgrade all packages"
-	@echo "  make reqs upgrade=pytest    # Upgrade only pytest package"
-	@echo "  make reqs startswith=pytest # Upgrade all packages starting with 'pytest'"
-	@echo "  make reqs clean=1           # Clean and rebuild all requirements"
+	@echo "  make reqs                     # Upgrade all packages"
+	@echo "  make reqs upgrade=pytest      # Upgrade only pytest package"
+	@echo "  make reqs upgrade=\"pytest black\" # Upgrade only pytest and black packages"
+	@echo "  make reqs startswith=pytest   # Upgrade all packages starting with 'pytest'"
+	@echo "  make reqs clean=1             # Clean and rebuild all requirements"
 	@echo ""
 
 reqs: $(outputs) ## Pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
@@ -63,8 +64,9 @@ touch:
 		uv pip compile $$STARTSWITH_UPGRADE \
 			--output-file=requirements/$@ requirements/$<; \
 	elif [ -n "$(upgrade)" ]; then \
+		UPGRADE_FLAGS=$$(echo "$(upgrade)" | xargs -n1 echo --upgrade-package); \
 		cd ..; \
-		uv pip compile --upgrade-package "$(upgrade)" \
+		uv pip compile $$UPGRADE_FLAGS \
 			--output-file=requirements/$@ requirements/$<; \
 	else \
 		cd ..; \
