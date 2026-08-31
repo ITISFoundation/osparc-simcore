@@ -16,7 +16,7 @@ import toolz
 from aiocache import SimpleMemoryCache  # type: ignore[import-untyped]
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from aiocache.serializers import JsonSerializer  # type: ignore[import-untyped]
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from models_library.function_services_catalog.api import is_function_service
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -266,6 +266,52 @@ async def test_get_batch_services_cold_cache_is_coalesced_across_replicas(
         await lock_client.shutdown()
 
     director_client.get.assert_awaited_once_with("/services")
+
+
+async def test_get_batch_services_falls_back_to_director_when_cache_is_unavailable(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+):
+    expected_services = [
+        ServiceMetaDataPublished.model_validate(service) for service in expected_director_rest_api_list_services[:2]
+    ]
+    unavailable_cache = Mock(spec=BaseCache)
+    unavailable_cache.multi_get.side_effect = RedisConnectionError("Redis is unavailable")
+    unavailable_cache.multi_set.side_effect = RedisConnectionError("Redis is unavailable")
+
+    got_services = await manifest.get_batch_services(
+        [(service.key, service.version) for service in expected_services],
+        director_client,
+        unavailable_cache,
+    )
+
+    assert got_services == expected_services
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_does_not_raise_when_cache_lock_and_director_are_unavailable():
+    director_client = Mock(spec=DirectorClient)
+    director_client.get.side_effect = HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+    director_client.get_service.side_effect = HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    unavailable_cache = Mock(spec=BaseCache)
+    unavailable_cache.multi_get.side_effect = RedisConnectionError("Redis is unavailable")
+    unavailable_cache.get.side_effect = RedisConnectionError("Redis is unavailable")
+
+    unavailable_lock_client = Mock(spec=RedisClientSDK)
+    unavailable_lock_client.client_name = "catalog-manifest-cache-test"
+    unavailable_lock_client.create_lock.side_effect = RedisConnectionError("Redis is unavailable")
+
+    got_services = await manifest.get_batch_services(
+        [("simcore/services/comp/itis/sleeper", "1.0.0")],
+        director_client,
+        unavailable_cache,
+        lock_client=unavailable_lock_client,
+    )
+
+    assert [type(service) for service in got_services] == [HTTPException]
 
 
 async def test_get_batch_services_empty_selection_skips_cache_and_director():

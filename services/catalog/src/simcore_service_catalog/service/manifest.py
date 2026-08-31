@@ -216,19 +216,20 @@ async def get_batch_services(
     services_map: ServiceMetaDataPublishedDict = {}
     if any(cached_service is None for cached_service in cached_services):
         try:
-            if lock_client is None:
+            try:
+                if lock_client is None:
+                    services_map = await get_services_map(director_client, service_cache)
+                else:
+                    await _prewarm_service_cache(
+                        lock_client=lock_client,
+                        cache_keys=cache_keys,
+                        director_client=director_client,
+                        service_cache=service_cache,
+                    )
+                    cached_services = cast(list[Any], await service_cache.multi_get(cache_keys))
+            except (CouldNotAcquireLockError, RedisError, TimeoutError):
+                _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
                 services_map = await get_services_map(director_client, service_cache)
-            else:
-                await _prewarm_service_cache(
-                    lock_client=lock_client,
-                    cache_keys=cache_keys,
-                    director_client=director_client,
-                    service_cache=service_cache,
-                )
-                cached_services = cast(list[Any], await service_cache.multi_get(cache_keys))
-        except (CouldNotAcquireLockError, RedisError, TimeoutError):
-            _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
-            services_map = await get_services_map(director_client, service_cache)
         except HTTPException:
             _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
 
