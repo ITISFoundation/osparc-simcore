@@ -40,6 +40,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
     LogFileUploadURL,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
@@ -968,7 +969,7 @@ async def test_send_computation_task_with_missing_resources_raises(
     resource_tracking_run_id: ServiceRunID,
 ):
     # remove the workers that can handle gpu
-    scheduler_info = dask_client.backend.client.scheduler_info()
+    scheduler_info = await get_scheduler_details(dask_client.backend.client)
     assert scheduler_info
     # find gpu workers
     workers_to_remove = [

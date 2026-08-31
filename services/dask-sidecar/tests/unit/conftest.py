@@ -170,6 +170,10 @@ async def async_local_cluster(
         resources={"CPU": 10, "GPU": 10},
         preload="simcore_service_dask_sidecar.worker",
         asynchronous=True,
+        # NOTE: disable the dashboard: bokeh's BokehTornado.stop() raises
+        # "Cannot synchronously wait on a running event loop" when the scheduler
+        # closes from within a running loop, as happens on async cluster teardown
+        scheduler_kwargs={"dashboard": False},
     ) as cluster:
         assert cluster
         assert isinstance(cluster, distributed.LocalCluster)
