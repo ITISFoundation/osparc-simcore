@@ -24,14 +24,10 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
-from settings_library.basic_types import TotalCpuCores
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
-from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
-
-API_PREFIX = "/" + api_version_prefix
 
 
 @pytest.mark.parametrize(
@@ -137,10 +133,13 @@ def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixtu
 
 
 @pytest.fixture
-def mocked_director_v2_service_get_helper_containers_resource_limits(mocker: MockerFixture) -> None:
+def mocked_director_v2_service_scale_service_resources(mocker: MockerFixture) -> None:
+    async def _scaled(*args, service_resources, **kwargs):
+        return service_resources
+
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service.get_helper_containers_resource_limits",
-        return_value=(TotalCpuCores(cores=0.1), TypeAdapter(ByteSize).validate_python("256MiB")),
+        "simcore_service_webserver.projects._projects_service.scale_service_resources_for_instance_type",
+        side_effect=_scaled,
     )
 
 
@@ -152,7 +151,7 @@ async def test_project_wallets_full_workflow(
     expected: HTTPStatus,
     mock_rut_api_responses: AioResponsesMock,
     mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
-    mocked_director_v2_service_get_helper_containers_resource_limits: None,
+    mocked_director_v2_service_scale_service_resources: None,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app

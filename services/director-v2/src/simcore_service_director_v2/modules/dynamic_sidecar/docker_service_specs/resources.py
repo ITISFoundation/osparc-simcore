@@ -3,14 +3,34 @@
 Kept free of docker/catalog dependencies so it can be tested in isolation.
 """
 
+from collections import Counter
+from dataclasses import dataclass
+from typing import Final
+
 from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
     SIDECAR_HELPERS_RESOURCE_KEY,
     ServiceResourcesDict,
 )
 from pydantic import ByteSize, TypeAdapter
+from servicelib.docker_utils import (
+    DYNAMIC_SIDECAR_MIN_CPUS,
+    estimate_dynamic_sidecar_resources_from_ec2_instance,
+)
 from settings_library.r_clone import RCloneSimcoreSDKMountSettings
 
 from ....core.dynamic_services_settings import DynamicServicesSettings
+
+# below these the user service cannot realistically run
+_MIN_USER_SERVICE_CPUS: Final[float] = 1.0
+_MIN_USER_SERVICE_RAM: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
+_MIN_SUB_SERVICE_RAM: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("128MiB")
+
+
+@dataclass(frozen=True)
+class NotEnoughInstanceResourcesError(Exception):
+    cpus: float
+    ram: int
 
 
 def get_max_user_service_container_memory(service_resources: ServiceResourcesDict) -> ByteSize:
@@ -76,3 +96,59 @@ def compute_helper_containers_resources(
         ram += int(get_max_rclone_container_memory_limit(mount_settings, max_user_service_container_memory))
 
     return cpu, ram
+
+
+def scale_service_resources_to_instance_type(
+    service_resources: ServiceResourcesDict,
+    *,
+    dynamic_services_settings: DynamicServicesSettings,
+    egress_proxy_count: int,
+    with_tracing: bool,
+    with_rclone: bool,
+    instance_cpus: float,
+    instance_ram: ByteSize,
+) -> ServiceResourcesDict:
+    """Rescales `service_resources` so the whole node (user services + dynamic-sidecar +
+    its helper containers) fits the given machine.
+
+    Raises `NotEnoughInstanceResourcesError` when what is left for the user service is
+    below the minimum needed to run it.
+    """
+    available_cpus, available_ram = estimate_dynamic_sidecar_resources_from_ec2_instance(instance_cpus, instance_ram)
+
+    scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
+    if DEFAULT_SINGLE_SERVICE_NAME not in service_resources:
+        # scale the most memory-hungry sub-service and leave the others untouched
+        scalable_service_name, _ = max(
+            service_resources.items(),
+            key=lambda name_to_resources: int(name_to_resources[1].resources["RAM"].limit),
+        )
+        other_services = Counter({"RAM": 0, "CPU": 0})
+        for service_name, sub_service_resources in service_resources.items():
+            if service_name != scalable_service_name:
+                other_services.update(
+                    {
+                        "RAM": sub_service_resources.resources["RAM"].limit,
+                        "CPU": sub_service_resources.resources["CPU"].limit,
+                    }
+                )
+        available_cpus = max(available_cpus - other_services["CPU"], DYNAMIC_SIDECAR_MIN_CPUS)
+        available_ram = int(max(available_ram - other_services["RAM"], _MIN_SUB_SERVICE_RAM))
+
+    helpers_cpus, helpers_ram = compute_helper_containers_resources(
+        dynamic_services_settings=dynamic_services_settings,
+        egress_proxy_count=egress_proxy_count,
+        with_tracing=with_tracing,
+        with_rclone=with_rclone,
+        max_user_service_container_memory=TypeAdapter(ByteSize).validate_python(available_ram),
+    )
+    sidecar_settings = dynamic_services_settings.DYNAMIC_SIDECAR
+    available_cpus -= helpers_cpus + sidecar_settings.DYNAMIC_SIDECAR_OWN_CPU_LIMIT.cores
+    available_ram = int(available_ram - helpers_ram - int(sidecar_settings.DYNAMIC_SIDECAR_OWN_MEMORY_LIMIT))
+
+    if available_cpus < _MIN_USER_SERVICE_CPUS or available_ram < _MIN_USER_SERVICE_RAM:
+        raise NotEnoughInstanceResourcesError(cpus=available_cpus, ram=available_ram)
+
+    service_resources[scalable_service_name].resources["CPU"].set_value(available_cpus)
+    service_resources[scalable_service_name].resources["RAM"].set_value(available_ram)
+    return service_resources

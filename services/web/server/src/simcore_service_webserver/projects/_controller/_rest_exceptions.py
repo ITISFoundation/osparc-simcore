@@ -10,6 +10,9 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundRpcError,
     CatalogNotAvailableRpcError,
 )
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    InsufficientInstanceResourcesError,
+)
 
 from ...catalog._controller_rest_exceptions import catalog_exceptions_handlers_map
 from ...conversations.errors import (
@@ -31,7 +34,6 @@ from ...workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoun
 from ..exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
-    InsufficientResourcesForHelperContainersError,
     InsufficientRoleForProjectTemplateTypeUpdateError,
     InvalidEC2TypeInResourcesSpecsError,
     InvalidKeysInResourcesSpecsError,
@@ -103,7 +105,7 @@ _NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
             _version=1,
         ),
     ),
-    InsufficientResourcesForHelperContainersError: HttpErrorInfo(
+    InsufficientInstanceResourcesError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message(
             "The machine selected for this service is too small to run it. TIP: select a pricing unit with a"

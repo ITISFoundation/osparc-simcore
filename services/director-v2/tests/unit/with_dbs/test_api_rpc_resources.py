@@ -11,6 +11,12 @@ import respx
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ResourcesDict,
+    ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
+)
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -18,13 +24,12 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
     resources as rpc_resources,
 )
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    InsufficientInstanceResourcesError,
+)
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
-)
-from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.resources import (
-    compute_helper_containers_resources,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -118,7 +123,7 @@ async def enable_data_mounting(
         )
 
 
-async def test_rpc_get_helper_containers_resource_limits(
+async def test_rpc_scale_service_resources_for_instance_type(
     initialized_app: FastAPI,
     rpc_client: RabbitMQRPCClient,
     create_registered_user: Callable[..., dict[str, Any]],
@@ -130,30 +135,66 @@ async def test_rpc_get_helper_containers_resource_limits(
     user = create_registered_user()
     await enable_data_mounting(user["primary_gid"], product_name)
 
-    max_user_service_container_memory = TypeAdapter(ByteSize).validate_python("2GiB")
+    service_resources = ServiceResourcesDictHelpers.create_from_single_service(
+        image="simcore/services/dynamic/sim4life:1.0.0",
+        resources=TypeAdapter(ResourcesDict).validate_python(
+            {
+                "CPU": {"limit": 0.1, "reservation": 0.1},
+                "RAM": {"limit": TypeAdapter(ByteSize).validate_python("2GiB"), "reservation": 0},
+            }
+        ),
+    )
 
-    cpu, ram = await rpc_resources.get_helper_containers_resource_limits(
+    scaled = await rpc_resources.scale_service_resources_for_instance_type(
         rpc_client,
         user_id=user["id"],
         product_name=product_name,
         service_key="simcore/services/dynamic/sim4life",
         service_version="1.0.0",
-        max_user_service_container_memory=max_user_service_container_memory,
+        service_resources=service_resources,
+        instance_cpus=16,
+        instance_ram=TypeAdapter(ByteSize).validate_python("128GiB"),
     )
 
     assert mock_catalog_service_get_service_labels["get_service_labels"].called
 
-    # NOTE: with_tracing=True (from the mocked labels) and with_rclone=True (from the DB
-    # row inserted by enable_data_mounting) and egress_proxy_count=0 (no permit list set)
-    app_settings: AppSettings = initialized_app.state.settings
-    expected_cpu, expected_ram = compute_helper_containers_resources(
-        dynamic_services_settings=app_settings.DYNAMIC_SERVICES,
-        egress_proxy_count=0,
-        with_tracing=True,
-        with_rclone=True,
-        max_user_service_container_memory=max_user_service_container_memory,
+    scaled_resources = TypeAdapter(ServiceResourcesDict).validate_python(scaled)[DEFAULT_SINGLE_SERVICE_NAME].resources
+    # the user service gets less than the machine offers: the dynamic-sidecar and its
+    # helper containers are reserved out of it
+    assert 0 < float(scaled_resources["CPU"].limit) < 16
+    assert 0 < int(scaled_resources["RAM"].limit) < TypeAdapter(ByteSize).validate_python("128GiB")
+
+
+async def test_rpc_scale_service_resources_for_instance_type_too_small(
+    initialized_app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    create_registered_user: Callable[..., dict[str, Any]],
+    with_product: dict[str, Any],
+    product_name: ProductName,
+    enable_data_mounting: Callable[[int, ProductName], Awaitable[None]],
+    mock_catalog_service_get_service_labels: respx.MockRouter,
+):
+    user = create_registered_user()
+    await enable_data_mounting(user["primary_gid"], product_name)
+
+    service_resources = ServiceResourcesDictHelpers.create_from_single_service(
+        image="simcore/services/dynamic/sim4life:1.0.0",
+        resources=TypeAdapter(ResourcesDict).validate_python(
+            {
+                "CPU": {"limit": 0.1, "reservation": 0.1},
+                "RAM": {"limit": TypeAdapter(ByteSize).validate_python("2GiB"), "reservation": 0},
+            }
+        ),
     )
-    assert cpu.cores == expected_cpu
-    assert ram == expected_ram
-    assert cpu.cores > 0
-    assert ram > 0
+
+    with pytest.raises(InsufficientInstanceResourcesError):
+        await rpc_resources.scale_service_resources_for_instance_type(
+            rpc_client,
+            user_id=user["id"],
+            product_name=product_name,
+            service_key="simcore/services/dynamic/sim4life",
+            service_version="1.0.0",
+            service_resources=service_resources,
+            instance_cpus=2,
+            instance_ram=TypeAdapter(ByteSize).validate_python("2GiB"),
+        )

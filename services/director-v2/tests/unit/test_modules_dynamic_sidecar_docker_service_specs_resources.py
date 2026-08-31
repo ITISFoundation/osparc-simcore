@@ -2,19 +2,24 @@
 
 import pytest
 from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
     SIDECAR_HELPERS_RESOURCE_KEY,
     ImageResources,
     ResourcesDict,
     ServiceResourcesDict,
+    ServiceResourcesDictHelpers,
 )
 from pydantic import ByteSize, TypeAdapter
+from servicelib.docker_utils import estimate_dynamic_sidecar_resources_from_ec2_instance
 from simcore_service_director_v2.core.dynamic_services_settings import (
     DynamicServicesSettings,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.resources import (
+    NotEnoughInstanceResourcesError,
     compute_helper_containers_resources,
     get_max_rclone_container_memory_limit,
     get_max_user_service_container_memory,
+    scale_service_resources_to_instance_type,
 )
 
 
@@ -168,3 +173,53 @@ def test_compute_helper_containers_resources_accumulates_all_helpers(
 
     assert all_helpers[0] == pytest.approx(egress_only[0] + tracing_only[0] + rclone_only[0])
     assert all_helpers[1] == egress_only[1] + tracing_only[1] + rclone_only[1]
+
+
+def _single_service_resources(cpu: float, ram: str) -> ServiceResourcesDict:
+    return ServiceResourcesDictHelpers.create_from_single_service(
+        image="simcore/services/dynamic/jupyter-math:1.0.0",
+        resources=TypeAdapter(ResourcesDict).validate_python(
+            {
+                "CPU": {"limit": cpu, "reservation": cpu},
+                "RAM": {"limit": TypeAdapter(ByteSize).validate_python(ram), "reservation": 0},
+            }
+        ),
+    )
+
+
+def test_scale_service_resources_leaves_room_for_sidecar_and_helpers(
+    dynamic_services_settings: DynamicServicesSettings,
+):
+    instance_cpus, instance_ram = 16, TypeAdapter(ByteSize).validate_python("128GiB")
+
+    scaled = scale_service_resources_to_instance_type(
+        _single_service_resources(0.1, "2GiB"),
+        dynamic_services_settings=dynamic_services_settings,
+        egress_proxy_count=0,
+        with_tracing=False,
+        with_rclone=False,
+        instance_cpus=instance_cpus,
+        instance_ram=instance_ram,
+    )
+
+    resources = scaled[DEFAULT_SINGLE_SERVICE_NAME].resources
+    sidecar_own = dynamic_services_settings.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_OWN_CPU_LIMIT.cores
+    available_cpus, _ = estimate_dynamic_sidecar_resources_from_ec2_instance(instance_cpus, instance_ram)
+    # the sidecar's own share is carved out of what the user service gets
+    assert float(resources["CPU"].limit) == pytest.approx(available_cpus - sidecar_own)
+    assert int(resources["RAM"].limit) < int(instance_ram)
+
+
+def test_scale_service_resources_raises_when_instance_too_small(
+    dynamic_services_settings: DynamicServicesSettings,
+):
+    with pytest.raises(NotEnoughInstanceResourcesError):
+        scale_service_resources_to_instance_type(
+            _single_service_resources(0.1, "2GiB"),
+            dynamic_services_settings=dynamic_services_settings,
+            egress_proxy_count=0,
+            with_tracing=False,
+            with_rclone=False,
+            instance_cpus=2,
+            instance_ram=TypeAdapter(ByteSize).validate_python("2GiB"),
+        )
