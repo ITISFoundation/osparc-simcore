@@ -71,6 +71,7 @@ from ....instrumentation import (
     get_instrumentation,
     get_metrics_labels,
     get_rate,
+    has_instrumentation,
     track_duration,
 )
 from ....long_running_tasks import get_long_running_client_helper
@@ -265,7 +266,7 @@ async def service_save_state(
 
     with track_duration() as duration:
         size = await sidecars_client.save_service_state(scheduler_data.endpoint, progress_callback=progress_callback)
-    if size and size > 0:
+    if size and size > 0 and has_instrumentation(app):
         get_instrumentation(app).dynamic_sidecar_metrics.push_service_state_rate.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(get_rate(size, duration.to_float()))
@@ -470,7 +471,7 @@ async def attempt_pod_removal_and_data_saving(app: FastAPI, scheduler_data: Sche
     # metrics
 
     stop_duration = scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
-    if stop_duration is not None:
+    if stop_duration is not None and has_instrumentation(app):
         get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(stop_duration)
@@ -552,7 +553,7 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
     async def _pull_output_ports_with_metrics() -> None:
         with track_duration() as duration:
             size: int = await sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint)
-        if size and size > 0:
+        if size and size > 0 and has_instrumentation(app):
             get_instrumentation(app).dynamic_sidecar_metrics.output_ports_pull_rate.labels(
                 **get_metrics_labels(scheduler_data)
             ).observe(get_rate(size, duration.to_float()))
@@ -561,15 +562,16 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
         with track_duration() as duration:
             await sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint)
 
-        get_instrumentation(app).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
-            **get_metrics_labels(scheduler_data)
-        ).observe(duration.to_float())
+        if has_instrumentation(app):
+            get_instrumentation(app).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
+                **get_metrics_labels(scheduler_data)
+            ).observe(duration.to_float())
 
     async def _restore_service_state_with_metrics() -> None:
         with track_duration() as duration:
             size = await sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
 
-        if size and size > 0:
+        if size and size > 0 and has_instrumentation(app):
             get_instrumentation(app).dynamic_sidecar_metrics.pull_service_state_rate.labels(
                 **get_metrics_labels(scheduler_data)
             ).observe(get_rate(size, duration.to_float()))

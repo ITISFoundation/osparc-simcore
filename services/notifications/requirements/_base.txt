@@ -20,7 +20,7 @@ aiormq==6.8.1
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
-aiosmtplib==5.1.0
+aiosmtplib==5.1.2
     # via -r requirements/_base.in
 alembic==1.15.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
