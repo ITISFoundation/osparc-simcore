@@ -32,7 +32,8 @@ This ensures data integrity and consistency across the system.
 """
 
 import logging
-from typing import Any, cast
+from itertools import batched
+from typing import Any, Final, cast
 
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from fastapi import HTTPException
@@ -58,6 +59,9 @@ type ServiceMetaDataPublishedDict = dict[tuple[ServiceKey, ServiceVersion], Serv
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
 _SERVICE_CACHE_PREWARM_LOCK_KEY = "catalog:service_manifest:prewarm"
+
+# NOTE: bounds each atomic MULTI/EXEC so bulk writes do not stall the shared redis
+_SERVICE_CACHE_WRITE_CHUNK_SIZE: Final[int] = 500
 
 
 def _build_service_cache_key(
@@ -95,21 +99,20 @@ async def get_services_map(
                 )
                 _error_already_logged.add(errored_service)
 
-    try:
-        await service_cache.multi_set(
-            [
-                (
-                    _build_service_cache_key(
-                        key=service.key,
-                        version=service.version,
-                    ),
-                    service.model_dump(mode="json", by_alias=True),
-                )
-                for service in services.values()
-            ],
-            ttl=DIRECTOR_CACHING_TTL,
+    cache_entries = [
+        (
+            _build_service_cache_key(
+                key=service.key,
+                version=service.version,
+            ),
+            service.model_dump(mode="json", by_alias=True),
         )
-        _logger.info("Refreshed the service manifest cache with %d entries", len(services))
+        for service in services.values()
+    ]
+    try:
+        for chunk in batched(cache_entries, _SERVICE_CACHE_WRITE_CHUNK_SIZE, strict=False):
+            await service_cache.multi_set(list(chunk), ttl=DIRECTOR_CACHING_TTL)
+        _logger.info("Refreshed the service manifest cache with %d entries", len(cache_entries))
     except (RedisError, TimeoutError):
         _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
     return services
