@@ -16,6 +16,7 @@ from models_library.rabbitmq_messages import (
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
@@ -31,7 +32,6 @@ from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
-from ....catalog import CatalogClient
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_nodes import ProjectsNodesRepository
@@ -171,10 +171,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         boot_options = node.boot_options if node is not None and node.boot_options is not None else {}
         _logger.info("%s", f"{boot_options=}")
 
-        catalog_client = CatalogClient.instance(app)
+        rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
-            catalog_client=catalog_client,
+            rpc_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
             service_user_selection_boot_options=boot_options,
@@ -227,8 +227,6 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
-        rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
-
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
@@ -245,15 +243,18 @@ class CreateSidecars(DynamicSchedulerEvent):
             rpc_client=rpc_client,
         )
 
-        user_specific_service_spec = (
-            await catalog_client.get_service_specifications(
-                scheduler_data.user_id,
-                scheduler_data.key,
-                scheduler_data.version,
-                scheduler_data.product_name,
-            )
-        ).get("sidecar", {}) or {}
-        user_specific_service_spec = AioDockerServiceSpec.model_validate(user_specific_service_spec)
+        user_specific_service_specs = await catalog_rpc.get_service_specifications(
+            rpc_client,
+            product_name=scheduler_data.product_name,
+            user_id=scheduler_data.user_id,
+            service_key=scheduler_data.key,
+            service_version=scheduler_data.version,
+        )
+        user_specific_service_spec = AioDockerServiceSpec.model_validate(
+            user_specific_service_specs.sidecar.model_dump(by_alias=True, exclude_unset=True)
+            if user_specific_service_specs.sidecar
+            else {}
+        )
         dynamic_sidecar_service_final_spec = _merge_service_base_and_user_specs(
             dynamic_sidecar_service_spec_base, user_specific_service_spec
         )

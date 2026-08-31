@@ -15,6 +15,10 @@ from models_library.api_schemas_catalog.services import (
     ServiceListFilters,
     ServiceUpdateV2,
 )
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecificationsGet,
+)
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -23,6 +27,7 @@ from models_library.rest_pagination import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
+from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging import version
@@ -757,6 +762,98 @@ async def test_rpc_get_service_labels(
 
     assert isinstance(labels, SimcoreServiceLabels)
     assert labels.needs_dynamic_sidecar is False
+
+
+async def test_rpc_get_service_extras(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    app: FastAPI,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    assert app
+
+    expected_service = expected_director_rest_api_list_services[0]
+
+    extras = await catalog_rpc.get_service_extras(
+        rpc_client,
+        service_key=expected_service["key"],
+        service_version=expected_service["version"],
+    )
+
+    assert isinstance(extras, ServiceExtras)
+
+
+async def test_rpc_get_service_resources(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    assert app
+
+    expected_service = expected_director_rest_api_list_services[0]
+
+    resources = await catalog_rpc.get_service_resources(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=expected_service["key"],
+        service_version=expected_service["version"],
+    )
+
+    assert resources
+    assert DEFAULT_SINGLE_SERVICE_NAME in resources
+
+
+async def test_rpc_get_service_specifications(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    user_id: UserID,
+    app: FastAPI,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    assert app
+
+    expected_service = expected_director_rest_api_list_services[0]
+
+    specifications = await catalog_rpc.get_service_specifications(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=expected_service["key"],
+        service_version=expected_service["version"],
+    )
+
+    # no user/group specific specs defined -> defaults are returned
+    assert specifications == ServiceSpecificationsGet()
+
+
+async def test_rpc_get_service_specifications_with_unknown_user_raises(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    app: FastAPI,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    assert app
+
+    expected_service = expected_director_rest_api_list_services[0]
+
+    with pytest.raises(CatalogForbiddenRpcError):
+        await catalog_rpc.get_service_specifications(
+            rpc_client,
+            product_name=product_name,
+            user_id=1000,
+            service_key=expected_service["key"],
+            service_version=expected_service["version"],
+        )
 
 
 async def test_rpc_get_service_ports_not_found(

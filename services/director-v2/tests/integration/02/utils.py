@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import os
-import urllib.parse
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from typing import Any
@@ -20,15 +19,17 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import PositiveInt
 from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -47,7 +48,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
-from yarl import URL
 
 PROXY_BOOT_TIME = 30
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 120
@@ -282,13 +282,19 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
 
 
 async def _get_service_resources(
-    catalog_url: URL, service_key: str, service_version: str, product_name: ProductName
+    rpc_client: RabbitMQRPCClient,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: ProductName,
+    user_id: UserID,
 ) -> ServiceResourcesDict:
-    encoded_key = urllib.parse.quote_plus(service_key)
-    url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
-        return TypeAdapter(ServiceResourcesDict).validate_python(response.json())
+    return await catalog_rpc.get_service_resources(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
 
 
 async def _handle_redirection(redirection_response: httpx.Response, *, method: str, **kwargs) -> httpx.Response:
@@ -313,13 +319,14 @@ async def assert_start_service(
     service_version: str,
     service_uuid: str,
     basepath: str | None,
-    catalog_url: URL,
+    rpc_client: RabbitMQRPCClient,
 ) -> None:
     service_resources: ServiceResourcesDict = await _get_service_resources(
-        catalog_url=catalog_url,
+        rpc_client=rpc_client,
         service_key=service_key,
         service_version=service_version,
         product_name=product_name,
+        user_id=user_id,
     )
     data = {
         "user_id": user_id,

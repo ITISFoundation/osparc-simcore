@@ -12,6 +12,10 @@ from models_library.api_schemas_catalog.services import (
     ServiceSummary,
     ServiceUpdateV2,
 )
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecifications,
+    ServiceSpecificationsGet,
+)
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
 from models_library.batch_operations import create_batch_ids_validator
@@ -172,7 +176,7 @@ async def _get_services_with_access_rights(
         Dictionary mapping (key, version) to list of access rights
 
     Raises:
-        CatalogForbiddenError: If no access rights are found for any service
+        CatalogForbiddenRpcError: If no access rights are found for any service
     """
     if not services:
         return {}
@@ -556,7 +560,7 @@ async def check_catalog_service_permissions(
 
     Raises:
         CatalogItemNotFoundError: service (key,version) not found
-        CatalogForbiddenError: insufficient access rights to get the requested access
+        CatalogForbiddenRpcError: insufficient access rights to get the requested access
     """
 
     access_rights = await _get_service_access_rights_or_raise(
@@ -822,7 +826,7 @@ async def get_user_services_ports(
 
     Raises:
         CatalogItemNotFoundError: When service is not found
-        CatalogForbiddenError: When user doesn't have access rights
+        CatalogForbiddenRpcError: When user doesn't have access rights
     """
 
     # Check access rights first
@@ -854,3 +858,44 @@ async def get_catalog_service_labels(
 ) -> SimcoreServiceLabels:
     labels = await director_api.get_service_labels(service_key=service_key, service_version=service_version)
     return TypeAdapter(SimcoreServiceLabels).validate_python(labels)
+
+
+async def get_catalog_service_specifications(
+    repo: ServicesRepository,
+    groups_repo: GroupsRepository,
+    *,
+    default_service_specifications: ServiceSpecifications,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceSpecificationsGet:
+    """Returns the user/group specific schedule-time specifications of a service
+
+    Raises:
+        CatalogForbiddenRpcError: When user doesn't have access rights
+    """
+    if is_function_service(service_key):
+        # There is no specification for these, return empty specs
+        return ServiceSpecificationsGet()
+
+    user_groups = await groups_repo.list_user_groups(user_id)
+    if not user_groups:
+        raise CatalogForbiddenRpcError(
+            name=f"{service_key}:{service_version}",
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    service_specs = await repo.get_service_specifications(
+        service_key,
+        service_version,
+        tuple(user_groups),
+        product_name,
+        allow_use_latest_service_version=True,
+    )
+    if not service_specs:
+        # nothing found, let's return the default then
+        service_specs = default_service_specifications.model_copy()
+
+    return ServiceSpecificationsGet.model_validate(service_specs, from_attributes=True)

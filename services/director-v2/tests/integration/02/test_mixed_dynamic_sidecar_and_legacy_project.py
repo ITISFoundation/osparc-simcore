@@ -26,6 +26,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_director_v2.modules.rabbitmq import get_rabbitmq_rpc_client
 from utils import (
     assert_all_services_running,
     assert_services_reply_200,
@@ -72,11 +73,6 @@ def mock_env(
     director_port = services_endpoint["director"].port
     assert director_port
 
-    catalog_host = services_endpoint["catalog"].host
-    assert catalog_host
-    catalog_port = services_endpoint["catalog"].port
-    assert catalog_port
-
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     mock_env.pop("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", None)
 
@@ -99,8 +95,6 @@ def mock_env(
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
             "DIRECTOR_HOST": director_host,
             "DIRECTOR_PORT": f"{director_port}",
-            "CATALOG_HOST": catalog_host,
-            "CATALOG_PORT": f"{catalog_port}",
         },
     )
 
@@ -289,7 +283,7 @@ async def test_legacy_and_dynamic_sidecar_run(
                 service_uuid=node_id,
                 # extra config (legacy)
                 basepath=f"/x/{node_id}" if is_legacy(node) else None,
-                catalog_url=services_endpoint["catalog"],
+                rpc_client=get_rabbitmq_rpc_client(initialized_app),
             )
             for node_id, node in dy_static_file_server_project.workbench.items()
         )

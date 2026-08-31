@@ -19,8 +19,8 @@ import contextlib
 import logging
 from typing import Annotated, Any, Final, cast
 
-from annotated_types import doc
 import networkx as nx
+from annotated_types import doc
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.serialization import model_dump_with_secrets
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
@@ -67,7 +67,6 @@ from ...models.comp_runs import (
     RunMetadataDict,
 )
 from ...models.comp_tasks import CompTaskAtDB
-from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import run_new_pipeline, stop_pipeline
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -86,7 +85,6 @@ from ...utils.dags import (
     create_minimal_computational_graph_based_on_selection,
     find_computational_node_cycles,
 )
-from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
@@ -114,14 +112,14 @@ async def _check_pipeline_not_running_or_raise_409(
 async def _check_pipeline_startable(
     pipeline_dag: nx.DiGraph,
     computation: ComputationCreate,
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
 ) -> None:
     assert computation.product_name  # nosec
     if deprecated_tasks := await utils.find_deprecated_tasks(
         computation.user_id,
         computation.product_name,
         [ServiceKeyVersion(key=node[1]["key"], version=node[1]["version"]) for node in pipeline_dag.nodes.data()],
-        catalog_client,
+        rpc_client,
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -409,7 +407,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
     projects_metadata_repo: Annotated[ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))],
-    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
 ) -> ComputationGet:
@@ -436,7 +433,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         )
 
         if computation.start_pipeline:
-            await _check_pipeline_startable(minimal_computational_dag, computation, catalog_client)
+            await _check_pipeline_startable(minimal_computational_dag, computation, rpc_client)
 
         await comp_pipelines_repo.upsert_pipeline(
             project.uuid,
@@ -448,7 +445,6 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
             project=project,
             project_nodes=project_nodes,
-            catalog_client=catalog_client,
             published_nodes=min_computation_nodes if computation.start_pipeline else [],
             user_id=computation.user_id,
             product_name=computation.product_name,

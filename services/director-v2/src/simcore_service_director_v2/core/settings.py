@@ -15,7 +15,6 @@ from models_library.clusters import BaseCluster, ClusterAuthentication, ClusterT
 from pydantic import AliasChoices, AnyUrl, Field, NonNegativeInt, PositiveInt, field_validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
-from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -226,8 +225,6 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         StorageAuthSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ] = None
-
-    DIRECTOR_V2_CATALOG: Annotated[CatalogSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
     DIRECTOR_V0: Annotated[DirectorV0Settings, Field(json_schema_extra={"auto_default_from_env": True})] = (
         DEFAULT_FACTORY

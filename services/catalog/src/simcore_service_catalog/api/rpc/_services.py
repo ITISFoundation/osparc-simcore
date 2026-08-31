@@ -13,10 +13,15 @@ from models_library.api_schemas_catalog.services import (
     ServiceUpdateV2,
 )
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecificationsGet,
+)
+from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError, validate_call
@@ -32,7 +37,7 @@ from ...errors import BatchNotFoundError
 from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
-from ...service import catalog_services
+from ...service import catalog_services, services_resources
 from .._dependencies.director import get_director_client
 
 _logger = logging.getLogger(__name__)
@@ -336,6 +341,71 @@ async def get_service_labels(
     """Get the docker image labels of a specific service version"""
     return await catalog_services.get_catalog_service_labels(
         get_director_client(app),
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+
+@router.expose(reraise_if_error_type=(ValidationError,))
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_service_extras(
+    app: FastAPI,
+    *,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceExtras:
+    """Get the extra metadata (e.g. node requirements) of a specific service version"""
+    return await catalog_services.get_catalog_service_extras(
+        get_director_client(app),
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+
+@router.expose(reraise_if_error_type=(ValidationError,))
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_service_resources(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceResourcesDict:
+    """Get the resources (and boot-modes) required to run a specific service version"""
+    assert app.state.engine  # nosec
+
+    groups_repo = GroupsRepository(app.state.engine)
+    return await services_resources.get_catalog_service_resources(
+        get_director_client(app),
+        ServicesRepository(app.state.engine),
+        default_service_resources=app.state.settings.CATALOG_SERVICES_DEFAULT_RESOURCES,
+        user_groups=await groups_repo.list_user_groups(user_id),
+        product_name=product_name,
+        service_key=service_key,
+        service_version=service_version,
+    )
+
+
+@router.expose(reraise_if_error_type=(CatalogForbiddenRpcError, ValidationError))
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_service_specifications(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> ServiceSpecificationsGet:
+    """Get the user/group specific schedule-time specifications of a service version"""
+    assert app.state.engine  # nosec
+
+    return await catalog_services.get_catalog_service_specifications(
+        ServicesRepository(app.state.engine),
+        GroupsRepository(app.state.engine),
+        default_service_specifications=app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS,
+        product_name=product_name,
+        user_id=user_id,
         service_key=service_key,
         service_version=service_version,
     )

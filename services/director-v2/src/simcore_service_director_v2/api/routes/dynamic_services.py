@@ -21,19 +21,21 @@ from models_library.users import UserID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.utils import logged_gather
 from starlette import status
 from starlette.datastructures import URL
 
-from ...api.dependencies.catalog import get_catalog_client
 from ...api.dependencies.database import get_repository
-from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
+from ...api.dependencies.rabbitmq import (
+    get_rabbitmq_client_from_request,
+    rabbitmq_rpc_client,
+)
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
 from ...core.errors import ProjectNotFoundError
 from ...modules import projects_networks
-from ...modules.catalog import CatalogClient
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
@@ -61,15 +63,20 @@ logger = logging.getLogger(__name__)
 
 
 async def _get_service_version_display(
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: str,
 ) -> str | None:
-    service_metadata = await catalog_client.get_service(user_id, service_key, service_version, product_name)
-    version_display: str | None = service_metadata.get("version_display")
-    return version_display
+    service_metadata = await catalog_rpc.get_service(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    return service_metadata.version_display
 
 
 @router.get(
@@ -110,7 +117,7 @@ async def list_tracked_dynamic_services(
 @log_decorator(logger=logger)
 async def create_dynamic_service(
     service: DynamicServiceCreate,
-    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
+    rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     dynamic_services_settings: Annotated[DynamicServicesSettings, Depends(get_dynamic_services_settings)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
@@ -118,7 +125,9 @@ async def create_dynamic_service(
     x_dynamic_sidecar_request_scheme: str = Header(...),
     x_simcore_user_agent: str = Header(...),
 ) -> DynamicServiceGet | RedirectResponse:
-    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(service.key, service.version)
+    simcore_service_labels: SimcoreServiceLabels = await catalog_rpc.get_service_labels(
+        rpc_client, service_key=service.key, service_version=service.version
+    )
 
     # LEGACY (backwards compatibility)
     if not simcore_service_labels.needs_dynamic_sidecar:
@@ -139,7 +148,7 @@ async def create_dynamic_service(
 
     if not await is_sidecar_running(service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME):
         version_display = await _get_service_version_display(
-            catalog_client, service.user_id, service.key, service.version, service.product_name
+            rpc_client, service.user_id, service.key, service.version, service.product_name
         )
         await scheduler.add_service(
             service=service,
@@ -289,7 +298,7 @@ async def update_projects_networks(
     projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
-    catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
+    rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
 ) -> None:
     # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
@@ -298,7 +307,7 @@ async def update_projects_networks(
         projects_repository=projects_repository,
         projects_nodes_repository=projects_nodes_repository,
         scheduler=scheduler,
-        catalog_client=catalog_client,
+        rpc_client=rpc_client,
         rabbitmq_client=rabbitmq_client,
         project_id=project_id,
     )

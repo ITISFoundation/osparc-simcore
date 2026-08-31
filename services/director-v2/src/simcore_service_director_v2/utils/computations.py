@@ -1,16 +1,17 @@
 import datetime as dt
 import logging
-from typing import Any
 
 import arrow
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES, RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.services_regex import SERVICE_KEY_RE
 from models_library.users import UserID
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.utils import logged_gather
 
 from ..models.comp_tasks import CompTaskAtDB
-from ..modules.catalog import CatalogClient
 from ..modules.db.tables import NodeClass
 
 _logger = logging.getLogger(__name__)
@@ -26,7 +27,8 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
         RunningState.NOT_STARTED,
         RunningState.WAITING_FOR_CLUSTER,
     ): RunningState.WAITING_FOR_CLUSTER,
-    # if there are tasks waiting for resources and nothing is running/pending, then the pipeline is also waiting for resources
+    # if there are tasks waiting for resources and nothing is running/pending,
+    # then the pipeline is also waiting for resources
     (
         RunningState.PUBLISHED,
         RunningState.NOT_STARTED,
@@ -116,28 +118,30 @@ async def find_deprecated_tasks(
     user_id: UserID,
     product_name: str,
     task_key_versions: list[ServiceKeyVersion],
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
 ) -> list[ServiceKeyVersion]:
     services_details = await logged_gather(
         *(
-            catalog_client.get_service(
+            catalog_rpc.get_service(
+                rpc_client,
+                product_name=product_name,
                 user_id=user_id,
                 service_key=key_version.key,
                 service_version=key_version.version,
-                product_name=product_name,
             )
             for key_version in set(task_key_versions)
         )
     )
     service_key_version_to_details = {
-        ServiceKeyVersion.model_construct(key=details["key"], version=details["version"]): details
+        ServiceKeyVersion.model_construct(key=details.key, version=details.version): details
         for details in services_details
     }
     today = dt.datetime.now(tz=dt.UTC)
 
-    def _is_service_deprecated(service: dict[str, Any]) -> bool:
-        if deprecation_date := service.get("deprecated"):
-            deprecation_date = arrow.get(deprecation_date).datetime.replace(tzinfo=dt.UTC)
+    def _is_service_deprecated(service: ServiceGetV2) -> bool:
+        release = next((r for r in service.history if r.version == service.version), None)
+        if release and release.retired:
+            deprecation_date = arrow.get(release.retired).datetime.replace(tzinfo=dt.UTC)
             is_deprecated: bool = today > deprecation_date
             return is_deprecated
         return False

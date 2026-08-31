@@ -26,12 +26,12 @@ from .._meta import APP_NAME
 from ..core.application import create_base_app
 from ..core.settings import AppSettings
 from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
-from ..modules import db, director_v0, dynamic_sidecar
-from ..modules.catalog import CatalogClient
+from ..modules import db, director_v0, dynamic_sidecar, rabbitmq
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ..modules.dynamic_sidecar import api_client
 from ..modules.projects_networks import requires_dynamic_sidecar
+from ..modules.rabbitmq import get_rabbitmq_rpc_client
 from ..utils.db import get_repository
 from ._client import ThinDV2LocalhostClient
 
@@ -53,6 +53,7 @@ async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
             director_v0_settings=settings.DIRECTOR_V0,
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
+        rabbitmq.configure_rabbitmq(app_lifespan, settings=settings.DIRECTOR_V2_RABBITMQ)
 
     async with app_lifespan(app):
         yield app
@@ -101,7 +102,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
             if not await requires_dynamic_sidecar(
                 service_key=node_content.key,
                 service_version=node_content.version,
-                catalog_client=CatalogClient.instance(app),
+                rpc_client=get_rabbitmq_rpc_client(app),
             ):
                 continue
 

@@ -36,7 +36,6 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
 )
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
-from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
     UserExtraProperties,
 )
@@ -574,19 +573,12 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
             assert isinstance(sorted_dict["task_template"]["container_spec"]["env"][key], str)
             unsorted_list = json.loads(sorted_dict["task_template"]["container_spec"]["env"][key])
             assert isinstance(unsorted_list, list)
-            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(unsorted_list.sort())
+            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(sorted(unsorted_list))
     assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
 
-    catalog_client = CatalogClient.instance(minimal_app)
-    user_service_specs: dict[str, Any] = await catalog_client.get_service_specifications(
-        scheduler_data.user_id,
-        mock_service_key_version.key,
-        mock_service_key_version.version,
-        scheduler_data.product_name,
-    )
-    assert user_service_specs
-    assert "sidecar" in user_service_specs
-    user_aiodocker_service_spec = AioDockerServiceSpec.model_validate(user_service_specs["sidecar"])
+    assert fake_service_specifications
+    assert "sidecar" in fake_service_specifications
+    user_aiodocker_service_spec = AioDockerServiceSpec.model_validate(fake_service_specifications["sidecar"])
     assert user_aiodocker_service_spec
 
     orig_dict = dynamic_sidecar_spec.model_dump(by_alias=True, exclude_unset=True)

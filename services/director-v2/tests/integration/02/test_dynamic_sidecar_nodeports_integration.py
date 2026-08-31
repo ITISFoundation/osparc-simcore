@@ -59,6 +59,7 @@ from servicelib.long_running_tasks.models import (
     TaskId,
 )
 from servicelib.progress_bar import ProgressBarData
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.sequences_utils import pairwise
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -78,6 +79,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules import storage as dv2_modules_storage
+from simcore_service_director_v2.modules.rabbitmq import get_rabbitmq_rpc_client
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import TryAgain
@@ -639,7 +641,7 @@ async def _start_and_wait_for_dynamic_services_ready(
     user_id: UserID,
     workbench_dynamic_services: dict[str, Node],
     current_study: ProjectAtDB,
-    catalog_url: URL,
+    rpc_client: RabbitMQRPCClient,
 ) -> dict[str, str]:
     # start dynamic services
     await asyncio.gather(
@@ -654,7 +656,7 @@ async def _start_and_wait_for_dynamic_services_ready(
                 service_version=node.version,
                 service_uuid=service_uuid,
                 basepath=f"/x/{service_uuid}" if is_legacy(node) else None,
-                catalog_url=catalog_url,
+                rpc_client=rpc_client,
             )
             for service_uuid, node in workbench_dynamic_services.items()
         )
@@ -864,7 +866,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
-        catalog_url=services_endpoint["catalog"],
+        rpc_client=get_rabbitmq_rpc_client(initialized_app),
     )
 
     # STEP 2
@@ -999,7 +1001,7 @@ async def test_nodeports_integration(
         user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
-        catalog_url=services_endpoint["catalog"],
+        rpc_client=get_rabbitmq_rpc_client(initialized_app),
     )
 
     dy_path_volume_after = await _fetch_data_from_container(

@@ -3,7 +3,6 @@
 
 import json
 import logging
-import urllib.parse
 from collections.abc import AsyncIterable, Iterable, Iterator, Mapping
 from typing import Any
 from unittest import mock
@@ -14,6 +13,9 @@ import respx
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_catalog.services_specifications import (
+    ServiceSpecificationsGet,
+)
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     ServiceDetails,
@@ -289,32 +291,14 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def mocked_catalog_service_api(
-    mock_env: EnvVarsDict,
-    mock_service_key_version: ServiceKeyVersion,
+    mocker: MockerFixture,
     fake_service_specifications: dict[str, Any],
-) -> Iterator[respx.MockRouter]:
-    settings = AppSettings.create_from_envs()
-    assert settings
-    assert settings.DIRECTOR_V2_CATALOG
-
-    # pylint: disable=not-context-manager
-    with respx.mock(  # type: ignore
-        base_url=settings.DIRECTOR_V2_CATALOG.api_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        # health
-        respx_mock.get("/", name="get_health").respond(json="all good ;)")
-
-        # get service specifications
-        quoted_key = urllib.parse.quote(mock_service_key_version.key, safe="")
-        version = mock_service_key_version.version
-        respx_mock.get(
-            f"/services/{quoted_key}/{version}/specifications",
-            name="get_service_specifications",
-        ).respond(json=fake_service_specifications)
-
-        yield respx_mock
+) -> mock.AsyncMock:
+    return mocker.patch(
+        "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service_specifications",
+        autospec=True,
+        return_value=ServiceSpecificationsGet.model_validate(fake_service_specifications),
+    )
 
 
 @pytest.fixture()

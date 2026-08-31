@@ -18,11 +18,11 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.utils import logged_gather
 
 from ..core.errors import ProjectNetworkNotFoundError
-from ..modules.catalog import CatalogClient
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.db.repositories.projects_nodes import ProjectsNodesRepository
@@ -52,7 +52,7 @@ def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName
 async def requires_dynamic_sidecar(
     service_key: str,
     service_version: str,
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
 ) -> bool:
     decoded_service_key = urllib.parse.unquote_plus(service_key)
 
@@ -64,8 +64,10 @@ async def requires_dynamic_sidecar(
         return False
 
     service_key_version = ServiceKeyVersion.model_validate({"key": decoded_service_key, "version": service_version})
-    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
-        service_key_version.key, service_key_version.version
+    simcore_service_labels: SimcoreServiceLabels = await catalog_rpc.get_service_labels(
+        rpc_client,
+        service_key=service_key_version.key,
+        service_version=service_key_version.version,
     )
     requires_dynamic_sidecar_: bool = simcore_service_labels.needs_dynamic_sidecar
     return requires_dynamic_sidecar_
@@ -174,7 +176,7 @@ async def _get_networks_with_aliases_for_default_network(
     project_id: ProjectID,
     user_id: UserID,
     new_workbench: NodesDict,
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     rabbitmq_client: RabbitMQClient,
 ) -> NetworksWithAliases:
     """
@@ -192,7 +194,7 @@ async def _get_networks_with_aliases_for_default_network(
         if not await requires_dynamic_sidecar(
             service_key=node_content.key,
             service_version=node_content.version,
-            catalog_client=catalog_client,
+            rpc_client=rpc_client,
         ):
             continue
 
@@ -230,7 +232,7 @@ async def update_from_workbench(
     projects_repository: ProjectsRepository,
     projects_nodes_repository: ProjectsNodesRepository,
     scheduler: DynamicSidecarsScheduler,
-    catalog_client: CatalogClient,
+    rpc_client: RabbitMQRPCClient,
     rabbitmq_client: RabbitMQClient,
     project_id: ProjectID,
 ) -> None:
@@ -255,7 +257,7 @@ async def update_from_workbench(
         project_id=project_id,
         user_id=UserID(project.prj_owner),
         new_workbench=await projects_nodes_repository.get_all(project_id),
-        catalog_client=catalog_client,
+        rpc_client=rpc_client,
         rabbitmq_client=rabbitmq_client,
     )
     logger.debug("%s", f"{existing_networks_with_aliases=}")

@@ -26,7 +26,6 @@ from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
 from .....utils.db import RUNNING_STATE_TO_DB
-from ....catalog import CatalogClient
 from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks
 from .._base import BaseRepository
 from . import _utils
@@ -132,7 +131,6 @@ class CompTasksRepository(BaseRepository):
         *,
         project: ProjectAtDB,
         project_nodes: NodesDict,
-        catalog_client: CatalogClient,
         published_nodes: list[NodeID],
         user_id: UserID,
         product_name: str,
@@ -152,7 +150,6 @@ class CompTasksRepository(BaseRepository):
                 await _utils.generate_tasks_list_from_project(
                     project=project,
                     project_nodes=project_nodes,
-                    catalog_client=catalog_client,
                     published_nodes=published_nodes,
                     user_id=user_id,
                     product_name=product_name,

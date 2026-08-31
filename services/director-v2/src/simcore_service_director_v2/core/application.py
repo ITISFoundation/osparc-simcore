@@ -33,7 +33,6 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..api.rpc.routes import configure_rpc_api_routes
 from ..modules import (
-    catalog,
     comp_scheduler,
     dask_clients_pool,
     db,
@@ -126,13 +125,6 @@ def _configure_external_service_clients(app_lifespan: LifespanManager, settings:
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
-    if settings.DIRECTOR_V2_CATALOG:
-        catalog.configure_catalog(
-            app_lifespan,
-            catalog_settings=settings.DIRECTOR_V2_CATALOG,
-            tracing_settings=settings.DIRECTOR_V2_TRACING,
-        )
-
 
 def _configure_rabbitmq_and_redis(
     app_lifespan: LifespanManager,
@@ -176,7 +168,7 @@ def _configure_plugins(app: FastAPI, app_lifespan: LifespanManager, settings: Ap
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         instrumentation.configure_instrumentation(app, app_lifespan)
 
-    # external service clients (director-v0, storage, catalog)
+    # external service clients (director-v0, storage)
     _configure_external_service_clients(app_lifespan, settings)
 
     # database

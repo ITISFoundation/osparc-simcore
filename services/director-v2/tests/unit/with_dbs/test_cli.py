@@ -127,7 +127,7 @@ def task_id(faker: Faker) -> str:
 @pytest.fixture
 def mock_catalog_instance(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.catalog.CatalogClient.instance",
+        "simcore_service_director_v2.cli._core.get_rabbitmq_rpc_client",
         return_value=AsyncMock(),
     )
 

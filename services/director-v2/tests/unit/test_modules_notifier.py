@@ -67,7 +67,6 @@ def mock_env(
             "S3_SECRET_KEY": faker.pystr(),
             "S3_BUCKET_NAME": faker.pystr(),
             "DIRECTOR_ENABLED": "0",
-            "DIRECTOR_V2_CATALOG": "null",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "0",
             "COMPUTATIONAL_BACKEND_ENABLED": "0",
             "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "1",

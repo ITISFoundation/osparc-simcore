@@ -7,6 +7,8 @@ from models_library.services import ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks.models import TaskId
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -17,7 +19,6 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData
-from .....modules.catalog import CatalogClient
 from .....modules.instrumentation import get_instrumentation, get_metrics_labels
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
@@ -59,9 +60,11 @@ async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> No
     # creates a docker compose spec given the service key and tag
     # fetching project form DB and fetching user settings
 
-    catalog_client = CatalogClient.instance(app)
-    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
-        scheduler_data.key, scheduler_data.version
+    rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
+    simcore_service_labels: SimcoreServiceLabels = await catalog_rpc.get_service_labels(
+        rpc_client,
+        service_key=scheduler_data.key,
+        service_version=scheduler_data.version,
     )
 
     groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)

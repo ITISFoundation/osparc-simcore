@@ -10,7 +10,6 @@ import base64
 import datetime as dt
 import json
 import re
-import urllib.parse
 from collections.abc import Awaitable, Callable, Iterator
 from decimal import Decimal
 from pathlib import Path
@@ -23,7 +22,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI, status
-from models_library.api_schemas_catalog.services import ServiceGet
+from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
@@ -133,114 +132,71 @@ def mocked_director_service_fcts(
         yield respx_mock
 
 
+def _make_service_get_v2(
+    service_key: str,
+    service_version: str,
+    fake_service_details: ServiceMetaDataPublished,
+    *,
+    retired: dt.datetime | None = None,
+) -> ServiceGetV2:
+    return ServiceGetV2.model_validate(
+        {
+            **ServiceGetV2.model_json_schema()["examples"][0],
+            "key": service_key,
+            "version": service_version,
+            "inputs": jsonable_encoder(fake_service_details.inputs, by_alias=True),
+            "outputs": jsonable_encoder(fake_service_details.outputs, by_alias=True),
+            "history": [{"version": service_version, "retired": retired}],
+        }
+    )
+
+
+@pytest.fixture
+def catalog_service_retired_at(request: pytest.FixtureRequest) -> dt.datetime | None:
+    """override indirectly to simulate services that were retired (i.e. deprecated)"""
+    retired: dt.datetime | None = getattr(request, "param", None)
+    return retired
+
+
 @pytest.fixture
 def mocked_catalog_service_fcts(
-    minimal_app: FastAPI,
+    mocker: MockerFixture,
     fake_service_details: ServiceMetaDataPublished,
     fake_service_resources: ServiceResourcesDict,
     fake_service_labels: dict[str, Any],
     fake_service_extras: ServiceExtras,
-) -> Iterator[respx.MockRouter]:
-    def _mocked_service_resources(request) -> httpx.Response:
-        return httpx.Response(httpx.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True))
-
-    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx.Response:
-        data_published = fake_service_details.model_copy(
-            update={
-                "key": urllib.parse.unquote(service_key),
-                "version": service_version,
-            }
-        ).model_dump(by_alias=True)
-        data = {
-            **ServiceGet.model_json_schema()["examples"][0],
-            **data_published,
-        }
-        payload = ServiceGet.model_validate(data)
-        return httpx.Response(
-            200,
-            json=jsonable_encoder(
-                payload,
-                by_alias=True,
-            ),
+    catalog_service_retired_at: dt.datetime | None,
+) -> dict[str, mock.AsyncMock]:
+    async def _mocked_service_details(_rpc_client, *, service_key, service_version, **kwargs) -> ServiceGetV2:
+        return _make_service_get_v2(
+            service_key,
+            service_version,
+            fake_service_details,
+            retired=catalog_service_retired_at,
         )
 
-    # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.get(
-            re.compile(
-                r"services/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F[^/]+/[^\.]+.[^\.]+.[^\/]+/resources"
-            ),
-            name="get_service_resources",
-        ).mock(side_effect=_mocked_service_resources)
-        respx_mock.get(
-            re.compile(r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"),
-            name="get_service_labels",
-        ).respond(json=fake_service_labels)
-        respx_mock.get(
-            re.compile(r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/extras"),
-            name="get_service_extras",
-        ).respond(json=fake_service_extras.model_dump(mode="json", by_alias=True))
-        respx_mock.get(
-            re.compile(
-                r"services/(?P<service_key>simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).*"
-            ),
-            name="get_service",
-        ).mock(side_effect=_mocked_services_details)
-
-        yield respx_mock
-
-
-@pytest.fixture
-def mocked_catalog_service_fcts_deprecated(
-    minimal_app: FastAPI,
-    fake_service_details: ServiceMetaDataPublished,
-    fake_service_extras: ServiceExtras,
-) -> Iterator[respx.MockRouter]:
-    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx.Response:
-        data_published = fake_service_details.model_copy(
-            update={
-                "key": urllib.parse.unquote(service_key),
-                "version": service_version,
-                "deprecated": (dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)).isoformat(),
-            }
-        ).model_dump(by_alias=True)
-
-        deprecated = {"deprecated": (dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)).isoformat()}
-
-        data = {
-            **ServiceGet.model_json_schema()["examples"][0],
-            **data_published,
-            **deprecated,
-        }  # type: ignore
-
-        payload = ServiceGet.model_validate(data)
-
-        return httpx.Response(
-            httpx.codes.OK,
-            json=jsonable_encoder(
-                payload,
-                by_alias=True,
-            ),
-        )
-
-    # pylint: disable=not-context-manager
-    with respx.mock(
-        base_url=minimal_app.state.settings.DIRECTOR_V2_CATALOG.api_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
-        respx_mock.get(
-            re.compile(
-                r"services/(?P<service_key>simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+)/(?P<service_version>[^\.]+.[^\.]+.[^/\?]+).*"
-            ),
-            name="get_service",
-        ).mock(side_effect=_mocked_services_details)
-
-        yield respx_mock
+    return {
+        "get_service": mocker.patch(
+            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service",
+            autospec=True,
+            side_effect=_mocked_service_details,
+        ),
+        "get_service_resources": mocker.patch(
+            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service_resources",
+            autospec=True,
+            return_value=fake_service_resources,
+        ),
+        "get_service_labels": mocker.patch(
+            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service_labels",
+            autospec=True,
+            return_value=SimcoreServiceLabels.model_validate(fake_service_labels),
+        ),
+        "get_service_extras": mocker.patch(
+            "servicelib.rabbitmq.rpc_interfaces.catalog.services.get_service_extras",
+            autospec=True,
+            return_value=fake_service_extras,
+        ),
+    }
 
 
 assert "json_schema_extra" in RutPricingPlanGet.model_config
@@ -358,7 +314,7 @@ async def test_computation_create_validators(
 async def test_create_computation(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
@@ -454,7 +410,7 @@ def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
 async def test_create_computation_with_wallet(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
     mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
     product_name: str,
@@ -547,7 +503,7 @@ async def test_create_computation_with_wallet(
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_404(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
     mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name: mock.Mock,
     product_name: str,
@@ -592,7 +548,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
     product_name: str,
     product_api_base_url: AnyHttpUrl,
@@ -624,7 +580,7 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
 async def test_start_computation_without_product_fails(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
@@ -650,7 +606,7 @@ async def test_start_computation_without_product_fails(
 async def test_start_computation_without_collection_run_id_fails(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
@@ -675,7 +631,7 @@ async def test_start_computation_without_collection_run_id_fails(
 async def test_start_computation(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
@@ -709,7 +665,7 @@ async def test_start_computation(
 async def test_start_computation_with_encryption_propagates_context_to_pipeline(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
@@ -762,7 +718,7 @@ async def test_start_computation_with_encryption_propagates_context_to_pipeline(
 async def test_start_computation_with_project_node_resources_defined(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
@@ -802,10 +758,16 @@ async def test_start_computation_with_project_node_resources_defined(
     assert mocked_get_service_resources.call_count == 0
 
 
+@pytest.mark.parametrize(
+    "catalog_service_retired_at",
+    [dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)],
+    ids=["retired_yesterday"],
+    indirect=True,
+)
 async def test_start_computation_with_deprecated_services_raises_409(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
-    mocked_catalog_service_fcts_deprecated: respx.MockRouter,
+    mocked_catalog_service_fcts: dict[str, mock.AsyncMock],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     fake_workbench_without_outputs: dict[str, Any],
