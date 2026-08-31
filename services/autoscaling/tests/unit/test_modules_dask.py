@@ -15,6 +15,7 @@ from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
     DASK_WORKER_THREAD_RESOURCE_NAME,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from faker import Faker
 from models_library.clusters import (
     ClusterAuthentication,
@@ -38,7 +39,6 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.modules.dask import (
     DaskMonitoringSettings,
     DaskTask,
-    _get_scheduler_identity,
     _scheduler_client,
     add_instance_generic_resources,
     compute_cluster_total_resources,
@@ -149,10 +149,8 @@ async def test_list_processing_tasks(
     assert future_queued_task
 
     # scheduler_info()'s "workers" is permanently empty for async clients (see
-    # _get_scheduler_identity's docstring), so we query the scheduler directly.
-    assert dask_spec_cluster_client.scheduler
-    scheduler_identity = await dask_spec_cluster_client.scheduler.identity(n_workers=-1)
-    assert isinstance(scheduler_identity, dict)
+    # get_scheduler_details's docstring), so we query the scheduler directly.
+    scheduler_identity = await get_scheduler_details(dask_spec_cluster_client)
     worker_address = next(iter(scheduler_identity["workers"]))
     assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {
         worker_address: [
@@ -497,7 +495,7 @@ async def test_get_scheduler_info_returns_all_workers_reliably(
     """Regression test: client.scheduler_info() is a local cache that (a) used to cap results at
     5 workers for async clients (distributed#9045) and (b), even after distributed#9308, is never
     populated with any worker for async clients: its periodic background refresh always fetches
-    with n_workers=0, so scheduler_info()["workers"] stays permanently empty. `_get_scheduler_identity()`
+    with n_workers=0, so scheduler_info()["workers"] stays permanently empty. `get_scheduler_details()`
     uses a live RPC instead and must reliably return all workers."""
     assert len(dask_workers_config_with_more_than_5_workers) == more_than_5_num_workers, (
         f"Expected {more_than_5_num_workers} workers, got {len(dask_workers_config_with_more_than_5_workers)}"
@@ -514,18 +512,18 @@ async def test_get_scheduler_info_returns_all_workers_reliably(
         # clients, so its "workers" cache never converges - unlike the live RPC below.
         assert client.scheduler_info()["workers"] == {}
 
-        with log_context(logging.INFO, "wait for _get_scheduler_identity() to report all workers") as ctx:
+        with log_context(logging.INFO, "wait for get_scheduler_details() to report all workers") as ctx:
             async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
                 with attempt:
-                    identity = await _get_scheduler_identity(client)
+                    identity = await get_scheduler_details(client)
                     num_workers = len(identity["workers"])
                     if num_workers != more_than_5_num_workers:
                         ctx.logger.info(
-                            "attempt %s: _get_scheduler_identity() reports %s/%s workers, retrying...",
+                            "attempt %s: get_scheduler_details() reports %s/%s workers, retrying...",
                             attempt.retry_state.attempt_number,
                             num_workers,
                             more_than_5_num_workers,
                         )
                     assert num_workers == more_than_5_num_workers, (
-                        f"_get_scheduler_identity() must return all {more_than_5_num_workers} workers"
+                        f"get_scheduler_details() must return all {more_than_5_num_workers} workers"
                     )

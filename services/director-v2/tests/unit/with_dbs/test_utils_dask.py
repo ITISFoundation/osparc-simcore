@@ -26,6 +26,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerLabelsDict,
 )
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
@@ -482,7 +483,7 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
             node_id=node_id,
             node_image=sleeper_task.image,
-            scheduler_info=dask_client.backend.client.scheduler_info(),
+            scheduler_info=await get_scheduler_details(dask_client.backend.client),
             task_resources={},
         )
 
@@ -509,9 +510,10 @@ async def test_check_if_cluster_is_able_to_run_pipeline_with_more_than_5_workers
     node_id: NodeID,
     published_project: PublishedProject,
 ):
-    """Regression test for https://github.com/dask/distributed/pull/9308 (distributed>=2026.7.0):
-    scheduler_info() used to cap results at 5 workers for async clients, which could make
-    check_if_cluster_is_able_to_run_pipeline() miss resources located on workers beyond the cap."""
+    """Regression test: for asynchronous clients, scheduler_info()'s "workers" is permanently
+    empty (its periodic background refresh always fetches with n_workers=0, see distributed#9308's
+    discussion), which would make check_if_cluster_is_able_to_run_pipeline() miss all resources.
+    get_scheduler_details() uses a live RPC instead and must return all workers reliably."""
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     async with (
         distributed.SpecCluster(
@@ -521,11 +523,9 @@ async def test_check_if_cluster_is_able_to_run_pipeline_with_more_than_5_workers
         ) as cluster,
         distributed.Client(cluster.scheduler_address, asynchronous=True) as client,
     ):
-        # scheduler_info()'s local cache is only synced once the scheduler pushes its periodic
-        # broadcast, so wait for all workers to register before relying on it.
         await client.wait_for_workers(6, timeout=10)
-        scheduler_info = client.scheduler_info()
-        assert len(scheduler_info["workers"]) == 6, "scheduler_info() must return all 6 workers"
+        scheduler_info = await get_scheduler_details(client)
+        assert len(scheduler_info["workers"]) == 6, "get_scheduler_details() must return all 6 workers"
 
         # the resource only present on the 6th worker must still be discoverable
         check_if_cluster_is_able_to_run_pipeline(
