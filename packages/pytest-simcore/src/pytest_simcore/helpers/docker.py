@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+from collections.abc import Container, Iterable
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -97,6 +98,34 @@ def get_service_published_port(service_name: str, target_ports: list[int] | int 
     return str(published_port)
 
 
+def filter_service_names_for_ci(service_names: Iterable[str], ci_allowed_service_names: Container[str]) -> list[str]:
+    """Keeps only the services the tests need when running in the CI
+
+    Outside of the CI nothing is filtered out, so that the UIs used to inspect the stack by hand
+    (adminer, redis-commander, ...) remain available for local debugging
+    """
+    if "CI" not in os.environ:
+        return list(service_names)
+    return [name for name in service_names if name in ci_allowed_service_names]
+
+
+def filter_compose_file_for_ci(
+    compose_path: Path, ci_allowed_service_names: Container[str], destination_dir: Path
+) -> Path:
+    """Same as 'filter_service_names_for_ci' but applied to a compose file, which is left untouched outside of the CI"""
+    content = yaml.safe_load(compose_path.read_text())
+    keep = filter_service_names_for_ci(content["services"], ci_allowed_service_names)
+    if keep == list(content["services"]):
+        return compose_path
+
+    log.info("Only services %s are kept from '%s' when running in the CI", keep, compose_path.name)
+    content["services"] = {name: content["services"][name] for name in keep}
+
+    destination_path = destination_dir / compose_path.name
+    destination_path.write_text(yaml.safe_dump(content, default_flow_style=False))
+    return destination_path
+
+
 def run_docker_compose_config(
     docker_compose_paths: list[Path] | Path,
     scripts_dir: Path,
@@ -137,7 +166,8 @@ def run_docker_compose_config(
     ]
 
     # Specify an alternate compose files
-    #  - When you use multiple Compose files, all paths in the files are relative to the first configuration file specified with -f.
+    #  - When you use multiple Compose files, all paths in the files are relative
+    #       to the first configuration file specified with -f.
     #    You can use the --project-directory option to override this base path.
     for docker_compose_path in docker_compose_paths:
         bash_options += [os.path.relpath(docker_compose_path, project_dir)]

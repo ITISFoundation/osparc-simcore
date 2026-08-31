@@ -46,6 +46,7 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import postgres_tools
+from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -116,10 +117,13 @@ def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.Monkey
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
+def docker_compose_file(docker_compose_env: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory) -> str:
     """Overrides pytest-docker fixture"""
     compose_path = CURRENT_DIR / "docker-compose-devel.yml"
     assert compose_path.exists()
+    compose_path = filter_compose_file_for_ci(
+        compose_path, ("postgres", "rabbit", "redis"), tmp_path_factory.mktemp("compose")
+    )
     return f"{compose_path}"
 
 
