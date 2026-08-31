@@ -140,8 +140,8 @@ async def test_list_latest_catalog_services(
     assert total_count == num_services
     assert page_found_items
     assert len(page_found_items) <= limit
-    assert mocked_director_rest_api["get_service"].called
-    assert mocked_director_rest_api["get_service"].call_count == limit
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
 
     for item in page_found_items:
         assert item.access_rights
@@ -160,8 +160,8 @@ async def test_list_latest_catalog_services(
         assert got.model_dump(exclude={"history"}) == item.model_dump(exclude={"release"})
         assert item.release in got.history
 
-    # since it is cached, it should only call it `limit` times
-    assert mocked_director_rest_api["get_service"].call_count == limit
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
 
 
 async def test_batch_get_my_services(

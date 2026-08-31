@@ -7,6 +7,7 @@
 
 
 from collections.abc import AsyncIterator
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -16,6 +17,7 @@ from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from aiocache.serializers import JsonSerializer  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from models_library.function_services_catalog.api import is_function_service
+from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -193,6 +195,35 @@ async def test_get_service_ports(
                 assert port.port == expected_service.outputs[port.key]
         else:
             assert not output_ports
+
+
+async def test_get_batch_services_cold_cache_uses_single_director_request(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
+):
+    expected_services = [
+        ServiceMetaDataPublished.model_validate(service) for service in expected_director_rest_api_list_services[:2]
+    ]
+
+    got_services = await manifest.get_batch_services(
+        [(service.key, service.version) for service in expected_services],
+        director_client,
+        service_manifest_cache,
+    )
+
+    assert got_services == expected_services
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_empty_selection_skips_cache_and_director():
+    director_client = Mock(spec=DirectorClient)
+    service_manifest_cache = Mock(spec=BaseCache)
+
+    assert await manifest.get_batch_services([], director_client, service_manifest_cache) == []
+    assert not service_manifest_cache.multi_get.called
 
 
 async def test_get_batch_services(

@@ -35,6 +35,7 @@ import logging
 from typing import Any, cast
 
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
+from fastapi import HTTPException
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -145,20 +146,66 @@ async def get_service(
     return service
 
 
+async def _resolve_batch_service(
+    *,
+    key: ServiceKey,
+    version: ServiceVersion,
+    cached_service: Any,
+    services_map: ServiceMetaDataPublishedDict,
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+) -> ServiceMetaDataPublished:
+    if cached_service is not None:
+        return ServiceMetaDataPublished.model_validate(cached_service)
+
+    if service := services_map.get((key, version)):
+        return service
+
+    return await get_service(
+        key=key,
+        version=version,
+        director_client=director_client,
+        service_cache=service_cache,
+    )
+
+
 async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
     service_cache: BaseCache,
 ) -> list[ServiceMetaDataPublished | BaseException]:
+    if not selection:
+        return []
+
+    try:
+        cached_services = cast(
+            list[Any],
+            await service_cache.multi_get(
+                [_build_service_cache_key(key=key, version=version) for key, version in selection]
+            ),
+        )
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to read a batch from the service manifest cache", exc_info=True)
+        cached_services = [None] * len(selection)
+
+    services_map: ServiceMetaDataPublishedDict = {}
+    if any(cached_service is None for cached_service in cached_services):
+        try:
+            services_map = await get_services_map(director_client, service_cache)
+        except HTTPException:
+            _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
+
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
         *(
-            get_service(
+            _resolve_batch_service(
                 key=key,
                 version=version,
+                cached_service=cached_service,
+                services_map=services_map,
                 director_client=director_client,
                 service_cache=service_cache,
             )
-            for key, version in selection
+            for (key, version), cached_service in zip(selection, cached_services, strict=True)
         ),
         reraise=False,
         log=_logger,
