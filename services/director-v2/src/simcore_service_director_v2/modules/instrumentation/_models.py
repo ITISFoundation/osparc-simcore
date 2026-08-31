@@ -17,6 +17,7 @@ _INSTRUMENTATION_LABELS: Final[tuple[str, ...]] = (
     "service_key",
     "service_version",
     "product_name",
+    "simcore_user_agent",
 )
 
 _MINUTE: Final[int] = 60
