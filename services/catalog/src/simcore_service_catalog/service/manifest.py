@@ -32,6 +32,7 @@ This ensures data integrity and consistency across the system.
 """
 
 import logging
+from datetime import timedelta
 from typing import Any, cast
 
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
@@ -41,6 +42,7 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from redis.exceptions import RedisError
+from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
 from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
@@ -55,6 +57,7 @@ type ServiceMetaDataPublishedDict = dict[tuple[ServiceKey, ServiceVersion], Serv
 
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
+_SERVICE_CACHE_PREWARM_LOCK_KEY = "catalog:service_manifest:prewarm"
 
 
 def _build_service_cache_key(
@@ -169,20 +172,44 @@ async def _resolve_batch_service(
     )
 
 
+def _get_lock_client(*_args: Any, lock_client: RedisClientSDK, **_kwargs: Any) -> RedisClientSDK:
+    return lock_client
+
+
+@exclusive(
+    _get_lock_client,
+    lock_key=_SERVICE_CACHE_PREWARM_LOCK_KEY,
+    blocking=True,
+    blocking_timeout=timedelta(seconds=20),
+)
+async def _prewarm_service_cache(
+    *,
+    lock_client: RedisClientSDK,
+    cache_keys: list[str],
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+) -> None:
+    del lock_client
+    cached_services = await service_cache.multi_get(cache_keys)
+    if any(cached_service is None for cached_service in cached_services):
+        await get_services_map(director_client, service_cache)
+
+
 async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
     service_cache: BaseCache,
+    *,
+    lock_client: RedisClientSDK | None = None,
 ) -> list[ServiceMetaDataPublished | BaseException]:
     if not selection:
         return []
 
+    cache_keys = [_build_service_cache_key(key=key, version=version) for key, version in selection]
     try:
         cached_services = cast(
             list[Any],
-            await service_cache.multi_get(
-                [_build_service_cache_key(key=key, version=version) for key, version in selection]
-            ),
+            await service_cache.multi_get(cache_keys),
         )
     except (RedisError, TimeoutError):
         _logger.warning("Failed to read a batch from the service manifest cache", exc_info=True)
@@ -191,6 +218,18 @@ async def get_batch_services(
     services_map: ServiceMetaDataPublishedDict = {}
     if any(cached_service is None for cached_service in cached_services):
         try:
+            if lock_client is None:
+                services_map = await get_services_map(director_client, service_cache)
+            else:
+                await _prewarm_service_cache(
+                    lock_client=lock_client,
+                    cache_keys=cache_keys,
+                    director_client=director_client,
+                    service_cache=service_cache,
+                )
+                cached_services = cast(list[Any], await service_cache.multi_get(cache_keys))
+        except (CouldNotAcquireLockError, RedisError, TimeoutError):
+            _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
             services_map = await get_services_map(director_client, service_cache)
         except HTTPException:
             _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)

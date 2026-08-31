@@ -33,7 +33,7 @@ from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import catalog_services
-from ...service.manifest_cache import get_service_manifest_cache
+from ...service.manifest_cache import get_service_manifest_cache, get_service_manifest_lock_client
 from .._dependencies.director import get_director_client
 
 _logger = logging.getLogger(__name__)
@@ -85,6 +85,7 @@ async def list_services_paginated(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
         service_cache=get_service_manifest_cache(app),
+        service_cache_lock_client=get_service_manifest_lock_client(app),
         product_name=product_name,
         user_id=user_id,
         limit=limit,
@@ -380,6 +381,7 @@ async def list_all_services_summaries_paginated(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
         service_cache=get_service_manifest_cache(app),
+        service_cache_lock_client=get_service_manifest_lock_client(app),
         product_name=product_name,
         user_id=user_id,
         limit=limit,

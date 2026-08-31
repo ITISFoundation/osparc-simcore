@@ -48,7 +48,7 @@ def _configure_plugins(
     configure_rabbitmq_client(app_lifespan, settings=settings.CATALOG_RABBITMQ)
     configure_director(app_lifespan)
     configure_function_services(app_lifespan)
-    configure_manifest_cache(app_lifespan)
+    configure_manifest_cache(app_lifespan, settings=settings.CATALOG_REDIS)
     configure_background_tasks(app_lifespan)
 
     configure_rpc_api(app_lifespan)

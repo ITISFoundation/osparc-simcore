@@ -31,6 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogInconsistentRpcError,
     CatalogItemNotFoundRpcError,
 )
+from servicelib.redis import RedisClientSDK
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -197,6 +198,7 @@ async def _get_services_manifests(
     access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]],
     director_api: DirectorClient,
     service_cache: BaseCache,
+    service_cache_lock_client: RedisClientSDK | None,
     product_name: ProductName,
     user_id: UserID,
     filters: ServiceDBFilters | None,
@@ -226,6 +228,7 @@ async def _get_services_manifests(
         [(sc.key, sc.version) for sc in services if access_rights.get((sc.key, sc.version))],
         director_api,
         service_cache,
+        lock_client=service_cache_lock_client,
     )
     service_manifest = {(sc.key, sc.version): sc for sc in got if isinstance(sc, ServiceMetaDataPublished)}
 
@@ -260,6 +263,7 @@ async def list_all_service_summaries(
     repo: ServicesRepository,
     director_api: DirectorClient,
     service_cache: BaseCache,
+    service_cache_lock_client: RedisClientSDK | None = None,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -300,6 +304,7 @@ async def list_all_service_summaries(
         access_rights,
         director_api,
         service_cache,
+        service_cache_lock_client,
         product_name,
         user_id,
         filters,
@@ -326,6 +331,7 @@ async def list_latest_catalog_services(
     repo: ServicesRepository,
     director_api: DirectorClient,
     service_cache: BaseCache,
+    service_cache_lock_client: RedisClientSDK | None = None,
     *,
     product_name: ProductName,
     user_id: UserID,
@@ -363,6 +369,7 @@ async def list_latest_catalog_services(
         access_rights,
         director_api,
         service_cache,
+        service_cache_lock_client,
         product_name,
         user_id,
         filters,

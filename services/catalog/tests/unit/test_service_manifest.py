@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import Mock
@@ -22,9 +23,14 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from redis.exceptions import ConnectionError as RedisConnectionError
 from respx.router import MockRouter
+from servicelib.redis import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
 from simcore_service_catalog.service import manifest
+from simcore_service_catalog.service.manifest_cache import create_service_manifest_cache
+
+pytest_simcore_core_services_selection = ["redis"]
 
 
 @pytest.fixture
@@ -40,6 +46,7 @@ def app_environment(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDic
 
 @pytest.fixture
 async def director_client(
+    background_task_lifespan_disabled: None,
     repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api: MockRouter,
@@ -216,6 +223,49 @@ async def test_get_batch_services_cold_cache_uses_single_director_request(
     assert got_services == expected_services
     assert mocked_director_rest_api["list_services"].call_count == 1
     assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_cold_cache_is_coalesced_across_replicas(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    redis_settings: RedisSettings,
+):
+    caches = [create_service_manifest_cache(redis_settings) for _ in range(2)]
+    await caches[0].clear()
+    lock_client = RedisClientSDK(
+        redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
+        client_name="catalog-manifest-cache-test",
+    )
+    await lock_client.setup()
+    director_client = Mock(spec=DirectorClient)
+    director_call_started = asyncio.Event()
+    release_director_call = asyncio.Event()
+
+    async def _list_services(path: str) -> list[dict[str, Any]]:
+        assert path == "/services"
+        director_call_started.set()
+        await release_director_call.wait()
+        return expected_director_rest_api_list_services
+
+    director_client.get.side_effect = _list_services
+    expected_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[0])
+    selection = [(expected_service.key, expected_service.version)]
+
+    try:
+        first_request = asyncio.create_task(
+            manifest.get_batch_services(selection, director_client, caches[0], lock_client=lock_client)
+        )
+        await director_call_started.wait()
+        second_request = asyncio.create_task(
+            manifest.get_batch_services(selection, director_client, caches[1], lock_client=lock_client)
+        )
+        release_director_call.set()
+
+        assert await asyncio.gather(first_request, second_request) == [[expected_service], [expected_service]]
+    finally:
+        await asyncio.gather(*(cache.close() for cache in caches))
+        await lock_client.shutdown()
+
+    director_client.get.assert_awaited_once_with("/services")
 
 
 async def test_get_batch_services_empty_selection_skips_cache_and_director():

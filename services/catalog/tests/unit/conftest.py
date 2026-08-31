@@ -55,6 +55,7 @@ pytest_plugins = [
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
 
@@ -117,6 +118,11 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 @pytest.fixture
 def in_memory_service_manifest_cache(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        simcore_service_catalog.service.manifest_cache,
+        "configure_redis_client_sdk",
+        autospec=True,
+    )
     mocker.patch.object(
         simcore_service_catalog.service.manifest_cache,
         "create_service_manifest_cache",
