@@ -2,8 +2,6 @@ import logging
 
 import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from ....core.errors import ProjectNotFoundError

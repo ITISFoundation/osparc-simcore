@@ -9,9 +9,6 @@ from typing import cast
 import httpx
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
-    WalletTotalCredits,
-)
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingPlanGet,
     RutPricingUnitGet,
@@ -23,7 +20,6 @@ from models_library.resource_tracker import (
     PricingUnitId,
 )
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.wallets import WalletID
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
 
