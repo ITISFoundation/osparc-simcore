@@ -344,7 +344,7 @@ jobs:
       build-backend: ${{ matrix.type == 'backend' }}
       build-frontend: ${{ matrix.type == 'frontend' }}
       os: ${{ matrix.os }}
-      python-version: "3.13"
+      python-version: "3.14"
       push-temp: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
       arch: ${{ matrix.arch }}
       build-artifacts: ${{ matrix.arch == 'amd64' }}
@@ -1362,7 +1362,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13", "3.14"]
+        python: ["3.14", "3.15"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
