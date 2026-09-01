@@ -324,10 +324,12 @@ async def test_get_aggregated_properties_for_user_non_boolean_fields_are_determi
     asyncpg_connection: AsyncConnection,
     registered_user: RowMapping,
     product_name: str,
+    create_fake_product: Callable[[str], Awaitable[RowMapping]],
     create_fake_group: Callable[..., Awaitable[RowMapping]],
     create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
 ):
     # NOTE: non-boolean fields are not merged, the lowest group_id must win reproducibly
+    await create_fake_product(product_name)
     standard_groups = [await create_fake_group(asyncpg_connection) for _ in range(5)]
     constraints_by_gid = {}
     for index, group in enumerate(standard_groups):
