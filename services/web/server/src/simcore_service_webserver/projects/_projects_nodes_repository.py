@@ -137,7 +137,8 @@ async def get_by_project(
             *_SELECTION_PROJECTS_NODES_DB_ARGS,
         ).where(projects_nodes.c.project_uuid == f"{project_id}")
         if for_update:
-            query = query.with_for_update()
+            # Concurrent deletions must acquire project-node locks in the same order.
+            query = query.order_by(projects_nodes.c.project_node_id).with_for_update()
         result = await conn.execute(query)
         rows = result.all()
 
