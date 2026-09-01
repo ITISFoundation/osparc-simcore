@@ -91,7 +91,7 @@ pydantic-settings==2.14.2
     # via -r requirements/_test.in
 pygments==2.19.2
     # via pytest
-pytest==9.0.2
+pytest==9.1.1
     # via locust
 python-dotenv==1.2.2
     # via pydantic-settings
