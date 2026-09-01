@@ -386,7 +386,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit.xml,services/web/server/junit-isolated.xml
           flags: unittests #optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
