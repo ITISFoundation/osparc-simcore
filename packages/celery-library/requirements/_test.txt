@@ -79,7 +79,7 @@ httpx==0.28.1
     #   -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
-idna==3.11
+idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio

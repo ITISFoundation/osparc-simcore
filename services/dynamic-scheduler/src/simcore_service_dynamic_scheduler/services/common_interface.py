@@ -17,12 +17,13 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import ApplicationSettings
-from .catalog._public_client import CatalogPublicClient
 from .director_v2 import DirectorV2Client
 from .fire_and_forget import FireAndForgetCollection
+from .rabbitmq import get_rabbitmq_rpc_client
 from .service_tracker import (
     get_tracked_service,
     set_request_as_running,
@@ -80,9 +81,10 @@ async def stop_dynamic_service(app: FastAPI, *, dynamic_service_stop: DynamicSer
     tracked_service = await get_tracked_service(app, dynamic_service_stop.node_id)
 
     if tracked_service and tracked_service.dynamic_service_start:
-        service_labels = await CatalogPublicClient.get_from_app_state(app).get_docker_image_labels(
-            tracked_service.dynamic_service_start.key,
-            tracked_service.dynamic_service_start.version,
+        service_labels = await catalog_rpc.get_service_labels(
+            get_rabbitmq_rpc_client(app),
+            service_key=tracked_service.dynamic_service_start.key,
+            service_version=tracked_service.dynamic_service_start.version,
         )
         if not service_labels.needs_dynamic_sidecar:
             # LEGACY services

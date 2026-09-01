@@ -18,7 +18,11 @@ from .....core.dynamic_services_settings.scheduler import (
 )
 from .....models.dynamic_services_scheduler import SchedulerData
 from .....modules.catalog import CatalogClient
-from .....modules.instrumentation import get_instrumentation, get_metrics_labels
+from .....modules.instrumentation import (
+    get_instrumentation,
+    get_metrics_labels,
+    has_instrumentation,
+)
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
@@ -220,7 +224,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
     await sidecars_client.pull_service_input_ports(dynamic_sidecar_endpoint)
 
     start_duration = scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
-    if start_duration is not None:
+    if start_duration is not None and has_instrumentation(app):
         get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(start_duration)

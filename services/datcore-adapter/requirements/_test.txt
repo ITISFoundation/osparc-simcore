@@ -48,7 +48,7 @@ httpx==0.28.1
     #   respx
 icdiff==2.0.10
     # via pytest-icdiff
-idna==3.6
+idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio

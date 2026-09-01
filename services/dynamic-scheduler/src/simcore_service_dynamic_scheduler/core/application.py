@@ -28,7 +28,6 @@ from .._meta import (
 from ..api.frontend import configure_frontend
 from ..api.rest.routes import configure_rest_api
 from ..api.rpc.routes import configure_rpc_api
-from ..services.catalog import configure_catalog
 from ..services.deferred_manager import configure_deferred_manager
 from ..services.director_v0 import configure_director_v0
 from ..services.director_v2 import configure_director_v2
@@ -60,7 +59,6 @@ def _configure_plugins(
     configure_fire_and_forget(app_lifespan)
     configure_director_v2(app_lifespan)
     configure_director_v0(app_lifespan)
-    configure_catalog(app_lifespan)
     configure_rabbitmq_client(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_RABBITMQ)
     configure_rpc_api(app_lifespan)
     configure_redis_clients(app_lifespan, settings=settings.DYNAMIC_SCHEDULER_REDIS)

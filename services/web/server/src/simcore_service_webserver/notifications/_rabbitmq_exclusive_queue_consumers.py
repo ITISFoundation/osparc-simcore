@@ -52,6 +52,20 @@ WALLET_SUBSCRIPTIONS_COUNT_APPKEY: Final = web.AppKey(
 )
 WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey("WALLET_SUBSCRIPTION_LOCK", asyncio.Lock)
 
+# NOTE: logs are high-volume and merely a UX nicety (unlike progress/pipeline-status/wallets
+# events); if a replica's consumer ever falls behind (e.g. stale subscriptions piling up),
+# cap the queue so dropping old log lines protects the broker instead of exhausting its memory.
+# Chosen well above real, self-recovering broker-wide bursts observed in production over the
+# past 45 days (up to ~920k ready messages within a single hour, always draining back down
+# within ~1h) so normal spiky traffic is never clipped - this is a last-resort circuit breaker
+# for genuine runaway growth (the 2026-08-26 incident reached ~7.4M before the broker crashed),
+# not a routine control.
+_LOGS_QUEUE_MAX_LENGTH: Final[int] = 1_500_000
+# NOTE: `_log_message_parser` is a cheap, I/O-bound handler (socket.io emit); the shared default
+# of 10 in-flight messages is otherwise the hard throughput ceiling for this high-volume queue,
+# regardless of how fast the handler itself runs
+_LOGS_QUEUE_PREFETCH_COUNT: Final[int] = 100
+
 
 async def _notify_comp_node_progress(app: web.Application, message: ProgressRabbitMessageNode) -> None:
     project = await _projects_service.get_project_for_user(
@@ -206,7 +220,14 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubscribeArgumentsTuple, ...]] = (
     SubscribeArgumentsTuple(
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        {"topics": []},
+        {
+            "topics": [],
+            "max_length": _LOGS_QUEUE_MAX_LENGTH,
+            "prefetch_count": _LOGS_QUEUE_PREFETCH_COUNT,
+            # a stale log line has no value and dead-lettering it back into this same exchange
+            # would only add more publish traffic to an already-backlogged queue
+            "enable_dead_letter_requeue": False,
+        },
     ),
     SubscribeArgumentsTuple(
         ProgressRabbitMessageNode.get_channel_name(),

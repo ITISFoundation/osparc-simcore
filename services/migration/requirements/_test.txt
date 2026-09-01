@@ -17,7 +17,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 greenlet==3.3.2
     # via sqlalchemy
-idna==3.11
+idna==3.19
     # via requests
 iniconfig==2.3.0
     # via pytest
