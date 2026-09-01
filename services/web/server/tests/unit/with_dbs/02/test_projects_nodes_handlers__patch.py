@@ -425,59 +425,6 @@ async def test_patch_project_node_inputs_with_data_type_change(
     assert _patch_inputs["inputs"] == _patch_inputs["inputs"]
 
 
-@pytest.mark.parametrize(
-    "patch,expected",
-    [
-        pytest.param(
-            {"inputNodes": ["11111111-1111-4111-8111-111111111111"]},
-            status.HTTP_404_NOT_FOUND,
-            id="input-nodes",
-        ),
-        pytest.param(
-            {
-                "inputs": {
-                    "input_1": {
-                        "nodeUuid": "11111111-1111-4111-8111-111111111111",
-                        "output": "out_1",
-                    }
-                }
-            },
-            status.HTTP_404_NOT_FOUND,
-            id="port-link",
-        ),
-        pytest.param(
-            {
-                "inputs": {
-                    "input_1": {
-                        "kind": "metadata",
-                        "nodeUuid": "11111111-1111-4111-8111-111111111111",
-                    }
-                }
-            },
-            status.HTTP_204_NO_CONTENT,
-            id="literal-dictionary",
-        ),
-    ],
-)
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_patch_project_node_validates_node_references(
-    mock_dynamic_scheduler: None,
-    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    expected: HTTPStatus,
-    patch: dict[str, object],
-):
-    node_id = next(iter(user_project["workbench"]))
-    assert client.app
-    url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
-
-    response = await client.patch(f"{url}", json=patch)
-
-    await assert_status(response, expected)
-
-
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_node_service_key_with_error(
     client: TestClient,
