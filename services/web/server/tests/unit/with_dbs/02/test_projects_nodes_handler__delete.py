@@ -6,7 +6,6 @@ from unittest import mock
 
 import pytest
 import sqlalchemy as sa
-from _pytest.mark.structures import ParameterSet
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -18,6 +17,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
+    standard_user_role_response,
 )
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -26,12 +26,6 @@ from simcore_service_webserver.projects.models import ProjectDict
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
-
-
-def standard_user_role() -> tuple[str, tuple[ParameterSet, ...]]:
-    all_roles = standard_role_response()
-
-    return (all_roles[0], (pytest.param(*all_roles[1][2], id="standard user role"),))
 
 
 @pytest.mark.parametrize(
@@ -110,12 +104,14 @@ async def test_delete_node(
     "reference_field_override,override_value,expected_override_value",
     [
         pytest.param("input_nodes", [], [], id="empty-input-nodes"),
+        pytest.param("input_nodes", None, None, id="json-null-input-nodes"),
         pytest.param("input_nodes", sa.null(), None, id="null-input-nodes"),
         pytest.param("inputs", {"literal": False}, {"literal": False}, id="unlinked-input-value"),
+        pytest.param("inputs", None, None, id="json-null-inputs"),
         pytest.param("inputs", sa.null(), None, id="null-inputs"),
     ],
 )
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_delete_node_removes_references_in_connected_nodes(
     mock_dynamic_scheduler: None,
     client: TestClient,

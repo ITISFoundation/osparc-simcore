@@ -96,9 +96,19 @@ async def _remove_references_to_node(conn: AsyncConnection, *, project_id: Proje
 
     # NOTE: a set-returning function in a sub-select FROM is implicitly LATERAL in postgres,
     # i.e. it expands the `projects_nodes` row currently being updated
-    linked_ports = sa.func.jsonb_each(projects_nodes.c.inputs).table_valued("key", "value")
+    inputs_jsonb_type = sa.func.jsonb_typeof(projects_nodes.c.inputs)
+    input_nodes_jsonb_type = sa.func.jsonb_typeof(projects_nodes.c.input_nodes)
+    inputs_object = sa.case(
+        (inputs_jsonb_type == "object", projects_nodes.c.inputs),
+        else_=_EMPTY_JSONB_OBJ,
+    )
+    input_nodes_array = sa.case(
+        (input_nodes_jsonb_type == "array", projects_nodes.c.input_nodes),
+        else_=_EMPTY_JSONB_ARR,
+    )
+    linked_ports = sa.func.jsonb_each(inputs_object).table_valued("key", "value")
     linked_port_node_id = linked_ports.c.value.op("->>", return_type=sa.Text)("nodeUuid")
-    input_node_ids = sa.func.jsonb_array_elements(projects_nodes.c.input_nodes).table_valued("value")
+    input_node_ids = sa.func.jsonb_array_elements(input_nodes_array).table_valued("value")
 
     pruned_inputs = (
         sa.select(
@@ -124,9 +134,17 @@ async def _remove_references_to_node(conn: AsyncConnection, *, project_id: Proje
         projects_nodes.update()
         .where((projects_nodes.c.project_uuid == f"{project_id}") & references_deleted_node)
         .values(
-            # NOTE: the CASEs keep a SQL NULL column as-is instead of rewriting it to an empty JSONB
-            inputs=sa.case((projects_nodes.c.inputs.is_(None), sa.null()), else_=pruned_inputs),
-            input_nodes=sa.case((projects_nodes.c.input_nodes.is_(None), sa.null()), else_=pruned_input_nodes),
+            # NOTE: the CASEs preserve SQL NULL, JSON null, and unexpected scalar values
+            inputs=sa.case(
+                (projects_nodes.c.inputs.is_(None), sa.null()),
+                (inputs_jsonb_type != "object", projects_nodes.c.inputs),
+                else_=pruned_inputs,
+            ),
+            input_nodes=sa.case(
+                (projects_nodes.c.input_nodes.is_(None), sa.null()),
+                (input_nodes_jsonb_type != "array", projects_nodes.c.input_nodes),
+                else_=pruned_input_nodes,
+            ),
         )
     )
 
