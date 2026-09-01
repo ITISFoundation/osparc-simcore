@@ -9,7 +9,6 @@ from models_library.docker import DockerGenericTag
 from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
-    ResourceValue,
     ServiceResourcesDict,
 )
 from pydantic import TypeAdapter
@@ -42,7 +41,6 @@ def compose_image() -> DockerGenericTag:
 def _ensure_resource_value_is_an_object(data: ResourcesDict) -> None:
     assert type(data) is dict
     print(data)
-    entry: ResourceValue
     for entry in data.values():
         assert entry.limit
         assert entry.reservation
@@ -53,11 +51,11 @@ def test_resources_dict_parsed_as_expected(resources_dict: ResourcesDict) -> Non
 
 
 def test_image_resources_parsed_as_expected() -> None:
-    result: ImageResources = ImageResources.model_validate(ImageResources.model_json_schema()["example"])
+    result = ImageResources.model_validate(ImageResources.model_json_schema()["example"])
     _ensure_resource_value_is_an_object(result.resources)
     assert type(result) is ImageResources
 
-    result: ImageResources = TypeAdapter(ImageResources).validate_python(ImageResources.model_json_schema()["example"])
+    result = TypeAdapter(ImageResources).validate_python(ImageResources.model_json_schema()["example"])
     assert type(result) is ImageResources
     _ensure_resource_value_is_an_object(result.resources)
 
