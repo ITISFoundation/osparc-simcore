@@ -31,7 +31,7 @@ httpx==0.28.1
     #   -r requirements/_test.in
 hypothesis==6.151.9
     # via -r requirements/_test.in
-idna==3.10
+idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
