@@ -117,6 +117,7 @@ async def lock_project_graph(
     *,
     project_uuid: ProjectID,
 ) -> None:
+    # SQLAlchemy renders key_share=True without read=True as FOR NO KEY UPDATE.
     result = await connection.execute(
         sa.select(projects.c.uuid).where(projects.c.uuid == f"{project_uuid}").with_for_update(key_share=True)
     )

@@ -426,10 +426,11 @@ async def test_patch_project_node_inputs_with_data_type_change(
 
 
 @pytest.mark.parametrize(
-    "patch",
+    "patch,expected",
     [
         pytest.param(
             {"inputNodes": ["11111111-1111-4111-8111-111111111111"]},
+            status.HTTP_404_NOT_FOUND,
             id="input-nodes",
         ),
         pytest.param(
@@ -441,12 +442,25 @@ async def test_patch_project_node_inputs_with_data_type_change(
                     }
                 }
             },
+            status.HTTP_404_NOT_FOUND,
             id="port-link",
+        ),
+        pytest.param(
+            {
+                "inputs": {
+                    "input_1": {
+                        "kind": "metadata",
+                        "nodeUuid": "11111111-1111-4111-8111-111111111111",
+                    }
+                }
+            },
+            status.HTTP_204_NO_CONTENT,
+            id="literal-dictionary",
         ),
     ],
 )
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_404_NOT_FOUND)])
-async def test_patch_project_node_rejects_missing_node_references(
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_patch_project_node_validates_node_references(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,

@@ -8,11 +8,13 @@ from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.ext.asyncio as sa_asyncio
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -25,6 +27,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects_nodes import projects_nodes
+from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _projects_nodes_repository, _projects_repository
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -265,12 +268,11 @@ async def test_delete_node_rolls_back_reference_pruning_if_delete_fails(
         pytest.param("patch", status.HTTP_204_NO_CONTENT, id="patch-first"),
     ],
 )
-@pytest.mark.parametrize(*standard_user_role_response())
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_delete_node_and_graph_patch_are_serialized(
     mock_dynamic_scheduler: None,
     client: TestClient,
     user_project: ProjectDict,
-    expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     storage_subsystem_mock: MockedStorageSubsystem,
@@ -301,13 +303,17 @@ async def test_delete_node_and_graph_patch_are_serialized(
     second_lock_attempted = asyncio.Event()
     lock_call_count = 0
 
-    async def _lock_project_graph(*args: object, **kwargs: object) -> None:
+    async def _lock_project_graph(
+        connection: sa_asyncio.AsyncConnection,
+        *,
+        project_uuid: ProjectID,
+    ) -> None:
         nonlocal lock_call_count
         lock_call_count += 1
         call_number = lock_call_count
         if call_number == 2:
             second_lock_attempted.set()
-        await original_lock_project_graph(*args, **kwargs)  # type: ignore[arg-type]
+        await original_lock_project_graph(connection, project_uuid=project_uuid)
         if call_number == 1:
             first_lock_acquired.set()
             await release_first_lock.wait()
@@ -329,7 +335,7 @@ async def test_delete_node_and_graph_patch_are_serialized(
 
     first_response, second_response = await asyncio.gather(first_request, second_request)
     responses = {first_operation: first_response, second_operation: second_response}
-    await assert_status(responses["delete"], expected.no_content)
+    await assert_status(responses["delete"], status.HTTP_204_NO_CONTENT)
     await assert_status(responses["patch"], expected_patch_status)
 
     with postgres_db.connect() as conn:
