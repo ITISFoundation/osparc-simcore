@@ -2,6 +2,7 @@
 # pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from unittest import mock
 
@@ -24,7 +25,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects_nodes import projects_nodes
-from simcore_service_webserver.projects import _projects_nodes_repository
+from simcore_service_webserver.projects import _projects_nodes_repository, _projects_repository
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
@@ -255,3 +256,91 @@ async def test_delete_node_rolls_back_reference_pruning_if_delete_fails(
         current_nodes = {row.node_id: (row.inputs, row.input_nodes) for row in conn.execute(query)}
 
     assert current_nodes == original_nodes
+
+
+@pytest.mark.parametrize(
+    "first_operation,expected_patch_status",
+    [
+        pytest.param("delete", status.HTTP_404_NOT_FOUND, id="delete-first"),
+        pytest.param("patch", status.HTTP_204_NO_CONTENT, id="patch-first"),
+    ],
+)
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_delete_node_and_graph_patch_are_serialized(
+    mock_dynamic_scheduler: None,
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    storage_subsystem_mock: MockedStorageSubsystem,
+    postgres_db: sa.engine.Engine,
+    mocker: MockerFixture,
+    first_operation: str,
+    expected_patch_status: int,
+):
+    assert client.app
+    deleted_node_id, patched_node_id = list(user_project["workbench"])[:2]
+    delete_url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=deleted_node_id)
+    patch_url = client.app.router["patch_project_node"].url_for(
+        project_id=user_project["uuid"], node_id=patched_node_id
+    )
+    patch = {
+        "inputNodes": [deleted_node_id],
+        "inputs": {
+            "input_1": {
+                "nodeUuid": deleted_node_id,
+                "output": "out_1",
+            }
+        },
+    }
+
+    original_lock_project_graph = _projects_repository.lock_project_graph
+    first_lock_acquired = asyncio.Event()
+    release_first_lock = asyncio.Event()
+    second_lock_attempted = asyncio.Event()
+    lock_call_count = 0
+
+    async def _lock_project_graph(*args: object, **kwargs: object) -> None:
+        nonlocal lock_call_count
+        lock_call_count += 1
+        call_number = lock_call_count
+        if call_number == 2:
+            second_lock_attempted.set()
+        await original_lock_project_graph(*args, **kwargs)  # type: ignore[arg-type]
+        if call_number == 1:
+            first_lock_acquired.set()
+            await release_first_lock.wait()
+
+    mocker.patch.object(_projects_repository, "lock_project_graph", side_effect=_lock_project_graph)
+
+    requests = {
+        "delete": lambda: client.delete(delete_url.path),
+        "patch": lambda: client.patch(patch_url.path, json=patch),
+    }
+    second_operation = "patch" if first_operation == "delete" else "delete"
+    first_request = asyncio.create_task(requests[first_operation]())
+    await asyncio.wait_for(first_lock_acquired.wait(), timeout=10)
+    second_request = asyncio.create_task(requests[second_operation]())
+    try:
+        await asyncio.wait_for(second_lock_attempted.wait(), timeout=10)
+    finally:
+        release_first_lock.set()
+
+    first_response, second_response = await asyncio.gather(first_request, second_request)
+    responses = {first_operation: first_response, second_operation: second_response}
+    await assert_status(responses["delete"], expected.no_content)
+    await assert_status(responses["patch"], expected_patch_status)
+
+    with postgres_db.connect() as conn:
+        patched_node = conn.execute(
+            sa.select(projects_nodes.c.inputs, projects_nodes.c.input_nodes).where(
+                (projects_nodes.c.project_uuid == user_project["uuid"]) & (projects_nodes.c.node_id == patched_node_id)
+            )
+        ).one()
+
+    assert deleted_node_id not in (patched_node.input_nodes or [])
+    assert not any(
+        isinstance(value, dict) and value.get("nodeUuid") == deleted_node_id
+        for value in (patched_node.inputs or {}).values()
+    )

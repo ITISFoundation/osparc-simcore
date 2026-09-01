@@ -178,6 +178,7 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
+    ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
@@ -1249,6 +1250,28 @@ def _prune_node_references(node: Node, *, deleted_node_id: NodeID) -> PartialNod
     return PartialNode.model_construct(**updates) if updates else None
 
 
+_NODE_GRAPH_FIELDS: Final[frozenset[str]] = frozenset({"input_nodes", "inputs"})
+
+
+def _validate_node_references(
+    partial_node: PartialNode,
+    *,
+    project_id: ProjectID,
+    project_node_ids: set[NodeID],
+) -> None:
+    referenced_node_ids = (
+        set(partial_node.input_nodes or []) if "input_nodes" in partial_node.model_fields_set else set()
+    )
+    if "inputs" in partial_node.model_fields_set and partial_node.inputs is not None:
+        referenced_node_ids.update(
+            value.node_uuid for value in partial_node.inputs.values() if isinstance(value, PortLink)
+        )
+
+    if missing_node_ids := referenced_node_ids - project_node_ids:
+        missing_node_id = min(missing_node_ids, key=str)
+        raise ParentNodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{missing_node_id}")
+
+
 async def delete_project_node(
     request: web.Request,
     project_uuid: ProjectID,
@@ -1289,11 +1312,11 @@ async def delete_project_node(
     )
 
     async with transaction_context(get_asyncpg_engine(request.app)) as conn:
+        await _projects_repository.lock_project_graph(conn, project_uuid=project_uuid)
         project_nodes = await _projects_nodes_repository.get_by_project(
             request.app,
             connection=conn,
             project_id=project_uuid,
-            for_update=True,
         )
         for sibling_node_id, sibling_node in project_nodes.items():
             if sibling_node_id == node_uuid:
@@ -1422,13 +1445,33 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-
-    await _projects_nodes_repository.update(
-        app,
-        project_id=project_id,
-        node_id=node_id,
-        partial_node=partial_node,
-    )
+    if partial_node.model_fields_set & _NODE_GRAPH_FIELDS:
+        async with transaction_context(get_asyncpg_engine(app)) as conn:
+            await _projects_repository.lock_project_graph(conn, project_uuid=project_id)
+            project_nodes = await _projects_nodes_repository.get_by_project(
+                app,
+                connection=conn,
+                project_id=project_id,
+            )
+            _validate_node_references(
+                partial_node,
+                project_id=project_id,
+                project_node_ids=set(project_nodes),
+            )
+            await _projects_nodes_repository.update(
+                app,
+                connection=conn,
+                project_id=project_id,
+                node_id=node_id,
+                partial_node=partial_node,
+            )
+    else:
+        await _projects_nodes_repository.update(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+            partial_node=partial_node,
+        )
 
     await create_project_document_and_notify(
         app,

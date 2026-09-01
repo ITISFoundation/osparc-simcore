@@ -89,6 +89,7 @@ async def test_patch_project_node(
     mock_catalog_rpc_check_for_service: None,
 ):
     node_id = next(iter(user_project["workbench"]))
+    sibling_node_id = next(candidate for candidate in user_project["workbench"] if candidate != node_id)
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     resp = await client.patch(
@@ -144,8 +145,7 @@ async def test_patch_project_node(
     # input nodes
     _patch_input_nodes = {
         "inputNodes": [
-            "9502ce16-1fe9-5b9a-86fa-9a9ba186174b",
-            "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+            sibling_node_id,
         ]
     }
     resp = await client.patch(
@@ -343,6 +343,7 @@ async def test_patch_project_node_inputs_notifies(
     expected: HTTPStatus,
 ):
     node_id = next(iter(user_project["workbench"]))
+    sibling_node_id = next(candidate for candidate in user_project["workbench"] if candidate != node_id)
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     notify_project_nodes_update = mocker.spy(projects_service, "notify_project_nodes_update")
@@ -355,7 +356,7 @@ async def test_patch_project_node_inputs_notifies(
     _patch_inputs = {
         "inputs": {
             "input_1": {
-                "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                "nodeUuid": sibling_node_id,
                 "output": "out_1",
             },
         }
@@ -384,6 +385,7 @@ async def test_patch_project_node_inputs_with_data_type_change(
     expected: HTTPStatus,
 ):
     node_id = next(iter(user_project["workbench"]))
+    sibling_node_id = next(candidate for candidate in user_project["workbench"] if candidate != node_id)
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
     # inputs
@@ -392,7 +394,7 @@ async def test_patch_project_node_inputs_with_data_type_change(
             "input_3": 0.0,  # <-- Changing type
             "input_2": 3.0,
             "input_1": {  # <-- Changing type
-                "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                "nodeUuid": sibling_node_id,
                 "output": "out_1",
             },
         }
@@ -408,7 +410,7 @@ async def test_patch_project_node_inputs_with_data_type_change(
     _patch_inputs = {
         "inputs": {
             "input_3": {  # <-- Changing type
-                "nodeUuid": "c374e5ba-fc42-5c40-ae74-df7ef337f597",
+                "nodeUuid": sibling_node_id,
                 "output": "out_1",
             },
             "input_2": 3.0,
@@ -421,6 +423,45 @@ async def test_patch_project_node_inputs_with_data_type_change(
     )
     await assert_status(resp, expected)
     assert _patch_inputs["inputs"] == _patch_inputs["inputs"]
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        pytest.param(
+            {"inputNodes": ["11111111-1111-4111-8111-111111111111"]},
+            id="input-nodes",
+        ),
+        pytest.param(
+            {
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "11111111-1111-4111-8111-111111111111",
+                        "output": "out_1",
+                    }
+                }
+            },
+            id="port-link",
+        ),
+    ],
+)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_404_NOT_FOUND)])
+async def test_patch_project_node_rejects_missing_node_references(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    patch: dict[str, object],
+):
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+
+    response = await client.patch(f"{url}", json=patch)
+
+    await assert_status(response, expected)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

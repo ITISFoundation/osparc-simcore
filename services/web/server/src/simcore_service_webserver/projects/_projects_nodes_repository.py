@@ -130,16 +130,13 @@ async def get_by_project(
     connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
-    for_update: bool = False,
 ) -> dict[NodeID, Node]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(
-            *_SELECTION_PROJECTS_NODES_DB_ARGS,
-        ).where(projects_nodes.c.project_uuid == f"{project_id}")
-        if for_update:
-            # Concurrent deletions must acquire project-node locks in the same order.
-            query = query.order_by(projects_nodes.c.project_node_id).with_for_update()
-        result = await conn.execute(query)
+        result = await conn.execute(
+            sa.select(
+                *_SELECTION_PROJECTS_NODES_DB_ARGS,
+            ).where(projects_nodes.c.project_uuid == f"{project_id}")
+        )
         rows = result.all()
 
         nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
