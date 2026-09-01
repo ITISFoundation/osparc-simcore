@@ -1,4 +1,4 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
 from pydantic import AnyHttpUrl, BaseModel, BeforeValidator, ByteSize, ConfigDict, Field
 from pydantic.config import JsonDict
@@ -88,7 +88,7 @@ class DynamicServiceCreate(ServiceDetails):
     )
 
 
-DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails  # noqa: UP040
+type DynamicServiceGet = RunningDynamicServiceDetails
 
 
 class GetProjectInactivityResponse(BaseModel):
