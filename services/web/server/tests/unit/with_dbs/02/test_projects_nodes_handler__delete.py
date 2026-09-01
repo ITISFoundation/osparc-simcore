@@ -13,6 +13,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.projects_nodes_io import NodeID
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -20,8 +21,10 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
     standard_user_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects_nodes import projects_nodes
+from simcore_service_webserver.projects import _projects_nodes_repository
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
@@ -204,3 +207,51 @@ async def test_delete_node_removes_references_in_connected_nodes(
 
         assert row.input_nodes == expected_input_nodes
         assert row.inputs == expected_inputs
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_delete_node_rolls_back_reference_pruning_if_delete_fails(
+    mock_dynamic_scheduler: None,
+    client: TestClient,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    storage_subsystem_mock: MockedStorageSubsystem,
+    postgres_db: sa.engine.Engine,
+    mocker: MockerFixture,
+):
+    assert client.app
+    workbench = user_project["workbench"]
+    assert isinstance(workbench, dict)
+
+    deleted_node_id = next(
+        node_id
+        for node_id in workbench
+        if any(node_id in (other.get("inputNodes") or []) for other in workbench.values())
+    )
+
+    query = sa.select(
+        projects_nodes.c.node_id,
+        projects_nodes.c.inputs,
+        projects_nodes.c.input_nodes,
+    ).where(projects_nodes.c.project_uuid == user_project["uuid"])
+    with postgres_db.connect() as conn:
+        original_nodes = {row.node_id: (row.inputs, row.input_nodes) for row in conn.execute(query)}
+
+    update_spy = mocker.spy(_projects_nodes_repository, "update")
+    mocker.patch.object(
+        _projects_nodes_repository,
+        "delete",
+        side_effect=RuntimeError("injected node deletion failure"),
+    )
+
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=deleted_node_id)
+    response = await client.delete(url.path)
+    await assert_status(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    assert update_spy.await_count > 0
+    with postgres_db.connect() as conn:
+        current_nodes = {row.node_id: (row.inputs, row.input_nodes) for row in conn.execute(query)}
+
+    assert current_nodes == original_nodes
