@@ -102,14 +102,15 @@ async def test_delete_node(
 
 
 @pytest.mark.parametrize(
-    "reference_field_override,override_value,expected_override_value",
+    "reference_field_override,override_value,expected_override_value,literal_with_deleted_node_id",
     [
-        pytest.param("input_nodes", [], [], id="empty-input-nodes"),
-        pytest.param("input_nodes", None, None, id="json-null-input-nodes"),
-        pytest.param("input_nodes", sa.null(), None, id="null-input-nodes"),
-        pytest.param("inputs", None, None, id="json-null-inputs"),
-        pytest.param("inputs", sa.null(), None, id="null-inputs"),
-        pytest.param("inputs", {"literal": False}, {"literal": False}, id="unlinked-input-value"),
+        pytest.param("input_nodes", [], [], False, id="empty-input-nodes"),
+        pytest.param("input_nodes", None, None, False, id="json-null-input-nodes"),
+        pytest.param("input_nodes", sa.null(), None, False, id="null-input-nodes"),
+        pytest.param("inputs", None, None, False, id="json-null-inputs"),
+        pytest.param("inputs", sa.null(), None, False, id="null-inputs"),
+        pytest.param("inputs", {"literal": False}, {"literal": False}, False, id="unlinked-input-value"),
+        pytest.param("inputs", {}, {}, True, id="literal-dictionary-containing-node-uuid"),
     ],
 )
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -126,6 +127,7 @@ async def test_delete_node_removes_references_in_connected_nodes(
     reference_field_override: str,
     override_value: object,
     expected_override_value: list[str] | dict[str, object] | None,
+    literal_with_deleted_node_id: bool,
 ):
     assert client.app
     workbench = user_project["workbench"]
@@ -141,6 +143,16 @@ async def test_delete_node_removes_references_in_connected_nodes(
         node_id for node_id, node_data in workbench.items() if deleted_node_id in (node_data.get("inputNodes") or [])
     ]
     assert dependent_node_ids
+
+    if literal_with_deleted_node_id:
+        literal_input: dict[str, object] = {
+            "literal": {
+                "kind": "metadata",
+                "nodeUuid": deleted_node_id,
+            }
+        }
+        override_value = literal_input
+        expected_override_value = literal_input
 
     with postgres_db.begin() as conn:
         conn.execute(
@@ -183,7 +195,11 @@ async def test_delete_node_removes_references_in_connected_nodes(
             expected_inputs = {
                 key: value
                 for key, value in expected_inputs.items()
-                if not (isinstance(value, dict) and value.get("nodeUuid") == deleted_node_id)
+                if not (
+                    isinstance(value, dict)
+                    and set(value) == {"nodeUuid", "output"}
+                    and value.get("nodeUuid") == deleted_node_id
+                )
             }
 
         assert row.input_nodes == expected_input_nodes

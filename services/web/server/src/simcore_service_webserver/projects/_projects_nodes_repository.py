@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Any
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -12,7 +12,6 @@ from simcore_postgres_database.utils_repos import (
     transaction_context,
 )
 from simcore_postgres_database.webserver_models import projects_nodes
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
@@ -56,9 +55,6 @@ _WRITABLE_COLUMNS: frozenset[str] = frozenset(c.name for c in projects_nodes.col
     }
 )
 
-_EMPTY_JSONB_OBJ: Final = sa.type_coerce({}, postgresql.JSONB)
-_EMPTY_JSONB_ARR: Final = sa.type_coerce([], postgresql.JSONB)
-
 
 def _node_dump_for_db(node_model: Node | PartialNode, *, exclude_unset: bool) -> dict[str, Any]:
     """Serializes a Node/PartialNode for DB storage.
@@ -90,66 +86,6 @@ async def add(
         await conn.execute(projects_nodes.insert().values(project_uuid=f"{project_id}", node_id=f"{node_id}", **values))
 
 
-async def _remove_references_to_node(conn: AsyncConnection, *, project_id: ProjectID, node_id: NodeID) -> None:
-    """Prunes, in the sibling nodes, the `inputs` port-links and `input_nodes` entries pointing to `node_id`"""
-    deleted_node_id = f"{node_id}"
-
-    # NOTE: a set-returning function in a sub-select FROM is implicitly LATERAL in postgres,
-    # i.e. it expands the `projects_nodes` row currently being updated
-    inputs_jsonb_type = sa.func.jsonb_typeof(projects_nodes.c.inputs)
-    input_nodes_jsonb_type = sa.func.jsonb_typeof(projects_nodes.c.input_nodes)
-    inputs_object = sa.case(
-        (inputs_jsonb_type == "object", projects_nodes.c.inputs),
-        else_=_EMPTY_JSONB_OBJ,
-    )
-    input_nodes_array = sa.case(
-        (input_nodes_jsonb_type == "array", projects_nodes.c.input_nodes),
-        else_=_EMPTY_JSONB_ARR,
-    )
-    linked_ports = sa.func.jsonb_each(inputs_object).table_valued("key", "value")
-    linked_port_value = sa.cast(linked_ports.c.value, postgresql.JSONB)
-    linked_port_node_id = linked_port_value["nodeUuid"].astext
-    input_node_ids = sa.func.jsonb_array_elements(input_nodes_array).table_valued("value")
-
-    pruned_inputs = (
-        sa.select(
-            sa.func.coalesce(sa.func.jsonb_object_agg(linked_ports.c.key, linked_ports.c.value), _EMPTY_JSONB_OBJ)
-        )
-        # NOTE: IS DISTINCT FROM keeps plain (non port-link) values, for which `->>` yields NULL
-        .where(linked_port_node_id.is_distinct_from(deleted_node_id))
-        .correlate(projects_nodes)
-        .scalar_subquery()
-    )
-    pruned_input_nodes = (
-        sa.select(sa.func.coalesce(sa.func.jsonb_agg(input_node_ids.c.value), _EMPTY_JSONB_ARR))
-        .where(input_node_ids.c.value != sa.type_coerce(deleted_node_id, postgresql.JSONB))
-        .correlate(projects_nodes)
-        .scalar_subquery()
-    )
-    references_deleted_node = sa.or_(
-        projects_nodes.c.input_nodes.contains([deleted_node_id]),
-        sa.select(sa.literal(1)).where(linked_port_node_id == deleted_node_id).correlate(projects_nodes).exists(),
-    )
-
-    await conn.execute(
-        projects_nodes.update()
-        .where((projects_nodes.c.project_uuid == f"{project_id}") & references_deleted_node)
-        .values(
-            # NOTE: the CASEs preserve SQL NULL, JSON null, and unexpected scalar values
-            inputs=sa.case(
-                (projects_nodes.c.inputs.is_(None), sa.null()),
-                (inputs_jsonb_type != "object", projects_nodes.c.inputs),
-                else_=pruned_inputs,
-            ),
-            input_nodes=sa.case(
-                (projects_nodes.c.input_nodes.is_(None), sa.null()),
-                (input_nodes_jsonb_type != "array", projects_nodes.c.input_nodes),
-                else_=pruned_input_nodes,
-            ),
-        )
-    )
-
-
 async def delete(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -165,8 +101,6 @@ async def delete(
         )
         if result.rowcount == 0:
             raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
-
-        await _remove_references_to_node(conn, project_id=project_id, node_id=node_id)
 
 
 async def get(
@@ -196,13 +130,15 @@ async def get_by_project(
     connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
+    for_update: bool = False,
 ) -> dict[NodeID, Node]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
-            sa.select(
-                *_SELECTION_PROJECTS_NODES_DB_ARGS,
-            ).where(projects_nodes.c.project_uuid == f"{project_id}")
-        )
+        query = sa.select(
+            *_SELECTION_PROJECTS_NODES_DB_ARGS,
+        ).where(projects_nodes.c.project_uuid == f"{project_id}")
+        if for_update:
+            query = query.with_for_update()
+        result = await conn.execute(query)
         rows = result.all()
 
         nodes = TypeAdapter(list[Node]).validate_python(rows, from_attributes=True)
