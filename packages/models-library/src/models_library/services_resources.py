@@ -56,7 +56,7 @@ class ResourceValue(BaseModel, validate_assignment=True):
         self.limit = self.reservation = value
 
 
-ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]  # noqa: UP040
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
 
 
 class BootMode(StrAutoEnum):
