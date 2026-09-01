@@ -6,7 +6,7 @@ attrs==26.1.0
     #   referencing
 cffi==2.0.0
     # via cryptography
-coverage==7.13.5
+coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -33,14 +33,14 @@ pygments==2.19.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.0.2
+pytest==9.1.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
