@@ -1297,20 +1297,6 @@ async def delete_project_node(
         project_id=project_uuid,
     )
 
-    fire_and_forget_task(
-        _remove_service_and_its_data_folders(
-            request.app,
-            user_id=user_id,
-            project_uuid=project_uuid,
-            node_uuid=node_uuid,
-            user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
-            product_name=product_name,
-            stop_service=any(s.node_uuid == node_uuid for s in list_running_dynamic_services),
-        ),
-        task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
-        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
     async with transaction_context(get_asyncpg_engine(request.app)) as conn:
         await _projects_repository.lock_project_graph(conn, project_uuid=project_uuid)
         project_nodes = await _projects_nodes_repository.get_by_project(
@@ -1338,6 +1324,20 @@ async def delete_project_node(
             project_id=project_uuid,
             node_id=node_uuid,
         )
+
+    fire_and_forget_task(
+        _remove_service_and_its_data_folders(
+            request.app,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            node_uuid=node_uuid,
+            user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+            product_name=product_name,
+            stop_service=any(s.node_uuid == node_uuid for s in list_running_dynamic_services),
+        ),
+        task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
+        fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
 
     await create_project_document_and_notify(
         request.app,

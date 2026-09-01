@@ -28,7 +28,11 @@ from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects import _projects_nodes_repository, _projects_repository
+from simcore_service_webserver.projects import (
+    _projects_nodes_repository,
+    _projects_repository,
+    _projects_service,
+)
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
@@ -244,6 +248,7 @@ async def test_delete_node_rolls_back_reference_pruning_if_delete_fails(
         original_nodes = {row.node_id: (row.inputs, row.input_nodes) for row in conn.execute(query)}
 
     update_spy = mocker.spy(_projects_nodes_repository, "update")
+    cleanup_mock = mocker.patch.object(_projects_service, "_remove_service_and_its_data_folders")
     mocker.patch.object(
         _projects_nodes_repository,
         "delete",
@@ -255,6 +260,7 @@ async def test_delete_node_rolls_back_reference_pruning_if_delete_fails(
     await assert_status(response, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     assert update_spy.await_count > 0
+    cleanup_mock.assert_not_called()
     with postgres_db.connect() as conn:
         current_nodes = {row.node_id: (row.inputs, row.input_nodes) for row in conn.execute(query)}
 
