@@ -194,7 +194,7 @@ def _update_resource_limits_and_reservations(
             e
             for e in environment
             if all(
-                i not in e for i in [USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY]
+                i not in e for i in {USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}
             )
         ]
 
