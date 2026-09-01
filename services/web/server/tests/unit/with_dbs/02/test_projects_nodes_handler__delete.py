@@ -102,15 +102,14 @@ async def test_delete_node(
 
 
 @pytest.mark.parametrize(
-    "reference_field_override,override_value,expected_override_value,legacy_input_link",
+    "reference_field_override,override_value,expected_override_value",
     [
-        pytest.param("input_nodes", [], [], False, id="empty-input-nodes"),
-        pytest.param("input_nodes", None, None, False, id="json-null-input-nodes"),
-        pytest.param("input_nodes", sa.null(), None, False, id="null-input-nodes"),
-        pytest.param("inputs", None, None, False, id="json-null-inputs"),
-        pytest.param("inputs", {"literal": False}, {"literal": False}, True, id="legacy-linked-input-value"),
-        pytest.param("inputs", sa.null(), None, False, id="null-inputs"),
-        pytest.param("inputs", {"literal": False}, {"literal": False}, False, id="unlinked-input-value"),
+        pytest.param("input_nodes", [], [], id="empty-input-nodes"),
+        pytest.param("input_nodes", None, None, id="json-null-input-nodes"),
+        pytest.param("input_nodes", sa.null(), None, id="null-input-nodes"),
+        pytest.param("inputs", None, None, id="json-null-inputs"),
+        pytest.param("inputs", sa.null(), None, id="null-inputs"),
+        pytest.param("inputs", {"literal": False}, {"literal": False}, id="unlinked-input-value"),
     ],
 )
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -127,7 +126,6 @@ async def test_delete_node_removes_references_in_connected_nodes(
     reference_field_override: str,
     override_value: object,
     expected_override_value: list[str] | dict[str, object] | None,
-    legacy_input_link: bool,
 ):
     assert client.app
     workbench = user_project["workbench"]
@@ -145,23 +143,13 @@ async def test_delete_node_removes_references_in_connected_nodes(
     assert dependent_node_ids
 
     with postgres_db.begin() as conn:
-        override_values = {reference_field_override: override_value}
-        if legacy_input_link:
-            assert isinstance(override_value, dict)
-            override_values.update(
-                input_nodes=[],
-                inputs={
-                    **override_value,
-                    "legacy-link": {"node_uuid": deleted_node_id, "output": "output"},
-                },
-            )
         conn.execute(
             projects_nodes.update()
             .where(
                 (projects_nodes.c.project_uuid == user_project["uuid"])
                 & (projects_nodes.c.node_id == dependent_node_ids[0])
             )
-            .values(**override_values)
+            .values(**{reference_field_override: override_value})
         )
 
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=deleted_node_id)
@@ -183,10 +171,7 @@ async def test_delete_node_removes_references_in_connected_nodes(
         expected_inputs = workbench[row.node_id].get("inputs")
 
         if row.node_id == dependent_node_ids[0]:
-            if legacy_input_link:
-                expected_input_nodes = []
-                expected_inputs = expected_override_value
-            elif reference_field_override == "input_nodes":
+            if reference_field_override == "input_nodes":
                 expected_input_nodes = expected_override_value
             else:
                 expected_inputs = expected_override_value
@@ -197,10 +182,7 @@ async def test_delete_node_removes_references_in_connected_nodes(
             expected_inputs = {
                 key: value
                 for key, value in expected_inputs.items()
-                if not (
-                    isinstance(value, dict)
-                    and (value.get("nodeUuid") == deleted_node_id or value.get("node_uuid") == deleted_node_id)
-                )
+                if not (isinstance(value, dict) and value.get("nodeUuid") == deleted_node_id)
             }
 
         assert row.input_nodes == expected_input_nodes

@@ -108,12 +108,7 @@ async def _remove_references_to_node(conn: AsyncConnection, *, project_id: Proje
     )
     linked_ports = sa.func.jsonb_each(inputs_object).table_valued("key", "value")
     linked_port_value = sa.cast(linked_ports.c.value, postgresql.JSONB)
-    camel_case_linked_port_node_id = linked_port_value["nodeUuid"].astext
-    legacy_linked_port_node_id = linked_port_value["node_uuid"].astext
-    linked_port_node_id = sa.case(
-        (camel_case_linked_port_node_id.is_not(None), camel_case_linked_port_node_id),
-        else_=legacy_linked_port_node_id,
-    )
+    linked_port_node_id = linked_port_value["nodeUuid"].astext
     input_node_ids = sa.func.jsonb_array_elements(input_nodes_array).table_valued("value")
 
     pruned_inputs = (
