@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import re
 from pathlib import Path
