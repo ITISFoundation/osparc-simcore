@@ -179,6 +179,7 @@ async def test_delete_node_removes_references_in_connected_nodes(
         if expected_input_nodes is not None:
             expected_input_nodes = [node_id for node_id in expected_input_nodes if node_id != deleted_node_id]
         if expected_inputs is not None:
+            assert isinstance(expected_inputs, dict)
             expected_inputs = {
                 key: value
                 for key, value in expected_inputs.items()
