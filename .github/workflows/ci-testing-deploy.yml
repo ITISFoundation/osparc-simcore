@@ -398,7 +398,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -434,7 +434,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -470,7 +470,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -506,7 +506,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -544,7 +544,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -582,7 +582,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -622,7 +622,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -660,7 +660,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -696,7 +696,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -736,7 +736,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -774,7 +774,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -818,7 +818,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -867,7 +867,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -911,7 +911,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -955,7 +955,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -999,7 +999,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1037,7 +1037,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1075,7 +1075,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1113,7 +1113,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1151,7 +1151,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1189,7 +1189,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1227,7 +1227,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1275,7 +1275,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1313,7 +1313,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1386,7 +1386,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1424,7 +1424,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1462,7 +1462,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1500,7 +1500,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1538,7 +1538,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1576,7 +1576,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1614,7 +1614,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1650,7 +1650,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1688,7 +1688,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1779,7 +1779,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1826,7 +1826,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1873,7 +1873,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     env:
@@ -1926,7 +1926,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1975,7 +1975,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2022,7 +2022,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2095,7 +2095,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2145,7 +2145,7 @@ jobs:
     #   image: mcr.microsoft.com/playwright/python:v1.39.0-jammy
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2191,7 +2191,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2241,7 +2241,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     env:

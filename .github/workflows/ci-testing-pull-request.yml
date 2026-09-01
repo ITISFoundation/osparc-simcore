@@ -77,7 +77,7 @@ jobs:
         if: steps.changes.outputs.api-server == 'true'
         uses: actions/setup-python@v7.0.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - name: install uv
         if: steps.changes.outputs.api-server == 'true'
         uses: astral-sh/setup-uv@v10.0.1
@@ -109,7 +109,7 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v7.0.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - name: checkout
         uses: actions/checkout@v7.0.1
       - name: Set environment variables based on event type
@@ -137,7 +137,7 @@ jobs:
       - name: setup python environment
         uses: actions/setup-python@v7.0.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - name: checkout
         uses: actions/checkout@v7.0.1
       - name: Set environment variables based on event type
