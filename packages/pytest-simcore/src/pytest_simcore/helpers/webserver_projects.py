@@ -4,7 +4,7 @@
 
 import json
 import uuid as uuidlib
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -171,7 +171,7 @@ async def NewProject(  # noqa: N802
     tests_data_dir: Path,
     force_uuid: bool = False,
     as_template: bool = False,
-) -> AsyncIterator[ProjectDict]:
+) -> AsyncGenerator[ProjectDict]:
     assert app  # nosec
     assert tests_data_dir.exists()
     assert tests_data_dir.is_dir()
