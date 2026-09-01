@@ -139,18 +139,6 @@ class ResourceUsageTrackerClient:
         response.raise_for_status()
         return RutPricingUnitGet.model_validate(response.json())
 
-    async def get_wallet_credits(
-        self,
-        product_name: ProductName,
-        wallet_id: WalletID,
-    ) -> WalletTotalCredits:
-        response = await self.client.post(
-            "/credit-transactions/credits:sum",
-            params={"product_name": product_name, "wallet_id": wallet_id},
-        )
-        response.raise_for_status()
-        return WalletTotalCredits.model_validate(response.json())
-
     #
     # app
     #

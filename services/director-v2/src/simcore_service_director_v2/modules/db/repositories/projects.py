@@ -35,7 +35,3 @@ class ProjectsRepository(BaseRepository):
             if row is None:
                 raise ProjectNotFoundError(project_id=project_id)
             return ProjectAtDB.model_validate(row)
-
-    async def get_project_id_from_node(self, node_id: NodeID) -> ProjectID:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
-            return await ProjectNodesRepo.get_project_id_from_node_id(conn, node_id=node_id)
