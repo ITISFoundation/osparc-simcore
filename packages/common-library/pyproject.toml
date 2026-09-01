@@ -10,7 +10,7 @@ description = "Core service library for simcore pydantic common"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Giancarlo Romeo", email = "giancarloromeo@example.com" }]
-requires-python = "~=3.13"
+requires-python = "~=3.14"
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Developers",
