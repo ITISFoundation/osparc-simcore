@@ -34,7 +34,7 @@ docker==7.1.0
     # via -r requirements/_base.in
 email-validator==2.3.0
     # via pydantic
-idna==3.11
+idna==3.19
     # via
     #   email-validator
     #   requests
@@ -93,7 +93,7 @@ pygments==2.19.2
     # via
     #   pytest
     #   rich
-pytest==9.0.2
+pytest==9.1.1
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow

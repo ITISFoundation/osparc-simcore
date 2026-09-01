@@ -47,7 +47,7 @@ charset-normalizer==3.4.6
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.13.5
+coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -89,7 +89,7 @@ httpx==0.28.1
     #   respx
 icdiff==2.0.10
     # via pytest-icdiff
-idna==3.11
+idna==3.19
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -162,7 +162,7 @@ propcache==0.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-py-cpuinfo==9.0.0
+py-cpuinfo2==10.1.1
     # via pytest-benchmark
 pygments==2.19.2
     # via
@@ -171,7 +171,7 @@ pygments==2.19.2
     #   pytest
 pyleak==0.2.0
     # via -r requirements/_test.in
-pytest==9.0.2
+pytest==9.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -184,15 +184,15 @@ pytest==9.0.2
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-aiohttp==1.1.0
+pytest-aiohttp==1.1.1
     # via -r requirements/_test.in
-pytest-asyncio==1.3.0
+pytest-asyncio==1.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
-pytest-benchmark==5.2.3
+pytest-benchmark==5.3.0
     # via -r requirements/_test.in
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-docker==3.2.5
     # via -r requirements/_test.in
