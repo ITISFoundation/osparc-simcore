@@ -6,6 +6,7 @@ from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from _pytest.mark.structures import ParameterSet
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -27,7 +28,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-def standard_user_role() -> tuple[str, tuple]:
+def standard_user_role() -> tuple[str, tuple[ParameterSet, ...]]:
     all_roles = standard_role_response()
 
     return (all_roles[0], (pytest.param(*all_roles[1][2], id="standard user role"),))
@@ -105,7 +106,15 @@ async def test_delete_node(
             assert result.scalar() is None
 
 
-@pytest.mark.parametrize("stale_reference_field", ["input_nodes", "inputs"])
+@pytest.mark.parametrize(
+    "reference_field_override,override_value,expected_override_value",
+    [
+        pytest.param("input_nodes", [], [], id="empty-input-nodes"),
+        pytest.param("input_nodes", sa.null(), None, id="null-input-nodes"),
+        pytest.param("inputs", {"literal": False}, {"literal": False}, id="unlinked-input-value"),
+        pytest.param("inputs", sa.null(), None, id="null-inputs"),
+    ],
+)
 @pytest.mark.parametrize(*standard_user_role())
 async def test_delete_node_removes_references_in_connected_nodes(
     mock_dynamic_scheduler: None,
@@ -117,7 +126,9 @@ async def test_delete_node_removes_references_in_connected_nodes(
     mock_catalog_api: dict[str, mock.Mock],
     storage_subsystem_mock: MockedStorageSubsystem,
     postgres_db: sa.engine.Engine,
-    stale_reference_field: str,
+    reference_field_override: str,
+    override_value: object,
+    expected_override_value: list[str] | dict[str, object] | None,
 ):
     assert client.app
     workbench = user_project["workbench"]
@@ -134,8 +145,6 @@ async def test_delete_node_removes_references_in_connected_nodes(
     ]
     assert dependent_node_ids
 
-    stale_value: list[str] | dict[str, object]
-    stale_value = [] if stale_reference_field == "input_nodes" else {}
     with postgres_db.begin() as conn:
         conn.execute(
             projects_nodes.update()
@@ -143,7 +152,7 @@ async def test_delete_node_removes_references_in_connected_nodes(
                 (projects_nodes.c.project_uuid == user_project["uuid"])
                 & (projects_nodes.c.node_id == dependent_node_ids[0])
             )
-            .values(**{stale_reference_field: stale_value})
+            .values(**{reference_field_override: override_value})
         )
 
     url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=deleted_node_id)
@@ -165,10 +174,10 @@ async def test_delete_node_removes_references_in_connected_nodes(
         expected_inputs = workbench[row.node_id].get("inputs")
 
         if row.node_id == dependent_node_ids[0]:
-            if stale_reference_field == "input_nodes":
-                expected_input_nodes = []
+            if reference_field_override == "input_nodes":
+                expected_input_nodes = expected_override_value
             else:
-                expected_inputs = {}
+                expected_inputs = expected_override_value
 
         if expected_input_nodes is not None:
             expected_input_nodes = [node_id for node_id in expected_input_nodes if node_id != deleted_node_id]
