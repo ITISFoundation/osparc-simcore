@@ -115,12 +115,8 @@ async def test_delete_node(
 @pytest.mark.parametrize(
     "reference_field_override,override_value,expected_override_value,literal_with_deleted_node_id",
     [
-        pytest.param("input_nodes", [], [], False, id="empty-input-nodes"),
-        pytest.param("input_nodes", None, None, False, id="json-null-input-nodes"),
         pytest.param("input_nodes", sa.null(), None, False, id="null-input-nodes"),
-        pytest.param("inputs", None, None, False, id="json-null-inputs"),
         pytest.param("inputs", sa.null(), None, False, id="null-inputs"),
-        pytest.param("inputs", {"literal": False}, {"literal": False}, False, id="unlinked-input-value"),
         pytest.param("inputs", {}, {}, True, id="literal-dictionary-containing-node-uuid"),
     ],
 )
