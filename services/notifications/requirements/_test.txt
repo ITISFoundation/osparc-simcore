@@ -84,7 +84,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-idna==3.10
+idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
