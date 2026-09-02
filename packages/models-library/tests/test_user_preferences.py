@@ -3,19 +3,22 @@
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar, Final, NamedTuple
 
 import pytest
+from models_library.api_schemas_webserver.users_preferences import PreferenceConstraints
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.user_preferences import (
+    _ALLOWED_VALUE_CONSTRAINTS,
     FrontendUserPreference,
+    InvalidValueConstraintsError,
     NoPreferenceFoundError,
     PreferenceType,
     UserServiceUserPreference,
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
 )
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError, create_model
 
 _SERVICE_KEY_AND_VERSION_SAMPLES: list[tuple[ServiceKey, ServiceVersion]] = [
     (
@@ -81,13 +84,16 @@ def test_user_service_preferences(value: Any, mock_file_path: Path):
 
 
 @pytest.fixture
-def unregister_defined_classes() -> Iterator[None]:
-    yield
+def restore_preference_classes_registry() -> Iterator[None]:
     # pylint: disable=protected-access
-    _AutoRegisterMeta.registered_user_preference_classes.pop("Pref1", None)
+    registry = _AutoRegisterMeta.registered_user_preference_classes
+    snapshot = dict(registry)
+    yield
+    registry.clear()
+    registry.update(snapshot)
 
 
-def test__frontend__user_preference(value: Any, unregister_defined_classes: None):
+def test__frontend__user_preference(value: Any, restore_preference_classes_registry: None):
     pref1 = FrontendUserPreference.model_validate({"preference_identifier": "pref_id", "value": value})
     assert isinstance(pref1, FrontendUserPreference)
 
@@ -98,7 +104,7 @@ def test__user_service__user_preference(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     mock_file_path: Path,
-    unregister_defined_classes: None,
+    restore_preference_classes_registry: None,
 ):
     pref1 = UserServiceUserPreference.model_validate(
         {
@@ -116,7 +122,7 @@ def test__user_service__user_preference(
     assert new_instance == pref1
 
 
-def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes: None):
+def test_redefine_class_with_same_name_is_not_allowed(restore_preference_classes_registry: None):
     # pylint: disable=unused-variable
     def def_class_1():
         class APreference(_BaseUserPreferenceModel): ...
@@ -132,3 +138,195 @@ def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes
 def test_get_preference_class_from_name_not_found():
     with pytest.raises(NoPreferenceFoundError, match="No preference class found"):
         _BaseUserPreferenceModel.get_preference_class_from_name("__missing_preference_name__")
+
+
+@pytest.fixture
+def capped_preference_class(restore_preference_classes_registry: None) -> type[FrontendUserPreference]:
+    class CappedPreference(FrontendUserPreference):
+        preference_identifier: str = "capped"
+        value: int = 1800
+        value_constraints: ClassVar[dict[str, Any]] = {"le": 10800}
+
+    return CappedPreference
+
+
+@pytest.mark.parametrize(
+    "value, overrides, is_valid",
+    [
+        pytest.param(1800, None, True, id="within_class_constraint"),
+        pytest.param(10800, None, True, id="at_class_constraint"),
+        pytest.param(14400, None, False, id="above_class_constraint"),
+        pytest.param(21600, {"le": 21600}, True, id="override_relaxes_class_constraint"),
+        pytest.param(25200, {"le": 21600}, False, id="above_relaxed_override"),
+        pytest.param(10800, {"le": 7200}, False, id="override_tightens_class_constraint"),
+        pytest.param(30, {"ge": 60}, False, id="override_adds_constraint"),
+        pytest.param("not-an-int", None, False, id="wrong_type"),
+    ],
+)
+def test_validate_value_with_constraint_overrides(
+    capped_preference_class: type[FrontendUserPreference],
+    value: Any,
+    overrides: dict[str, Any] | None,
+    is_valid: bool,
+):
+    if is_valid:
+        capped_preference_class.validate_value(value, overrides)
+    else:
+        with pytest.raises(ValidationError):
+            capped_preference_class.validate_value(value, overrides)
+
+
+def test_validate_value_leaves_preference_class_untouched(
+    capped_preference_class: type[FrontendUserPreference],
+):
+    capped_preference_class.validate_value(21600, {"le": 21600})
+
+    assert capped_preference_class.model_fields["value"].metadata == []
+    assert capped_preference_class.get_default_value() == 1800
+    # a value the deployment allowed must remain readable
+    assert capped_preference_class.model_validate({"value": 21600}).value == 21600
+
+
+def test_build_value_validator_is_cached(
+    capped_preference_class: type[FrontendUserPreference],
+):
+    assert capped_preference_class.build_value_validator(
+        {"le": 21600}
+    ) is capped_preference_class.build_value_validator({"le": 21600})
+    assert capped_preference_class.build_value_validator({"le": 21600}) is not (
+        capped_preference_class.build_value_validator({"le": 7200})
+    )
+
+
+def test_build_value_validator_cache_ignores_constraint_ordering(
+    capped_preference_class: type[FrontendUserPreference],
+):
+    # NOTE: the cache key is serialized, equivalent constraints must not build separate validators
+    assert capped_preference_class.build_value_validator(
+        {"ge": 60, "le": 21600}
+    ) is capped_preference_class.build_value_validator({"le": 21600, "ge": 60})
+
+
+def test_unsupported_constraint_is_rejected(
+    capped_preference_class: type[FrontendUserPreference],
+):
+    with pytest.raises(InvalidValueConstraintsError, match="unsupported"):
+        capped_preference_class.validate_value(1800, {"allow_inf_nan": True})
+
+
+def test_constraint_not_applicable_to_field_type_is_rejected(restore_preference_classes_registry: None):
+    class Pref1(FrontendUserPreference):
+        preference_identifier: str = "pref1"
+        value: str = "a-value"
+
+    with pytest.raises(InvalidValueConstraintsError, match="Unable to apply constraint"):
+        Pref1.validate_value("a-value", {"ge": 1})
+
+
+def test_class_constraints_are_validated_at_class_creation(restore_preference_classes_registry: None):
+    with pytest.raises(InvalidValueConstraintsError, match="unsupported"):
+
+        class Pref1(FrontendUserPreference):  # pylint: disable=unused-variable
+            preference_identifier: str = "pref1"
+            value: int = 1
+            value_constraints: ClassVar[dict[str, Any]] = {"not_a_constraint": 1}
+
+
+def test_nullable_value_accepts_none_with_constraints(restore_preference_classes_registry: None):
+    class Pref1(FrontendUserPreference):
+        preference_identifier: str = "pref1"
+        value: int | None = None
+
+    Pref1.validate_value(None, {"ge": 1})
+    Pref1.validate_value(5, {"ge": 1})
+    with pytest.raises(ValidationError):
+        Pref1.validate_value(0, {"ge": 1})
+
+
+class _ConstraintExample(NamedTuple):
+    name: str
+    value_type: type
+    stored_in_db: dict[str, Any]
+    accepts: Any
+    rejects: Any
+
+
+_CONSTRAINT_EXAMPLES: Final[list[_ConstraintExample]] = [
+    _ConstraintExample("ge", int, {"ge": 60}, 60, 59),
+    _ConstraintExample("gt", int, {"gt": 60}, 61, 60),
+    _ConstraintExample("le", int, {"le": 10800}, 10800, 10801),
+    _ConstraintExample("lt", int, {"lt": 10800}, 10799, 10800),
+    _ConstraintExample("max_length", str, {"max_length": 5}, "abcde", "abcdef"),
+    _ConstraintExample("min_length", str, {"min_length": 3}, "abc", "ab"),
+    _ConstraintExample("multiple_of", int, {"multiple_of": 60}, 120, 121),
+    _ConstraintExample("pattern", str, {"pattern": "^(dark|light)$"}, "dark", "blue"),
+]
+
+
+def test_constraint_examples_cover_all_allowed_constraints():
+    assert {example.name for example in _CONSTRAINT_EXAMPLES} == set(_ALLOWED_VALUE_CONSTRAINTS)
+
+
+def test_frontend_schema_exposes_all_allowed_constraints():
+    assert set(PreferenceConstraints.model_fields) == set(_ALLOWED_VALUE_CONSTRAINTS)
+
+
+@pytest.mark.parametrize(
+    "example",
+    [pytest.param(example, id=example.name) for example in _CONSTRAINT_EXAMPLES],
+)
+def test_every_allowed_constraint_is_enforced(
+    restore_preference_classes_registry: None,
+    example: _ConstraintExample,
+):
+    preference_class: type[FrontendUserPreference] = create_model(
+        "ConstrainedPreference",
+        __base__=FrontendUserPreference,
+        preference_identifier=(str, "constrained"),
+        value=(example.value_type, ...),
+    )
+
+    preference_class.validate_value(example.accepts, example.stored_in_db)
+    with pytest.raises(ValidationError):
+        preference_class.validate_value(example.rejects, example.stored_in_db)
+
+
+def test_get_value_constraints_merges_overrides_per_key(restore_preference_classes_registry: None):
+    class Pref1(FrontendUserPreference):
+        preference_identifier: str = "pref1"
+        value: int = 1800
+        value_constraints: ClassVar[dict[str, Any]] = {"ge": 60, "le": 10800}
+
+    assert Pref1.get_value_constraints() == {"ge": 60, "le": 10800}
+    assert Pref1.get_value_constraints({"le": 21600}) == {"ge": 60, "le": 21600}
+    with pytest.raises(InvalidValueConstraintsError, match="unsupported"):
+        Pref1.get_value_constraints({"not_a_constraint": 1})
+
+
+@pytest.mark.parametrize(
+    "value_type, malformed_overrides",
+    [
+        pytest.param(int, {"lte": 3600}, id="misspelled_constraint"),
+        pytest.param(int, {"le": "not-a-number"}, id="constraint_value_of_wrong_type"),
+        pytest.param(str, {"pattern": "["}, id="invalid_regular_expression"),
+        pytest.param(str, {"ge": 1}, id="constraint_not_applicable_to_value_type"),
+        pytest.param(int, "not-a-mapping", id="overrides_not_a_mapping"),
+        pytest.param(int, ["le", 1], id="overrides_is_a_sequence"),
+    ],
+)
+def test_malformed_overrides_are_reported_as_configuration_errors(
+    restore_preference_classes_registry: None,
+    value_type: type,
+    malformed_overrides: Any,
+):
+    # NOTE: overrides come from the database, a malformed one must never escape as a raw
+    # pydantic/TypeError, otherwise callers cannot tell it apart from an invalid user value
+    preference_class: type[FrontendUserPreference] = create_model(
+        "MalformedOverridesPreference",
+        __base__=FrontendUserPreference,
+        preference_identifier=(str, "malformed"),
+        value=(value_type, ...),
+    )
+
+    with pytest.raises(InvalidValueConstraintsError):
+        preference_class.validate_value(value_type(), malformed_overrides)
