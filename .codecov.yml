@@ -93,9 +93,6 @@ component_management:
     - component_id: dynamic_sidecar
       paths:
         - services/dynamic-sidecar/**
-    - component_id: efs_guardian
-      paths:
-        - services/efs-guardian/**
     - component_id: invitations
       paths:
         - services/invitations/**
