@@ -101,7 +101,7 @@ priority==2.0.0
     # via hypercorn
 pyee==13.0.1
     # via playwright
-pygments==2.19.1
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -125,7 +125,7 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
