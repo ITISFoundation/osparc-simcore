@@ -57,7 +57,7 @@ pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
-pygments==2.19.2
+pygments==2.21.0
     # via rich
 python-dateutil==2.9.0.post0
     # via osparc-client

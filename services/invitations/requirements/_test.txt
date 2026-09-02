@@ -46,7 +46,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pygments==2.19.1
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest

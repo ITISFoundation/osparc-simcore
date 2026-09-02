@@ -101,7 +101,7 @@ priority==2.0.0
     # via hypercorn
 pyee==13.0.1
     # via playwright
-pygments==2.19.1
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest

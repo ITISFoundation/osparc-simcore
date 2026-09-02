@@ -290,7 +290,7 @@ pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pygments==2.18.0
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
