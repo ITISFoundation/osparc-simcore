@@ -68,7 +68,7 @@ markupsafe==3.0.3
     #   flask
     #   jinja2
     #   werkzeug
-msgpack==1.1.2
+msgpack==1.2.2
     # via locust
 packaging==26.0
     # via pytest
