@@ -10,7 +10,10 @@ from ....exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...errors import FrontendUserPreferenceIsNotDefinedError
+from ...errors import (
+    FrontendUserPreferenceIsNotDefinedError,
+    FrontendUserPreferenceValueIsInvalidError,
+)
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     CouldNotCreateOrUpdateUserPreferenceError: HttpErrorInfo(
@@ -21,7 +24,12 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     FrontendUserPreferenceIsNotDefinedError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Provided {frontend_preference_name} not found"),
+        # NOTE: reuses the domain message so it is translated from a single catalog entry
+        FrontendUserPreferenceIsNotDefinedError.msg_template,
+    ),
+    FrontendUserPreferenceValueIsInvalidError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        FrontendUserPreferenceValueIsInvalidError.msg_template,
     ),
 }
 
