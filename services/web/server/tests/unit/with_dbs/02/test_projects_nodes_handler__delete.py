@@ -142,14 +142,17 @@ async def test_delete_node_removes_references_in_connected_nodes(
 
     # find a node that is referenced by at least another one
     deleted_node_id = next(
-        node_id
-        for node_id in workbench
-        if any(node_id in (other.get("inputNodes") or []) for other in workbench.values())
+        (
+            node_id
+            for node_id in workbench
+            if any(node_id in (other.get("inputNodes") or []) for other in workbench.values())
+        ),
+        None,
     )
+    assert deleted_node_id is not None, "test setup requires at least one referenced node"
     dependent_node_ids = [
         node_id for node_id, node_data in workbench.items() if deleted_node_id in (node_data.get("inputNodes") or [])
     ]
-    assert dependent_node_ids
 
     if literal_with_deleted_node_id:
         literal_input: dict[str, object] = {
@@ -184,7 +187,9 @@ async def test_delete_node_removes_references_in_connected_nodes(
             ).where(projects_nodes.c.project_uuid == user_project["uuid"])
         ).fetchall()
 
-    assert {row.node_id for row in rows} == set(workbench) - {deleted_node_id}
+    assert {row.node_id for row in rows} == set(workbench) - {deleted_node_id}, (
+        "expected only the selected node to be deleted"
+    )
     for row in rows:
         expected_input_nodes = workbench[row.node_id].get("inputNodes")
         expected_inputs = workbench[row.node_id].get("inputs")
@@ -209,8 +214,10 @@ async def test_delete_node_removes_references_in_connected_nodes(
                 )
             }
 
-        assert row.input_nodes == expected_input_nodes
-        assert row.inputs == expected_inputs
+        assert row.input_nodes == expected_input_nodes, (
+            "expected original input nodes without references to the deleted node"
+        )
+        assert row.inputs == expected_inputs, "expected original inputs without references to the deleted node"
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
