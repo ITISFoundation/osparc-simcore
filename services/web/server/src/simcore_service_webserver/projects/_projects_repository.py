@@ -112,6 +112,19 @@ async def get_project(
         return ProjectDBGet.model_validate(row)
 
 
+async def lock_project_graph(
+    connection: AsyncConnection,
+    *,
+    project_uuid: ProjectID,
+) -> None:
+    # SQLAlchemy renders key_share=True without read=True as FOR NO KEY UPDATE.
+    result = await connection.execute(
+        sa.select(projects.c.uuid).where(projects.c.uuid == f"{project_uuid}").with_for_update(key_share=True)
+    )
+    if result.scalar_one_or_none() is None:
+        raise ProjectNotFoundError(project_uuid=project_uuid)
+
+
 async def get_project_product(
     app: web.Application,
     connection: AsyncConnection | None = None,
