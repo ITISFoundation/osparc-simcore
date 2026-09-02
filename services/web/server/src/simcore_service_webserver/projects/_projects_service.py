@@ -117,11 +117,13 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
+from ..db.plugin import get_asyncpg_engine
 from ..director_v2 import director_v2_service
 from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
@@ -176,6 +178,7 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
+    ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
@@ -1228,6 +1231,47 @@ async def _remove_service_and_its_data_folders(
     )
 
 
+def _prune_node_references(node: Node, *, deleted_node_id: NodeID) -> PartialNode | None:
+    updates: dict[str, Any] = {}
+    if node.inputs is not None:
+        inputs = {
+            input_id: value
+            for input_id, value in node.inputs.items()
+            if not (isinstance(value, PortLink) and value.node_uuid == deleted_node_id)
+        }
+        if inputs != node.inputs:
+            updates["inputs"] = inputs
+
+    if node.input_nodes is not None:
+        input_nodes = [input_node_id for input_node_id in node.input_nodes if input_node_id != deleted_node_id]
+        if input_nodes != node.input_nodes:
+            updates["input_nodes"] = input_nodes
+
+    return PartialNode.model_construct(**updates) if updates else None
+
+
+_NODE_GRAPH_FIELDS: Final[frozenset[str]] = frozenset({"input_nodes", "inputs"})
+
+
+def _validate_node_references(
+    partial_node: PartialNode,
+    *,
+    project_id: ProjectID,
+    project_node_ids: set[NodeID],
+) -> None:
+    referenced_node_ids = (
+        set(partial_node.input_nodes or []) if "input_nodes" in partial_node.model_fields_set else set()
+    )
+    if "inputs" in partial_node.model_fields_set and partial_node.inputs is not None:
+        referenced_node_ids.update(
+            value.node_uuid for value in partial_node.inputs.values() if isinstance(value, PortLink)
+        )
+
+    if missing_node_ids := referenced_node_ids - project_node_ids:
+        missing_node_id = min(missing_node_ids, key=str)
+        raise ParentNodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{missing_node_id}")
+
+
 async def delete_project_node(
     request: web.Request,
     project_uuid: ProjectID,
@@ -1253,6 +1297,34 @@ async def delete_project_node(
         project_id=project_uuid,
     )
 
+    async with transaction_context(get_asyncpg_engine(request.app)) as conn:
+        await _projects_repository.lock_project_graph(conn, project_uuid=project_uuid)
+        project_nodes = await _projects_nodes_repository.get_by_project(
+            request.app,
+            connection=conn,
+            project_id=project_uuid,
+        )
+        for sibling_node_id, sibling_node in project_nodes.items():
+            if sibling_node_id == node_uuid:
+                continue
+
+            partial_node = _prune_node_references(sibling_node, deleted_node_id=node_uuid)
+            if partial_node is not None:
+                await _projects_nodes_repository.update(
+                    request.app,
+                    connection=conn,
+                    project_id=project_uuid,
+                    node_id=sibling_node_id,
+                    partial_node=partial_node,
+                )
+
+        await _projects_nodes_repository.delete(
+            request.app,
+            connection=conn,
+            project_id=project_uuid,
+            node_id=node_uuid,
+        )
+
     fire_and_forget_task(
         _remove_service_and_its_data_folders(
             request.app,
@@ -1265,12 +1337,6 @@ async def delete_project_node(
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
-    await _projects_nodes_repository.delete(
-        request.app,
-        project_id=project_uuid,
-        node_id=node_uuid,
     )
 
     await create_project_document_and_notify(
@@ -1379,13 +1445,33 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-
-    await _projects_nodes_repository.update(
-        app,
-        project_id=project_id,
-        node_id=node_id,
-        partial_node=partial_node,
-    )
+    if partial_node.model_fields_set & _NODE_GRAPH_FIELDS:
+        async with transaction_context(get_asyncpg_engine(app)) as conn:
+            await _projects_repository.lock_project_graph(conn, project_uuid=project_id)
+            project_nodes = await _projects_nodes_repository.get_by_project(
+                app,
+                connection=conn,
+                project_id=project_id,
+            )
+            _validate_node_references(
+                partial_node,
+                project_id=project_id,
+                project_node_ids=set(project_nodes),
+            )
+            await _projects_nodes_repository.update(
+                app,
+                connection=conn,
+                project_id=project_id,
+                node_id=node_id,
+                partial_node=partial_node,
+            )
+    else:
+        await _projects_nodes_repository.update(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+            partial_node=partial_node,
+        )
 
     await create_project_document_and_notify(
         app,
