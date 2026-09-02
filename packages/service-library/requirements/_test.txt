@@ -148,7 +148,7 @@ pathable==0.4.4
     # via jsonschema-path
 pathspec==1.0.4
     # via mypy
-pillow==12.2.0
+pillow==12.3.0
     # via -r requirements/_test.in
 pluggy==1.6.0
     # via
