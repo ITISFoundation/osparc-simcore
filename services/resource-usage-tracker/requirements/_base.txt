@@ -376,7 +376,7 @@ python-dateutil==2.9.0.post0
     #   dateparser
     #   matplotlib
     #   pandas
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn

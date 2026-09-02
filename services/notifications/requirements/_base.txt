@@ -329,7 +329,7 @@ python-dateutil==2.9.0.post0
     # via
     #   arrow
     #   celery
-python-dotenv==1.1.0
+python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn

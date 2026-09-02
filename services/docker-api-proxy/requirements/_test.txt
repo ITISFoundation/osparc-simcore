@@ -271,7 +271,7 @@ pytest-mock==3.15.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via
     #   -r requirements/_test.in
     #   pydantic-settings
