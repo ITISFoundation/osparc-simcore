@@ -8,6 +8,8 @@ Currently includes two parts:
 """
 
 import asyncio
+import hashlib
+import hmac
 import logging
 
 import twilio.rest  # type: ignore[import-untyped]
@@ -19,7 +21,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.logging_utils import log_decorator
-from servicelib.utils_secrets import generate_passcode
+from servicelib.utils_secrets import are_secrets_equal, generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
 
@@ -27,6 +29,7 @@ from ..locale import resolve_effective_locale
 from ..notifications import notifications_service
 from ..notifications.models import EmailContact
 from ..redis import get_redis_validation_code_client
+from ..session.settings import get_plugin_settings as get_session_settings
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
 log = logging.getLogger(__name__)
@@ -43,37 +46,51 @@ class ValidationCode(BaseModel):
 # SEE https://redis-py.readthedocs.io/en/stable/index.html
 
 
+def hash_2fa_code_for_storage(*, code: str, secret_key: str) -> str:
+    """Returns the HMAC-SHA256 digest used to persist one time pads in Redis."""
+    return hmac.new(
+        key=secret_key.encode(),
+        msg=code.encode(),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+
+
+def _hash_2fa_code(app: web.Application, *, code: str) -> str:
+    """HMAC-SHA256 of the OTP so that only a non-reversible digest (never the
+    plaintext code) is persisted in Redis. Keyed with the server-side session secret.
+    """
+    secret_key = get_session_settings(app).SESSION_SECRET_KEY.get_secret_value()
+    return hash_2fa_code_for_storage(code=code, secret_key=secret_key)
+
+
 @log_decorator(log, level=logging.DEBUG)
-async def _do_create_2fa_code(
-    redis_client,
-    user_email: str,
-    *,
-    expiration_seconds: int,
-) -> str:
-    hash_key: str = user_email
-    code: str = generate_passcode()
-    await redis_client.set(hash_key, value=code, ex=expiration_seconds)
-    return code
-
-
 async def create_2fa_code(app: web.Application, *, user_email: str, expiration_in_seconds: int) -> str:
-    """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
+    """Generates a 2FA code, stores only its HMAC digest with a finite TTL and returns the plaintext code"""
     redis_client = get_redis_validation_code_client(app)
-    code: str = await _do_create_2fa_code(
-        redis_client=redis_client,
-        user_email=user_email,
-        expiration_seconds=expiration_in_seconds,
+    code: str = generate_passcode()
+    await redis_client.set(
+        user_email,
+        value=_hash_2fa_code(app, code=code),
+        ex=expiration_in_seconds,
     )
     return code
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def get_2fa_code(app: web.Application, user_email: str) -> str | None:
-    """Returns 2FA code for user or None if it does not exist (e.g. expired or never set)"""
+async def has_2fa_code(app: web.Application, user_email: str) -> bool:
+    """Returns True if a non-expired 2FA code exists for user_email"""
     redis_client = get_redis_validation_code_client(app)
-    hash_key = user_email
-    hash_value: str | None = await redis_client.get(hash_key)
-    return hash_value
+    return await redis_client.get(user_email) is not None
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def verify_2fa_code(app: web.Application, *, user_email: str, code: str) -> bool:
+    """Constant-time verification of a submitted 2FA code against the stored HMAC digest"""
+    redis_client = get_redis_validation_code_client(app)
+    stored_digest: str | None = await redis_client.get(user_email)
+    if stored_digest is None:
+        return False
+    return are_secrets_equal(got=_hash_2fa_code(app, code=code), expected=stored_digest)
 
 
 @log_decorator(log, level=logging.DEBUG)
