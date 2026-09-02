@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from datetime import datetime
 from typing import Any
 
@@ -15,6 +15,7 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.utils.change_case import snake_to_camel
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt, PositiveInt, TypeAdapter
+from servicelib.async_utils import run_sequentially_in_context
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_extensions import projects_extensions
 from simcore_postgres_database.models.users import users
@@ -123,6 +124,18 @@ async def lock_project_graph(
     )
     if result.scalar_one_or_none() is None:
         raise ProjectNotFoundError(project_uuid=project_uuid)
+
+
+@run_sequentially_in_context(target_args=["project_uuid"])
+async def run_project_graph_mutation(
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    mutation: Callable[[AsyncConnection], Awaitable[None]],
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app)) as connection:
+        await lock_project_graph(connection, project_uuid=project_uuid)
+        await mutation(connection)
 
 
 async def get_project_product(

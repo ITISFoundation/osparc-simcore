@@ -9,6 +9,7 @@ from unittest import mock
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.ext.asyncio as sa_asyncio
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -307,10 +308,31 @@ async def test_delete_node_and_graph_patch_are_serialized(
     }
 
     original_lock_project_graph = _projects_repository.lock_project_graph
-    first_lock_acquired = asyncio.Event()
-    release_first_lock = asyncio.Event()
-    second_lock_attempted = asyncio.Event()
+    original_run_project_graph_mutation = _projects_repository.run_project_graph_mutation
+    first_lock_acquired, release_first_lock, second_mutation_queued, second_lock_attempted = (
+        asyncio.Event(),
+        asyncio.Event(),
+        asyncio.Event(),
+        asyncio.Event(),
+    )
+    mutation_call_count = 0
     lock_call_count = 0
+
+    async def _run_project_graph_mutation(
+        app: web.Application,
+        *,
+        project_uuid: ProjectID,
+        mutation: Callable[[sa_asyncio.AsyncConnection], Awaitable[None]],
+    ) -> None:
+        nonlocal mutation_call_count
+        mutation_call_count += 1
+        if mutation_call_count == 2:
+            second_mutation_queued.set()
+        await original_run_project_graph_mutation(
+            app,
+            project_uuid=project_uuid,
+            mutation=mutation,
+        )
 
     async def _lock_project_graph(
         connection: sa_asyncio.AsyncConnection,
@@ -327,6 +349,11 @@ async def test_delete_node_and_graph_patch_are_serialized(
             first_lock_acquired.set()
             await release_first_lock.wait()
 
+    mocker.patch.object(
+        _projects_repository,
+        "run_project_graph_mutation",
+        side_effect=_run_project_graph_mutation,
+    )
     mocker.patch.object(_projects_repository, "lock_project_graph", side_effect=_lock_project_graph)
 
     requests = {
@@ -338,11 +365,13 @@ async def test_delete_node_and_graph_patch_are_serialized(
     await asyncio.wait_for(first_lock_acquired.wait(), timeout=10)
     second_request = asyncio.create_task(requests[second_operation]())
     try:
-        await asyncio.wait_for(second_lock_attempted.wait(), timeout=10)
+        await asyncio.wait_for(second_mutation_queued.wait(), timeout=10)
+        assert not second_lock_attempted.is_set()
     finally:
         release_first_lock.set()
 
     first_response, second_response = await asyncio.gather(first_request, second_request)
+    assert second_lock_attempted.is_set()
     responses = {first_operation: first_response, second_operation: second_response}
     await assert_status(responses["delete"], status.HTTP_204_NO_CONTENT)
     await assert_status(responses["patch"], expected_patch_status)
