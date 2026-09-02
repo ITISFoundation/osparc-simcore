@@ -420,15 +420,6 @@ async def get_project_type(app: web.Application, project_uuid: ProjectID) -> Pro
     return await db_legacy.get_project_type(project_uuid)
 
 
-async def get_project_dict_legacy(app: web.Application, project_uuid: ProjectID) -> ProjectDict:
-    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
-    assert db_legacy  # nosec
-    project, _ = await db_legacy.get_project_dict_and_type(
-        f"{project_uuid}",
-    )
-    return project
-
-
 async def get_project_dict_and_type(
     app: web.Application,
     project_uuid: str,
@@ -1536,7 +1527,7 @@ async def _get_node_share_state(
     node_id: NodeID,
     node_key: ServiceKey,
     computational_pipeline_running: bool | None,
-    user_primrary_groupid: GroupID,
+    user_primary_groupid: GroupID,
 ) -> NodeShareState:
     if _is_node_dynamic(node_key):
         # if the service is dynamic and running it is locked if it is not collaborative
@@ -1566,7 +1557,7 @@ async def _get_node_share_state(
         return NodeShareState(
             locked=True,
             current_user_groupids=[
-                user_primrary_groupid,
+                user_primary_groupid,
             ],
             status=NodeShareStatus.OPENED,
         )
@@ -2091,7 +2082,7 @@ async def add_project_states_for_user(
                 node_id=NodeID(node_uuid),
                 node_key=node["key"],
                 computational_pipeline_running=is_pipeline_running,
-                user_primrary_groupid=user_primary_group_id,
+                user_primary_groupid=user_primary_group_id,
             )
         if NodeID(node_uuid) in computational_node_states:
             computed_node_state = computational_node_states[NodeID(node_uuid)].model_copy(
