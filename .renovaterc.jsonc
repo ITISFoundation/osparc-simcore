@@ -20,9 +20,6 @@
   },
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
-  "schedule": [
-    "before 3am on monday"
-  ],
   "timezone": "Europe/Zurich",
   "pip-compile": {
     "managerFilePatterns": [
@@ -64,9 +61,6 @@
         "packages/**/requirements/**"
       ],
       "groupName": "packages deps",
-      "schedule": [
-        "before 3am on monday"
-      ],
       "minimumReleaseAge": "3 days",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
@@ -78,9 +72,6 @@
         "services/**/requirements/**"
       ],
       "groupName": "services deps",
-      "schedule": [
-        "before 3am on the first day of the month"
-      ],
       "minimumReleaseAge": "14 days",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
