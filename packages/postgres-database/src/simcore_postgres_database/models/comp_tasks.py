@@ -108,6 +108,15 @@ comp_tasks = sa.Table(
         doc="[DEPRECATED unused but kept for legacy services and "
         "must be filled with a default value of 1 January 1900]",
     ),
+    sa.Column(
+        "skip_db_notification",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.false(),
+        doc="Set to true (by callers that already published this change on RabbitMQ) "
+        "to suppress this row's pg_notify trigger; legacy writers never set it, "
+        "so it stays false and the DB-based notification path keeps working for them",
+    ),
     # ------
     sa.UniqueConstraint("project_id", "node_id", name="project_node_uniqueness"),
     sa.Index("ix_comp_tasks_project_id", "project_id"),
@@ -127,7 +136,10 @@ DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
 AFTER UPDATE OF outputs,state ON comp_tasks
     FOR EACH ROW
-    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state))
+    WHEN (
+        (OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state)
+        AND NEW.skip_db_notification IS NOT TRUE
+    )
     EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
 """
 )
