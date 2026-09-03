@@ -74,7 +74,6 @@ jobs:
       director: ${{ steps.filter.outputs.director }}
       director-v2: ${{ steps.filter.outputs.director-v2 }}
       dynamic-sidecar: ${{ steps.filter.outputs.dynamic-sidecar }}
-      efs-guardian: ${{ steps.filter.outputs.efs-guardian }}
       invitations: ${{ steps.filter.outputs.invitations }}
       migration: ${{ steps.filter.outputs.migration }}
       payments: ${{ steps.filter.outputs.payments }}
@@ -226,12 +225,6 @@ jobs:
               - 'services/dynamic-sidecar/**'
               - 'services/docker-compose*'
               - 'scripts/install_rclone.bash'
-              - 'scripts/mypy/*'
-              - 'mypy.ini'
-            efs-guardian:
-              - 'packages/**'
-              - 'services/efs-guardian/**'
-              - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
             invitations:
@@ -1305,55 +1298,6 @@ jobs:
           flags: unittests #optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  unit-test-efs-guardian:
-    needs: changes
-    if: ${{ needs.changes.outputs.efs-guardian == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] efs-guardian"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.13"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7.0.1
-      - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
-      - name: install
-        run: |
-          make devenv
-          source .venv/bin/activate && \
-          pushd services/efs-guardian && \
-          make install-ci
-      - name: typecheck
-        run: |
-          source .venv/bin/activate && \
-          uv pip install mypy && \
-          pushd services/efs-guardian && \
-          make mypy
-      - name: test
-        run: |
-          source .venv/bin/activate && \
-          pushd services/efs-guardian && \
-          make test-ci-unit
-      - uses: codecov/codecov-action@v7
-        with:
-          flags: unittests #optional
-          token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
-        with:
-          report_type: test_results
-          files: services/efs-guardian/junit.xml
-          flags: unittests #optional
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   unit-test-python-linting:
     needs: changes
     if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1739,7 +1683,6 @@ jobs:
         unit-test-director-v2,
         unit-test-director,
         unit-test-dynamic-sidecar,
-        unit-test-efs-guardian,
         unit-test-models-library,
         unit-test-pytest-simcore,
         unit-test-common-library,
