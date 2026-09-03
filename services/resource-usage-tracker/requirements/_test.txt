@@ -331,7 +331,7 @@ urllib3==2.7.0
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
