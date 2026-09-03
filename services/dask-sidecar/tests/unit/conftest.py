@@ -22,7 +22,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
-from pytest_localftpserver.servers import ProcessFTPServer
+from pytest_localftpserver.servers import PytestLocalFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -189,7 +189,7 @@ async def async_dask_client(
 
 
 @pytest.fixture(scope="module")
-def ftp_server(ftpserver: ProcessFTPServer) -> list[URL]:
+def ftp_server(ftpserver: PytestLocalFTPServer) -> list[URL]:
     faker = Faker()
 
     files = ["file_1", "file_2", "file_3"]
