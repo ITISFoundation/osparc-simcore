@@ -1,34 +1,42 @@
 """this module creates a background task that monitors changes in the database.
 First a procedure is registered in postgres that gets triggered whenever the outputs
 of a record in comp_task table is changed.
+
+This is a thin PG -> RabbitMQ relay: on notification it resolves the project
+owner and republishes a `NodeDataUpdatedEventMessage` event (no embedded values).
+Actual handling (re-reading comp_tasks and notifying the project) happens in
+the RabbitMQ consumer (see notifications/_rabbitmq_exclusive_queue_consumers.py),
+which runs on every (already horizontally-scaled) webserver-api replica.
+
+The LISTEN loop itself is guarded by a Redis exclusive lock (see
+`create_comp_tasks_listening_task`) so it can run safely as a plain background
+task on every webserver-api replica too - no dedicated singleton service needed.
 """
 
 import asyncio
 import datetime
 import logging
 from collections.abc import AsyncIterator
-from typing import Final, NoReturn
+from typing import Final, Literal, NoReturn
 
 import asyncpg
 from aiohttp import web
+from common_library.async_tools import cancel_wait_task
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
+from models_library.rabbitmq_messages import NodeDataUpdatedEventMessage
 from models_library.users import UserID
 from pydantic.types import PositiveInt
-from servicelib.background_task import periodic_task
-from simcore_postgres_database.models.comp_tasks import comp_tasks
+from servicelib.background_task_utils import exclusive_periodic
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
-from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
 from ..db.settings import get_plugin_settings
-from ..projects import _projects_service, exceptions
-from ..projects.nodes_utils import update_node_outputs
+from ..projects import exceptions
+from ..rabbitmq import get_rabbitmq_client
+from ..redis import get_redis_lock_manager_client_sdk
 from ._models import CompTaskNotificationPayload
-from ._utils import convert_state_from_db
 
 _LISTENING_TASK_BASE_SLEEPING_TIME_S: Final[int] = 1
 _logger = logging.getLogger(__name__)
@@ -43,83 +51,32 @@ async def _get_project_owner(conn: AsyncConnection, project_uuid: ProjectID) -> 
     return UserID(the_project_owner)
 
 
-async def _update_project_state(
-    app: web.Application,
-    user_id: UserID,
-    project_uuid: ProjectID,
-    node_uuid: NodeID,
-    new_state: RunningState,
-) -> None:
-    project = await _projects_service.update_project_node_state(
-        app,
-        user_id,
-        project_uuid,
-        node_uuid,
-        new_state,
-        client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
-    )
-
-    await _projects_service.notify_project_node_update(app, project, node_uuid)
-
-    await _projects_service.notify_project_state_update(app, project)
-
-
-async def _get_changed_comp_task_row(conn: AsyncConnection, task_id: PositiveInt) -> Row | None:
-    result = await conn.execute(select(comp_tasks).where(comp_tasks.c.task_id == task_id))
-    return result.fetchone()
-
-
 async def _handle_db_notification(
     app: web.Application, payload: CompTaskNotificationPayload, engine: AsyncEngine
 ) -> None:
+    changes: list[Literal["outputs", "state"]] = []
+    if any(field in payload.changes for field in ("outputs", "run_hash")):
+        changes.append("outputs")
+    if "state" in payload.changes:
+        changes.append("state")
+    if not changes:
+        return
+
     try:
         async with engine.connect() as conn:
             the_project_owner = await _get_project_owner(conn, payload.project_id)
-            changed_row = await _get_changed_comp_task_row(conn, payload.task_id)
 
-        if not changed_row:
-            _logger.warning(
-                "No comp_tasks row found for project_id=%s node_id=%s",
-                payload.project_id,
-                payload.node_id,
-            )
-            return
-
-        if any(f in payload.changes for f in ["outputs", "run_hash"]):
-            await update_node_outputs(
-                app,
-                the_project_owner,
-                payload.project_id,
-                payload.node_id,
-                changed_row.outputs,
-                changed_row.run_hash,
-                ui_changed_keys=None,
-                client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
-            )
-
-        if "state" in payload.changes and (changed_row.state is not None):
-            await _update_project_state(
-                app,
-                the_project_owner,
-                payload.project_id,
-                payload.node_id,
-                convert_state_from_db(changed_row.state),
-            )
-
-    except exceptions.ProjectNotFoundError as exc:
-        _logger.warning(
-            "Project %s was not found and cannot be updated. Maybe was it deleted?",
-            exc.project_uuid,
+        message = NodeDataUpdatedEventMessage(
+            user_id=the_project_owner,
+            project_id=payload.project_id,
+            node_id=payload.node_id,
+            changes=changes,
         )
+        await get_rabbitmq_client(app).publish(message.channel_name, message)
+
     except exceptions.ProjectOwnerNotFoundError as exc:
         _logger.warning(
             "Project owner of project %s could not be found, is the project valid?",
-            exc.project_uuid,
-        )
-    except exceptions.NodeNotFoundError as exc:
-        _logger.warning(
-            "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
-            exc.node_uuid,
             exc.project_uuid,
         )
 
@@ -171,10 +128,20 @@ async def _listen(app: web.Application) -> NoReturn:
 
 
 async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
-    async with periodic_task(
-        _listen,
-        interval=datetime.timedelta(seconds=_LISTENING_TASK_BASE_SLEEPING_TIME_S),
-        task_name="computation db listener",
-        app=app,
-    ):
+    # NOTE: this task is safe to run on every webserver-api replica (no dedicated
+    # singleton `wb-db-event-listener` service needed): the Redis lock below ensures
+    # only one replica actually holds the LISTEN connection at a time, with automatic
+    # failover to another replica if that one goes down.
+    @exclusive_periodic(
+        get_redis_lock_manager_client_sdk(app),
+        task_interval=datetime.timedelta(seconds=_LISTENING_TASK_BASE_SLEEPING_TIME_S),
+        retry_after=datetime.timedelta(seconds=_LISTENING_TASK_BASE_SLEEPING_TIME_S),
+    )
+    async def _exclusive_listen() -> None:
+        await _listen(app)
+
+    task = asyncio.create_task(_exclusive_listen(), name="computation db listener")
+    try:
         yield
+    finally:
+        await cancel_wait_task(task)

@@ -87,7 +87,7 @@ Common service name patterns:
 - **Dask**: `dask_stack_<component>`
 
 Core simcore services:
-`webserver`, `api-server`, `director`, `director-v2`, `catalog`, `dynamic-schdlr`, `agent`, `autoscaling`, `clusters-keeper`, `resource-usage-tracker`, `wb-api-server`, `wb-auth`, `wb-db-event-listener`, `wb-garbage-collector`, `payments`, `invitations`, `efs-guardian`, `datcore-adapter`, `traefik`
+`webserver`, `api-server`, `director`, `director-v2`, `catalog`, `dynamic-schdlr`, `agent`, `autoscaling`, `clusters-keeper`, `resource-usage-tracker`, `wb-api-server`, `wb-auth`, `wb-garbage-collector`, `payments`, `invitations`, `efs-guardian`, `datcore-adapter`, `traefik`
 
 ### 2. Query Logs (Loki)
 

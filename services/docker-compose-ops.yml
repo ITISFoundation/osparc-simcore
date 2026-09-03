@@ -20,12 +20,12 @@
 
 services:
   adminer:
-    image: adminer:5.4.1
+    image: adminer:6.0.1
     init: true
     environment:
       ADMINER_DEFAULT_SERVER: postgres
       ADMINER_DESIGN: nette
-      ADMINER_PLUGINS: json-column
+      # ADMINER_PLUGINS: json-column
     ports:
       - "18080:8080"
     networks:
@@ -73,7 +73,7 @@ services:
     init: true
     ports:
       - "9000:9000"
-    command: -H unix:///var/run/docker.sock
+    command: ["-H", "unix:///var/run/docker.sock", "--no-setup-token"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data

@@ -182,11 +182,6 @@ services:
     environment:
       <<: *webserver_environment_devel
 
-  wb-db-event-listener:
-    volumes: *webserver_volumes_devel
-    environment:
-      <<: *webserver_environment_devel
-
   wb-garbage-collector:
     volumes: *webserver_volumes_devel
     environment:

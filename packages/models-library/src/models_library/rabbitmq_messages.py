@@ -331,7 +331,9 @@ class NodeDataUpdatedEventMessage(RabbitMessageBase, NodeMessageBase):
     changes: list[Literal["outputs", "state"]]
 
     def routing_key(self) -> str | None:
-        return f"{self.project_id}.{self.node_id}"
+        # no per-project/node filtering needed: every message must reach the single
+        # shared (non-exclusive) consumer queue, so this stays a plain FANOUT message
+        return None
 
 
 class FileNotificationEventType(StrAutoEnum):

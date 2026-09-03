@@ -6,15 +6,17 @@ import json
 from collections.abc import Callable
 from random import randint
 from typing import Any
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_sdk.node_ports_common.dbmanager import DBManager
 
 
 @pytest.fixture(scope="module")
 def user_id() -> int:
-    return randint(1, 10000)
+    return randint(1, 10000)  # noqa: S311
 
 
 @pytest.fixture(scope="module")
@@ -25,6 +27,11 @@ def project_id() -> str:
 @pytest.fixture(scope="module")
 def node_uuid() -> str:
     return str(uuid4())
+
+
+@pytest.fixture
+def rabbitmq_client() -> RabbitMQClient:
+    return AsyncMock(spec=RabbitMQClient)
 
 
 @pytest.fixture

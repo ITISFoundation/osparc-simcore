@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Final
 
 from aiohttp import web
-from models_library.rabbitmq_messages import InstrumentationRabbitMessage
+from models_library.rabbitmq_messages import InstrumentationRabbitMessage, NodeDataUpdatedEventMessage
 from servicelib.aiohttp.monitor_services import (
     MONITOR_SERVICE_STARTED_LABELS,
     MONITOR_SERVICE_STOPPED_LABELS,
@@ -14,6 +14,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import ConsumerTag, ExchangeName, QueueName, RabbitMQClient
 from servicelib.utils import logged_gather
 
+from ..db_listener._node_update_handler import apply_node_data_update
 from ..rabbitmq import get_rabbitmq_client
 from ._rabbitmq_consumers_common import SubscribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -39,6 +40,18 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
     return True
 
 
+async def _node_data_updated_message_parser(app: web.Application, data: bytes) -> bool:
+    rabbit_message = NodeDataUpdatedEventMessage.model_validate_json(data)
+    await apply_node_data_update(
+        app,
+        user_id=rabbit_message.user_id,
+        project_id=rabbit_message.project_id,
+        node_id=rabbit_message.node_id,
+        changes=rabbit_message.changes,
+    )
+    return True
+
+
 _EXCHANGE_TO_PARSER_CONFIG: Final[
     tuple[
         SubscribeArgumentsTuple,
@@ -48,6 +61,11 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[
     SubscribeArgumentsTuple(
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,
+        {"exclusive_queue": False},
+    ),
+    SubscribeArgumentsTuple(
+        NodeDataUpdatedEventMessage.get_channel_name(),
+        _node_data_updated_message_parser,
         {"exclusive_queue": False},
     ),
 )

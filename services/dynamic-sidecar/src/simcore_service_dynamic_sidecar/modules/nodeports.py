@@ -1,13 +1,12 @@
 import json
 import logging
-import os
 import sys
 import time
 from asyncio import CancelledError
 from collections import deque
 from collections.abc import Coroutine
 from contextlib import AsyncExitStack
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import cast
 
@@ -23,6 +22,7 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.file_utils import remove_directory, shutil_move
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import limited_gather
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -37,7 +37,7 @@ from ..core.settings import ApplicationSettings, get_settings
 from ..modules.notifications import PortNotifier
 
 
-class PortTypeName(str, Enum):
+class PortTypeName(StrEnum):
     INPUTS = "inputs"
     OUTPUTS = "outputs"
 
@@ -60,9 +60,8 @@ def _get_size_of_value(value: tuple[ItemConcreteValue | None, SetKWargs | None])
         # does not equal to their parent dir
         path = value
         if value.is_symlink():
-            path = Path(value.parent) / Path(os.readlink(value))
-        size_bytes = path.stat().st_size
-        return size_bytes
+            path = Path(value.parent) / Path.readlink(value)
+        return path.stat().st_size
     return sys.getsizeof(value)
 
 
@@ -90,6 +89,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
     port_notifier: PortNotifier,
+    rabbitmq_client: RabbitMQClient,
 ) -> None:
     # pylint: disable=too-many-branches
     _logger.debug("uploading data to simcore...")
@@ -104,6 +104,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         db_manager=db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
 
     # let's gather the tasks
@@ -230,18 +231,18 @@ async def _get_data_from_port(
             downloaded_file: Path | None = cast(Path | None, port_data)
             final_path: Path = target_dir / port.key
 
-            if not downloaded_file or not downloaded_file.exists():
+            if not downloaded_file or not downloaded_file.exists():  # noqa: ASYNC240
                 # the link may be empty
                 # remove files all files from disk when disconnecting port
                 with log_context(_logger, logging.DEBUG, f"removing contents of dir '{final_path}'"):
                     await remove_directory(final_path, only_children=True, ignore_errors=True)
                 return port, None, ByteSize(0)
 
-            transferred_bytes = downloaded_file.stat().st_size
+            transferred_bytes = downloaded_file.stat().st_size  # noqa: ASYNC240
 
             # in case of valid file, it is either uncompressed and/or moved to the final directory
             with log_context(_logger, logging.DEBUG, "creating directory"):
-                final_path.mkdir(exist_ok=True, parents=True)
+                final_path.mkdir(exist_ok=True, parents=True)  # noqa: ASYNC240
             port_data = f"{final_path}"
 
             archive_files: set[Path]
@@ -289,6 +290,7 @@ async def download_target_ports(
     io_log_redirect_cb: LogRedirectCB,
     progress_bar: ProgressBarData,
     port_notifier: PortNotifier | None,
+    rabbitmq_client: RabbitMQClient,
 ) -> ByteSize:
     _logger.debug("retrieving data from simcore...")
     start_time = time.perf_counter()
@@ -302,6 +304,7 @@ async def download_target_ports(
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         db_manager=db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
 
     # let's gather all the data

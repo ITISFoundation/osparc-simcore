@@ -119,7 +119,6 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
             "PAYMENTS_TRACING",
             "RESOURCE_USAGE_TRACKER_TRACING",
             "STORAGE_TRACING",
-            "WB_DB_EL_TRACING",
             "WB_GC_TRACING",
             "WEBSERVER_TRACING",
         ),

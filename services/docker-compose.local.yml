@@ -198,13 +198,6 @@ services:
       - "8080"
       - "3019:3000"
 
-  wb-db-event-listener:
-    environment:
-      <<: *webserver_environment_local
-    ports:
-      - "8080"
-      - "3013:3000"
-
   wb-garbage-collector:
     environment:
       <<: *webserver_environment_local

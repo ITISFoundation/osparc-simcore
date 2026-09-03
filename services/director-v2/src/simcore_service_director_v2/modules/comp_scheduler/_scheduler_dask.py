@@ -423,6 +423,7 @@ class DaskScheduler(BaseCompScheduler):
                 self.db_engine,
                 task.job_id,
                 result,
+                self.rabbitmq_client,
             )
             return RunningState.SUCCESS, SimcorePlatformStatus.OK, [], True
         except PortsValidationError as err:
@@ -695,6 +696,7 @@ class DaskScheduler(BaseCompScheduler):
                         comp_run.user_id,
                         comp_run.project_uuid,
                         task.current.node_id,
+                        self.rabbitmq_client,
                     )
             else:
                 (
@@ -710,6 +712,7 @@ class DaskScheduler(BaseCompScheduler):
                     comp_run.user_id,
                     comp_run.project_uuid,
                     task.current.node_id,
+                    self.rabbitmq_client,
                 )
 
             if task_completed:

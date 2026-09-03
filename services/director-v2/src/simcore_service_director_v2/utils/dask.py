@@ -33,6 +33,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
     NodeportsError,
@@ -79,6 +80,7 @@ async def create_node_ports(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    rabbitmq_client: RabbitMQClient,
 ) -> node_ports_v2.Nodeports:
     """
     This function create a nodeports object by fetching the node state from the database
@@ -99,6 +101,7 @@ async def create_node_ports(
             project_id=f"{project_id}",
             node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{node_id}"),
             db_manager=db_manager,
+            rabbitmq_client=rabbitmq_client,
         )
     except ValidationError as err:
         raise PortsValidationError(project_id=project_id, node_id=node_id, errors_list=list(err.errors())) from err
@@ -108,6 +111,7 @@ async def parse_output_data(
     db_engine: AsyncEngine,
     job_id: str,
     data: TaskOutputData,
+    rabbitmq_client: RabbitMQClient,
     ports: node_ports_v2.Nodeports | None = None,
 ) -> None:
     """
@@ -137,6 +141,7 @@ async def parse_output_data(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
+            rabbitmq_client=rabbitmq_client,
         )
 
     ports_errors = []
@@ -391,6 +396,7 @@ async def clean_task_output_and_log_files_if_invalid(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    rabbitmq_client: RabbitMQClient,
     ports: node_ports_v2.Nodeports | None = None,
 ) -> None:
     """
@@ -400,7 +406,7 @@ async def clean_task_output_and_log_files_if_invalid(
 
     # check outputs
     if ports is None:
-        ports = await create_node_ports(db_engine, user_id, project_id, node_id)
+        ports = await create_node_ports(db_engine, user_id, project_id, node_id, rabbitmq_client)
 
     for port in (await ports.outputs).values():
         if not port_utils.is_file_type(port.property_type):

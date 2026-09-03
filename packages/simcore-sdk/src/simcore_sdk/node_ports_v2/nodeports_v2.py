@@ -14,6 +14,7 @@ from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import InitErrorDetails
 from servicelib.progress_bar import ProgressBarData
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 
@@ -63,6 +64,7 @@ class Nodeports(BaseModel):
     user_id: UserID
     project_id: ProjectIDStr
     node_uuid: NodeIDStr
+    rabbitmq_client: RabbitMQClient
     save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
     node_port_creator_cb: Callable[
         [DBManager, UserID, ProjectIDStr, NodeIDStr],

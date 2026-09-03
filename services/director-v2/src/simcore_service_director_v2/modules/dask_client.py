@@ -90,6 +90,7 @@ from ..utils.dask_client_utils import (
     connect_to_dask_scheduler,
 )
 from .db import get_db_engine
+from .rabbitmq import get_rabbitmq_client
 
 _logger = logging.getLogger(__name__)
 
@@ -349,6 +350,7 @@ class DaskClient:
                     user_id=user_id,
                     project_id=project_id,
                     node_id=node_id,
+                    rabbitmq_client=get_rabbitmq_client(self.app),
                 )
                 # NOTE: for download there is no need to go with S3 links
                 input_data = await dask_utils.compute_input_data(
