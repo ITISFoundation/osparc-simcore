@@ -39,7 +39,7 @@ def compose_image() -> DockerGenericTag:
 
 
 def _ensure_resource_value_is_an_object(data: ResourcesDict) -> None:
-    assert type(data) is dict
+    assert isinstance(data, dict)
     print(data)
     for entry in data.values():
         assert entry.limit
@@ -53,10 +53,10 @@ def test_resources_dict_parsed_as_expected(resources_dict: ResourcesDict) -> Non
 def test_image_resources_parsed_as_expected() -> None:
     result = ImageResources.model_validate(ImageResources.model_json_schema()["example"])
     _ensure_resource_value_is_an_object(result.resources)
-    assert type(result) is ImageResources
+    assert isinstance(result, ImageResources)
 
     result = TypeAdapter(ImageResources).validate_python(ImageResources.model_json_schema()["example"])
-    assert type(result) is ImageResources
+    assert isinstance(result, ImageResources)
     _ensure_resource_value_is_an_object(result.resources)
 
 
@@ -67,7 +67,7 @@ def test_service_resource_parsed_as_expected(
     def _assert_service_resources_dict(
         service_resources_dict: ServiceResourcesDict,
     ) -> None:
-        assert type(service_resources_dict) is ServiceResourcesDict
+        assert isinstance(service_resources_dict, ServiceResourcesDict)
 
         print(service_resources_dict)
         for image_resources in service_resources_dict.values():
