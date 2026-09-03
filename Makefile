@@ -41,7 +41,6 @@ SERVICES_NAMES_TO_BUILD := \
   director \
   director-v2 \
   dynamic-sidecar \
-	efs-guardian \
 	invitations \
   migration \
 	notifications \
@@ -74,7 +73,6 @@ export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
 export DOCKER_API_PROXY_API_VERSION := $(shell cat $(CURDIR)/services/docker-api-proxy/VERSION)
 export DYNAMIC_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dynamic-sidecar/VERSION)
-export EFS_GUARDIAN_API_VERSION := $(shell cat $(CURDIR)/services/efs-guardian/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export MIGRATION_API_VERSION := $(shell cat $(CURDIR)/services/migration/VERSION)

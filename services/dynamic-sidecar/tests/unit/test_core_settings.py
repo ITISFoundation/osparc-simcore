@@ -8,11 +8,15 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 
 def test_settings_with_mock_environment(mock_environment: EnvVarsDict):
-    assert ApplicationSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
+    assert settings
+    assert settings.DYNAMIC_SIDECAR_TRACING is None
 
 
 def test_settings_with_envdevel_file(mock_environment_with_envdevel: EnvVarsDict):
-    assert ApplicationSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs()
+    assert settings
+    assert settings.DYNAMIC_SIDECAR_TRACING is None
 
 
 @pytest.fixture
