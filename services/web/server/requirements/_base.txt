@@ -113,7 +113,7 @@ email-validator==2.2.0
     # via pydantic
 et-xmlfile==1.1.0
     # via openpyxl
-faker==19.6.1
+faker==40.38.0
     # via -r requirements/_base.in
 fast-depends==3.0.8
     # via faststream
@@ -195,7 +195,7 @@ markupsafe==3.0.2
     #   werkzeug
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.1.0
+msgpack==1.2.2
     # via -r requirements/_base.in
 multidict==6.1.0
     # via
@@ -321,7 +321,7 @@ passlib==1.7.4
     # via -r requirements/_base.in
 phonenumbers==9.0.9
     # via -r requirements/_base.in
-pillow==12.2.0
+pillow==12.3.0
     # via captcha
 pint==0.25
     # via
@@ -384,7 +384,6 @@ python-dateutil==2.8.2
     # via
     #   arrow
     #   celery
-    #   faker
 python-dotenv==1.0.1
     # via pydantic-settings
 python-engineio==4.13.5
@@ -492,7 +491,7 @@ urllib3==2.7.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
-uvloop==0.21.0
+uvloop==0.22.1
     # via -r requirements/_base.in
 vine==5.1.0
     # via

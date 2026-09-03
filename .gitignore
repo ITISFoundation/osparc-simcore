@@ -193,3 +193,15 @@ repo*.config*
 
 # playwright CLI outputs
 .playwright-cli/*
+
+# temporary: ignore graphify
+.copilot/skills/graphify/.graphify_version
+.copilot/skills/graphify/SKILL.md
+.copilot/skills/graphify/references/add-watch.md
+.copilot/skills/graphify/references/exports.md
+.copilot/skills/graphify/references/extraction-spec.md
+.copilot/skills/graphify/references/github-and-merge.md
+.copilot/skills/graphify/references/hooks.md
+.copilot/skills/graphify/references/query.md
+.copilot/skills/graphify/references/transcribe.md
+.copilot/skills/graphify/references/update.md

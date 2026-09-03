@@ -95,7 +95,7 @@ docker==7.1.0
     #   moto
 execnet==2.1.2
     # via pytest-xdist
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in

@@ -19,8 +19,6 @@ from models_library.services_metadata_runtime import (
     to_simcore_runtime_docker_label_key,
 )
 from pydantic import ByteSize, TypeAdapter
-from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
@@ -218,14 +216,12 @@ def get_prometheus_monitoring_networks(
     )
 
 
-async def _get_mounts(
+def _get_mounts(
     *,
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     has_quota_support: bool,
-    rpc_client: RabbitMQRPCClient,
-    user_extra_properties: UserExtraProperties,
     tracing_enabled: bool,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
@@ -274,41 +270,20 @@ async def _get_mounts(
         )
 
     # state paths now get mounted via different driver and are synced to s3 automatically
-    for path_to_mount in scheduler_data.paths_mapping.state_paths:
-        if user_extra_properties.is_efs_enabled:
-            assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
-
-            _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(path_to_mount).strip("_")
-            await efs_manager.create_project_specific_data_dir(
-                rpc_client,
+    mounts.extend(
+        [
+            DynamicSidecarVolumesPathsResolver.mount_entry(
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                path=path_to_mount,
+                node_uuid=scheduler_data.node_uuid,
+                service_run_id=scheduler_data.run_id,
                 project_id=scheduler_data.project_id,
-                node_id=scheduler_data.node_uuid,
-                storage_directory_name=_storage_directory_name,
+                user_id=scheduler_data.user_id,
+                volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
             )
-            mounts.append(
-                DynamicSidecarVolumesPathsResolver.mount_efs(
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    path=path_to_mount,
-                    node_uuid=scheduler_data.node_uuid,
-                    service_run_id=scheduler_data.run_id,
-                    project_id=scheduler_data.project_id,
-                    user_id=scheduler_data.user_id,
-                    efs_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS,
-                    storage_directory_name=_storage_directory_name,
-                )
-            )
-        else:
-            mounts.append(
-                DynamicSidecarVolumesPathsResolver.mount_entry(
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    path=path_to_mount,
-                    node_uuid=scheduler_data.node_uuid,
-                    service_run_id=scheduler_data.run_id,
-                    project_id=scheduler_data.project_id,
-                    user_id=scheduler_data.user_id,
-                    volume_size_limit=volume_size_limits.get(f"{path_to_mount}"),
-                )
-            )
+            for path_to_mount in scheduler_data.paths_mapping.state_paths
+        ]
+    )
 
     if scheduler_data.paths_mapping.state_paths and scheduler_data.requires_data_mounting:
         mounts.append(
@@ -397,7 +372,7 @@ def _get_ports(*, dynamic_sidecar_settings: DynamicSidecarSettings, app_settings
 _NO_DEFINED_WALLET_ID_LABEL_VALUE: Final[str] = TypeAdapter(str).validate_python(f"{None}")
 
 
-async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
+def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -409,7 +384,6 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
     user_extra_properties: UserExtraProperties,
-    rpc_client: RabbitMQRPCClient,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -421,13 +395,11 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
     """
     compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
-    mounts = await _get_mounts(
+    mounts = _get_mounts(
         scheduler_data=scheduler_data,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         has_quota_support=has_quota_support,
-        rpc_client=rpc_client,
-        user_extra_properties=user_extra_properties,
         tracing_enabled=app_settings.DIRECTOR_V2_TRACING is not None and scheduler_data.tracing,
     )
 
