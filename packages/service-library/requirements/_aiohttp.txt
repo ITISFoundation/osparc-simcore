@@ -73,7 +73,7 @@ typing-extensions==4.15.0
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via -r requirements/_aiohttp.in
 wrapt==1.17.3
     # via
