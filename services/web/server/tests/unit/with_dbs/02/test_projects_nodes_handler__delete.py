@@ -355,7 +355,7 @@ async def test_delete_node_and_graph_patch_are_serialized(
         "run_project_graph_mutation",
         side_effect=_run_project_graph_mutation,
     )
-    mocker.patch.object(_projects_repository, "lock_project_graph", side_effect=_lock_project_graph)
+    mocker.patch.object(_projects_repository, "_lock_project_graph", side_effect=_lock_project_graph)
 
     requests = {
         "delete": lambda: client.delete(delete_url.path),
