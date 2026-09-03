@@ -33,7 +33,7 @@ from models_library.projects_nodes import Node, NodeShareStatus
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     SERVICE_RESOURCES_DICT_EXAMPLES,
-    service_resources_adapter,
+    ServiceResourcesDict,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
@@ -90,10 +90,10 @@ async def test_get_node_resources(
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = service_resources_adapter.validate_python(data)
+            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert service_resources_adapter.dump_python(node_resources, mode="json") == next(
+            assert TypeAdapter(ServiceResourcesDict).dump_python(node_resources, mode="json") == next(
                 iter(SERVICE_RESOURCES_DICT_EXAMPLES)
             )
         else:
@@ -155,17 +155,19 @@ async def test_replace_node_resources_is_forbidden_by_default(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=service_resources_adapter.dump_python(
-                service_resources_adapter.validate_python(SERVICE_RESOURCES_DICT_EXAMPLES[0]), mode="json"
+            json=TypeAdapter(ServiceResourcesDict).dump_python(
+                TypeAdapter(ServiceResourcesDict).validate_python(SERVICE_RESOURCES_DICT_EXAMPLES[0]), mode="json"
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = service_resources_adapter.validate_python(data)
+            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert node_resources == service_resources_adapter.validate_python(SERVICE_RESOURCES_DICT_EXAMPLES[0])
+            assert node_resources == TypeAdapter(ServiceResourcesDict).validate_python(
+                SERVICE_RESOURCES_DICT_EXAMPLES[0]
+            )
 
 
 @pytest.mark.parametrize(
@@ -188,18 +190,19 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=service_resources_adapter.dump_python(
-                service_resources_adapter.validate_python(SERVICE_RESOURCES_DICT_EXAMPLES[0]), mode="json"
+            json=TypeAdapter(ServiceResourcesDict).dump_python(
+                TypeAdapter(ServiceResourcesDict).validate_python(SERVICE_RESOURCES_DICT_EXAMPLES[0]), mode="json"
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = service_resources_adapter.validate_python(data)
+            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
-                service_resources_adapter.dump_python(node_resources, mode="json") == SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                TypeAdapter(ServiceResourcesDict).dump_python(node_resources, mode="json")
+                == SERVICE_RESOURCES_DICT_EXAMPLES[0]
             )
 
 
@@ -219,8 +222,8 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=service_resources_adapter.dump_python(
-                service_resources_adapter.validate_python(
+            json=TypeAdapter(ServiceResourcesDict).dump_python(
+                TypeAdapter(ServiceResourcesDict).validate_python(
                     # NOTE: we apply a different resource set
                     SERVICE_RESOURCES_DICT_EXAMPLES[1]
                 ),

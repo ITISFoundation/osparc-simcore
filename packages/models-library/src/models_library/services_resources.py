@@ -166,8 +166,6 @@ SERVICE_RESOURCES_DICT_EXAMPLES: Final[list[dict[str, Any]]] = [
     },
 ]
 
-# PEP 695 type alias: keeps a real `dict` at runtime while still getting a named
-# schema entry (pydantic >= 2.9) and examples via `Field`.
 type ServiceResourcesDict = Annotated[
     dict[DockerGenericTag, ImageResources],
     Field(
@@ -176,17 +174,13 @@ type ServiceResourcesDict = Annotated[
     ),
 ]
 
-# NOTE: module-level since building a TypeAdapter is expensive; reuse this instance
-# instead of calling `TypeAdapter(ServiceResourcesDict)` again at call sites
-service_resources_adapter: Final[TypeAdapter[ServiceResourcesDict]] = TypeAdapter(ServiceResourcesDict)
-
 
 def create_service_resources_from_single_service(
     image: DockerGenericTag,
     resources: ResourcesDict,
     boot_modes: list[BootMode] | None = None,
 ) -> ServiceResourcesDict:
-    return service_resources_adapter.validate_python(
+    return TypeAdapter(ServiceResourcesDict).validate_python(
         {
             DEFAULT_SINGLE_SERVICE_NAME: {
                 "image": image,

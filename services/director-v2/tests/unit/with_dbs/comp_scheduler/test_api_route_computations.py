@@ -50,7 +50,6 @@ from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
-    service_resources_adapter,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
@@ -103,7 +102,7 @@ def fake_service_extras() -> ServiceExtras:
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return service_resources_adapter.validate_python(
+    return TypeAdapter(ServiceResourcesDict).validate_python(
         SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
