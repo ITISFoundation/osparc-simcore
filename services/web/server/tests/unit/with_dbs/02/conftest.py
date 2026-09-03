@@ -52,7 +52,7 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
 
 @pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
         SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 

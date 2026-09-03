@@ -303,7 +303,7 @@ async def get_service_resources(request: Request):
         product_name=ctx.product_name,
     )
 
-    data = TypeAdapter(ServiceResourcesDict).dump_python(service_resources, mode="json")
+    data = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(service_resources, mode="json")
     return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 

@@ -170,7 +170,9 @@ def start_request_data(
             "outputs_path": "/tmp/outputs",  # noqa: S108
             "inputs_path": "/tmp/inputs",  # noqa: S108
         },
-        "service_resources": TypeAdapter(ServiceResourcesDict).dump_python(service_resources, mode="json"),
+        "service_resources": TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            service_resources, mode="json"
+        ),
     }
 
 

@@ -60,7 +60,7 @@ class DirectorV2ThinClient(BaseThinClient):
             "version": dynamic_service_start.version,
             "node_uuid": dynamic_service_start.node_uuid,
             "basepath": f"/x/{dynamic_service_start.node_uuid}",
-            "service_resources": TypeAdapter(ServiceResourcesDict).dump_python(
+            "service_resources": TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
                 dynamic_service_start.service_resources, mode="json"
             ),
             "wallet_info": dynamic_service_start.wallet_info,

@@ -68,7 +68,7 @@ environment:
     [
         pytest.param(
             {"version": "2.3", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            TypeAdapter(ServiceResourcesDict).validate_python(
+            TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -83,7 +83,7 @@ environment:
         ),
         pytest.param(
             {"version": "3.7", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            TypeAdapter(ServiceResourcesDict).validate_python(
+            TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -177,7 +177,7 @@ def test_regression_service_has_no_reservations():
         "version": "3.7",
         "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
     }
-    service_resources = TypeAdapter(ServiceResourcesDict).validate_python({})
+    service_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python({})
 
     spec_before = deepcopy(service_spec)
     docker_compose_specs._update_resource_limits_and_reservations(  # noqa: SLF001

@@ -16,7 +16,10 @@ from simcore_service_webserver.projects.exceptions import (
 
 @pytest.mark.parametrize(
     "resources",
-    [TypeAdapter(ServiceResourcesDict).validate_python(example) for example in SERVICE_RESOURCES_DICT_EXAMPLES],
+    [
+        TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(example)
+        for example in SERVICE_RESOURCES_DICT_EXAMPLES
+    ],
 )
 def test_check_can_update_service_resources_with_same_does_not_raise(
     resources: ServiceResourcesDict,
@@ -27,7 +30,10 @@ def test_check_can_update_service_resources_with_same_does_not_raise(
 
 @pytest.mark.parametrize(
     "resources",
-    [TypeAdapter(ServiceResourcesDict).validate_python(example) for example in SERVICE_RESOURCES_DICT_EXAMPLES],
+    [
+        TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(example)
+        for example in SERVICE_RESOURCES_DICT_EXAMPLES
+    ],
 )
 def test_check_can_update_service_resources_with_invalid_container_name_raises(
     resources: ServiceResourcesDict,
@@ -42,7 +48,10 @@ def test_check_can_update_service_resources_with_invalid_container_name_raises(
 
 @pytest.mark.parametrize(
     "resources",
-    [TypeAdapter(ServiceResourcesDict).validate_python(example) for example in SERVICE_RESOURCES_DICT_EXAMPLES],
+    [
+        TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(example)
+        for example in SERVICE_RESOURCES_DICT_EXAMPLES
+    ],
 )
 def test_check_can_update_service_resources_with_invalid_image_name_raises(
     resources: ServiceResourcesDict,

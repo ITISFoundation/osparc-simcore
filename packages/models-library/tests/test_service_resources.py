@@ -75,7 +75,7 @@ def test_service_resource_parsed_as_expected(
         for image_resources in service_resources_dict.values():
             _ensure_resource_value_is_an_object(image_resources.resources)
 
-    service_resources_dict = TypeAdapter(ServiceResourcesDict).validate_python(example)
+    service_resources_dict = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(example)
     _assert_service_resources_dict(service_resources_dict)
 
     for image_resources in example.values():
@@ -88,5 +88,7 @@ def test_service_resource_parsed_as_expected(
 
 @pytest.mark.parametrize("example", SERVICE_RESOURCES_DICT_EXAMPLES)
 def test_create_jsonable_dict(example: dict[DockerGenericTag, Any]) -> None:
-    service_resources_dict = TypeAdapter(ServiceResourcesDict).validate_python(example)
-    assert example == TypeAdapter(ServiceResourcesDict).dump_python(service_resources_dict, mode="json")
+    service_resources_dict = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(example)
+    assert example == TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+        service_resources_dict, mode="json"
+    )

@@ -15,6 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.projects_state import ProjectStatus
+from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
@@ -318,11 +319,12 @@ async def _compose_project_data(
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
             }  # pyright: ignore[reportAssignmentType]
-            create_kwargs["required_resources"] = (
+            create_kwargs["required_resources"] = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
                 await catalog_service.get_service_resources(
                     app, user_id, node_data["key"], node_data["version"], product_name
-                )
-            ).model_dump(mode="json")
+                ),
+                mode="json",
+            )
             project_nodes[NodeID(node_id)] = ProjectNodeCreate(node_id=NodeID(node_id), **create_kwargs)
 
         new_project = predefined_project

@@ -180,7 +180,7 @@ def create_service_resources_from_single_service(
     resources: ResourcesDict,
     boot_modes: list[BootMode] | None = None,
 ) -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
         {
             DEFAULT_SINGLE_SERVICE_NAME: {
                 "image": image,

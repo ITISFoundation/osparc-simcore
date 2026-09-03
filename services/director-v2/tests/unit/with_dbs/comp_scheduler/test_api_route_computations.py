@@ -102,7 +102,7 @@ def fake_service_extras() -> ServiceExtras:
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
         SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 

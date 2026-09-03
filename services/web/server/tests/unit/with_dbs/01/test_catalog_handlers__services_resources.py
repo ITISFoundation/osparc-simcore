@@ -27,10 +27,12 @@ def mock_catalog_service_api_responses(client: TestClient, aioresponses_mocker: 
 
     url_pattern = re.compile(f"^{settings.base_url}+/.+$")
 
-    service_resources = TypeAdapter(ServiceResourcesDict).validate_python(
+    service_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
         SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
-    jsonable_service_resources = TypeAdapter(ServiceResourcesDict).dump_python(service_resources, mode="json")
+    jsonable_service_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+        service_resources, mode="json"
+    )
 
     aioresponses_mocker.get(url_pattern, payload=jsonable_service_resources)
     aioresponses_mocker.post(url_pattern, payload=jsonable_service_resources)
