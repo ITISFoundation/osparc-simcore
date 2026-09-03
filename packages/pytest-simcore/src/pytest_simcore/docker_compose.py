@@ -16,7 +16,7 @@ import shutil
 from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import pytest
 import yaml
@@ -26,7 +26,7 @@ from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
-from .helpers.docker import run_docker_compose_config, save_docker_infos
+from .helpers.docker import filter_service_names_for_ci, run_docker_compose_config, save_docker_infos
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
 
@@ -270,6 +270,9 @@ def ops_services_selection(request) -> list[str]:
     return getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
 
 
+_CI_ALLOWED_OPS_SERVICE_NAMES: Final[tuple[str, ...]] = ("minio",)
+
+
 @pytest.fixture(scope="module")
 def ops_docker_compose_file(ops_services_selection: list[str], temp_folder: Path, ops_docker_compose: dict) -> Path:
     """A compose with a selection of services from ops_docker_compose
@@ -279,13 +282,7 @@ def ops_docker_compose_file(ops_services_selection: list[str], temp_folder: Path
     """
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
-    # these services are useless when running in the CI
-    if "CI" in os.environ:
-        allowed_services = ["minio"]
-        _logger.info(
-            "Note that services such as '%s' are removed from the stack when running in the CI", allowed_services
-        )
-        ops_services_selection = allowed_services
+    ops_services_selection = filter_service_names_for_ci(ops_services_selection, _CI_ALLOWED_OPS_SERVICE_NAMES)
 
     _filter_services_and_dump(ops_services_selection, ops_docker_compose, docker_compose_path)
 

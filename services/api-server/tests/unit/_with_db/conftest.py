@@ -24,6 +24,7 @@ from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import postgres_tools
+from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import (
     random_api_auth,
     random_product,
@@ -54,7 +55,8 @@ def docker_compose_file(default_app_env_vars: dict[str, str], tmpdir_factory: Ca
     environ.update(default_app_env_vars)
 
     src_path = _CURRENT_DIR / "data" / "docker-compose.yml"
-    assert src_path.exists
+    assert src_path.exists()
+    src_path = filter_compose_file_for_ci(src_path, ("postgres",), Path(str(tmpdir_factory.mktemp("compose"))))
 
     dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
 
@@ -62,7 +64,7 @@ def docker_compose_file(default_app_env_vars: dict[str, str], tmpdir_factory: Ca
     assert dst_path.exists()
 
     # configs
-    subprocess.run(
+    subprocess.run(  # noqa: S602
         f'docker compose --file "{src_path}" config > "{dst_path}"',
         shell=True,
         check=True,
