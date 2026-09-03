@@ -1,11 +1,15 @@
 import logging
+from datetime import timedelta
+from typing import Final
 
 from aiodocker.networks import DockerNetwork
 from fastapi import FastAPI
 from models_library.services import ServiceOutput
+from servicelib.container_utils import run_command_in_container
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
+from ..core.utils import get_self_container
 from ..modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import (
@@ -15,6 +19,8 @@ from ..modules.outputs import (
 )
 
 _logger = logging.getLogger(__name__)
+
+_TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 
 
 async def toggle_ports_io(app: FastAPI, *, enable_outputs: bool, enable_inputs: bool) -> None:
@@ -48,6 +54,17 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
     _logger.debug("Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}")
     await outputs_context.set_file_type_port_keys(file_type_port_keys)
     outputs_context.non_file_type_port_keys = non_file_port_keys
+
+
+async def enforce_input_permissions(app: FastAPI) -> None:
+    # user services must not be able to write to the inputs folder, it is managed for them
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
+
+    await run_command_in_container(
+        get_self_container(),
+        command=f"chmod gu-w '{mounted_volumes.disk_inputs_path}'",
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
 
 
 async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:

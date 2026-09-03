@@ -44,6 +44,9 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
+from simcore_service_dynamic_sidecar.services.container_extensions import (
+    _TIMEOUT_PERMISSION_CHANGES,
+)
 from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
@@ -140,6 +143,35 @@ async def test_container_create_outputs_dirs(
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
     assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
+
+
+@pytest.fixture
+def mock_run_command_in_container(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.services.container_extensions.run_command_in_container",
+        autospec=True,
+    )
+
+
+async def test_enforce_input_permissions(
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    mock_run_command_in_container: AsyncMock,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("HOSTNAME", "test-self-container")
+    app_state = AppState(app)
+
+    result = await container_extensions.enforce_input_permissions(
+        rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID
+    )
+    assert result is None
+
+    mock_run_command_in_container.assert_awaited_once_with(
+        "test-self-container",
+        command=f"chmod gu-w '{app_state.mounted_volumes.disk_inputs_path}'",
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
 
 
 @pytest.fixture

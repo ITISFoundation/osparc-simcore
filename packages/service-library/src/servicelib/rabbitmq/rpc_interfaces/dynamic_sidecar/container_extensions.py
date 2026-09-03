@@ -40,6 +40,16 @@ async def create_output_dirs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def enforce_input_permissions(rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID) -> None:
+    rpc_namespace = get_rpc_namespace(node_id)
+    result = await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        TypeAdapter(RPCMethodName).validate_python("enforce_input_permissions"),
+    )
+    assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def attach_container_to_network(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,

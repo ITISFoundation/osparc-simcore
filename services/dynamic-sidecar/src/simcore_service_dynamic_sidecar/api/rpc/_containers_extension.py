@@ -25,6 +25,12 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
 
 
 @router.expose()
+async def enforce_input_permissions(app: FastAPI) -> None:
+    """Removes write permissions on the inputs folder so user services cannot write to it"""
+    await container_extensions.enforce_input_permissions(app)
+
+
+@router.expose()
 async def attach_container_to_network(
     app: FastAPI, *, container_id: str, network_id: str, network_aliases: list[str]
 ) -> None:

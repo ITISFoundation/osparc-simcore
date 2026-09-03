@@ -1,6 +1,5 @@
 import functools
 import logging
-import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -22,6 +21,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePat
 
 from ..core.rabbitmq import get_rabbitmq_client
 from ..core.settings import ApplicationSettings
+from ..core.utils import get_self_container
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 
@@ -89,9 +89,8 @@ async def _try_remove_from_disk_volumes(
     if local_path is None or not local_path.exists():
         return
 
-    self_container = os.environ["HOSTNAME"]
     await run_command_in_container(
-        self_container,
+        get_self_container(),
         command=["rm", "-rf", f"{local_path}"],
         timeout=_TIMEOUT_REMOVAL.total_seconds(),
     )

@@ -584,6 +584,9 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
 
     await limited_gather(*tasks, limit=3)
 
+    # dropped after the pulls above so it does not race with output ports being written
+    await sidecars_client.enforce_input_permissions(dynamic_sidecar_endpoint)
+
     # inside this directory create the missing dirs, fetch those form the labels
     catalog_client = CatalogClient.instance(app)
     simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
