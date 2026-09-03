@@ -20,9 +20,6 @@
   },
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
-  "schedule": [
-    "before 3am on monday"
-  ],
   "timezone": "Europe/Zurich",
   "pip-compile": {
     "managerFilePatterns": [
@@ -59,32 +56,11 @@
       "groupSlug": "{{packageFileDir}}"
     },
     {
-      "description": "_test.txt/_tools.txt use `-c _base.txt` as a pip-compile constraint (see requirements/Makefile), but Renovate's pip-compile manager recompiles each output file independently and can process them out of that order, producing an inconsistent lockfile. Re-run `make reqs` after Renovate's edits so the Makefile's prerequisite order (_base -> _test -> _tools) is enforced. NOTE: requires the bot admin to allow the `make ... reqs` command in the global allowedCommands config, otherwise this task is silently skipped.",
-      "matchManagers": [
-        "pip-compile"
-      ],
-      "postUpgradeTasks": {
-        "commands": [
-          "make -C {{packageFileDir}} reqs"
-        ],
-        "executionMode": "branch",
-        "fileFilters": [
-          "{{packageFileDir}}/*.txt"
-        ],
-        "installTools": {
-          "uv": {}
-        }
-      }
-    },
-    {
       "description": "Shared packages: upgrade faster (smaller blast radius)",
       "matchFileNames": [
         "packages/**/requirements/**"
       ],
       "groupName": "packages deps",
-      "schedule": [
-        "before 3am on monday"
-      ],
       "minimumReleaseAge": "3 days",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
@@ -96,9 +72,6 @@
         "services/**/requirements/**"
       ],
       "groupName": "services deps",
-      "schedule": [
-        "before 3am on the first day of the month"
-      ],
       "minimumReleaseAge": "14 days",
       "dependencyDashboardApproval": true,
       "prCreation": "approval",
