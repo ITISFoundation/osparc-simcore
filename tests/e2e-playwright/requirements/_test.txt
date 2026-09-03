@@ -24,7 +24,7 @@ dnspython==2.8.0
     #   email-validator
 email-validator==2.3.0
     # via -r requirements/_test_wo_playwright.txt
-faker==40.19.1
+faker==40.38.0
     # via -r requirements/_test_wo_playwright.txt
 greenlet==3.5.1
     # via playwright
