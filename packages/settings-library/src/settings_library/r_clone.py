@@ -5,15 +5,13 @@ from typing import Annotated, Final
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import ByteSize, Field, NonNegativeFloat, NonNegativeInt, PositiveInt, TypeAdapter
+from pydantic import ByteSize, Field, NonNegativeFloat, PositiveInt, TypeAdapter
 
 from .base import BaseCustomSettings
+from .basic_types import CpuCores
 from .s3 import S3Settings
 
 DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
-
-
-_ONE_CPU: Final[NonNegativeInt] = int(1e9)
 
 
 class S3Provider(StrEnum):
@@ -32,7 +30,7 @@ type EditArguments = dict[SearchArgument, ReplaceArgument]
 type RemoveArguments = list[tuple[SearchArgument, ElementsToRemove]]
 
 
-class SimcoreSDKMountSettings(BaseCustomSettings):
+class RCloneSimcoreSDKMountSettings(BaseCustomSettings):
     R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: Annotated[
         timedelta,
         Field(
@@ -73,13 +71,29 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
         ),
     ] = False
 
-    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT: Annotated[
-        ByteSize, Field(description="memory limit for the rclone mount container")
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MIN: Annotated[
+        ByteSize,
+        Field(description="low cap: the rclone mount container's memory limit will never go below this value"),
+    ] = TypeAdapter(ByteSize).validate_python("0.5GiB")
+
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MAX: Annotated[
+        ByteSize,
+        Field(description="high cap: the rclone mount container's memory limit will never exceed this value"),
     ] = TypeAdapter(ByteSize).validate_python("10GiB")
 
-    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS: Annotated[
-        NonNegativeInt, Field(description="CPU limit for the rclone mount container")
-    ] = 1 * _ONE_CPU
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_PERCENT_OF_MAX_USER_SERVICE: Annotated[
+        NonNegativeFloat,
+        Field(
+            description=(
+                "fraction of the largest user-service container's memory limit used as the "
+                "rclone mount container's memory limit, before clamping to the min/max caps above"
+            ),
+        ),
+    ] = 0.1
+
+    R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CPU_LIMIT: Annotated[
+        CpuCores, Field(description="CPU cores limit for the rclone mount container")
+    ] = CpuCores(cores=1.0)
 
     R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS: Annotated[
         EditArguments,
@@ -108,7 +122,7 @@ class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
     R_CLONE_PROVIDER: S3Provider
 
-    R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: SimcoreSDKMountSettings = Field(
+    R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: RCloneSimcoreSDKMountSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
     R_CLONE_SIMCORE_SDK_SYNC_SETTINGS: SimcoreSDKSyncSettings = Field(json_schema_extra={"auto_default_from_env": True})

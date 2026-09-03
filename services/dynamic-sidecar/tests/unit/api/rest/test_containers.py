@@ -25,11 +25,16 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
-from pydantic import TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.long_running_tasks.models import TaskId
+from servicelib.resources import (
+    USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY,
+    USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY,
+)
+from settings_library.basic_types import CpuCores
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
@@ -54,6 +59,16 @@ pytest_simcore_core_services_selection = [
 
 _WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 _FAST_POLLING_INTERVAL: Final[float] = 0.1
+
+_USER_SERVICE_CPU_LIMIT: Final[CpuCores] = CpuCores(cores=4.0)
+_USER_SERVICE_RAM_LIMIT: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("16GiB")
+_USER_SERVICE_ENV: Final[list[str]] = [
+    f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={_USER_SERVICE_CPU_LIMIT.to_nano_cpus()}",
+    f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={int(_USER_SERVICE_RAM_LIMIT)}",
+]
+_USER_SERVICE_DEPLOY: Final[dict[str, Any]] = {
+    "resources": {"limits": {"cpus": f"{_USER_SERVICE_CPU_LIMIT}", "memory": f"{int(_USER_SERVICE_RAM_LIMIT)}"}}
+}
 
 
 # UTILS
@@ -211,8 +226,14 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
                         dynamic_sidecar_network_name: None,
                     },
                     "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                    "environment": _USER_SERVICE_ENV,
+                    "deploy": _USER_SERVICE_DEPLOY,
                 },
-                "second-box": {"image": "busybox:latest"},
+                "second-box": {
+                    "image": "busybox:latest",
+                    "environment": _USER_SERVICE_ENV,
+                    "deploy": _USER_SERVICE_DEPLOY,
+                },
                 "egress": {
                     "image": "busybox:latest",
                     "networks": {
@@ -234,6 +255,8 @@ def compose_spec_single_service() -> str:
                 "solo-box": {
                     "image": "busybox:latest",
                     "labels": {"io.osparc.test-label": "mark-entrypoint"},
+                    "environment": _USER_SERVICE_ENV,
+                    "deploy": _USER_SERVICE_DEPLOY,
                 },
             },
         }

@@ -15,13 +15,15 @@ from models_library.utils.common_validators import (
 )
 from pydantic import (
     AliasChoices,
+    ByteSize,
     Field,
     Json,
+    TypeAdapter,
     ValidationInfo,
     field_validator,
 )
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt
+from settings_library.basic_types import CpuCores, PortInt
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -143,6 +145,16 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: Annotated[
         RCloneSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
+
+    DYNAMIC_SIDECAR_OWN_CPU_LIMIT: Annotated[
+        CpuCores,
+        Field(description="CPU cores the dynamic-sidecar process itself requires"),
+    ] = CpuCores(cores=0.5)
+
+    DYNAMIC_SIDECAR_OWN_MEMORY_LIMIT: Annotated[
+        ByteSize,
+        Field(description="memory the dynamic-sidecar process itself requires, including usage spikes"),
+    ] = TypeAdapter(ByteSize).validate_python("1GiB")
 
     DYNAMIC_SIDECAR_EFS_SETTINGS: Annotated[
         AwsEfsSettings | None, Field(json_schema_extra={"auto_default_from_env": True})

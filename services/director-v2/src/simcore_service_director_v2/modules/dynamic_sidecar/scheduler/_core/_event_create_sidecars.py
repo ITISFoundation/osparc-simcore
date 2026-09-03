@@ -13,8 +13,17 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressType,
 )
-from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
 from models_library.services import ServiceRunID
+from models_library.services_resources import (
+    SIDECAR_HELPERS_RESOURCE_KEY,
+    ImageResources,
+    ResourceValue,
+    ServiceResourcesDict,
+)
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -43,12 +52,19 @@ from ...docker_api import (
     get_swarm_network,
     is_dynamic_sidecar_stack_missing,
 )
+from ...docker_compose_egress_config import count_required_egress_proxies
 from ...docker_service_specs import (
     extract_service_port_service_settings,
     get_dynamic_proxy_spec,
     get_dynamic_sidecar_spec,
 )
-from ...docker_service_specs.settings import merge_settings_before_use
+from ...docker_service_specs.resources import (
+    compute_helper_containers_resources,
+    get_max_user_service_container_memory,
+)
+from ...docker_service_specs.settings import (
+    merge_settings_before_use,
+)
 from ._abc import DynamicSchedulerEvent
 from ._events_utils import get_allow_metrics_collection
 
@@ -77,6 +93,42 @@ def _merge_service_base_and_user_specs(
             jsonable_encoder(user_specific_service_spec, exclude_unset=True, by_alias=False),
             include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
         )
+    )
+
+
+def _add_helper_containers_resources_to_service_resources(
+    service_resources: ServiceResourcesDict,
+    *,
+    dynamic_services_settings: DynamicServicesSettings,
+    egress_proxy_count: int,
+    with_tracing: bool,
+    with_rclone: bool,
+) -> None:
+    """Adds a synthetic entry to `service_resources` covering everything that runs inside
+    the dynamic-sidecar's Swarm task but is invisible to Swarm: the dynamic-sidecar process
+    itself plus the helper containers it creates (envoy egress-proxies, otel collector/
+    forwarder, rclone mount). Without this the task books only the user services and the
+    sidecar has to squeeze into their allocation. dy-proxy (caddy) is excluded: it already
+    runs as its own separate Swarm service with its own dedicated resources.
+    """
+    cpu, ram = compute_helper_containers_resources(
+        dynamic_services_settings=dynamic_services_settings,
+        egress_proxy_count=egress_proxy_count,
+        with_tracing=with_tracing,
+        with_rclone=with_rclone,
+        max_user_service_container_memory=get_max_user_service_container_memory(service_resources),
+    )
+
+    sidecar_settings = dynamic_services_settings.DYNAMIC_SIDECAR
+    cpu += sidecar_settings.DYNAMIC_SIDECAR_OWN_CPU_LIMIT.cores
+    ram += int(sidecar_settings.DYNAMIC_SIDECAR_OWN_MEMORY_LIMIT)
+
+    service_resources[SIDECAR_HELPERS_RESOURCE_KEY] = ImageResources(
+        image=SIDECAR_HELPERS_RESOURCE_KEY,
+        resources={
+            "CPU": ResourceValue(limit=cpu, reservation=cpu),
+            "RAM": ResourceValue(limit=ram, reservation=ram),
+        },
     )
 
 
@@ -173,6 +225,17 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         catalog_client = CatalogClient.instance(app)
 
+        simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
+            scheduler_data.key, scheduler_data.version
+        )
+        _add_helper_containers_resources_to_service_resources(
+            scheduler_data.service_resources,
+            dynamic_services_settings=app_settings.DYNAMIC_SERVICES,
+            egress_proxy_count=count_required_egress_proxies(simcore_service_labels),
+            with_tracing=scheduler_data.tracing,
+            with_rclone=scheduler_data.requires_data_mounting,
+        )
+
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             catalog_client=catalog_client,
             service_key=scheduler_data.key,
@@ -180,9 +243,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_user_selection_boot_options=boot_options,
             service_resources=scheduler_data.service_resources,
             placement_substitutions=dynamic_services_placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS,
-            has_machine_specific_resources=bool(
-                scheduler_data.hardware_info and scheduler_data.hardware_info.aws_ec2_instances
-            ),
         )
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)

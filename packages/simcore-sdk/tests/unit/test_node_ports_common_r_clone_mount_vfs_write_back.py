@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 
 import pytest
-from settings_library.r_clone import SimcoreSDKMountSettings
+from settings_library.r_clone import RCloneSimcoreSDKMountSettings
 from simcore_sdk.node_ports_common.r_clone_utils import (
     _parse_rclone_duration_to_seconds,
     get_effective_vfs_write_back_seconds,
@@ -29,7 +29,7 @@ def test_parse_rclone_duration_invalid_returns_zero():
     assert _parse_rclone_duration_to_seconds("invalid") == 0
 
 
-def _resolve(settings: SimcoreSDKMountSettings) -> list[str]:
+def _resolve(settings: RCloneSimcoreSDKMountSettings) -> list[str]:
     command_parts = ["rclone", "mount", "--vfs-write-back", "30s", "--cache-dir", "/some-folder"]
     return overwrite_command(
         command_parts,
@@ -39,12 +39,12 @@ def _resolve(settings: SimcoreSDKMountSettings) -> list[str]:
 
 
 def test_get_effective_vfs_write_back_seconds_default():
-    resolved = _resolve(SimcoreSDKMountSettings())
+    resolved = _resolve(RCloneSimcoreSDKMountSettings())
     assert get_effective_vfs_write_back_seconds(resolved) == 30
 
 
 def test_get_effective_vfs_write_back_seconds_with_edit():
-    settings = SimcoreSDKMountSettings(
+    settings = RCloneSimcoreSDKMountSettings(
         R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS={
             "--vfs-write-back": ("--vfs-write-back", "5s"),
         }
@@ -54,7 +54,7 @@ def test_get_effective_vfs_write_back_seconds_with_edit():
 
 
 def test_get_effective_vfs_write_back_seconds_with_removal():
-    settings = SimcoreSDKMountSettings(
+    settings = RCloneSimcoreSDKMountSettings(
         R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS=[
             ("--vfs-write-back", 2),
         ]

@@ -220,12 +220,11 @@ class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
     msg_template = "Incompatible '{image_name}' cannot be applied on {container_name}:{expected_image}"
 
 
-class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = "Sub service is missing RAM/CPU resource keys ({missing_key})!"
-
-
 class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
+    msg_template = (
+        "Machine type '{ec2_type}' selected by the pricing plan is not available."
+        " Available types: {available_ec2_types}. TIP: adjust product configuration"
+    )
 
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...

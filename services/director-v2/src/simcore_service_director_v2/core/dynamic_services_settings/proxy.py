@@ -1,7 +1,8 @@
 from models_library.basic_types import PortInt
-from pydantic import Field
+from pydantic import ByteSize, Field, TypeAdapter
 from servicelib.utils_secrets import secure_randint
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import CpuCores
 
 
 class DynamicSidecarProxySettings(BaseCustomSettings):
@@ -14,7 +15,25 @@ class DynamicSidecarProxySettings(BaseCustomSettings):
         description="port where to expose the proxy's admin API",
     )
 
-    PROXY_EXPOSE_PORT: bool = Field(
+    DYNAMIC_SIDECAR_PROXY_EXPOSE_PORT: bool = Field(
         default=False,
         description="exposes the proxy on localhost for debugging and testing",
+    )
+
+    DYNAMIC_SIDECAR_PROXY_MEMORY_RESERVATION: ByteSize = Field(
+        default=TypeAdapter(ByteSize).validate_python("50MiB"),
+        description="memory reservation for the proxy container",
+    )
+    DYNAMIC_SIDECAR_PROXY_MEMORY_LIMIT: ByteSize = Field(
+        default=TypeAdapter(ByteSize).validate_python("250MiB"),
+        description="memory limit for the proxy container",
+    )
+
+    DYNAMIC_SIDECAR_PROXY_CPU_RESERVATION: CpuCores = Field(
+        default=CpuCores(cores=0.1),
+        description="CPU cores reservation for the proxy container",
+    )
+    DYNAMIC_SIDECAR_PROXY_CPU_LIMIT: CpuCores = Field(
+        default=CpuCores(cores=1.0),
+        description="CPU cores limit for the proxy container",
     )

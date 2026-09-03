@@ -3,6 +3,7 @@
 # pylint: disable=no-member
 
 import asyncio
+import hashlib
 import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
@@ -14,6 +15,7 @@ import aiodocker
 import faker
 import pytest
 import sqlalchemy as sa
+import yaml
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
@@ -33,6 +35,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.long_running_tasks import (
     assert_task_is_no_longer_present,
     get_fastapi_long_running_manager,
@@ -179,7 +182,7 @@ def dynamic_sidecar_network_name() -> str:
 )
 def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
-    return json.dumps(spec_dict)
+    return yaml.safe_dump(inject_container_resources(spec_dict))
 
 
 @pytest.fixture
@@ -525,7 +528,10 @@ async def test_create_containers_task_invalid_yaml_spec(
         (_get_task_id_state_save, "unique"),
         (
             _get_task_id_task_ports_inputs_pull,
-            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
+            "unique_"
+            + hashlib.sha256(
+                json.dumps(sorted({"port_keys": None}.items()), separators=(",", ":"), sort_keys=True).encode()
+            ).hexdigest(),
         ),
         (_get_task_id_task_ports_outputs_pull, "unique"),
         (_get_task_id_task_ports_outputs_push, "unique"),

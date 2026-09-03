@@ -3,10 +3,12 @@ from typing import Annotated
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, TypeAdapter
-from settings_library.application import BaseApplicationSettings
+
+from .base import BaseCustomSettings
+from .basic_types import CpuCores
 
 
-class UserServicesTracingSettings(BaseApplicationSettings):
+class UserServicesTracingSettings(BaseCustomSettings):
     USER_SERVICES_TRACING_COLLECTOR_IMAGE_NAME: Annotated[str, Field(description="official OTEL Collector image")] = (
         "otel/opentelemetry-collector-contrib"
     )
@@ -34,15 +36,8 @@ class UserServicesTracingSettings(BaseApplicationSettings):
         Field(description="memory limit for the OTEL collector containers"),
     ] = TypeAdapter(ByteSize).validate_python("256MiB")
     USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT: Annotated[
-        float,
+        CpuCores,
         Field(description="CPU cores limit for the OTEL collector containers"),
-    ] = 0.30
-    USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES: Annotated[
-        int,
-        Field(description="relative CPU weight for the OTEL collector containers"),
-    ] = 16
+    ] = CpuCores(cores=0.25)
 
     _validate_flush_interval = validate_numeric_string_as_timedelta("USER_SERVICES_TRACING_COLLECTOR_FLUSH_INTERVAL")
-    _validate_stop_grace_period = validate_numeric_string_as_timedelta(
-        "USER_SERVICES_TRACING_COLLECTOR_STOP_GRACE_PERIOD"
-    )

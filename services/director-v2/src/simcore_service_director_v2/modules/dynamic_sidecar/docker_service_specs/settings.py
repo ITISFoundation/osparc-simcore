@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import Any
+from typing import Any, Final
 
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
@@ -15,10 +15,8 @@ from models_library.service_settings_labels import (
 )
 from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.services_resources import (
-    CPU_100_PERCENT,
     DEFAULT_SINGLE_SERVICE_NAME,
     GIGA,
-    MEMORY_1GB,
     ServiceResourcesDict,
 )
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -59,13 +57,16 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
     return mounts
 
 
+_EXPECTED_PARTS: Final[int] = 2
+
+
 def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
     for s in settings:
         log.debug("Retrieved env settings %s", s)
         if "=" in s:
             parts = s.split("=")
-            if len(parts) == 2:
+            if len(parts) == _EXPECTED_PARTS:
                 # will be forwarded to dynamic-sidecar spawned containers
                 envs[f"FORWARD_ENV_{parts[0]}"] = parts[1]
 
@@ -251,7 +252,6 @@ def _merge_resources_in_settings(
     service_resources: ServiceResourcesDict,
     *,
     placement_substitutions: dict[str, DockerPlacementConstraint],
-    has_machine_specific_resources: bool,
 ) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -302,19 +302,6 @@ def _merge_resources_in_settings(
                     }
                 }
                 empty_resource_entry.value["Reservations"]["GenericResources"].extend([generic_resource])
-    if not has_machine_specific_resources:
-        # When no machine type is explicitly selected, services may not define CPU/RAM
-        # limitations (defaulting to 0.1 CPU, i.e. 10%). Enforce a minimum so the dynamic-sidecar
-        # can actually run. When a machine type IS selected the webserver already computed
-        # the correct values; applying a floor here would make the service unschedulable
-        # on the very node it was pinned to (e.g. 0.6 CPU on t3.large would be raised to
-        # 1.0 CPU, exceeding the node's available capacity after overhead).
-        empty_resource_entry.value["Limits"]["NanoCPUs"] = max(
-            empty_resource_entry.value["Limits"]["NanoCPUs"], CPU_100_PERCENT
-        )
-        empty_resource_entry.value["Limits"]["MemoryBytes"] = max(
-            empty_resource_entry.value["Limits"]["MemoryBytes"], MEMORY_1GB
-        )
 
     result.append(empty_resource_entry)
 
@@ -405,7 +392,6 @@ async def merge_settings_before_use(
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
     placement_substitutions: dict[str, DockerPlacementConstraint],
-    has_machine_specific_resources: bool,
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         catalog_client=catalog_client,
@@ -446,7 +432,6 @@ async def merge_settings_before_use(
         settings,
         service_resources,
         placement_substitutions=placement_substitutions,
-        has_machine_specific_resources=has_machine_specific_resources,
     )
     settings = _patch_target_service_into_env_vars(settings)
 

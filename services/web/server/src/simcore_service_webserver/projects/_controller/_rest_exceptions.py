@@ -10,6 +10,10 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundRpcError,
     CatalogNotAvailableRpcError,
 )
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    InsufficientInstanceResourcesError,
+    MissingServiceResourceKeysError,
+)
 
 from ...catalog._controller_rest_exceptions import catalog_exceptions_handlers_map
 from ...conversations.errors import (
@@ -32,6 +36,7 @@ from ..exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     InsufficientRoleForProjectTemplateTypeUpdateError,
+    InvalidEC2TypeInResourcesSpecsError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
@@ -79,6 +84,34 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
     ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message("Required input values for this project node have not been set.", _version=1),
+    ),
+}
+
+
+_NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
+    InvalidEC2TypeInResourcesSpecsError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "This service cannot start because its pricing plan requests a machine type that is not available."
+            " TIP: select another pricing unit or contact support.",
+            _version=1,
+        ),
+    ),
+    MissingServiceResourceKeysError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "The service '{service_key}:{service_version}' does not define the CPU/RAM it needs and cannot start."
+            " TIP: contact support.",
+            _version=1,
+        ),
+    ),
+    InsufficientInstanceResourcesError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "The machine selected for this service is too small to run it. TIP: select a pricing unit with a"
+            " larger machine.",
+            _version=1,
+        ),
     ),
 }
 
@@ -281,6 +314,7 @@ _ERRORS = [
     _CONVERSATION_ERRORS,
     _FOLDER_ERRORS,
     _NODE_ERRORS,
+    _NODE_RESOURCES_ERRORS,
     _OTHER_ERRORS,
     _PRICING_ERRORS,
     _PROJECT_ERRORS,

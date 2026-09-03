@@ -28,6 +28,7 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.logging_utils import log_context
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -48,6 +49,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
+
+_logger = logging.getLogger(__name__)
 
 PROXY_BOOT_TIME = 30
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 120
@@ -303,7 +306,7 @@ async def _handle_redirection(redirection_response: httpx.Response, *, method: s
         return response
 
 
-async def assert_start_service(
+async def assert_start_service(  # pylint: disable=too-many-arguments
     director_v2_client: httpx.AsyncClient,
     product_name: str,
     product_api_base_url: str,
@@ -314,13 +317,16 @@ async def assert_start_service(
     service_uuid: str,
     basepath: str | None,
     catalog_url: URL,
+    service_resources: ServiceResourcesDict | None = None,
 ) -> None:
-    service_resources: ServiceResourcesDict = await _get_service_resources(
-        catalog_url=catalog_url,
-        service_key=service_key,
-        service_version=service_version,
-        product_name=product_name,
-    )
+    if service_resources is None:
+        service_resources = await _get_service_resources(
+            catalog_url=catalog_url,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+
     data = {
         "user_id": user_id,
         "project_id": project_id,
@@ -338,18 +344,18 @@ async def assert_start_service(
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
         X_SIMCORE_USER_AGENT: "",
     }
+    with log_context(_logger, logging.INFO, f"start-service request payload: {data}"):
+        response = await director_v2_client.post(
+            "/v2/dynamic_services",
+            json=data,
+            headers=headers,
+            follow_redirects=False,
+            timeout=30,
+        )
 
-    response = await director_v2_client.post(
-        "/v2/dynamic_services",
-        json=data,
-        headers=headers,
-        follow_redirects=False,
-        timeout=30,
-    )
-
-    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
-        response = await _handle_redirection(response, method="POST", json=data, headers=headers, timeout=30)
-    response.raise_for_status()
+        if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+            response = await _handle_redirection(response, method="POST", json=data, headers=headers, timeout=30)
+        response.raise_for_status()
 
     assert response.status_code == httpx.codes.CREATED, response.text
 

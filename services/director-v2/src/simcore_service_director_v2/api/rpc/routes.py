@@ -1,5 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
+from typing import Final
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
@@ -10,12 +11,12 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.rabbitmq import get_rabbitmq_rpc_client
-from . import _computations, _computations_tasks
+from . import _computations, _computations_tasks, _resources
 
 _logger = logging.getLogger(__name__)
 
 
-ROUTERS: list[RPCRouter] = [_computations.router, _computations_tasks.router]
+_ROUTERS: Final[list[RPCRouter]] = [_computations.router, _computations_tasks.router, _resources.router]
 
 
 async def _rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -25,7 +26,7 @@ async def _rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[None]:
         msg="Director-v2 startup RPC API Routes",
     ):
         rpc_client = get_rabbitmq_rpc_client(app)
-        for router in ROUTERS:
+        for router in _ROUTERS:
             await rpc_client.register_router(router, DIRECTOR_V2_RPC_NAMESPACE, app)
     yield
 

@@ -13,8 +13,7 @@ from models_library.service_settings_labels import (
 from models_library.service_settings_nat_rule import NATRule
 from ordered_set import OrderedSet
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
-
-from ...core.dynamic_services_settings.egress_proxy import EgressProxySettings
+from settings_library.egress_proxy import EgressProxySettings
 
 _DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME: Final[str] = "with-internet"
 
@@ -29,7 +28,7 @@ class _HostData:
     dns_resolver_port: PortInt
 
     def __hash__(self) -> int:
-        return hash((type(self),) + tuple(self.__dict__.values()))
+        return hash((type(self), *self.__dict__.values()))
 
     def __lt__(self, other: "_HostData") -> bool:
         return self.hostname < other.hostname
@@ -52,7 +51,7 @@ def _get_tcp_listener(
         "name": name,
         "address": {
             "socket_address": {
-                "address": "0.0.0.0",  # nosec
+                "address": "0.0.0.0",  # nosec  # noqa: S104
                 "port_value": port,
             },
         },
@@ -181,7 +180,7 @@ def _get_egress_proxy_service_config(
         [
             "envoy",
             "--log-level",
-            egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL.to_log_level(),
+            egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_LOG_LEVEL,
             # add envoy proxy config
             "--config-yaml",
             f"'{yaml_str_envoy_config}'",
@@ -191,6 +190,8 @@ def _get_egress_proxy_service_config(
     egress_proxy_config: dict[str, Any] = {
         "image": egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_IMAGE,
         "command": command,
+        "mem_limit": f"{egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_MEMORY_LIMIT}",
+        "cpus": f"{egress_proxy_settings.DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT}",
         "networks": {
             # allows the proxy to access the internet
             network_with_internet: None,
@@ -247,6 +248,123 @@ def _allow_outgoing_internet(service_spec: ComposeSpecLabelDict, container_name:
     service_spec["services"][container_name]["networks"] = networks
 
 
+def _flatten_host_permit_list_policies(
+    simcore_service_labels: SimcoreServiceLabels,
+) -> list[NATRule]:
+    permit_list = simcore_service_labels.containers_allowed_outgoing_permit_list
+    if permit_list is None:
+        return []
+    return [
+        host_permit_list_policy
+        for host_permit_list_policies in permit_list.values()
+        for host_permit_list_policy in host_permit_list_policies
+    ]
+
+
+def count_required_egress_proxies(simcore_service_labels: SimcoreServiceLabels) -> int:
+    return len(_get_egress_proxy_dns_port_rules(_flatten_host_permit_list_policies(simcore_service_labels)))
+
+
+def _setup_internet_network_if_needed(
+    service_spec: ComposeSpecLabelDict, simcore_service_labels: SimcoreServiceLabels
+) -> None:
+    if (
+        simcore_service_labels.containers_allowed_outgoing_internet
+        or simcore_service_labels.containers_allowed_outgoing_permit_list
+    ):
+        # placing containers with internet access in an isolated network
+        service_networks = service_spec.setdefault("networks", {})
+        service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {"internal": False}
+
+
+def _allow_full_outgoing_internet_access(
+    service_spec: ComposeSpecLabelDict, simcore_service_labels: SimcoreServiceLabels
+) -> None:
+    for container_name in simcore_service_labels.containers_allowed_outgoing_internet or []:
+        _allow_outgoing_internet(service_spec, container_name)
+
+
+def _map_hostname_port_to_container_name(
+    permit_list: dict[str, list[NATRule]],
+) -> dict[tuple[str, PortInt], str]:
+    hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
+    for container_name, host_permit_list_policies in permit_list.items():
+        for host_permit_list_policy in host_permit_list_policies:
+            for port in host_permit_list_policy.iter_tcp_ports():
+                hostname_port_to_container_name[(raise_if_unresolved(host_permit_list_policy.hostname), port)] = (
+                    container_name
+                )
+    return hostname_port_to_container_name
+
+
+def _create_egress_proxy_services(
+    service_spec: ComposeSpecLabelDict,
+    grouped_proxy_rules: list[OrderedSet[_ProxyRule]],
+    egress_proxy_settings: EgressProxySettings,
+    hostname_port_to_container_name: dict[tuple[str, PortInt], str],
+) -> dict[str, set[str]]:
+    """creates one egress-proxy service per proxy rule group, returns {container_name: {proxy_name, ...}}"""
+    container_name_to_proxies_names: dict[str, set[str]] = {}
+
+    for i, proxy_rules in enumerate(grouped_proxy_rules):
+        egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}-{i}"
+
+        # add new network for each proxy where it can be reached
+        _add_egress_proxy_network(service_spec, egress_proxy_name)
+
+        egress_proxy_config = _get_egress_proxy_service_config(
+            egress_proxy_rules=proxy_rules,
+            network_with_internet=_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME,
+            egress_proxy_settings=egress_proxy_settings,
+            egress_proxy_name=egress_proxy_name,
+        )
+        logger.debug(
+            "EGRESS PROXY '%s' CONFIG:\n%s",
+            egress_proxy_name,
+            yaml.safe_dump(egress_proxy_config),
+        )
+        service_spec["services"][egress_proxy_name] = egress_proxy_config
+
+        # extract dependency between container_name and egress_proxy_name
+        for proxy_rule in proxy_rules:
+            container_name = hostname_port_to_container_name[(proxy_rule[0].hostname, proxy_rule[1])]
+            container_name_to_proxies_names.setdefault(container_name, set()).add(egress_proxy_name)
+
+    return container_name_to_proxies_names
+
+
+def _attach_egress_proxies_to_containers(
+    service_spec: ComposeSpecLabelDict, container_name_to_proxies_names: dict[str, set[str]]
+) -> None:
+    for container_name, proxy_names in container_name_to_proxies_names.items():
+        # attach `depends_on` rules to all container
+        service_spec["services"][container_name]["depends_on"] = list(proxy_names)
+        # attach proxy network to allow
+        service_networks = service_spec["services"][container_name].get("networks", {})
+        for proxy_name in proxy_names:
+            service_networks[_get_egress_proxy_network_name(proxy_name)] = None
+        service_spec["services"][container_name]["networks"] = service_networks
+
+
+def _configure_permit_list_egress_proxies(
+    service_spec: ComposeSpecLabelDict,
+    permit_list: dict[str, list[NATRule]],
+    egress_proxy_settings: EgressProxySettings,
+) -> None:
+    all_host_permit_list_policies = [
+        host_permit_list_policy
+        for host_permit_list_policies in permit_list.values()
+        for host_permit_list_policy in host_permit_list_policies
+    ]
+    hostname_port_to_container_name = _map_hostname_port_to_container_name(permit_list)
+    grouped_proxy_rules = _get_egress_proxy_dns_port_rules(all_host_permit_list_policies)
+
+    container_name_to_proxies_names = _create_egress_proxy_services(
+        service_spec, grouped_proxy_rules, egress_proxy_settings, hostname_port_to_container_name
+    )
+    _attach_egress_proxies_to_containers(service_spec, container_name_to_proxies_names)
+
+
 def add_egress_configuration(
     service_spec: ComposeSpecLabelDict,
     simcore_service_labels: SimcoreServiceLabels,
@@ -260,79 +378,8 @@ def add_egress_configuration(
     - `simcore.service.containers-allowed-outgoing-internet` list of containers
         allowed to have complete access to the internet
     """
+    _setup_internet_network_if_needed(service_spec, simcore_service_labels)
+    _allow_full_outgoing_internet_access(service_spec, simcore_service_labels)
 
-    # creating a network with internet access
-    if (
-        simcore_service_labels.containers_allowed_outgoing_internet
-        or simcore_service_labels.containers_allowed_outgoing_permit_list
-    ):
-        # placing containers with internet access in an isolated network
-        service_networks = service_spec.setdefault("networks", {})
-        service_networks[_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME] = {"internal": False}
-
-    # allow complete internet access to single container
-    if simcore_service_labels.containers_allowed_outgoing_internet:
-        # attach to network
-        for container_name in simcore_service_labels.containers_allowed_outgoing_internet:
-            _allow_outgoing_internet(service_spec, container_name)
-
-    # allow internet access to containers based on DNS:PORT rules
-    if simcore_service_labels.containers_allowed_outgoing_permit_list:
-        # get all HostPermitListPolicy entries from all containers
-        all_host_permit_list_policies: list[NATRule] = []
-
-        hostname_port_to_container_name: dict[tuple[str, PortInt], str] = {}
-        container_name_to_proxies_names: dict[str, set[str]] = {}
-
-        for (
-            container_name,
-            host_permit_list_policies,
-        ) in simcore_service_labels.containers_allowed_outgoing_permit_list.items():
-            for host_permit_list_policy in host_permit_list_policies:
-                all_host_permit_list_policies.append(host_permit_list_policy)
-
-                for port in host_permit_list_policy.iter_tcp_ports():
-                    hostname_port_to_container_name[
-                        (
-                            raise_if_unresolved(host_permit_list_policy.hostname),
-                            port,
-                        )
-                    ] = container_name
-
-        # assemble proxy configuration based on all HostPermitListPolicy entries
-        grouped_proxy_rules = _get_egress_proxy_dns_port_rules(all_host_permit_list_policies)
-        for i, proxy_rules in enumerate(grouped_proxy_rules):
-            egress_proxy_name = f"{SUFFIX_EGRESS_PROXY_NAME}-{i}"
-
-            # add new network for each proxy where it can be reached
-            _add_egress_proxy_network(service_spec, egress_proxy_name)
-
-            egress_proxy_config = _get_egress_proxy_service_config(
-                egress_proxy_rules=proxy_rules,
-                network_with_internet=_DEFAULT_USER_SERVICES_NETWORK_WITH_INTERNET_NAME,
-                egress_proxy_settings=egress_proxy_settings,
-                egress_proxy_name=egress_proxy_name,
-            )
-            logger.debug(
-                "EGRESS PROXY '%s' CONFIG:\n%s",
-                egress_proxy_name,
-                yaml.safe_dump(egress_proxy_config),
-            )
-            # adds a new service configuration here
-            service_spec["services"][egress_proxy_name] = egress_proxy_config
-
-            # extract dependency between container_name and egress_proxy_name
-            for proxy_rule in proxy_rules:
-                container_name = hostname_port_to_container_name[(proxy_rule[0].hostname, proxy_rule[1])]
-                if container_name not in container_name_to_proxies_names:
-                    container_name_to_proxies_names[container_name] = set()
-                container_name_to_proxies_names[container_name].add(egress_proxy_name)
-
-        for container_name, proxy_names in container_name_to_proxies_names.items():
-            # attach `depends_on` rules to all container
-            service_spec["services"][container_name]["depends_on"] = list(proxy_names)
-            # attach proxy network to allow
-            service_networks = service_spec["services"][container_name].get("networks", {})
-            for proxy_name in proxy_names:
-                service_networks[_get_egress_proxy_network_name(proxy_name)] = None
-                service_spec["services"][container_name]["networks"] = service_networks
+    if permit_list := simcore_service_labels.containers_allowed_outgoing_permit_list:
+        _configure_permit_list_egress_proxies(service_spec, permit_list, egress_proxy_settings)
