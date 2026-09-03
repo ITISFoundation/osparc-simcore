@@ -490,7 +490,7 @@ urllib3==2.7.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
-uvloop==0.21.0
+uvloop==0.22.1
     # via -r requirements/_base.in
 vine==5.1.0
     # via
