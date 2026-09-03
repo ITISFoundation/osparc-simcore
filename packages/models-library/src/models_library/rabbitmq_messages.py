@@ -326,6 +326,14 @@ class ComputationalPipelineStatusMessage(RabbitMessageBase, ProjectMessageBase):
         return f"{self.project_id}.all_nodes"
 
 
+class NodeDataUpdatedEventMessage(RabbitMessageBase, NodeMessageBase):
+    channel_name: Literal["io.simcore.service.node-data-updated"] = "io.simcore.service.node-data-updated"
+    changes: list[Literal["outputs", "state"]]
+
+    def routing_key(self) -> str | None:
+        return f"{self.project_id}.{self.node_id}"
+
+
 class FileNotificationEventType(StrAutoEnum):
     FILE_UPLOADED = auto()
     FILE_DELETED = auto()
