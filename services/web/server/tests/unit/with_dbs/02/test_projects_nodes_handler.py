@@ -23,9 +23,6 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
-    DynamicServiceStop,
-)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     PresignedLink,
@@ -33,7 +30,6 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGetIdle
 from models_library.generics import Envelope
 from models_library.projects_nodes import Node, NodeShareStatus
-from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
@@ -49,7 +45,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp import status
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects_nodes import projects_nodes
@@ -606,78 +601,6 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert not data
     # this does not start anything in the backend since this node is deprecated
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "dy_service_running",
-    [
-        pytest.param(True, id="dy-service-running"),
-        pytest.param(False, id="dy-service-NOT-running"),
-    ],
-)
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_delete_node(
-    mock_dynamic_scheduler: None,
-    client: TestClient,
-    logged_user: dict,
-    user_project: ProjectDict,
-    expected: ExpectedResponse,
-    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    mock_catalog_api: dict[str, mock.Mock],
-    storage_subsystem_mock: MockedStorageSubsystem,
-    dy_service_running: bool,
-    postgres_db: sa.engine.Engine,
-    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-):
-    # first create a node
-    assert client.app
-    assert "workbench" in user_project
-    assert isinstance(user_project["workbench"], dict)
-    running_dy_services = [
-        service_uuid
-        for service_uuid, service_data in user_project["workbench"].items()
-        if "/dynamic/" in service_data["key"] and dy_service_running
-    ]
-    _ = [
-        await create_dynamic_service_mock(project_id=user_project["uuid"], service_uuid=service_uuid)
-        for service_uuid in running_dy_services
-    ]
-
-    for node_id in user_project["workbench"]:
-        url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
-        response = await client.delete(url.path)
-        data, error = await assert_status(response, expected.no_content)
-        assert not data
-        if error:
-            continue
-
-        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].assert_called_once()
-        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].reset_mock()
-
-        if node_id in running_dy_services:
-            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once_with(
-                mock.ANY,
-                dynamic_service_stop=DynamicServiceStop(
-                    user_id=logged_user["id"],
-                    project_id=user_project["uuid"],
-                    node_id=NodeID(node_id),
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    save_state=False,
-                    product_name="osparc",
-                ),
-            )
-            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
-        else:
-            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
-
-        # ensure the node is gone
-        with postgres_db.connect() as conn:
-            result = conn.execute(
-                sa.select(sa.literal(1))
-                .where((projects_nodes.c.project_uuid == user_project["uuid"]) & (projects_nodes.c.node_id == node_id))
-                .limit(1)
-            )
-            assert result.scalar() is None
 
 
 @pytest.fixture

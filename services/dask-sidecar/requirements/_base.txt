@@ -182,7 +182,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.1
+msgpack==1.2.2
     # via distributed
 multidict==6.7.0
     # via
@@ -294,7 +294,7 @@ pamqp==3.3.0
     # via aiormq
 partd==1.4.2
     # via dask
-pillow==12.2.0
+pillow==12.3.0
     # via bokeh
 prometheus-client==0.26.0
     # via
