@@ -43,6 +43,7 @@ from ..core.docker_utils import (
     get_containers_count_from_names,
 )
 from ..core.rabbitmq import (
+    get_rabbitmq_client,
     post_event_reload_iframe,
     post_progress_message,
     post_sidecar_log_message,
@@ -517,6 +518,7 @@ async def pull_user_services_input_ports(
                     settings.DY_SIDECAR_PROJECT_ID,
                     settings.DY_SIDECAR_NODE_ID,
                 ),
+                rabbitmq_client=get_rabbitmq_client(app),
             )
     await post_sidecar_log_message(app, f"Finished pulling inputs: {port_keys}", log_level=logging.INFO)
     await progress.update(message="finished inputs pulling", percent=0.99)
@@ -548,6 +550,7 @@ async def pull_user_services_output_ports(
             io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
             progress_bar=root_progress,
             port_notifier=None,
+            rabbitmq_client=get_rabbitmq_client(app),
         )
     await post_sidecar_log_message(app, "Finished pulling outputs", log_level=logging.INFO)
     await progress.update(message="finished outputs pulling", percent=0.99)

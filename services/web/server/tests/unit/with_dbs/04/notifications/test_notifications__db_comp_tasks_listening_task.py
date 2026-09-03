@@ -17,16 +17,13 @@ from typing import Any
 from unittest import mock
 
 import pytest
-import simcore_service_webserver
-import simcore_service_webserver.db_listener
-import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
-from pytest_mock import MockType
+from models_library.rabbitmq_messages import NodeDataUpdatedEventMessage
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -35,12 +32,12 @@ from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
-    _get_changed_comp_task_row,
     _get_project_owner,
     _handle_db_notification,
     create_comp_tasks_listening_task,
 )
 from simcore_service_webserver.db_listener._models import CompTaskNotificationPayload
+from simcore_service_webserver.db_listener._node_update_handler import _get_comp_task_row
 from simcore_service_webserver.projects import exceptions
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import stop_after_attempt
@@ -54,30 +51,16 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
-    mocked_project_calls = {}
-
-    mocked_project_calls["update_node_outputs"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task.update_node_outputs",
-        return_value="",
+async def mock_rabbitmq_publish(mocker: MockerFixture) -> mock.AsyncMock:
+    """Mocks the relay's RabbitMQClient so we can assert on published NodeDataUpdatedEventMessage(s)
+    without a real broker round-trip."""
+    mocked_client = mock.MagicMock()
+    mocked_client.publish = mock.AsyncMock()
+    mocker.patch(
+        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task.get_rabbitmq_client",
+        return_value=mocked_client,
     )
-
-    mocked_project_calls["_update_project_state.update_project_node_state"] = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.update_project_node_state",
-        autospec=True,
-    )
-
-    mocked_project_calls["_update_project_state.notify_project_node_update"] = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.notify_project_node_update",
-        autospec=True,
-    )
-
-    mocked_project_calls["_update_project_state.notify_project_state_update"] = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.notify_project_state_update",
-        autospec=True,
-    )
-
-    return mocked_project_calls
+    return mocked_client.publish
 
 
 @pytest.fixture
@@ -88,37 +71,28 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
         yield
 
 
-@pytest.fixture
-async def spied_get_changed_comp_task_row(
-    mocker: MockerFixture,
-) -> MockType:
-    return mocker.spy(
-        simcore_service_webserver.db_listener._db_comp_tasks_listening_task,  # noqa: SLF001
-        "_get_changed_comp_task_row",
-    )
-
-
 @dataclass(frozen=True, slots=True)
 class _CompTaskChangeParams:
     update_values: dict[str, Any]
-    expected_calls: list[str]
+    expected_changes: list[str]
 
 
-async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]) -> None:
-    for call_name, mocked_call in mock_project_subsystem.items():
-        if call_name in expected_calls:
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(1),
-                stop=stop_after_delay(10),
-                retry=retry_if_exception_type(AssertionError),
-                before_sleep=before_sleep_log(logger, logging.INFO),
-                reraise=True,
-            ):
-                with attempt:
-                    mocked_call.assert_called_once()
-
-        else:
-            mocked_call.assert_not_called()
+async def _assert_publish_triggers(mock_rabbitmq_publish: mock.AsyncMock, expected_changes: list[str]) -> None:
+    if expected_changes:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(10),
+            retry=retry_if_exception_type(AssertionError),
+            before_sleep=before_sleep_log(logger, logging.INFO),
+            reraise=True,
+        ):
+            with attempt:
+                mock_rabbitmq_publish.assert_called_once()
+        published_message = mock_rabbitmq_publish.call_args.args[1]
+        assert isinstance(published_message, NodeDataUpdatedEventMessage)
+        assert sorted(published_message.changes) == sorted(expected_changes)
+    else:
+        mock_rabbitmq_publish.assert_not_called()
 
 
 @pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND])
@@ -130,18 +104,14 @@ async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock]
                 {
                     "outputs": {"some new stuff": "it is new"},
                 },
-                ["update_node_outputs"],
+                ["outputs"],
             ),
             id="new output shall trigger",
         ),
         pytest.param(
             _CompTaskChangeParams(
                 {"state": StateType.ABORTED},
-                [
-                    "_update_project_state.update_project_node_state",
-                    "_update_project_state.notify_project_node_update",
-                    "_update_project_state.notify_project_state_update",
-                ],
+                ["state"],
             ),
             id="new state shall trigger",
         ),
@@ -151,14 +121,9 @@ async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock]
                     "outputs": {"some new stuff": "it is new"},
                     "state": StateType.ABORTED,
                 },
-                [
-                    "update_node_outputs",
-                    "_update_project_state.update_project_node_state",
-                    "_update_project_state.notify_project_node_update",
-                    "_update_project_state.notify_project_state_update",
-                ],
+                ["outputs", "state"],
             ),
-            id="new output and state shall double trigger",
+            id="new output and state shall trigger with both changes",
         ),
         pytest.param(
             _CompTaskChangeParams({"inputs": {"should not trigger": "right?"}}, []),
@@ -167,10 +132,9 @@ async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock]
     ],
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_db_listener_triggers_on_event_with_multiple_tasks(
+async def test_db_listener_triggers_on_event_with_multiple_tasks(  # noqa: PLR0917
     sqlalchemy_async_engine: AsyncEngine,
-    mock_project_subsystem: dict[str, mock.Mock],
-    spied_get_changed_comp_task_row: MockType,
+    mock_rabbitmq_publish: mock.AsyncMock,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
@@ -195,21 +159,18 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     ]
     random_task_to_update = tasks[secrets.randbelow(len(tasks))]
     updated_task_id = random_task_to_update["task_id"]
+    updated_node_id = random_task_to_update["node_id"]
 
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update().values(**params.update_values).where(comp_tasks.c.task_id == updated_task_id)
         )
-    await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
+    await _assert_publish_triggers(mock_rabbitmq_publish, params.expected_changes)
 
-    # Assert the spy was called with the correct task_id
-    if params.expected_calls:
-        assert any(call.args[1] == updated_task_id for call in spied_get_changed_comp_task_row.call_args_list), (
-            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}."
-            f" Calls: {spied_get_changed_comp_task_row.call_args_list}"
-        )
-    else:
-        spied_get_changed_comp_task_row.assert_not_called()
+    if params.expected_changes:
+        published_message = mock_rabbitmq_publish.call_args.args[1]
+        assert f"{published_message.node_id}" == f"{updated_node_id}"
+        assert f"{published_message.project_id}" == f"{some_project.uuid}"
 
 
 @pytest.fixture
@@ -252,7 +213,7 @@ async def _check_for_stability(function: Callable[..., Awaitable[None]], *args, 
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_db_listener_upgrades_projects_row_correctly(
+async def test_db_listener_upgrades_projects_row_correctly(  # noqa: PLR0917
     with_started_listening_task: None,
     director_v2_service_mock: AioResponsesMock,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -263,7 +224,6 @@ async def test_db_listener_upgrades_projects_row_correctly(
     fake_2connected_jupyterlabs_workbench: dict[str, Any],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
-    spied_get_changed_comp_task_row: MockType,
     faker: Faker,
 ):
     some_project = await create_project(logged_user, workbench=fake_2connected_jupyterlabs_workbench)
@@ -388,7 +348,7 @@ async def test_get_project_owner_raises_when_project_missing(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_changed_comp_task_row_returns_task(
+async def test_get_comp_task_row_returns_task(
     sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -398,23 +358,29 @@ async def test_get_changed_comp_task_row_returns_task(
 ):
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
+    node_id = faker.uuid4()
     task = await create_comp_task(
         project_id=f"{project.uuid}",
-        node_id=faker.uuid4(),
+        node_id=node_id,
         outputs=json.dumps({}),
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_changed_comp_task_row(conn, task["task_id"])
+        row = await _get_comp_task_row(conn, project.uuid, NodeID(node_id))
     assert row is not None
     assert row.task_id == task["task_id"]
 
 
-async def test_get_changed_comp_task_row_returns_none_for_missing_task(
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_comp_task_row_returns_none_for_missing_task(
     sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    faker: Faker,
 ):
+    project = await create_project(logged_user)
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_changed_comp_task_row(conn, 999999)
+        row = await _get_comp_task_row(conn, project.uuid, NodeID(faker.uuid4()))
     assert row is None
 
 
@@ -468,7 +434,7 @@ async def test_handle_db_notification_logs_warning_on_missing_comp_task(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_handle_db_notification_with_output_change(
     sqlalchemy_async_engine: AsyncEngine,
-    mock_project_subsystem: dict[str, mock.Mock],
+    mock_rabbitmq_publish: mock.AsyncMock,
     client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -496,14 +462,16 @@ async def test_handle_db_notification_with_output_change(
         node_id=node_id,
     )
     await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    mock_rabbitmq_publish.assert_called_once()
+    published_message = mock_rabbitmq_publish.call_args.args[1]
+    assert published_message.changes == ["outputs"]
 
 
 @pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_handle_db_notification_with_state_change(
     sqlalchemy_async_engine: AsyncEngine,
-    mock_project_subsystem: dict[str, mock.Mock],
+    mock_rabbitmq_publish: mock.AsyncMock,
     client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -536,15 +504,15 @@ async def test_handle_db_notification_with_state_change(
         node_id=node_id,
     )
     await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
-    mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
-    mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
+    mock_rabbitmq_publish.assert_called_once()
+    published_message = mock_rabbitmq_publish.call_args.args[1]
+    assert published_message.changes == ["state"]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_handle_db_notification_ignores_non_output_non_state_changes(
     sqlalchemy_async_engine: AsyncEngine,
-    mock_project_subsystem: dict[str, mock.Mock],
+    mock_rabbitmq_publish: mock.AsyncMock,
     client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -571,8 +539,7 @@ async def test_handle_db_notification_ignores_non_output_non_state_changes(
         node_id=node_id,
     )
     await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    for mocked_call in mock_project_subsystem.values():
-        mocked_call.assert_not_called()
+    mock_rabbitmq_publish.assert_not_called()
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

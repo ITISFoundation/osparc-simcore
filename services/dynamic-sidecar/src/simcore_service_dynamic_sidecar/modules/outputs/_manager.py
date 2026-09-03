@@ -21,7 +21,7 @@ from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
-from ...core.rabbitmq import post_log_message, post_progress_message
+from ...core.rabbitmq import get_rabbitmq_client, post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
 from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
@@ -140,6 +140,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                         io_log_redirect_cb=self.io_log_redirect_cb,
                         progress_bar=root_progress,
                         port_notifier=self.port_notifier,
+                        rabbitmq_client=get_rabbitmq_client(self.port_notifier.app),
                     )
 
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"

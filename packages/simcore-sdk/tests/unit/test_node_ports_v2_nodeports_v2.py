@@ -14,6 +14,7 @@ from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
@@ -34,6 +35,7 @@ async def test_nodeports_auto_updates(
     project_id: str,
     node_uuid: str,
     auto_update: bool,
+    rabbitmq_client: RabbitMQClient,
 ):
     db_manager = mock_db_manager(default_configuration)
 
@@ -55,6 +57,7 @@ async def test_nodeports_auto_updates(
             project_id=project_id,
             node_uuid=node_uuid,
             io_log_redirect_cb=None,
+            rabbitmq_client=rabbitmq_client,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
@@ -68,6 +71,7 @@ async def test_nodeports_auto_updates(
         project_id=project_id,
         node_uuid=node_uuid,
         io_log_redirect_cb=None,
+        rabbitmq_client=rabbitmq_client,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
         auto_update=auto_update,
@@ -90,6 +94,7 @@ async def test_node_ports_accessors(
     project_id: str,
     node_uuid: str,
     faker: Faker,
+    rabbitmq_client: RabbitMQClient,
 ):
     db_manager = mock_db_manager(default_configuration)
 
@@ -108,6 +113,7 @@ async def test_node_ports_accessors(
             project_id=project_id,
             node_uuid=node_uuid,
             io_log_redirect_cb=None,
+            rabbitmq_client=rabbitmq_client,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
@@ -121,6 +127,7 @@ async def test_node_ports_accessors(
         project_id=project_id,
         node_uuid=node_uuid,
         io_log_redirect_cb=None,
+        rabbitmq_client=rabbitmq_client,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
         auto_update=False,
@@ -168,6 +175,7 @@ async def test_node_ports_set_file_by_keymap(
     project_id: str,
     node_uuid: str,
     mock_upload_path: MockFixture,
+    rabbitmq_client: RabbitMQClient,
 ):
     db_manager = mock_db_manager(default_configuration)
 
@@ -186,6 +194,7 @@ async def test_node_ports_set_file_by_keymap(
             project_id=project_id,
             node_uuid=node_uuid,
             io_log_redirect_cb=None,
+            rabbitmq_client=rabbitmq_client,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
@@ -199,6 +208,7 @@ async def test_node_ports_set_file_by_keymap(
         project_id=project_id,
         node_uuid=node_uuid,
         io_log_redirect_cb=None,
+        rabbitmq_client=rabbitmq_client,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
         auto_update=False,
@@ -216,9 +226,10 @@ async def test_node_ports_v2_packages(
     user_id: int,
     project_id: str,
     node_uuid: str,
+    rabbitmq_client: RabbitMQClient,
 ):
     db_manager = mock_db_manager(default_configuration)
-    await ports(user_id, project_id, node_uuid, db_manager=db_manager)
+    await ports(user_id, project_id, node_uuid, db_manager=db_manager, rabbitmq_client=rabbitmq_client)
 
 
 @pytest.fixture
@@ -237,6 +248,7 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
     project_id: str,
     node_uuid: str,
     faker: Faker,
+    rabbitmq_client: RabbitMQClient,
 ):
     db_manager = mock_db_manager(default_configuration)
 
@@ -254,6 +266,7 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
         project_id=project_id,
         node_uuid=node_uuid,
         io_log_redirect_cb=None,
+        rabbitmq_client=rabbitmq_client,
         save_to_db_cb=_mock_callback,
         node_port_creator_cb=_mock_callback,
         auto_update=False,

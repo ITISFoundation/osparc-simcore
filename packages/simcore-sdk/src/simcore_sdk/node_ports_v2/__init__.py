@@ -4,6 +4,7 @@ from models_library.api_schemas_storage.storage_schemas import LinkType as FileL
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import exceptions
@@ -22,6 +23,7 @@ async def ports(
     node_uuid: NodeIDStr,
     *,
     db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
     r_clone_settings: RCloneSettings | None = None,
     io_log_redirect_cb: LogRedirectCB | None = None,
 ) -> Nodeports:
@@ -33,6 +35,7 @@ async def ports(
         auto_update=True,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
+        rabbitmq_client=rabbitmq_client,
     )
 
 

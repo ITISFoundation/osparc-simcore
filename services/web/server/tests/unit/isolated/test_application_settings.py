@@ -239,7 +239,7 @@ def mock_service_environment(
     return setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
 
 
-@pytest.mark.parametrize("service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"])
+@pytest.mark.parametrize("service_name", ["webserver", "wb-garbage-collector"])
 def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
     # NOTE: This requirement will change when https://github.com/ITISFoundation/osparc-simcore/issues/8448  is implemented
     settings = ApplicationSettings.create_from_envs()

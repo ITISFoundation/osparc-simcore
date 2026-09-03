@@ -5,9 +5,13 @@ from typing import Any
 
 import pydantic
 from common_library.json_serialization import json_dumps, json_loads
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rabbitmq_messages import NodeDataUpdatedEventMessage
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
+from servicelib.logging_utils import log_catch
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
@@ -35,6 +39,8 @@ async def load(
     project_id: str,
     node_uuid: str,
     io_log_redirect_cb: LogRedirectCB | None,
+    *,
+    rabbitmq_client: RabbitMQClient,
     auto_update: bool = False,
     r_clone_settings: RCloneSettings | None = None,
 ) -> Nodeports:
@@ -47,14 +53,14 @@ async def load(
     port_config_str: str = await db_manager.get_ports_configuration_from_node_uuid(project_id, node_uuid)
     port_cfg = json_loads(port_config_str)
 
-    log.debug(f"{port_cfg=}")  # pylint: disable=logging-fstring-interpolation
+    log.debug("%s", f"{port_cfg=}")
     if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):
         raise InvalidProtocolError(port_cfg, "nodeport in comp_task does not follow protocol")
 
     # convert to our internal node ports
     node_ports_cfg: dict[str, dict[str, Any]] = {}
     if _PYDANTIC_NEEDS_ROOT_SPECIFIED:
-        _PY_INT = "__root__"
+        _PY_INT = "__root__"  # noqa: N806
         node_ports_cfg = {
             "inputs": {_PY_INT: {}},
             "outputs": {_PY_INT: {}},
@@ -87,8 +93,11 @@ async def load(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
+        rabbitmq_client=rabbitmq_client,
         save_to_db_cb=dump,
-        node_port_creator_cb=functools.partial(load, io_log_redirect_cb=io_log_redirect_cb),
+        node_port_creator_cb=functools.partial(
+            load, io_log_redirect_cb=io_log_redirect_cb, rabbitmq_client=rabbitmq_client
+        ),
         auto_update=auto_update,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
@@ -121,6 +130,7 @@ async def dump(nodeports: Nodeports) -> None:
                 project_id=nodeports.project_id,
                 node_uuid=f"{node_id}",
                 io_log_redirect_cb=nodeports.io_log_redirect_cb,
+                rabbitmq_client=nodeports.rabbitmq_client,
             )
         )
 
@@ -158,3 +168,16 @@ async def dump(nodeports: Nodeports) -> None:
         nodeports.project_id,
         nodeports.node_uuid,
     )
+
+    # NOTE: publish AFTER the DB write commits (write_ports_configuration's transaction
+    # already committed by the time it returns) so a consumer re-reading comp_tasks
+    # never sees stale/missing data. Best-effort: a broker hiccup must not fail the
+    # write - the DB trigger stays suppressed for this row regardless (accepted risk).
+    message = NodeDataUpdatedEventMessage(
+        user_id=nodeports.user_id,
+        project_id=ProjectID(nodeports.project_id),
+        node_id=NodeID(nodeports.node_uuid),
+        changes=["outputs"],
+    )
+    with log_catch(log, reraise=False):
+        await nodeports.rabbitmq_client.publish(message.channel_name, message)

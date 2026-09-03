@@ -130,6 +130,8 @@ class DBManager:
                     inputs=node_configuration["inputs"],
                     outputs=node_configuration["outputs"],
                     run_hash=node_configuration.get("run_hash"),
+                    # caller always publishes the change on RabbitMQ right after this call
+                    skip_db_notification=True,
                 )
             )
 
