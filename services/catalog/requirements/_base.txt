@@ -149,7 +149,7 @@ markupsafe==3.0.2
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.1.0
+msgpack==1.2.2
     # via aiocache
 multidict==6.1.0
     # via
@@ -413,7 +413,7 @@ uvicorn==0.34.2
     #   fastapi
     #   fastapi-cli
     #   fastapi-cloud-cli
-uvloop==0.21.0
+uvloop==0.22.1
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn

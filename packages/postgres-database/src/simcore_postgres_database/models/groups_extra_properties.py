@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
@@ -74,6 +75,15 @@ groups_extra_properties = sa.Table(
         nullable=False,
         server_default=sa.sql.expression.false(),
         doc="If true, will use r_clone mounting for state persistence when dynamic services start",
+    ),
+    sa.Column(
+        "frontend_preferences_constraints",
+        postgresql.JSONB(),
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Overrides the constraints applied when a frontend user preference is set. "
+        "Maps a preference identifier to pydantic Field kwargs, "
+        'e.g. {"userInactivityThreshold": {"le": 21600}}',
     ),
     sa.PrimaryKeyConstraint("group_id", "product_name", name="group_id_product_name_pk"),
     # TIME STAMPS ----
