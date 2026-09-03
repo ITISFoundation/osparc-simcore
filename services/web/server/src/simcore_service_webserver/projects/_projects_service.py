@@ -422,15 +422,6 @@ async def get_project_type(app: web.Application, project_uuid: ProjectID) -> Pro
     return await db_legacy.get_project_type(project_uuid)
 
 
-async def get_project_dict_legacy(app: web.Application, project_uuid: ProjectID) -> ProjectDict:
-    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
-    assert db_legacy  # nosec
-    project, _ = await db_legacy.get_project_dict_and_type(
-        f"{project_uuid}",
-    )
-    return project
-
-
 async def get_project_dict_and_type(
     app: web.Application,
     project_uuid: str,
