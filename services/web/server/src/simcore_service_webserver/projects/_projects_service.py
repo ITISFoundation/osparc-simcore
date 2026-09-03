@@ -77,6 +77,8 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
+    service_resources_adapter,
+    set_reservation_same_as_limit,
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID, UserIDAdapter
@@ -1621,7 +1623,7 @@ async def _get_node_share_state(
     node_id: NodeID,
     node_key: ServiceKey,
     computational_pipeline_running: bool | None,
-    user_primrary_groupid: GroupID,
+    user_primary_groupid: GroupID,
 ) -> NodeShareState:
     if _is_node_dynamic(node_key):
         # if the service is dynamic and running it is locked if it is not collaborative
@@ -1651,7 +1653,7 @@ async def _get_node_share_state(
         return NodeShareState(
             locked=True,
             current_user_groupids=[
-                user_primrary_groupid,
+                user_primary_groupid,
             ],
             status=NodeShareStatus.OPENED,
         )
@@ -2176,7 +2178,7 @@ async def add_project_states_for_user(
                 node_id=NodeID(node_uuid),
                 node_key=node["key"],
                 computational_pipeline_running=is_pipeline_running,
-                user_primrary_groupid=user_primary_group_id,
+                user_primary_groupid=user_primary_group_id,
             )
         if NodeID(node_uuid) in computational_node_states:
             computed_node_state = computational_node_states[NodeID(node_uuid)].model_copy(
@@ -2259,7 +2261,7 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources = ServiceResourcesDict.model_validate(project_node.required_resources)
+        node_resources = service_resources_adapter.validate_python(project_node.required_resources)
         if not node_resources:
             # get default resources
             node_resources = await catalog_service.get_service_resources(
@@ -2285,7 +2287,7 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources = ServiceResourcesDict.model_validate(current_project_node.required_resources)
+        current_resources = service_resources_adapter.validate_python(current_project_node.required_resources)
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
@@ -2294,17 +2296,17 @@ async def update_project_node_resources(
             )
 
         validate_new_service_resources(current_resources, new_resources=resources)
-        resources.set_reservation_same_as_limit()
+        set_reservation_same_as_limit(resources)
 
         project_node = await db.update_project_node(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             product_name=product_name,
-            required_resources=resources.model_dump(mode="json"),
+            required_resources=service_resources_adapter.dump_python(resources, mode="json"),
             check_update_allowed=True,
         )
-        return ServiceResourcesDict.model_validate(project_node.required_resources)
+        return service_resources_adapter.validate_python(project_node.required_resources)
     except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}") from exc
 

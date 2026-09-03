@@ -14,7 +14,7 @@ from aiohttp.test_utils import TestClient
 from common_library.dict_tools import remap_keys
 from deepdiff import DeepDiff
 from models_library.projects_nodes_io import NodeID
-from models_library.services_resources import ServiceResourcesDict
+from models_library.services_resources import SERVICE_RESOURCES_DICT_EXAMPLES
 from simcore_postgres_database import webserver_models
 from simcore_postgres_database.utils_projects_nodes import (
     WORKBENCH_NODE_ALIAS_TO_COLUMN,
@@ -63,7 +63,7 @@ async def create_project(
 ) -> ProjectDict:
     """Injects new project in database for user or as template
 
-    :param params_override: predefined project properties (except for non-writeable e.g. uuid), defaults to None
+    :param params_override: predefined project properties (except for non-writable e.g. uuid), defaults to None
     :type params_override: Dict, optional
     :param user_id: assigns this project to user or template project if None, defaults to None
     :type user_id: int, optional
@@ -90,7 +90,7 @@ async def create_project(
     # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
     valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
 
-    fake_required_resources: dict[str, Any] = ServiceResourcesDict.model_json_schema()["examples"][0]
+    fake_required_resources: dict[str, Any] = SERVICE_RESOURCES_DICT_EXAMPLES[0]
 
     project_nodes = {
         NodeID(node_id): ProjectNodeCreate(

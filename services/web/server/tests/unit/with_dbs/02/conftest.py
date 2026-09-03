@@ -24,7 +24,9 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
+    service_resources_adapter,
 )
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -51,8 +53,8 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
 
 @pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
-    return ServiceResourcesDict.model_validate(
-        ServiceResourcesDict.model_json_schema()["examples"][0],
+    return service_resources_adapter.validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
 

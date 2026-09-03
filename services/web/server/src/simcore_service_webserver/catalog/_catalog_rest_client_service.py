@@ -17,7 +17,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.products import ProductName
-from models_library.services_resources import ServiceResourcesDict
+from models_library.services_resources import ServiceResourcesDict, service_resources_adapter
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from servicelib.aiohttp.client_session import get_client_session
@@ -178,7 +178,7 @@ async def get_service_resources(
         async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
             resp.raise_for_status()
             dict_response = await resp.json()
-            return ServiceResourcesDict.model_validate(dict_response)
+            return service_resources_adapter.validate_python(dict_response)
 
 
 async def get_service_access_rights(

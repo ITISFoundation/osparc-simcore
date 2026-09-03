@@ -10,7 +10,7 @@ from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.services_resources import ServiceResourcesDict
+from models_library.services_resources import ServiceResourcesDict, service_resources_adapter
 from models_library.users import UserID
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
@@ -112,7 +112,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceResourcesDict.model_validate(resp.json())
+            return service_resources_adapter.validate_python(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_labels(

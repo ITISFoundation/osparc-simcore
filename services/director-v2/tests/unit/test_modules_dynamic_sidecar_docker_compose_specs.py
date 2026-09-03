@@ -19,6 +19,7 @@ from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
     ServiceResourcesDict,
+    service_resources_adapter,
 )
 from models_library.users import UserID
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
@@ -67,7 +68,7 @@ environment:
     [
         pytest.param(
             {"version": "2.3", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            ServiceResourcesDict.model_validate(
+            service_resources_adapter.validate_python(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -82,7 +83,7 @@ environment:
         ),
         pytest.param(
             {"version": "3.7", "services": {DEFAULT_SINGLE_SERVICE_NAME: {}}},
-            ServiceResourcesDict.model_validate(
+            service_resources_adapter.validate_python(
                 {
                     DEFAULT_SINGLE_SERVICE_NAME: {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -176,7 +177,7 @@ def test_regression_service_has_no_reservations():
         "version": "3.7",
         "services": {DEFAULT_SINGLE_SERVICE_NAME: {}},
     }
-    service_resources = ServiceResourcesDict.model_validate({})
+    service_resources = service_resources_adapter.validate_python({})
 
     spec_before = deepcopy(service_spec)
     docker_compose_specs._update_resource_limits_and_reservations(  # noqa: SLF001

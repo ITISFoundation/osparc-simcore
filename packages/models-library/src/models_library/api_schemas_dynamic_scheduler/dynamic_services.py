@@ -5,7 +5,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
-from models_library.services_resources import ServiceResourcesDict
+from models_library.services_resources import SERVICE_RESOURCES_DICT_EXAMPLES
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
 
@@ -31,7 +31,7 @@ class DynamicServiceStart(DynamicServiceCreate):
                     "request_dns": "some.local",
                     "request_scheme": "http",
                     "simcore_user_agent": "",
-                    "service_resources": ServiceResourcesDict.model_json_schema()["examples"][0],
+                    "service_resources": SERVICE_RESOURCES_DICT_EXAMPLES[0],
                     "wallet_info": WalletInfo.model_json_schema()["examples"][0],
                     "pricing_info": PricingInfo.model_json_schema()["examples"][0],
                     "hardware_info": HardwareInfo.model_json_schema()["examples"][0],

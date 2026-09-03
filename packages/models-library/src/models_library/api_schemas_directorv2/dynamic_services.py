@@ -6,7 +6,7 @@ from pydantic.config import JsonDict
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
 from ..services_creation import CreateServiceMetricsAdditionalParams
-from ..services_resources import ServiceResourcesDict
+from ..services_resources import SERVICE_RESOURCES_DICT_EXAMPLES, ServiceResourcesDict
 from ..wallets import WalletInfo
 from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
 
@@ -75,7 +75,7 @@ class DynamicServiceCreate(ServiceDetails):
                     "product_name": "osparc",
                     "product_api_base_url": "https://api.local/",
                     "can_save": True,
-                    "service_resources": ServiceResourcesDict.model_json_schema()["examples"][0],
+                    "service_resources": SERVICE_RESOURCES_DICT_EXAMPLES[0],
                     "wallet_info": WalletInfo.model_json_schema()["examples"][0],
                     "pricing_info": PricingInfo.model_json_schema()["examples"][0],
                     "hardware_info": HardwareInfo.model_json_schema()["examples"][0],

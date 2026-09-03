@@ -10,7 +10,8 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.services_resources import (
-    ServiceResourcesDict,
+    SERVICE_RESOURCES_DICT_EXAMPLES,
+    service_resources_adapter,
 )
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -28,10 +29,10 @@ def mock_catalog_service_api_responses(client: TestClient, aioresponses_mocker: 
 
     url_pattern = re.compile(f"^{settings.base_url}+/.+$")
 
-    service_resources = ServiceResourcesDict.model_validate(
-        ServiceResourcesDict.model_json_schema()["examples"][0],
+    service_resources = service_resources_adapter.validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
-    jsonable_service_resources = service_resources.model_dump(mode="json")
+    jsonable_service_resources = service_resources_adapter.dump_python(service_resources, mode="json")
 
     aioresponses_mocker.get(url_pattern, payload=jsonable_service_resources)
     aioresponses_mocker.post(url_pattern, payload=jsonable_service_resources)

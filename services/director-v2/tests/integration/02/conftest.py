@@ -11,7 +11,9 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.projects_networks import ProjectsNetworks
 from models_library.services_resources import (
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
+    service_resources_adapter,
 )
 from pytest_mock.plugin import MockerFixture
 
@@ -66,8 +68,8 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def service_resources() -> ServiceResourcesDict:
-    return ServiceResourcesDict.model_validate(
-        ServiceResourcesDict.model_json_schema()["examples"][0],
+    return service_resources_adapter.validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
 

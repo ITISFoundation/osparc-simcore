@@ -48,7 +48,9 @@ from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
+    service_resources_adapter,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
@@ -101,8 +103,8 @@ def fake_service_extras() -> ServiceExtras:
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return ServiceResourcesDict.model_validate(
-        ServiceResourcesDict.model_config["json_schema_extra"]["examples"][0],  # type: ignore
+    return service_resources_adapter.validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
 
@@ -440,7 +442,7 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
-@pytest.fixture(params=ServiceResourcesDict.model_json_schema()["examples"])
+@pytest.fixture(params=SERVICE_RESOURCES_DICT_EXAMPLES)
 def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
@@ -768,7 +770,7 @@ async def test_start_computation_with_project_node_resources_defined(
     user = create_registered_user()
     proj = await create_project(
         user,
-        project_nodes_overrides={"required_resources": ServiceResourcesDict.model_json_schema()["examples"][0]},
+        project_nodes_overrides={"required_resources": SERVICE_RESOURCES_DICT_EXAMPLES[0]},
         workbench=fake_workbench_without_outputs,
     )
     create_computation_url = httpx.URL("/v2/computations")

@@ -18,6 +18,7 @@ from models_library.projects import Node, NodesDict
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     ServiceResourcesDict,
+    service_resources_adapter,
 )
 from models_library.users import UserID
 from pydantic import PositiveInt
@@ -267,7 +268,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
 
 async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     """
-    Normally director-v2 talks via docker-netwoks with the started proxy.
+    Normally director-v2 talks via docker-networks with the started proxy.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
     url needs to be changed to get_localhost_ip()
@@ -287,7 +288,7 @@ async def _get_service_resources(
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
-        return ServiceResourcesDict.model_validate(response.json())
+        return service_resources_adapter.validate_python(response.json())
 
 
 async def _handle_redirection(redirection_response: httpx.Response, *, method: str, **kwargs) -> httpx.Response:
