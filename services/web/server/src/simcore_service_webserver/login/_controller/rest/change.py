@@ -5,11 +5,8 @@ from aiohttp.web import RouteTableDef
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.notifications import Channel
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
-from ....db.plugin import get_asyncpg_engine
-from ....exception_handling import create_error_context_from_request
 from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
 from ....notifications.models import EmailContact
@@ -23,13 +20,9 @@ from ....web_utils import flash_response
 from ... import _auth_service, _confirmation_web
 from ..._login_service import (
     ACTIVE,
-    CHANGE_EMAIL,
     validate_user_access,
 )
 from ...constants import (
-    MSG_CANT_SEND_MAIL,
-    MSG_CHANGE_EMAIL_REQUESTED,
-    MSG_EMAIL_CHANGED,
     MSG_EMAIL_SENT,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
@@ -38,7 +31,7 @@ from ...constants import (
 from ...decorators import login_required
 from ...errors import WrongPasswordError
 from ._rest_dependencies import get_confirmation_service
-from .change_schemas import ChangeEmailBody, ChangePasswordBody, ResetPasswordBody
+from .change_schemas import ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
 
@@ -216,78 +209,6 @@ async def initiate_reset_password(request: web.Request):
     # NOTE: Always same response: guideline #1
     translated_msg = translate_message(MSG_EMAIL_SENT, request).format(email=request_body.email)
     return flash_response(translated_msg, "INFO")
-
-
-async def initiate_change_email(request: web.Request):
-    # NOTE: This code have been intentionally disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
-    product: Product = products_web.get_current_product(request)
-    confirmation_service = get_confirmation_service(request.app)
-
-    request_body = await parse_request_body_as(ChangeEmailBody, request)
-
-    user = await _auth_service.get_user_or_none(request.app, user_id=request[RQT_USERID_KEY])
-    assert user  # nosec
-
-    if user["email"] == request_body.email:
-        return flash_response(translate_message(MSG_EMAIL_CHANGED, request))
-
-    repo = UsersRepo(get_asyncpg_engine(request.app))
-    if await repo.is_email_used(email=request_body.email):
-        raise web.HTTPUnprocessableEntity(text="This email cannot be used")
-
-    # Reset if previously requested
-    existing_confirmation = await confirmation_service.get_confirmation(
-        filter_dict={"user_id": user["id"], "action": CHANGE_EMAIL}
-    )
-    if existing_confirmation:
-        await confirmation_service.delete_confirmation(existing_confirmation)
-
-    # create new confirmation to ensure email is actually valid
-    confirmation = await confirmation_service.create_confirmation(
-        user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
-    )
-    link = _confirmation_web.make_confirmation_link(request, confirmation.code)
-    try:
-        await notifications_service.send_message_from_template(
-            request.app,
-            user_id=user["id"],
-            product_name=product.name,
-            channel=Channel.email,
-            group_ids=None,
-            external_contacts=[
-                EmailContact(
-                    name=user.get("first_name") or user["name"],
-                    email=request_body.email,
-                )
-            ],
-            template_name="change_email",
-            context={
-                "user": {
-                    "first_name": user.get("first_name"),
-                    "user_name": user["name"],
-                },
-                "link": link,
-            },
-            locale=get_locale_or_none(request),
-        )
-    except Exception as err:  # pylint: disable=broad-except
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                "Can not send change_email_email",
-                error=err,
-                error_context={
-                    "user_id": user["id"],
-                    "user_email": user["email"],
-                    "new_email": request_body.email,
-                    "product_name": product.name,
-                    **create_error_context_from_request(request),
-                },
-            )
-        )
-        await confirmation_service.delete_confirmation(confirmation)
-        raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
-
-    return flash_response(translate_message(MSG_CHANGE_EMAIL_REQUESTED, request))
 
 
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
