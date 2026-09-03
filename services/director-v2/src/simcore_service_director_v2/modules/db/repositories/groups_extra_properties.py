@@ -10,7 +10,6 @@ from ._base import BaseRepository
 class UserExtraProperties(BaseModel):
     is_internet_enabled: bool
     is_telemetry_enabled: bool
-    is_efs_enabled: bool
     mount_data: bool
 
 
@@ -47,6 +46,5 @@ class GroupsExtraPropertiesRepository(BaseRepository):
         return UserExtraProperties(
             is_internet_enabled=group_extra_properties.internet_access,
             is_telemetry_enabled=group_extra_properties.enable_telemetry,
-            is_efs_enabled=group_extra_properties.enable_efs,
             mount_data=group_extra_properties.mount_data,
         )

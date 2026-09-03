@@ -73,7 +73,7 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
@@ -331,7 +331,7 @@ urllib3==2.7.0
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors

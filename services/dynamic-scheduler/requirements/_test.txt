@@ -25,7 +25,7 @@ coverage==7.16.0
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
@@ -101,7 +101,7 @@ priority==2.0.0
     # via hypercorn
 pyee==13.0.1
     # via playwright
-pygments==2.19.1
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest

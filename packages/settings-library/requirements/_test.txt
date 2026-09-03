@@ -4,7 +4,7 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 iniconfig==2.3.0
     # via pytest

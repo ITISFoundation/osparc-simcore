@@ -36,7 +36,7 @@ coverage==7.16.0
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fastapi==0.141.1
     # via -r requirements/_test.in

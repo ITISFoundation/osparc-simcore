@@ -8,7 +8,7 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff

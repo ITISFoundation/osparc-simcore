@@ -118,7 +118,7 @@ docker==7.1.0
     #   moto
     #   pytest-celery
     #   pytest-docker-tools
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
@@ -443,7 +443,7 @@ wcwidth==0.2.13
     # via
     #   -c requirements/_base.txt
     #   prompt-toolkit
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
