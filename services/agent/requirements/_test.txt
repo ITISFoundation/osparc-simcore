@@ -311,7 +311,7 @@ urllib3==2.7.0
     #   docker
     #   requests
     #   responses
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
