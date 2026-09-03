@@ -307,7 +307,7 @@ async def test_delete_node_and_graph_patch_are_serialized(
         },
     }
 
-    original_lock_project_graph = _projects_repository.lock_project_graph
+    original_lock_project_graph = _projects_repository._lock_project_graph
     original_run_project_graph_mutation = _projects_repository.run_project_graph_mutation
     first_lock_acquired, release_first_lock, second_mutation_queued, second_lock_attempted = (
         asyncio.Event(),

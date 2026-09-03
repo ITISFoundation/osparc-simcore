@@ -117,7 +117,7 @@ async def get_project(
         return ProjectDBGet.model_validate(row)
 
 
-async def lock_project_graph(
+async def _lock_project_graph(
     connection: AsyncConnection,
     *,
     project_uuid: ProjectID,
@@ -145,7 +145,7 @@ async def run_project_graph_mutation(
     )
     async def _run_exclusively() -> None:
         async with transaction_context(get_asyncpg_engine(app)) as connection:
-            await lock_project_graph(connection, project_uuid=project_uuid)
+            await _lock_project_graph(connection, project_uuid=project_uuid)
             await mutation(connection)
 
     await _run_exclusively()
