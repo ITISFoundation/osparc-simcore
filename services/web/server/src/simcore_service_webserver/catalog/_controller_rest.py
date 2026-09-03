@@ -22,6 +22,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.services_resources import (
     ServiceResourcesDict,
 )
+from pydantic import TypeAdapter
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
@@ -302,7 +303,7 @@ async def get_service_resources(request: Request):
         product_name=ctx.product_name,
     )
 
-    data = service_resources.model_dump(mode="json")
+    data = TypeAdapter(ServiceResourcesDict).dump_python(service_resources, mode="json")
     return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 

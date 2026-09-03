@@ -280,7 +280,7 @@ async def _update_project_node_resources_from_hardware_info(
             await project_nodes_repo.update(
                 connection,
                 node_id=node_id,
-                required_resources=node_resources.model_dump(mode="json"),
+                required_resources=TypeAdapter(ServiceResourcesDict).dump_python(node_resources, mode="json"),
             )
         else:
             _logger.warning("Services resource override not implemented yet for multi-container services!!!")

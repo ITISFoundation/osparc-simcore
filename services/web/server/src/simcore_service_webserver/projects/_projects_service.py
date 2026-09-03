@@ -831,7 +831,7 @@ async def update_project_node_resources_from_hardware_info(
             project_id,
             node_id,
             product_name,
-            required_resources=node_resources.model_dump(mode="json"),
+            required_resources=TypeAdapter(ServiceResourcesDict).dump_python(node_resources, mode="json"),
             check_update_allowed=False,
         )
     except StopIteration as exc:

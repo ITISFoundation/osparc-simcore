@@ -328,7 +328,7 @@ async def assert_start_service(
         "service_uuid": service_uuid,
         "can_save": True,
         "basepath": basepath,
-        "service_resources": service_resources.model_dump(mode="json"),
+        "service_resources": TypeAdapter(ServiceResourcesDict).dump_python(service_resources, mode="json"),
         "product_name": product_name,
         "product_api_base_url": product_api_base_url,
     }
