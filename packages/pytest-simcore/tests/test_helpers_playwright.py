@@ -6,7 +6,9 @@ from datetime import timedelta
 from pytest_simcore.helpers.playwright import (
     SOCKETIO_MESSAGE_PREFIX,
     NodeProgressType,
+    RunningState,
     SocketIONodeProgressCompleteWaiter,
+    SocketIOProjectStateUpdatedWaiter,
 )
 
 _NODE_ID = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
@@ -27,6 +29,20 @@ def _node_progress_message(node_id: str, progress_type: NodeProgressType, ratio:
             "node_id": node_id,
             "progress_type": progress_type.value,
             "progress_report": {"actual_value": ratio, "total": 1.0},
+        },
+    )
+
+
+def _project_state_updated_message(project_uuid: str, running_state: RunningState) -> str:
+    return _socketio_message(
+        "projectStateUpdated",
+        {
+            "project_uuid": project_uuid,
+            "data": {
+                "state": {
+                    "value": running_state.value,
+                }
+            },
         },
     )
 
@@ -105,3 +121,33 @@ def test_node_progress_reaching_completion_marks_success():
 
     assert done is True
     assert waiter.success is True
+
+
+def test_project_state_waiter_ignores_project_updates_until_project_uuid_is_set():
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=(RunningState.STARTED,))
+
+    done = waiter(_project_state_updated_message("project-a", RunningState.STARTED))
+
+    assert done is False
+
+
+def test_project_state_waiter_ignores_state_updates_for_other_project_uuid():
+    waiter = SocketIOProjectStateUpdatedWaiter(
+        expected_states=(RunningState.STARTED,),
+        project_uuid="project-a",
+    )
+
+    done = waiter(_project_state_updated_message("project-b", RunningState.STARTED))
+
+    assert done is False
+
+
+def test_project_state_waiter_accepts_expected_state_for_matching_project_uuid():
+    waiter = SocketIOProjectStateUpdatedWaiter(
+        expected_states=(RunningState.STARTED,),
+        project_uuid="project-a",
+    )
+
+    done = waiter(_project_state_updated_message("project-a", RunningState.STARTED))
+
+    assert done is True
