@@ -27,8 +27,10 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationRunStateRpcGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
     GetProjectInactivityResponse,
+)
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -77,7 +79,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    set_reservation_same_as_limit,
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID, UserIDAdapter
@@ -165,7 +167,7 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._nodes_utils import validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
@@ -822,7 +824,9 @@ async def update_project_node_resources_from_hardware_info(
             project_id,
             node_id,
             product_name,
-            required_resources=ServiceResourcesDictHelpers.create_jsonable(node_resources),
+            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                node_resources, mode="json"
+            ),
             check_update_allowed=False,
         )
     except StopIteration as exc:
@@ -1619,10 +1623,10 @@ async def _get_node_share_state(
         # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(app, node_id=node_id)
 
-        if isinstance(service, DynamicServiceGet | NodeGet):
+        if isinstance(service, RunningDynamicServiceDetails | NodeGet):
             # service is running
             is_collaborative_service = False
-            if isinstance(service, DynamicServiceGet):
+            if isinstance(service, RunningDynamicServiceDetails):
                 # only dynamic-sidecar powered services can be collaborative
                 is_collaborative_service = service.is_collaborative
 
@@ -2251,7 +2255,9 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+            project_node.required_resources
+        )
         if not node_resources:
             # get default resources
             node_resources = await catalog_service.get_service_resources(
@@ -2277,7 +2283,9 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources = TypeAdapter(ServiceResourcesDict).validate_python(current_project_node.required_resources)
+        current_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+            current_project_node.required_resources
+        )
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
@@ -2293,10 +2301,12 @@ async def update_project_node_resources(
             project_id=project_id,
             node_id=node_id,
             product_name=product_name,
-            required_resources=jsonable_encoder(resources),
+            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                resources, mode="json"
+            ),
             check_update_allowed=True,
         )
-        return TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(project_node.required_resources)
     except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}") from exc
 

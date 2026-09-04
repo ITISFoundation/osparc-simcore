@@ -12,15 +12,15 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
 from models_library.products import ProductName
 from models_library.services_resources import (
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     BootMode,
     ResourcesDict,
     ResourceValue,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    create_service_resources_from_single_service,
 )
 from pydantic import ByteSize, TypeAdapter
 from respx.models import Route
@@ -212,16 +212,14 @@ async def test_get_service_resources(
     response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_resources: ServiceResourcesDict = ServiceResourcesDict(**data)
-    assert isinstance(received_resources, dict)
+    received_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
 
-    expected_service_resources = ServiceResourcesDictHelpers.create_from_single_service(
+    expected_service_resources = create_service_resources_from_single_service(
         TypeAdapter(DockerGenericTag).validate_python(f"{service_key}:{service_version}"),
         params.expected_resources,
         boot_modes=params.expected_boot_modes,
     )
-    assert isinstance(expected_service_resources, dict)
-    assert received_resources == jsonable_encoder(expected_service_resources)
+    assert received_resources == expected_service_resources
 
 
 @pytest.fixture
@@ -272,9 +270,7 @@ def create_mock_director_service_labels(
                 },
                 "sym-server": {"simcore.service.settings": "[]"},
             },
-            TypeAdapter(ServiceResourcesDict).validate_python(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][1]
-            ),
+            TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(SERVICE_RESOURCES_DICT_EXAMPLES[1]),
             "simcore/services/dynamic/sim4life-dy",
             "3.0.0",
             id="s4l_case",
@@ -289,7 +285,7 @@ def create_mock_director_service_labels(
                 },
                 "busybox": {"simcore.service.settings": "[]"},
             },
-            TypeAdapter(ServiceResourcesDict).validate_python(
+            TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
                 {
                     "jupyter-math": {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
@@ -336,7 +332,7 @@ async def test_get_service_resources_sim4life_case(
     response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_service_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+    received_service_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
 
     assert received_service_resources == expected_service_resources
 

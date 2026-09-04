@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import cast
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
@@ -448,7 +449,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
-    body = await parse_request_body_as(ServiceResourcesDict, request)
+    body = await parse_request_body_as(cast("type[ServiceResourcesDict]", ServiceResourcesDict), request)
 
     # ensure the project exists
     project = await _projects_service.get_project_for_user(

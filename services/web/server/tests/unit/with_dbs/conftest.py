@@ -502,7 +502,7 @@ def create_dynamic_service_mock(
             "product_name": "osparc",
         } | service_override_kwargs
 
-        running_service = DynamicServiceGet(**service_config)
+        running_service = TypeAdapter(DynamicServiceGet).validate_python(service_config)
 
         services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done

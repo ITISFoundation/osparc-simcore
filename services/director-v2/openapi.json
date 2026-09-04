@@ -1965,8 +1965,7 @@
             "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
           },
           "service_resources": {
-            "type": "object",
-            "title": "Service Resources"
+            "$ref": "#/components/schemas/ServiceResourcesDict"
           },
           "product_name": {
             "type": "string",
@@ -3311,8 +3310,7 @@
             "default": 65534
           },
           "service_resources": {
-            "type": "object",
-            "title": "Service Resources",
+            "$ref": "#/components/schemas/ServiceResourcesDict",
             "description": "service resources used to enforce limits"
           },
           "request_dns": {
@@ -3466,6 +3464,10 @@
         },
         "type": "object",
         "title": "ServiceRemovalState"
+      },
+      "ServiceResourcesDict": {
+        "type": "object",
+        "title": "ServiceResourcesDict"
       },
       "ServiceState": {
         "type": "string",

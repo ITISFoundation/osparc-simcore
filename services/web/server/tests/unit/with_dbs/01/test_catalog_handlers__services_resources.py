@@ -9,10 +9,7 @@ from http import HTTPStatus
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.services_resources import (
-    ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
-)
+from models_library.services_resources import SERVICE_RESOURCES_DICT_EXAMPLES, ServiceResourcesDict
 from pydantic import TypeAdapter
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -30,10 +27,12 @@ def mock_catalog_service_api_responses(client: TestClient, aioresponses_mocker: 
 
     url_pattern = re.compile(f"^{settings.base_url}+/.+$")
 
-    service_resources = TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
+    service_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
-    jsonable_service_resources = ServiceResourcesDictHelpers.create_jsonable(service_resources)
+    jsonable_service_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+        service_resources, mode="json"
+    )
 
     aioresponses_mocker.get(url_pattern, payload=jsonable_service_resources)
     aioresponses_mocker.post(url_pattern, payload=jsonable_service_resources)

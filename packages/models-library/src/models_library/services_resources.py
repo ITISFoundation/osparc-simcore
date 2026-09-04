@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Any, Final, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -14,7 +14,6 @@ from pydantic import (
 
 from .docker import DockerGenericTag
 from .utils.enums import StrAutoEnum
-from .utils.fastapi_encoders import jsonable_encoder
 
 ResourceName = str
 
@@ -104,108 +103,94 @@ class ImageResources(BaseModel):
     )
 
 
-ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]
+_2_GIB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("2Gib")
 
-
-class ServiceResourcesDictHelpers:
-    @staticmethod
-    def create_from_single_service(
-        image: DockerGenericTag,
-        resources: ResourcesDict,
-        boot_modes: list[BootMode] | None = None,
-    ) -> ServiceResourcesDict:
-        if boot_modes is None:
-            boot_modes = [BootMode.CPU]
-        return TypeAdapter(ServiceResourcesDict).validate_python(
-            {
-                DEFAULT_SINGLE_SERVICE_NAME: {
-                    "image": image,
-                    "resources": resources,
-                    "boot_modes": boot_modes,
-                }
+SERVICE_RESOURCES_DICT_EXAMPLES: Final[list[dict[str, Any]]] = [
+    # no compose spec (majority of services)
+    {
+        DEFAULT_SINGLE_SERVICE_NAME: {
+            "image": "simcore/services/dynamic/jupyter-math:2.0.5",
+            "resources": {
+                "CPU": {"limit": 0.1, "reservation": 0.1},
+                "RAM": {"limit": _2_GIB, "reservation": _2_GIB},
             },
-        )
+            "boot_modes": [BootMode.CPU],
+        },
+    },
+    # service with a compose spec
+    {
+        "rt-web-dy": {
+            "image": "simcore/services/dynamic/sim4life-dy:3.0.0",
+            "resources": {
+                "CPU": {"limit": 0.3, "reservation": 0.3},
+                "RAM": {"limit": 53687091232, "reservation": 53687091232},
+            },
+            "boot_modes": [BootMode.CPU],
+        },
+        "s4l-core": {
+            "image": "simcore/services/dynamic/s4l-core-dy:3.0.0",
+            "resources": {
+                "CPU": {"limit": 4.0, "reservation": 0.1},
+                "RAM": {"limit": 17179869184, "reservation": 536870912},
+                "VRAM": {"limit": 1, "reservation": 1},
+            },
+            "boot_modes": [BootMode.GPU],
+        },
+        "sym-server": {
+            "image": "simcore/services/dynamic/sym-server:3.0.0",
+            "resources": {
+                "CPU": {"limit": 0.1, "reservation": 0.1},
+                "RAM": {"limit": _2_GIB, "reservation": _2_GIB},
+            },
+            "boot_modes": [BootMode.CPU],
+        },
+    },
+    # compose spec with image outside the platform
+    {
+        "jupyter-lab": {
+            "image": "simcore/services/dynamic/jupyter-math:4.0.0",
+            "resources": {
+                "CPU": {"limit": 0.1, "reservation": 0.1},
+                "RAM": {"limit": _2_GIB, "reservation": _2_GIB},
+            },
+            "boot_modes": [BootMode.CPU],
+        },
+        "proxy": {
+            "image": "traefik:v2.6.6",
+            "resources": {
+                "CPU": {"limit": 0.1, "reservation": 0.1},
+                "RAM": {"limit": _2_GIB, "reservation": _2_GIB},
+            },
+            "boot_modes": [BootMode.CPU],
+        },
+    },
+]
 
-    @staticmethod
-    def create_jsonable(
-        service_resources: ServiceResourcesDict,
-    ) -> dict[DockerGenericTag, Any]:
-        output: dict[DockerGenericTag, Any] = jsonable_encoder(service_resources)
-        return output
+type ServiceResourcesDict = Annotated[
+    dict[DockerGenericTag, ImageResources],
+    Field(
+        description="Resources reserved/limited per running container of a service",
+        examples=SERVICE_RESOURCES_DICT_EXAMPLES,
+    ),
+]
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                # no compose spec (majority of services)
-                {
-                    DEFAULT_SINGLE_SERVICE_NAME: {
-                        "image": "simcore/services/dynamic/jupyter-math:2.0.5",
-                        "resources": {
-                            "CPU": {"limit": 0.1, "reservation": 0.1},
-                            "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
-                            },
-                        },
-                        "boot_modes": [BootMode.CPU],
-                    },
-                },
-                # service with a compose spec
-                {
-                    "rt-web-dy": {
-                        "image": "simcore/services/dynamic/sim4life-dy:3.0.0",
-                        "resources": {
-                            "CPU": {"limit": 0.3, "reservation": 0.3},
-                            "RAM": {"limit": 53687091232, "reservation": 53687091232},
-                        },
-                        "boot_modes": [BootMode.CPU],
-                    },
-                    "s4l-core": {
-                        "image": "simcore/services/dynamic/s4l-core-dy:3.0.0",
-                        "resources": {
-                            "CPU": {"limit": 4.0, "reservation": 0.1},
-                            "RAM": {"limit": 17179869184, "reservation": 536870912},
-                            "VRAM": {"limit": 1, "reservation": 1},
-                        },
-                        "boot_modes": [BootMode.GPU],
-                    },
-                    "sym-server": {
-                        "image": "simcore/services/dynamic/sym-server:3.0.0",
-                        "resources": {
-                            "CPU": {"limit": 0.1, "reservation": 0.1},
-                            "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
-                            },
-                        },
-                        "boot_modes": [BootMode.CPU],
-                    },
-                },
-                # compose spec with image outside the platform
-                {
-                    "jupyter-lab": {
-                        "image": "simcore/services/dynamic/jupyter-math:4.0.0",
-                        "resources": {
-                            "CPU": {"limit": 0.1, "reservation": 0.1},
-                            "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
-                            },
-                        },
-                        "boot_modes": [BootMode.CPU],
-                    },
-                    "proxy": {
-                        "image": "traefik:v2.6.6",
-                        "resources": {
-                            "CPU": {"limit": 0.1, "reservation": 0.1},
-                            "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
-                            },
-                        },
-                        "boot_modes": [BootMode.CPU],
-                    },
-                },
-            ]
-        }
+
+def create_service_resources_from_single_service(
+    image: DockerGenericTag,
+    resources: ResourcesDict,
+    boot_modes: list[BootMode] | None = None,
+) -> ServiceResourcesDict:
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+        {
+            DEFAULT_SINGLE_SERVICE_NAME: {
+                "image": image,
+                "resources": resources,
+                "boot_modes": boot_modes if boot_modes is not None else [BootMode.CPU],
+            }
+        },
     )
+
+
+def set_reservation_same_as_limit(service_resources: ServiceResourcesDict) -> None:
+    for image_resources in service_resources.values():
+        image_resources.set_reservation_same_as_limit()
