@@ -43,7 +43,7 @@ jobs:
       - name: install uv
         uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: "0.11.x"
+          version: "0.12.x"
           enable-cache: false
 
       - name: re-run make reqs per changed directory, targeting only the packages Renovate bumped
