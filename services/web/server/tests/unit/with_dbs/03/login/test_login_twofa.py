@@ -84,7 +84,8 @@ async def test_2fa_code_operations(client: TestClient):
     assert await has_2fa_code(client.app, email) is True
     assert await verify_2fa_code(client.app, user_email=email, code=code) is True
     # a wrong code is rejected
-    assert await verify_2fa_code(client.app, user_email=email, code="000000") is False
+    wrong_code = "000000" if code != "000000" else "111111"
+    assert await verify_2fa_code(client.app, user_email=email, code=wrong_code) is False
     # only the HMAC digest is persisted, never the plaintext code
     assert await get_redis_validation_code_client(client.app).get(email) != code
 

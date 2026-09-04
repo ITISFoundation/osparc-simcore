@@ -138,7 +138,7 @@ def otp_to_hmac(
             help="Session secret used for the HMAC. If omitted, reads WEBSERVER_SESSION_SECRET_KEY from env.",
         ),
     ] = None,
-):
+) -> None:
     """Converts an OTP into the HMAC digest persisted in Redis for 2FA checks."""
     # NOTE: keeping imports here to reduce CLI load time
     from .login._twofa_service import hash_2fa_code_for_storage  # noqa: PLC0415
