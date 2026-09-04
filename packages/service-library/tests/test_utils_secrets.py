@@ -8,7 +8,7 @@
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretBytes, SecretStr, ValidationError
 from servicelib.utils_secrets import (
     _MIN_SECRET_NUM_BYTES,
     _PLACEHOLDER,
@@ -31,7 +31,7 @@ def test_generate_password():
     password = generate_password()
     assert '"' not in password
 
-    # min lenght
+    # min length
     password = generate_password(length=MIN_PASSWORD_LENGTH + 2)
     assert len(password) == MIN_PASSWORD_LENGTH + 2
 
@@ -50,7 +50,7 @@ def test_generate_passcode():
     passcode = generate_passcode()
     assert '"' not in passcode
 
-    # min lenght
+    # min length
     passcode = generate_passcode(number_of_digits=MIN_PASSCODE_LENGTH + 2)
     assert len(passcode) == MIN_PASSCODE_LENGTH + 2
 
@@ -81,7 +81,7 @@ async def test_secure_randint(start: int, end: int):
     assert start <= random_number <= end
 
 
-async def test_secure_randint_called_with_wrong_tupes():
+async def test_secure_randint_called_with_wrong_tuples():
     with pytest.raises(ValidationError):
         secure_randint(1.1, 2)
 
@@ -103,9 +103,7 @@ def test_mask_sensitive_data():
         uuid_obj: other_obj,
     }
 
-    masked_data = mask_sensitive_data(
-        sensitive_data, extra_sensitive_keywords={"credit-card"}
-    )
+    masked_data = mask_sensitive_data(sensitive_data, extra_sensitive_keywords={"credit-card"})
 
     assert masked_data == {
         "username": "john_doe",
@@ -116,4 +114,22 @@ def test_mask_sensitive_data():
         },
         "credit-card": _PLACEHOLDER,
         uuid_obj: other_obj,
+    }
+
+
+def test_mask_sensitive_data_masks_explicit_secret_values():
+    sensitive_data = {
+        "api_token": SecretStr("top-secret-token"),
+        "payload": {
+            "raw_bytes": SecretBytes(b"very-secret-bytes"),
+        },
+    }
+
+    masked_data = mask_sensitive_data(sensitive_data)
+
+    assert masked_data == {
+        "api_token": _PLACEHOLDER,
+        "payload": {
+            "raw_bytes": _PLACEHOLDER,
+        },
     }
