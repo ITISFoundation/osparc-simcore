@@ -71,12 +71,14 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry | None, benc
 
     def _run_async_test():
         s = deepcopy(catalog_service)
-        asyncio.get_event_loop().run_until_complete(
-            replace_service_input_outputs(s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY)
-        )
+        loop.run_until_complete(replace_service_input_outputs(s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY))
         return s
 
-    result = benchmark(_run_async_test)
+    loop = asyncio.new_event_loop()
+    try:
+        result = benchmark(_run_async_test)
+    finally:
+        loop.close()
 
     # check result
     got = json.dumps(result, indent=1)

@@ -29,7 +29,7 @@ SETUP = {
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "author": "Giancarlo Romeo (giancarloromeo)",
     "description": "Core service library for Celery",
-    "python_requires": "~=3.13",
+    "python_requires": "~=3.14",
     "classifiers": [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
