@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Final, Self
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, HttpUrl, TypeAdapter, model_validator
+from pydantic import BaseModel, Field, HttpUrl, SecretStr, TypeAdapter, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .models import Deployment
@@ -18,6 +18,15 @@ _DEPLOYMENTS_MAP = {
     Deployment.aws_zmt_production: "sim4life.io",
 }
 _DEPLOYMENTS_IMAP = {v: k for k, v in _DEPLOYMENTS_MAP.items()}
+_LEGACY_DEPLOYMENT_CONFIG: dict[str, tuple[str, str, int]] = {
+    "aws-nih-production": ("AWS_NIH_PRODUCTION", "production-simcore_production", 2),
+    "aws-staging": ("AWS_STAGING", "staging-simcore_staging", 2),
+    "aws-zmt-production": ("AWS_ZMT_PRODUCTION", "staging-simcore_staging", 1),
+    "dalco-production": ("DALCO_PRODUCTION", "production-simcore_production", 1),
+    "dalco-staging": ("DALCO_STAGING", "staging-simcore_staging", 1),
+    "master": ("MASTER", "master-simcore_master", 1),
+    "tip-production": ("TIP_PRODUCTION", "production-simcore_production", 2),
+}
 
 SECRETS_CONFIG_FILE_NAME: Final[str] = "repo.config"
 
@@ -37,7 +46,7 @@ class ReleaseSettings(BaseSettings):
     PORTAINER_DOMAIN: str
 
     portainer_username: str = Field(..., validation_alias="PORTAINER_USER")
-    portainer_password: str = Field(..., validation_alias="PORTAINER_PASSWORD")
+    portainer_password: SecretStr = Field(..., validation_alias="PORTAINER_PASSWORD")
     swarm_stack_name: str = Field(..., validation_alias="SWARM_STACK_NAME")
     portainer_endpoint_version: int
     starts_with: str
@@ -121,106 +130,30 @@ def get_release_settings(env_file_path: Path):
 class LegacySettings(BaseModel):
     portainer_url: str
     portainer_username: str
-    portainer_password: str
+    portainer_password: SecretStr
     starts_with: str
     swarm_stack_name: str
     portainer_endpoint_version: int
 
 
 def get_legacy_settings(env_file, deployment: str) -> LegacySettings:
-    # pylint: disable=too-many-return-statements
     load_dotenv(env_file)
 
-    if deployment == "master":
-        portainer_url = os.getenv("MASTER_PORTAINER_URL")
-        portainer_username = os.getenv("MASTER_PORTAINER_USERNAME")
-        portainer_password = os.getenv("MASTER_PORTAINER_PASSWORD")
+    deployment_config = _LEGACY_DEPLOYMENT_CONFIG.get(deployment)
+    if deployment_config is None:
+        msg = "Invalid environment type provided."
+        raise ValueError(msg)
 
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="master-simcore_master",
-            swarm_stack_name="master-simcore",
-            portainer_endpoint_version=1,
-        )
-    if deployment == "dalco-staging":
-        portainer_url = os.getenv("DALCO_STAGING_PORTAINER_URL")
-        portainer_username = os.getenv("DALCO_STAGING_PORTAINER_USERNAME")
-        portainer_password = os.getenv("DALCO_STAGING_PORTAINER_PASSWORD")
+    env_prefix, starts_with, portainer_endpoint_version = deployment_config
+    portainer_url = os.getenv(f"{env_prefix}_PORTAINER_URL")
+    portainer_username = os.getenv(f"{env_prefix}_PORTAINER_USERNAME")
+    portainer_password = os.getenv(f"{env_prefix}_PORTAINER_PASSWORD")
 
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="staging-simcore_staging",
-            swarm_stack_name="staging-simcore",
-            portainer_endpoint_version=1,
-        )
-    if deployment == "dalco-production":
-        portainer_url = os.getenv("DALCO_PRODUCTION_PORTAINER_URL")
-        portainer_username = os.getenv("DALCO_PRODUCTION_PORTAINER_USERNAME")
-        portainer_password = os.getenv("DALCO_PRODUCTION_PORTAINER_PASSWORD")
-
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="production-simcore_production",
-            swarm_stack_name="production-simcore",
-            portainer_endpoint_version=1,
-        )
-    if deployment == "tip-production":
-        portainer_url = os.getenv("TIP_PRODUCTION_PORTAINER_URL")
-        portainer_username = os.getenv("TIP_PRODUCTION_PORTAINER_USERNAME")
-        portainer_password = os.getenv("TIP_PRODUCTION_PORTAINER_PASSWORD")
-
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="production-simcore_production",
-            swarm_stack_name="production-simcore",
-            portainer_endpoint_version=2,
-        )
-    if deployment == "aws-staging":
-        portainer_url = os.getenv("AWS_STAGING_PORTAINER_URL")
-        portainer_username = os.getenv("AWS_STAGING_PORTAINER_USERNAME")
-        portainer_password = os.getenv("AWS_STAGING_PORTAINER_PASSWORD")
-
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="staging-simcore_staging",
-            swarm_stack_name="staging-simcore",
-            portainer_endpoint_version=2,
-        )
-    if deployment == "aws-nih-production":
-        portainer_url = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_URL")
-        portainer_username = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_USERNAME")
-        portainer_password = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_PASSWORD")
-
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="production-simcore_production",
-            swarm_stack_name="production-simcore",
-            portainer_endpoint_version=2,
-        )
-    if deployment == "aws-zmt-production":
-        portainer_url = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_URL")
-        portainer_username = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_USERNAME")
-        portainer_password = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_PASSWORD")
-
-        return LegacySettings(
-            portainer_url=portainer_url,
-            portainer_username=portainer_username,
-            portainer_password=portainer_password,
-            starts_with="staging-simcore_staging",
-            swarm_stack_name="staging-simcore",
-            portainer_endpoint_version=1,
-        )
-    msg = "Invalid environment type provided."
-    raise ValueError(msg)
+    return LegacySettings(
+        portainer_url=portainer_url,
+        portainer_username=portainer_username,
+        portainer_password=portainer_password,
+        starts_with=starts_with,
+        swarm_stack_name=starts_with.split("_")[0],
+        portainer_endpoint_version=portainer_endpoint_version,
+    )

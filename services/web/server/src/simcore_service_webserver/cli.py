@@ -32,7 +32,7 @@ from .login import cli as login_cli
 if os.environ.get("SC_BOOT_MODE") == "debug":
     import multiprocessing
 
-    multiprocessing.set_start_method("spawn", True)
+    multiprocessing.set_start_method("spawn", force=True)
 
 _logger = logging.getLogger(__name__)
 
@@ -42,8 +42,8 @@ def _setup_app_from_settings(
     tracing_config: TracingConfig,
 ) -> tuple[web.Application, dict]:
     # NOTE: keeping imports here to reduce CLI load time
-    from .application import create_application
-    from .application_settings_utils import convert_to_app_config
+    from .application import create_application  # noqa: PLC0415
+    from .application_settings_utils import convert_to_app_config  # noqa: PLC0415
 
     # NOTE: By having an equivalent config allows us
     # to keep some of the code from the previous
@@ -61,8 +61,8 @@ async def app_factory() -> web.Application:
 
     Created to launch app from gunicorn (see docker/boot.sh)
     """
-    from .application import create_application_auth
-    from .log import setup_logging
+    from .application import create_application_auth  # noqa: PLC0415
+    from .log import setup_logging  # noqa: PLC0415
 
     app_settings = ApplicationSettings.create_from_envs()
     tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)
@@ -117,9 +117,32 @@ def invitations(
 def run():
     """Runs web server"""
     # NOTE: keeping imports here to reduce CLI load time
-    from .application import run_service
+    from .application import run_service  # noqa: PLC0415
 
     app_settings = ApplicationSettings.create_from_envs()
     app_tracing_config = TracingConfig.create(app_settings.WEBSERVER_TRACING, service_name=APP_NAME)
     app, cfg = _setup_app_from_settings(app_settings, app_tracing_config)
     run_service(app, cfg)
+
+
+@main.command()
+def otp_to_hmac(
+    otp: Annotated[
+        str,
+        typer.Argument(help="One-time passcode to convert into the stored Redis digest"),
+    ],
+    session_secret_key: Annotated[
+        str | None,
+        typer.Option(
+            "--session-secret-key",
+            help="Session secret used for the HMAC. If omitted, reads WEBSERVER_SESSION_SECRET_KEY from env.",
+        ),
+    ] = None,
+) -> None:
+    """Converts an OTP into the HMAC digest persisted in Redis for 2FA checks."""
+    # NOTE: keeping imports here to reduce CLI load time
+    from .login._twofa_service import hash_2fa_code_for_storage  # noqa: PLC0415
+    from .session.settings import SessionSettings  # noqa: PLC0415
+
+    secret_key = session_secret_key or SessionSettings.create_from_envs().SESSION_SECRET_KEY.get_secret_value()
+    typer.echo(hash_2fa_code_for_storage(code=otp, secret_key=secret_key))
