@@ -28,7 +28,6 @@ from simcore_postgres_database.models.services_specifications import (
     services_specifications,
 )
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
-from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
@@ -142,28 +141,6 @@ class ServicesRepository(BaseRepository):
             return packaging.version.parse(x.version)
 
         return sorted(releases, key=_by_version, reverse=True)
-
-    async def get_latest_release(self, key: str) -> ServiceMetaDataDBGet | None:
-        """Returns last release or None if service was never released"""
-        services_latest = create_select_latest_services_query().alias("services_latest")
-
-        query = (
-            sa.select(*SERVICES_META_DATA_COLS)
-            .select_from(
-                services_latest.join(
-                    services_meta_data,
-                    (services_meta_data.c.key == services_latest.c.key)
-                    & (services_meta_data.c.version == services_latest.c.latest),
-                )
-            )
-            .where(services_latest.c.key == key)
-        )
-        async with self.db_engine.connect() as conn:
-            result = await conn.execute(query)
-            row = result.first()
-        if row:
-            return ServiceMetaDataDBGet.model_validate(row)
-        return None  # mypy
 
     async def get_service(
         self,
