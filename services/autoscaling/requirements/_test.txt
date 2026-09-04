@@ -228,7 +228,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-python-dotenv==1.2.1
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

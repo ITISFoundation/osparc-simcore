@@ -117,13 +117,12 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
-from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import ProjectType
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
-from ..db.plugin import get_asyncpg_engine
 from ..director_v2 import director_v2_service
 from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
@@ -1288,11 +1287,10 @@ async def delete_project_node(
         project_id=project_uuid,
     )
 
-    async with transaction_context(get_asyncpg_engine(request.app)) as conn:
-        await _projects_repository.lock_project_graph(conn, project_uuid=project_uuid)
+    async def _delete_node_from_graph(connection: AsyncConnection) -> None:
         project_nodes = await _projects_nodes_repository.get_by_project(
             request.app,
-            connection=conn,
+            connection=connection,
             project_id=project_uuid,
         )
         for sibling_node_id, sibling_node in project_nodes.items():
@@ -1303,7 +1301,7 @@ async def delete_project_node(
             if partial_node is not None:
                 await _projects_nodes_repository.update(
                     request.app,
-                    connection=conn,
+                    connection=connection,
                     project_id=project_uuid,
                     node_id=sibling_node_id,
                     partial_node=partial_node,
@@ -1311,10 +1309,16 @@ async def delete_project_node(
 
         await _projects_nodes_repository.delete(
             request.app,
-            connection=conn,
+            connection=connection,
             project_id=project_uuid,
             node_id=node_uuid,
         )
+
+    await _projects_repository.run_project_graph_mutation(
+        request.app,
+        project_uuid=project_uuid,
+        mutation=_delete_node_from_graph,
+    )
 
     fire_and_forget_task(
         _remove_service_and_its_data_folders(
@@ -1437,11 +1441,11 @@ async def patch_project_node(
 
     # 3. Patch the project node
     if partial_node.model_fields_set & _NODE_GRAPH_FIELDS:
-        async with transaction_context(get_asyncpg_engine(app)) as conn:
-            await _projects_repository.lock_project_graph(conn, project_uuid=project_id)
+
+        async def _patch_node_graph(connection: AsyncConnection) -> None:
             project_nodes = await _projects_nodes_repository.get_by_project(
                 app,
-                connection=conn,
+                connection=connection,
                 project_id=project_id,
             )
             _validate_node_references(
@@ -1451,11 +1455,17 @@ async def patch_project_node(
             )
             await _projects_nodes_repository.update(
                 app,
-                connection=conn,
+                connection=connection,
                 project_id=project_id,
                 node_id=node_id,
                 partial_node=partial_node,
             )
+
+        await _projects_repository.run_project_graph_mutation(
+            app,
+            project_uuid=project_id,
+            mutation=_patch_node_graph,
+        )
     else:
         await _projects_nodes_repository.update(
             app,
