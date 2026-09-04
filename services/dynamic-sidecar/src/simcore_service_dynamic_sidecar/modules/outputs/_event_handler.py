@@ -1,17 +1,16 @@
 import logging
+import multiprocessing
 from asyncio import CancelledError, Task, create_task, get_event_loop
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from multiprocessing.queues import Queue
 from pathlib import Path
 from queue import Empty
 from threading import Thread
 from time import sleep as blocking_sleep
 from typing import Any, Final
 
-import aioprocessing  # type: ignore [import-untyped]
-from aioprocessing.process import AioProcess  # type: ignore [import-untyped]
-from aioprocessing.queues import AioQueue  # type: ignore [import-untyped]
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
@@ -32,12 +31,12 @@ def _get_first_entry_or_none(data: list[str]) -> str | None:
 class _PortKeysEventHandler(SafeFileSystemEventHandler):
     # NOTE: runs in the created process
 
-    def __init__(self, outputs_path: Path, port_key_events_queue: AioQueue):
+    def __init__(self, outputs_path: Path, port_key_events_queue: Queue[str | None]):
         super().__init__()
 
         self._is_event_propagation_enabled: bool = False
         self.outputs_path: Path = outputs_path
-        self.port_key_events_queue: AioQueue = port_key_events_queue
+        self.port_key_events_queue: Queue[str | None] = port_key_events_queue
         self._outputs_port_keys: set[str] = set()
 
     def handle_set_outputs_port_keys(self, *, outputs_port_keys: set[str]) -> None:
@@ -89,47 +88,136 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
             self.port_key_events_queue.put(port_key_candidate)
 
 
+def _thread_worker_update_outputs_port_keys(
+    file_system_event_handler_queue: Queue[dict[str, Any] | None],
+    file_system_event_handler: _PortKeysEventHandler,
+) -> None:
+    # NOTE: runs as a thread in the created process
+
+    # Propagate `outputs_port_keys` changes to the `_PortKeysEventHandler`.
+    while True:
+        message: dict[str, Any] | None = file_system_event_handler_queue.get()
+        _logger.debug("received message %s", message)
+
+        # no more messages quitting
+        if message is None:
+            break
+
+        # handle events
+        method_kwargs: dict[str, Any] = message["kwargs"]
+        method_name = message["method_name"]
+        method_to_call = getattr(file_system_event_handler, method_name)
+        method_to_call(**method_kwargs)
+
+
+def _process_worker(
+    outputs_path: Path,
+    port_key_events_queue: Queue[str | None],
+    file_system_event_handler_queue: Queue[dict[str, Any] | None],
+    health_check_queue: Queue[int | None],
+    stop_queue: Queue[None],
+    heart_beat_interval_s: PositiveFloat,
+) -> None:
+    # NOTE: module level and only receives pickleable arguments,
+    # so that it is compatible with any multiprocessing start method
+
+    observer = ExtendedInotifyObserver()
+    file_system_event_handler = _PortKeysEventHandler(
+        outputs_path=outputs_path,
+        port_key_events_queue=port_key_events_queue,
+    )
+    watch = None
+
+    thread_update_outputs_port_keys = Thread(
+        target=_thread_worker_update_outputs_port_keys,
+        args=(file_system_event_handler_queue, file_system_event_handler),
+        daemon=True,
+    )
+    thread_update_outputs_port_keys.start()
+
+    try:
+        watch = observer.schedule(
+            event_handler=file_system_event_handler,
+            path=f"{outputs_path.absolute()}",
+            recursive=True,
+        )
+        observer.start()
+
+        while stop_queue.qsize() == 0:
+            # watchdog internally uses 1 sec interval to detect events
+            # sleeping for less is useless.
+            # If this value is bigger then the DEFAULT_OBSERVER_TIMEOUT
+            # the result will not be as expected. Keep sleep to 1 second
+
+            # NOTE: watchdog will block this thread for some period of
+            # time while handling inotify events
+            # the health_check sending could be delayed
+
+            health_check_queue.put(_HEART_BEAT_MARK)
+            blocking_sleep(heart_beat_interval_s)
+
+    except Exception:  # pylint: disable=broad-except
+        _logger.exception("Unexpected error")
+    finally:
+        if watch:
+            observer.remove_handler_for_watch(file_system_event_handler, watch)
+        observer.stop()
+
+        # stop created thread
+        file_system_event_handler_queue.put(None)
+        thread_update_outputs_port_keys.join()
+
+        _logger.warning("%s exited", _EventHandlerProcess.__name__)
+
+
 class _EventHandlerProcess:
     def __init__(
         self,
         outputs_context: OutputsContext,
-        health_check_queue: AioQueue,
+        health_check_queue: Queue[int | None],
         heart_beat_interval_s: PositiveFloat,
     ) -> None:
         # NOTE: runs in asyncio thread
 
         self.outputs_context: OutputsContext = outputs_context
-        self.health_check_queue: AioQueue = health_check_queue
+        self.health_check_queue: Queue[int | None] = health_check_queue
         self.heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
 
         # This is accessible from the creating process and from
         # the process itself and is used to stop the process.
-        self._stop_queue: AioQueue = aioprocessing.AioQueue()
+        self._stop_queue: Queue[None] = multiprocessing.Queue()
 
-        self._file_system_event_handler: _PortKeysEventHandler | None = None
-        self._process: AioProcess | None = None
+        self._process: multiprocessing.Process | None = None
 
     def start_process(self) -> None:
         # NOTE: runs in asyncio thread
 
         with log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"):
-            self._process = aioprocessing.AioProcess(target=self._process_worker, daemon=True)
-            self._process.start()  # pylint:disable=no-member
+            self._process = multiprocessing.Process(
+                target=_process_worker,
+                args=(
+                    self.outputs_context.outputs_path,
+                    self.outputs_context.port_key_events_queue,
+                    self.outputs_context.file_system_event_handler_queue,
+                    self.health_check_queue,
+                    self._stop_queue,
+                    self.heart_beat_interval_s,
+                ),
+                daemon=True,
+            )
+            self._process.start()
 
     def stop_process(self) -> None:
         # NOTE: runs in asyncio thread
 
         with log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} stop_process"):
-            self._stop_queue.put(None)  # pylint:disable=no-member
+            self._stop_queue.put(None)
 
             if self._process:
                 # force stop the process
-                self._process.kill()  # pylint:disable=no-member
-                self._process.join()  # pylint:disable=no-member
+                self._process.kill()
+                self._process.join()
                 self._process = None
-
-            # cleanup whatever remains
-            self._file_system_event_handler = None
 
     def shutdown(self) -> None:
         # NOTE: runs in asyncio thread
@@ -138,81 +226,8 @@ class _EventHandlerProcess:
             self.stop_process()
 
             # signal queue observers to finish
-            self.outputs_context.port_key_events_queue.put(None)  # pylint:disable=no-member
-            self.health_check_queue.put(None)  # pylint:disable=no-member
-
-    def _thread_worker_update_outputs_port_keys(self) -> None:
-        # NOTE: runs as a thread in the created process
-
-        # Propagate `outputs_port_keys` changes to the `_PortKeysEventHandler`.
-        while True:
-            message: dict[str, Any] | None = self.outputs_context.file_system_event_handler_queue.get()  # pylint:disable=no-member
-            _logger.debug("received message %s", message)
-
-            # no more messages quitting
-            if message is None:
-                break
-
-            # do nothing
-            if self._file_system_event_handler is None:
-                continue
-
-            # handle events
-            method_kwargs: dict[str, Any] = message["kwargs"]
-            method_name = message["method_name"]
-            method_to_call = getattr(self._file_system_event_handler, method_name)
-            method_to_call(**method_kwargs)
-
-    def _process_worker(self) -> None:
-        # NOTE: runs in the created process
-
-        observer = ExtendedInotifyObserver()
-        self._file_system_event_handler = _PortKeysEventHandler(
-            outputs_path=self.outputs_context.outputs_path,
-            port_key_events_queue=self.outputs_context.port_key_events_queue,
-        )
-        watch = None
-
-        thread_update_outputs_port_keys = Thread(target=self._thread_worker_update_outputs_port_keys, daemon=True)
-        thread_update_outputs_port_keys.start()
-
-        try:
-            watch = observer.schedule(
-                event_handler=self._file_system_event_handler,
-                path=f"{self.outputs_context.outputs_path.absolute()}",
-                recursive=True,
-            )
-            observer.start()
-
-            while self._stop_queue.qsize() == 0:  # pylint:disable=no-member
-                # watchdog internally uses 1 sec interval to detect events
-                # sleeping for less is useless.
-                # If this value is bigger then the DEFAULT_OBSERVER_TIMEOUT
-                # the result will not be as expected. Keep sleep to 1 second
-
-                # NOTE: watchdog will block this thread for some period of
-                # time while handling inotify events
-                # the health_check sending could be delayed
-
-                self.health_check_queue.put(  # pylint:disable=no-member
-                    _HEART_BEAT_MARK
-                )
-                blocking_sleep(self.heart_beat_interval_s)
-
-        except Exception:  # pylint: disable=broad-except
-            _logger.exception("Unexpected error")
-        finally:
-            if watch:
-                observer.remove_handler_for_watch(self._file_system_event_handler, watch)
-            observer.stop()
-
-            # stop created thread
-            self.outputs_context.file_system_event_handler_queue.put(  # pylint:disable=no-member
-                None
-            )
-            thread_update_outputs_port_keys.join()
-
-            _logger.warning("%s exited", _EventHandlerProcess.__name__)
+            self.outputs_context.port_key_events_queue.put(None)
+            self.health_check_queue.put(None)
 
 
 class EventHandlerObserver:
@@ -234,7 +249,7 @@ class EventHandlerObserver:
         self.heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
         self.max_heart_beat_wait_interval_s: PositiveFloat = max_heart_beat_wait_interval_s
 
-        self._health_check_queue: AioQueue = aioprocessing.AioQueue()
+        self._health_check_queue: Queue[int | None] = multiprocessing.Queue()
         self._event_handler_process: _EventHandlerProcess = _EventHandlerProcess(
             outputs_context=outputs_context,
             health_check_queue=self._health_check_queue,
@@ -255,7 +270,7 @@ class EventHandlerObserver:
             heart_beat_count = 0
             while True:
                 try:
-                    self._health_check_queue.get_nowait()  # pylint:disable=no-member
+                    self._health_check_queue.get_nowait()
                     heart_beat_count += 1
                 except Empty:
                     break

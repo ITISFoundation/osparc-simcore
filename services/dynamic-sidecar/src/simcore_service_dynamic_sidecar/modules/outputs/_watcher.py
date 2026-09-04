@@ -1,5 +1,5 @@
 import logging
-from asyncio import CancelledError, Task, create_task
+from asyncio import CancelledError, Task, create_task, to_thread
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 
@@ -31,7 +31,7 @@ class OutputsWatcher:
 
     async def _worker_events(self) -> None:
         while True:
-            event: str | None = await self.outputs_context.port_key_events_queue.coro_get()
+            event: str | None = await to_thread(self.outputs_context.port_key_events_queue.get)
             if event is None:
                 break
 
