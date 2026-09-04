@@ -5,6 +5,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from inspect import signature
+from pathlib import Path
 from typing import Any, Final
 from unittest.mock import AsyncMock
 
@@ -158,19 +159,31 @@ def mock_run_command_in_container(mocker: MockerFixture) -> AsyncMock:
     )
 
 
+_SELF_CONTAINER_NAME: Final[str] = "test-self-container"
+
+
+@pytest.fixture
+def self_container_name(monkeypatch: pytest.MonkeyPatch) -> str:
+    monkeypatch.setenv("HOSTNAME", _SELF_CONTAINER_NAME)
+    return _SELF_CONTAINER_NAME
+
+
+@pytest.fixture
+def inputs_path(app: FastAPI) -> Path:
+    return AppState(app).mounted_volumes.disk_inputs_path
+
+
 async def test_restrict_input_permissions(
     app: FastAPI,
     mock_run_command_in_container: AsyncMock,
-    monkeypatch: pytest.MonkeyPatch,
+    self_container_name: str,
+    inputs_path: Path,
 ):
-    monkeypatch.setenv("HOSTNAME", "test-self-container")
-    app_state = AppState(app)
-
     await restrict_input_permissions(app)
 
     mock_run_command_in_container.assert_awaited_once_with(
-        "test-self-container",
-        command=_get_restrict_input_permissions_command(app_state.mounted_volumes.disk_inputs_path),
+        self_container_name,
+        command=_get_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -178,16 +191,14 @@ async def test_restrict_input_permissions(
 async def test_grant_input_permissions(
     app: FastAPI,
     mock_run_command_in_container: AsyncMock,
-    monkeypatch: pytest.MonkeyPatch,
+    self_container_name: str,
+    inputs_path: Path,
 ):
-    monkeypatch.setenv("HOSTNAME", "test-self-container")
-    app_state = AppState(app)
-
     await grant_input_permissions(app)
 
     mock_run_command_in_container.assert_awaited_once_with(
-        "test-self-container",
-        command=_get_grant_input_permissions_command(app_state.mounted_volumes.disk_inputs_path),
+        self_container_name,
+        command=_get_grant_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -195,31 +206,28 @@ async def test_grant_input_permissions(
 async def test_writable_inputs_grants_then_restricts(
     app: FastAPI,
     mock_run_command_in_container: AsyncMock,
-    monkeypatch: pytest.MonkeyPatch,
+    self_container_name: str,
+    inputs_path: Path,
 ):
-    monkeypatch.setenv("HOSTNAME", "test-self-container")
-    app_state = AppState(app)
-
     async with writable_inputs(app):
         mock_run_command_in_container.assert_awaited_once_with(
-            "test-self-container",
-            command=_get_grant_input_permissions_command(app_state.mounted_volumes.disk_inputs_path),
+            self_container_name,
+            command=_get_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
-    assert mock_run_command_in_container.await_args_list[-1].args == ("test-self-container",)
-    assert mock_run_command_in_container.await_args_list[-1].kwargs["command"] == (
-        _get_restrict_input_permissions_command(app_state.mounted_volumes.disk_inputs_path)
+    mock_run_command_in_container.assert_awaited_with(
+        self_container_name,
+        command=_get_restrict_input_permissions_command(inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
 
 async def test_writable_inputs_restricts_even_on_error(
     app: FastAPI,
     mock_run_command_in_container: AsyncMock,
-    monkeypatch: pytest.MonkeyPatch,
+    self_container_name: str,
 ):
-    monkeypatch.setenv("HOSTNAME", "test-self-container")
-
     class _MyError(Exception):
         pass
 
