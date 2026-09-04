@@ -9,7 +9,7 @@ class RepositoryError(BaseCatalogError):
 
 
 class UninitializedGroupError(RepositoryError):
-    msg_tempalte = "{group} groups was never initialized"
+    msg_template = "{group} groups was never initialized"
 
 
 class BaseDirectorError(BaseCatalogError): ...
@@ -17,9 +17,6 @@ class BaseDirectorError(BaseCatalogError): ...
 
 class DirectorUnresponsiveError(BaseDirectorError):
     msg_template = "Director-v0 is not responsive"
-
-
-class DirectorStatusError(BaseDirectorError): ...
 
 
 class BatchNotFoundError(BaseCatalogError):

@@ -307,7 +307,6 @@ def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
         return_value=UserExtraProperties(
             is_internet_enabled=False,
             is_telemetry_enabled=False,
-            is_efs_enabled=False,
             mount_data=False,
         )
     )

@@ -63,10 +63,6 @@
   - changed-files:
       - any-glob-to-any-file: services/dynamic-sidecar/**
 
-"a:efs-guardian":
-  - changed-files:
-      - any-glob-to-any-file: services/efs-guardian/**
-
 "a:invitations":
   - changed-files:
       - any-glob-to-any-file: services/invitations/**
