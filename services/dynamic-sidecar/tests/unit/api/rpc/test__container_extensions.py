@@ -46,6 +46,11 @@ from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from simcore_service_dynamic_sidecar.services.container_extensions import (
     _TIMEOUT_PERMISSION_CHANGES,
+    _get_grant_input_permissions_command,
+    _get_restrict_input_permissions_command,
+    grant_input_permissions,
+    restrict_input_permissions,
+    writable_inputs,
 )
 from utils import get_lrt_result
 
@@ -153,25 +158,77 @@ def mock_run_command_in_container(mocker: MockerFixture) -> AsyncMock:
     )
 
 
-async def test_enforce_input_permissions(
+async def test_restrict_input_permissions(
     app: FastAPI,
-    rpc_client: RabbitMQRPCClient,
     mock_run_command_in_container: AsyncMock,
     monkeypatch: pytest.MonkeyPatch,
 ):
     monkeypatch.setenv("HOSTNAME", "test-self-container")
     app_state = AppState(app)
 
-    result = await container_extensions.enforce_input_permissions(
-        rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID
-    )
-    assert result is None
+    await restrict_input_permissions(app)
 
     mock_run_command_in_container.assert_awaited_once_with(
         "test-self-container",
-        command=f"chmod gu-w '{app_state.mounted_volumes.disk_inputs_path}'",
+        command=_get_restrict_input_permissions_command(app_state.mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
+
+
+async def test_grant_input_permissions(
+    app: FastAPI,
+    mock_run_command_in_container: AsyncMock,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("HOSTNAME", "test-self-container")
+    app_state = AppState(app)
+
+    await grant_input_permissions(app)
+
+    mock_run_command_in_container.assert_awaited_once_with(
+        "test-self-container",
+        command=_get_grant_input_permissions_command(app_state.mounted_volumes.disk_inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def test_writable_inputs_grants_then_restricts(
+    app: FastAPI,
+    mock_run_command_in_container: AsyncMock,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("HOSTNAME", "test-self-container")
+    app_state = AppState(app)
+
+    async with writable_inputs(app):
+        mock_run_command_in_container.assert_awaited_once_with(
+            "test-self-container",
+            command=_get_grant_input_permissions_command(app_state.mounted_volumes.disk_inputs_path),
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
+
+    assert mock_run_command_in_container.await_args_list[-1].args == ("test-self-container",)
+    assert mock_run_command_in_container.await_args_list[-1].kwargs["command"] == (
+        _get_restrict_input_permissions_command(app_state.mounted_volumes.disk_inputs_path)
+    )
+
+
+async def test_writable_inputs_restricts_even_on_error(
+    app: FastAPI,
+    mock_run_command_in_container: AsyncMock,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("HOSTNAME", "test-self-container")
+
+    class _MyError(Exception):
+        pass
+
+    with pytest.raises(_MyError):
+        async with writable_inputs(app):
+            raise _MyError
+
+    EXPECTED_CALLS = 2  # grant, then restrict
+    assert mock_run_command_in_container.await_count == EXPECTED_CALLS
 
 
 @pytest.fixture

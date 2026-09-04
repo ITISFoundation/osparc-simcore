@@ -132,10 +132,6 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         )
 
     @log_decorator(logger=_logger)
-    async def enforce_input_permissions(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        await self._thin_client.post_containers_ports_inputs_enforce_permissions(dynamic_sidecar_endpoint)
-
-    @log_decorator(logger=_logger)
     async def get_entrypoint_container_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, dynamic_sidecar_network_name: str
     ) -> str:

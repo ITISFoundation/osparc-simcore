@@ -72,18 +72,6 @@ async def create_output_dirs(
 
 
 @router.post(
-    "/containers/ports/inputs:enforce-permissions",
-    response_class=Response,
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def enforce_input_permissions(
-    app: Annotated[FastAPI, Depends(get_application)],
-) -> None:
-    """Removes write permissions on the inputs folder so user services cannot write to it"""
-    await container_extensions.enforce_input_permissions(app)
-
-
-@router.post(
     "/containers/{id}/networks:attach",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,

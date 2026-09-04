@@ -231,17 +231,6 @@ async def test_service_outputs_create_dirs(
         assert await client.service_outputs_create_dirs(dynamic_sidecar_endpoint, outputs_labels) is None
 
 
-async def test_enforce_input_permissions(
-    get_patched_client: Callable,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-):
-    with get_patched_client(
-        "post_containers_ports_inputs_enforce_permissions",
-        return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
-    ) as client:
-        assert await client.enforce_input_permissions(dynamic_sidecar_endpoint) is None
-
-
 @pytest.mark.parametrize("dynamic_sidecar_network_name", ["a_test_network"])
 async def test_get_entrypoint_container_name_ok(
     get_patched_client: Callable,

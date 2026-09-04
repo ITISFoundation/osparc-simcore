@@ -20,6 +20,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
+from ..services.container_extensions import restrict_input_permissions
 from .docker_compose_utils import docker_compose_down
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
@@ -228,6 +229,7 @@ def _configure_application_lifespan(
 
         app_state = AppState(app)
         await volumes_fix_permissions(app_state.mounted_volumes)
+        await restrict_input_permissions(app)
         yield {}
 
     app_lifespan.add(_application_lifespan)

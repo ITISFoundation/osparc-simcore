@@ -107,12 +107,6 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         return await self.client.post(url, json={"outputs_labels": outputs_labels})
 
     @retry_on_errors()
-    @expect_status(status.HTTP_204_NO_CONTENT)
-    async def post_containers_ports_inputs_enforce_permissions(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/inputs:enforce-permissions")
-        return await self.client.post(url)
-
-    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_containers_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, dynamic_sidecar_network_name: str

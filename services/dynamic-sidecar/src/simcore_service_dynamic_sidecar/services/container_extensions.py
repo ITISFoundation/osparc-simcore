@@ -1,5 +1,8 @@
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import timedelta
+from pathlib import Path
 from typing import Final
 
 from aiodocker.networks import DockerNetwork
@@ -56,15 +59,43 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
     outputs_context.non_file_type_port_keys = non_file_port_keys
 
 
-async def enforce_input_permissions(app: FastAPI) -> None:
+def _get_restrict_input_permissions_command(inputs_path: Path) -> str:
+    return f"chmod -R go-w '{inputs_path}'"
+
+
+def _get_grant_input_permissions_command(inputs_path: Path) -> str:
+    return f"chmod -R go+w '{inputs_path}'"
+
+
+async def restrict_input_permissions(app: FastAPI) -> None:
     # user services must not be able to write to the inputs folder, it is managed for them
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
     await run_command_in_container(
         get_self_container(),
-        command=f"chmod gu-w '{mounted_volumes.disk_inputs_path}'",
+        command=_get_restrict_input_permissions_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
+
+
+async def grant_input_permissions(app: FastAPI) -> None:
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
+
+    await run_command_in_container(
+        get_self_container(),
+        command=_get_grant_input_permissions_command(mounted_volumes.disk_inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+@asynccontextmanager
+async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
+    # write access is only needed for the duration of this sidecar's own update
+    await grant_input_permissions(app)
+    try:
+        yield
+    finally:
+        await restrict_input_permissions(app)
 
 
 async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:
