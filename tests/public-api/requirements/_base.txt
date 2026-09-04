@@ -61,7 +61,7 @@ pygments==2.19.2
     # via rich
 python-dateutil==2.9.0.post0
     # via osparc-client
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 rich==14.3.3
     # via
