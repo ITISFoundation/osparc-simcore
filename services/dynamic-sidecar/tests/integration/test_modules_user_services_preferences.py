@@ -87,8 +87,6 @@ def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-a
         "DY_SIDECAR_SERVICE_KEY": service_key,
         "DY_SIDECAR_SERVICE_VERSION": service_version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{dy_sidecar_user_preferences_path}",
-        # set by docker at runtime; used by get_self_container() to target this sidecar's own container
-        "HOSTNAME": "test-self-container",
         **base_mock_envs,
     }
 

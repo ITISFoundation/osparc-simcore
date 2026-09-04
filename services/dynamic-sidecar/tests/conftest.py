@@ -218,6 +218,8 @@ def base_mock_envs(
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
         "DY_SIDECAR_PRODUCT_NAME": product_name,
+        # set by docker at runtime; used by get_self_container() to target this sidecar's own container
+        "HOSTNAME": "test-self-container",
     }
 
 
@@ -270,6 +272,8 @@ def mock_environment(
             "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",
             "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
             "DYNAMIC_SIDECAR_TRACING": "null",
+            # set by docker at runtime; used by get_self_container() to target this sidecar's own container
+            "HOSTNAME": "test-self-container",
             "POSTGRES_DB": "test",
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",

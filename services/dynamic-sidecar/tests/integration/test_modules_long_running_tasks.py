@@ -107,8 +107,6 @@ def mock_environment(
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
         "R_CLONE_PROVIDER": "MINIO",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
-        # set by docker at runtime; used by get_self_container() to target this sidecar's own container
-        "HOSTNAME": "test-self-container",
         **{k: f"{v}" for k, v in rabbit_service.model_dump().items()},
         **base_mock_envs,
     }
