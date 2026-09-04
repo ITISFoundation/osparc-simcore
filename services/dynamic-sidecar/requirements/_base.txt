@@ -26,8 +26,6 @@ aiohttp==3.14.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
-aioprocessing==2.0.1
-    # via -r requirements/_base.in
 aiormq==6.8.1
     # via aio-pika
 aiosignal==1.4.0
