@@ -153,11 +153,10 @@ async def test_container_create_outputs_dirs(
 
 
 @pytest.fixture
-def mock_run_command_in_container(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_dynamic_sidecar.services.container_extensions.run_command_in_container",
-        autospec=True,
-    )
+def mock_run_command_in_container(mock_input_permissions_toggle: AsyncMock) -> AsyncMock:
+    # already patched by mock_input_permissions_toggle (a base_mock_envs dependency);
+    # re-patching the same target here would fail autospec (can't spec a Mock)
+    return mock_input_permissions_toggle
 
 
 _SELF_CONTAINER_NAME: Final[str] = "test-self-container"
