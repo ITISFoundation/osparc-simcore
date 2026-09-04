@@ -244,7 +244,7 @@ pydantic-settings==2.14.2
     # via
     #   -c requirements/_base.txt
     #   fastapi
-pygments==2.15.1
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
