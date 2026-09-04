@@ -152,13 +152,6 @@ async def test_container_create_outputs_dirs(
     assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
 
 
-@pytest.fixture
-def mock_run_command_in_container(mock_input_permissions_toggle: AsyncMock) -> AsyncMock:
-    # already patched by mock_input_permissions_toggle (a base_mock_envs dependency);
-    # re-patching the same target here would fail autospec (can't spec a Mock)
-    return mock_input_permissions_toggle
-
-
 _SELF_CONTAINER_NAME: Final[str] = "test-self-container"
 
 
@@ -175,13 +168,13 @@ def inputs_path(app: FastAPI) -> Path:
 
 async def test_restrict_input_permissions(
     app: FastAPI,
-    mock_run_command_in_container: AsyncMock,
+    mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
     inputs_path: Path,
 ):
     await restrict_input_permissions(app)
 
-    mock_run_command_in_container.assert_awaited_once_with(
+    mock_input_permissions_toggle.assert_awaited_once_with(
         self_container_name,
         command=_get_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
@@ -190,13 +183,13 @@ async def test_restrict_input_permissions(
 
 async def test_grant_input_permissions(
     app: FastAPI,
-    mock_run_command_in_container: AsyncMock,
+    mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
     inputs_path: Path,
 ):
     await grant_input_permissions(app)
 
-    mock_run_command_in_container.assert_awaited_once_with(
+    mock_input_permissions_toggle.assert_awaited_once_with(
         self_container_name,
         command=_get_grant_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
@@ -205,18 +198,18 @@ async def test_grant_input_permissions(
 
 async def test_writable_inputs_grants_then_restricts(
     app: FastAPI,
-    mock_run_command_in_container: AsyncMock,
+    mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
     inputs_path: Path,
 ):
     async with writable_inputs(app):
-        mock_run_command_in_container.assert_awaited_once_with(
+        mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
             command=_get_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
-    mock_run_command_in_container.assert_awaited_with(
+    mock_input_permissions_toggle.assert_awaited_with(
         self_container_name,
         command=_get_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
@@ -225,7 +218,7 @@ async def test_writable_inputs_grants_then_restricts(
 
 async def test_writable_inputs_restricts_even_on_error(
     app: FastAPI,
-    mock_run_command_in_container: AsyncMock,
+    mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
 ):
     class _MyError(Exception):
@@ -236,12 +229,12 @@ async def test_writable_inputs_restricts_even_on_error(
             raise _MyError
 
     EXPECTED_CALLS = 2  # grant, then restrict
-    assert mock_run_command_in_container.await_count == EXPECTED_CALLS
+    assert mock_input_permissions_toggle.await_count == EXPECTED_CALLS
 
 
 async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
     app: FastAPI,
-    mock_run_command_in_container: AsyncMock,
+    mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
     inputs_path: Path,
 ):
@@ -260,7 +253,7 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
 
     async with writable_inputs(app):
         # second caller is still writing: only the initial grant must have happened
-        mock_run_command_in_container.assert_awaited_once_with(
+        mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
             command=_get_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
@@ -269,13 +262,13 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
         await first_task
 
         # first caller exited but the second is still inside: must stay writable
-        mock_run_command_in_container.assert_awaited_once_with(
+        mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
             command=_get_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
-    mock_run_command_in_container.assert_awaited_with(
+    mock_input_permissions_toggle.assert_awaited_with(
         self_container_name,
         command=_get_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
@@ -284,7 +277,7 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
 
 async def test_writable_inputs_registers_without_waiting_for_slow_grant(
     app: FastAPI,
-    mock_run_command_in_container: AsyncMock,
+    mock_input_permissions_toggle: AsyncMock,
     inputs_path: Path,
 ):
     # regression test: a new writer must register its reference count
@@ -297,7 +290,7 @@ async def test_writable_inputs_registers_without_waiting_for_slow_grant(
             grant_started.set()
             await release_grant.wait()
 
-    mock_run_command_in_container.side_effect = _slow_exec
+    mock_input_permissions_toggle.side_effect = _slow_exec
     state = _get_writable_inputs_state(app)
 
     async def _enter() -> None:
