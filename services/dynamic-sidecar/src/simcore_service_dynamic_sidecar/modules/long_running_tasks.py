@@ -62,6 +62,7 @@ from ..modules.outputs import (
     event_propagation_disabled,
 )
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
+from ..services.container_extensions import writable_inputs
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
@@ -505,19 +506,20 @@ async def pull_user_services_input_ports(
         description="pulling inputs",
     ) as root_progress:
         with log_directory_changes(mounted_volumes.disk_inputs_path, _logger, logging.INFO):
-            transferred_bytes = await nodeports.download_target_ports(
-                nodeports.PortTypeName.INPUTS,
-                mounted_volumes.disk_inputs_path,
-                port_keys=port_keys,
-                io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
-                progress_bar=root_progress,
-                port_notifier=PortNotifier(
-                    app,
-                    settings.DY_SIDECAR_USER_ID,
-                    settings.DY_SIDECAR_PROJECT_ID,
-                    settings.DY_SIDECAR_NODE_ID,
-                ),
-            )
+            async with writable_inputs(app):
+                transferred_bytes = await nodeports.download_target_ports(
+                    nodeports.PortTypeName.INPUTS,
+                    mounted_volumes.disk_inputs_path,
+                    port_keys=port_keys,
+                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
+                    progress_bar=root_progress,
+                    port_notifier=PortNotifier(
+                        app,
+                        settings.DY_SIDECAR_USER_ID,
+                        settings.DY_SIDECAR_PROJECT_ID,
+                        settings.DY_SIDECAR_NODE_ID,
+                    ),
+                )
     await post_sidecar_log_message(app, f"Finished pulling inputs: {port_keys}", log_level=logging.INFO)
     await progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)

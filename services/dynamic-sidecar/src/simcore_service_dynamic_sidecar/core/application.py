@@ -20,6 +20,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
+from ..services.container_extensions import restrict_input_permissions
 from .docker_compose_utils import docker_compose_down
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
@@ -185,6 +186,7 @@ def _configure_plugins(
     from ..modules.user_services_preferences import (
         configure_user_services_preferences,
     )
+    from ..services.container_extensions import configure_writable_inputs
     from .docker_logs import configure_background_log_fetcher
     from .external_dependencies import configure_check_dependencies
     from .rabbitmq import configure_rabbitmq
@@ -208,6 +210,7 @@ def _configure_plugins(
     configure_mounted_fs(app_lifespan)
     configure_system_monitor(app, app_lifespan)
     configure_inputs(app_lifespan)
+    configure_writable_inputs(app_lifespan)
     configure_outputs(app_lifespan)
     configure_long_running_tasks(app, app_lifespan)
     configure_attribute_monitor(app_lifespan)
@@ -228,6 +231,7 @@ def _configure_application_lifespan(
 
         app_state = AppState(app)
         await volumes_fix_permissions(app_state.mounted_volumes)
+        await restrict_input_permissions(app)
         yield {}
 
     app_lifespan.add(_application_lifespan)

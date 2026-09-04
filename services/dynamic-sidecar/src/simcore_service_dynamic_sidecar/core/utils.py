@@ -27,13 +27,17 @@ class CommandResult(NamedTuple):
         return f"'{self.command}' finished_ok='{self.success}' elapsed='{self.elapsed}'\n{self.message}"
 
 
+def get_self_container() -> str:
+    return os.environ["HOSTNAME"]
+
+
 def _close_transport(proc: Process):
     # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
     #
     # Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7f871d0c7e50>
     # Traceback (most recent call last):
     #   File " ... ./versions/3.9.12/lib/python3.9/asyncio/base_subprocess.py", line 126, in __del__
-    #     self.close()
+    #     self.close()  # noqa: ERA001
     #
 
     # SEE implementation of asyncio.subprocess.Process._read_stream(...)

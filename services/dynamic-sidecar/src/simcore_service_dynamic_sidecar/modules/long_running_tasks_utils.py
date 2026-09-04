@@ -1,5 +1,4 @@
 import logging
-import os
 from datetime import timedelta
 from typing import Final
 
@@ -13,6 +12,7 @@ from servicelib.container_utils import (
 )
 from servicelib.logging_utils import log_context
 
+from ..core.utils import get_self_container
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
 
@@ -52,14 +52,12 @@ async def ensure_read_permissions_on_user_service_data(
     # Makes sure sidecar has access to all files in the user services.
     # The user could have removed read permissions form a file, which will cause an error.
 
-    # NOTE: command runs inside self container since the user service container might not always be running
-    self_container = os.environ["HOSTNAME"]
     for path_to_store in (  # apply changes to otuputs and all state folders
         *mounted_volumes.disk_state_paths_iter(),
         mounted_volumes.disk_outputs_path,
     ):
         await run_command_in_container(
-            self_container,
+            get_self_container(),
             command=f"chmod -R g+rX,o+rX '{path_to_store}'",
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )

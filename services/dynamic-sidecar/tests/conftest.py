@@ -179,6 +179,7 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 def base_mock_envs(
     fast_long_running_tasks_cancellation: None,
     use_in_memory_redis: RedisSettings,
+    mock_input_permissions_toggle: AsyncMock,
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -218,6 +219,8 @@ def base_mock_envs(
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
         "DY_SIDECAR_PRODUCT_NAME": product_name,
+        # set by docker at runtime; used by get_self_container() to target this sidecar's own container
+        "HOSTNAME": "test-self-container",
     }
 
 
@@ -270,6 +273,8 @@ def mock_environment(
             "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",
             "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
             "DYNAMIC_SIDECAR_TRACING": "null",
+            # set by docker at runtime; used by get_self_container() to target this sidecar's own container
+            "HOSTNAME": "test-self-container",
             "POSTGRES_DB": "test",
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",
@@ -314,6 +319,14 @@ def caplog_info_debug(
 ) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
+
+
+@pytest.fixture
+def mock_input_permissions_toggle(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.services.container_extensions.run_command_in_container",
+        autospec=True,
+    )
 
 
 @pytest.fixture
