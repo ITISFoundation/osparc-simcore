@@ -35,7 +35,6 @@ Makefile                                           @pcrespov @sanderegg
 /services/docker-compose.yml                           @sanderegg @mrnicegyu11 @YuryHrytsuk
 /services/docker-compose.*.yml                         @sanderegg
 /services/dynamic-sidecar/                             @GitHK
-/services/efs-guardian/                                @matusdrobuliak66
 /services/invitations/                                 @pcrespov
 /services/migration/                                   @pcrespov
 /services/notifications/                               @pcrespov @giancarloromeo

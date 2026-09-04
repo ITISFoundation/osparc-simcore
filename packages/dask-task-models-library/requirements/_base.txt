@@ -92,7 +92,7 @@ pygments==2.21.0
     # via rich
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 pyyaml==6.0.3
     # via

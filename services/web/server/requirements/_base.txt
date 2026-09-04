@@ -29,11 +29,8 @@ aiohttp==3.14.3
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
     #   aiodocker
-    #   aiohttp-jinja2
     #   aiohttp-security
     #   aiohttp-session
-aiohttp-jinja2==1.6
-    # via -r requirements/_base.in
 aiohttp-security==0.5.0
     # via -r requirements/_base.in
 aiohttp-session==2.11.0
@@ -113,7 +110,7 @@ email-validator==2.2.0
     # via pydantic
 et-xmlfile==1.1.0
     # via openpyxl
-faker==19.6.1
+faker==40.38.0
     # via -r requirements/_base.in
 fast-depends==3.0.8
     # via faststream
@@ -163,12 +160,9 @@ idna==3.19
     #   httpx
     #   requests
     #   yarl
-jinja-app-loader==1.0.2
-    # via -r requirements/_base.in
 jinja2==3.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
-    #   aiohttp-jinja2
     #   swagger-ui-py
 jsondiff==2.0.0
     # via -r requirements/_base.in
@@ -192,6 +186,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   mako
+    #   werkzeug
 mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.2.2
@@ -384,7 +379,7 @@ python-dateutil==2.8.2
     #   arrow
     #   celery
     #   faker
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via pydantic-settings
 python-engineio==4.13.5
     # via python-socketio
@@ -491,7 +486,7 @@ urllib3==2.7.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
-uvloop==0.21.0
+uvloop==0.22.1
     # via -r requirements/_base.in
 vine==5.1.0
     # via
@@ -500,7 +495,7 @@ vine==5.1.0
     #   kombu
 wcwidth==0.2.13
     # via prompt-toolkit
-werkzeug==2.1.2
+werkzeug==3.1.8
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.16.0
     # via

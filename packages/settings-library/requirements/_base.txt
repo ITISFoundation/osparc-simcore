@@ -28,7 +28,7 @@ pydantic-settings==2.14.2
     # via -r requirements/_base.in
 pygments==2.21.0
     # via rich
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 rich==14.3.3
     # via

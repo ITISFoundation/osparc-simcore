@@ -14,7 +14,7 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 h11==0.16.0
     # via
@@ -67,7 +67,7 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

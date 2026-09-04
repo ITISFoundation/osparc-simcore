@@ -43,7 +43,7 @@ coverage==7.16.0
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.36.0
     # via -r requirements/_test.in

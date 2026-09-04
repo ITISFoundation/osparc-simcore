@@ -195,7 +195,7 @@ markupsafe==3.0.3
     #   jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.1
+msgpack==1.2.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
@@ -373,7 +373,7 @@ python-dateutil==2.9.0.post0
     #   aiobotocore
     #   arrow
     #   botocore
-python-dotenv==1.2.1
+python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn

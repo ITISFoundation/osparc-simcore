@@ -56,7 +56,7 @@ docker==7.1.0
     # via
     #   pytest-celery
     #   pytest-docker-tools
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
@@ -158,7 +158,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   celery
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

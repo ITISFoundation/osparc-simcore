@@ -36,7 +36,7 @@ coverage==7.16.0
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fastapi==0.141.1
     # via -r requirements/_test.in
@@ -129,7 +129,7 @@ pytest-sugar==1.1.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via -r requirements/_test.in
 python-engineio==4.13.5
     # via python-socketio

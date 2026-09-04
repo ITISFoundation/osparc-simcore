@@ -52,6 +52,8 @@ billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
+blinker==1.9.0
+    # via flask
 boto3==1.40.61
     # via
     #   -c requirements/_base.txt
@@ -126,11 +128,11 @@ docker==7.1.0
     #   moto
     #   pytest-celery
     #   pytest-docker-tools
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-flask==2.1.3
+flask==3.1.3
     # via
     #   flask-cors
     #   moto
@@ -224,8 +226,10 @@ mako==1.3.12
 markupsafe==3.0.2
     # via
     #   -c requirements/_base.txt
+    #   flask
     #   jinja2
     #   mako
+    #   werkzeug
 moto==5.2.2
     # via -r requirements/_test.in
 mpmath==1.3.0
@@ -453,7 +457,7 @@ wcwidth==0.2.13
     # via
     #   -c requirements/_base.txt
     #   prompt-toolkit
-werkzeug==2.1.2
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors

@@ -95,7 +95,7 @@ docker==7.1.0
     #   moto
 execnet==2.1.2
     # via pytest-xdist
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -262,7 +262,7 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   aiobotocore
     #   botocore
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -354,7 +354,7 @@ urllib3==2.7.0
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors
