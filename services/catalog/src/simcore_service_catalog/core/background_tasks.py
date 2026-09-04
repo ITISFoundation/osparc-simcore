@@ -9,6 +9,7 @@
 
 """
 
+import asyncio
 import datetime
 import logging
 from collections.abc import AsyncIterator
@@ -22,7 +23,7 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
-from servicelib.background_task import create_periodic_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
 from sqlalchemy.exc import SQLAlchemyError
@@ -34,6 +35,7 @@ from ..repository.groups import GroupsRepository
 from ..repository.projects import ProjectsRepository
 from ..repository.services import ServicesRepository
 from ..service import access_rights, manifest
+from ..service.manifest_cache import get_service_manifest_cache, get_service_manifest_lock_client
 
 _logger = logging.getLogger(__name__)
 
@@ -115,7 +117,10 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     Notice that a services here refers to a 2-tuple (key, version)
     """
     director_api = get_director_client(app)
-    services_in_manifest_map = await manifest.get_services_map(director_api)
+    services_in_manifest_map = await manifest.get_services_map(
+        director_api,
+        get_service_manifest_cache(app),
+    )
 
     services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)
 
@@ -168,7 +173,7 @@ async def _ensure_published_templates_accessible(db_engine: AsyncEngine, default
 
 
 @traced
-async def _run_sync_services(app: FastAPI):
+async def _run_sync_services(app: FastAPI) -> None:
     default_product: Final[str] = app.state.default_product_name
     engine: AsyncEngine = app.state.engine
 
@@ -184,10 +189,21 @@ async def background_task_lifespan(app: FastAPI) -> AsyncIterator[State]:
     registry_sync_task = None
     try:
         with log_context(_logger, logging.DEBUG, msg="starting registry syncing task"):
-            registry_sync_task = create_periodic_task(
-                _run_sync_services,
-                interval=datetime.timedelta(seconds=app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME),
-                app=app,
+            sync_interval = datetime.timedelta(seconds=app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
+            lock_client = get_service_manifest_lock_client(app)
+            assert lock_client is not None  # nosec
+
+            @exclusive_periodic(
+                lock_client,
+                task_interval=sync_interval,
+                retry_after=sync_interval,
+            )
+            async def _periodic_registry_sync() -> None:
+                await _run_sync_services(app)
+
+            registry_sync_task = asyncio.create_task(
+                _periodic_registry_sync(),
+                name=_periodic_registry_sync.__name__,
             )
         yield {}
     finally:
