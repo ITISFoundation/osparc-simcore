@@ -49,6 +49,7 @@ from simcore_service_dynamic_sidecar.services.container_extensions import (
     _TIMEOUT_PERMISSION_CHANGES,
     _get_grant_input_permissions_command,
     _get_restrict_input_permissions_command,
+    _get_writable_inputs_state,
     grant_input_permissions,
     restrict_input_permissions,
     writable_inputs,
@@ -237,6 +238,84 @@ async def test_writable_inputs_restricts_even_on_error(
 
     EXPECTED_CALLS = 2  # grant, then restrict
     assert mock_run_command_in_container.await_count == EXPECTED_CALLS
+
+
+async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
+    app: FastAPI,
+    mock_run_command_in_container: AsyncMock,
+    self_container_name: str,
+    inputs_path: Path,
+):
+    # regression test: an overlapping second pull must not have the first
+    # one's exit re-lock the folder while it is still writing to it
+    entered_first = asyncio.Event()
+    release_first = asyncio.Event()
+
+    async def _first() -> None:
+        async with writable_inputs(app):
+            entered_first.set()
+            await release_first.wait()
+
+    first_task = asyncio.create_task(_first())
+    await entered_first.wait()
+
+    async with writable_inputs(app):
+        # second caller is still writing: only the initial grant must have happened
+        mock_run_command_in_container.assert_awaited_once_with(
+            self_container_name,
+            command=_get_grant_input_permissions_command(inputs_path),
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
+        release_first.set()
+        await first_task
+
+        # first caller exited but the second is still inside: must stay writable
+        mock_run_command_in_container.assert_awaited_once_with(
+            self_container_name,
+            command=_get_grant_input_permissions_command(inputs_path),
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
+
+    mock_run_command_in_container.assert_awaited_with(
+        self_container_name,
+        command=_get_restrict_input_permissions_command(inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def test_writable_inputs_registers_without_waiting_for_slow_grant(
+    app: FastAPI,
+    mock_run_command_in_container: AsyncMock,
+    inputs_path: Path,
+):
+    # regression test: a new writer must register its reference count
+    # immediately, without queueing behind another caller's in-flight grant
+    grant_started = asyncio.Event()
+    release_grant = asyncio.Event()
+
+    async def _slow_exec(*args, **kwargs) -> None:
+        if kwargs.get("command") == _get_grant_input_permissions_command(inputs_path):
+            grant_started.set()
+            await release_grant.wait()
+
+    mock_run_command_in_container.side_effect = _slow_exec
+    state = _get_writable_inputs_state(app)
+
+    async def _enter() -> None:
+        async with writable_inputs(app):
+            pass
+
+    first_task = asyncio.create_task(_enter())
+    await grant_started.wait()
+    assert state.active_count == 1
+
+    second_task = asyncio.create_task(_enter())
+    await asyncio.sleep(0)  # let the second caller run its registration step
+    assert state.active_count == 2  # registered despite the grant still pending
+
+    release_grant.set()
+    await first_task
+    await second_task
 
 
 @pytest.fixture

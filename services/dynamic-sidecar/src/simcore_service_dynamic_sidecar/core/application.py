@@ -186,6 +186,7 @@ def _configure_plugins(
     from ..modules.user_services_preferences import (
         configure_user_services_preferences,
     )
+    from ..services.container_extensions import configure_writable_inputs
     from .docker_logs import configure_background_log_fetcher
     from .external_dependencies import configure_check_dependencies
     from .rabbitmq import configure_rabbitmq
@@ -209,6 +210,7 @@ def _configure_plugins(
     configure_mounted_fs(app_lifespan)
     configure_system_monitor(app, app_lifespan)
     configure_inputs(app_lifespan)
+    configure_writable_inputs(app_lifespan)
     configure_outputs(app_lifespan)
     configure_long_running_tasks(app, app_lifespan)
     configure_attribute_monitor(app_lifespan)

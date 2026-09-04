@@ -1,12 +1,15 @@
+import asyncio
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
 from aiodocker.networks import DockerNetwork
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.services import ServiceOutput
 from servicelib.container_utils import run_command_in_container
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
@@ -60,11 +63,11 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
 
 
 def _get_restrict_input_permissions_command(inputs_path: Path) -> str:
-    return f"chmod -R go-w '{inputs_path}'"
+    return f"chmod -R a-w '{inputs_path}'"
 
 
 def _get_grant_input_permissions_command(inputs_path: Path) -> str:
-    return f"chmod -R go+w '{inputs_path}'"
+    return f"chmod -R a+w '{inputs_path}'"
 
 
 async def restrict_input_permissions(app: FastAPI) -> None:
@@ -88,14 +91,43 @@ async def grant_input_permissions(app: FastAPI) -> None:
     )
 
 
+@dataclass
+class _WritableInputsState:
+    io_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    active_count: int = 0
+
+
+async def _writable_inputs_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.writable_inputs_state = _WritableInputsState()
+    yield
+
+
+def configure_writable_inputs(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_writable_inputs_lifespan)
+
+
+def _get_writable_inputs_state(app: FastAPI) -> _WritableInputsState:
+    state: _WritableInputsState = app.state.writable_inputs_state
+    return state
+
+
 @asynccontextmanager
 async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
-    # write access is only needed for the duration of this sidecar's own update
-    await grant_input_permissions(app)
+    state = _get_writable_inputs_state(app)
+
+    state.active_count += 1
+    first = state.active_count == 1
     try:
+        async with state.io_lock:
+            if first:
+                await grant_input_permissions(app)
         yield
     finally:
-        await restrict_input_permissions(app)
+        state.active_count -= 1
+        last = state.active_count == 0
+        async with state.io_lock:
+            if last:
+                await restrict_input_permissions(app)
 
 
 async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:
