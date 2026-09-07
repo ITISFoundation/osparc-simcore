@@ -1,13 +1,14 @@
 import logging
 import multiprocessing
 import stat
-from asyncio import CancelledError, Task, create_task, get_event_loop
+from asyncio import CancelledError, Task, create_task, get_event_loop, to_thread
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from multiprocessing.queues import Queue
 from pathlib import Path
 from queue import Empty
+from threading import Lock
 from time import sleep as blocking_sleep
 from typing import Final
 
@@ -94,13 +95,17 @@ class _LoggingEventHandlerProcess:
         # the process itself and is used to stop the process.
         self._stop_queue: Queue[None] = multiprocessing.Queue()
 
+        self._process_lock: Lock = Lock()
         self._process: multiprocessing.Process | None = None
 
     def start_process(self) -> None:
-        with log_context(
-            logger,
-            logging.DEBUG,
-            f"{_LoggingEventHandlerProcess.__name__} start_process",
+        with (
+            log_context(
+                logger,
+                logging.DEBUG,
+                f"{_LoggingEventHandlerProcess.__name__} start_process",
+            ),
+            self._process_lock,
         ):
             self._process = multiprocessing.Process(
                 target=_process_worker,
@@ -115,10 +120,13 @@ class _LoggingEventHandlerProcess:
             self._process.start()
 
     def _stop_process(self) -> None:
-        with log_context(
-            logger,
-            logging.DEBUG,
-            f"{_LoggingEventHandlerProcess.__name__} stop_process",
+        with (
+            log_context(
+                logger,
+                logging.DEBUG,
+                f"{_LoggingEventHandlerProcess.__name__} stop_process",
+            ),
+            self._process_lock,
         ):
             self._stop_queue.put(None)
 
@@ -199,9 +207,11 @@ class LoggingEventHandlerObserver:
 
     async def stop(self) -> None:
         with log_context(logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} stop"):
-            self._stop_observer_process()
+            # NOTE: the health worker is the only other user of the process,
+            # stopping it first avoids racing with a restart
             self._keep_running = False
             if self._task_health_worker is not None:
                 self._task_health_worker.cancel("stopping health worker")
                 with suppress(CancelledError):
                     await self._task_health_worker
+            await to_thread(self._stop_observer_process)

@@ -6,6 +6,7 @@ import multiprocessing
 from collections.abc import AsyncIterable
 from multiprocessing.queues import Queue
 from pathlib import Path
+from threading import Event, Thread
 from typing import Any, Final
 from unittest.mock import Mock
 
@@ -91,6 +92,60 @@ async def test_event_handler_process_lifecycle(
     observer_process.stop_process()
 
     observer_process.shutdown()
+
+
+def test_event_handler_process_concurrent_stop_process_does_not_raise(
+    outputs_context: OutputsContext,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+) -> None:
+    observer_process = _EventHandlerProcess(
+        outputs_context=outputs_context,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+
+    entered_kill = Event()
+    release_kill = Event()
+    first_caller_paused = False
+
+    def _kill() -> None:
+        nonlocal first_caller_paused
+        # only the first caller pauses: it must observe `self._process` as
+        # non-`None` for longer than it takes a concurrent caller to clear it
+        if not first_caller_paused:
+            first_caller_paused = True
+            entered_kill.set()
+            assert release_kill.wait(timeout=5), "test setup: never released"
+
+    mock_process = Mock()
+    mock_process.kill.side_effect = _kill
+    observer_process._process = mock_process
+
+    errors: list[BaseException] = []
+
+    def _stop_process() -> None:
+        try:
+            observer_process.stop_process()
+        except BaseException as exc:  # pylint: disable=broad-except
+            errors.append(exc)
+
+    first_thread = Thread(target=_stop_process)
+    first_thread.start()
+    assert entered_kill.wait(timeout=5), "first thread never reached kill()"
+
+    # with the lock this blocks on `_process_lock` and cannot make progress
+    # while the first thread is paused mid-`kill()`; without it, it runs to
+    # completion (clearing `self._process`) before the first thread resumes
+    second_thread = Thread(target=_stop_process)
+    second_thread.start()
+    second_thread.join(timeout=0.5)
+
+    release_kill.set()
+    first_thread.join(timeout=5)
+    second_thread.join(timeout=5)
+
+    assert not errors
 
 
 async def test_event_handler_observer_health_ok(
