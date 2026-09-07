@@ -28,6 +28,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
 )
 from models_library.services_types import ServicePortKey
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
@@ -166,7 +167,7 @@ def default_db_manager(faker: Faker) -> DBManager:
 
 
 async def test_default_configuration(
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     default_configuration: dict[str, Any],
@@ -189,7 +190,7 @@ async def test_default_configuration(
 
 
 async def test_invalid_ports(
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
@@ -231,7 +232,7 @@ async def test_invalid_ports(
     ],
 )
 async def test_port_value_accessors(
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
@@ -280,14 +281,14 @@ async def test_port_value_accessors(
         ("data:text/py", "symlink_path", Path, "config_value_symlink_path"),
     ],
 )
-async def test_port_file_accessors(  # noqa: PLR0917
+async def test_port_file_accessors(
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     s3_simcore_location: LocationID,
     item_type: str,
     item_value: str,
     item_pytype: type,
     config_value: dict[str, str],
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     e_tag: str,
@@ -363,7 +364,7 @@ async def test_port_file_accessors(  # noqa: PLR0917
 
 
 async def test_adding_new_ports(
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
@@ -414,7 +415,7 @@ async def test_adding_new_ports(
 
 
 async def test_removing_ports(
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
@@ -463,8 +464,8 @@ async def test_removing_ports(
         ("string", "", str),
     ],
 )
-async def test_get_value_from_previous_node(  # noqa: PLR0917
-    user_id: int,
+async def test_get_value_from_previous_node(
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
@@ -509,9 +510,9 @@ async def test_get_value_from_previous_node(  # noqa: PLR0917
         ("data:text/py", __file__, Path),
     ],
 )
-async def test_get_file_from_previous_node(  # noqa: PLR0917
+async def test_get_file_from_previous_node(
     create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_node_link: Callable,
@@ -566,9 +567,9 @@ async def test_get_file_from_previous_node(  # noqa: PLR0917
         ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
     ],
 )
-async def test_get_file_from_previous_node_with_mapping_of_same_key_name(  # noqa: PLR0917
+async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_node_link: Callable,
@@ -629,9 +630,9 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(  # noq
         ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
     ],
 )
-async def test_file_mapping(  # noqa: PLR0917
+async def test_file_mapping(
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     s3_simcore_location: LocationID,
@@ -723,7 +724,7 @@ def port_count() -> int:
 
 
 async def test_regression_concurrent_port_update_fails(
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
@@ -805,8 +806,8 @@ async def spy_outputs_callbacks(mocker: MockerFixture, output_callbacks: _Callba
 
 
 @pytest.mark.parametrize("use_output_callbacks", [True, False])
-async def test_batch_update_inputs_outputs(  # noqa: PLR0917
-    user_id: int,
+async def test_batch_update_inputs_outputs(
+    user_id: UserID,
     project_id: str,
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
