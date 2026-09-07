@@ -185,6 +185,69 @@ def test_logging_event_handler_process_concurrent_stop_process_does_not_raise(
     first_thread.join(timeout=5)
     second_thread.join(timeout=5)
 
+    assert not first_thread.is_alive(), "first thread never completed (deadlock?)"
+    assert not second_thread.is_alive(), "second thread never completed (deadlock?)"
+    assert not errors
+
+
+def test_logging_event_handler_process_concurrent_start_vs_stop_process_does_not_raise(
+    fake_dy_volumes_mount_dir: Path,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    mocker: MockerFixture,
+):
+    observer_process = _LoggingEventHandlerProcess(
+        path_to_observe=fake_dy_volumes_mount_dir,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+
+    entered_start = threading.Event()
+    release_start = threading.Event()
+    first_caller_paused = False
+
+    def _start() -> None:
+        nonlocal first_caller_paused
+        # pauses while `start_process` still holds `_process_lock`
+        if not first_caller_paused:
+            first_caller_paused = True
+            entered_start.set()
+            assert release_start.wait(timeout=5), "test setup: never released"
+
+    mock_process_cls = Mock()
+    mock_process_cls.return_value.start.side_effect = _start
+    mocker.patch.object(multiprocessing, "Process", mock_process_cls)
+
+    errors: list[BaseException] = []
+
+    def _start_process() -> None:
+        try:
+            observer_process.start_process()
+        except BaseException as exc:  # pylint: disable=broad-except
+            errors.append(exc)
+
+    def _stop_process() -> None:
+        try:
+            observer_process._stop_process()  # noqa: SLF001
+        except BaseException as exc:  # pylint: disable=broad-except
+            errors.append(exc)
+
+    start_thread = threading.Thread(target=_start_process)
+    start_thread.start()
+    assert entered_start.wait(timeout=5), "start thread never reached start()"
+
+    # must block on `_process_lock` while `start_process` is still in progress
+    stop_thread = threading.Thread(target=_stop_process)
+    stop_thread.start()
+    stop_thread.join(timeout=0.5)
+    assert stop_thread.is_alive(), "_stop_process proceeded before start_process released the lock"
+
+    release_start.set()
+    start_thread.join(timeout=5)
+    stop_thread.join(timeout=5)
+
+    assert not start_thread.is_alive(), "start thread never completed (deadlock?)"
+    assert not stop_thread.is_alive(), "stop thread never completed (deadlock?)"
     assert not errors
 
 
