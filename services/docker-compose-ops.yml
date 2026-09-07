@@ -20,12 +20,10 @@
 
 services:
   adminer:
-    image: adminer:5.4.1
+    image: adminer:6.0.1
     init: true
     environment:
       ADMINER_DEFAULT_SERVER: postgres
-      ADMINER_DESIGN: nette
-      ADMINER_PLUGINS: json-column
     ports:
       - "18080:8080"
     networks:
