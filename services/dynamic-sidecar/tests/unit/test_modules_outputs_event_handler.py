@@ -141,6 +141,7 @@ def test_event_handler_process_concurrent_stop_process_does_not_raise(
     second_thread = Thread(target=_stop_process)
     second_thread.start()
     second_thread.join(timeout=0.5)
+    assert second_thread.is_alive(), "stop_process proceeded before first stop_process released the lock"
 
     release_kill.set()
     first_thread.join(timeout=5)
