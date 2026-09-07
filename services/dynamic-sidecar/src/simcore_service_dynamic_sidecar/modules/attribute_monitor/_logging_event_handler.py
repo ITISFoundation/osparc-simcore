@@ -12,6 +12,7 @@ from threading import Lock
 from time import sleep as blocking_sleep
 from typing import Final
 
+from common_library.async_tools import cancel_wait_task
 from pydantic import ByteSize, PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
@@ -211,8 +212,7 @@ class LoggingEventHandlerObserver:
             self._keep_running = False
             try:
                 if self._task_health_worker is not None:
-                    self._task_health_worker.cancel("stopping health worker")
                     with suppress(CancelledError):
-                        await self._task_health_worker
+                        await cancel_wait_task(self._task_health_worker)
             finally:
                 await to_thread(self._stop_observer_process)
