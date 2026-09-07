@@ -44,7 +44,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from redis.exceptions import RedisError
 from servicelib.logging_utils import log_context
-from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK, exclusive
+from servicelib.redis import BaseRedisError, RedisClientSDK, exclusive
 from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
@@ -217,13 +217,40 @@ async def _prewarm_service_cache(
     lock_client: RedisClientSDK,
     director_client: DirectorClient,
     service_cache: BaseCache,
-) -> None:
+) -> ServiceMetaDataPublishedDict | None:
     del lock_client
     with log_context(_logger, logging.INFO, "prewarming service manifest cache"):
         if await _is_snapshot_fresh(service_cache):
             _logger.info("Service manifest cache was already prewarmed by another replica")
-        else:
-            await get_services_map(director_client, service_cache)
+            return None
+        return await get_services_map(director_client, service_cache)
+
+
+async def _refresh_batch_from_registry(
+    *,
+    cache_keys: list[str],
+    cached_services: list[Any],
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+    lock_client: RedisClientSDK | None,
+) -> tuple[ServiceMetaDataPublishedDict, list[Any]]:
+    if lock_client is None:
+        return await get_services_map(director_client, service_cache), cached_services
+
+    prewarmed_services_map: ServiceMetaDataPublishedDict | None = None
+    try:
+        prewarmed_services_map = await _prewarm_service_cache(
+            lock_client=lock_client,
+            director_client=director_client,
+            service_cache=service_cache,
+        )
+        return {}, cast(list[Any], await service_cache.multi_get(cache_keys))
+    except (BaseRedisError, RedisError, TimeoutError):
+        _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
+        # NOTE: reusing the snapshot fetched under the lock avoids calling the director twice
+        if prewarmed_services_map is None:
+            prewarmed_services_map = await get_services_map(director_client, service_cache)
+        return prewarmed_services_map, cached_services
 
 
 async def get_batch_services(
@@ -253,19 +280,13 @@ async def get_batch_services(
     # never cached, so keying off missing entries would refresh on every request
     if cache_hits < len(selection) and not await _is_snapshot_fresh(service_cache):
         try:
-            try:
-                if lock_client is None:
-                    services_map = await get_services_map(director_client, service_cache)
-                else:
-                    await _prewarm_service_cache(
-                        lock_client=lock_client,
-                        director_client=director_client,
-                        service_cache=service_cache,
-                    )
-                    cached_services = cast(list[Any], await service_cache.multi_get(cache_keys))
-            except (CouldNotAcquireLockError, RedisError, TimeoutError):
-                _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
-                services_map = await get_services_map(director_client, service_cache)
+            services_map, cached_services = await _refresh_batch_from_registry(
+                cache_keys=cache_keys,
+                cached_services=cached_services,
+                director_client=director_client,
+                service_cache=service_cache,
+                lock_client=lock_client,
+            )
         except HTTPException:
             _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
 
