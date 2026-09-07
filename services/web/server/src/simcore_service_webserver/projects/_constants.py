@@ -10,3 +10,8 @@ MSG_PARENT_PROJECT_NOT_FOUND_ERROR: Final[str] = user_message(
 )
 
 MSG_PROJECT_NOT_FOUND_ERROR: Final[str] = user_message("The project you're looking for could not be found.", _version=1)
+
+MSG_INVALID_REQUEST_PARAMETER_ERROR: Final[str] = user_message(
+    "The request contains invalid or missing parameters. Please check and try again.",
+    _version=1,
+)

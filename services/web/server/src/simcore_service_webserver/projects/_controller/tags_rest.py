@@ -10,6 +10,7 @@ from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _tags_service as tags_api
+from .._constants import MSG_INVALID_REQUEST_PARAMETER_ERROR
 from ._rest_exceptions import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ async def add_project_tag(request: web.Request):
             request.match_info["project_uuid"],
         )
     except KeyError as err:
-        raise web.HTTPBadRequest(text=f"Invalid request parameter {err}") from err
+        raise web.HTTPBadRequest(text=MSG_INVALID_REQUEST_PARAMETER_ERROR) from err
 
     project = await tags_api.add_tag(
         request.app,
