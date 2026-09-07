@@ -133,6 +133,7 @@ async def _assert_wait_for_task_status(
 @pytest.fixture
 def _minimal_dask_config(
     disable_postgres: None,
+    disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
@@ -301,8 +302,8 @@ def image_params(cpu_image: ImageParams, gpu_image: ImageParams, request) -> Ima
 
 
 @pytest.fixture
-def _mocked_node_ports(mocker: MockerFixture) -> None:
-    mocker.patch(
+def _mocked_node_ports(mocker: MockerFixture) -> mock.Mock:
+    mocked_create_node_ports = mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.create_node_ports",
         return_value=None,
     )
@@ -319,6 +320,7 @@ def _mocked_node_ports(mocker: MockerFixture) -> None:
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_service_log_file_upload_link",
         return_value=TypeAdapter(AnyUrl).validate_python("file://undefined"),
     )
+    return mocked_create_node_ports
 
 
 @pytest.fixture
@@ -430,7 +432,7 @@ async def test_send_computation_task(
     project_id: ProjectID,
     node_id: NodeID,
     image_params: ImageParams,
-    _mocked_node_ports: None,
+    _mocked_node_ports: mock.Mock,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     comp_run_metadata: RunMetadataDict,
@@ -507,6 +509,17 @@ async def test_send_computation_task(
     assert len(node_id_to_job_ids) == 1
     published_computation_task = node_id_to_job_ids[0]
     assert published_computation_task.node_id in image_params.fake_tasks
+
+    # the app's rabbitmq client must be forwarded down to node_ports
+    _mocked_node_ports.assert_called_once_with(
+        db_engine=mock.ANY,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        rabbitmq_client=dask_client.app.state.rabbitmq_client,
+    )
+    # sending a computation task only reads the ports: it must never publish
+    dask_client.app.state.rabbitmq_client.publish.assert_not_called()
 
     # check status goes to PENDING/STARTED
     await _assert_wait_for_task_status(

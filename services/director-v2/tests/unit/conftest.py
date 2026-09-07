@@ -37,11 +37,17 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
+
+
+@pytest.fixture
+def rabbitmq_client() -> mock.AsyncMock:
+    return mock.AsyncMock(spec=RabbitMQClient)
 
 
 @pytest.fixture

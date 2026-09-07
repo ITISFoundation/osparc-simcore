@@ -201,6 +201,7 @@ async def test_parse_output_data(
     fake_task_output_data: TaskOutputData,
     mocker: MockerFixture,
     faker: Faker,
+    rabbitmq_client: mock.AsyncMock,
 ):
     # need some fakes set in the DB
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
@@ -218,11 +219,13 @@ async def test_parse_output_data(
         sleeper_task.node_id,
         run_id=faker.pyint(min_value=1),
     )
-    await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data)
+    await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data, rabbitmq_client)
 
     # the FileUrl types are converted to a pure url
     expected_values = {k: v.url if isinstance(v, FileUrl) else v for k, v in fake_task_output_data.items()}
     mocked_node_ports_set_value_fct.assert_has_calls([mock.call(value) for value in expected_values.values()])
+    # Port.set_value is mocked out, so the real db write/publish never runs
+    rabbitmq_client.publish.assert_not_called()
 
 
 @pytest.fixture
@@ -252,6 +255,7 @@ async def test_compute_input_data(
     faker: Faker,
     mocker: MockerFixture,
     tasks_file_link_type: FileLinkType,
+    rabbitmq_client: mock.AsyncMock,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
 
@@ -291,6 +295,7 @@ async def test_compute_input_data(
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
+        rabbitmq_client=rabbitmq_client,
     )
     computed_input_data = await compute_input_data(
         project_id=published_project.project.uuid,
@@ -302,6 +307,8 @@ async def test_compute_input_data(
         [mock.call(mock.ANY, file_link_type=tasks_file_link_type) for n in fake_io_data]
     )
     assert computed_input_data.keys() == fake_io_data.keys()
+    # computing input data only reads: it must never publish
+    rabbitmq_client.publish.assert_not_called()
 
 
 @pytest.fixture
@@ -324,6 +331,7 @@ async def test_compute_output_data_schema(
     tasks_file_link_type: FileLinkType,
     tasks_file_link_scheme: tuple,
     mocked_node_ports_filemanager_fcts: dict[str, mock.MagicMock],
+    rabbitmq_client: mock.AsyncMock,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     # simulate pre-created file links
@@ -335,6 +343,7 @@ async def test_compute_output_data_schema(
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
+        rabbitmq_client=rabbitmq_client,
     )
 
     output_schema = await compute_output_data_schema(
@@ -344,6 +353,8 @@ async def test_compute_output_data_schema(
         file_link_type=tasks_file_link_type,
         node_ports=node_ports,
     )
+    # computing the output schema only reads: it must never publish
+    rabbitmq_client.publish.assert_not_called()
     for port_key, port_schema in fake_io_schema.items():
         assert port_key in output_schema
         assert output_schema[port_key]
@@ -369,6 +380,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     entry_exists_returns: bool,
     fake_io_schema: dict[str, dict[str, str]],
     faker: Faker,
+    rabbitmq_client: mock.AsyncMock,
 ):
     # since the presigned links for outputs and logs file are created
     # BEFORE the task is actually run. In case there is a failure at running
@@ -394,7 +406,10 @@ async def test_clean_task_output_and_log_files_if_invalid(
         user_id,
         published_project.project.uuid,
         published_project.tasks[1].node_id,
+        rabbitmq_client,
     )
+    # cleaning up storage entries only reads the ports: it must never publish
+    rabbitmq_client.publish.assert_not_called()
     expected_calls = [
         mock.call(
             user_id=user_id,

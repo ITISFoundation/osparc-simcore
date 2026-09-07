@@ -164,11 +164,6 @@ def mock_catalog_client() -> AsyncMock:
 
 
 @pytest.fixture
-def rabbitmq_client() -> AsyncMock:
-    return AsyncMock()
-
-
-@pytest.fixture
 def project_id() -> ProjectID:
     return uuid4()
 
