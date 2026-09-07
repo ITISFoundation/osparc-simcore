@@ -43,7 +43,6 @@ from servicelib.common_headers import (
 )
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -75,8 +74,6 @@ from .._nodes_service import NodeScreenshot, get_node_screenshots
 from ..api import has_user_project_access_rights
 from ..exceptions import (
     NodeNotFoundError,
-    ProjectNodeResourcesInsufficientRightsError,
-    ProjectNodeResourcesInvalidError,
 )
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
@@ -458,29 +455,18 @@ async def replace_node_resources(request: web.Request) -> web.Response:
     )
     if f"{path_params.node_id}" not in project["workbench"]:
         raise NodeNotFoundError(project_uuid=f"{path_params.project_id}", node_uuid=f"{path_params.node_id}")
-    try:
-        new_node_resources = await _projects_service.update_project_node_resources(
-            request.app,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            node_id=path_params.node_id,
-            service_key=project["workbench"][f"{path_params.node_id}"]["key"],
-            service_version=project["workbench"][f"{path_params.node_id}"]["version"],
-            product_name=req_ctx.product_name,
-            resources=body,
-        )
+    new_node_resources = await _projects_service.update_project_node_resources(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+        service_key=project["workbench"][f"{path_params.node_id}"]["key"],
+        service_version=project["workbench"][f"{path_params.node_id}"]["version"],
+        product_name=req_ctx.product_name,
+        resources=body,
+    )
 
-        return envelope_json_response(new_node_resources)
-    except ProjectNodeResourcesInvalidError as exc:
-        raise web.HTTPUnprocessableEntity(  # 422
-            text=f"{exc}",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        ) from exc
-    except ProjectNodeResourcesInsufficientRightsError as exc:
-        raise web.HTTPForbidden(
-            text=f"{exc}",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        ) from exc
+    return envelope_json_response(new_node_resources)
 
 
 class _ServicesAccessQuery(BaseModel):
