@@ -131,7 +131,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo2==10.1.1
     # via pytest-benchmark
-pygments==2.19.1
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest

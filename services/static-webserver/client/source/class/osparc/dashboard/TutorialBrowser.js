@@ -85,7 +85,10 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
       return osparc.store.Templates.getTutorials(useCache)
         .then(tutorials => this.__setResourcesToList(tutorials))
-        .catch(() => this.__setResourcesToList([]));
+        .catch(err => {
+          console.error("Failed to load tutorials", err);
+          this.__setResourcesToList([]);
+        });
     },
 
     _updateTutorialData: function(templateData) {

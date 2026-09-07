@@ -12,7 +12,7 @@ pydantic==2.13.4
     # via -r requirements/requirements.in
 pydantic-core==2.46.4
     # via pydantic
-pygments==2.19.2
+pygments==2.21.0
     # via pytest
 pytest==9.1.1
     # via

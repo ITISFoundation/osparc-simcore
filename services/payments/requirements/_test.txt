@@ -114,7 +114,7 @@ propcache==0.5.2
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pygments==2.18.0
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest

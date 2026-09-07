@@ -101,7 +101,7 @@ propcache==0.5.2
     #   yarl
 py-cpuinfo2==10.1.1
     # via pytest-benchmark
-pygments==2.18.0
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
