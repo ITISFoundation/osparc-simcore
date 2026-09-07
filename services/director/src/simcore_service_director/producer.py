@@ -594,7 +594,7 @@ async def _get_service_state(  # noqa: C901, PLR0912
         return (ServiceState.FAILED, "getting state timed out")
 
     # we are only interested in the last task which has been created last
-    last_task = sorted(tasks, key=lambda task: task["UpdatedAt"])[-1]
+    last_task = max(tasks, key=lambda task: task["UpdatedAt"])
     task_state = last_task["Status"]["State"]
 
     _logger.debug("%s %s", service["ID"], task_state)
