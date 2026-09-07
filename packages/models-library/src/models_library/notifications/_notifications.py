@@ -10,6 +10,7 @@ class Channel(StrEnum):
     """
 
     email = "email"
+    sms = "sms"
 
 
 type TemplateName = Annotated[str, Field(min_length=1)]
