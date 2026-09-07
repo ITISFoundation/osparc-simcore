@@ -601,7 +601,7 @@ async def _get_service_state(  # noqa: C901, PLR0912
 
     last_task_state = ServiceState.STARTING  # default
     last_task_error_msg = last_task["Status"].get("Err", "")
-    if task_state in ("failed"):
+    if task_state == "failed":
         # check if it failed already the max number of attempts we allow for
         if len(tasks) < app_settings.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
             _logger.debug("number of tasks: %s", len(tasks))
