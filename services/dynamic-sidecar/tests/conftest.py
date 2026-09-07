@@ -269,6 +269,7 @@ def mock_environment(
             "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
             "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",
             "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+            "DYNAMIC_SIDECAR_TRACING": "null",
             "POSTGRES_DB": "test",
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",

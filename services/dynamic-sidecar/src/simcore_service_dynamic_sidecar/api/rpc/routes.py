@@ -12,7 +12,6 @@ from . import (
     _containers_extension,
     _containers_long_running_tasks,
     _disk,
-    _disk_usage,
     _volumes,
 )
 
@@ -20,7 +19,6 @@ ROUTERS: list[RPCRouter] = [
     _containers_extension.router,
     _containers_long_running_tasks.router,
     _containers.router,
-    _disk_usage.router,
     _disk.router,
     _volumes.router,
 ]

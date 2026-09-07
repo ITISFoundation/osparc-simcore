@@ -1,17 +1,16 @@
 import logging
+import multiprocessing
 import stat
 from asyncio import CancelledError, Task, create_task, get_event_loop
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from multiprocessing.queues import Queue
 from pathlib import Path
 from queue import Empty
 from time import sleep as blocking_sleep
 from typing import Final
 
-import aioprocessing  # type: ignore[import-untyped]
-from aioprocessing.process import AioProcess  # type: ignore[import-untyped]
-from aioprocessing.queues import AioQueue  # type: ignore[import-untyped]
 from pydantic import ByteSize, PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
@@ -41,23 +40,61 @@ class _LoggingEventHandler(SafeFileSystemEventHandler):
             )
 
 
+def _process_worker(
+    path_to_observe: Path,
+    health_check_queue: Queue[int | None],
+    stop_queue: Queue[None],
+    heart_beat_interval_s: PositiveFloat,
+) -> None:
+    # NOTE: module level and only receives pickleable arguments,
+    # so that it is compatible with any multiprocessing start method
+
+    observer = ExtendedInotifyObserver()
+    file_system_event_handler = _LoggingEventHandler()
+    watch = None
+
+    try:
+        watch = observer.schedule(
+            event_handler=file_system_event_handler,
+            path=f"{path_to_observe.absolute()}",
+            recursive=True,
+        )
+        observer.start()
+
+        while stop_queue.qsize() == 0:
+            # NOTE: watchdog handles events internally every 1 second.
+            # While doing so it will block this thread briefly.
+            # Health check delivery may be delayed.
+
+            health_check_queue.put(_HEART_BEAT_MARK)
+            blocking_sleep(heart_beat_interval_s)
+
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unexpected error")
+    finally:
+        if watch:
+            observer.remove_handler_for_watch(file_system_event_handler, watch)
+        observer.stop()
+
+        logger.warning("%s exited", _LoggingEventHandlerProcess.__name__)
+
+
 class _LoggingEventHandlerProcess:
     def __init__(
         self,
         path_to_observe: Path,
-        health_check_queue: AioQueue,
+        health_check_queue: Queue[int | None],
         heart_beat_interval_s: PositiveFloat,
     ) -> None:
         self.path_to_observe: Path = path_to_observe
-        self.health_check_queue: AioQueue = health_check_queue
+        self.health_check_queue: Queue[int | None] = health_check_queue
         self.heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
 
         # This is accessible from the creating process and from
         # the process itself and is used to stop the process.
-        self._stop_queue: AioQueue = aioprocessing.AioQueue()
+        self._stop_queue: Queue[None] = multiprocessing.Queue()
 
-        self._file_system_event_handler: _LoggingEventHandler | None = None
-        self._process: AioProcess | None = None
+        self._process: multiprocessing.Process | None = None
 
     def start_process(self) -> None:
         with log_context(
@@ -65,8 +102,17 @@ class _LoggingEventHandlerProcess:
             logging.DEBUG,
             f"{_LoggingEventHandlerProcess.__name__} start_process",
         ):
-            self._process = aioprocessing.AioProcess(target=self._process_worker, daemon=True)
-            self._process.start()  # pylint:disable=no-member
+            self._process = multiprocessing.Process(
+                target=_process_worker,
+                args=(
+                    self.path_to_observe,
+                    self.health_check_queue,
+                    self._stop_queue,
+                    self.heart_beat_interval_s,
+                ),
+                daemon=True,
+            )
+            self._process.start()
 
     def _stop_process(self) -> None:
         with log_context(
@@ -74,16 +120,13 @@ class _LoggingEventHandlerProcess:
             logging.DEBUG,
             f"{_LoggingEventHandlerProcess.__name__} stop_process",
         ):
-            self._stop_queue.put(None)  # pylint:disable=no-member
+            self._stop_queue.put(None)
 
             if self._process:
                 # force stop the process
-                self._process.kill()  # pylint:disable=no-member
-                self._process.join()  # pylint:disable=no-member
+                self._process.kill()
+                self._process.join()
                 self._process = None
-
-            # cleanup whatever remains
-            self._file_system_event_handler = None
 
     def shutdown(self) -> None:
         with log_context(logger, logging.DEBUG, f"{_LoggingEventHandlerProcess.__name__} shutdown"):
@@ -91,36 +134,6 @@ class _LoggingEventHandlerProcess:
 
             # signal queue observers to finish
             self.health_check_queue.put(None)
-
-    def _process_worker(self) -> None:
-        observer = ExtendedInotifyObserver()
-        self._file_system_event_handler = _LoggingEventHandler()
-        watch = None
-
-        try:
-            watch = observer.schedule(
-                event_handler=self._file_system_event_handler,
-                path=f"{self.path_to_observe.absolute()}",
-                recursive=True,
-            )
-            observer.start()
-
-            while self._stop_queue.qsize() == 0:  # pylint:disable=no-member
-                # NOTE: watchdog handles events internally every 1 second.
-                # While doing so it will block this thread briefly.
-                # Health check delivery may be delayed.
-
-                self.health_check_queue.put(_HEART_BEAT_MARK)
-                blocking_sleep(self.heart_beat_interval_s)
-
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error")
-        finally:
-            if watch:
-                observer.remove_handler_for_watch(self._file_system_event_handler, watch)
-            observer.stop()
-
-            logger.warning("%s exited", _LoggingEventHandlerProcess.__name__)
 
 
 class LoggingEventHandlerObserver:
@@ -140,7 +153,7 @@ class LoggingEventHandlerObserver:
         self._heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
         self.max_heart_beat_wait_interval_s: PositiveFloat = max_heart_beat_wait_interval_s
 
-        self._health_check_queue = aioprocessing.AioQueue()
+        self._health_check_queue: Queue[int | None] = multiprocessing.Queue()
         self._logging_event_handler_process = _LoggingEventHandlerProcess(
             path_to_observe=self.path_to_observe,
             health_check_queue=self._health_check_queue,
@@ -161,7 +174,7 @@ class LoggingEventHandlerObserver:
             heart_beat_count = 0
             while True:
                 try:
-                    self._health_check_queue.get_nowait()  # pylint:disable=no-member
+                    self._health_check_queue.get_nowait()
                     heart_beat_count += 1
                 except Empty:
                     break

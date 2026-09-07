@@ -134,6 +134,7 @@ idna==3.19
     #   anyio
     #   email-validator
     #   httpx
+    #   nicegui
     #   requests
     #   yarl
 ifaddr==0.2.0
@@ -169,7 +170,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-nicegui==2.23.3
+nicegui==3.16.0
     # via -r requirements/_base.in
 opentelemetry-api==1.44.0
     # via
@@ -284,8 +285,6 @@ protobuf==5.29.6
     #   -c requirements/../../../requirements/constraints.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-pscript==0.7.7
-    # via vbuild
 psutil==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.11
@@ -305,7 +304,9 @@ pydantic==2.13.4
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.46.4
-    # via pydantic
+    # via
+    #   nicegui
+    #   pydantic
 pydantic-extra-types==2.11.1
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
@@ -316,7 +317,7 @@ pydantic-settings==2.14.2
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi
-pygments==2.19.1
+pygments==2.21.0
     # via
     #   nicegui
     #   rich
@@ -324,8 +325,9 @@ pyinstrument==5.1.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via
+    #   nicegui
     #   pydantic-settings
     #   uvicorn
 python-engineio==4.13.5
@@ -396,6 +398,8 @@ stream-zip==0.0.84
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tenacity==9.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+tinycss2==1.5.1
+    # via nicegui
 toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
@@ -447,14 +451,14 @@ uvicorn==0.34.2
     #   fastapi-cli
     #   fastapi-cloud-cli
     #   nicegui
-uvloop==0.21.0
+uvloop==0.22.1
     # via uvicorn
-vbuild==0.8.2
-    # via nicegui
 watchfiles==1.1.1
     # via
     #   nicegui
     #   uvicorn
+webencodings==0.6.1
+    # via tinycss2
 websockets==15.0.1
     # via uvicorn
 wrapt==1.17.2

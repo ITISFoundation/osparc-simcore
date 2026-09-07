@@ -318,3 +318,35 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     assert aggregated_group_properties.internet_access is False
     assert aggregated_group_properties.override_services_specifications is False
     assert aggregated_group_properties.use_on_demand_clusters is True
+
+
+async def test_get_aggregated_properties_for_user_non_boolean_fields_are_deterministic(
+    asyncpg_connection: AsyncConnection,
+    registered_user: RowMapping,
+    product_name: str,
+    create_fake_product: Callable[[str], Awaitable[RowMapping]],
+    create_fake_group: Callable[..., Awaitable[RowMapping]],
+    create_fake_group_extra_properties: Callable[..., Awaitable[GroupExtraProperties]],
+):
+    # NOTE: non-boolean fields are not merged, the lowest group_id must win reproducibly
+    await create_fake_product(product_name)
+    standard_groups = [await create_fake_group(asyncpg_connection) for _ in range(5)]
+    constraints_by_gid = {}
+    for index, group in enumerate(standard_groups):
+        constraints = {"userInactivityThreshold": {"le": 3600 * (index + 1)}}
+        constraints_by_gid[group["gid"]] = constraints
+        await create_fake_group_extra_properties(
+            group["gid"],
+            product_name,
+            frontend_preferences_constraints=constraints,
+        )
+        await _add_user_to_group(asyncpg_connection, user_id=registered_user["id"], group_id=group["gid"])
+
+    lowest_gid = min(constraints_by_gid)
+
+    for _ in range(5):
+        aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            asyncpg_connection, user_id=registered_user["id"], product_name=product_name
+        )
+        assert aggregated_group_properties.group_id == lowest_gid
+        assert aggregated_group_properties.frontend_preferences_constraints == constraints_by_gid[lowest_gid]

@@ -55,7 +55,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.1
+msgpack==1.2.2
     # via distributed
 orjson==3.11.9
     # via
@@ -88,11 +88,11 @@ pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-pygments==2.19.2
+pygments==2.21.0
     # via rich
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 pyyaml==6.0.3
     # via

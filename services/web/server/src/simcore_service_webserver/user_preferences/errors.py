@@ -1,13 +1,23 @@
 """Domain exceptions for user_preferences."""
 
+from common_library.user_messages import user_message
 
-class UserPreferencesError(Exception):
-    """Base exception for user_preferences domain."""
+from ..errors import WebServerBaseError
+
+
+class UserPreferencesError(WebServerBaseError, ValueError): ...
 
 
 class FrontendUserPreferenceIsNotDefinedError(UserPreferencesError):
-    """Raised when a frontend user preference is not defined."""
+    msg_template = user_message(
+        "The setting '{frontend_preference_identifier}' was not found. Please verify the setting name and try again.",
+        _version=1,
+    )
 
 
-class CouldNotCreateOrUpdateUserPreferenceError(UserPreferencesError):
-    """Raised when a user preference cannot be created or updated."""
+class FrontendUserPreferenceValueIsInvalidError(UserPreferencesError):
+    msg_template = user_message(
+        "The value {value} is outside the acceptable range for "
+        "'{frontend_preference_identifier}'. Please enter a valid value.",
+        _version=1,
+    )

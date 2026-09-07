@@ -1,16 +1,12 @@
-from typing import TypeAlias
-
 from models_library.api_schemas_payments.errors import InvalidPaymentMethodError
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.basic_types import NonNegativeDecimal
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, ConfigDict, PositiveInt
+from pydantic import BaseModel, ConfigDict
 from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStatements
 
 from .base import BaseRepository
-
-AutoRechargeID: TypeAlias = PositiveInt
 
 
 class PaymentsAutorechargeDB(BaseModel):

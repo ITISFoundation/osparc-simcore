@@ -67,15 +67,6 @@ class DiskUsageMonitor:
 
     # tracked disk usage
     _last_usage: dict[MountPathCategory, DiskUsage] = field(default_factory=dict)
-    _usage_overwrite: dict[str, DiskUsage] = field(
-        default_factory=dict,
-        metadata={
-            "description": (
-                "third party services can update the disk usage for certain paths "
-                "monitored by the dynamic-sidecar. This is the case for the efs-guardian."
-            )
-        },
-    )
 
     @cached_property
     def _monitored_paths_set(self) -> set[Path]:
@@ -88,7 +79,7 @@ class DiskUsageMonitor:
         """
         Transforms Path -> str form `/tmp/.some_file/here` -> `_tmp_.some_file_here`.
         This a one way transformation used to uniquely identify volume mounts inside
-        by the dynamic-sidecar. These are also used by the efs-guardian.
+        by the dynamic-sidecar.
         """
         return {
             k: {_get_normalized_folder_name(get_relative_path(p, self.dy_volumes_mount_dir)) for p in paths}
@@ -103,11 +94,6 @@ class DiskUsageMonitor:
             _get_normalized_folder_name(get_relative_path(p, self.dy_volumes_mount_dir)): u
             for p, u in zip(self._monitored_paths_set, measured_disk_usage, strict=True)
         }
-
-    def _replace_incoming_usage(self, normalized_disk_usage: dict[str, DiskUsage]) -> None:
-        """overwrites local disk usage with incoming usage from egs-guardian"""
-        for key, overwrite_usage in self._usage_overwrite.items():
-            normalized_disk_usage[key] = overwrite_usage  # noqa: PERF403
 
     @staticmethod
     def _get_grouped_usage_to_folder_names(
@@ -129,8 +115,6 @@ class DiskUsageMonitor:
         measured_disk_usage = await self._get_measured_disk_usage()
 
         local_disk_usage = self._get_local_disk_usage(measured_disk_usage)
-
-        self._replace_incoming_usage(local_disk_usage)
 
         usage_to_folder_names = self._get_grouped_usage_to_folder_names(local_disk_usage)
 
@@ -168,14 +152,6 @@ class DiskUsageMonitor:
     async def shutdown(self) -> None:
         if self._monitor_task:
             await cancel_wait_task(self._monitor_task)
-
-    def set_disk_usage_for_path(self, overwrite_usage: dict[str, DiskUsage]) -> None:
-        """
-        efs-guardian manages disk quotas since the underlying FS has no support for them.
-        the dynamic-sidecar will use this information to provide correct quotas for the
-        volumes managed by the efs-guardian
-        """
-        self._usage_overwrite = overwrite_usage
 
 
 def _get_monitored_paths(app: FastAPI) -> dict[MountPathCategory, set[Path]]:

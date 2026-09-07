@@ -25,7 +25,6 @@ aiocache
 aiodebug # asyncio debug
 aiofiles # i/o
 aiohttp
-aiohttp_jinja2
 aiohttp_security
 aiohttp_session[secure]
 asyncpg # db
@@ -35,7 +34,6 @@ deepdiff[optimize] # diffs data-structures
 faker # Only used in dev-mode for proof-of-concepts
 gunicorn[setproctitle]
 httpx
-jinja_app_loader # email
 jsondiff
 msgpack
 openpyxl # excel

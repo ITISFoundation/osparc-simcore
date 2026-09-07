@@ -261,17 +261,11 @@ async def test_list_service_releases(
 
     assert is_patch_release(last_release.version, previous_release.version)
 
-    assert last_release == await services_repo.get_latest_release("simcore/services/dynamic/jupyterlab")
-
 
 async def test_list_service_releases_version_filtered(
     fake_catalog_with_jupyterlab: FakeCatalogInfo,
     services_repo: ServicesRepository,
 ):
-    latest = await services_repo.get_latest_release("simcore/services/dynamic/jupyterlab")
-    assert latest
-    assert latest.version == fake_catalog_with_jupyterlab.expected_latest
-
     releases_1_1_x: list[ServiceMetaDataDBGet] = await services_repo.list_service_releases(
         "simcore/services/dynamic/jupyterlab", major=1, minor=1
     )
@@ -281,13 +275,6 @@ async def test_list_service_releases_version_filtered(
         "simcore/services/dynamic/jupyterlab", major=0
     )
     assert [s.version for s in expected_0_x_x] == fake_catalog_with_jupyterlab.expected_0_x_x
-
-
-async def test_get_latest_release(services_repo: ServicesRepository, fake_catalog_with_jupyterlab: FakeCatalogInfo):
-    latest = await services_repo.get_latest_release("simcore/services/dynamic/jupyterlab")
-
-    assert latest
-    assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
 
 async def test_list_latest_services(

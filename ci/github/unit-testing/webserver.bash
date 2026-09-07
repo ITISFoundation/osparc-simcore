@@ -26,7 +26,8 @@ test_isolated() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/web/server
-  make test-ci-unit test-path=isolated pytest-parameters="--numprocesses=auto"
+  # NOTE: distinct --junitxml so this run does not get overwritten by test_with_db's junit.xml
+  make test-ci-unit test-path=isolated pytest-parameters="--numprocesses=auto --junitxml=junit-isolated.xml -o junit_family=legacy"
   popd
 }
 

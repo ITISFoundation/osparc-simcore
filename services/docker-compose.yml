@@ -838,10 +838,6 @@ services:
       R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: ${R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS}
       R_CLONE_SIMCORE_SDK_SYNC_SETTINGS: ${R_CLONE_SIMCORE_SDK_SYNC_SETTINGS}
 
-      EFS_DNS_NAME: ${EFS_DNS_NAME}
-      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
-      EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
-
       DIRECTOR_V2_DOCKER_HUB_REGISTRY: ${DIRECTOR_V2_DOCKER_HUB_REGISTRY}
 
       RESOURCE_USAGE_TRACKER_HOST: ${RESOURCE_USAGE_TRACKER_HOST}
@@ -1381,31 +1377,6 @@ services:
       RESOURCE_USAGE_TRACKER_S3: ${RESOURCE_USAGE_TRACKER_S3}
       RESOURCE_USAGE_TRACKER_TRACING: ${RESOURCE_USAGE_TRACKER_TRACING}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_PORT}
-
-  efs-guardian:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    networks:
-      - default
-    environment:
-      <<:
-        - *common_logging_environments
-        - *postgres_settings
-        - *rabbit_settings
-        - *redis_settings
-        - *tracing_open_telemetry_environments
-      SC_USER_ID: ${SC_USER_ID}
-      SC_USER_NAME: ${SC_USER_NAME}
-      EFS_USER_ID: ${EFS_USER_ID}
-      EFS_USER_NAME: ${EFS_USER_NAME}
-      EFS_GROUP_ID: ${EFS_GROUP_ID}
-      EFS_GROUP_NAME: ${EFS_GROUP_NAME}
-      EFS_DNS_NAME: ${EFS_DNS_NAME}
-      EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ${EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}
-      EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
-      EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
-      EFS_GUARDIAN_TRACING: ${EFS_GUARDIAN_TRACING}
 
   api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
