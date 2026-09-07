@@ -244,7 +244,11 @@ async def _refresh_batch_from_registry(
             director_client=director_client,
             service_cache=service_cache,
         )
-        return {}, cast(list[Any], await service_cache.multi_get(cache_keys))
+        # NOTE: keeping the snapshot covers the entries whose cache write failed, cached ones are preferred anyway
+        return (
+            prewarmed_services_map or {},
+            cast(list[Any], await service_cache.multi_get(cache_keys)),
+        )
     except (BaseRedisError, RedisError, TimeoutError):
         _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
         # NOTE: reusing the snapshot fetched under the lock avoids calling the director twice
@@ -269,6 +273,8 @@ async def get_batch_services(
             list[Any],
             await service_cache.multi_get(cache_keys),
         )
+        if not cached_services:
+            cached_services = [None] * len(selection)
     except (RedisError, TimeoutError):
         _logger.warning("Failed to read a batch from the service manifest cache", exc_info=True)
         cached_services = [None] * len(selection)

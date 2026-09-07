@@ -9,7 +9,7 @@
 import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import toolz
@@ -262,6 +262,50 @@ async def test_get_batch_services_cold_cache_uses_single_director_request(
     assert got_services == expected_services
     assert mocked_director_rest_api["list_services"].call_count == 1
     assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_get_batch_services_treats_disabled_cache_as_misses(
+    monkeypatch: pytest.MonkeyPatch,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    mocked_director_rest_api: MockRouter,
+    director_client: DirectorClient,
+    service_manifest_cache: BaseCache,
+):
+    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+    expected_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[0])
+
+    got_services = await manifest.get_batch_services(
+        [(expected_service.key, expected_service.version)],
+        director_client,
+        service_manifest_cache,
+    )
+
+    assert got_services == [expected_service]
+    assert mocked_director_rest_api["list_services"].call_count == 1
+    assert not mocked_director_rest_api["get_service"].called
+
+
+async def test_refresh_batch_preserves_prewarmed_snapshot_when_cache_reread_misses(
+    monkeypatch: pytest.MonkeyPatch,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    expected_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[0])
+    expected_services_map = {(expected_service.key, expected_service.version): expected_service}
+    prewarm_service_cache = AsyncMock(return_value=expected_services_map)
+    monkeypatch.setattr(manifest, "_prewarm_service_cache", prewarm_service_cache)
+    service_cache = Mock(spec=BaseCache)
+    service_cache.multi_get.return_value = [None]
+
+    services_map, cached_services = await manifest._refresh_batch_from_registry(
+        cache_keys=[manifest._build_service_cache_key(key=expected_service.key, version=expected_service.version)],
+        cached_services=[None],
+        director_client=Mock(spec=DirectorClient),
+        service_cache=service_cache,
+        lock_client=Mock(spec=RedisClientSDK),
+    )
+
+    assert services_map == expected_services_map
+    assert cached_services == [None]
 
 
 async def test_get_batch_services_cold_cache_is_coalesced_across_replicas(
