@@ -20,6 +20,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -74,6 +75,11 @@ def node_uuid() -> NodeIDStr:
     return TypeAdapter(NodeIDStr).validate_python(f"{uuid4()}")
 
 
+@pytest.fixture
+def rabbitmq_client(create_rabbitmq_client: Callable[[str], RabbitMQClient]) -> RabbitMQClient:
+    return create_rabbitmq_client("pytest_sdk_nodeports")
+
+
 @pytest.fixture(scope="session")
 def s3_simcore_location() -> LocationID:
     return 0
@@ -98,7 +104,7 @@ async def default_configuration(
     node_uuid: str,
 ) -> dict[str, Any]:
     # prepare database with default configuration
-    json_configuration = default_configuration_file.read_text()
+    json_configuration = default_configuration_file.read_text()  # noqa: ASYNC240
     await create_pipeline(project_id=project_id)
     return _set_configuration(create_task, project_id, node_uuid, json_configuration)
 
@@ -166,7 +172,7 @@ async def create_special_configuration(
         project_id: str = project_id,
         node_id: str = node_uuid,
     ) -> tuple[dict, str, str]:
-        config_dict = json.loads(empty_configuration_file.read_text())
+        config_dict = json.loads(empty_configuration_file.read_text())  # noqa: ASYNC240
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
         await create_pipeline(project_id=project_id)
@@ -195,7 +201,7 @@ async def create_2nodes_configuration(
         await create_pipeline(project_id=project_id)
 
         # create previous node
-        previous_config_dict = json.loads(empty_configuration_file.read_text())
+        previous_config_dict = json.loads(empty_configuration_file.read_text())  # noqa: ASYNC240
         _assign_config(previous_config_dict, "inputs", prev_node_inputs if prev_node_inputs else [])
         _assign_config(
             previous_config_dict,
@@ -210,7 +216,7 @@ async def create_2nodes_configuration(
         )
 
         # create current node
-        config_dict = json.loads(empty_configuration_file.read_text())
+        config_dict = json.loads(empty_configuration_file.read_text())  # noqa: ASYNC240
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
         # configure links if necessary

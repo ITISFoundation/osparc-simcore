@@ -8,7 +8,6 @@
 
 
 import filecmp
-import os
 import tempfile
 from asyncio import gather
 from collections.abc import Awaitable, Callable, Iterable
@@ -32,6 +31,7 @@ from models_library.services_types import ServicePortKey
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from servicelib.rabbitmq import RabbitMQClient
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.dbmanager import DBManager
@@ -137,7 +137,7 @@ def symlink_path(tmp_path: Path) -> Iterable[Path]:
 
     if not symlink_path.exists():
         # using a relative symlink, only these are supported
-        os.symlink(os.path.relpath(file_path, "."), symlink_path)
+        symlink_path.symlink_to(file_path.relative_to(file_path.parent))
         assert symlink_path.exists()
 
     yield symlink_path
@@ -172,6 +172,7 @@ async def test_default_configuration(
     default_configuration: dict[str, Any],
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict = default_configuration
     await check_config_valid(
@@ -181,6 +182,7 @@ async def test_default_configuration(
             node_uuid=node_uuid,
             r_clone_settings=option_r_clone_settings,
             db_manager=default_db_manager,
+            rabbitmq_client=rabbitmq_client,
         ),
         config_dict,
     )
@@ -193,6 +195,7 @@ async def test_invalid_ports(
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, _, _ = await create_special_configuration()
     PORTS = await node_ports_v2.ports(
@@ -201,6 +204,7 @@ async def test_invalid_ports(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -236,6 +240,7 @@ async def test_port_value_accessors(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):  # pylint: disable=W0613, W0621
     item_key = TypeAdapter(ServicePortKey).validate_python("some_key")
     config_dict, _, _ = await create_special_configuration(
@@ -249,6 +254,7 @@ async def test_port_value_accessors(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -274,7 +280,7 @@ async def test_port_value_accessors(
         ("data:text/py", "symlink_path", Path, "config_value_symlink_path"),
     ],
 )
-async def test_port_file_accessors(
+async def test_port_file_accessors(  # noqa: PLR0917
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     s3_simcore_location: LocationID,
     item_type: str,
@@ -289,6 +295,7 @@ async def test_port_file_accessors(
     request: pytest.FixtureRequest,
     constant_uuid4: None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     if item_value == "symlink_path":
         item_value = request.getfixturevalue("symlink_path")
@@ -311,6 +318,7 @@ async def test_port_file_accessors(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
     assert (
@@ -362,6 +370,7 @@ async def test_adding_new_ports(
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, project_id, node_uuid = await create_special_configuration()
     PORTS = await node_ports_v2.ports(
@@ -370,6 +379,7 @@ async def test_adding_new_ports(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -411,6 +421,7 @@ async def test_removing_ports(
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, project_id, node_uuid = await create_special_configuration(
         inputs=[("in_14", "integer", 15), ("in_17", "boolean", False)],
@@ -422,6 +433,7 @@ async def test_removing_ports(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
     # let's remove the first input
@@ -449,10 +461,9 @@ async def test_removing_ports(
         ("boolean", True, bool),
         ("string", "test-string", str),
         ("string", "", str),
-        # TODO: add here schema-like port
     ],
 )
-async def test_get_value_from_previous_node(
+async def test_get_value_from_previous_node(  # noqa: PLR0917
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
@@ -463,6 +474,7 @@ async def test_get_value_from_previous_node(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
@@ -480,6 +492,7 @@ async def test_get_value_from_previous_node(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
 
     await check_config_valid(PORTS, config_dict)
@@ -496,7 +509,7 @@ async def test_get_value_from_previous_node(
         ("data:text/py", __file__, Path),
     ],
 )
-async def test_get_file_from_previous_node(
+async def test_get_file_from_previous_node(  # noqa: PLR0917
     create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     user_id: int,
     project_id: str,
@@ -509,6 +522,7 @@ async def test_get_file_from_previous_node(
     option_r_clone_settings: RCloneSettings | None,
     constant_uuid4: None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
@@ -525,6 +539,7 @@ async def test_get_file_from_previous_node(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
     file_path = await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_15")].get()
@@ -551,7 +566,7 @@ async def test_get_file_from_previous_node(
         ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
     ],
 )
-async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
+async def test_get_file_from_previous_node_with_mapping_of_same_key_name(  # noqa: PLR0917
     create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     user_id: int,
     project_id: str,
@@ -566,6 +581,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     option_r_clone_settings: RCloneSettings | None,
     constant_uuid4: None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, _, this_node_uuid = await create_2nodes_configuration(
         prev_node_inputs=None,
@@ -582,6 +598,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
@@ -612,7 +629,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
         ("data:text/py", __file__, "öä$äö2-34 name without extension", Path),
     ],
 )
-async def test_file_mapping(
+async def test_file_mapping(  # noqa: PLR0917
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     user_id: int,
     project_id: str,
@@ -628,6 +645,7 @@ async def test_file_mapping(
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     constant_uuid4: None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ):
     config_dict, project_id, node_uuid = await create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],
@@ -641,6 +659,7 @@ async def test_file_mapping(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
@@ -713,6 +732,7 @@ async def test_regression_concurrent_port_update_fails(
     port_count: int,
     option_r_clone_settings: RCloneSettings | None,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ) -> None:
     """
     when using `await PORTS.outputs` test will fail
@@ -728,6 +748,7 @@ async def test_regression_concurrent_port_update_fails(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -784,7 +805,7 @@ async def spy_outputs_callbacks(mocker: MockerFixture, output_callbacks: _Callba
 
 
 @pytest.mark.parametrize("use_output_callbacks", [True, False])
-async def test_batch_update_inputs_outputs(
+async def test_batch_update_inputs_outputs(  # noqa: PLR0917
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
@@ -796,6 +817,7 @@ async def test_batch_update_inputs_outputs(
     spy_outputs_callbacks: dict[str, AsyncMock],
     use_output_callbacks: bool,
     default_db_manager: DBManager,
+    rabbitmq_client: RabbitMQClient,
 ) -> None:
     callbacks = output_callbacks if use_output_callbacks else None
 
@@ -809,6 +831,7 @@ async def test_batch_update_inputs_outputs(
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
         db_manager=default_db_manager,
+        rabbitmq_client=rabbitmq_client,
     )
     await check_config_valid(PORTS, config_dict)
 
