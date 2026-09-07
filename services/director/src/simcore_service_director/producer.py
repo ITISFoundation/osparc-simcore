@@ -111,6 +111,17 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
 
 _ENV_NUM_ELEMENTS: Final[int] = 2
 
+_TASK_STATES_PULLING: Final[frozenset[str]] = frozenset({"assigned", "accepted", "preparing"})
+_TASK_STATES_STARTING: Final[frozenset[str]] = frozenset({"ready", "starting"})
+_TASK_STATES_COMPLETE: Final[frozenset[str]] = frozenset({"complete", "shutdown"})
+_STATE_SAVE_IGNORED_STATUS_CODES: Final[frozenset[int]] = frozenset(
+    {
+        status.HTTP_405_METHOD_NOT_ALLOWED,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_501_NOT_IMPLEMENTED,
+    }
+)
+
 
 def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
@@ -603,16 +614,16 @@ async def _get_service_state(  # noqa: C901, PLR0912
                 len(tasks),
             )
             last_task_state = ServiceState.FAILED
-    elif task_state in ("rejected"):
+    elif task_state == "rejected":
         _logger.error("service %s failed with %s", service_name, last_task["Status"])
         last_task_state = ServiceState.FAILED
-    elif task_state in ("pending"):
+    elif task_state == "pending":
         last_task_state = ServiceState.PENDING
-    elif task_state in {"assigned", "accepted", "preparing"}:
+    elif task_state in _TASK_STATES_PULLING:
         last_task_state = ServiceState.PULLING
-    elif task_state in {"ready", "starting"}:
+    elif task_state in _TASK_STATES_STARTING:
         last_task_state = ServiceState.STARTING
-    elif task_state in ("running"):
+    elif task_state == "running":
         now = arrow.utcnow().datetime
         # NOTE: task_state_update_time is only used to discrimitate between 'starting' and 'running'
         task_state_update_time = to_datetime(last_task["Status"]["Timestamp"])
@@ -624,7 +635,7 @@ async def _get_service_state(  # noqa: C901, PLR0912
         else:
             last_task_state = ServiceState.STARTING
 
-    elif task_state in {"complete", "shutdown"}:
+    elif task_state in _TASK_STATES_COMPLETE:
         last_task_state = ServiceState.COMPLETE
     _logger.debug("service running state is %s", last_task_state)
     return (last_task_state, last_task_error_msg)
@@ -1018,11 +1029,7 @@ async def _save_service_state(service_host_name: str, client: httpx.AsyncClient)
         response.raise_for_status()
 
     except httpx.HTTPStatusError as err:
-        if err.response.status_code in {
-            status.HTTP_405_METHOD_NOT_ALLOWED,
-            status.HTTP_404_NOT_FOUND,
-            status.HTTP_501_NOT_IMPLEMENTED,
-        }:
+        if err.response.status_code in _STATE_SAVE_IGNORED_STATUS_CODES:
             # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
             # therefore we assume there is nothing to be saved and do not raise exception
             # Responses found so far:
