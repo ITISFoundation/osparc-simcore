@@ -41,6 +41,8 @@ async def test_load(
         "rabbitmq_client": rabbitmq_client,
     }
     assert node_ports.auto_update == auto_update
+    # loading is a read: it must never publish
+    rabbitmq_client.publish.assert_not_called()
 
 
 async def test_load_with_invalid_cfg(
@@ -61,6 +63,8 @@ async def test_load_with_invalid_cfg(
             io_log_redirect_cb=None,
             rabbitmq_client=rabbitmq_client,
         )
+    # loading is a read: it must never publish, even when it fails
+    rabbitmq_client.publish.assert_not_called()
 
 
 async def test_dump(
@@ -80,6 +84,9 @@ async def test_dump(
         io_log_redirect_cb=None,
         rabbitmq_client=rabbitmq_client,
     )
+    # loading is a read: it must never publish
+    rabbitmq_client.publish.assert_not_called()
 
     await dump(node_ports)
-    rabbitmq_client.publish.assert_awaited_once()
+    # dumping is a write: it must publish once
+    rabbitmq_client.publish.assert_called_once()
