@@ -1,9 +1,8 @@
 import logging
 import multiprocessing
-from asyncio import CancelledError, Task, create_task, get_event_loop, to_thread
+from asyncio import Task, create_task, get_event_loop, to_thread
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import suppress
 from multiprocessing.queues import Queue
 from pathlib import Path
 from queue import Empty
@@ -11,6 +10,7 @@ from threading import Lock, Thread
 from time import sleep as blocking_sleep
 from typing import Any, Final
 
+from common_library.async_tools import cancel_wait_task
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
@@ -197,6 +197,7 @@ class _EventHandlerProcess:
             log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"),
             self._process_lock,
         ):
+            self._stop_queue = multiprocessing.Queue()
             self._process = multiprocessing.Process(
                 target=_process_worker,
                 args=(
@@ -312,8 +313,8 @@ class EventHandlerObserver:
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, f"{EventHandlerObserver.__name__} stop"):
             self._keep_running = False
-            if self._task_health_worker is not None:
-                self._task_health_worker.cancel("stopping health worker")
-                with suppress(CancelledError):
-                    await self._task_health_worker
-            await to_thread(self._stop_observer_process)
+            try:
+                if self._task_health_worker is not None:
+                    await cancel_wait_task(self._task_health_worker)
+            finally:
+                await to_thread(self._stop_observer_process)

@@ -98,7 +98,7 @@ def test_event_handler_process_concurrent_stop_process_does_not_raise(
     outputs_context: OutputsContext,
     health_check_queue: Queue[int | None],
     heart_beat_interval_s: PositiveFloat,
-) -> None:
+):
     observer_process = _EventHandlerProcess(
         outputs_context=outputs_context,
         health_check_queue=health_check_queue,
@@ -120,7 +120,7 @@ def test_event_handler_process_concurrent_stop_process_does_not_raise(
 
     mock_process = Mock()
     mock_process.kill.side_effect = _kill
-    observer_process._process = mock_process
+    observer_process._process = mock_process  # noqa: SLF001
 
     errors: list[BaseException] = []
 

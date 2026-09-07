@@ -5,12 +5,14 @@
 
 import asyncio
 import logging
+import multiprocessing
 import pickle
 import socket
 import threading
 from collections import deque
 from collections.abc import AsyncIterator, Iterator
 from logging.handlers import DEFAULT_UDP_LOGGING_PORT, DatagramHandler
+from multiprocessing.queues import Queue
 from pathlib import Path
 from typing import Final
 from unittest.mock import AsyncMock, Mock
@@ -20,11 +22,15 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_types import PortInt
+from pydantic import PositiveFloat
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
     _logging_event_handler,
     configure_attribute_monitor,
+)
+from simcore_service_dynamic_sidecar.modules.attribute_monitor._logging_event_handler import (
+    _LoggingEventHandlerProcess,
 )
 
 # NOTE: multiprocessing logs do not work with logcap,
@@ -116,6 +122,70 @@ async def logging_event_handler_observer(
     async with app_lifespan(fake_app):
         assert fake_app.state.attribute_monitor
         yield None
+
+
+@pytest.fixture
+def health_check_queue() -> Queue[int | None]:
+    return multiprocessing.Queue()
+
+
+@pytest.fixture
+def heart_beat_interval_s() -> PositiveFloat:
+    return 0.01
+
+
+def test_logging_event_handler_process_concurrent_stop_process_does_not_raise(
+    fake_dy_volumes_mount_dir: Path,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+):
+    observer_process = _LoggingEventHandlerProcess(
+        path_to_observe=fake_dy_volumes_mount_dir,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+
+    entered_kill = threading.Event()
+    release_kill = threading.Event()
+    first_caller_paused = False
+
+    def _kill() -> None:
+        nonlocal first_caller_paused
+        # only the first caller pauses: it must observe `self._process` as
+        # non-`None` for longer than it takes a concurrent caller to clear it
+        if not first_caller_paused:
+            first_caller_paused = True
+            entered_kill.set()
+            assert release_kill.wait(timeout=5), "test setup: never released"
+
+    mock_process = Mock()
+    mock_process.kill.side_effect = _kill
+    observer_process._process = mock_process  # noqa: SLF001
+
+    errors: list[BaseException] = []
+
+    def _stop_process() -> None:
+        try:
+            observer_process._stop_process()  # noqa: SLF001
+        except BaseException as exc:  # pylint: disable=broad-except
+            errors.append(exc)
+
+    first_thread = threading.Thread(target=_stop_process)
+    first_thread.start()
+    assert entered_kill.wait(timeout=5), "first thread never reached kill()"
+
+    # with the lock this blocks on `_process_lock` and cannot make progress
+    # while the first thread is paused mid-`kill()`; without it, it runs to
+    # completion (clearing `self._process`) before the first thread resumes
+    second_thread = threading.Thread(target=_stop_process)
+    second_thread.start()
+    second_thread.join(timeout=0.5)
+
+    release_kill.set()
+    first_thread.join(timeout=5)
+    second_thread.join(timeout=5)
+
+    assert not errors
 
 
 @pytest.mark.parametrize(
