@@ -1,4 +1,4 @@
-from typing import Generic, TypeAlias, TypeVar
+from typing import TypeVar
 
 from ._mixins import DisplayaMixin, ParentMixin
 from .base_component import BaseUpdatableComponent
@@ -6,10 +6,10 @@ from .base_display_model import BaseUpdatableDisplayModel
 
 M = TypeVar("M", bound=BaseUpdatableDisplayModel)
 
-Reference: TypeAlias = str
+type Reference = str
 
 
-class UpdatableComponentStack(DisplayaMixin, ParentMixin, Generic[M]):
+class UpdatableComponentStack[M: BaseUpdatableDisplayModel](DisplayaMixin, ParentMixin):
     """
     Renders `BaseUpdatableComponent` models via the provided `BaseUpdatableDisplayModel`
     Appends new elements to the parent container.
@@ -52,14 +52,3 @@ class UpdatableComponentStack(DisplayaMixin, ParentMixin, Generic[M]):
             self._added_models[reference].remove_from_ui()
             del self._added_models[reference]
             self._rendered_models.remove(reference)
-
-    def update_from_dict(self, models: dict[Reference, M]) -> None:
-        """updates UI given a new input"""
-        # remove models that are not in the new list
-        for reference in tuple(self._added_models.keys()):
-            if reference not in models:
-                self.remove_model(reference)
-
-        # add or update existing models
-        for reference, model in models.items():
-            self.add_or_update_model(reference, model)

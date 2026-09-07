@@ -362,18 +362,3 @@ async def test_multiple_components_management(
     stack.remove_model("person_2")
     await _ensure_person_not_present(async_page, person_2)
     await _ensure_person_not_present(async_page, person_1)
-
-    # add both persons again together
-    stack.update_from_dict({"person_1": person_1, "person_2": person_2})
-    await _ensure_person_is_present(async_page, person_1)
-    await _ensure_person_is_present(async_page, person_2)
-
-    # only person_1 is displayed
-    stack.update_from_dict({"person_1": person_1})
-    await _ensure_person_is_present(async_page, person_1)
-    await _ensure_person_not_present(async_page, person_2)
-
-    # no person is displayed
-    stack.update_from_dict({})
-    await _ensure_person_not_present(async_page, person_1)
-    await _ensure_person_not_present(async_page, person_2)
