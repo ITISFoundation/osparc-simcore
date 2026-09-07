@@ -1,14 +1,12 @@
 import logging
-from typing import Any, ClassVar, cast
+from typing import ClassVar
 
 import httpx
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
@@ -42,13 +40,3 @@ class DirectorV0PublicClient(SingletonInAppStateMixin):
             node_id
         )
         return TypeAdapter(RunningDynamicServiceDetails).validate_python(_unenvelope_or_raise_error(response))
-
-    async def get_running_services(
-        self, user_id: UserID | None = None, project_id: ProjectID | None = None
-    ) -> list[RunningDynamicServiceDetails]:
-        response = await DirectorV0ThinClient.get_from_app_state(self.app).get_running_interactive_services(
-            user_id=user_id, project_id=project_id
-        )
-        return [
-            RunningDynamicServiceDetails(**x) for x in cast(list[dict[str, Any]], _unenvelope_or_raise_error(response))
-        ]

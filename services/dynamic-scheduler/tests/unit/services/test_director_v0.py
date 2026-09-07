@@ -71,13 +71,3 @@ async def test_get_running_service_details(
     client = DirectorV0PublicClient.get_from_app_state(app)
     result = await client.get_running_service_details(node_id)
     assert result == legacy_service_details
-
-
-async def test_get_running_services(
-    mock_director_v0: None,
-    app: FastAPI,
-    legacy_service_details: RunningDynamicServiceDetails,
-):
-    client = DirectorV0PublicClient.get_from_app_state(app)
-    result = await client.get_running_services()
-    assert result == [legacy_service_details]
