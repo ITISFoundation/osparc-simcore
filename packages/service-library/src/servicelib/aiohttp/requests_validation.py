@@ -25,6 +25,11 @@ ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list 
 
 APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey("APP_JSON_SCHEMA_SPECS_KEY", dict[str, object])
 
+_MSG_INVALID_JSON = user_message(
+    "The request body contains invalid JSON. Please check your request format and try again.",
+    _version=1,
+)
+
 
 @contextmanager
 def handle_validation_as_http_error(*, error_msg_template: str, resource_name: str) -> Iterator[None]:
@@ -87,7 +92,7 @@ def handle_validation_as_http_error(*, error_msg_template: str, resource_name: s
 #
 
 
-def parse_request_path_parameters_as(
+def parse_request_path_parameters_as[ModelClass: BaseModel](
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -109,7 +114,7 @@ def parse_request_path_parameters_as(
         return parameters_schema_cls.model_validate(data)
 
 
-def parse_request_query_parameters_as(
+def parse_request_query_parameters_as[ModelClass: BaseModel](
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -137,7 +142,7 @@ def parse_request_query_parameters_as(
         return model
 
 
-def parse_request_headers_as(
+def parse_request_headers_as[ModelClass: BaseModel](
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -149,7 +154,7 @@ def parse_request_headers_as(
         return parameters_schema_cls.model_validate(data)
 
 
-async def parse_request_body_as(
+async def parse_request_body_as[ModelOrListOrDictType: BaseModel | list | dict](
     model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,
 ) -> ModelOrListOrDictType:
@@ -176,7 +181,7 @@ async def parse_request_body_as(
             try:
                 body = await request.json()
             except json.decoder.JSONDecodeError as err:
-                raise web.HTTPBadRequest(text=f"Invalid json in body: {err}") from err
+                raise web.HTTPBadRequest(text=_MSG_INVALID_JSON) from err
 
         if hasattr(model_schema_cls, "model_validate"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
