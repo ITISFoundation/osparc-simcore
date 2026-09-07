@@ -25,6 +25,10 @@ _MSG_INVALID_PATH = user_message("Invalid parameter/s '{failed}' in request path
 _MSG_INVALID_QUERY = user_message("Invalid parameter/s '{failed}' in request query")
 _MSG_INVALID_HEADERS = user_message("Invalid parameter/s '{failed}' in request headers")
 _MSG_INVALID_BODY = user_message("Invalid field/s '{failed}' in request body")
+_MSG_INVALID_JSON = user_message(
+    "The request body contains invalid JSON. Please check your request format and try again.",
+    _version=1,
+)
 
 
 def parse_request_path_parameters_as(  # noqa: UP047
@@ -78,7 +82,7 @@ async def parse_request_body_as(  # noqa: UP047
             try:
                 body = await request.json()
             except json.decoder.JSONDecodeError as err:
-                raise web.HTTPBadRequest(text=f"Invalid json in body: {err}") from err
+                raise web.HTTPBadRequest(text=_MSG_INVALID_JSON) from err
 
         if hasattr(model_schema_cls, "model_validate"):
             assert issubclass(model_schema_cls, BaseModel)  # nosec
