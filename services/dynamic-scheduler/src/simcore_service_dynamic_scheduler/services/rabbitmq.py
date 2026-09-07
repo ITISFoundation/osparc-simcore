@@ -2,7 +2,6 @@ from typing import cast
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
-from models_library.rabbitmq_messages import RabbitMessageBase
 from servicelib.fastapi.rabbitmq_lifespan import (
     configure_rabbitmq_client as _configure_rabbitmq_client,
 )
@@ -40,7 +39,3 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     assert app.state.rabbitmq_rpc_client
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
-
-
-async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:
-    await get_rabbitmq_client(app).publish(message.channel_name, message)
