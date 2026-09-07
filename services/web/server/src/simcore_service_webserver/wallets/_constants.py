@@ -39,3 +39,9 @@ MSG_WALLET_OR_PAYMENT_NOT_FOUND_ERROR: Final[str] = user_message(
     "or contact support.",
     _version=1,
 )
+
+MSG_WALLET_GROUP_NOT_FOUND_ERROR: Final[str] = user_message(
+    "The wallet group you're looking for isn't available. Please check the reference and try again, "
+    "or contact support.",
+    _version=1,
+)
