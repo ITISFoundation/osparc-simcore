@@ -146,26 +146,6 @@ async def publish_service_resource_tracking_heartbeat(
     await rabbitmq_client.publish(message.channel_name, message)
 
 
-async def publish_service_log(
-    rabbitmq_client: RabbitMQClient,
-    *,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
-    log: str,
-    log_level: LogLevelInt,
-) -> None:
-    message = LoggerRabbitMessage.model_construct(
-        user_id=user_id,
-        project_id=project_id,
-        node_id=node_id,
-        messages=[log],
-        log_level=log_level,
-    )
-
-    await rabbitmq_client.publish(message.channel_name, message)
-
-
 async def publish_service_progress(
     rabbitmq_client: RabbitMQClient,
     *,

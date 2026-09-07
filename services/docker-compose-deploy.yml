@@ -23,8 +23,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
   dynamic-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
-  efs-guardian:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
   migration:

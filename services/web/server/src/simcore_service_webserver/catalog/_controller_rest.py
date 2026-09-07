@@ -54,7 +54,6 @@ from .errors import DefaultPricingUnitForServiceNotFoundError
 _logger = logging.getLogger(__name__)
 
 VTAG: Final[str] = f"/{API_VTAG}"
-VTAG_DEV: Final[str] = f"{VTAG}/dev"
 
 routes = RouteTableDef()
 

@@ -18,7 +18,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-idna==3.11
+idna==3.19
     # via yarl
 jsonschema==4.26.0
     # via -r requirements/_aiohttp.in
@@ -73,7 +73,7 @@ typing-extensions==4.15.0
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via -r requirements/_aiohttp.in
 wrapt==1.17.3
     # via

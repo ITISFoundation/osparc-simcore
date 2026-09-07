@@ -3,8 +3,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=too-many-return-statements
 
-from collections.abc import AsyncIterator
-from typing import Any, Literal, get_args, get_origin
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any, Final, Literal, get_args, get_origin
 
 import pytest
 from aiohttp import web
@@ -26,12 +26,18 @@ from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.user_preferences._models import (
     ALL_FRONTEND_PREFERENCES,
     BillingCenterUsageColumnOrderFrontendUserPreference,
+    UserInactivityThresholdFrontendUserPreference,
 )
 from simcore_service_webserver.user_preferences._service import (
     _get_frontend_user_preferences,
+    get_frontend_user_preference,
     get_frontend_user_preferences_aggregation,
     set_frontend_user_preference,
 )
+from simcore_service_webserver.user_preferences.errors import (
+    FrontendUserPreferenceValueIsInvalidError,
+)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -123,11 +129,15 @@ async def test__get_frontend_user_preferences_list_defaults(
 
 @pytest.fixture
 async def enable_all_frontend_preferences(asyncpg_engine: AsyncEngine, product_name: ProductName) -> None:
+    # NOTE: upserts the EVERYONE group (gid=1) row instead of relying on one being pre-seeded
     async with asyncpg_engine.begin() as conn:
         await conn.execute(
-            groups_extra_properties.update()
-            .where(groups_extra_properties.c.product_name == product_name)
-            .values(enable_telemetry=True)
+            pg_insert(groups_extra_properties)
+            .values(group_id=1, product_name=product_name, enable_telemetry=True)
+            .on_conflict_do_update(
+                index_elements=["group_id", "product_name"],
+                set_={"enable_telemetry": True},
+            )
         )
 
 
@@ -194,3 +204,217 @@ async def test_set_frontend_user_preference(
 def test_expected_fields_in_serialization():
     for preference_class in ALL_FRONTEND_PREFERENCES:
         assert set(preference_class().to_db().keys()) == {"value"}
+
+
+_INACTIVITY_IDENTIFIER: Final[str] = UserInactivityThresholdFrontendUserPreference.model_fields[
+    "preference_identifier"
+].default
+_MINUTE: Final[int] = 60
+_HOUR: Final[int] = 60 * _MINUTE
+
+
+@pytest.fixture
+async def set_inactivity_constraints(
+    asyncpg_engine: AsyncEngine, product_name: ProductName
+) -> Callable[[Any], Awaitable[None]]:
+    # NOTE: upserts the EVERYONE group (gid=1) row instead of relying on one being pre-seeded,
+    # so this fixture is unaffected by other tests deleting group extra properties beforehand
+    async def _(constraints: Any) -> None:
+        frontend_preferences_constraints = {_INACTIVITY_IDENTIFIER: constraints} if constraints else {}
+        async with asyncpg_engine.begin() as conn:
+            await conn.execute(
+                pg_insert(groups_extra_properties)
+                .values(
+                    group_id=1,
+                    product_name=product_name,
+                    frontend_preferences_constraints=frontend_preferences_constraints,
+                )
+                .on_conflict_do_update(
+                    index_elements=["group_id", "product_name"],
+                    set_={"frontend_preferences_constraints": frontend_preferences_constraints},
+                )
+            )
+
+    return _
+
+
+@pytest.fixture
+async def drop_all_group_extra_properties(asyncpg_engine: AsyncEngine, product_name: ProductName) -> None:
+    async with asyncpg_engine.begin() as conn:
+        await conn.execute(
+            groups_extra_properties.delete().where(groups_extra_properties.c.product_name == product_name)
+        )
+
+
+async def test_set_frontend_user_preference_without_group_extra_properties(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    drop_all_group_extra_properties: None,
+):
+    # NOTE: products do not provision `groups_extra_properties`, writing a preference must not depend on it
+    await set_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+        value=2 * _HOUR,
+    )
+
+    preference = await get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=UserInactivityThresholdFrontendUserPreference,
+    )
+    assert preference is not None
+    assert preference.value == 2 * _HOUR
+
+    # the class constraints still apply
+    with pytest.raises(FrontendUserPreferenceValueIsInvalidError):
+        await set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+            value=4 * _HOUR,
+        )
+
+
+@pytest.mark.parametrize(
+    "constraints, value, is_allowed",
+    [
+        pytest.param(None, 1 * _MINUTE, True, id="at_class_minimum"),
+        pytest.param(None, 1 * _MINUTE - 1, False, id="below_class_minimum"),
+        pytest.param(None, 3 * _HOUR, True, id="at_class_cap"),
+        pytest.param(None, 4 * _HOUR, False, id="above_class_cap"),
+        # NOTE: overrides are merged per key, they must use the same key as the class to replace it
+        pytest.param({"le": 6 * _HOUR}, 6 * _HOUR, True, id="group_relaxes_class_cap"),
+        pytest.param({"le": 6 * _HOUR}, 7 * _HOUR, False, id="above_relaxed_group_cap"),
+        pytest.param({"le": 2 * _HOUR}, 3 * _HOUR, False, id="group_tightens_class_cap"),
+    ],
+)
+async def test_set_frontend_user_preference_honours_group_constraints(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[dict[str, Any] | None], Awaitable[None]],
+    constraints: dict[str, Any] | None,
+    value: int,
+    is_allowed: bool,
+):
+    await set_inactivity_constraints(constraints)
+
+    async def _set() -> None:
+        await set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+            value=value,
+        )
+
+    if is_allowed:
+        await _set()
+    else:
+        with pytest.raises(FrontendUserPreferenceValueIsInvalidError):
+            await _set()
+
+
+async def test_value_allowed_by_group_stays_readable_after_constraint_removal(
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[dict[str, Any] | None], Awaitable[None]],
+):
+    await set_inactivity_constraints({"le": 6 * _HOUR})
+    await set_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+        value=6 * _HOUR,
+    )
+
+    await set_inactivity_constraints(None)
+
+    preference = await get_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=UserInactivityThresholdFrontendUserPreference,
+    )
+    assert preference is not None
+    assert preference.value == 6 * _HOUR
+
+
+async def test_aggregation_exposes_effective_constraints(
+    app: web.Application,
+    enable_all_frontend_preferences: None,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[dict[str, Any] | None], Awaitable[None]],
+):
+    await set_inactivity_constraints(None)
+    aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
+    constraints = aggregation[_INACTIVITY_IDENTIFIER].constraints
+    assert constraints is not None
+    assert constraints.le == 3 * _HOUR
+    # preferences without constraints must not carry an empty object
+    assert aggregation["themeName"].constraints is None
+
+    await set_inactivity_constraints({"le": 6 * _HOUR, "ge": 60})
+    aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
+    constraints = aggregation[_INACTIVITY_IDENTIFIER].constraints
+    assert constraints is not None
+    assert constraints.le == 6 * _HOUR
+    assert constraints.ge == 60
+
+
+@pytest.mark.parametrize(
+    "malformed_constraints",
+    [
+        pytest.param({"lte": 6 * _HOUR}, id="misspelled_constraint"),
+        pytest.param({"le": "not-a-number"}, id="constraint_value_of_wrong_type"),
+        pytest.param({"pattern": "["}, id="invalid_regular_expression"),
+        pytest.param("not-a-mapping", id="overrides_not_a_mapping"),
+        pytest.param(["le", 1], id="overrides_is_a_sequence"),
+    ],
+)
+async def test_misconfigured_constraints_fall_back_to_code_defaults(
+    app: web.Application,
+    enable_all_frontend_preferences: None,
+    user_id: UserID,
+    product_name: ProductName,
+    drop_all_preferences: None,
+    set_inactivity_constraints: Callable[[Any], Awaitable[None]],
+    malformed_constraints: Any,
+):
+    # NOTE: a single bad row must not take down profile loading for everyone in the group
+    await set_inactivity_constraints(malformed_constraints)
+
+    aggregation = await get_frontend_user_preferences_aggregation(app, user_id=user_id, product_name=product_name)
+    constraints = aggregation[_INACTIVITY_IDENTIFIER].constraints
+    assert constraints is not None
+    assert constraints.le == 3 * _HOUR
+
+    # the code defaults still apply on the write path
+    await set_frontend_user_preference(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+        value=2 * _HOUR,
+    )
+    with pytest.raises(FrontendUserPreferenceValueIsInvalidError):
+        await set_frontend_user_preference(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            frontend_preference_identifier=_INACTIVITY_IDENTIFIER,
+            value=4 * _HOUR,
+        )

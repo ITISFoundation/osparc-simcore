@@ -58,7 +58,7 @@ def app(client: TestClient) -> web.Application:
     "overwrites",
     [
         {
-            "UserInactivityThresholdFrontendUserPreference": 45,
+            "UserInactivityThresholdFrontendUserPreference": 120,
             "WalletIndicatorVisibilityFrontendUserPreference": "nothing",
             "ServicesFrontendUserPreference": {"empty": "data"},
             "DoNotShowAnnouncementsFrontendUserPreference": [1, 5, 70],

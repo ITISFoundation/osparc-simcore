@@ -17,7 +17,7 @@ import fsspec
 import pytest
 from faker import Faker
 from pydantic import AnyUrl, SecretBytes, TypeAdapter
-from pytest_localftpserver.servers import ProcessFTPServer
+from pytest_localftpserver.servers import PytestLocalFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.errors import (
@@ -52,7 +52,7 @@ def s3_presigned_link_storage_kwargs(s3_settings: S3Settings) -> dict[str, Any]:
 
 
 @pytest.fixture
-def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
+def ftp_remote_file_url(ftpserver: PytestLocalFTPServer, faker: Faker) -> AnyUrl:
     return TypeAdapter(AnyUrl).validate_python(f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}")
 
 

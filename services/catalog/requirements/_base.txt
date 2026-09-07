@@ -98,7 +98,7 @@ googleapis-common-protos==1.70.0
     #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via sqlalchemy
-grpcio==1.71.0
+grpcio==1.83.1
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
     # via
@@ -120,7 +120,7 @@ httpx==0.28.1
     #   fastapi-cloud-cli
 hyperframe==6.1.0
     # via h2
-idna==3.10
+idna==3.19
     # via
     #   anyio
     #   email-validator
@@ -149,7 +149,7 @@ markupsafe==3.0.2
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.1.0
+msgpack==1.2.2
     # via aiocache
 multidict==6.1.0
     # via
@@ -298,13 +298,13 @@ pydantic-settings==2.14.2
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi
-pygments==2.19.1
+pygments==2.21.0
     # via rich
 pyinstrument==5.1.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn
@@ -385,6 +385,7 @@ typing-extensions==4.14.1
     #   fast-depends
     #   fastapi
     #   faststream
+    #   grpcio
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -412,7 +413,7 @@ uvicorn==0.34.2
     #   fastapi
     #   fastapi-cli
     #   fastapi-cloud-cli
-uvloop==0.21.0
+uvloop==0.22.1
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn

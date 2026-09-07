@@ -34,7 +34,7 @@ docker==7.1.0
     # via -r requirements/_base.in
 email-validator==2.3.0
     # via pydantic
-idna==3.11
+idna==3.19
     # via
     #   email-validator
     #   requests
@@ -89,15 +89,15 @@ pydantic-extra-types==2.11.1
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 pydantic-settings==2.14.2
     # via -r requirements/../../../packages/models-library/requirements/_base.in
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   pytest
     #   rich
-pytest==9.0.2
+pytest==9.1.1
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 python-slugify==8.0.4
     # via cookiecutter

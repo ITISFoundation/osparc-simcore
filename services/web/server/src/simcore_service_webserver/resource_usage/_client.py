@@ -1,6 +1,5 @@
 """Requests to catalog service API"""
 
-import logging
 import urllib.parse
 from datetime import datetime
 from decimal import Decimal
@@ -21,7 +20,6 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
@@ -30,57 +28,6 @@ from yarl import URL
 from ._utils import handle_client_exceptions
 from .errors import DefaultPricingPlanNotFoundError
 from .settings import get_plugin_settings
-
-_logger = logging.getLogger(__name__)
-
-
-async def list_service_runs_by_user_and_product(
-    app: web.Application,
-    user_id: UserID,
-    product_name: str,
-    offset: int,
-    limit: NonNegativeInt,
-) -> dict:
-    settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (URL(settings.api_base_url) / "services" / "-" / "usages").with_query(
-        {
-            "user_id": user_id,
-            "product_name": product_name,
-            "offset": offset,
-            "limit": limit,
-        }
-    )
-    with handle_client_exceptions(app) as session:
-        async with session.get(url) as response:
-            body: dict = await response.json()
-            return body
-
-
-async def list_service_runs_by_user_and_product_and_wallet(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: str,
-    wallet_id: WalletID,
-    access_all_wallet_usage: bool,
-    offset: int,
-    limit: NonNegativeInt,
-) -> dict:
-    settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (URL(settings.api_base_url) / "services" / "-" / "usages").with_query(
-        {
-            "user_id": user_id,
-            "product_name": product_name,
-            "wallet_id": wallet_id,
-            "access_all_wallet_usage": f"{access_all_wallet_usage}".lower(),
-            "offset": offset,
-            "limit": limit,
-        }
-    )
-    with handle_client_exceptions(app) as session:
-        async with session.get(url) as response:
-            body: dict = await response.json()
-            return body
 
 
 async def get_default_service_pricing_plan(

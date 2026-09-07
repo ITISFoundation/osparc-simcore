@@ -151,7 +151,7 @@ httpx==0.28.1
     #   fastapi-cloud-cli
 hyperframe==6.1.0
     # via h2
-idna==3.6
+idna==3.19
     # via
     #   anyio
     #   email-validator
@@ -314,7 +314,7 @@ pamqp==3.3.0
     # via aiormq
 pandas==2.3.3
     # via prometheus-api-client
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 prometheus-api-client==0.6.0
     # via -r requirements/_base.in
@@ -362,7 +362,7 @@ pydantic-settings==2.14.2
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi
-pygments==2.17.2
+pygments==2.21.0
     # via rich
 pyinstrument==5.1.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -376,7 +376,7 @@ python-dateutil==2.9.0.post0
     #   dateparser
     #   matplotlib
     #   pandas
-python-dotenv==1.0.1
+python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn
@@ -515,7 +515,7 @@ uvicorn==0.34.2
     #   fastapi
     #   fastapi-cli
     #   fastapi-cloud-cli
-uvloop==0.21.0
+uvloop==0.22.1
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn

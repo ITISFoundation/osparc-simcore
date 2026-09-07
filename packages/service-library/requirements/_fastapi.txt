@@ -59,7 +59,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
     #   fastapi-cloud-cli
-idna==3.11
+idna==3.19
     # via
     #   anyio
     #   email-validator
@@ -113,9 +113,9 @@ pydantic-extra-types==2.11.1
     # via fastapi
 pydantic-settings==2.14.2
     # via fastapi
-pygments==2.19.2
+pygments==2.21.0
     # via rich
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via
     #   pydantic-settings
     #   uvicorn

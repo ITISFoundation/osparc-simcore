@@ -23,8 +23,6 @@ install-dev: _check_venv_active ## install app in development mode (editable) an
 	@python -c "import polib; from pathlib import Path; [polib.pofile(str(p)).save_as_mofile(str(p.with_suffix('.mo'))) for p in Path('src/common_library/locale').glob('*/LC_MESSAGES/messages.po')]"
 
 
-PYTEST_JUNIT_ARGS :=
-
 .PHONY: tests tests-ci
 tests: test-dev-unit ## runs unit tests
 
