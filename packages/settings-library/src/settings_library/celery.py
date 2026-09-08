@@ -24,13 +24,15 @@ class CelerySettings(BaseCustomSettings):
     CELERY_RESULT_EXPIRES: Annotated[
         timedelta,
         Field(
-            description="Time after which task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            description="Time after which task results will be deleted (default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = timedelta(days=7)
     CELERY_EPHEMERAL_RESULT_EXPIRES: Annotated[
         timedelta,
         Field(
-            description="Time after which ephemeral task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            description="Time after which ephemeral task results will be deleted (default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = timedelta(hours=1)
     CELERY_RESULT_PERSISTENT: Annotated[
@@ -41,7 +43,8 @@ class CelerySettings(BaseCustomSettings):
     CELERY_POOL: Annotated[
         CeleryPoolType,
         Field(
-            description="Type of pool to use. One of: prefork, eventlet, gevent, threads. See https://docs.celeryq.dev/en/stable/userguide/concurrency/index.html for details.",
+            description="Type of pool to use. One of: prefork, eventlet, gevent, threads. See "
+            "https://docs.celeryq.dev/en/stable/userguide/concurrency/index.html for details.",
         ),
     ] = CeleryPoolType.PREFORK
 
