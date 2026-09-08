@@ -120,6 +120,10 @@ class ProjectRunningConflictError(ProjectTrashError):
     msg_template = "Cannot trash running project '{project_uuid}' except if forced option is on"
 
 
+class ProjectTrashLockConflictError(ProjectTrashError):
+    msg_template = "Project '{project_uuid}' is temporarily in use and cannot be trashed. Please try again later."
+
+
 class ProjectNotTrashedError(ProjectTrashError):
     msg_template = "Cannot delete project {project_uuid} since it was not trashed first: {details}"
 

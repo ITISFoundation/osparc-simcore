@@ -13,6 +13,7 @@ from ...projects.exceptions import (
     ProjectInvalidRightsError,
     ProjectRunningConflictError,
     ProjectStoppingError,
+    ProjectTrashLockConflictError,
 )
 from ...workspaces.errors import (
     WorkspaceAccessForbiddenError,
@@ -61,7 +62,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "You do not have permission to move the project with UUID: {project_uuid}. To locate this project, copy and paste the UUID into the search bar.",
+            "You do not have permission to move the project with UUID: {project_uuid}. "
+            "To locate this project, copy and paste the UUID into the search bar.",
             _version=1,
         ),
     ),
@@ -69,15 +71,25 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Cannot move folder to trash because it contains projects that are currently running. Please stop all running services first and try again.",
+            "Cannot move folder to trash because it contains projects that are currently running. "
+            "Please stop all running services first and try again.",
             _version=2,
         ),
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "Something went wrong while stopping running services in projects within this folder before trashing. Aborting trash.",
+            "Something went wrong while stopping running services in projects within this folder before trashing. "
+            "Aborting trash.",
             _version=2,
+        ),
+    ),
+    ProjectTrashLockConflictError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "Cannot move folder to trash because it contains a project that is temporarily in use. "
+            "Please try again later.",
+            _version=1,
         ),
     ),
 }

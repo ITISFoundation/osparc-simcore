@@ -49,6 +49,7 @@ from ..exceptions import (
     ProjectTooManyNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
+    ProjectTrashLockConflictError,
     ProjectTypeAndTemplateIncompatibilityError,
     ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
@@ -144,6 +145,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please try again later.",
+            _version=1,
+        ),
+    ),
+    ProjectTrashLockConflictError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "The project is temporarily in use and cannot be moved to trash. Please try again later.",
             _version=1,
         ),
     ),

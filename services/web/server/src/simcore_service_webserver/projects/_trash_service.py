@@ -29,6 +29,7 @@ from .exceptions import (
     ProjectNotTrashedError,
     ProjectRunningConflictError,
     ProjectsBatchDeleteError,
+    ProjectTrashLockConflictError,
 )
 from .models import ProjectDict, ProjectPatchInternalExtended, ProjectTypeAPI
 
@@ -47,7 +48,7 @@ async def _run_trash_operation_locked(
 
     async def _run_without_readers() -> None:
         if await has_project_read_locks(redis_client, project_id):
-            raise ProjectRunningConflictError(
+            raise ProjectTrashLockConflictError(
                 project_uuid=project_id,
                 user_id=user_id,
                 product_name=product_name,
@@ -63,7 +64,7 @@ async def _run_trash_operation_locked(
             notification_cb=_projects_service.create_user_notification_cb(user_id, project_id, app),
         )(_run_without_readers)()
     except ProjectLockError as exc:
-        raise ProjectRunningConflictError(
+        raise ProjectTrashLockConflictError(
             project_uuid=project_id,
             user_id=user_id,
             product_name=product_name,

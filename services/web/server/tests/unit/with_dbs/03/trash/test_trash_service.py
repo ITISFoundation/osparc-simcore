@@ -36,7 +36,6 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.models import projects as projects_table
 from simcore_service_webserver.folders import _folders_service
 from simcore_service_webserver.projects import _projects_service_delete, _trash_service
-from simcore_service_webserver.projects.exceptions import ProjectRunningConflictError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from simcore_service_webserver.trash import trash_service
@@ -76,15 +75,12 @@ async def test_trash_project_fails_while_project_is_being_cloned(
     user_id = UserID(logged_user["id"])
 
     async def _trash_while_locked() -> None:
-        with pytest.raises(ProjectRunningConflictError):
-            await _trash_service.trash_project(
-                client.app,
-                product_name="osparc",
-                user_id=user_id,
-                project_id=project_id,
-                force_stop_first=False,
-                explicit=True,
-            )
+        response = await client.post(f"/v0/projects/{project_id}:trash")
+        _, error = await assert_status(response, status.HTTP_409_CONFLICT)
+        assert error["message"] == (
+            f"Current study is temporarily in use and cannot be trashed [project_id={project_id}]. "
+            "Please try again later."
+        )
 
     await with_project_read_locked(
         get_redis_lock_manager_client_sdk(client.app),
