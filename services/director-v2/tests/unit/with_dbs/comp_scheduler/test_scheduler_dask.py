@@ -1620,6 +1620,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
                     running_project.project.prj_owner,
                     running_project.project.uuid,
                     t.node_id,
+                    mock.ANY,
                 )
                 for t in running_project.tasks
                 if t.node_class == NodeClass.COMPUTATIONAL
