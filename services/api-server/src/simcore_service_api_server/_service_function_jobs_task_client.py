@@ -34,6 +34,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.task_manager import TaskManager
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -121,6 +122,7 @@ class FunctionJobTaskClientService:
     _webserver_api: AuthSession
     _celery_task_manager: TaskManager
     _async_pg_engine: AsyncEngine
+    _rabbitmq_client: RabbitMQClient
     _function_lookup: dict[FunctionID, RegisteredFunction] = field(default_factory=dict)
 
     async def list_function_jobs_with_status(
@@ -282,6 +284,7 @@ class FunctionJobTaskClientService:
                             version=function.solver_version,
                             job_id=function_job.solver_job_id,
                             async_pg_engine=self._async_pg_engine,
+                            rabbitmq_client=self._rabbitmq_client,
                         )
                     ).results
                 )

@@ -60,6 +60,7 @@ from pytest_simcore.helpers.webserver_rpc import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server.api.dependencies.authentication import Identity
@@ -310,11 +311,15 @@ def mocked_app_rpc_dependencies(app: FastAPI, mocked_rabbit_rpc_client: MockType
     Mocks rabbit clients overrides for the FastAPI app.
     """
     from simcore_service_api_server.api.dependencies.rabbitmq import (  # noqa: PLC0415
+        get_rabbitmq_client,
         get_rabbitmq_rpc_client,
     )
     from simcore_service_api_server.api.dependencies.webserver_rpc import (  # noqa: PLC0415
         get_wb_api_rpc_client,
     )
+
+    # Overrides Depends[get_rabbitmq_client]
+    app.dependency_overrides[get_rabbitmq_client] = lambda: MagicMock(spec=RabbitMQClient)
 
     # Overrides Depends[get_rabbitmq_rpc_client]
     app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: mocked_rabbit_rpc_client
@@ -337,6 +342,7 @@ def mocked_app_rpc_dependencies(app: FastAPI, mocked_rabbit_rpc_client: MockType
 
     app.dependency_overrides.pop(get_wb_api_rpc_client, None)
     app.dependency_overrides.pop(get_rabbitmq_rpc_client, None)
+    app.dependency_overrides.pop(get_rabbitmq_client, None)
 
 
 @pytest.fixture

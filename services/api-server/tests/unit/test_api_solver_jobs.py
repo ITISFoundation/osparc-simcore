@@ -469,6 +469,7 @@ async def test_get_solver_job_outputs(
     expected_status_code: int,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
     mock_dependency_get_celery_task_manager: MockType,
+    mocked_app_rpc_dependencies: None,
 ):
     def _sf(
         request: httpx.Request,
@@ -552,6 +553,7 @@ async def test_get_solver_job_outputs_assets_deleted(
     project_tests_dir: Path,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
     mock_dependency_get_celery_task_manager: MockType,
+    mocked_app_rpc_dependencies: None,
 ):
     def _sf(
         request: httpx.Request,

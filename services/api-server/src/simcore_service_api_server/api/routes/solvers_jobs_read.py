@@ -19,6 +19,7 @@ from models_library.users import UserID
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from servicelib.rabbitmq import RabbitMQClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
@@ -53,7 +54,7 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
-from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
+from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor, get_rabbitmq_client
 from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
@@ -384,12 +385,14 @@ async def get_job_outputs(
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
 ):
     return await job_service.get_solver_job_outputs(
         solver_key=solver_key,
         version=version,
         job_id=job_id,
         async_pg_engine=async_pg_engine,
+        rabbitmq_client=rabbitmq_client,
     )
 
 

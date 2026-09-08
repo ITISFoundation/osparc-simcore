@@ -30,6 +30,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.task_manager import TaskManager
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server._service_function_jobs_task_client import (
     FunctionJobTaskClientService,
@@ -175,6 +176,7 @@ async def test_create_function_job_creation_tasks_all_cached(
         _webserver_api=mocker.AsyncMock(spec=AuthSession),
         _celery_task_manager=mocker.Mock(spec=TaskManager),
         _async_pg_engine=mocker.MagicMock(spec=AsyncEngine),
+        _rabbitmq_client=mocker.MagicMock(spec=RabbitMQClient),
     )
 
     identity = Identity(
@@ -257,6 +259,7 @@ async def test_list_function_jobs_with_status_caches_get_function(
         _webserver_api=mocker.AsyncMock(spec=AuthSession),
         _celery_task_manager=mocker.Mock(spec=TaskManager),
         _async_pg_engine=mocker.MagicMock(spec=AsyncEngine),
+        _rabbitmq_client=mocker.MagicMock(spec=RabbitMQClient),
     )
 
     jobs, meta = await service.list_function_jobs_with_status()

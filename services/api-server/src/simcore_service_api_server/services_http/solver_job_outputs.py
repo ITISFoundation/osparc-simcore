@@ -5,6 +5,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.users import UserID
 from pydantic import StrictBool, StrictFloat, StrictInt, TypeAdapter
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -23,7 +24,11 @@ ResultsTypes: TypeAlias = StrictFloat | StrictInt | StrictBool | BaseFileLink | 
 
 
 async def get_solver_output_results(
-    user_id: UserID, project_uuid: ProjectID, node_uuid: NodeID, db_engine: AsyncEngine
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_uuid: NodeID,
+    db_engine: AsyncEngine,
+    rabbitmq_client: RabbitMQClient,
 ) -> dict[str, ResultsTypes]:
     """
     Wraps calls via node_ports to retrieve project's output
@@ -38,6 +43,7 @@ async def get_solver_output_results(
             project_id=f"{project_uuid}",
             node_uuid=f"{node_uuid}",
             db_manager=db_manager,
+            rabbitmq_client=rabbitmq_client,
         )
         solver_output_results: dict[str, Any] = {}
         for port in (await solver.outputs).values():

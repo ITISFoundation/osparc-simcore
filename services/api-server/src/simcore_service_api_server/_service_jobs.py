@@ -28,6 +28,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
 from servicelib.logging_utils import log_context
+from servicelib.rabbitmq import RabbitMQClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_solvers import SolverService
@@ -303,6 +304,7 @@ class JobService:
         version: VersionStr,
         job_id: JobID,
         async_pg_engine: AsyncEngine,
+        rabbitmq_client: RabbitMQClient,
     ) -> JobOutputs:
         job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Get Job '%s' outputs", job_name)
@@ -340,6 +342,7 @@ class JobService:
             project_uuid=job_id,
             node_uuid=UUID(node_ids[0]),
             db_engine=async_pg_engine,
+            rabbitmq_client=rabbitmq_client,
         )
 
         results: dict[str, ArgumentTypes] = {}
