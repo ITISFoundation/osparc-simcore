@@ -405,6 +405,49 @@ async def test_registry_sync_reuses_request_prewarmed_snapshot(
     director_client.get.assert_awaited_once_with("/services")
 
 
+async def test_registry_sync_forces_refresh_of_fresh_snapshot(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    redis_settings: RedisSettings,
+):
+    service_cache = create_service_manifest_cache(redis_settings)
+    await service_cache.clear()
+    lock_client = RedisClientSDK(
+        redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
+        client_name="catalog-manifest-cache-test",
+    )
+    await lock_client.setup()
+    director_client = Mock(spec=DirectorClient)
+    director_client.get.side_effect = [
+        expected_director_rest_api_list_services[:1],
+        expected_director_rest_api_list_services[:2],
+    ]
+    newly_published_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[1])
+
+    try:
+        first_services_map = await manifest.get_services_map_with_lock(
+            director_client,
+            service_cache,
+            lock_client=lock_client,
+        )
+        refreshed_services_map = await manifest.get_services_map_with_lock(
+            director_client,
+            service_cache,
+            lock_client=lock_client,
+            force_refresh=True,
+        )
+
+        assert (newly_published_service.key, newly_published_service.version) not in first_services_map
+        assert (
+            refreshed_services_map[newly_published_service.key, newly_published_service.version]
+            == newly_published_service
+        )
+    finally:
+        await service_cache.close()
+        await lock_client.shutdown()
+
+    assert director_client.get.await_count == 2
+
+
 async def test_get_batch_services_falls_back_to_director_when_cache_is_unavailable(
     expected_director_rest_api_list_services: list[dict[str, Any]],
     mocked_director_rest_api: MockRouter,
@@ -473,6 +516,7 @@ async def test_get_batch_services_refreshes_once_when_a_service_is_absent_from_t
         assert isinstance(got_services[1], HTTPException)
 
     assert director_client.get.await_count == 1
+    assert not director_client.get_service.called
 
 
 async def test_get_batch_services_empty_selection_skips_cache_and_director():

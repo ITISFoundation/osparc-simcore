@@ -37,7 +37,7 @@ from itertools import batched
 from typing import Any, Final, cast
 
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -197,7 +197,7 @@ async def _resolve_batch_service(
     key: ServiceKey,
     version: ServiceVersion,
     cached_service: Any,
-    services_map: ServiceMetaDataPublishedDict,
+    services_map: ServiceMetaDataPublishedDict | None,
     director_client: DirectorClient,
     service_cache: BaseCache,
 ) -> ServiceMetaDataPublished:
@@ -211,8 +211,10 @@ async def _resolve_batch_service(
                 exc_info=True,
             )
 
-    if service := services_map.get((key, version)):
-        return service
+    if services_map is not None:
+        if service := services_map.get((key, version)):
+            return service
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     return await get_service(
         key=key,
@@ -236,10 +238,11 @@ async def _prewarm_service_cache(
     lock_client: RedisClientSDK,
     director_client: DirectorClient,
     service_cache: BaseCache,
+    force_refresh: bool = False,
 ) -> ServiceMetaDataPublishedDict:
     del lock_client
     with log_context(_logger, logging.INFO, "prewarming service manifest cache"):
-        if await _is_snapshot_fresh(service_cache):
+        if not force_refresh and await _is_snapshot_fresh(service_cache):
             services_map = await _get_cached_services_map(service_cache)
             if services_map is not None:
                 _logger.info("Service manifest cache was already prewarmed by another replica")
@@ -252,6 +255,7 @@ async def get_services_map_with_lock(
     service_cache: BaseCache,
     *,
     lock_client: RedisClientSDK | None,
+    force_refresh: bool = False,
 ) -> ServiceMetaDataPublishedDict:
     if lock_client is None:
         return await get_services_map(director_client, service_cache)
@@ -259,6 +263,7 @@ async def get_services_map_with_lock(
         lock_client=lock_client,
         director_client=director_client,
         service_cache=service_cache,
+        force_refresh=force_refresh,
     )
 
 
@@ -317,27 +322,30 @@ async def get_batch_services(
 
     cache_hits = sum(1 for cached_service in cached_services if cached_service is not None)
 
-    services_map: ServiceMetaDataPublishedDict = {}
+    services_map: ServiceMetaDataPublishedDict | None = None
     # NOTE: only a stale snapshot justifies a full refresh: services dropped from the registry are
     # never cached, so keying off missing entries would refresh on every request
-    if cache_hits < len(selection) and not await _is_snapshot_fresh(service_cache):
-        try:
-            services_map, cached_services = await _refresh_batch_from_registry(
-                cache_keys=cache_keys,
-                cached_services=cached_services,
-                director_client=director_client,
-                service_cache=service_cache,
-                lock_client=lock_client,
-            )
-        except HTTPException:
-            _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
+    if cache_hits < len(selection):
+        if await _is_snapshot_fresh(service_cache):
+            services_map = await _get_cached_services_map(service_cache)
+        if services_map is None:
+            try:
+                services_map, cached_services = await _refresh_batch_from_registry(
+                    cache_keys=cache_keys,
+                    cached_services=cached_services,
+                    director_client=director_client,
+                    service_cache=service_cache,
+                    lock_client=lock_client,
+                )
+            except HTTPException:
+                _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
 
     _logger.debug(
         "Service manifest batch of %d: %d cache hits, %d after prewarming, %d from the registry snapshot",
         len(selection),
         cache_hits,
         sum(1 for cached_service in cached_services if cached_service is not None),
-        len(services_map),
+        len(services_map or {}),
     )
 
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
