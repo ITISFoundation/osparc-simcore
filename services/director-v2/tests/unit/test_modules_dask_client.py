@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-positional-arguments
 # pylint: disable=reimported
 import asyncio
 import base64
