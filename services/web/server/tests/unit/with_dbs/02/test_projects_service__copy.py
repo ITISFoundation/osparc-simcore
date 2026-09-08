@@ -17,6 +17,7 @@ here are inspired by the handler-level tests in `test_projects_crud_handlers.py`
 `test_new_template_from_project`).
 """
 
+import asyncio
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -408,6 +409,46 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     # ASSERT
     spied_with_project_locked.assert_not_called()
     spied_with_project_read_locked.assert_called_once()
+
+
+async def test_run_project_clone_locked_allows_concurrent_template_readers(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    template_project: ProjectDict,
+):
+    assert client.app
+    project_uuid = ProjectID(template_project["uuid"])
+    user_id = UserID(logged_user["id"])
+    both_clones_started = asyncio.Event()
+    release_clones = asyncio.Event()
+    active_clones = 0
+
+    async def _clone(source_project: ProjectDict) -> str:
+        nonlocal active_clones
+        active_clones += 1
+        if active_clones == 2:
+            both_clones_started.set()
+        await release_clones.wait()
+        return source_project["uuid"]
+
+    clone_tasks = [
+        asyncio.create_task(
+            _projects_service.run_project_clone_locked(
+                client.app,
+                project_uuid=project_uuid,
+                user_id=user_id,
+                operation=_clone,
+            )
+        )
+        for _ in range(2)
+    ]
+
+    async with asyncio.timeout(5):
+        await both_clones_started.wait()
+        release_clones.set()
+        cloned_project_uuids = await asyncio.gather(*clone_tasks)
+
+    assert cloned_project_uuids == [template_project["uuid"], template_project["uuid"]]
 
 
 async def test_clone_project_data_with_template_parameters(
