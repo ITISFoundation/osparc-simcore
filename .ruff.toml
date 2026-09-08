@@ -93,15 +93,16 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [lint.per-file-ignores]
 "**/{tests,pytest_simcore}/**" = [
-  "T201",    # print found
   "ARG001",  # unused function argument
-  "PT019",   # user pytest.mark.usefixture
-  "PLR2004", # use of magic values
-  "PLR0913", # too many arguments
-  "N806",    # Uppercase variables in functions
-  "PT001",   # use pytest.fixture over pytest.fixture() whatsoever
   "ERA001",  # found commented out code
   "FBT001",  # Boolean positional arg in function definition
+  "N806",    # Uppercase variables in functions
+  "PLR0913", # too many arguments
+  "PLR2004", # use of magic values
+  "PT001",   # use pytest.fixture over pytest.fixture() whatsoever
+  "PT019",   # user pytest.mark.usefixture
+  "SLF001",  # https://docs.astral.sh/ruff/rules/private-member-access/
+  "T201",    # print found
 ]
 
 [lint.flake8-pytest-style]
