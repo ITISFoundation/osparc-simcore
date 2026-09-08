@@ -28,7 +28,7 @@ async def ec2_client(
         "ec2",
         endpoint_url=ec2_settings.EC2_ENDPOINT,
         aws_access_key_id=ec2_settings.EC2_ACCESS_KEY_ID,
-        aws_secret_access_key=ec2_settings.EC2_SECRET_ACCESS_KEY,
+        aws_secret_access_key=ec2_settings.EC2_SECRET_ACCESS_KEY.get_secret_value(),
         region_name=ec2_settings.EC2_REGION_NAME,
     )
     assert isinstance(session_client, ClientCreatorContext)

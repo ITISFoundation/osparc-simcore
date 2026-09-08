@@ -5,7 +5,7 @@ from typing import Final
 from uuid import UUID
 
 from locust import HttpUser, task
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests.auth import HTTPBasicAuth
 from tenacity import (
@@ -29,7 +29,7 @@ _MAX_WAIT_SECONDS: Final[int] = 60
 class UserSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
     OSPARC_API_KEY: str = Field(default=...)
-    OSPARC_API_SECRET: str = Field(default=...)
+    OSPARC_API_SECRET: SecretStr = Field(default=...)
 
     TEMPLATE_UUID: UUID = Field(default=..., examples=["2ed6b0a1-f1a8-4495-8d65-d516f58b7ae0"])
 
@@ -39,7 +39,7 @@ class MetaModelingUser(HttpUser):
         self._user_settings = UserSettings()
         self._auth = HTTPBasicAuth(
             username=self._user_settings.OSPARC_API_KEY,
-            password=self._user_settings.OSPARC_API_SECRET,
+            password=self._user_settings.OSPARC_API_SECRET.get_secret_value(),
         )
         retry_strategy = Retry(
             total=4,
@@ -130,7 +130,8 @@ class MetaModelingUser(HttpUser):
                 response.raise_for_status()
                 state = response.json().get("state")
                 if state not in {"SUCCESS", "FAILED"}:
-                    raise RuntimeError(f"Computation not finished after attempt {attempt.retry_state.attempt_number}")
+                    error_message = f"Computation not finished after attempt {attempt.retry_state.attempt_number}"
+                    raise RuntimeError(error_message)
 
         assert state == "SUCCESS"
 
@@ -149,7 +150,7 @@ class MetaModelingUser(HttpUser):
 
     def upload_file(self, file: Path) -> UUID:
         assert file.is_file()
-        with open(f"{file.resolve()}", "rb") as f:
+        with file.resolve().open("rb") as f:
             files = {"file": f}
             response = self.client.put("/v0/files/content", files=files, auth=self._auth)
             response.raise_for_status()
