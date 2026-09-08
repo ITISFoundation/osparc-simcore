@@ -129,6 +129,10 @@ qx.Class.define("osparc.store.StaticInfo", {
       return this.getValue("webserverDevFeaturesEnabled");
     },
 
+    isLocalizedMessagesEnabled: function() {
+      return Boolean(this.getValue("webserverLocalizedMessagesEnabled"));
+    },
+
     isBillableProduct: function() {
       return Boolean(this.getValue("isPaymentEnabled"));
     },
