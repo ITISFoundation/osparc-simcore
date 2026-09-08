@@ -415,7 +415,9 @@ async def test_rpc_client_recovers_after_broker_restart(rpc_client: RabbitMQRPCC
                 while await stop_stream.read_out() is not None:
                     pass
             assert (await stop_instance.inspect())["ExitCode"] == 0
-            async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
+            # allow for the client's health grace period (tolerates brief,
+            # self-healing disconnects) before it must report unhealthy
+            async for attempt in AsyncRetrying(stop=stop_after_delay(20), wait=wait_fixed(1), reraise=True):
                 with attempt:
                     assert rpc_client.healthy is False
         finally:
