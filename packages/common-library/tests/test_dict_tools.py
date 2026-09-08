@@ -17,7 +17,7 @@ from common_library.dict_tools import (
 @pytest.fixture
 def data() -> dict[str, Any]:
     return {
-        "ID": "3ifd79yhz2vpgu1iz43mf9m2d",
+        "ID": "3ifd79yhz2vpgu1is43mf9m2d",
         "Version": {"Index": 176},
         "CreatedAt": "2021-11-10T17:09:01.892109221Z",
         "UpdatedAt": "2021-11-10T17:09:35.291164864Z",
@@ -43,7 +43,7 @@ def data() -> dict[str, Any]:
         },
         "ServiceID": "77hyhjm6bqs81xp5g3e4ov7wv",
         "Slot": 1,
-        "NodeID": "iz7unuzyzuxbpr80kzheskbbf",
+        "NodeID": "is7unuzyzuxbpr80kzheskbbf",
         "Status": {
             "Timestamp": "2021-11-10T17:09:35.237847117Z",
             "State": "running",
@@ -125,7 +125,6 @@ def test_update_dict():
 
 def test_get_from_dict(data: dict[str, Any]):
     assert get_from_dict(data, "Spec.ContainerSpec.Labels") == {"com.docker.stack.namespace": "master-simcore"}
-    # TODO: see that dotted keys cannot be used here,
     assert get_from_dict(data, "Invalid.Invalid.Invalid", default=42) == 42
 
 
