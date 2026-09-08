@@ -13,7 +13,7 @@ import contextlib
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from contextlib import suppress
 from decimal import Decimal
 from typing import Any, Final, cast
@@ -109,6 +109,7 @@ from servicelib.redis import (
     get_project_locked_state,
     is_project_locked,
     with_project_locked,
+    with_project_read_locked,
 )
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
@@ -178,6 +179,7 @@ from .exceptions import (
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
     ParentNodeNotFoundError,
+    ProjectCloningConflictError,
     ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
@@ -510,7 +512,86 @@ def raise_if_project_is_trashed(project: ProjectDict) -> None:
         raise ProjectCopyingTrashedProjectError(project_uuid=project["uuid"])
 
 
+async def run_project_clone_locked[ResultT](
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    operation: Callable[[ProjectDict], Coroutine[Any, Any, ResultT]],
+) -> ResultT:
+    source_project = await get_project_for_user(
+        app,
+        project_uuid=f"{project_uuid}",
+        user_id=user_id,
+    )
+    raise_if_project_is_trashed(source_project)
+
+    db = ProjectDBAPI.get_from_app_context(app)
+    source_project_type = await db.get_project_type(project_uuid)
+
+    async def _run_with_fresh_source() -> ResultT:
+        fresh_source_project = await get_project_for_user(
+            app,
+            project_uuid=f"{project_uuid}",
+            user_id=user_id,
+        )
+        raise_if_project_is_trashed(fresh_source_project)
+        return await operation(fresh_source_project)
+
+    try:
+        if source_project_type == ProjectType.TEMPLATE:
+            return await with_project_read_locked(
+                get_redis_lock_manager_client_sdk(app),
+                project_uuid=project_uuid,
+                status=ProjectStatus.CLONING,
+                owner=Owner(user_id=user_id),
+            )(_run_with_fresh_source)()
+
+        return await with_project_locked(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=project_uuid,
+            status=ProjectStatus.CLONING,
+            owner=Owner(user_id=user_id),
+            notification_cb=create_user_notification_cb(user_id, project_uuid, app),
+        )(_run_with_fresh_source)()
+    except ProjectLockError as exc:
+        raise ProjectCloningConflictError(project_uuid=project_uuid) from exc
+
+
 async def clone_project_data(
+    app: web.Application,
+    *,
+    source_project: ProjectDict,
+    forced_copy_project_id: ProjectID | None,
+    user_id: UserID,
+    product_name: ProductName,
+    product_api_base_url: str,
+    task_progress: TaskProgress,
+    template_parameters: dict[str, str] | None = None,
+) -> ProjectDict:
+    source_project_uuid = TypeAdapter(ProjectID).validate_python(source_project["uuid"])
+
+    async def _clone(fresh_source_project: ProjectDict) -> ProjectDict:
+        return await _clone_project_data_unlocked(
+            app,
+            source_project=fresh_source_project,
+            forced_copy_project_id=forced_copy_project_id,
+            user_id=user_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            task_progress=task_progress,
+            template_parameters=template_parameters,
+        )
+
+    return await run_project_clone_locked(
+        app,
+        project_uuid=source_project_uuid,
+        user_id=user_id,
+        operation=_clone,
+    )
+
+
+async def _clone_project_data_unlocked(
     app: web.Application,
     *,
     source_project: ProjectDict,
@@ -578,11 +659,6 @@ async def clone_project_data(
 
     new_project["accessRights"] = inserted_project["accessRights"]
 
-    needs_lock_source_project = (
-        await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
-        != ProjectType.TEMPLATE
-    )
-
     async def _copy_data() -> None:
         starting_value = task_progress.percent
         async for async_job_composed_result in storage_service.copy_data_folders_from_project(
@@ -606,16 +682,7 @@ async def clone_project_data(
             if async_job_composed_result.done:
                 await async_job_composed_result.result()
 
-    if needs_lock_source_project:
-        await with_project_locked(
-            get_redis_lock_manager_client_sdk(app),
-            project_uuid=source_project["uuid"],
-            status=ProjectStatus.CLONING,
-            owner=Owner(user_id=user_id),
-            notification_cb=create_user_notification_cb(user_id, ProjectID(f"{source_project['uuid']}"), app),
-        )(_copy_data)()
-    else:
-        await _copy_data()
+    await _copy_data()
 
     await director_v2_service.create_or_update_pipeline(
         app, user_id, new_project["uuid"], product_name, product_api_base_url

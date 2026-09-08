@@ -371,6 +371,7 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
 ):
     # SETUP
     assert client.app
+    spied_with_project_read_locked = mocker.spy(_projects_service, "with_project_read_locked")
     spied_with_project_locked = mocker.spy(_projects_service, "with_project_locked")
 
     # ACT: cloning a STANDARD project locks the source while copying data
@@ -386,8 +387,10 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     )
 
     # ASSERT
+    spied_with_project_read_locked.assert_not_called()
     spied_with_project_locked.assert_called_once()
 
+    spied_with_project_read_locked.reset_mock()
     spied_with_project_locked.reset_mock()
 
     # ACT: cloning a TEMPLATE does NOT lock it (templates are not "in use")
@@ -404,6 +407,7 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
 
     # ASSERT
     spied_with_project_locked.assert_not_called()
+    spied_with_project_read_locked.assert_called_once()
 
 
 async def test_clone_project_data_with_template_parameters(

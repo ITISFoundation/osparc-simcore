@@ -34,6 +34,7 @@ from ..exceptions import (
     InsufficientRoleForProjectTemplateTypeUpdateError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
+    ProjectCloningConflictError,
     ProjectCopyingTrashedProjectError,
     ProjectDeleteError,
     ProjectGroupNotFoundError,
@@ -85,6 +86,13 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
+    ProjectCloningConflictError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "The project is currently in use and cannot be duplicated. Please try again later.",
+            _version=1,
+        ),
+    ),
     ProjectCopyingTrashedProjectError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(

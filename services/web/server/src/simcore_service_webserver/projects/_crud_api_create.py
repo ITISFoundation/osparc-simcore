@@ -12,9 +12,7 @@ from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID, PortLink
-from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
@@ -23,7 +21,6 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.redis import ProjectLockError, with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
     WORKBENCH_NODE_ALIAS_TO_COLUMN,
@@ -37,7 +34,6 @@ from ..catalog import catalog_service
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..folders import _folders_repository as folders_folders_repository
-from ..redis import get_redis_lock_manager_client_sdk
 from ..storage.api import copy_data_folders_from_project, get_project_total_size_simcore_s3
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
@@ -48,6 +44,8 @@ from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
     ParentNodeNotFoundError,
     ParentProjectNotFoundError,
+    ProjectCloningConflictError,
+    ProjectCopyingTrashedProjectError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
@@ -326,7 +324,7 @@ async def create_project(  # NOSONAR  # pylint: disable=too-many-arguments  # no
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
 ) -> web.HTTPCreated:
-    async def _run() -> web.HTTPCreated:
+    async def _run(_source_project: ProjectDict) -> web.HTTPCreated:
         return await _create_project_unlocked(
             progress,
             app=app,
@@ -345,18 +343,34 @@ async def create_project(  # NOSONAR  # pylint: disable=too-many-arguments  # no
         )
 
     if from_study is None:
-        return await _run()
+        return await _create_project_unlocked(
+            progress,
+            app=app,
+            request_url=request_url,
+            request_headers=request_headers,
+            new_project_was_hidden_before_data_was_copied=new_project_was_hidden_before_data_was_copied,
+            from_study=from_study,
+            as_template=as_template,
+            copy_data=copy_data,
+            user_id=user_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            predefined_project=predefined_project,
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
+        )
 
     try:
-        return await with_project_locked(
-            get_redis_lock_manager_client_sdk(app),
+        return await _projects_service.run_project_clone_locked(
+            app,
             project_uuid=from_study,
-            status=ProjectStatus.CLONING,
-            owner=Owner(user_id=user_id),
-            notification_cb=_projects_service.create_user_notification_cb(user_id, from_study, app),
-        )(_run)()
-    except ProjectLockError as exc:
-        raise web.HTTPConflict(text=f"Project {from_study} is locked") from exc
+            user_id=user_id,
+            operation=_run,
+        )
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(text=f"Project {exc.project_uuid} not found") from exc
+    except ProjectInvalidRightsError as exc:
+        raise web.HTTPForbidden from exc
 
 
 # pylint: disable-next=too-many-arguments,too-many-branches,too-many-statements
@@ -608,8 +622,9 @@ def register_create_project_task(app: web.Application) -> None:
     TaskRegistry.register(
         create_project,
         allowed_errors=(
+            ProjectCloningConflictError,
+            ProjectCopyingTrashedProjectError,
             web.HTTPBadRequest,
-            web.HTTPConflict,
             web.HTTPForbidden,
             web.HTTPNotFound,
             web.HTTPUnprocessableEntity,

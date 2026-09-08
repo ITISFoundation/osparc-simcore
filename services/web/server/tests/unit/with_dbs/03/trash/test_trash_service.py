@@ -29,7 +29,7 @@ from pytest_simcore.helpers.webserver_login import (
 )
 from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
-from servicelib.redis import with_project_locked
+from servicelib.redis import with_project_read_locked
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces as workspaces_table
 from simcore_service_webserver.db.models import UserRole
@@ -86,12 +86,11 @@ async def test_trash_project_fails_while_project_is_being_cloned(
                 explicit=True,
             )
 
-    await with_project_locked(
+    await with_project_read_locked(
         get_redis_lock_manager_client_sdk(client.app),
         project_uuid=project_id,
         status=ProjectStatus.CLONING,
         owner=Owner(user_id=user_id),
-        notification_cb=None,
     )(_trash_while_locked)()
 
 

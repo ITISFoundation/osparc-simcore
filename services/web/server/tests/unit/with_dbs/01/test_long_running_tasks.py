@@ -19,9 +19,13 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.projects.exceptions import ProjectCopyingTrashedProjectError
+from simcore_service_webserver.projects.exceptions import (
+    ProjectCloningConflictError,
+    ProjectCopyingTrashedProjectError,
+)
 
 
 @pytest.mark.parametrize(
@@ -76,7 +80,7 @@ async def test_listing_tasks_empty(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_task_result_maps_project_copying_trashed_error(
     client: TestClient,
-    logged_user,
+    logged_user: UserInfoDict,
     faker: Faker,
     mocker: MockerFixture,
 ):
@@ -95,6 +99,29 @@ async def test_get_task_result_maps_project_copying_trashed_error(
         "message": (
             f"Cannot duplicate project {project_uuid} because it is in the trash. Restore it first and try again."
         ),
+        "status": status.HTTP_409_CONFLICT,
+    }
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_task_result_maps_project_cloning_conflict_error(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "servicelib.aiohttp.long_running_tasks._routes.lrt_api.get_task_result",
+        side_effect=ProjectCloningConflictError(project_uuid=faker.uuid4()),
+    )
+
+    result_url = client.app.router["get_task_result"].url_for(task_id="some_task_id")
+    response = await client.get(f"{result_url}")
+
+    _, error = await assert_status(response, status.HTTP_409_CONFLICT)
+    assert error == {
+        "message": "The project is currently in use and cannot be duplicated. Please try again later.",
         "status": status.HTTP_409_CONFLICT,
     }
 

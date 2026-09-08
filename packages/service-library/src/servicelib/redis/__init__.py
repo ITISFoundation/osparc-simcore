@@ -17,8 +17,10 @@ from ._project_document_version import (
 )
 from ._project_lock import (
     get_project_locked_state,
+    has_project_read_locks,
     is_project_locked,
     with_project_locked,
+    with_project_read_locked,
 )
 from ._semaphore_decorator import with_limited_concurrency
 from ._utils import handle_redis_returns_union_types
@@ -37,9 +39,11 @@ __all__: tuple[str, ...] = (
     "SemaphoreNotAcquiredError",
     "exclusive",
     "get_project_locked_state",
+    "has_project_read_locks",
     "handle_redis_returns_union_types",
     "increment_and_return_project_document_version",
     "is_project_locked",
     "with_limited_concurrency",
     "with_project_locked",
+    "with_project_read_locked",
 )

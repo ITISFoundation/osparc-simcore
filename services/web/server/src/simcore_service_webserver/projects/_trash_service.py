@@ -16,7 +16,7 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from servicelib.logging_utils import log_context
-from servicelib.redis import ProjectLockError, with_project_locked
+from servicelib.redis import ProjectLockError, has_project_read_locks, with_project_locked
 from servicelib.utils import fire_and_forget_task
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -43,14 +43,25 @@ async def _run_trash_operation_locked(
     user_id: UserID,
     operation: Callable[[], Coroutine[Any, Any, None]],
 ) -> None:
+    redis_client = get_redis_lock_manager_client_sdk(app)
+
+    async def _run_without_readers() -> None:
+        if await has_project_read_locks(redis_client, project_id):
+            raise ProjectRunningConflictError(
+                project_uuid=project_id,
+                user_id=user_id,
+                product_name=product_name,
+            )
+        await operation()
+
     try:
         await with_project_locked(
-            get_redis_lock_manager_client_sdk(app),
+            redis_client,
             project_uuid=project_id,
             status=ProjectStatus.CLOSING,
             owner=Owner(user_id=user_id),
             notification_cb=_projects_service.create_user_notification_cb(user_id, project_id, app),
-        )(operation)()
+        )(_run_without_readers)()
     except ProjectLockError as exc:
         raise ProjectRunningConflictError(
             project_uuid=project_id,

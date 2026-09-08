@@ -9,8 +9,7 @@ Flow:
     2. The SPA calls ``POST /{API_VTAG}/studies/{study_id}:dispatch``.
     3. That controller validates accessibility **synchronously** (pre-flight), then calls
        ``start_long_running_task``.  A 4xx is returned immediately for inaccessible studies.
-    4. This module runs the actual clone asynchronously and reports progress.
-       Access is trusted from the controller; no redundant re-check here.
+    4. This module runs the actual clone asynchronously, revalidates access and reports progress.
 """
 
 import logging
@@ -32,7 +31,11 @@ from ..projects.api import (
     copy_allow_guests_to_push_states_and_output_ports,
     get_project_dict_and_type,
 )
-from ..projects.exceptions import ProjectNotFoundError
+from ..projects.exceptions import (
+    ProjectCloningConflictError,
+    ProjectCopyingTrashedProjectError,
+    ProjectNotFoundError,
+)
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users.users_service import get_user
 
@@ -167,9 +170,11 @@ def register_dispatch_study_task(app: web.Application) -> None:
     TaskRegistry.register(
         dispatch_study,
         allowed_errors=(
-            web.HTTPNotFound,
-            web.HTTPForbidden,
+            ProjectCloningConflictError,
+            ProjectCopyingTrashedProjectError,
             web.HTTPBadRequest,
+            web.HTTPForbidden,
+            web.HTTPNotFound,
         ),
         app=app,
     )

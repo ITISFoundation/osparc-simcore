@@ -19,8 +19,10 @@ from servicelib.redis import (
     ProjectLockError,
     RedisClientSDK,
     get_project_locked_state,
+    has_project_read_locks,
     is_project_locked,
     with_project_locked,
+    with_project_read_locked,
 )
 from servicelib.redis._project_lock import _PROJECT_REDIS_LOCK_KEY
 
@@ -140,3 +142,80 @@ async def test_lock_already_locked_project_raises(
         await _locked_fct()
 
     await cancel_wait_task(task1)
+
+
+async def test_project_read_locks_allow_concurrent_readers(
+    redis_client_sdk: RedisClientSDK,
+    project_uuid: ProjectID,
+    owner: Owner,
+):
+    both_readers_started = asyncio.Event()
+    release_readers = asyncio.Event()
+    active_readers = 0
+
+    @with_project_read_locked(
+        redis_client_sdk,
+        project_uuid=project_uuid,
+        status=ProjectStatus.CLONING,
+        owner=owner,
+    )
+    async def _read_project() -> None:
+        nonlocal active_readers
+        active_readers += 1
+        if active_readers == 2:
+            both_readers_started.set()
+        await release_readers.wait()
+
+    reader_tasks = [asyncio.create_task(_read_project()) for _ in range(2)]
+    await both_readers_started.wait()
+    assert await has_project_read_locks(redis_client_sdk, project_uuid)
+
+    release_readers.set()
+    await asyncio.gather(*reader_tasks)
+
+    assert await has_project_read_locks(redis_client_sdk, project_uuid) is False
+
+
+async def test_project_read_lock_waits_for_writer_before_entering(
+    redis_client_sdk: RedisClientSDK,
+    project_uuid: ProjectID,
+    owner: Owner,
+):
+    writer_started = asyncio.Event()
+    release_writer = asyncio.Event()
+    reader_started = asyncio.Event()
+    writer_finished = False
+
+    @with_project_locked(
+        redis_client_sdk,
+        project_uuid=project_uuid,
+        status=ProjectStatus.CLOSING,
+        owner=owner,
+        notification_cb=None,
+    )
+    async def _write_project() -> None:
+        nonlocal writer_finished
+        writer_started.set()
+        await release_writer.wait()
+        writer_finished = True
+
+    @with_project_read_locked(
+        redis_client_sdk,
+        project_uuid=project_uuid,
+        status=ProjectStatus.CLONING,
+        owner=owner,
+    )
+    async def _read_project() -> None:
+        assert writer_finished
+        reader_started.set()
+
+    writer_task = asyncio.create_task(_write_project())
+    await writer_started.wait()
+    reader_task = asyncio.create_task(_read_project())
+    await asyncio.sleep(0)
+    assert reader_started.is_set() is False
+    assert await has_project_read_locks(redis_client_sdk, project_uuid) is False
+
+    release_writer.set()
+    await asyncio.gather(reader_task, writer_task)
+    assert reader_started.is_set()

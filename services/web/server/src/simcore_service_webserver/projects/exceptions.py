@@ -159,6 +159,14 @@ class ParentProjectNotFoundError(BaseProjectError):
         self.project_uuid = project_uuid
 
 
+class ProjectCloningConflictError(BaseProjectError):
+    msg_template = "Project '{project_uuid}' is currently in use and cannot be duplicated. Please try again later."
+
+    def __init__(self, *, project_uuid: ProjectID, **ctx):
+        super().__init__(**ctx)
+        self.project_uuid = project_uuid
+
+
 class ProjectCopyingTrashedProjectError(BaseProjectError):
     msg_template = (
         "Cannot duplicate project '{project_uuid}' because it is in the trash. Restore it first and try again."
