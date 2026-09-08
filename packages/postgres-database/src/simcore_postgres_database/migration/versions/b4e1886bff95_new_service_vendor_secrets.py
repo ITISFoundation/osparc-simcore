@@ -47,9 +47,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "service_key", "service_base_version", name="services_vendor_secrets_pk"
-        ),
+        sa.PrimaryKeyConstraint("service_key", "service_base_version", name="services_vendor_secrets_pk"),
     )
 
 

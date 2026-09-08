@@ -13,7 +13,7 @@ from .wallets import wallets
 
 
 @enum.unique
-class InitPromptAckFlowState(str, enum.Enum):
+class InitPromptAckFlowState(enum.StrEnum):
     PENDING = "PENDING"  # initiated
     SUCCESS = "SUCCESS"  # completed (ack) with success
     FAILED = "FAILED"  # failed
@@ -27,7 +27,7 @@ class InitPromptAckFlowState(str, enum.Enum):
 #  - Payment methods are owned by a user and associated to a wallet. When the same CC is added
 #    in the framework by different users, the gateway will produce  different payment_method_id for each
 #    of them (VERIFY assumption)
-#  - A payment method is unique, i.e. only one per wallet and user. For the moment, we intentially avoid the
+#  - A payment method is unique, i.e. only one per wallet and user. For the moment, we intentionally avoid the
 #    possibility of associating a payment method to more than one wallet to avoid complexity
 #
 payments_methods = sa.Table(

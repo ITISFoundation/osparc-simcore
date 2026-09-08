@@ -29,7 +29,7 @@ wallet_to_groups = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
-        doc="Group unique IDentifier",
+        doc="Group unique IIdentifier",
     ),
     # Access Rights flags ---
     sa.Column(

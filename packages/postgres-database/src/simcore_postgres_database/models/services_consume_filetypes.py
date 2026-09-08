@@ -12,7 +12,7 @@ from ._common import RefActions
 from .base import metadata
 
 #
-# TODO: This information SHALL be defined in service metadata upon publication
+# NOTE: This information SHALL be defined in service metadata upon publication
 #       and the catalog service, using e.g. a background task,
 #       can automatically fill this table with services that elligable (e.g. shared with everybody)
 #       to consume given filetypes. Notice also that service "matching" will also be determined in a near
@@ -56,7 +56,7 @@ services_consume_filetypes = sa.Table(
         nullable=False,
         doc="An extension supported by this service, e.g. CSV, VTK, etc."
         "The filetype identifiers are not well defined, so we avoided using enums"
-        "Temptative list in https://en.wikipedia.org/wiki/List_of_file_formats",
+        "Tentative list in https://en.wikipedia.org/wiki/List_of_file_formats",
     ),
     sa.Column(
         "preference_order",

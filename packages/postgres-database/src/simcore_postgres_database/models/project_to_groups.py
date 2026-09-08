@@ -32,7 +32,7 @@ project_to_groups = sa.Table(
             ondelete=RefActions.CASCADE,
         ),
         nullable=False,
-        doc="Group unique IDentifier",
+        doc="Group unique IIdentifier",
     ),
     # Access Rights flags ---
     sa.Column(
