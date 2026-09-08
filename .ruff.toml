@@ -93,16 +93,16 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [lint.per-file-ignores]
 "**/{tests,pytest_simcore}/**" = [
-  "ARG001",  # unused function argument
-  "ERA001",  # found commented out code
-  "FBT001",  # Boolean positional arg in function definition
-  "N806",    # Uppercase variables in functions
-  "PLR0913", # too many arguments
-  "PLR2004", # use of magic values
-  "PT001",   # use pytest.fixture over pytest.fixture() whatsoever
-  "PT019",   # user pytest.mark.usefixture
+  "ARG001",  # https://docs.astral.sh/ruff/rules/unused-function-argument/
+  "ERA001",  # https://docs.astral.sh/ruff/rules/commented-out-code/
+  "FBT001",  # https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
+  "N806",    # https://docs.astral.sh/ruff/rules/non-lowercase-variable-in-function/
+  "PLR0913", # https://docs.astral.sh/ruff/rules/too-many-arguments/
+  "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+  "PT001",   # https://docs.astral.sh/ruff/rules/pytest-fixture-incorrect-parentheses-style/
+  "PT019",   # https://docs.astral.sh/ruff/rules/pytest-fixture-param-without-value/
   "SLF001",  # https://docs.astral.sh/ruff/rules/private-member-access/
-  "T201",    # print found
+  "T201",    # https://docs.astral.sh/ruff/rules/print/
 ]
 
 [lint.flake8-pytest-style]
