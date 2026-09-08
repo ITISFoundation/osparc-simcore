@@ -34,6 +34,7 @@ from ..projects.api import (
 from ..projects.exceptions import (
     ProjectCloningConflictError,
     ProjectCopyingTrashedProjectError,
+    ProjectInvalidRightsError,
     ProjectNotFoundError,
 )
 from ..redis import get_redis_lock_manager_client_sdk
@@ -172,6 +173,8 @@ def register_dispatch_study_task(app: web.Application) -> None:
         allowed_errors=(
             ProjectCloningConflictError,
             ProjectCopyingTrashedProjectError,
+            ProjectInvalidRightsError,
+            ProjectNotFoundError,
             web.HTTPBadRequest,
             web.HTTPForbidden,
             web.HTTPNotFound,

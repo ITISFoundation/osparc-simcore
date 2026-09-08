@@ -569,6 +569,7 @@ async def clone_project_data(
     task_progress: TaskProgress,
     template_parameters: dict[str, str] | None = None,
 ) -> ProjectDict:
+    raise_if_project_is_trashed(source_project)
     source_project_uuid = TypeAdapter(ProjectID).validate_python(source_project["uuid"])
 
     async def _clone(fresh_source_project: ProjectDict) -> ProjectDict:
