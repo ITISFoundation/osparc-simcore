@@ -31,7 +31,7 @@ PROJECTS_PATHS = [f"services/web/server/tests/data/{name}" for name in PROJECTS_
 
 
 def _load_data(fpath: Path):
-    with open(fpath) as fh:
+    with fpath.open() as fh:
         try:
             data = json.load(fh)
         except json.JSONDecodeError:
@@ -62,7 +62,6 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
 
     # Adapts workbench-only data: embeds data within a fake project skeleton
     if "workbench" in data_path:
-        # TODO: Ideally project is faked to a schema.
         # NOTE: tried already `faker-schema` but it does not do the job right
         prj = {
             "uuid": "eiusmod",
