@@ -5,7 +5,7 @@ from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
 from models_library.docker import DockerNodeID
-from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
+from pydantic import AliasChoices, AnyHttpUrl, Field, SecretStr, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -56,7 +56,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str
     AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
-    AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str
+    AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: SecretStr
     AGENT_VOLUMES_CLEANUP_S3_BUCKET: str
     AGENT_VOLUMES_CLEANUP_S3_PROVIDER: S3Provider
     AGENT_VOLUMES_CLEANUP_S3_REGION: str = "us-east-1"

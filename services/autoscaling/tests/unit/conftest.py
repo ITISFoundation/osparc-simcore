@@ -223,7 +223,7 @@ def ec2_instance_custom_tags(
 @pytest.fixture
 def external_ec2_instances_allowed_types(
     external_envfile_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None | dict[str, EC2InstanceBootSpecific]:
+) -> dict[str, EC2InstanceBootSpecific] | None:
     if not external_envfile_dict:
         return None
     with monkeypatch.context() as patch:
@@ -612,13 +612,18 @@ async def create_service(
     async_docker_client: aiodocker.Docker,
     docker_swarm: None,
     faker: Faker,
-) -> AsyncIterator[Callable[[dict[str, Any], dict[DockerLabelKey, str] | None], Awaitable[Service]]]:
+) -> AsyncIterator[
+    Callable[
+        [dict[str, Any], dict[DockerLabelKey, str] | None, str | list[str], list[str] | None],
+        Awaitable[Service],
+    ]
+]:
     created_services = []
 
     async def _creator(
         task_template: dict[str, Any],
         labels: dict[DockerLabelKey, str] | None = None,
-        wait_for_service_state="running",
+        wait_for_service_state: str | list[str] = "running",
         placement_constraints: list[str] | None = None,
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
@@ -683,7 +688,10 @@ async def create_service(
         )
         assert not diff, f"{diff}"
         assert service.spec.labels == base_labels
-        await _assert_wait_for_service_state(async_docker_client, service, [wait_for_service_state])
+        expected_states = (
+            [wait_for_service_state] if isinstance(wait_for_service_state, str) else wait_for_service_state
+        )
+        await _assert_wait_for_service_state(async_docker_client, service, expected_states)
         return service
 
     yield _creator
@@ -1235,7 +1243,7 @@ def fake_pre_pull_images() -> list[DockerGenericTag]:
 def ec2_instances_allowed_types_with_only_1_buffered(
     faker: Faker,
     fake_pre_pull_images: list[DockerGenericTag],
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+    external_ec2_instances_allowed_types: dict[str, EC2InstanceBootSpecific] | None,
 ) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
     if not external_ec2_instances_allowed_types:
         return {

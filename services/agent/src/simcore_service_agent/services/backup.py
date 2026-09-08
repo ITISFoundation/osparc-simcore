@@ -41,7 +41,7 @@ async def _rclone_config_file(settings: ApplicationSettings) -> AsyncIterator[Pa
     config_content = _R_CLONE_CONFIG.format(
         destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
-        destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
+        destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY.get_secret_value(),
         destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
         destination_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
     )

@@ -129,15 +129,17 @@ async def send_sms_code(
 
         def _sender():
             log.info(
-                "Sending sms code to %s from product %s",
-                f"{phone_number=}",
-                twilio_alpha_numeric_sender,
+                "Sending sms code to %s",
+                mask_phone_number(phone_number),
             )
             #
             # SEE https://www.twilio.com/docs/sms/quickstart/python
             #
             # NOTE: this is mocked
-            client = twilio.rest.Client(twilio_auth.TWILIO_ACCOUNT_SID, twilio_auth.TWILIO_AUTH_TOKEN)
+            client = twilio.rest.Client(
+                twilio_auth.TWILIO_ACCOUNT_SID,
+                twilio_auth.TWILIO_AUTH_TOKEN.get_secret_value(),
+            )
             message = client.messages.create(**create_kwargs)
 
             log.debug(
