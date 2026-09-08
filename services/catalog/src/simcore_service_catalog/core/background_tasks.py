@@ -121,7 +121,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
         director_api,
         get_service_manifest_cache(app),
         lock_client=get_service_manifest_lock_client(app),
-        force_refresh=True,
+        max_snapshot_age=datetime.timedelta(seconds=app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME),
     )
 
     services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)

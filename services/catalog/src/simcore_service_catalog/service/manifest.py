@@ -32,7 +32,7 @@ This ensures data integrity and consistency across the system.
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from itertools import batched
 from typing import Any, Final, cast
 
@@ -76,11 +76,20 @@ def _build_service_cache_key(
     return f"get_service/{key}/{version}"
 
 
-async def _is_snapshot_fresh(service_cache: BaseCache) -> bool:
+async def _is_snapshot_fresh(
+    service_cache: BaseCache,
+    *,
+    max_snapshot_age: timedelta | None = None,
+) -> bool:
     """Tells whether the last full registry snapshot is still cached"""
     try:
-        return await service_cache.get(_SERVICE_CACHE_SNAPSHOT_KEY) is not None
-    except (RedisError, TimeoutError):
+        snapshot_timestamp = await service_cache.get(_SERVICE_CACHE_SNAPSHOT_KEY)
+        if snapshot_timestamp is None:
+            return False
+        if max_snapshot_age is None:
+            return True
+        return datetime.now(UTC) - datetime.fromisoformat(snapshot_timestamp) <= max_snapshot_age
+    except (RedisError, TimeoutError, TypeError, ValueError):
         _logger.warning("Failed to read the service manifest cache snapshot marker", exc_info=True)
         return False
 
@@ -238,11 +247,11 @@ async def _prewarm_service_cache(
     lock_client: RedisClientSDK,
     director_client: DirectorClient,
     service_cache: BaseCache,
-    force_refresh: bool = False,
+    max_snapshot_age: timedelta | None = None,
 ) -> ServiceMetaDataPublishedDict:
     del lock_client
     with log_context(_logger, logging.INFO, "prewarming service manifest cache"):
-        if not force_refresh and await _is_snapshot_fresh(service_cache):
+        if await _is_snapshot_fresh(service_cache, max_snapshot_age=max_snapshot_age):
             services_map = await _get_cached_services_map(service_cache)
             if services_map is not None:
                 _logger.info("Service manifest cache was already prewarmed by another replica")
@@ -255,7 +264,7 @@ async def get_services_map_with_lock(
     service_cache: BaseCache,
     *,
     lock_client: RedisClientSDK | None,
-    force_refresh: bool = False,
+    max_snapshot_age: timedelta | None = None,
 ) -> ServiceMetaDataPublishedDict:
     if lock_client is None:
         return await get_services_map(director_client, service_cache)
@@ -263,7 +272,7 @@ async def get_services_map_with_lock(
         lock_client=lock_client,
         director_client=director_client,
         service_cache=service_cache,
-        force_refresh=force_refresh,
+        max_snapshot_age=max_snapshot_age,
     )
 
 

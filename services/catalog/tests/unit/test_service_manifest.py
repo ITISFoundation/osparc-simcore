@@ -8,6 +8,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
@@ -374,6 +375,7 @@ async def test_registry_sync_reuses_request_prewarmed_snapshot(
 
     director_client.get.side_effect = _list_services
     expected_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[0])
+    sync_interval = timedelta(minutes=1)
 
     try:
         request = asyncio.create_task(
@@ -390,6 +392,7 @@ async def test_registry_sync_reuses_request_prewarmed_snapshot(
                 director_client,
                 caches[1],
                 lock_client=lock_client,
+                max_snapshot_age=sync_interval,
             )
         )
         release_director_call.set()
@@ -405,7 +408,7 @@ async def test_registry_sync_reuses_request_prewarmed_snapshot(
     director_client.get.assert_awaited_once_with("/services")
 
 
-async def test_registry_sync_forces_refresh_of_fresh_snapshot(
+async def test_registry_sync_refreshes_snapshot_older_than_sync_interval(
     expected_director_rest_api_list_services: list[dict[str, Any]],
     redis_settings: RedisSettings,
 ):
@@ -422,6 +425,7 @@ async def test_registry_sync_forces_refresh_of_fresh_snapshot(
         expected_director_rest_api_list_services[:2],
     ]
     newly_published_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[1])
+    sync_interval = timedelta(minutes=1)
 
     try:
         first_services_map = await manifest.get_services_map_with_lock(
@@ -429,11 +433,15 @@ async def test_registry_sync_forces_refresh_of_fresh_snapshot(
             service_cache,
             lock_client=lock_client,
         )
+        await service_cache.set(
+            manifest._SERVICE_CACHE_SNAPSHOT_KEY,
+            (datetime.now(UTC) - sync_interval - timedelta(seconds=1)).isoformat(),
+        )
         refreshed_services_map = await manifest.get_services_map_with_lock(
             director_client,
             service_cache,
             lock_client=lock_client,
-            force_refresh=True,
+            max_snapshot_age=sync_interval,
         )
 
         assert (newly_published_service.key, newly_published_service.version) not in first_services_map
