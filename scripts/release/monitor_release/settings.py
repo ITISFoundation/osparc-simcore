@@ -19,13 +19,11 @@ _DEPLOYMENTS_MAP = {
 }
 _DEPLOYMENTS_IMAP = {v: k for k, v in _DEPLOYMENTS_MAP.items()}
 _LEGACY_DEPLOYMENT_CONFIG: dict[str, tuple[str, str, int]] = {
-    "aws-nih-production": ("AWS_NIH_PRODUCTION", "production-simcore_production", 2),
     "aws-staging": ("AWS_STAGING", "staging-simcore_staging", 2),
     "aws-zmt-production": ("AWS_ZMT_PRODUCTION", "staging-simcore_staging", 1),
     "dalco-production": ("DALCO_PRODUCTION", "production-simcore_production", 1),
     "dalco-staging": ("DALCO_STAGING", "staging-simcore_staging", 1),
     "master": ("MASTER", "master-simcore_master", 1),
-    "tip-production": ("TIP_PRODUCTION", "production-simcore_production", 2),
 }
 
 SECRETS_CONFIG_FILE_NAME: Final[str] = "repo.config"
@@ -96,23 +94,11 @@ def get_release_settings(env_file_path: Path):
                 portainer_endpoint_version=1,
                 starts_with="production-simcore_production",
             )
-        case "tip.itis.swiss":
-            settings = ReleaseSettings(
-                _env_file=env_file_path,  # type: ignore
-                portainer_endpoint_version=2,
-                starts_with="production-simcore_production",
-            )
         case "osparc-staging.io":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="staging-simcore_staging",
-            )
-        case "osparc.io":
-            settings = ReleaseSettings(
-                _env_file=env_file_path,  # type: ignore
-                portainer_endpoint_version=2,
-                starts_with="production-simcore_production",
             )
         case "sim4life.io":
             settings = ReleaseSettings(

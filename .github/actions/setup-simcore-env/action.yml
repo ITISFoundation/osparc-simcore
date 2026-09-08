@@ -47,12 +47,12 @@ runs:
       uses: crazy-max/ghaction-github-runtime@v4
 
     - name: Setup Python environment
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python-version }}
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v10.0.1
       with:
         version: ${{ inputs.uv-version }}
         enable-cache: false

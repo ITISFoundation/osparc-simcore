@@ -11,6 +11,7 @@ from pydantic import (
 )
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.utils_secrets import are_secrets_equal
 from yarl import URL
 
 from ....locale import translate_message
