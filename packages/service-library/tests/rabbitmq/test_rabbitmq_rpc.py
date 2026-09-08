@@ -320,6 +320,7 @@ async def test_rpc_client_recovers_after_broker_disruption(
 
 
 async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitMQRPCClient, mocker: MockerFixture):
+    rpc_client.grace_period_s = 0  # observe the raw state transition immediately
     mocker.patch.object(rpc_client, "_rebuild_rpc_surface", side_effect=RuntimeError("boom"))
     assert rpc_client.healthy is True
 
