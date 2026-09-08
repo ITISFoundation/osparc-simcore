@@ -409,12 +409,12 @@ async def test_rpc_client_recovers_after_broker_restart(rpc_client: RabbitMQRPCC
         assert len(containers) == 1, "missing rabbit container!"
         rabbit_container = containers[0]
         stop_instance = await rabbit_container.exec(["rabbitmqctl", "stop_app"])
-        stop_stream = stop_instance.start()
-        async with stop_stream:
-            while await stop_stream.read_out() is not None:
-                pass
-        assert (await stop_instance.inspect())["ExitCode"] == 0
         try:
+            stop_stream = stop_instance.start()
+            async with stop_stream:
+                while await stop_stream.read_out() is not None:
+                    pass
+            assert (await stop_instance.inspect())["ExitCode"] == 0
             async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
                 with attempt:
                     assert rpc_client.healthy is False
