@@ -41,7 +41,7 @@ from fastapi import HTTPException
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from redis.exceptions import RedisError
 from servicelib.logging_utils import log_context
 from servicelib.redis import BaseRedisError, RedisClientSDK, exclusive
@@ -59,8 +59,10 @@ type ServiceMetaDataPublishedDict = dict[tuple[ServiceKey, ServiceVersion], Serv
 
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
+_SERVICE_CACHE_FULL_SNAPSHOT_KEY: Final[str] = "services_map_full_snapshot"
 _SERVICE_CACHE_PREWARM_LOCK_KEY = "catalog:service_manifest:prewarm"
 _SERVICE_CACHE_SNAPSHOT_KEY: Final[str] = "services_map_snapshot"
+_SERVICE_METADATA_LIST_ADAPTER = TypeAdapter(list[ServiceMetaDataPublished])
 
 # NOTE: bounds each atomic MULTI/EXEC so bulk writes do not stall the shared redis
 _SERVICE_CACHE_WRITE_CHUNK_SIZE: Final[int] = 500
@@ -81,6 +83,18 @@ async def _is_snapshot_fresh(service_cache: BaseCache) -> bool:
     except (RedisError, TimeoutError):
         _logger.warning("Failed to read the service manifest cache snapshot marker", exc_info=True)
         return False
+
+
+async def _get_cached_services_map(service_cache: BaseCache) -> ServiceMetaDataPublishedDict | None:
+    try:
+        cached_snapshot = await service_cache.get(_SERVICE_CACHE_FULL_SNAPSHOT_KEY)
+        if cached_snapshot is None:
+            return None
+        services = _SERVICE_METADATA_LIST_ADAPTER.validate_python(cached_snapshot)
+        return {(service.key, service.version): service for service in services}
+    except (RedisError, TimeoutError, ValidationError):
+        _logger.warning("Failed to read the full service manifest cache snapshot", exc_info=True)
+        return None
 
 
 async def get_services_map(
@@ -123,6 +137,11 @@ async def get_services_map(
     try:
         for chunk in batched(cache_entries, _SERVICE_CACHE_WRITE_CHUNK_SIZE, strict=False):
             await service_cache.multi_set(list(chunk), ttl=DIRECTOR_CACHING_TTL)
+        await service_cache.set(
+            _SERVICE_CACHE_FULL_SNAPSHOT_KEY,
+            [cache_value for _, cache_value in cache_entries],
+            ttl=DIRECTOR_CACHING_TTL,
+        )
         # NOTE: only this marker's presence matters, its ttl defines how long a snapshot stays fresh
         await service_cache.set(
             _SERVICE_CACHE_SNAPSHOT_KEY,
@@ -217,13 +236,30 @@ async def _prewarm_service_cache(
     lock_client: RedisClientSDK,
     director_client: DirectorClient,
     service_cache: BaseCache,
-) -> ServiceMetaDataPublishedDict | None:
+) -> ServiceMetaDataPublishedDict:
     del lock_client
     with log_context(_logger, logging.INFO, "prewarming service manifest cache"):
         if await _is_snapshot_fresh(service_cache):
-            _logger.info("Service manifest cache was already prewarmed by another replica")
-            return None
+            services_map = await _get_cached_services_map(service_cache)
+            if services_map is not None:
+                _logger.info("Service manifest cache was already prewarmed by another replica")
+                return services_map
         return await get_services_map(director_client, service_cache)
+
+
+async def get_services_map_with_lock(
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+    *,
+    lock_client: RedisClientSDK | None,
+) -> ServiceMetaDataPublishedDict:
+    if lock_client is None:
+        return await get_services_map(director_client, service_cache)
+    return await _prewarm_service_cache(
+        lock_client=lock_client,
+        director_client=director_client,
+        service_cache=service_cache,
+    )
 
 
 async def _refresh_batch_from_registry(

@@ -117,9 +117,10 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     Notice that a services here refers to a 2-tuple (key, version)
     """
     director_api = get_director_client(app)
-    services_in_manifest_map = await manifest.get_services_map(
+    services_in_manifest_map = await manifest.get_services_map_with_lock(
         director_api,
         get_service_manifest_cache(app),
+        lock_client=get_service_manifest_lock_client(app),
     )
 
     services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)

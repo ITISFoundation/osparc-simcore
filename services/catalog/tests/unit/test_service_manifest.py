@@ -351,6 +351,60 @@ async def test_get_batch_services_cold_cache_is_coalesced_across_replicas(
     director_client.get.assert_awaited_once_with("/services")
 
 
+async def test_registry_sync_reuses_request_prewarmed_snapshot(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+    redis_settings: RedisSettings,
+):
+    caches = [create_service_manifest_cache(redis_settings) for _ in range(2)]
+    await caches[0].clear()
+    lock_client = RedisClientSDK(
+        redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
+        client_name="catalog-manifest-cache-test",
+    )
+    await lock_client.setup()
+    director_client = Mock(spec=DirectorClient)
+    director_call_started = asyncio.Event()
+    release_director_call = asyncio.Event()
+
+    async def _list_services(path: str) -> list[dict[str, Any]]:
+        assert path == "/services"
+        director_call_started.set()
+        await release_director_call.wait()
+        return expected_director_rest_api_list_services
+
+    director_client.get.side_effect = _list_services
+    expected_service = ServiceMetaDataPublished.model_validate(expected_director_rest_api_list_services[0])
+
+    try:
+        request = asyncio.create_task(
+            manifest.get_batch_services(
+                [(expected_service.key, expected_service.version)],
+                director_client,
+                caches[0],
+                lock_client=lock_client,
+            )
+        )
+        await director_call_started.wait()
+        registry_sync = asyncio.create_task(
+            manifest.get_services_map_with_lock(
+                director_client,
+                caches[1],
+                lock_client=lock_client,
+            )
+        )
+        release_director_call.set()
+
+        request_services, registry_services_map = await asyncio.gather(request, registry_sync)
+        assert request_services == [expected_service]
+        assert registry_services_map[expected_service.key, expected_service.version] == expected_service
+    finally:
+        release_director_call.set()
+        await asyncio.gather(*(cache.close() for cache in caches))
+        await lock_client.shutdown()
+
+    director_client.get.assert_awaited_once_with("/services")
+
+
 async def test_get_batch_services_falls_back_to_director_when_cache_is_unavailable(
     expected_director_rest_api_list_services: list[dict[str, Any]],
     mocked_director_rest_api: MockRouter,
