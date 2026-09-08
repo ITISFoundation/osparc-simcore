@@ -14,7 +14,11 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.projects import ProjectID
+from models_library.projects_access import Owner
+from models_library.projects_state import ProjectStatus
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -25,13 +29,16 @@ from pytest_simcore.helpers.webserver_login import (
 )
 from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
+from servicelib.redis import with_project_locked
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces as workspaces_table
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.models import projects as projects_table
 from simcore_service_webserver.folders import _folders_service
 from simcore_service_webserver.projects import _projects_service_delete, _trash_service
+from simcore_service_webserver.projects.exceptions import ProjectRunningConflictError
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from simcore_service_webserver.trash import trash_service
 from simcore_service_webserver.workspaces import _workspaces_service
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -56,6 +63,36 @@ def app_environment(
 @pytest.fixture
 def user_role() -> UserRole:
     return UserRole.USER
+
+
+async def test_trash_project_fails_while_project_is_being_cloned(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
+):
+    assert client.app
+    project_id = ProjectID(user_project["uuid"])
+    user_id = UserID(logged_user["id"])
+
+    async def _trash_while_locked() -> None:
+        with pytest.raises(ProjectRunningConflictError):
+            await _trash_service.trash_project(
+                client.app,
+                product_name="osparc",
+                user_id=user_id,
+                project_id=project_id,
+                force_stop_first=False,
+                explicit=True,
+            )
+
+    await with_project_locked(
+        get_redis_lock_manager_client_sdk(client.app),
+        project_uuid=project_id,
+        status=ProjectStatus.CLONING,
+        owner=Owner(user_id=user_id),
+        notification_cb=None,
+    )(_trash_while_locked)()
 
 
 async def test_trash_service__delete_expired_trash(

@@ -23,14 +23,13 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.redis import with_project_locked
+from servicelib.redis import ProjectLockError, with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.utils_projects_nodes import (
     WORKBENCH_NODE_ALIAS_TO_COLUMN,
     ProjectNode,
     ProjectNodeCreate,
 )
-from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 from yarl import URL
 
 from ..application_settings import get_application_settings
@@ -245,15 +244,6 @@ async def _copy_files_from_source_project(
     product_name: str,
     task_progress: TaskProgress,
 ):
-    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
-
-    needs_lock_source_project: bool = (
-        await _projects_repository_legacy.get_project_type(
-            TypeAdapter(ProjectID).validate_python(source_project["uuid"])
-        )
-        != ProjectTypeDB.TEMPLATE
-    )
-
     async def _copy() -> None:
         starting_value = task_progress.percent
         async for async_job_composed_result in copy_data_folders_from_project(
@@ -277,18 +267,7 @@ async def _copy_files_from_source_project(
             if async_job_composed_result.done:
                 await async_job_composed_result.result()
 
-    if needs_lock_source_project:
-        await with_project_locked(
-            get_redis_lock_manager_client_sdk(app),
-            project_uuid=source_project["uuid"],
-            status=ProjectStatus.CLONING,
-            owner=Owner(user_id=user_id),
-            notification_cb=_projects_service.create_user_notification_cb(
-                user_id, ProjectID(f"{source_project['uuid']}"), app
-            ),
-        )(_copy)()
-    else:
-        await _copy()
+    await _copy()
 
 
 async def _compose_project_data(
@@ -330,8 +309,59 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0912, PLR0913, PLR0915
-    progress: TaskProgress,
+async def create_project(  # NOSONAR  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    progress: TaskProgress,  # NOSONAR
+    *,
+    app: web.Application,
+    request_url: URL,
+    request_headers: dict[str, str],
+    new_project_was_hidden_before_data_was_copied: bool,
+    from_study: ProjectID | None,
+    as_template: bool,
+    copy_data: bool,
+    user_id: UserID,
+    product_name: str,
+    product_api_base_url: str,
+    predefined_project: ProjectDict | None,
+    parent_project_uuid: ProjectID | None,
+    parent_node_id: NodeID | None,
+) -> web.HTTPCreated:
+    async def _run() -> web.HTTPCreated:
+        return await _create_project_unlocked(
+            progress,
+            app=app,
+            request_url=request_url,
+            request_headers=request_headers,
+            new_project_was_hidden_before_data_was_copied=new_project_was_hidden_before_data_was_copied,
+            from_study=from_study,
+            as_template=as_template,
+            copy_data=copy_data,
+            user_id=user_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            predefined_project=predefined_project,
+            parent_project_uuid=parent_project_uuid,
+            parent_node_id=parent_node_id,
+        )
+
+    if from_study is None:
+        return await _run()
+
+    try:
+        return await with_project_locked(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=from_study,
+            status=ProjectStatus.CLONING,
+            owner=Owner(user_id=user_id),
+            notification_cb=_projects_service.create_user_notification_cb(user_id, from_study, app),
+        )(_run)()
+    except ProjectLockError as exc:
+        raise web.HTTPConflict(text=f"Project {from_study} is locked") from exc
+
+
+# pylint: disable-next=too-many-arguments,too-many-branches,too-many-statements
+async def _create_project_unlocked(  # NOSONAR  # noqa: C901, PLR0912, PLR0913, PLR0915
+    progress: TaskProgress,  # NOSONAR
     *,
     app: web.Application,
     request_url: URL,
@@ -578,10 +608,11 @@ def register_create_project_task(app: web.Application) -> None:
     TaskRegistry.register(
         create_project,
         allowed_errors=(
-            web.HTTPUnprocessableEntity,
             web.HTTPBadRequest,
-            web.HTTPNotFound,
+            web.HTTPConflict,
             web.HTTPForbidden,
+            web.HTTPNotFound,
+            web.HTTPUnprocessableEntity,
         ),
         app=app,
     )

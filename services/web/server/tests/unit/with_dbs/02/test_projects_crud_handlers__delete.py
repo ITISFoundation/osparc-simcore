@@ -21,6 +21,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -33,6 +34,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis import with_project_locked
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects.exceptions import ProjectRunningConflictError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from simcore_service_webserver.trash import trash_service
@@ -178,3 +180,28 @@ async def test_delete_project_while_it_is_locked_raises_error(
         owner=Owner(user_id=user_id),
         notification_cb=None,
     )(_request_delete_project)(client, user_project, expected.conflict)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_delete_project_maps_lock_race_to_conflict(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.projects._controller.projects_rest.get_project_locked_state",
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._controller.projects_rest.projects_trash_service."
+        "trash_project_for_immediate_deletion",
+        side_effect=ProjectRunningConflictError(
+            project_uuid=user_project["uuid"],
+            user_id=logged_user["id"],
+            product_name="osparc",
+        ),
+    )
+
+    await _request_delete_project(client, user_project, status.HTTP_409_CONFLICT)

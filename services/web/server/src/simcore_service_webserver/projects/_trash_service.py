@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
-from typing import Final
+from typing import Any, Final
 
 import arrow
 from aiohttp import web
@@ -8,16 +9,20 @@ from common_library.pagination_tools import iter_pagination_params
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.projects_access import Owner
+from models_library.projects_state import ProjectStatus
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from servicelib.logging_utils import log_context
+from servicelib.redis import ProjectLockError, with_project_locked
 from servicelib.utils import fire_and_forget_task
 
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..redis import get_redis_lock_manager_client_sdk
 from . import _access_rights_service, _crud_api_read, _projects_repository, _projects_service, _projects_service_delete
 from .exceptions import (
     ProjectNotFoundError,
@@ -28,6 +33,30 @@ from .exceptions import (
 from .models import ProjectDict, ProjectPatchInternalExtended, ProjectTypeAPI
 
 _logger = logging.getLogger(__name__)
+
+
+async def _run_trash_operation_locked(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    project_id: ProjectID,
+    user_id: UserID,
+    operation: Callable[[], Coroutine[Any, Any, None]],
+) -> None:
+    try:
+        await with_project_locked(
+            get_redis_lock_manager_client_sdk(app),
+            project_uuid=project_id,
+            status=ProjectStatus.CLOSING,
+            owner=Owner(user_id=user_id),
+            notification_cb=_projects_service.create_user_notification_cb(user_id, project_id, app),
+        )(operation)()
+    except ProjectLockError as exc:
+        raise ProjectRunningConflictError(
+            project_uuid=project_id,
+            user_id=user_id,
+            product_name=product_name,
+        ) from exc
 
 
 async def _is_project_running(
@@ -64,6 +93,35 @@ async def trash_project(
         permission="write",
     )
 
+    async def _trash_project() -> None:
+        if not force_stop_first and await _is_project_running(app, user_id=user_id, project_id=project_id):
+            raise ProjectRunningConflictError(
+                project_uuid=project_id,
+                user_id=user_id,
+                product_name=product_name,
+            )
+
+        await _projects_service.patch_project_for_user(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            project_uuid=project_id,
+            project_patch=ProjectPatchInternalExtended(
+                trashed_at=arrow.utcnow().datetime,
+                trashed_explicitly=explicit,
+                trashed_by=user_id,
+            ),
+            client_session_id=None,
+        )
+
+    await _run_trash_operation_locked(
+        app,
+        product_name=product_name,
+        project_id=project_id,
+        user_id=user_id,
+        operation=_trash_project,
+    )
+
     if force_stop_first:
         fire_and_forget_task(
             _projects_service_delete.batch_stop_services_in_project(
@@ -72,26 +130,6 @@ async def trash_project(
             task_suffix_name=f"trash_project_force_stop_first_{user_id=}_{project_id=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
-
-    elif await _is_project_running(app, user_id=user_id, project_id=project_id):
-        raise ProjectRunningConflictError(
-            project_uuid=project_id,
-            user_id=user_id,
-            product_name=product_name,
-        )
-
-    await _projects_service.patch_project_for_user(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        project_uuid=project_id,
-        project_patch=ProjectPatchInternalExtended(
-            trashed_at=arrow.utcnow().datetime,
-            trashed_explicitly=explicit,
-            trashed_by=user_id,
-        ),
-        client_session_id=None,
-    )
 
 
 async def untrash_project(
@@ -143,18 +181,27 @@ async def trash_project_for_immediate_deletion(
         permission="delete",
     )
 
-    # NOTE: if the steps performed later by the GC fail, it might result in a
-    # services/projects/data that might be inconsistent. The GC retries every cycle
-    # until it succeeds (see `delete_project_as_admin`).
-    await _projects_repository.patch_project(
+    async def _trash_project_immediately() -> None:
+        # NOTE: if the steps performed later by the GC fail, it might result in a
+        # services/projects/data that might be inconsistent. The GC retries every cycle
+        # until it succeeds (see `delete_project_as_admin`).
+        await _projects_repository.patch_project(
+            app,
+            project_uuid=project_id,
+            new_partial_project_data={
+                "hidden": True,
+                "trashed": _IMMEDIATE_TRASH_EPOCH,
+                "trashed_explicitly": True,
+                "trashed_by": user_id,
+            },
+        )
+
+    await _run_trash_operation_locked(
         app,
-        project_uuid=project_id,
-        new_partial_project_data={
-            "hidden": True,
-            "trashed": _IMMEDIATE_TRASH_EPOCH,
-            "trashed_explicitly": True,
-            "trashed_by": user_id,
-        },
+        product_name=product_name,
+        project_id=project_id,
+        user_id=user_id,
+        operation=_trash_project_immediately,
     )
 
 

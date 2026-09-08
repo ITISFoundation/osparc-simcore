@@ -13,6 +13,7 @@ from .._meta import API_VTAG, APP_NAME
 from ..application_setup import ModuleCategory, app_setup_func
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
+from ..projects._controller._rest_exceptions import handle_plugin_requests_exceptions
 from ..projects.plugin import register_projects_long_running_tasks
 from ..studies_dispatcher._dispatch_task import register_dispatch_study_task
 from . import settings as long_running_tasks_settings
@@ -22,6 +23,10 @@ _logger = logging.getLogger(__name__)
 
 def _get_lrt_namespace(suffix: str) -> str:
     return f"{APP_NAME}-{suffix}"
+
+
+def _handle_lrt_request(handler: Handler) -> Handler:
+    return login_required(handle_plugin_requests_exceptions(handler))
 
 
 def webserver_request_context_decorator(handler: Handler):
@@ -56,6 +61,6 @@ def setup_long_running_tasks(app: web.Application) -> None:
         rabbit_settings=rabbitmq_settings.get_plugin_settings(app),
         lrt_namespace=_get_lrt_namespace(settings.LONG_RUNNING_TASKS_NAMESPACE_SUFFIX),
         router_prefix=f"/{API_VTAG}/tasks-legacy",
-        handler_check_decorator=login_required,
+        handler_check_decorator=_handle_lrt_request,
         task_request_context_decorator=webserver_request_context_decorator,
     )

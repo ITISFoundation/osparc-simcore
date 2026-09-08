@@ -43,6 +43,7 @@ from ..exceptions import (
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNotFoundError,
+    ProjectRunningConflictError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
     ProjectTooManyProjectOpenedError,
@@ -130,6 +131,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
+    ),
+    ProjectRunningConflictError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please try again later.",
+            _version=1,
+        ),
     ),
     ProjectTooManyProjectOpenedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
