@@ -120,7 +120,8 @@ class BaseCompTaskAtDB(BaseModel):
     ]
     run_hash: str | None = Field(
         default=None,
-        description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+        description="the hex digest of the resolved inputs +outputs "
+        "hash at the time when the last outputs were generated",
     )
     image: Image
     start: dt.datetime | None = None
@@ -141,6 +142,8 @@ class BaseCompTaskAtDB(BaseModel):
     # Additional information about price and hardware (ex. AWS EC2 instance type)
     pricing_info: dict | None
     hardware_info: HardwareInfo
+
+    skip_db_notification: Annotated[bool, Field(..., description="Flag to skip database notifications")] = False
 
     @field_validator("state", mode="before")
     @classmethod
@@ -202,7 +205,8 @@ class CompTaskAtDB(BaseCompTaskAtDB):
                         "inputs": {
                             "input_1": {
                                 "label": "input_files",
-                                "description": "Any input files. One or several files compressed in a zip will be downloaded in an inputs folder.",
+                                "description": "Any input files. "
+                                "One or several files compressed in a zip will be downloaded in an inputs folder.",
                                 "type": "data:*/*",
                                 "displayOrder": 1.0,
                             }
@@ -225,7 +229,8 @@ class CompTaskAtDB(BaseCompTaskAtDB):
                     "outputs": {
                         "output_1": {
                             "store": 0,
-                            "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
+                            "path": "341351c4-23d1-4366-95d0-bc01386001a7/"
+                            "7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
                         }
                     },
                     "image": image_example,
