@@ -39,10 +39,16 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_service_webserver.projects.exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.studies_dispatcher import _dispatch_task
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -86,6 +92,18 @@ def _assert_dispatch_fragment(fragment: str) -> str:
     m = re.match(r"(?:/dispatch\?study_id=|/study/)([0-9a-f\-]+)(?:/dispatch)?$", fragment)
     assert m, f"Expected fragment with dispatch route, got: {fragment!r}"
     return m.group(1)
+
+
+def test_register_dispatch_study_task_allows_revalidation_errors(
+    mocker: MockerFixture,
+):
+    mocker.patch.object(TaskRegistry, "_REGISTERED_TASKS", {})
+
+    _dispatch_task.register_dispatch_study_task(mock.MagicMock())
+
+    allowed_errors = TaskRegistry.get_allowed_errors(_dispatch_task.dispatch_study.__name__)
+    assert ProjectInvalidRightsError in allowed_errors
+    assert ProjectNotFoundError in allowed_errors
 
 
 async def _poll_lr_task_until_done(client: TestClient, status_href: str) -> None:
