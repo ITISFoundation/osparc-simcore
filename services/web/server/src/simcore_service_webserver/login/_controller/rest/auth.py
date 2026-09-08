@@ -9,7 +9,6 @@ from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.logging_utils import log_context
-from servicelib.utils_secrets import are_secrets_equal
 from simcore_postgres_database.models.users import UserRole
 
 from ...._meta import API_VTAG
