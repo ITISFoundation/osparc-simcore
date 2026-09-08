@@ -80,5 +80,5 @@ def test_enormous_file_size_raises_value_error():
     enormous_file_size = TypeAdapter(ByteSize).validate_python(
         (max(_MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE) * _MULTIPART_MAX_NUMBER_OF_PARTS + 1),
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Could not determine number of upload links"):
         compute_num_file_chunks(enormous_file_size)

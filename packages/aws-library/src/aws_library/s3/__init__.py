@@ -40,5 +40,3 @@ __all__: tuple[str, ...] = (
     "UploadID",
     "UploadedBytesTransferredCallback",
 )
-
-# nopycln: file

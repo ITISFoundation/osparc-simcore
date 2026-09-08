@@ -30,9 +30,9 @@ async def simcore_ssm_api(
 ) -> AsyncIterator[SimcoreSSMAPI]:
     ec2 = await SimcoreSSMAPI.create(settings=mocked_ssm_server_settings)
     assert ec2
-    assert ec2._client
-    assert ec2._exit_stack
-    assert ec2._session
+    assert ec2._client  # noqa: SLF001 - verifying internal setup of the created API
+    assert ec2._exit_stack  # noqa: SLF001
+    assert ec2._session  # noqa: SLF001
     yield ec2
     await ec2.close()
 
