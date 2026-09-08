@@ -1,3 +1,5 @@
+from collections.abc import Callable, Coroutine
+from typing import Any
 from unittest.mock import MagicMock
 
 from aiohttp import web
@@ -9,6 +11,8 @@ from servicelib.long_running_tasks.models import TaskProgress
 from simcore_service_webserver.projects import _crud_api_create
 from yarl import URL
 
+type _CreateProjectOperation = Callable[[], Coroutine[Any, Any, web.HTTPCreated]]
+
 
 async def test_create_project_locks_source_before_reading_it(
     faker: Faker,
@@ -17,7 +21,7 @@ async def test_create_project_locks_source_before_reading_it(
     source_project_id = ProjectID(faker.uuid4())
     lock_is_held = False
 
-    async def _create_project_unlocked(*_args, **_kwargs) -> web.HTTPCreated:
+    async def _create_project_unlocked(*_args: Any, **_kwargs: Any) -> web.HTTPCreated:
         assert lock_is_held
         return web.HTTPCreated()
 
@@ -32,11 +36,13 @@ async def test_create_project_locks_source_before_reading_it(
         return_value=MagicMock(),
     )
 
-    def _with_project_locked(*_args, **kwargs):
+    def _with_project_locked(
+        *_args: Any, **kwargs: Any
+    ) -> Callable[[_CreateProjectOperation], _CreateProjectOperation]:
         assert kwargs["project_uuid"] == source_project_id
 
-        def _decorator(operation):
-            async def _run_locked():
+        def _decorator(operation: _CreateProjectOperation) -> _CreateProjectOperation:
+            async def _run_locked() -> web.HTTPCreated:
                 nonlocal lock_is_held
                 lock_is_held = True
                 try:
