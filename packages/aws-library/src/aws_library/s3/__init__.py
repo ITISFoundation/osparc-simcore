@@ -39,4 +39,4 @@ __all__: tuple[str, ...] = (
     "SimcoreS3API",
     "UploadID",
     "UploadedBytesTransferredCallback",
-)
+)  # nopycln: file
