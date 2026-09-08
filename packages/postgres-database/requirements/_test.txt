@@ -16,11 +16,6 @@ cryptography==50.0.0
     #   types-paramiko
 faker==40.38.0
     # via -r requirements/_test.in
-greenlet==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_migration.txt
-    #   sqlalchemy
 iniconfig==2.3.0
     # via pytest
 librt==0.8.1
