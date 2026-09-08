@@ -2,14 +2,42 @@ import json
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+import typer
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from settings_library.r_clone import S3Provider
+
+_SETTINGS_EXAMPLE = {
+    "source": {
+        "db": {"address": "", "user": "", "password": "", "database": ""},
+        "s3": {
+            "endpoint": "",
+            "provider": "AWS",
+            "access_key": "",
+            "secret_key": "",
+            "bucket": "",
+        },
+        "project_uuid": UUID(int=0),
+        "hidden_projects_for_user": None,
+    },
+    "destination": {
+        "db": {"address": "", "user": "", "password": "", "database": ""},
+        "s3": {
+            "endpoint": "",
+            "provider": "AWS",
+            "access_key": "",
+            "secret_key": "",
+            "bucket": "",
+        },
+        "user_id": 0,
+        "user_gid": 0,
+    },
+}
 
 
 class DBConfig(BaseModel):
     address: str
     user: str
-    password: str
+    password: SecretStr
     database: str
 
 
@@ -20,7 +48,7 @@ class S3Config(BaseModel):
         description='The S3 implementation / provider. Allowed values: "MINIO","CEPH","AWS"',
     )
     access_key: str
-    secret_key: str
+    secret_key: SecretStr
     bucket: str = Field(
         ...,
         description="S3 Bucket Name",
@@ -54,41 +82,13 @@ class Settings(BaseModel):
     source: SourceConfig
     destination: DestinationConfig
 
+    model_config = ConfigDict(json_schema_extra={"example": _SETTINGS_EXAMPLE})
+
     @classmethod
     def load_from_file(cls, path: Path) -> "Settings":
-        return Settings.model_validate(json.loads(path.read_text()))
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "source": {
-                    "db": {"address": "", "user": "", "password": "", "database": ""},
-                    "s3": {
-                        "endpoint": "",
-                        "provider": "AWS",
-                        "access_key": "",
-                        "secret_key": "",
-                        "bucket": "",
-                    },
-                    "project_uuid": UUID(int=0),
-                    "move_hidden_projects": False,
-                },
-                "destination": {
-                    "db": {"address": "", "user": "", "password": "", "database": ""},
-                    "s3": {
-                        "endpoint": "",
-                        "provider": "AWS",
-                        "access_key": "",
-                        "secret_key": "",
-                        "bucket": "",
-                    },
-                    "user_id": 0,
-                    "user_gid": 0,
-                },
-            }
-        }
+        return cls.model_validate(json.loads(path.read_text()))
 
 
 if __name__ == "__main__":
     # produces an empty configuration to be saved as starting point
-    print(Settings.model_validate(Settings.Config.schema_extra["example"]).model_dump_json(indent=2))
+    typer.echo(Settings.model_validate(_SETTINGS_EXAMPLE).model_dump_json(indent=2))
