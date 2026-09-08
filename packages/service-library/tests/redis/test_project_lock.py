@@ -188,7 +188,7 @@ async def test_has_project_read_locks_prunes_stale_reader_registration(
     expired_reader_lock_key = _PROJECT_REDIS_READ_LOCK_KEY.format(project_uuid, "expired")
     await redis_client_sdk.redis.sadd(readers_set_key, expired_reader_lock_key)
 
-    assert await redis_client_sdk.redis.smembers(readers_set_key) == {expired_reader_lock_key.encode()}
+    assert await redis_client_sdk.redis.smembers(readers_set_key) == {expired_reader_lock_key}
     assert await has_project_read_locks(redis_client_sdk, project_uuid) is False
     assert await redis_client_sdk.redis.smembers(readers_set_key) == set()
 
