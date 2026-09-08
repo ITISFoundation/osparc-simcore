@@ -756,6 +756,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         mock.ANY,
         completed_tasks[0].job_id,
         await _return_random_task_result(completed_tasks[0].job_id),
+        mock.ANY,
     )
     mocked_parse_output_data_fct.reset_mock()
 
