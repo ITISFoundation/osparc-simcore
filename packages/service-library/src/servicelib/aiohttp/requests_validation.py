@@ -92,7 +92,7 @@ def handle_validation_as_http_error(*, error_msg_template: str, resource_name: s
 #
 
 
-def parse_request_path_parameters_as[ModelClass: BaseModel](
+def parse_request_path_parameters_as(
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -114,7 +114,7 @@ def parse_request_path_parameters_as[ModelClass: BaseModel](
         return parameters_schema_cls.model_validate(data)
 
 
-def parse_request_query_parameters_as[ModelClass: BaseModel](
+def parse_request_query_parameters_as(
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -142,7 +142,7 @@ def parse_request_query_parameters_as[ModelClass: BaseModel](
         return model
 
 
-def parse_request_headers_as[ModelClass: BaseModel](
+def parse_request_headers_as(
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -154,7 +154,7 @@ def parse_request_headers_as[ModelClass: BaseModel](
         return parameters_schema_cls.model_validate(data)
 
 
-async def parse_request_body_as[ModelOrListOrDictType: BaseModel | list | dict](
+async def parse_request_body_as(
     model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,
 ) -> ModelOrListOrDictType:
