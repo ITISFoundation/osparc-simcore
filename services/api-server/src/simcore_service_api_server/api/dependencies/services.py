@@ -175,7 +175,7 @@ def get_function_job_service(
     )
 
 
-def get_function_job_task_client_service(  # noqa: PLR0913, PLR0917
+def get_function_job_task_client_service(  # pylint:disable=too-many-arguments # noqa: PLR0913, PLR0917
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     function_service: Annotated[FunctionService, Depends(get_function_service)],
