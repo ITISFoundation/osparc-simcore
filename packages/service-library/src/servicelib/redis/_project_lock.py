@@ -1,6 +1,6 @@
-import asyncio
 import functools
 import logging
+import time
 from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 from uuid import uuid4
@@ -9,20 +9,39 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 
+from ..background_task import periodic_task
 from ..logging_utils import log_catch
 from ._client import RedisClientSDK
+from ._constants import DEFAULT_LOCK_TTL
 from ._decorators import exclusive
 from ._errors import CouldNotAcquireLockError, ProjectLockError
 from ._utils import handle_redis_returns_union_types
 
 _PROJECT_REDIS_LOCK_KEY: Final[str] = "project_lock:{}"
 _PROJECT_REDIS_READ_LOCK_KEY: Final[str] = "project_read_lock:{}:{}"
-_PROJECT_REDIS_READERS_SET_KEY: Final[str] = "project_read_locks:{}"
+_PROJECT_REDIS_READERS_ZSET_KEY: Final[str] = "project_read_locks:{}"
 
 _logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+async def _refresh_project_read_lock_registration(
+    redis_client: RedisClientSDK,
+    *,
+    reader_lock_key: str,
+    readers_zset_key: str,
+) -> None:
+    now = time.time()
+    await handle_redis_returns_union_types(redis_client.redis.zremrangebyscore(readers_zset_key, "-inf", now))
+    await handle_redis_returns_union_types(
+        redis_client.redis.zadd(
+            readers_zset_key,
+            {reader_lock_key: now + DEFAULT_LOCK_TTL.total_seconds()},
+        )
+    )
+    await handle_redis_returns_union_types(redis_client.redis.expire(readers_zset_key, DEFAULT_LOCK_TTL))
 
 
 def with_project_locked(
@@ -103,7 +122,7 @@ def with_project_read_locked(
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             client = redis_client(*args, **kwargs) if not isinstance(redis_client, RedisClientSDK) else redis_client
             reader_lock_key = _PROJECT_REDIS_READ_LOCK_KEY.format(project_uuid, uuid4())
-            readers_set_key = _PROJECT_REDIS_READERS_SET_KEY.format(project_uuid)
+            readers_zset_key = _PROJECT_REDIS_READERS_ZSET_KEY.format(project_uuid)
 
             @exclusive(client, lock_key=reader_lock_key)
             async def _read_locked() -> R:
@@ -118,12 +137,25 @@ def with_project_read_locked(
                         blocking=True,
                     )
                     async def _register_reader() -> None:
-                        await handle_redis_returns_union_types(client.redis.sadd(readers_set_key, reader_lock_key))
+                        await _refresh_project_read_lock_registration(
+                            client,
+                            reader_lock_key=reader_lock_key,
+                            readers_zset_key=readers_zset_key,
+                        )
 
                     await _register_reader()
-                    return await func(*args, **kwargs)
+                    async with periodic_task(
+                        _refresh_project_read_lock_registration,
+                        interval=DEFAULT_LOCK_TTL / 2,
+                        task_name=f"project-read-lock/refresh-registration/{reader_lock_key}",
+                        raise_on_error=True,
+                        redis_client=client,
+                        reader_lock_key=reader_lock_key,
+                        readers_zset_key=readers_zset_key,
+                    ):
+                        return await func(*args, **kwargs)
                 finally:
-                    await handle_redis_returns_union_types(client.redis.srem(readers_set_key, reader_lock_key))
+                    await handle_redis_returns_union_types(client.redis.zrem(readers_zset_key, reader_lock_key))
 
             return await _read_locked()
 
@@ -136,23 +168,9 @@ async def has_project_read_locks(
     redis_client: RedisClientSDK,
     project_uuid: str | ProjectID,
 ) -> bool:
-    readers_set_key = _PROJECT_REDIS_READERS_SET_KEY.format(project_uuid)
-    reader_lock_keys = {
-        key.decode() if isinstance(key, bytes) else key
-        for key in await handle_redis_returns_union_types(redis_client.redis.smembers(readers_set_key))
-    }
-    if not reader_lock_keys:
-        return False
-
-    async def _lock_exists(key: str) -> bool:
-        return bool(await handle_redis_returns_union_types(redis_client.redis.exists(key)))
-
-    lock_exists = await asyncio.gather(*(_lock_exists(key) for key in reader_lock_keys))
-    stale_lock_keys = [key for key, exists in zip(reader_lock_keys, lock_exists, strict=True) if not exists]
-    if stale_lock_keys:
-        await handle_redis_returns_union_types(redis_client.redis.srem(readers_set_key, *stale_lock_keys))
-
-    return any(lock_exists)
+    readers_zset_key = _PROJECT_REDIS_READERS_ZSET_KEY.format(project_uuid)
+    await handle_redis_returns_union_types(redis_client.redis.zremrangebyscore(readers_zset_key, "-inf", time.time()))
+    return bool(await handle_redis_returns_union_types(redis_client.redis.zcard(readers_zset_key)))
 
 
 async def is_project_locked(redis_client: RedisClientSDK, project_uuid: str | ProjectID) -> bool:

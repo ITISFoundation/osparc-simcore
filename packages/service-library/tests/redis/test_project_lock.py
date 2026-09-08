@@ -27,7 +27,7 @@ from servicelib.redis import (
 from servicelib.redis._project_lock import (
     _PROJECT_REDIS_LOCK_KEY,
     _PROJECT_REDIS_READ_LOCK_KEY,
-    _PROJECT_REDIS_READERS_SET_KEY,
+    _PROJECT_REDIS_READERS_ZSET_KEY,
 )
 
 pytest_simcore_core_services_selection = [
@@ -173,6 +173,7 @@ async def test_project_read_locks_allow_concurrent_readers(
     reader_tasks = [asyncio.create_task(_read_project()) for _ in range(2)]
     await both_readers_started.wait()
     assert await has_project_read_locks(redis_client_sdk, project_uuid)
+    assert await redis_client_sdk.redis.ttl(_PROJECT_REDIS_READERS_ZSET_KEY.format(project_uuid)) > 0
 
     release_readers.set()
     await asyncio.gather(*reader_tasks)
@@ -184,13 +185,13 @@ async def test_has_project_read_locks_prunes_stale_reader_registration(
     redis_client_sdk: RedisClientSDK,
     project_uuid: ProjectID,
 ):
-    readers_set_key = _PROJECT_REDIS_READERS_SET_KEY.format(project_uuid)
+    readers_zset_key = _PROJECT_REDIS_READERS_ZSET_KEY.format(project_uuid)
     expired_reader_lock_key = _PROJECT_REDIS_READ_LOCK_KEY.format(project_uuid, "expired")
-    await redis_client_sdk.redis.sadd(readers_set_key, expired_reader_lock_key)
+    await redis_client_sdk.redis.zadd(readers_zset_key, {expired_reader_lock_key: 0})
 
-    assert await redis_client_sdk.redis.smembers(readers_set_key) == {expired_reader_lock_key}
+    assert await redis_client_sdk.redis.zrange(readers_zset_key, 0, -1) == [expired_reader_lock_key]
     assert await has_project_read_locks(redis_client_sdk, project_uuid) is False
-    assert await redis_client_sdk.redis.smembers(readers_set_key) == set()
+    assert await redis_client_sdk.redis.exists(readers_zset_key) == 0
 
 
 async def test_project_read_lock_waits_for_writer_before_entering(
