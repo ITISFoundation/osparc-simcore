@@ -149,8 +149,22 @@ def _minimal_dask_config(
 
 
 @pytest.fixture
+def mocked_rabbit_client(minimal_app: FastAPI) -> mock.AsyncMock:
+    """Expose a mock RabbitMQ client on ``app.state`` for the Dask-client tests.
+
+    With ``COMPUTATIONAL_BACKEND_ENABLED=0`` (see ``_minimal_dask_config``) the app never
+    wires up RabbitMQ, so any code path reading ``app.state.rabbitmq_client`` would fail.
+    The returned mock lets tests assert that this exact client is forwarded/used.
+    """
+    rabbit_client = mock.AsyncMock()
+    minimal_app.state.rabbitmq_client = rabbit_client
+    return rabbit_client
+
+
+@pytest.fixture
 async def create_dask_client_from_scheduler(
     _minimal_dask_config: None,
+    mocked_rabbit_client: mock.AsyncMock,
     dask_spec_local_cluster: distributed.SpecCluster,
     minimal_app: FastAPI,
     tasks_file_link_type: FileLinkType,
@@ -428,6 +442,7 @@ def empty_hardware_info() -> HardwareInfo:
 
 async def test_send_computation_task(
     dask_client: DaskClient,
+    mocked_rabbit_client: mock.AsyncMock,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -510,16 +525,15 @@ async def test_send_computation_task(
     published_computation_task = node_id_to_job_ids[0]
     assert published_computation_task.node_id in image_params.fake_tasks
 
-    # the app's rabbitmq client must be forwarded down to node_ports
     _mocked_node_ports.assert_called_once_with(
         db_engine=mock.ANY,
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        rabbitmq_client=dask_client.app.state.rabbitmq_client,
+        rabbitmq_client=mocked_rabbit_client,
     )
     # sending a computation task only reads the ports: it must never publish
-    dask_client.app.state.rabbitmq_client.publish.assert_not_called()
+    mocked_rabbit_client.publish.assert_not_called()
 
     # check status goes to PENDING/STARTED
     await _assert_wait_for_task_status(
@@ -1246,10 +1260,11 @@ async def fake_task_handlers(mocker: MockerFixture) -> TaskHandlers:
 
 async def test_dask_sub_handlers(
     dask_client: DaskClient,
+    mocked_rabbit_client: mock.AsyncMock,
     user_id: UserID,
     project_id: ProjectID,
     cpu_image: ImageParams,
-    _mocked_node_ports: None,
+    _mocked_node_ports: mock.Mock,
     mocked_user_completed_cb: mock.AsyncMock,
     mocked_storage_service_api: respx.MockRouter,
     fake_task_handlers: TaskHandlers,
@@ -1290,6 +1305,13 @@ async def test_dask_sub_handlers(
     assert len(published_computation_task) == 1
 
     assert published_computation_task[0].node_id in cpu_image.fake_tasks
+    _mocked_node_ports.assert_called_once_with(
+        db_engine=mock.ANY,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=published_computation_task[0].node_id,
+        rabbitmq_client=mocked_rabbit_client,
+    )
     computation_future = distributed.Future(published_computation_task[0].job_id, client=dask_client.backend.client)
     print("--> waiting for job to finish...")
     await distributed.wait(computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
