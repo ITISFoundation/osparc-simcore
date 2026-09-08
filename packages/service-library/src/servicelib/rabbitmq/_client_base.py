@@ -52,7 +52,7 @@ class RabbitMQClientBase:
                         error_context={"sender": sender},
                     )
                 )
-                self._healthy_state = False
+            self._healthy_state = False
 
     def _channel_close_callback(
         self,

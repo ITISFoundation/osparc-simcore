@@ -396,3 +396,38 @@ async def test_rpc_client_recovers_when_broker_closes_all_connections(
             assert rpc_client.healthy is True
             assert _get_rpc_result_queue_name(rpc_client) != queue_before
             assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9
+
+
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
+async def test_rpc_client_recovers_after_broker_restart(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
+    queue_before = _get_rpc_result_queue_name(rpc_client)
+
+    async with aiodocker.Docker() as docker_client:
+        containers = await docker_client.containers.list(filters={"name": ["rabbit"]})
+        assert len(containers) == 1, "missing rabbit container!"
+        rabbit_container = containers[0]
+        stop_instance = await rabbit_container.exec(["rabbitmqctl", "stop_app"])
+        stop_stream = stop_instance.start()
+        async with stop_stream:
+            while await stop_stream.read_out() is not None:
+                pass
+        assert (await stop_instance.inspect())["ExitCode"] == 0
+        try:
+            async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
+                with attempt:
+                    assert rpc_client.healthy is False
+        finally:
+            start_instance = await rabbit_container.exec(["rabbitmqctl", "start_app"])
+            start_stream = start_instance.start()
+            async with start_stream:
+                while await start_stream.read_out() is not None:
+                    pass
+            assert (await start_instance.inspect())["ExitCode"] == 0
+
+    async for attempt in AsyncRetrying(stop=stop_after_delay(60), wait=wait_fixed(1), reraise=True):
+        with attempt:
+            assert rpc_client.healthy is True
+            assert _get_rpc_result_queue_name(rpc_client) != queue_before
+            assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9

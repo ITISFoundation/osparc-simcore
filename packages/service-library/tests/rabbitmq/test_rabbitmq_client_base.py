@@ -101,15 +101,21 @@ def test_channel_close_callback_with_no_exception_stays_healthy(
 # ---------------------------------------------------------------------------
 
 
-def test_connection_close_callback_with_connection_closed_stays_healthy(
+def test_connection_close_callback_with_cancelled_error_marks_unhealthy(
     client_base: RabbitMQClientBase,
 ):
-    # Create a mock with __str__ method that includes the maintenance mode message
+    client_base._connection_close_callback(sender="1", exc=asyncio.CancelledError())
+    assert client_base.healthy is False
+
+
+def test_connection_close_callback_with_connection_closed_marks_unhealthy(
+    client_base: RabbitMQClientBase,
+):
     mock_reply = MagicMock(reply_code=320, reply_text="CONNECTION_FORCED - Node was put into maintenance mode")
     mock_reply.__str__.return_value = "CONNECTION_FORCED - Node was put into maintenance mode"
     exc = aiormq.exceptions.ConnectionClosed(mock_reply)
     client_base._connection_close_callback(sender="1", exc=exc)
-    assert client_base.healthy is True
+    assert client_base.healthy is False
 
 
 def test_connection_close_callback_with_unexpected_error_marks_unhealthy(
