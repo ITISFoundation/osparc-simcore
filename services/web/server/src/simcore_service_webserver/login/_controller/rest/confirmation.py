@@ -11,6 +11,7 @@ from pydantic import (
 )
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.utils_secrets import are_secrets_equal
 from yarl import URL
 
 from ....locale import translate_message
@@ -208,9 +209,9 @@ async def phone_confirmation(request: web.Request):
 
     request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
-    if (
-        expected := await _twofa_service.get_2fa_code(request.app, request_body.email)
-    ) and request_body.code.get_secret_value() == expected:
+    if (expected := await _twofa_service.get_2fa_code(request.app, request_body.email)) and are_secrets_equal(
+        got=request_body.code.get_secret_value(), expected=expected
+    ):
         # consumes code
         await _twofa_service.delete_2fa_code(request.app, request_body.email)
 
