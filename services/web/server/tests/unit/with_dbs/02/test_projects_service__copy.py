@@ -34,11 +34,14 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
+from models_library.projects_access import Owner
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
+from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from servicelib.redis import with_project_locked
 from simcore_service_webserver.projects import (
     _projects_repository as projects_repository,
 )
@@ -56,6 +59,7 @@ from simcore_service_webserver.projects._projects_service import (
 from simcore_service_webserver.projects.exceptions import ProjectCopyingTrashedProjectError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 
 @pytest.fixture
@@ -358,7 +362,7 @@ async def test_clone_project_data_with_forced_project_id(
     assert cloned_project["uuid"] == f"{forced_project_id}"
 
 
-async def test_clone_project_data_locks_source_project_only_if_not_template(
+async def test_clone_project_data_uses_exclusive_lock_for_standard_and_read_lock_for_template(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -394,7 +398,7 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     spied_with_project_read_locked.reset_mock()
     spied_with_project_locked.reset_mock()
 
-    # ACT: cloning a TEMPLATE does NOT lock it (templates are not "in use")
+    # ACT: cloning a TEMPLATE uses a shared read lock
     template_source_project = await _fetch_source_project(client.app, template_project["uuid"], logged_user["id"])
     await clone_project_data(
         client.app,
@@ -443,12 +447,76 @@ async def test_run_project_clone_locked_allows_concurrent_template_readers(
         for _ in range(2)
     ]
 
-    async with asyncio.timeout(5):
-        await both_clones_started.wait()
-        release_clones.set()
-        cloned_project_uuids = await asyncio.gather(*clone_tasks)
+    await both_clones_started.wait()
+    release_clones.set()
+    cloned_project_uuids = await asyncio.gather(*clone_tasks)
 
     assert cloned_project_uuids == [template_project["uuid"], template_project["uuid"]]
+
+
+async def test_run_project_clone_locked_rejects_source_trashed_while_waiting_for_writer(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    template_project: ProjectDict,
+    mocker: MockerFixture,
+):
+    assert client.app
+    project_uuid = ProjectID(template_project["uuid"])
+    user_id = UserID(logged_user["id"])
+    writer_started = asyncio.Event()
+    clone_prevalidation_completed = asyncio.Event()
+    source_is_trashed = False
+    original_get_project_for_user = _projects_service.get_project_for_user
+
+    async def _get_project_for_user(
+        app: web.Application,
+        project_uuid: str,
+        user_id: UserID,
+    ) -> ProjectDict:
+        project = await original_get_project_for_user(
+            app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+        )
+        if not clone_prevalidation_completed.is_set():
+            clone_prevalidation_completed.set()
+        if source_is_trashed:
+            project["trashed"] = "2026-07-21T00:00:00+00:00"
+        return project
+
+    mocker.patch.object(
+        _projects_service,
+        "get_project_for_user",
+        side_effect=_get_project_for_user,
+    )
+    operation = mocker.AsyncMock()
+
+    @with_project_locked(
+        get_redis_lock_manager_client_sdk(client.app),
+        project_uuid=project_uuid,
+        status=ProjectStatus.MAINTAINING,
+        owner=Owner(user_id=user_id),
+        notification_cb=None,
+    )
+    async def _trash_source_after_clone_prevalidation() -> None:
+        nonlocal source_is_trashed
+        writer_started.set()
+        await clone_prevalidation_completed.wait()
+        source_is_trashed = True
+
+    writer_task = asyncio.create_task(_trash_source_after_clone_prevalidation())
+    await writer_started.wait()
+
+    with pytest.raises(ProjectCopyingTrashedProjectError):
+        await _projects_service.run_project_clone_locked(
+            client.app,
+            project_uuid=project_uuid,
+            user_id=user_id,
+            operation=operation,
+        )
+
+    await writer_task
+    operation.assert_not_awaited()
 
 
 async def test_clone_project_data_with_template_parameters(
