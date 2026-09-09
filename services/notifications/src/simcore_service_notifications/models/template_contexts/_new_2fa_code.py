@@ -12,6 +12,7 @@ class User(BaseModel):
 
 
 @register_template_context(channel=Channel.email, template_name="new_2fa_code")
+@register_template_context(channel=Channel.sms, template_name="new_2fa_code")
 class New2faCodeTemplateContext(BaseTemplateContext):
     user: User
     host: str

@@ -20,3 +20,4 @@ aiosmtplib
 Jinja2
 packaging
 pydantic
+twilio

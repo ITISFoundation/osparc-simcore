@@ -3,9 +3,11 @@ from typing import Annotated, Self
 from celery_library.basic_types import BootServerMode
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from models_library.basic_regex import TWILIO_ALPHANUMERIC_SENDER_ID_RE
 from models_library.basic_types import LogLevel
 from models_library.notifications.errors import (
     NotificationsProductSMTPSettingsNotFoundError,
+    NotificationsProductTwilioSettingsNotFoundError,
 )
 from models_library.notifications.rpc import SenderIdentity
 from pydantic import (
@@ -23,6 +25,7 @@ from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
+from settings_library.twilio import TwilioSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from ..models.smtp import ALLOWED_HEADERS, EmailProtocol
@@ -162,6 +165,52 @@ class NotificationsSMTPSettings(BaseModel):
         return self.mail_servers[product.mail_server]
 
 
+class ProductTwilioSettings(BaseModel):
+    """Per-product Twilio configuration referencing a named account profile."""
+
+    model_config = ConfigDict(frozen=True)
+
+    account: Annotated[
+        str,
+        Field(description="Name of the twilio account profile from accounts dict"),
+    ]
+    messaging_service_sid: Annotated[str, Field(description="Twilio Messaging Service SID")]
+    alphanumeric_sender_id: Annotated[
+        str,
+        Field(pattern=TWILIO_ALPHANUMERIC_SENDER_ID_RE),
+    ]
+
+
+class NotificationsTwilioSettings(BaseModel):
+    """Root model for Twilio settings with named account profiles and per-product config."""
+
+    model_config = ConfigDict(frozen=True)
+
+    accounts: dict[str, TwilioSettings]
+    products: dict[str, ProductTwilioSettings]
+
+    @model_validator(mode="after")
+    def _validate_account_references(self) -> Self:
+        for product_name, product_settings in self.products.items():
+            if product_settings.account not in self.accounts:
+                msg = (
+                    f"Product '{product_name}' references account "
+                    f"'{product_settings.account}' which is not defined in accounts. "
+                    f"Available: {sorted(self.accounts.keys())}"
+                )
+                raise ValueError(msg)
+        return self
+
+    def get_product_twilio_settings(self, product_name: str) -> ProductTwilioSettings:
+        if product_name not in self.products:
+            raise NotificationsProductTwilioSettingsNotFoundError(product_name=product_name)
+        return self.products[product_name]
+
+    def get_twilio_account_settings(self, product_name: str) -> TwilioSettings:
+        product = self.get_product_twilio_settings(product_name)
+        return self.accounts[product.account]
+
+
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
@@ -241,10 +290,48 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Maximum number of recipients per email message"),
     ] = 20
 
+    NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
+        int,
+        Field(description="Maximum number of recipients per sms message"),
+    ] = 20
+
     NOTIFICATIONS_EMAIL_RATE_LIMIT: Annotated[
         str,
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
     ] = "1/s"
+
+    NOTIFICATIONS_SMS_RATE_LIMIT: Annotated[
+        str,
+        Field(description="Rate limit for sending sms, e.g. '0.2/s' means 1 sms every 5 seconds"),
+    ] = "1/s"
+
+    NOTIFICATIONS_TWILIO_SETTINGS: Annotated[
+        NotificationsTwilioSettings | None,
+        Field(
+            description=(
+                "Per-product Twilio settings with named account profiles and product-to-profile mapping. "
+                "Used by the worker to deliver sms."
+            ),
+            examples=[
+                {
+                    "accounts": {
+                        "main": {
+                            "TWILIO_ACCOUNT_SID": "AC...",
+                            "TWILIO_AUTH_TOKEN": "***",
+                            "TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT": ["41"],
+                        }
+                    },
+                    "products": {
+                        "osparc": {
+                            "account": "main",
+                            "messaging_service_sid": "MG...",
+                            "alphanumeric_sender_id": "osparc",
+                        }
+                    },
+                }
+            ],
+        ),
+    ] = None
 
     NOTIFICATIONS_SMTP_SETTINGS: Annotated[
         NotificationsSMTPSettings | None,

@@ -12,11 +12,13 @@ from models_library.celery import (
 from models_library.notifications import Channel
 from models_library.notifications.errors import (
     NotificationsTooManyRecipientsError,
+    NotificationsUnsupportedChannelError,
 )
 from models_library.notifications.rpc import (
     Addressing,
     EmailMessage,
     Message,
+    SmsMessage,
 )
 from models_library.products import ProductName
 from servicelib.celery.async_jobs.notifications import (
@@ -58,11 +60,31 @@ def _prepare_celery_messages(
 
 
 def _get_task_description(message: Message) -> str | None:
-    if message.channel == Channel.email:
-        if isinstance(message, EmailMessage):
-            return message.content.subject
-        return None
+    if isinstance(message, EmailMessage):
+        return message.content.subject
+    if isinstance(message, SmsMessage):
+        return message.content.body
     return None
+
+
+def _get_max_recipients(channel: Channel, settings: ApplicationSettings) -> int | None:
+    return settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE if channel == Channel.email else None
+
+
+def _build_message(channel: Channel, addressing: Addressing, content: dict[str, Any]) -> Message:
+    """Builds the channel-specific message, revalidating addressing against that channel's shape.
+
+    Raises:
+        NotificationsUnsupportedChannelError: If the channel is not supported.
+    """
+    payload = {"addressing": addressing.model_dump(), "content": content}
+    match channel:
+        case Channel.email:
+            return EmailMessage.model_validate(payload)
+        case Channel.sms:
+            return SmsMessage.model_validate(payload)
+        case _:
+            raise NotificationsUnsupportedChannelError(channel=channel)
 
 
 @dataclass(frozen=True)
@@ -101,8 +123,8 @@ class MessageService:
             )
             return task_uuid, task_name
 
-        max_recipients = self.settings.NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE
-        if num_recipients > max_recipients:
+        max_recipients = _get_max_recipients(message.channel, self.settings)
+        if max_recipients and num_recipients > max_recipients:
             raise NotificationsTooManyRecipientsError(
                 num_recipients=num_recipients,
                 max_recipients=max_recipients,
@@ -131,9 +153,10 @@ class MessageService:
             product_name=product_name, ref=ref, context=context, locale=locale
         )
 
-        message = EmailMessage(
-            addressing=addressing,
-            content=preview.message_content.model_dump(),
+        message = _build_message(
+            ref.channel,
+            addressing,
+            preview.message_content.model_dump(),
         )
         return await self.send_message(
             product_name=product_name,
