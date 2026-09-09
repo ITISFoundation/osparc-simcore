@@ -324,7 +324,7 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       let toolTipText = "";
       if (!isOsparc) {
         const displayName = osparc.store.StaticInfo.getDisplayName();
-        toolTipText = displayName + this.tr(" is powered by osparc.<br>");
+        toolTipText = this.tr("%1 is powered by oSPARC.<br>", displayName);
       }
       toolTipText += this.tr("Click to see what's new in this release.");
       createReleaseNotesLink.set({
