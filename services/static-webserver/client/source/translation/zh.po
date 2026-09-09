@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-09-09T08:44:56Z\n"
+"X-Translation-Date: 2026-09-09T09:06:52Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
@@ -20,12 +20,12 @@ msgstr ""
 msgid "About %1"
 msgstr "关于 %1"
 
-# CTX-INTERPRETATION: This string appears in the About section of osparc,
-# indicating that the application is powered by the OSPARC platform and
-# providing a link to its GitHub repository.
+# CTX-INTERPRETATION: In About.js, %1 is the product display name and %2 is a
+# rich HTML link to the OSPARC GitHub repository. The translated string must
+# preserve both placeholders and the surrounding sentence structure.
 #: services/static-webserver/client/source/class/osparc/About.js:68
 msgid "%1 is powered by the %2 platform."
-msgstr "该字符串出现在osparc的关于部分中，表明该应用程序由OSPARC平台提供支持，并提供指向其GitHub仓库的链接。"
+msgstr "%1 由 %2 平台提供支持。"
 
 # CTX-INTERPRETATION: This string appears in the About.js file, describing the
 # SPARC program and its online computational modeling platform for
@@ -355,7 +355,7 @@ msgstr "服务"
 #: services/static-webserver/client/source/class/osparc/jobs/RunsTable.js:121
 #: services/static-webserver/client/source/class/osparc/jobs/SubRunsTable.js:80
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:203
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:138
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:141
 msgid "Status"
 msgstr "状态"
 
@@ -595,12 +595,12 @@ msgstr "您的帐户已创建。<br>您现在可以使用您的凭据登录。"
 msgid "Platform"
 msgstr "平台"
 
-# CTX-INTERPRETATION: This string appears in the LoginWithDecorators.js file,
-# likely within a tooltip or similar UI element, to inform the user that the
-# application is powered by osparc.
+# CTX-INTERPRETATION: This string appears in the login screen of oSPARC,
+# indicating that the login process is powered by oSPARC and displays the
+# user's display name.
 #: services/static-webserver/client/source/class/osparc/auth/LoginWithDecorators.js:327
-msgid " is powered by osparc.<br>"
-msgstr "由 osparc 驱动。"
+msgid "%1 is powered by oSPARC.<br>"
+msgstr "\"%1 由 oSPARC 提供支持。<br>\""
 
 # CTX-INTERPRETATION: This string appears as a tooltip for a link that directs
 # the user to release notes, providing information about new features and
@@ -890,7 +890,7 @@ msgstr "大学邮箱"
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:189
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:223
 #: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:82
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:134
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:137
 #: services/static-webserver/client/source/class/osparc/share/RequestServiceAccess.js:50
 #: services/static-webserver/client/source/class/osparc/user/UserProfile.js:110
 msgid "Email"
@@ -2727,13 +2727,13 @@ msgstr "权限将从新的工作空间中获取。"
 msgid "Are you sure you want to delete the Folder and all its content?"
 msgstr "您确定要删除此文件夹及其所有内容吗？"
 
-# CTX-INTERPRETATION: This string appears in a confirmation dialog when a user
-# attempts to permanently delete a folder and its contents, indicating the
-# retention period before deletion.
+# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
+# within a function related to managing data deletion or retention policies
+# for studies.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:747
-#: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:308
-msgid "It will be permanently deleted after "
-msgstr "它将在 "
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
+msgid "It will be permanently deleted after %1 days."
+msgstr "它将在%1天后永久删除。"
 
 # CTX-INTERPRETATION: The string "New Plan" is used as the title for a button
 # within the StudyBrowser, likely allowing the user to create a new study
@@ -3045,13 +3045,6 @@ msgstr "您没有删除或移除此项目的权限。"
 msgid "They will be permanently deleted after %1 days."
 msgstr "它们将在%1天后永久删除。"
 
-# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
-# within a function related to managing data deletion or retention policies
-# for studies.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
-msgid "It will be permanently deleted after %1 days."
-msgstr "它将在%1天后永久删除。"
-
 # CTX-INTERPRETATION: This string appears in the StudyBrowser.js file,
 # specifically when a user confirms the removal of a study from their list,
 # informing them that collaborators will retain access.
@@ -3192,6 +3185,13 @@ msgstr "更新"
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:307
 msgid "Are you sure you want to delete the Workspace and all its content?"
 msgstr "您确定要删除工作区及其所有内容吗？"
+
+# CTX-INTERPRETATION: This string appears in a confirmation dialog when a user
+# attempts to permanently delete a folder and its contents, indicating the
+# retention period before deletion.
+#: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:308
+msgid "It will be permanently deleted after "
+msgstr "它将在 "
 
 # CTX-INTERPRETATION: This string appears in a confirmation dialog when a user
 # attempts to delete a workspace, warning them about the irreversible data
@@ -3836,12 +3836,12 @@ msgstr "无法分配探测器"
 msgid "Dashboard"
 msgstr "仪表盘"
 
-# CTX-INTERPRETATION: This string is part of a message displayed to the user,
-# prompting them to confirm closing a study within the application,
-# specifically when the 's4l' product is detected.
+# CTX-INTERPRETATION: The string appears in the "Close" dialog of the
+# application, prompting the user to confirm closing a study, specifically
+# mentioning the 'smash file' and 'notebooks'.
 #: services/static-webserver/client/source/class/osparc/desktop/MainPage.js:135
-msgid "Do you want to close "
-msgstr "您想关闭吗？ "
+msgid "Do you want to close <b>%1</b>?"
+msgstr "您是否想关闭 <b>%1</b>？"
 
 # CTX-INTERPRETATION: This string appears in a dialog box, prompting the user
 # to confirm closing the application after saving changes to files and
@@ -3879,12 +3879,12 @@ msgstr ""
 msgid "Close"
 msgstr "关闭"
 
-# CTX-INTERPRETATION: The string "Do you want to save and close " is part of a
-# message displayed in a dialog box, prompting the user to confirm whether
-# they want to save and close a study.
+# CTX-INTERPRETATION: The string appears in the "Save & Close" dialog of the
+# application, prompting the user to save their study and close the current
+# window.
 #: services/static-webserver/client/source/class/osparc/desktop/MainPage.js:149
-msgid "Do you want to save and close "
-msgstr "您是否要保存并关闭 "
+msgid "Do you want to save and close <b>%1</b>?"
+msgstr "您想保存并关闭 <b>%1</b> 吗？"
 
 # CTX-INTERPRETATION: The string "Save & Close" appears as a button caption on
 # a user interface, likely allowing the user to save the current state of the
@@ -8645,7 +8645,7 @@ msgstr "上一页"
 # likely for displaying or collecting a user's username, possibly within a
 # registration or search context.
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:218
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:130
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:133
 msgid "Username"
 msgstr "用户名"
 
@@ -8686,17 +8686,24 @@ msgstr "用户邮箱地址或用户@*"
 msgid "Searching users..."
 msgstr "正在搜索用户..."
 
-# CTX-INTERPRETATION: The string " user(s) found" is displayed in the UI to
-# indicate the number of users found during a search operation, likely within
-# a user interface for searching and managing users.
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:105
-msgid " user(s) found"
-msgstr "用户(们) 已找到"
+# CTX-INTERPRETATION: The string "1 user found" is used within a function to
+# display the number of users found in a search result, specifically within
+# the context of a user search feature.
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:106
+msgid "1 user found"
+msgstr "1 个用户找到"
+
+# CTX-INTERPRETATION: This string is part of a user search function in the
+# Osparc application, displaying the number of users found based on search
+# criteria.
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:107
+msgid "%1 users found"
+msgstr "找到 %1 个用户"
 
 # CTX-INTERPRETATION: This string appears within a user search function,
 # likely indicating an error occurred while attempting to find users based on
 # a search query.
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:109
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:112
 msgid "Error searching users"
 msgstr "在搜索用户时出错"
 
@@ -9807,19 +9814,12 @@ msgstr "发布给"
 msgid "Emails sent"
 msgstr "邮件已发送"
 
-# CTX-INTERPRETATION: This string appears within a user interface element that
-# describes the ability for any logged-in user with access to a specific study
-# to open it.
+# CTX-INTERPRETATION: The string appears in the Collaborators.js file, likely
+# within a user interface element that displays details about a resource and
+# indicates who can access it.
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:97
-msgid "Any logged-in user with access to the "
-msgstr "任何已登录且具有访问权限的用户都可以打开它 "
-
-# CTX-INTERPRETATION: This string appears within a UI element that describes
-# the ability for a user to access a resource, specifically indicating that
-# any logged-in user with access to the specified study alias can open it.
-#: services/static-webserver/client/source/class/osparc/share/Collaborators.js:97
-msgid " can open it"
-msgstr "可以打开它"
+msgid "Any logged-in user with access to the %1 can open it"
+msgstr "任何已登录且拥有访问 %1 的用户都可以打开它"
 
 # CTX-INTERPRETATION: The string "Copy link" appears as the label for a button
 # that copies a URL to the clipboard, likely within a user interface for
@@ -9829,19 +9829,18 @@ msgstr "可以打开它"
 msgid "Copy link"
 msgstr "复制链接"
 
-# CTX-INTERPRETATION: This string appears within the Collaborators.js file,
-# likely indicating that a user with the provided link can access a specific
-# resource or template.
+# CTX-INTERPRETATION: The string appears in the Collaborators.js file,
+# indicating that anyone with the link can access a shared resource.
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:133
-msgid "Anyone on the internet with the link can open this "
-msgstr "任何拥有该链接的人都可以访问此资源 "
+msgid "Anyone on the internet with the link can open this %1"
+msgstr "互联网上任何拥有此链接的人都可以打开此 %1"
 
-# CTX-INTERPRETATION: The string appears within a JavaScript function that
-# constructs a message to display to a user, indicating they can copy and open
-# a specific resource.
+# CTX-INTERPRETATION: The string appears in the Collaborators.js file, likely
+# within a UI element that allows users to copy and open a document or
+# resource accessible via a link.
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:135
-msgid "Any logged-in user with the link can copy and open this "
-msgstr "任何已登录的用户，只要拥有该链接，就可以复制并打开这个。 "
+msgid "Any logged-in user with the link can copy and open this %1"
+msgstr "任何已登录的用户，只要拥有该链接，就可以复制并打开此%1。"
 
 # CTX-INTERPRETATION: This string appears in the Collaborators.js file,
 # describing a section that displays user and organization access information,
@@ -10499,8 +10498,8 @@ msgstr "有效期: 1 年"
 # renting a unit, likely within a pricing or licensing context, as indicated
 # by the surrounding code and file paths.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:54
-#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:95
-#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:96
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:93
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:94
 msgid "Rent"
 msgstr "租用"
 
@@ -10511,12 +10510,28 @@ msgstr "租用"
 msgid "Credits: %1"
 msgstr "积分：%1"
 
-# CTX-INTERPRETATION: This string is part of a function that constructs a
-# message informing the user about the availability of a rental unit,
-# specifically the expiration date of the license.
+# CTX-INTERPRETATION: This string appears in a confirmation window when the
+# user rents a unit, displaying details about availability, cost, and
+# acceptance of terms.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
-msgid "will be available until "
-msgstr "将在...可用 "
+msgid ""
+"%1 %2 will be available until %3.<br>The rental will cost %4 credits.<br>I "
+"hereby accept the Terms and Conditions."
+msgstr "%1 %2 将在 %3 可用。<br>租赁将收取 %4 个信用点。<br>我已接受服务条款。"
+
+# CTX-INTERPRETATION: The string is used within a function to display rental
+# availability and cost information, including the number of seats, expiration
+# date, and total credits required for renting.
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
+msgid "seats"
+msgstr "座位数量"
+
+# CTX-INTERPRETATION: The string is used within a function to display rental
+# terms and conditions, specifically indicating the availability duration and
+# cost of renting a unit.
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
+msgid "seat"
+msgstr "座位/座位 (根据数量选择)"
 
 # CTX-INTERPRETATION: The string "Selected" is used within the PricingUnitTier
 # component to display a label indicating whether a specific item or option
@@ -11647,7 +11662,7 @@ msgstr "最多 %1 个座位，到 %2。"
 # whether there's one or more seats available.
 #: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:452
 msgid "%1 seat available until %2"
-msgstr "一个座位可用，直到 %2"
+msgstr "%1 个座位可用，直到 %2"
 
 # CTX-INTERPRETATION: The string "Loading Models..." appears as a label within
 # a UI element, likely indicating that the application is currently loading
@@ -11908,6 +11923,32 @@ msgstr "将选定的日志复制到剪贴板"
 #: services/static-webserver/client/source/class/osparc/widget/logger/LoggerView.js:225
 msgid "Download logs"
 msgstr "下载日志"
+
+# CTX-INTERPRETATION: This message is displayed in the user interface when the
+# "Service Filesystem" has insufficient disk space, informing the user about
+# the remaining space and suggesting solutions.
+#: services/static-webserver/client/source/class/osparc/workbench/DiskUsageController.js:136
+msgid ""
+"Out of Disk Space on \"Service Filesystem\" for %1<br />The volume Service "
+"Filesystem has only %2 disk space remaining. You can free up disk space by "
+"removing unused files in your service. Alternatively, you can run your "
+"service with a pricing plan that supports your storage requirements."
+msgstr ""
+"%1 的“服务文件系统”磁盘空间不足。<br />服务文件系统卷仅剩余 %2 "
+"磁盘空间。您可以通过删除服务中未使用的文件来释放磁盘空间。或者，您可以使用支持您存储需求的定价计划运行您的服务。"
+
+# CTX-INTERPRETATION: This message is displayed in the Disk Usage Controller
+# when the "Service Filesystem" has low disk space, informing the user about
+# the remaining space and suggesting solutions.
+#: services/static-webserver/client/source/class/osparc/workbench/DiskUsageController.js:143
+msgid ""
+"Low Disk Space on \"Service Filesystem\" for %1<br />The volume Service "
+"Filesystem has only %2 disk space remaining. You can free up disk space by "
+"removing unused files in your service. Alternatively, you can run your "
+"service with a pricing plan that supports your storage requirements."
+msgstr ""
+"%1 的“服务文件系统”磁盘空间过低。<br />服务文件系统卷仅剩余 %2 "
+"磁盘空间。您可以通过删除服务中未使用的文件来释放磁盘空间。或者，您可以使用支持您存储需求的定价计划运行您的服务。"
 
 # CTX-INTERPRETATION: The string "Disk usage" is used within a JavaScript
 # function to display disk usage information, specifically when the usage of
@@ -12681,6 +12722,18 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "一旦付款验证成功，信用额将添加到您的信用账户中，并可立即使用。"
+
+# CTX-INTERPRETATION: This string appears within a UI element that describes
+# the ability for a user to access a resource, specifically indicating that
+# any logged-in user with access to the specified study alias can open it.
+#~ msgid " can open it"
+#~ msgstr "可以打开它"
+
+# CTX-INTERPRETATION: This string is part of a function that constructs a
+# message informing the user about the availability of a rental unit,
+# specifically the expiration date of the license.
+#~ msgid "will be available until "
+#~ msgstr "将在...可用 "
 
 # CTX-INTERPRETATION: The string " Messages" is used within the
 # ConversationPage.js file to dynamically update a label indicating the number

@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-09-09T08:44:40Z\n"
+"X-Translation-Date: 2026-09-09T09:06:36Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This string is used within the 'About Product' menu item
@@ -19,12 +19,12 @@ msgstr ""
 msgid "About %1"
 msgstr "%1 정보"
 
-# CTX-INTERPRETATION: This string appears in the 'About' section of the
-# application, indicating that the software is powered by the OSPARC platform
-# and providing a link to its GitHub repository.
+# CTX-INTERPRETATION: In About.js, %1 is the product display name and %2 is a
+# rich HTML link to the OSPARC GitHub repository. The translated string must
+# preserve both placeholders and the surrounding sentence structure.
 #: services/static-webserver/client/source/class/osparc/About.js:68
 msgid "%1 is powered by the %2 platform."
-msgstr "\"%1은 %2 플랫폼에서 구동됩니다. (이 애플리케이션의 About 섹션에 표시됨)\""
+msgstr "%1은(는) %2 플랫폼에서 구동됩니다."
 
 # CTX-INTERPRETATION: This string appears in the About section of the SPARC
 # portal, providing a description of the platform and its purpose.
@@ -353,7 +353,7 @@ msgstr "서비스"
 #: services/static-webserver/client/source/class/osparc/jobs/RunsTable.js:121
 #: services/static-webserver/client/source/class/osparc/jobs/SubRunsTable.js:80
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:203
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:138
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:141
 msgid "Status"
 msgstr "상태"
 
@@ -594,11 +594,12 @@ msgstr "계정이 성공적으로 만들어졌습니다.<br>이제 사용자 이
 msgid "Platform"
 msgstr "플랫폼"
 
-# CTX-INTERPRETATION: This string appears in the login screen of osparc,
-# indicating that the login functionality is powered by osparc.
+# CTX-INTERPRETATION: This string appears in the login screen of oSPARC,
+# indicating that the login process is powered by oSPARC and displays the
+# username.
 #: services/static-webserver/client/source/class/osparc/auth/LoginWithDecorators.js:327
-msgid " is powered by osparc.<br>"
-msgstr "는 osparc에서 제공됩니다.<br>"
+msgid "%1 is powered by oSPARC.<br>"
+msgstr "\"%1는 oSPARC로 구동됩니다.<br>\""
 
 # CTX-INTERPRETATION: This string appears within the context of a release
 # notes link, providing users with an action to view new features and updates.
@@ -762,9 +763,7 @@ msgstr "이 버전의 계획 도구는 곧 폐기될 예정이며 새로운 사�
 # of the planning tool.
 #: services/static-webserver/client/source/class/osparc/auth/ui/LoginView.js:201
 msgid "Please visit %1 or %2 instead. See %3 for more information."
-msgstr ""
-"대신 TIP.lite 또는 TIP를 방문하십시오. 자세한 내용은 여기(https://itis.swiss/tools-and-"
-"systems/ti-planning/overview/)를 참조하십시오."
+msgstr "대신 %1 또는 %2를 방문하십시오. 자세한 내용은 %3에서 확인하십시오."
 
 # CTX-INTERPRETATION: This string appears in the LoginView.js file, likely
 # within a UI component responsible for displaying error messages related to
@@ -886,7 +885,7 @@ msgstr "대학교 이메일"
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:189
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:223
 #: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:82
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:134
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:137
 #: services/static-webserver/client/source/class/osparc/share/RequestServiceAccess.js:50
 #: services/static-webserver/client/source/class/osparc/user/UserProfile.js:110
 msgid "Email"
@@ -1151,7 +1150,7 @@ msgstr "데이터 처리에 대한 %1에 동의합니다. (개인정보처리방
 # agree and use the product according to its terms.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:367
 msgid "I accept the %1 and I will use the product in accordance with it"
-msgstr "저는 이 약관에 동의하며, 제품을 이에 따라 사용하겠습니다."
+msgstr "저는 %1에 동의하며, 제품을 이에 따라 사용하겠습니다."
 
 # CTX-INTERPRETATION: The string "Request" appears as the label for a button
 # that initiates an account request within the Osparc authentication UI,
@@ -2691,13 +2690,13 @@ msgstr "새 워크스페이스로 이동하면 권한이 새 워크스페이스�
 msgid "Are you sure you want to delete the Folder and all its content?"
 msgstr "폴더와 모든 내용을 영구적으로 삭제하시겠습니까?"
 
-# CTX-INTERPRETATION: This string appears in the confirmation dialog when
-# deleting a folder and its contents permanently after a specified retention
-# period.
+# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
+# within a function related to permanently deleting study data after a
+# specified number of days.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:747
-#: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:308
-msgid "It will be permanently deleted after "
-msgstr "영구적으로 삭제됩니다. "
+#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
+msgid "It will be permanently deleted after %1 days."
+msgstr "데이터는 %1일 후에 영구적으로 삭제됩니다."
 
 # CTX-INTERPRETATION: The string "New Plan" is used as the title for a button
 # within the StudyBrowser component, likely to create a new study plan.
@@ -3003,13 +3002,6 @@ msgstr "이 프로젝트를 삭제하거나 제거할 수 있는 권한이 없�
 msgid "They will be permanently deleted after %1 days."
 msgstr "이들은 영구적으로 %1일 후에 삭제됩니다."
 
-# CTX-INTERPRETATION: This string appears in the StudyBrowser.js file, likely
-# within a function related to permanently deleting study data after a
-# specified number of days.
-#: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2573
-msgid "It will be permanently deleted after %1 days."
-msgstr "데이터는 %1일 후에 영구적으로 삭제됩니다."
-
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:2585
 msgid ""
 "'%1' will be removed from your list. Collaborators will still have access."
@@ -3145,6 +3137,13 @@ msgstr "업데이트"
 #: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:307
 msgid "Are you sure you want to delete the Workspace and all its content?"
 msgstr "워크스페이스와 그 모든 내용을 삭제하시겠습니까?"
+
+# CTX-INTERPRETATION: This string appears in the confirmation dialog when
+# deleting a folder and its contents permanently after a specified retention
+# period.
+#: services/static-webserver/client/source/class/osparc/dashboard/WorkspaceButtonItem.js:308
+msgid "It will be permanently deleted after "
+msgstr "영구적으로 삭제됩니다. "
 
 # CTX-INTERPRETATION: This string appears in the confirmation dialog when a
 # user attempts to delete a workspace, warning them about data loss.
@@ -3624,7 +3623,7 @@ msgstr "프로세스가 시작됨: %1:%2..."
 # specifying the node ID and version number.
 #: services/static-webserver/client/source/class/osparc/data/model/Node.js:1238
 msgid "Stopping %1:%2..."
-msgstr "프로세스 또는 시뮬레이션이 중지되고 있음을 나타내는 메시지를 표시하며, 노드 ID 및 버전 번호를 지정합니다."
+msgstr "프로세스 또는 시뮬레이션 %1:%2이(가) 중지되고 있습니다..."
 
 # CTX-INTERPRETATION: This string appears as a progress label within a
 # NodeProgressSequence object, indicating that the application is currently
@@ -3759,12 +3758,12 @@ msgstr "프로브 할당에 실패했습니다."
 msgid "Dashboard"
 msgstr "대시보드"
 
-# CTX-INTERPRETATION: This string appears in the 'Close' dialog box of the
-# application, asking the user if they want to close a study and warning them
-# about unsaved changes.
+# CTX-INTERPRETATION: The string appears in the 'Close' dialog of the
+# application, prompting the user to confirm closing a session and saving
+# changes.
 #: services/static-webserver/client/source/class/osparc/desktop/MainPage.js:135
-msgid "Do you want to close "
-msgstr "닫으시겠습니까? "
+msgid "Do you want to close <b>%1</b>?"
+msgstr "%1를 닫고 싶으신가요?"
 
 # CTX-INTERPRETATION: This string appears in the 'Close' dialog box, reminding
 # the user to save their changes before closing the application.
@@ -3800,8 +3799,8 @@ msgstr "닫기"
 # the application, asking the user if they want to save their study and close
 # the application.
 #: services/static-webserver/client/source/class/osparc/desktop/MainPage.js:149
-msgid "Do you want to save and close "
-msgstr "저장하고 닫을까요? "
+msgid "Do you want to save and close <b>%1</b>?"
+msgstr "<b>%1</b>을(를) 저장하고 닫으시겠습니까?"
 
 # CTX-INTERPRETATION: The "Save & Close" string appears in the MainPage.js
 # file, likely as a button caption or confirmation message related to saving
@@ -5546,7 +5545,7 @@ msgstr "대시보드로 돌아가기"
 # indicating that the action cannot be undone.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/ConfirmationsPage.js:61
 msgid "Delete a %1"
-msgstr "연구를 삭제하는 경우, 이 작업은 되돌릴 수 없습니다."
+msgstr "연구 %1을(를) 삭제하는 경우, 이 작업은 되돌릴 수 없습니다."
 
 # CTX-INTERPRETATION: This string appears in the confirmation dialog for
 # deleting a study, warning the user that the action is irreversible and
@@ -5734,8 +5733,8 @@ msgid ""
 "making it easier to search and filter. Once the tags are created, they can "
 "be assigned to the %2 via 'More options...' on the %2 cards."
 msgstr ""
-"태그는 대시보드에서 주제를 분류하여 연구를 정리하고 검색 및 필터링을 더 쉽게 만들어 줍니다. 태그가 생성되면 '더 옵션...'을 "
-"사용하여 %2 카드에 할당할 수 있습니다."
+"태그는 대시보드에서 주제를 분류하여 %1을(를) 정리하고 검색 및 필터링을 더 쉽게 만들어 줍니다. 태그가 생성되면 '더 옵션...'을 "
+"사용하여 %2을(를) %2 카드에 할당할 수 있습니다."
 
 # CTX-INTERPRETATION: The string "New Tag" appears as the label for a button
 # that adds a new tag to a list of tags, likely within a user interface for
@@ -6718,7 +6717,9 @@ msgstr "태그 적용"
 msgid ""
 "Manage and apply tags to better organize your %1. Select from existing tags "
 "or create new ones, then save your changes when ready."
-msgstr "기존 태그를 선택하거나 새 태그를 만들고 저장할 때까지 태그를 관리하고 적용하여 데이터를 더 잘 정리하는 방법을 안내합니다."
+msgstr ""
+"%1을(를) 더 잘 정리하기 위해 태그를 관리하고 적용하십시오. 기존 태그를 선택하거나 새 태그를 만든 다음 준비가 되면 변경 사항을 "
+"저장하십시오."
 
 # CTX-INTERPRETATION: The 'Function Id' button allows users to copy the UUID
 # of a function displayed in the FunctionLarge component, likely for
@@ -6733,7 +6734,7 @@ msgstr "함수 ID"
 #: services/static-webserver/client/source/class/osparc/info/FunctionLarge.js:75
 #: services/static-webserver/client/source/class/osparc/info/StudyLarge.js:118
 msgid "Copy %1"
-msgstr "값 또는 식별자를 복사합니다."
+msgstr "%1 복사"
 
 # CTX-INTERPRETATION: The string "Edit title" appears as the label for a
 # button that allows users to modify the title of a study or function, likely
@@ -7983,7 +7984,7 @@ msgstr "이제 '%1'의 구성원이 되었습니다."
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:206
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:223
 msgid "was shared by %1"
-msgstr "사용자가 공유했습니다"
+msgstr "%1님이 공유했습니다"
 
 # CTX-INTERPRETATION: This string is used within the NotificationUI.js file to
 # display a notification message indicating that the user has been informed
@@ -7997,7 +7998,7 @@ msgstr "'%1'에 알림이 전송되었습니다."
 # the name of the user initiating the notification.
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:236
 msgid "%1 wants you to check the conversation"
-msgstr "사용자는 대화를 확인하시기 바랍니다."
+msgstr "%1님이 대화를 확인하시기 바랍니다."
 
 # CTX-INTERPRETATION: This string is used within the NotificationUI.js file to
 # display a notification message indicating that a study with the given name
@@ -8010,7 +8011,7 @@ msgstr "'%1'에 추가된 노트"
 # likely displaying a message indicating who added a notification.
 #: services/static-webserver/client/source/class/osparc/notification/NotificationUI.js:249
 msgid "was added by %1"
-msgstr "이 사용자에 의해 추가되었습니다"
+msgstr "%1님이 추가했습니다"
 
 # CTX-INTERPRETATION: This string appears in the NotificationUI.js file,
 # likely indicating that a user's access has been revoked or changed.
@@ -8495,7 +8496,7 @@ msgstr "마지막 페이지"
 # field for entering or displaying usernames in user management and search
 # functionalities.
 #: services/static-webserver/client/source/class/osparc/po/UsersRegistered.js:218
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:130
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:133
 msgid "Username"
 msgstr "사용자 이름"
 
@@ -8534,16 +8535,22 @@ msgstr "유효한 이메일 주소 또는 @* 패턴"
 msgid "Searching users..."
 msgstr "사용자 검색 중..."
 
-# CTX-INTERPRETATION: The string " user(s) found" is used within a UI
-# component to display the number of users that have been found during a
-# search operation, likely in a scientific simulation context.
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:105
-msgid " user(s) found"
-msgstr "사용자(들)이 발견되었습니다"
+# CTX-INTERPRETATION: This string is part of a user search function that
+# displays the number of users found in the results.
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:106
+msgid "1 user found"
+msgstr "1명의 사용자 발견됨"
+
+# CTX-INTERPRETATION: This string is used within the 'UsersSearch' component
+# to display the number of users found in a search result, using a placeholder
+# for the count.
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:107
+msgid "%1 users found"
+msgstr "%1 사용자가 발견되었습니다"
 
 # CTX-INTERPRETATION: This string appears in the UsersSearch component of a
 # web application, indicating an error occurred while searching for users.
-#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:109
+#: services/static-webserver/client/source/class/osparc/po/UsersSearch.js:112
 msgid "Error searching users"
 msgstr "사용자 검색 중 오류"
 
@@ -8787,23 +8794,21 @@ msgstr ""
 # providing a link to read license agreements for the Sim4Life application.
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:95
 msgid "Click %1 to read the license agreements."
-msgstr "여기 클릭하여 라이선스 계약을 읽으십시오."
+msgstr "라이선스 계약을 읽으려면 %1을(를) 클릭하십시오."
 
 # CTX-INTERPRETATION: This string appears in the AboutProduct.js file and
 # provides a link to the Sim4Life.lite website for users seeking more
 # information.
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:99
 msgid "For more information about Sim4Life.lite, visit %1."
-msgstr "Sim4Life.lite에 대한 자세한 내용은 다음 웹사이트를 방문하십시오: https://zmt.swiss/"
+msgstr "Sim4Life.lite에 대한 자세한 내용은 %1을(를) 방문하십시오."
 
 # CTX-INTERPRETATION: The string appears in the AboutProduct.js file,
 # providing a link to more information about TIP (TI Planning Tool) and its
 # licensing.
 #: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:129
 msgid "For more information about TIP, please visit %1."
-msgstr ""
-"TIP에 대한 자세한 내용은 다음 링크를 방문하십시오: https://itis.swiss/tools-and-systems/ti-"
-"planning/overview"
+msgstr "TIP에 대한 자세한 내용은 %1을(를) 방문하십시오."
 
 # CTX-INTERPRETATION: This string likely represents the alias or name of a
 # project within the application, used in a user interface element.
@@ -9662,19 +9667,12 @@ msgstr "공유하기 대상 선택"
 msgid "Emails sent"
 msgstr "이메일 전송 완료"
 
-# CTX-INTERPRETATION: This string appears within the 'Collaborators'
-# component, indicating that any user with access to a specific study can open
-# it.
+# CTX-INTERPRETATION: This string appears in the Collaborators.js file and is
+# used to inform a user about who can access a resource, specifically when
+# opening a study.
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:97
-msgid "Any logged-in user with access to the "
-msgstr "로그인한 사용자는 해당 연구에 액세스할 수 있습니다. "
-
-# CTX-INTERPRETATION: This string appears in the Collaborators.js file, likely
-# within a UI element that describes who can access a specific resource
-# (study) and open it.
-#: services/static-webserver/client/source/class/osparc/share/Collaborators.js:97
-msgid " can open it"
-msgstr "누구든지 액세스 권한이 있는 경우 열 수 있습니다"
+msgid "Any logged-in user with access to the %1 can open it"
+msgstr "로그인한 사용자는 %1에 액세스할 수 있는 경우 해당 리소스를 열 수 있습니다."
 
 # CTX-INTERPRETATION: The string "Copy link" appears as the label for a button
 # that copies a URL to the clipboard within the Collaborators component,
@@ -9684,19 +9682,18 @@ msgstr "누구든지 액세스 권한이 있는 경우 열 수 있습니다"
 msgid "Copy link"
 msgstr "링크 복사"
 
-# CTX-INTERPRETATION: This string appears in the Collaborators.js file, likely
-# indicating that a user can access a shared document or resource through a
-# publicly accessible link.
+# CTX-INTERPRETATION: This string appears in the Collaborators.js file,
+# indicating that anyone with the link can access a shared resource.
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:133
-msgid "Anyone on the internet with the link can open this "
-msgstr "링크를 가진 인터넷 사용자 누구나 이 문서를 열 수 있습니다. "
+msgid "Anyone on the internet with the link can open this %1"
+msgstr "링크를 가진 인터넷 사용자 누구나 이 %1에 액세스할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in the Collaborators.js file, likely
-# within a function that handles displaying or interacting with a link related
-# to opening a template.
+# within a UI element that allows users to copy and open a document or
+# resource.
 #: services/static-webserver/client/source/class/osparc/share/Collaborators.js:135
-msgid "Any logged-in user with the link can copy and open this "
-msgstr "로그인한 사용자는 이 링크를 통해 복사하고 열 수 있습니다. "
+msgid "Any logged-in user with the link can copy and open this %1"
+msgstr "로그인한 사용자는 링크를 통해 이 %1를 복사하고 열 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in the Collaborators.js file,
 # describing a section that displays user and organization access information
@@ -10350,8 +10347,8 @@ msgstr "기간: 1년"
 # CTX-INTERPRETATION: The string "Rent" appears in the PricingUnitLicense
 # class, likely referring to renting a license or unit.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:54
-#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:95
-#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:96
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:93
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:94
 msgid "Rent"
 msgstr "임대"
 
@@ -10362,11 +10359,28 @@ msgstr "임대"
 msgid "Credits: %1"
 msgstr "크레딧: %1"
 
-# CTX-INTERPRETATION: This string is part of a message displayed to the user
-# when renting a unit, indicating the availability date and rental cost.
+# CTX-INTERPRETATION: This string appears in the 'Rent' confirmation window of
+# a pricing unit license, informing the user about rental availability, cost,
+# and acceptance of terms.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
-msgid "will be available until "
-msgstr "까지 이용 가능합니다 "
+msgid ""
+"%1 %2 will be available until %3.<br>The rental will cost %4 credits.<br>I "
+"hereby accept the Terms and Conditions."
+msgstr "%1 %2는 %3까지 이용 가능합니다.<br>이용료는 %4 크레딧입니다.<br>저는 서비스 약관에 동의합니다."
+
+# CTX-INTERPRETATION: The string is part of a confirmation message displayed
+# when the user rents a unit, indicating the availability and cost of the
+# rental.
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
+msgid "seats"
+msgstr "좌석"
+
+# CTX-INTERPRETATION: The string appears in the 'Rent' confirmation window,
+# displaying details about renting a unit, including seat availability,
+# expiration date, and cost.
+#: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
+msgid "seat"
+msgstr "좌석"
 
 # CTX-INTERPRETATION: This string is used to display the selected item's label
 # in a PricingUnitTier component, indicating whether an item has been chosen
@@ -11482,7 +11496,7 @@ msgstr "총 %1개의 좌석이 %2까지 남아 있습니다."
 # date, indicating whether there's one available or not.
 #: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:452
 msgid "%1 seat available until %2"
-msgstr "1개의 좌석이 %2까지 남아 있습니다."
+msgstr "%1개의 좌석이 %2까지 남아 있습니다."
 
 # CTX-INTERPRETATION: The string "Loading Models..." appears as a label within
 # a UI element, likely indicating that the application is currently loading
@@ -11739,6 +11753,34 @@ msgstr "선택한 로그를 클립보드에 복사"
 msgid "Download logs"
 msgstr "로그 다운로드"
 
+# CTX-INTERPRETATION: This string is displayed when the disk usage of the
+# 'Service Filesystem' exceeds a warning threshold, informing the user about
+# available space and suggesting solutions.
+#: services/static-webserver/client/source/class/osparc/workbench/DiskUsageController.js:136
+msgid ""
+"Out of Disk Space on \"Service Filesystem\" for %1<br />The volume Service "
+"Filesystem has only %2 disk space remaining. You can free up disk space by "
+"removing unused files in your service. Alternatively, you can run your "
+"service with a pricing plan that supports your storage requirements."
+msgstr ""
+"%1의 \"서비스 파일 시스템\" 디스크 공간이 부족합니다.<br />서비스 파일 시스템 볼륨에 %2의 디스크 공간만 남아 있습니다. "
+"서비스에서 사용하지 않는 파일을 제거하여 디스크 공간을 확보할 수 있습니다. 또는 저장 요구 사항을 지원하는 가격 계획으로 서비스를 "
+"실행할 수 있습니다."
+
+# CTX-INTERPRETATION: This message appears in the DiskUsageController.js file,
+# warning the user about low disk space on the 'Service Filesystem' and
+# suggesting solutions.
+#: services/static-webserver/client/source/class/osparc/workbench/DiskUsageController.js:143
+msgid ""
+"Low Disk Space on \"Service Filesystem\" for %1<br />The volume Service "
+"Filesystem has only %2 disk space remaining. You can free up disk space by "
+"removing unused files in your service. Alternatively, you can run your "
+"service with a pricing plan that supports your storage requirements."
+msgstr ""
+"%1의 \"서비스 파일 시스템\" 디스크 공간이 부족합니다.<br />서비스 파일 시스템 볼륨에 %2의 디스크 공간만 남아 있습니다. "
+"서비스에서 사용하지 않는 파일을 제거하여 디스크 공간을 확보할 수 있습니다. 또는 저장 요구 사항을 지원하는 가격 계획으로 서비스를 "
+"실행할 수 있습니다."
+
 # CTX-INTERPRETATION: This string is used as the title for a disk usage
 # indicator, likely displaying information about both overall and individual
 # volume storage.
@@ -11765,7 +11807,7 @@ msgstr "I/O 저장 공간: "
 # verify input nodes.
 #: services/static-webserver/client/source/class/osparc/workbench/EdgeUI.js:79
 msgid "Connection candidate.<br>Check the %1 inputs"
-msgstr "연결 후보.<br>다음 입력 노드를 확인하십시오."
+msgstr "연결 후보입니다.<br>%1 입력을 확인하십시오."
 
 # CTX-INTERPRETATION: The string "Out-of-date" appears in the EdgeUI
 # component, likely indicating that the data or simulation results are
@@ -12523,6 +12565,17 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "결제가 확인되면 신용은 귀하의 신용 계정에 추가되어 사용할 준비가 됩니다."
+
+# CTX-INTERPRETATION: This string appears in the Collaborators.js file, likely
+# within a UI element that describes who can access a specific resource
+# (study) and open it.
+#~ msgid " can open it"
+#~ msgstr "누구든지 액세스 권한이 있는 경우 열 수 있습니다"
+
+# CTX-INTERPRETATION: This string is part of a message displayed to the user
+# when renting a unit, indicating the availability date and rental cost.
+#~ msgid "will be available until "
+#~ msgstr "까지 이용 가능합니다 "
 
 # CTX-INTERPRETATION: This string is used to display the number of messages in
 # a conversation page, appending ' Messages' to the numerical value.
