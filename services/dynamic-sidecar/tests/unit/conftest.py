@@ -14,6 +14,7 @@ from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from servicelib.rabbitmq._client import RabbitMQClient
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_down,
@@ -150,3 +151,11 @@ def mock_ensure_read_permissions_on_user_service_data(mocker: MockerFixture) -> 
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.long_running_tasks.ensure_read_permissions_on_user_service_data",
     )
+
+
+@pytest.fixture
+def mock_rabbitmq_client(app: FastAPI) -> AsyncMock:
+    """stubs the client since these tests bypass the app lifespan that normally configures it"""
+    rabbitmq_client = AsyncMock(spec=RabbitMQClient)
+    app.state.rabbitmq_client = rabbitmq_client
+    return rabbitmq_client

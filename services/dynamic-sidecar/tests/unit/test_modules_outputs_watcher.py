@@ -13,6 +13,7 @@ from typing import Any, Final
 from unittest.mock import AsyncMock
 
 import aiofiles
+import aiofiles.ospath
 import pytest
 from aiofiles import os
 from faker import Faker
@@ -204,10 +205,10 @@ async def _random_events_in_path(
     Simulates some random user activity"""
 
     async def _empty_file(file_path: Path) -> None:
-        assert file_path.exists() is False
+        assert await aiofiles.ospath.exists(file_path) is False
         async with aiofiles.open(file_path, "wb"):
             pass
-        assert file_path.exists() is True
+        assert await aiofiles.ospath.exists(file_path) is True
 
     async def _random_file(
         file_path: Path,
@@ -219,19 +220,19 @@ async def _random_events_in_path(
             for _ in range(size // chunk_size):
                 await file.write(randbytes(chunk_size))  # noqa: S311
             await file.write(randbytes(size % chunk_size))  # noqa: S311
-        assert file_path.stat().st_size == size
+        assert await aiofiles.ospath.getsize(file_path) == size
 
     async def _move_existing_file(file_path: Path) -> None:
         await _empty_file(file_path)
         destination = file_path.parent / f"{file_path.name}_"
         await os.rename(file_path, destination)
-        assert file_path.exists() is False
-        assert destination.exists() is True
+        assert await aiofiles.ospath.exists(file_path) is False
+        assert await aiofiles.ospath.exists(destination) is True
 
     async def _remove_file(file_path: Path) -> None:
         await _empty_file(file_path)
         await os.remove(file_path)
-        assert file_path.exists() is False
+        assert await aiofiles.ospath.exists(file_path) is False
 
     event_awaitables: list[Awaitable] = [
         *(_empty_file(port_key_path / f"empty_file_{i}") for i in range(empty_files)),
@@ -341,6 +342,7 @@ async def test_does_not_trigger_on_attribute_change(
 
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
+    mock_rabbitmq_client: AsyncMock,
     mounted_volumes: MountedVolumes,
     outputs_watcher: OutputsWatcher,
     files_per_port_key: NonNegativeInt,
@@ -382,3 +384,5 @@ async def test_port_key_sequential_event_generation(
             for call_args in mock_long_running_upload_outputs.call_args_list:
                 uploaded_port_keys |= set(call_args.kwargs["port_keys"])
             assert uploaded_port_keys == set(port_keys)
+
+    mock_rabbitmq_client.assert_not_called()

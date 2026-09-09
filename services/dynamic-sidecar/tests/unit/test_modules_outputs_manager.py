@@ -207,6 +207,7 @@ async def outputs_manager(
 
 async def test_upload_port_wait_sequential(
     mock_upload_outputs: AsyncMock,
+    mock_rabbitmq_client: AsyncMock,
     outputs_manager: OutputsManager,
     port_keys: list[str],
     non_file_type_port_keys: list[str],
@@ -220,10 +221,12 @@ async def test_upload_port_wait_sequential(
     assert await outputs_manager._port_key_tracker.no_tracked_ports() is True  # noqa: SLF001
 
     _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
+    mock_rabbitmq_client.assert_not_called()
 
 
 async def test_upload_port_wait_parallel_parallel(
     mock_upload_outputs: AsyncMock,
+    mock_rabbitmq_client: AsyncMock,
     outputs_manager: OutputsManager,
     port_keys: list[str],
     non_file_type_port_keys: list[str],
@@ -236,9 +239,11 @@ async def test_upload_port_wait_parallel_parallel(
     await outputs_manager.wait_for_all_uploads_to_finish()
 
     _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
+    mock_rabbitmq_client.assert_not_called()
 
 
 async def test_recovers_after_raising_error(
+    mock_rabbitmq_client: AsyncMock,
     mock_upload_outputs_raises_error: ToggleErrorRaising,
     outputs_manager: OutputsManager,
     port_keys: list[str],

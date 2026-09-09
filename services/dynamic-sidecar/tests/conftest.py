@@ -150,7 +150,8 @@ def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
     # remove files and dir
     for f in shared_store_dir.glob("*"):
         f.unlink()
-    shared_store_dir.rmdir()
+    if shared_store_dir.exists():
+        shared_store_dir.rmdir()
     assert shared_store_dir.exists() is False
 
 
