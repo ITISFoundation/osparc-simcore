@@ -29,7 +29,7 @@ workspaces_access_rights = sa.Table(
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
         ),
-        doc="Group unique IDentifier",
+        doc="Group unique IIdentifier",
     ),
     # Access Rights flags ---
     sa.Column(

@@ -37,7 +37,7 @@ group_classifiers = sa.Table(
         ),
         unique=True,  # Every Group can ONLY have one set of classifiers
     ),
-    # uses scicrunch service to acccess curated classifiers instead of static bundle
+    # uses scicrunch service to access curated classifiers instead of static bundle
     sa.Column("uses_scicrunch", sa.Boolean, nullable=False, default=False),
     sa.PrimaryKeyConstraint("id", name="group_classifiers_pkey"),
 )

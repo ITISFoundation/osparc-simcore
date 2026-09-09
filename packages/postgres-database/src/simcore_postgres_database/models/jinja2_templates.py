@@ -33,7 +33,7 @@ jinja2_templates = sa.Table(
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
-        doc="Automaticaly updates on modification of the row",
+        doc="Automatically updates on modification of the row",
     ),
     sa.PrimaryKeyConstraint("name", name="jinja2_templates_name_pk"),
 )

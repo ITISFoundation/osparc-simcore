@@ -19,9 +19,11 @@ class RegistrySettings(BaseCustomSettings):
     REGISTRY_PATH: Annotated[
         str | None,
         Field(
-            # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine"
+            # This is useful in case of a local registry, where the registry url (path) is
+            # relative to the host docker engine"
             description="development mode only, in case a local registry is used - "
-            "this is the hostname to the docker registry as seen from the host running the containers (e.g. 127.0.0.1:5000)",
+            "this is the hostname to the docker registry as seen from the host running "
+            "the containers (e.g. 127.0.0.1:5000)",
         ),
     ] = None
 

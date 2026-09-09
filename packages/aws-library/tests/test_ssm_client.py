@@ -164,16 +164,14 @@ async def test_wait_for_has_instance_completed_cloud_init(
     mocker: MockerFixture,
 ):
     assert await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr()) is False
-    original_get_command_invocation = (
-        simcore_ssm_api._client.get_command_invocation  # noqa: SLF001
-    )
+    original_get_command_invocation = simcore_ssm_api._client.get_command_invocation
 
     # NOTE: wait_for_has_instance_completed_cloud_init calls twice get_command_invocation
     async def mock_send_command_timesout(*args, **kwargs):
         return {"Status": "Failure", "StatusDetails": faker.text()}
 
     mocked_command_invocation = mocker.patch.object(
-        simcore_ssm_api._client,  # noqa: SLF001
+        simcore_ssm_api._client,
         "get_command_invocation",
         side_effect=mock_send_command_timesout,
     )

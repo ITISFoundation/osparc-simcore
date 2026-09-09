@@ -4,7 +4,7 @@
 
 import json
 from copy import deepcopy
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 from uuid import uuid4
 
 import pytest
@@ -53,7 +53,7 @@ def test_serialized_non_str_dict_keys():
     json_dumps({1: "foo"})
 
 
-ConstrainedFloat: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]
+type ConstrainedFloat = Annotated[float, Field(ge=0.0, le=1.0)]
 
 
 def test_serialized_constraint_floats():

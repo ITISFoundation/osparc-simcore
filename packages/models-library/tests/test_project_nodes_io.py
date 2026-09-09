@@ -165,14 +165,12 @@ def test_simcore_s3_directory_get_parent():
     # pylint: disable=protected-access
 
     with pytest.raises(ValueError, match="does not have enough parents, expected 4"):
-        SimcoreS3DirectoryID._get_parent("hello/object", parent_index=4)  # noqa SLF001
+        SimcoreS3DirectoryID._get_parent("hello/object", parent_index=4)
 
     with pytest.raises(ValueError, match="does not have enough parents, expected 4"):
-        SimcoreS3DirectoryID._get_parent("hello/object/", parent_index=4)  # noqa SLF001
+        SimcoreS3DirectoryID._get_parent("hello/object/", parent_index=4)
     with pytest.raises(ValueError, match="does not have enough parents, expected 4"):
-        SimcoreS3DirectoryID._get_parent(  # noqa SLF001
-            "/hello/object/", parent_index=4
-        )
+        SimcoreS3DirectoryID._get_parent("/hello/object/", parent_index=4)
 
 
 @pytest.mark.parametrize(

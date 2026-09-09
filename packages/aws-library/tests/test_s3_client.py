@@ -81,9 +81,9 @@ async def simcore_s3_api(
 ) -> AsyncIterator[SimcoreS3API]:
     s3 = await SimcoreS3API.create(settings=mocked_s3_server_settings)
     assert s3
-    assert s3._client  # noqa: SLF001
-    assert s3._exit_stack  # noqa: SLF001
-    assert s3._session  # noqa: SLF001
+    assert s3._client
+    assert s3._exit_stack
+    assert s3._session
     yield s3
     await s3.close()
 
@@ -123,7 +123,7 @@ async def upload_to_presigned_link(
             file,
             MultiPartUploadLinks(
                 upload_id="fake",
-                chunk_size=TypeAdapter(ByteSize).validate_python(file.stat().st_size),
+                chunk_size=TypeAdapter(ByteSize).validate_python((await asyncio.to_thread(file.stat)).st_size),
                 urls=[presigned_url],
             ),
         )
@@ -306,7 +306,8 @@ async def upload_file(
         if base_path:
             object_key = f"{file.relative_to(base_path)}"
         with log_context(logging.INFO, msg=f"uploading {file} to {with_s3_bucket}/{object_key}") as ctx:
-            progress_cb = _UploadProgressCallback(file_size=file.stat().st_size, action="uploaded", logger=ctx.logger)
+            st = await asyncio.to_thread(file.stat)
+            progress_cb = _UploadProgressCallback(file_size=st.st_size, action="uploaded", logger=ctx.logger)
             response = await simcore_s3_api.upload_file(
                 bucket=with_s3_bucket,
                 file=file,
@@ -1775,7 +1776,7 @@ async def test_read_from_bytes_streamer(
         async for chunk in bytes_streamer.with_progress_bytes_iter(AsyncMock()):
             await f.write(chunk)
 
-    assert bytes_streamer.data_size == fake_file_name.stat().st_size
+    assert bytes_streamer.data_size == (await asyncio.to_thread(fake_file_name.stat)).st_size
 
     await assert_same_file_content(with_uploaded_file_on_s3.local_path, fake_file_name)
 

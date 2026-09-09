@@ -32,12 +32,12 @@ def test_get_full_class_name():
 
     class B12(B1, ValueError): ...  # noqa: N818
 
-    assert B1._get_full_class_name() == "A.B1"  # noqa: SLF001
-    assert C._get_full_class_name() == "A.B2.C"  # noqa: SLF001
-    assert A._get_full_class_name() == "A"  # noqa: SLF001
+    assert B1._get_full_class_name() == "A.B1"
+    assert C._get_full_class_name() == "A.B2.C"
+    assert A._get_full_class_name() == "A"
 
     # diamond inheritance (not usual but supported)
-    assert B12._get_full_class_name() == "ValueError.A.B1.B12"  # noqa: SLF001
+    assert B12._get_full_class_name() == "ValueError.A.B1.B12"
 
 
 def test_error_codes_and_msg_template():

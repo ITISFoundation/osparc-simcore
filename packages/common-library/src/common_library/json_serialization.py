@@ -6,6 +6,7 @@
 import datetime
 from collections import deque
 from collections.abc import Callable
+from dataclasses import asdict, is_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import (
@@ -24,6 +25,7 @@ from uuid import UUID
 
 import orjson
 from pydantic import AnyHttpUrl, AnyUrl, HttpUrl, NameEmail, SecretBytes, SecretStr
+from pydantic.main import BaseModel
 from pydantic_core import Url
 from pydantic_extra_types.color import Color
 
@@ -94,10 +96,6 @@ ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
 
 
 def pydantic_encoder(obj: Any) -> Any:
-    from dataclasses import asdict, is_dataclass
-
-    from pydantic.main import BaseModel
-
     if isinstance(obj, BaseModel):
         return obj.model_dump()
 

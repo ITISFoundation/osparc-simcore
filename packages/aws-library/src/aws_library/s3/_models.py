@@ -1,16 +1,16 @@
 import datetime
 from pathlib import Path
-from typing import Annotated, TypeAlias, cast
+from typing import Annotated, cast
 
 from models_library.api_schemas_storage.storage_schemas import ETag
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, BaseModel, ByteSize, Field
 from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
-S3ObjectKey: TypeAlias = str
-S3ObjectPrefix: TypeAlias = Path
-UploadID: TypeAlias = str
-PathCursor: TypeAlias = str
+type S3ObjectKey = str
+type S3ObjectPrefix = Path
+type UploadID = str
+type PathCursor = str
 
 
 class S3MetaData(BaseModel, frozen=True):

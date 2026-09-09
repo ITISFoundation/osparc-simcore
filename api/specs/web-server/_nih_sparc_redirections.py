@@ -38,10 +38,10 @@ async def get_redirection_to_viewer(
 
 
 @router.get(
-    "/study/{id}",
+    "/study/{study_id}",
     response_class=RedirectResponse,
     response_description="Opens osparc and opens a copy of published study",
     status_code=status.HTTP_302_FOUND,
 )
-async def get_redirection_to_study_page(id: ProjectID):
+async def get_redirection_to_study_page(study_id: ProjectID):
     """Opens a study published in osparc"""

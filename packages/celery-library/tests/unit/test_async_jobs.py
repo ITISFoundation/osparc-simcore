@@ -5,7 +5,7 @@ import asyncio
 import pickle
 from collections.abc import Callable
 from datetime import timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import pytest
@@ -45,7 +45,7 @@ def owner_metadata(faker: Faker) -> OwnerMetadata:
     )
 
 
-class Action(str, Enum):
+class Action(StrEnum):
     ECHO = "ECHO"
     RAISE = "RAISE"
     SLEEP = "SLEEP"

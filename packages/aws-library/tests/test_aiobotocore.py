@@ -36,7 +36,7 @@ async def test_s3_client_reconnects_if_s3_server_restarts(
     # pylint: disable=protected-access
     async with session.create_client(
         "s3",
-        endpoint_url=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # noqa: SLF001
+        endpoint_url=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",
         aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
     ) as client:

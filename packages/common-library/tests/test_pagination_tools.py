@@ -65,7 +65,7 @@ def test_iter_pages_args_invalid(limit: int, offset: int):
 def test_fails_if_total_number_of_items_not_set():
     with pytest.raises(
         RuntimeError,
-        match="page_args.total_number_of_items = total_count",
+        match=r"page_args\.total_number_of_items = total_count",
     ):
         for _ in iter_pagination_params(offset=0, limit=2):
             pass

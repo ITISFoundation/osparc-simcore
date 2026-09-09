@@ -31,7 +31,9 @@ def list_files_in_api_specs(wildcard: str) -> list[Path]:
 
     e.g.  pytest -v  test_individual_openapi_schemas.py
 
-    test_individual_openapi_schemas.py::test_valid_individual_openapi_schemas_specs[/home/crespo/devp/osparc-simcore/api/specs/common/schemas/node-meta-v0.0.1.json] PASSED
+    test_individual_openapi_schemas.py::test_valid_individual_openapi_schemas_specs[
+        /home/crespo/devp/osparc-simcore/api/specs/common/schemas/node-meta-v0.0.1.json
+    ] PASSED
     """
     specs_dir = specs_folder()
 
@@ -49,11 +51,7 @@ def list_all_openapi() -> list[str]:
 def load_specs(spec_file_path: Path) -> dict:
     assert spec_file_path.exists(), spec_file_path
     with spec_file_path.open() as file_ptr:
-        if ".json" in spec_file_path.suffix:
-            schema_specs = json.load(file_ptr)
-        else:
-            schema_specs = yaml.safe_load(file_ptr)
-        return schema_specs
+        return json.load(file_ptr) if ".json" in spec_file_path.suffix else yaml.safe_load(file_ptr)
 
 
 def dump_specs(specs: dict, specs_path: Path):
