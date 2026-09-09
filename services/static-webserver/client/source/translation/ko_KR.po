@@ -599,7 +599,7 @@ msgstr "플랫폼"
 # username.
 #: services/static-webserver/client/source/class/osparc/auth/LoginWithDecorators.js:327
 msgid "%1 is powered by oSPARC.<br>"
-msgstr "\"%1는 oSPARC로 구동됩니다.<br>\""
+msgstr "%1는 oSPARC로 구동됩니다.<br>"
 
 # CTX-INTERPRETATION: This string appears within the context of a release
 # notes link, providing users with an action to view new features and updates.

@@ -600,7 +600,7 @@ msgstr "平台"
 # user's display name.
 #: services/static-webserver/client/source/class/osparc/auth/LoginWithDecorators.js:327
 msgid "%1 is powered by oSPARC.<br>"
-msgstr "\"%1 由 oSPARC 提供支持。<br>\""
+msgstr "%1 由 oSPARC 提供支持。<br>"
 
 # CTX-INTERPRETATION: This string appears as a tooltip for a link that directs
 # the user to release notes, providing information about new features and
@@ -10531,7 +10531,7 @@ msgstr "座位数量"
 # cost of renting a unit.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitLicense.js:91
 msgid "seat"
-msgstr "座位/座位 (根据数量选择)"
+msgstr "座位"
 
 # CTX-INTERPRETATION: The string "Selected" is used within the PricingUnitTier
 # component to display a label indicating whether a specific item or option
