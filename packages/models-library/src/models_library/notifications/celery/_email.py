@@ -1,6 +1,4 @@
-"""Celery worker task payloads for notifications service."""
-
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -38,7 +36,7 @@ class EmailContent(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    channel: Channel = Channel.email
+    channel: Literal[Channel.EMAIL] = Channel.EMAIL
 
     # Envelope fields
     from_: Annotated[EmailContact, Field(alias="from")]

@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -41,11 +41,7 @@ class EmailAddressing(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    channel: Channel = Channel.email
+    channel: Literal[Channel.email] = Channel.email
 
     addressing: EmailAddressing
     content: EmailContent
-
-
-type Addressing = EmailAddressing
-type Message = EmailMessage
