@@ -112,10 +112,6 @@ frozenlist==1.8.0
     #   aiosignal
 graphql-core==3.2.8
     # via moto
-greenlet==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 icdiff==2.0.10
     # via pytest-icdiff
 idna==3.19
