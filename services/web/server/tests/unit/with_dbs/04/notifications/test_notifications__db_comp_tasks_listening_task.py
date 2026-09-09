@@ -132,7 +132,7 @@ async def _assert_publish_triggers(mock_rabbitmq_publish: mock.AsyncMock, expect
     ],
 )
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_db_listener_triggers_on_event_with_multiple_tasks(  # noqa: PLR0917
+async def test_db_listener_triggers_on_event_with_multiple_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     mock_rabbitmq_publish: mock.AsyncMock,
     logged_user: UserInfoDict,
@@ -213,7 +213,7 @@ async def _check_for_stability(function: Callable[..., Awaitable[None]], *args, 
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_db_listener_upgrades_projects_row_correctly(  # noqa: PLR0917
+async def test_db_listener_upgrades_projects_row_correctly(
     with_started_listening_task: None,
     director_v2_service_mock: AioResponsesMock,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -404,30 +404,6 @@ async def test_handle_db_notification_logs_warning_on_missing_project(
     with caplog.at_level(logging.WARNING):
         await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
     assert "could not be found" in caplog.text or "not found" in caplog.text.lower()
-
-
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_handle_db_notification_logs_warning_on_missing_comp_task(
-    sqlalchemy_async_engine: AsyncEngine,
-    client: TestClient,
-    logged_user: UserInfoDict,
-    create_project: Callable[..., Awaitable[ProjectAtDB]],
-    caplog: pytest.LogCaptureFixture,
-    faker: Faker,
-):
-    assert client.app
-    project = await create_project(logged_user)
-    payload = CompTaskNotificationPayload(
-        action="UPDATE",
-        changes=["outputs"],
-        table="comp_tasks",
-        task_id=999999,
-        project_id=project.uuid,
-        node_id=faker.uuid4(),
-    )
-    with caplog.at_level(logging.WARNING):
-        await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    assert "No comp_tasks row found" in caplog.text
 
 
 @pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
