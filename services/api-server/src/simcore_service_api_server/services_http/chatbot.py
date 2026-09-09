@@ -98,6 +98,8 @@ class ChatbotSession:
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError:
+            # read the body before closing so callers can inspect/relay the downstream error detail
+            await response.aread()
             await response.aclose()
             raise
         return response

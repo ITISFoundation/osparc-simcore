@@ -11,11 +11,14 @@ from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.task_manager import TaskManager
+from servicelib.status_codes_utils import is_4xx_client_error
+from starlette.responses import JSONResponse
 
 from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
 
 from ...core.settings import ApplicationSettings
 from ...exceptions.backend_errors import BaseBackEndError, ChatbotNotAvailableError
+from ...exceptions.handlers._utils import create_error_json_response
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.basic_types import SseStreamingResponse
 from ...models.domain.celery_models import ApiServerOwnerMetadata
@@ -57,6 +60,19 @@ async def _relay_sse_response(response: httpx.Response, request: Request) -> Asy
         await response.aclose()
 
 
+def _relay_downstream_client_error(response: httpx.Response) -> JSONResponse:
+    """The chatbot service already validated the request and returned a client-facing
+    error body (e.g. FastAPI's `{"detail": [...]}`) -- relay it as-is, with the same
+    status code, instead of masking it behind a generic backend error."""
+    try:
+        errors = response.json().get("detail", response.text)
+    except ValueError:
+        errors = response.text
+    if not isinstance(errors, list):
+        errors = [errors]
+    return create_error_json_response(*errors, status_code=response.status_code)
+
+
 @router.post(
     "",
     description=create_route_description(
@@ -72,6 +88,10 @@ async def _relay_sse_response(response: httpx.Response, request: Request) -> Asy
     response_model=ResponseObject,
     status_code=status.HTTP_200_OK,
     responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "The request was rejected by the chatbot service",
+            "model": ErrorGet,
+        },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
             "description": "Chatbot service is not enabled",
             "model": ErrorGet,
@@ -87,7 +107,7 @@ async def create_response(
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     task_manager: Annotated[TaskManager, Depends(get_task_manager)],
     app: Annotated[FastAPI, Depends(get_app)],
-) -> ResponseObject | SseStreamingResponse:
+) -> ResponseObject | SseStreamingResponse | JSONResponse:
     if settings.API_SERVER_CHATBOT is None:
         raise ChatbotNotAvailableError
 
@@ -106,6 +126,10 @@ async def create_response(
                 temperature=body.temperature,
                 response_format=body.to_chat_response_format(),
             )
+        except httpx.HTTPStatusError as exc:
+            if is_4xx_client_error(exc.response.status_code):
+                return _relay_downstream_client_error(exc.response)
+            raise BaseBackEndError from exc
         except httpx.HTTPError as exc:
             raise BaseBackEndError from exc
         return SseStreamingResponse(_relay_sse_response(upstream_response, request))
