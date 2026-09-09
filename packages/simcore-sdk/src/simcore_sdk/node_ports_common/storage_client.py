@@ -112,7 +112,7 @@ async def retry_request(
             async with _session_method(session, method, url, **kwargs) as response:
                 if response.status != expected_status:
                     # this is a more precise raise_for_status()
-                    error_msg = await response.json()
+                    error_msg = await response.text()
                     response.release()
                     raise ClientResponseError(
                         response.request_info,
