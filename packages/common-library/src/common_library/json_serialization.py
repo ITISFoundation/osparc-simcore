@@ -140,7 +140,6 @@ def representation_encoder(obj: Any):
         return str(obj)
 
 
-# Types orjson.OPT_NON_STR_KEYS already accepts as dict keys (IntEnum is a subclass of int)
 _JSON_KEY_SAFE_TYPES = (str, int, float, bool, type(None), datetime.datetime, datetime.date, datetime.time, UUID)
 
 
@@ -188,9 +187,6 @@ def json_dumps(
         raise ValueError(msg)
 
     if sanitize_keys:
-        # NOTE: OPT_NON_STR_KEYS only supports a fixed set of key types (see below) and there is
-        # no `default`-like hook for keys, so any other key type (e.g. a tuple) raises unconditionally.
-        # Opt-in only: existing callers are unaffected and keep getting a hard failure on unexpected keys.
         obj = _sanitize_non_str_keys(obj)
 
     # serialize
