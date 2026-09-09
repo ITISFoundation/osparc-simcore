@@ -19,7 +19,7 @@ from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import are_secrets_equal, generate_passcode
 from settings_library.twilio import TwilioSettings
@@ -46,10 +46,10 @@ class ValidationCode(BaseModel):
 # SEE https://redis-py.readthedocs.io/en/stable/index.html
 
 
-def hash_2fa_code_for_storage(*, code: str, secret_key: str) -> str:
+def hash_2fa_code_for_storage(*, code: str, secret_key: SecretStr) -> str:
     """Returns the HMAC-SHA256 digest used to persist one time pads in Redis."""
     return hmac.new(
-        key=secret_key.encode(),
+        key=secret_key.get_secret_value().encode(),
         msg=code.encode(),
         digestmod=hashlib.sha256,
     ).hexdigest()
@@ -59,8 +59,7 @@ def _hash_2fa_code(app: web.Application, *, code: str) -> str:
     """HMAC-SHA256 of the OTP so that only a non-reversible digest (never the
     plaintext code) is persisted in Redis. Keyed with the server-side session secret.
     """
-    secret_key = get_session_settings(app).SESSION_SECRET_KEY.get_secret_value()
-    return hash_2fa_code_for_storage(code=code, secret_key=secret_key)
+    return hash_2fa_code_for_storage(code=code, secret_key=get_session_settings(app).SESSION_SECRET_KEY)
 
 
 @log_decorator(log, level=logging.DEBUG)

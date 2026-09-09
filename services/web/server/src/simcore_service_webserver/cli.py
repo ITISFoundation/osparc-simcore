@@ -141,8 +141,14 @@ def otp_to_hmac(
 ) -> None:
     """Converts an OTP into the HMAC digest persisted in Redis for 2FA checks."""
     # NOTE: keeping imports here to reduce CLI load time
+    from pydantic import SecretStr  # noqa: PLC0415
+
     from .login._twofa_service import hash_2fa_code_for_storage  # noqa: PLC0415
     from .session.settings import SessionSettings  # noqa: PLC0415
 
-    secret_key = session_secret_key or SessionSettings.create_from_envs().SESSION_SECRET_KEY.get_secret_value()
+    secret_key = (
+        SecretStr(session_secret_key)
+        if session_secret_key is not None
+        else SessionSettings.create_from_envs().SESSION_SECRET_KEY
+    )
     typer.echo(hash_2fa_code_for_storage(code=otp, secret_key=secret_key))
