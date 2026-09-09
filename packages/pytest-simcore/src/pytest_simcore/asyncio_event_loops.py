@@ -10,22 +10,18 @@ all the tests in this repository.
 """
 
 import asyncio
-from collections.abc import Callable
 
 import pytest
 import uvloop
 
 
-def pytest_asyncio_loop_factories() -> dict[str, Callable[[], asyncio.AbstractEventLoop]]:
-    """Tell pytest-asyncio to build every test event loop with uvloop.
-
-    This is the supported replacement for the (now deprecated) ``event_loop_policy``
-    fixture override. Registering a single loop factory here makes all asyncio tests and
-    their fixtures run on uvloop, the event loop we use in production.
+@pytest.fixture(scope="session")
+def event_loop_policy():
+    """Override the event loop policy to use uvloop which is the one we use in production
 
     SEE https://pytest-asyncio.readthedocs.io/en/stable/how-to-guides/uvloop.html
     """
-    return {"uvloop": uvloop.new_event_loop}
+    return uvloop.EventLoopPolicy()
 
 
 async def test_using_uvloop_event_loop():
@@ -33,7 +29,7 @@ async def test_using_uvloop_event_loop():
 
     Manually import and add it your test-suite to run this test.
     """
-    assert isinstance(asyncio.get_running_loop(), uvloop.Loop)
+    assert isinstance(asyncio.get_event_loop_policy(), uvloop.EventLoopPolicy)
 
 
 @pytest.fixture
