@@ -158,10 +158,10 @@ def _load_glossary(path: str) -> GlossaryData:
     return GlossaryData(glossaries, lang_names)
 
 
-# Placeholders like {min_size}, %s, or %(count)s must survive translation unchanged.
+# Placeholders like {min_size}, %s, %1, or %(count)s must survive translation unchanged.
 # The %(name)s form (Python named percent formatting, used by gettext/Jinja plurals)
 # must come before %[sdif] so the named variant is matched as a whole.
-PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s)")
+PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s|%\d+)")
 TRAILING_WHITESPACE_RE: Final = re.compile(r"(\s+)$")
 NPLURALS_RE: Final = re.compile(r"nplurals\s*=\s*(\d+)")
 
@@ -629,7 +629,7 @@ def _build_logger(log_file: Path | None) -> logging.Logger | None:
 
 
 @app.command()
-def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915
+def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
     out: Path = typer.Option(..., help="Output .po file path"),
     pot: Path = typer.Option(Path("messages.pot"), help="Source .pot template"),
     in_po: Path | None = typer.Option(

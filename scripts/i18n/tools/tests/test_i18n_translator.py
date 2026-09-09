@@ -156,10 +156,12 @@ def test_clean_tcomment_repairs_inverted_interpretation() -> None:
 
 
 def test_protect_restore_roundtrip_preserves_placeholders() -> None:
-    protected = tr._protect("Max {n} of %s items")
+    protected = tr._protect("Max {n} of %1 (%2 users) and %s items")
     assert "{n}" not in protected.text
+    assert "%1" not in protected.text
+    assert "%2" not in protected.text
     assert "%s" not in protected.text
-    assert tr._restore(protected.text, protected.mapping) == "Max {n} of %s items"
+    assert tr._restore(protected.text, protected.mapping) == "Max {n} of %1 (%2 users) and %s items"
 
 
 def test_normalize_trailing_whitespace_matches_source_intent() -> None:
