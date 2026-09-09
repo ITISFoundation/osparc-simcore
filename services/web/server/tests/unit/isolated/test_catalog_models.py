@@ -2,11 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 import json
 from copy import deepcopy
 
 import pytest
+import uvloop
 from pint import UnitRegistry
 from pytest_benchmark.fixture import BenchmarkFixture
 from simcore_service_webserver.catalog._controller_rest import RESPONSE_MODEL_POLICY
@@ -71,9 +71,7 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry | None, benc
 
     def _run_async_test():
         s = deepcopy(catalog_service)
-        asyncio.get_event_loop().run_until_complete(
-            replace_service_input_outputs(s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY)
-        )
+        uvloop.run(replace_service_input_outputs(s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY))
         return s
 
     result = benchmark(_run_async_test)
