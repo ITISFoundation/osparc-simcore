@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
 from models_library.functions_errors import FunctionBaseError
+from pydantic import ValidationError
 from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -30,6 +31,9 @@ def setup(app: FastAPI, *, is_debug: bool = False):
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
+    # e.g. a pydantic model built from validated input (not the request body itself)
+    # failing validation deep inside business logic -- same 422 shape as above.
+    app.add_exception_handler(ValidationError, http422_error_handler)
     app.add_exception_handler(LogStreamingBaseError, log_handling_error_handler)
     app.add_exception_handler(CustomBaseError, custom_error_handler)
     app.add_exception_handler(BaseBackEndError, backend_error_handler)
