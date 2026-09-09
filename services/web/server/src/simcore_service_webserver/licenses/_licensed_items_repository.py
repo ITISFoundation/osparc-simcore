@@ -56,8 +56,8 @@ def _create_insert_query(
             version=version,
             pricing_plan_id=pricing_plan_id,
             product_name=product_name,
-            created=func.now(),
-            modified=func.now(),
+            created=func.now(),  # pylint: disable=not-callable
+            modified=func.now(),  # pylint: disable=not-callable
         )
         .returning(*_SELECTION_ARGS)
     )
@@ -111,7 +111,7 @@ async def list_(
 
     # Select total count from base_query
     subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(subquery)  # pylint: disable=not-callable
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
@@ -163,7 +163,7 @@ async def update(
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
-        licensed_items.c.modified.name: func.now(),
+        licensed_items.c.modified.name: func.now(),  # pylint: disable=not-callable
     }
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -272,7 +272,7 @@ async def get_licensed_item_by_key_version(
         row = result.one_or_none()
         if row is None:
             raise LicensedKeyVersionNotFoundError(key=key, version=version)
-        return LicensedItem.model_validate(dict(row))
+        return LicensedItem.model_validate(row, from_attributes=True)
 
 
 async def list_licensed_items(
@@ -318,7 +318,7 @@ async def list_licensed_items(
 
     # Select total count from base_query
     subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(subquery)  # pylint: disable=not-callable
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
@@ -337,6 +337,6 @@ async def list_licensed_items(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[LicensedItem] = [LicensedItem.model_validate(dict(row)) async for row in result]
+        items: list[LicensedItem] = [LicensedItem.model_validate(row, from_attributes=True) async for row in result]
 
         return cast(int, total_count), items

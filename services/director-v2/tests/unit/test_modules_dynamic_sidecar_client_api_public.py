@@ -1,7 +1,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from collections.abc import AsyncIterable, Callable, Iterator
+from collections.abc import AsyncIterable, Callable, Generator
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import AsyncMock
@@ -23,6 +23,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
     get_sidecars_client,
+    remove_sidecars_client,
     shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
@@ -89,7 +90,7 @@ def get_patched_client(sidecars_client: SidecarsClient, mocker: MockerFixture) -
         method: str,
         return_value: Any | None = None,
         side_effect: Callable | None = None,
-    ) -> Iterator[SidecarsClient]:
+    ) -> Generator[SidecarsClient]:
         mocker.patch(
             f"simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin.ThinSidecarsClient.{method}",
             return_value=return_value,
@@ -107,7 +108,7 @@ async def test_is_healthy(
     dynamic_sidecar_endpoint: AnyHttpUrl,
     is_healthy: bool,
     with_retry: bool,
-) -> None:
+):
     mock_json = {"is_healthy": is_healthy}
     with get_patched_client(
         "get_health" if with_retry else "get_health_no_retry",
@@ -121,7 +122,7 @@ async def test_is_healthy_times_out(
     sidecars_client: SidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     caplog_info_level: pytest.LogCaptureFixture,
-) -> None:
+):
     assert await sidecars_client.is_healthy(dynamic_sidecar_endpoint) is False
     # check if the right amount of messages was captured by the logs
     unexpected_counter = 1
@@ -154,7 +155,7 @@ async def test_is_healthy_api_error(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     side_effect: Exception,
-) -> None:
+):
     with get_patched_client(
         "get_health",
         side_effect=side_effect,
@@ -162,7 +163,7 @@ async def test_is_healthy_api_error(
         assert await client.is_healthy(dynamic_sidecar_endpoint) is False
 
 
-async def test_containers_inspect(get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+async def test_containers_inspect(get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl):
     mock_json = {"ok": "data"}
     with get_patched_client(
         "get_containers",
@@ -171,9 +172,7 @@ async def test_containers_inspect(get_patched_client: Callable, dynamic_sidecar_
         assert await client.containers_inspect(dynamic_sidecar_endpoint) == mock_json
 
 
-async def test_containers_docker_status_api_ok(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
+async def test_containers_docker_status_api_ok(get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl):
     mock_json = {"container_id": {"ok": "data"}}
     with get_patched_client(
         "get_containers",
@@ -182,9 +181,7 @@ async def test_containers_docker_status_api_ok(
         assert await client.containers_docker_status(dynamic_sidecar_endpoint) == mock_json
 
 
-async def test_containers_docker_status_api_error(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
+async def test_containers_docker_status_api_error(get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl):
     with get_patched_client(
         "get_containers",
         side_effect=UnexpectedStatusError(
@@ -206,7 +203,7 @@ async def test_toggle_service_ports_io(
     dynamic_sidecar_endpoint: AnyHttpUrl,
     enable_outputs: bool,
     enable_inputs: bool,
-) -> None:
+):
     with get_patched_client(
         "patch_containers_ports_io",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
@@ -226,7 +223,7 @@ async def test_service_outputs_create_dirs(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     outputs_labels: dict[str, Any],
-) -> None:
+):
     with get_patched_client(
         "post_containers_ports_outputs_dirs",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
@@ -239,7 +236,7 @@ async def test_get_entrypoint_container_name_ok(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     dynamic_sidecar_network_name: str,
-) -> None:
+):
     with get_patched_client(
         "get_containers_name",
         return_value=Response(status_code=status.HTTP_200_OK, json="a_test_container"),
@@ -255,7 +252,7 @@ async def test_get_entrypoint_container_name_api_not_found(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     dynamic_sidecar_network_name: str,
-) -> None:
+):
     with (
         get_patched_client(
             "get_containers_name",
@@ -274,7 +271,7 @@ async def test_attach_container_to_network(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     network_aliases: list[str],
-) -> None:
+):
     with get_patched_client(
         "post_containers_networks_attach",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
@@ -294,7 +291,7 @@ async def test_attach_container_to_network(
 async def test_detach_container_from_network(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
-) -> None:
+):
     with get_patched_client(
         "post_containers_networks_detach",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
@@ -317,7 +314,7 @@ async def test_update_volume_state(
     dynamic_sidecar_endpoint: AnyHttpUrl,
     volume_category: VolumeCategory,
     volume_status: VolumeStatus,
-) -> None:
+):
     with get_patched_client(
         "put_volumes",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
@@ -340,7 +337,7 @@ async def test_get_service_activity(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_dict: dict[str, Any],
-) -> None:
+):
     with get_patched_client(
         "get_containers_activity",
         return_value=Response(status_code=status.HTTP_200_OK, text=json_dumps(mock_dict)),
@@ -353,7 +350,7 @@ async def test_get_service_activity(
 async def test_free_reserved_disk_space(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
-) -> None:
+):
     with get_patched_client(
         "post_disk_reserved_free",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
@@ -364,3 +361,28 @@ async def test_free_reserved_disk_space(
             )
             is None
         )
+
+
+async def test_remove_sidecars_client_tears_down_and_pops_client(
+    sidecars_client: SidecarsClient, mocker: MockerFixture
+):
+    app = sidecars_client._app  # noqa: SLF001  # pylint:disable=protected-access
+    node_id = next(iter(app.state.sidecars_api_clients))
+    teardown_mock = mocker.patch.object(sidecars_client, "teardown", AsyncMock(wraps=sidecars_client.teardown))
+
+    assert node_id in app.state.sidecars_api_clients
+
+    await remove_sidecars_client(app, node_id)
+
+    teardown_mock.assert_awaited_once()
+    assert node_id not in app.state.sidecars_api_clients
+
+
+async def test_remove_sidecars_client_missing_client_is_a_noop(sidecars_client: SidecarsClient, faker: Faker) -> None:
+    app = sidecars_client._app  # noqa: SLF001  # pylint:disable=protected-access
+    existing_node_ids = set(app.state.sidecars_api_clients)
+
+    # does not raise even though no client was ever created for this node
+    await remove_sidecars_client(app, faker.uuid4(cast_to=None))
+
+    assert set(app.state.sidecars_api_clients) == existing_node_ids

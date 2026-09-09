@@ -14,7 +14,6 @@ New workflow (fixes 2+4 hybrid):
 These tests are the completion gate (Phase 0): implementation is done when this suite passes.
 """
 
-import asyncio
 import re
 import urllib.parse
 from collections.abc import AsyncIterator
@@ -44,6 +43,10 @@ from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from tenacity.asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -83,6 +86,22 @@ def _assert_dispatch_fragment(fragment: str) -> str:
     m = re.match(r"(?:/dispatch\?study_id=|/study/)([0-9a-f\-]+)(?:/dispatch)?$", fragment)
     assert m, f"Expected fragment with dispatch route, got: {fragment!r}"
     return m.group(1)
+
+
+async def _poll_lr_task_until_done(client: TestClient, status_href: str) -> None:
+    """Poll the LRT status endpoint until done, retrying via tenacity instead of a fixed sleep loop."""
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            poll_resp = await client.get(urllib.parse.urlparse(status_href).path)
+            poll_payload = await poll_resp.json()
+            assert poll_resp.status == status.HTTP_200_OK, poll_payload
+            task_status = poll_payload.get("data") or poll_payload
+            assert task_status.get("done"), "task incomplete"
 
 
 # ---------------------------------------------------------------------------
@@ -154,9 +173,9 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
 async def storage_subsystem_mock_override(
     storage_subsystem_mock: MockedStorageSubsystem, mocker: MockerFixture, faker: Faker
 ) -> None:
-    """Mocks copy_data_folders_from_project used by the dispatch task."""
+    """Mocks copy_data_folders_from_project used by the shared clone_project_data primitive."""
     mock_fn = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._dispatch_task.copy_data_folders_from_project",
+        "simcore_service_webserver.projects._projects_service.storage_service.copy_data_folders_from_project",
         autospec=True,
     )
 
@@ -303,24 +322,15 @@ async def test_dispatch_task_completes_and_returns_cloned_project_id(
     result_href: str = task_data["result_href"]
 
     # Poll until done (task is backed by the LRT machinery)
-    cloned_project_id: str | None = None
-    for _ in range(30):
-        await asyncio.sleep(0.1)  # yield to let the background task make progress
-        poll_resp = await client.get(urllib.parse.urlparse(status_href).path)
-        poll_payload = await poll_resp.json()
-        assert poll_resp.status == status.HTTP_200_OK, poll_payload
-        task_status = poll_payload.get("data") or poll_payload
-        if task_status.get("done"):
-            # Fetch result
-            result_resp = await client.get(urllib.parse.urlparse(result_href).path)
-            result_payload = await result_resp.json()
-            assert result_resp.status == status.HTTP_200_OK, result_payload
-            result = result_payload.get("data") or result_payload
-            cloned_project_id = result.get("project_id")
-            assert cloned_project_id, f"Expected project_id in task result, got: {result}"
-            break
+    await _poll_lr_task_until_done(client, status_href)
 
-    assert cloned_project_id is not None, "Task never completed"
+    # Fetch result
+    result_resp = await client.get(urllib.parse.urlparse(result_href).path)
+    result_payload = await result_resp.json()
+    assert result_resp.status == status.HTTP_200_OK, result_payload
+    result = result_payload.get("data") or result_payload
+    cloned_project_id = result.get("project_id")
+    assert cloned_project_id, f"Expected project_id in task result, got: {result}"
 
     # Guest owns exactly one project that is a copy of the template
     projects = await _get_user_projects(client)
@@ -354,15 +364,11 @@ async def test_dispatch_works_for_logged_user(
     result_href = task_data["result_href"]
 
     # Poll until done (emulates SPA operation)
-    for _ in range(30):
-        await asyncio.sleep(0.1)  # yield to let the background task make progress
-        poll_resp = await client.get(urllib.parse.urlparse(status_href).path)
-        task_status = (await poll_resp.json()).get("data") or (await poll_resp.json())
-        if task_status.get("done"):
-            result_resp = await client.get(urllib.parse.urlparse(result_href).path)
-            result = (await result_resp.json()).get("data") or (await result_resp.json())
-            assert result.get("project_id"), f"Expected project_id, got: {result}"
-            break
+    await _poll_lr_task_until_done(client, status_href)
+
+    result_resp = await client.get(urllib.parse.urlparse(result_href).path)
+    result = (await result_resp.json()).get("data") or (await result_resp.json())
+    assert result.get("project_id"), f"Expected project_id, got: {result}"
 
 
 # Phase 0 — Security Test 1: GUEST cannot dispatch a non-published project

@@ -14,12 +14,21 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         "broker_connection_retry_on_startup": True,
         "broker_connection_retry": True,
         "broker_heartbeat": 30,
+        # NOTE: Three retries limit one operation to four backend calls and,
+        # with Celery's full-jitter exponential backoff, add at most 700 ms of sleep
+        # (about 350 ms on average). The 500 ms cap bounds each wait if the retry
+        # count is increased later.
+        "result_backend_always_retry": True,
+        "result_backend_max_retries": 3,
+        "result_backend_base_sleep_between_retries_ms": 50,
+        "result_backend_max_sleep_between_retries_ms": 500,
         "result_expires": celery_settings.CELERY_RESULT_EXPIRES,
         "result_extended": True,
         "result_serializer": "json",
         "task_default_queue": DEFAULT_QUEUE,
         "task_send_sent_event": True,
         "task_track_started": True,
+        "worker_hijack_root_logger": False,
         "worker_send_task_events": True,
         # Configure celery to use quorum queues
         # https://docs.celeryq.dev/en/v5.5.2/userguide/configuration.html#std-setting-task_default_queue_type

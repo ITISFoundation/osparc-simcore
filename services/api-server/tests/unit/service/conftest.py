@@ -143,6 +143,7 @@ def job_service(
         _directorv2_rpc_client=director_v2_rpc_client,
         _director2_api=director2_api,
         _solver_service=solver_service,
+        _kms_client=None,
         user_id=user_id,
         product_name=product_name,
     )

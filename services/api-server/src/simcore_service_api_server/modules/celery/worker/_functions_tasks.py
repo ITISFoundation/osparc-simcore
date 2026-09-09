@@ -90,6 +90,7 @@ async def _assemble_function_job_service(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
         solver_service=solver_service,
+        kms_client=app.state.kms_client,
     )
 
     return get_function_job_service(

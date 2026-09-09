@@ -225,6 +225,9 @@ type AWSTagValue = Annotated[
 
 type EC2Tags = dict[AWSTagKey, AWSTagValue]
 
+# NOTE: shared across autoscaling/clusters-keeper so cost allocation reports in AWS Cost Explorer can be unified
+PRODUCT_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("io.simcore.product_name")
+
 
 @dataclass(frozen=True)
 class EC2InstanceData:

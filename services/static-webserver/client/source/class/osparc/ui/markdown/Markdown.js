@@ -56,12 +56,31 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     this.setHeight(1);
   },
 
+  statics: {
+    /**
+     * Returns true if the given string is an http(s) URL pointing to a markdown (.md) file.
+     * @param {String} value
+     */
+    isMarkdownFileUrl: function(value) {
+      if (!osparc.utils.Utils.isValidHttpUrl(value)) {
+        return false;
+      }
+      try {
+        return new URL(value).pathname.toLowerCase().endsWith(".md");
+      } catch (err) {
+        return false;
+      }
+    },
+  },
+
   properties: {
     /**
      * Holds the raw markdown text and updates the label's {@link #value} whenever new markdown arrives.
+     * Accepts a plain String or a qx.locale.LocalizedString (from tr()); normalized to a plain string in __applyMarkdown.
      */
     value: {
-      check: "String",
+      check: value => typeof value === "string" || value instanceof qx.locale.LocalizedString,
+      nullable: true,
       apply: "__applyMarkdown"
     },
 
@@ -77,6 +96,42 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
   members: {
     __loadMarked: null,
+    __resizeObserver: null,
+
+    /**
+     * Fetches the markdown content from the given URL and sets it as the value.
+     * @param {String} url URL pointing to a markdown file.
+     * @return {Promise} resolves once the content has been fetched and set.
+     */
+    setValueFromUrl: function(url) {
+      return fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch markdown (${response.status}) from ${url}`);
+          }
+          return response.text();
+        })
+        .then(text => this.setValue(text));
+    },
+
+    /**
+     * Sets the value from a string that can either be raw markdown or a URL to a markdown file.
+     * - If it's a URL to a .md file, the content is fetched and rendered
+     * - Otherwise the string is rendered as is
+     * @param {String} value Raw markdown text or a URL to a markdown (.md) file.
+     */
+    setValueSmart: function(value) {
+      if (osparc.ui.markdown.Markdown.isMarkdownFileUrl(value)) {
+        this.setValueFromUrl(value)
+          .catch(err => {
+            console.error(err);
+            this.setValue(value);
+          });
+      } else {
+        this.setValue(value);
+      }
+    },
+
     /**
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
@@ -104,7 +159,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         // With this, a single line break (Enter) in your Markdown input will render as a <br> in HTML.
         marked.setOptions({ breaks: true }); //
 
-        const html = marked.parse(value);
+        const html = marked.parse(value == null ? "" : String(value));
 
         const safeHtml = osparc.wrapper.DOMPurify.sanitize(html);
         this.setHtml(safeHtml);
@@ -112,6 +167,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         // for some reason the content is not immediately there
         qx.event.Timer.once(() => {
           this.__parseImages();
+          this.__observeContentResize();
           this.__resizeMe();
         }, this, 100);
 
@@ -130,6 +186,24 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           this.__resizeMe();
         };
       }
+    },
+
+    // Catch any post-render content size change (fonts/images loading, <details>
+    // toggles, iframes/videos, ...) that wouldn't otherwise fire a qooxdoo resize
+    // event, so the widget always recomputes its height to fit its content.
+    __observeContentResize: function() {
+      const domElement = this.__getDomElement();
+      if (domElement === null || typeof ResizeObserver === "undefined") {
+        return;
+      }
+      if (this.__resizeObserver) {
+        this.__resizeObserver.disconnect();
+      } else {
+        this.__resizeObserver = new ResizeObserver(() => this.__resizeMe());
+      }
+      // Observe the children rather than the widget's own element to avoid a
+      // feedback loop with the height we set on it in __resizeMe.
+      Array.from(domElement.children).forEach(child => this.__resizeObserver.observe(child));
     },
 
     // qx.ui.embed.html scale to content
@@ -213,5 +287,12 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       return qx.bom.element.Dimension.getSize(element);
     },
+  },
+
+  destruct: function() {
+    if (this.__resizeObserver) {
+      this.__resizeObserver.disconnect();
+      this.__resizeObserver = null;
+    }
   }
 });

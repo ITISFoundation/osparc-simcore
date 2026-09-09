@@ -12,6 +12,7 @@ import socketio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from models_library.api_schemas_dynamic_sidecar.ports import (
     InputPortStatus,
     InputStatus,
@@ -44,8 +45,10 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications import (
     PortNotifier,
     StatePathsNotifier,
+    configure_notifications,
     publish_disk_usage,
 )
+from simcore_service_dynamic_sidecar.modules.notifications import _setup as notifications_setup
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
 )
@@ -59,6 +62,25 @@ pytest_simcore_core_services_selection = [
 ]
 
 _NUMBER_OF_CLIENTS: Final[NonNegativeInt] = 10
+
+
+def test_configure_notifications_preserves_socketio_before_notifier(mocker: MockerFixture):
+    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    configured_lifespans: list[str] = []
+    mocker.patch.object(
+        notifications_setup,
+        "configure_notifier",
+        side_effect=lambda _: configured_lifespans.append("notifier"),
+    )
+    mocker.patch.object(
+        notifications_setup,
+        "configure_socketio",
+        side_effect=lambda _: configured_lifespans.append("socketio"),
+    )
+
+    configure_notifications(app_lifespan)
+
+    assert configured_lifespans == ["socketio", "notifier"]
 
 
 @pytest.fixture

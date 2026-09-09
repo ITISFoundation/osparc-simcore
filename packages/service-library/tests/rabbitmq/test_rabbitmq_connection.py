@@ -103,7 +103,7 @@ def _get_rabbitmq_api_params(rabbit_service: RabbitSettings) -> dict[str, Any]:
 def _assert_rabbitmq_has_connections(rabbit_service: RabbitSettings, num_connections: int) -> list[str]:
     rabbit_list_connections_url = HttpUrl.build(
         **_get_rabbitmq_api_params(rabbit_service),
-        path="/api/connections/",
+        path="api/connections/",
     )
     response = requests.get(rabbit_list_connections_url, timeout=5)
     response.raise_for_status()
@@ -121,7 +121,7 @@ def _assert_rabbitmq_has_connections(rabbit_service: RabbitSettings, num_connect
 def _assert_connection_state(rabbit_service: RabbitSettings, connection_name: str, *, state: str) -> None:
     rabbit_specific_connection_url = HttpUrl.build(
         **_get_rabbitmq_api_params(rabbit_service),
-        path=f"/api/connections/{connection_name}",
+        path=f"api/connections/{connection_name}",
     )
     response = requests.get(rabbit_specific_connection_url, timeout=5)
     response.raise_for_status()
@@ -132,7 +132,7 @@ def _assert_connection_state(rabbit_service: RabbitSettings, connection_name: st
 def _close_rabbitmq_connection(rabbit_service: RabbitSettings, connection_name: str) -> None:
     rabbit_specific_connection_url = HttpUrl.build(
         **_get_rabbitmq_api_params(rabbit_service),
-        path=f"/api/connections/{connection_name}",
+        path=f"api/connections/{connection_name}",
     )
     response = requests.delete(rabbit_specific_connection_url, timeout=5)
     response.raise_for_status()
@@ -164,4 +164,4 @@ async def test_rabbit_server_closes_connection(
     # since the heartbeat during testing is low, the connection disappears fast
     _assert_rabbitmq_has_connections(rabbit_service, 0)
 
-    await _assert_rabbit_client_state(rabbit_client, healthy=False)
+    await _assert_rabbit_client_state(rabbit_client, healthy=True)

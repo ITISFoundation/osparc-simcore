@@ -310,7 +310,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const successfulMsg = this.tr("Changes on the Auto recharge were successfully saved");
       saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(this.__enabledField.getValue(), saveAutoRechargeBtn, successfulMsg));
       btnContainer.addAt(saveAutoRechargeBtn, 1)
-      const cancelBtn = new qx.ui.form.Button("Cancel").set({
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "appmotion-button"
       });
       cancelBtn.addListener("execute", () => this.fireEvent("close"))

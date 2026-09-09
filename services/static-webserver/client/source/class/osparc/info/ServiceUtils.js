@@ -186,24 +186,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
       */
     createDescription: function(serviceData) {
       const description = new osparc.ui.markdown.Markdown();
-      // display markdown link content if that's the case
-      if (
-        osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
-        serviceData["description"].endsWith(".md")
-      ) {
-        // if it's a link, fetch the content
-        fetch(serviceData["description"])
-          .then(response => response.blob())
-          .then(blob => blob.text())
-          .then(markdown => {
-            description.setValue(markdown)
-          })
-          .catch(err => {
-            console.error(err);
-            description.setValue(serviceData["description"]);
-          });
-      } else if (serviceData["description"]) {
-        description.setValue(serviceData["description"]);
+      if (serviceData["description"]) {
+        description.setValueSmart(serviceData["description"]);
       } else {
         description.setValue(this.tr("No description"));
       }

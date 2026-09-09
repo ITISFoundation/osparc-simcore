@@ -46,3 +46,21 @@ class ServiceInputsUseFileToKeyMapButReceivesZipDataError(ContainerTaskError):
         "map but receives zip data instead. "
         "TIP: either pass a single file or zip file and remove the file-to-key map parameter."
     )
+
+
+class ServiceEncryptionError(ContainerTaskError):
+    code = "runtime.encryption"  # type: ignore[assignment]
+    msg_template = user_message(
+        "The service {service_key}:{service_version} could not securely {operation} "
+        "the {file_role} file {file_id}: {error_message}. "
+        "TIP: this usually means the provided encryption key or context does not match "
+        "the one used to encrypt the data."
+    )
+
+
+class ServiceEncryptionUnavailableError(ContainerTaskError):
+    code = "runtime.encryption.unavailable"  # type: ignore[assignment]
+    msg_template = user_message(
+        "The service {service_key}:{service_version} requires decryption, but the encryption "
+        "service is currently unavailable: {error_message}. Please contact support if this persists."
+    )

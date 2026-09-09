@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
+from models_library.products import ProductName
 from models_library.services_metadata_runtime import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
 )
@@ -103,6 +104,12 @@ class ComputationalAutoscalingProvider:
         assert task  # nosec
         # NOTE: currently no such constraints are defined for dask tasks
         return {}
+
+    def get_task_product_name(self, task) -> ProductName | None:  # pylint: disable=useless-return
+        assert self  # nosec
+        assert task  # nosec
+        # NOTE: currently not tagged on computational EC2 instances
+        return None
 
     async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources:
         assert self  # nosec

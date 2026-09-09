@@ -33,6 +33,7 @@ from models_library.rpc_pagination import (
     PageLimitInt,
     PageRpc,
 )
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
@@ -253,6 +254,28 @@ async def get_service_ports(
     )
     assert TypeAdapter(list[ServicePortGet]).validate_python(result) is not None  # nosec
     return cast(list[ServicePortGet], result)
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_service_labels(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> SimcoreServiceLabels:
+    """Gets the docker image labels of a specific service version
+
+    Raises:
+        ValidationError: on invalid arguments
+    """
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_service_labels"),
+        service_key=service_key,
+        service_version=service_version,
+    )
+    return TypeAdapter(SimcoreServiceLabels).validate_python(result)
 
 
 @validate_call(config={"arbitrary_types_allowed": True})

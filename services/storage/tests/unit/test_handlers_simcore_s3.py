@@ -5,7 +5,6 @@
 # pylint:disable=no-name-in-module
 # pylint:disable=too-many-nested-blocks
 
-import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Literal
@@ -33,9 +32,6 @@ from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
-
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, client: httpx.AsyncClient):

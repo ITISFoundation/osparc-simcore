@@ -259,9 +259,12 @@ qx.Class.define("osparc.ui.table.rowrenderer.PopUpLogMessage", {
       const rowData = rowInfo.rowData;
       rowElem.style.cursor = "pointer";
       rowElem.onclick = function() {
+        // eslint-disable-next-line no-underscore-dangle
         if (self.__activeRowIndex === rowIndex) {
+          // eslint-disable-next-line no-underscore-dangle
           self.__closePopup();
         } else {
+          // eslint-disable-next-line no-underscore-dangle
           self.__showPopup(rowElem, rowIndex, rowData);
         }
       };

@@ -38,6 +38,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
+from simcore_service_webserver.director_v2 import _director_v2_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 
@@ -224,9 +225,16 @@ async def project_db_cleaner(client: TestClient):
     await delete_all_projects(client.app)
 
 
-@pytest.fixture(autouse=True)
-async def mocked_director_v2(director_v2_service_mock: aioresponses) -> None:
-    pass
+@pytest.fixture
+async def mocked_director_v2(
+    director_v2_service_mock: aioresponses,
+    mocker: MockerFixture,
+) -> mock.AsyncMock:
+    return mocker.patch(
+        f"{_director_v2_service.__name__}.computations.batch_get_computations_latest_states",
+        spec=True,
+        return_value=[],
+    )
 
 
 @pytest.fixture()

@@ -15,7 +15,6 @@ from simcore_postgres_database.utils_projects_metadata import (
     DBProjectInvalidParentNodeError,
     DBProjectInvalidParentProjectError,
     DBProjectNotFoundError,
-    ProjectMetadata,
 )
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
@@ -90,15 +89,6 @@ async def get_project_custom_metadata(
 
 
 @_handle_projects_metadata_exceptions
-async def get_project_metadata_or_none(engine: AsyncEngine, project_uuid: ProjectID) -> ProjectMetadata | None:
-    async with pass_or_acquire_connection(engine) as connection:
-        try:
-            return await utils_projects_metadata.get(connection, project_uuid=project_uuid)
-        except DBProjectNotFoundError:
-            return None
-
-
-@_handle_projects_metadata_exceptions
 async def set_project_custom_metadata(
     engine: AsyncEngine,
     project_uuid: ProjectID,
@@ -166,5 +156,5 @@ async def list_project_uuids_by_root_parent_project_id(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(stmt)
-        return [ProjectID(row["project_uuid"]) async for row in result]
+        result = await conn.stream_scalars(stmt)
+        return [ProjectID(project_uuid) async for project_uuid in result]

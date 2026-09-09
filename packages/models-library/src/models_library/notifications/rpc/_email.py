@@ -30,7 +30,7 @@ class EmailContent(BaseModel):
 class EmailAddressing(BaseModel):
     from_identity: SenderIdentity = SenderIdentity.SUPPORT
     to: list[EmailContact]
-    bcc: EmailContact | None = None
+    bcc: list[EmailContact] | None = None
     reply_to: EmailContact | None = None
 
     attachments: list[EmailAttachment] | None = None

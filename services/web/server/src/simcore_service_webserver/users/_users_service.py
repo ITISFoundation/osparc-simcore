@@ -1,9 +1,10 @@
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfileRestPatch
+from annotated_types import doc
+from common_library.gettext_support import SupportedLocale
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -26,7 +27,6 @@ from ._models import (
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
-    UserModelAdapter,
 )
 from .errors import (
     MissingGroupExtraPropertiesForProductError,
@@ -61,21 +61,34 @@ async def search_public_users(
 
 
 async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
-    """
-    :raises UserNotFoundError: if missing but NOT if marked for deletion!
+    """Returns a user row by id.
+
+    Raises:
+        UserNotFoundError: If the user does not exist.
     """
     return await _users_repository.get_user_or_raise(engine=get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_email_legacy(app: web.Application, user_id: UserID | None) -> str:
-    """
-    :raises UserNotFoundError: if missing but NOT if marked for deletion!
+    """Returns the legacy email for a user id.
+
+    Raises:
+        UserNotFoundError: If the user does not exist.
     """
     return await _users_repository.get_user_email_legacy(engine=get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> GroupID:
     return await _users_repository.get_user_primary_group_id(engine=get_asyncpg_engine(app), user_id=user_id)
+
+
+async def get_user_language(
+    app: web.Application, *, user_id: UserID
+) -> Annotated[
+    SupportedLocale | None,
+    doc("The user's persisted language, or None if never set"),
+]:
+    return await _users_repository.get_user_language(get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> UserID:
@@ -106,19 +119,19 @@ async def is_user_in_product(app: web.Application, *, user_id: UserID, product_n
 
 
 async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNameDict:
-    """
-    :raises UserNotFoundError:
+    """Returns first and last name values for a user.
+
+    Raises:
+        UserNotFoundError: If the user does not exist.
     """
     return await _users_repository.get_user_fullname(app, user_id=user_id)
 
 
 async def get_user_name_and_email(app: web.Application, *, user_id: UserID) -> UserIdNamesTuple:
-    """
-    Raises:
-        UserNotFoundError
+    """Returns login name and email for a user.
 
-    Returns:
-        (user, email)
+    Raises:
+        UserNotFoundError: If the user does not exist.
     """
     row = await _users_repository.get_user_or_raise(
         get_asyncpg_engine(app),
@@ -129,9 +142,10 @@ async def get_user_name_and_email(app: web.Application, *, user_id: UserID) -> U
 
 
 async def get_user_display_and_id_names(app: web.Application, *, user_id: UserID) -> UserDisplayAndIdNamesTuple:
-    """
+    """Returns display and id-related name fields for a user.
+
     Raises:
-        UserNotFoundError
+        UserNotFoundError: If the user does not exist.
     """
     row = await _users_repository.get_user_or_raise(
         get_asyncpg_engine(app),
@@ -177,21 +191,16 @@ async def list_user_permissions(
     return permissions
 
 
-async def get_user_billing_details(
-    app: web.Application, *, user_id: UserID, product_name: ProductName
-) -> UserBillingDetails:
-    return await _users_repository.get_user_billing_details(
-        get_asyncpg_engine(app), user_id=user_id, product_name=product_name
-    )
+async def get_user_billing_details(app: web.Application, *, user_id: UserID) -> UserBillingDetails:
+    return await _users_repository.get_user_billing_details(get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_invoice_address(
     app: web.Application,
     *,
-    product_name: ProductName,
     user_id: UserID,
 ) -> UserInvoiceAddress:
-    user_billing_details = await get_user_billing_details(app, user_id=user_id, product_name=product_name)
+    user_billing_details = await get_user_billing_details(app, user_id=user_id)
 
     return UserInvoiceAddress(
         line1=user_billing_details.address,
@@ -207,8 +216,16 @@ async def get_user_invoice_address(
 #
 
 
-async def delete_user_without_projects(app: web.Application, *, user_id: UserID, clean_cache: bool = True) -> None:
-    """Deletes a user from the database if the user exists"""
+async def delete_user_without_projects(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    clean_cache: Annotated[
+        bool,
+        doc("When True, invalidates the auth policy cache after a successful deletion"),
+    ] = True,
+) -> None:
+    """Deletes a user if present and optionally invalidates auth cache."""
     # WARNING: user cannot be deleted without deleting first all its project
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
     # Consider "marking" users as deleted and havning a background job that
@@ -239,15 +256,17 @@ async def update_expired_users(app: web.Application) -> list[UserID]:
 
 async def get_my_profile(
     app: web.Application, *, user_id: UserID, product_name: ProductName
-) -> tuple[MyProfile, AggregatedPreferences]:
-    """Caller and target user is the same. Privacy settings do not apply here
+) -> Annotated[
+    tuple[MyProfile, AggregatedPreferences],
+    doc("Profile and aggregated frontend preferences for the authenticated user"),
+]:
+    """Returns the authenticated user's profile and preferences.
 
-    :raises UserNotFoundError:
-    :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
-
-    NOTE: Deferred import to avoid circular dependency at runtime.
-    This is safe because the import happens at call time, not at module import time.
+    Raises:
+        UserNotFoundError: If the user does not exist.
+        MissingGroupExtraPropertiesForProductError: If product group properties are missing.
     """
+    # Deferred import avoids a circular dependency at module import time.
     from ..user_preferences import user_preferences_service  # noqa: PLC0415
 
     my_profile = await _users_repository.get_my_profile(app, user_id=user_id)
@@ -269,13 +288,23 @@ async def update_my_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: MyProfileRestPatch,
+    updated_values: dict[str, Any],
+    updated_contact: dict[str, Any] | None = None,
 ) -> None:
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
+        updated_values=updated_values,
     )
+
+    if updated_contact:
+        # NOTE: contact or its fields canNOT be deleted, only updated.
+        # An empty `updated_contact` (e.g. `{}`) must be a no-op, not a deletion.
+        await _users_repository.update_user_billing_details(
+            get_asyncpg_engine(app),
+            user_id=user_id,
+            updates=updated_contact,
+        )
 
 
 async def update_user_phone(
@@ -284,13 +313,7 @@ async def update_user_phone(
     user_id: UserID,
     phone: str,
 ) -> None:
-    """Update user's phone number after successful verification
-
-    Args:
-        app: Web application instance
-        user_id: ID of the user whose phone to update
-        phone: Verified phone number to set
-    """
+    """Updates a user's verified phone number."""
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,

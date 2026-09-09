@@ -1,10 +1,12 @@
 """Module that takes care of communications with director v0 service"""
 
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi_lifespan_manager import LifespanManager
 from models_library.users import UserID
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
@@ -24,15 +26,16 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(
-    app: FastAPI,
+def configure_storage(
+    app_lifespan: LifespanManager,
+    *,
     storage_settings: StorageSettings | None,
     tracing_settings: TracingSettings | None,
-):
+) -> None:
     if not storage_settings:
         storage_settings = StorageSettings()
 
-    def on_startup() -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         client = httpx.AsyncClient(
             base_url=f"{storage_settings.api_base_url}",
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
@@ -47,14 +50,12 @@ def setup(
             client=client,
         )
         logger.debug("created client for storage: %s", storage_settings.api_base_url)
+        try:
+            yield
+        finally:
+            await client.aclose()
 
-    async def on_shutdown() -> None:
-        client = StorageClient.instance(app).client
-        await client.aclose()
-        del client
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 @dataclass

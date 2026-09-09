@@ -8,6 +8,7 @@ import logging
 
 from aiohttp import web
 from common_library.logging.logging_base import get_log_record_extra
+from models_library.users import UserID
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer  # type: ignore[import-untyped]
@@ -35,7 +36,7 @@ async def _on_user_logout(user_id: str, client_session_id: str | None, app: web.
     _logger.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
     sio: AsyncServer = get_socket_server(app)
-    with managed_resource(int(user_id), client_session_id, app) as user_session:
+    with managed_resource(UserID(int(user_id)), client_session_id, app) as user_session:
         # start by disconnecting this client if possible
         if client_session_id:
             if socket_id := await user_session.get_socket_id():

@@ -26,6 +26,7 @@ from tenacity.stop import stop_after_attempt
 from . import docker_utils
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
+    LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
     MEM_RESOURCE_LIMIT_KEY,
     SERVICE_REVERSE_PROXY_SETTINGS,
     SERVICE_RUNTIME_BOOTSETTINGS,
@@ -110,6 +111,17 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
 
 _ENV_NUM_ELEMENTS: Final[int] = 2
 
+_TASK_STATES_PULLING: Final[frozenset[str]] = frozenset({"assigned", "accepted", "preparing"})
+_TASK_STATES_STARTING: Final[frozenset[str]] = frozenset({"ready", "starting"})
+_TASK_STATES_COMPLETE: Final[frozenset[str]] = frozenset({"complete", "shutdown"})
+_STATE_SAVE_IGNORED_STATUS_CODES: Final[frozenset[int]] = frozenset(
+    {
+        status.HTTP_405_METHOD_NOT_ALLOWED,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_501_NOT_IMPLEMENTED,
+    }
+)
+
 
 def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
@@ -191,9 +203,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key(
-                "product_name"
-            ): "osparc",  # fixed no legacy available in other products
+            _to_simcore_runtime_docker_label_key("product_name"): LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
         }
@@ -237,9 +247,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
             _to_simcore_runtime_docker_label_key("node_id"): node_uuid,
             _to_simcore_runtime_docker_label_key("swarm_stack_name"): app_settings.DIRECTOR_SWARM_STACK_NAME,
             _to_simcore_runtime_docker_label_key("simcore_user_agent"): request_simcore_user_agent,
-            _to_simcore_runtime_docker_label_key(
-                "product_name"
-            ): "osparc",  # fixed no legacy available in other products
+            _to_simcore_runtime_docker_label_key("product_name"): LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
             _to_simcore_runtime_docker_label_key("type"): ("main" if main_service else "dependency"),
@@ -268,7 +276,7 @@ async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR091
     # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
-            "product_name": "osparc",
+            "product_name": LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_uuid,
@@ -586,14 +594,14 @@ async def _get_service_state(  # noqa: C901, PLR0912
         return (ServiceState.FAILED, "getting state timed out")
 
     # we are only interested in the last task which has been created last
-    last_task = sorted(tasks, key=lambda task: task["UpdatedAt"])[-1]
+    last_task = max(tasks, key=lambda task: task["UpdatedAt"])
     task_state = last_task["Status"]["State"]
 
     _logger.debug("%s %s", service["ID"], task_state)
 
     last_task_state = ServiceState.STARTING  # default
     last_task_error_msg = last_task["Status"].get("Err", "")
-    if task_state in ("failed"):
+    if task_state == "failed":
         # check if it failed already the max number of attempts we allow for
         if len(tasks) < app_settings.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
             _logger.debug("number of tasks: %s", len(tasks))
@@ -606,16 +614,16 @@ async def _get_service_state(  # noqa: C901, PLR0912
                 len(tasks),
             )
             last_task_state = ServiceState.FAILED
-    elif task_state in ("rejected"):
+    elif task_state == "rejected":
         _logger.error("service %s failed with %s", service_name, last_task["Status"])
         last_task_state = ServiceState.FAILED
-    elif task_state in ("pending"):
+    elif task_state == "pending":
         last_task_state = ServiceState.PENDING
-    elif task_state in ("assigned", "accepted", "preparing"):
+    elif task_state in _TASK_STATES_PULLING:
         last_task_state = ServiceState.PULLING
-    elif task_state in ("ready", "starting"):
+    elif task_state in _TASK_STATES_STARTING:
         last_task_state = ServiceState.STARTING
-    elif task_state in ("running"):
+    elif task_state == "running":
         now = arrow.utcnow().datetime
         # NOTE: task_state_update_time is only used to discrimitate between 'starting' and 'running'
         task_state_update_time = to_datetime(last_task["Status"]["Timestamp"])
@@ -627,33 +635,10 @@ async def _get_service_state(  # noqa: C901, PLR0912
         else:
             last_task_state = ServiceState.STARTING
 
-    elif task_state in ("complete", "shutdown"):
+    elif task_state in _TASK_STATES_COMPLETE:
         last_task_state = ServiceState.COMPLETE
     _logger.debug("service running state is %s", last_task_state)
     return (last_task_state, last_task_error_msg)
-
-
-async def _wait_until_service_running_or_failed(client: aiodocker.docker.Docker, service: dict, node_uuid: str) -> None:
-    # some times one has to wait until the task info is filled
-    service_name = service["Spec"]["Name"]
-    _logger.debug("Waiting for service %s to start", service_name)
-    while True:
-        tasks = await client.tasks.list(filters={"service": service_name})
-        # only keep the ones with the right service ID (we're being a bit picky maybe)
-        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
-        # we are only interested in the last task which has index 0
-        if tasks:
-            last_task = tasks[0]
-            task_state = last_task["Status"]["State"]
-            _logger.debug("%s %s", service["ID"], task_state)
-            if task_state in ("failed", "rejected"):
-                _logger.error("Error while waiting for service with %s", last_task["Status"])
-                raise ServiceStartTimeoutError(service_name=service_name, service_uuid=node_uuid)
-            if task_state in ("running", "complete"):
-                break
-        # allows dealing with other events instead of wasting time here
-        await asyncio.sleep(1)  # 1s
-    _logger.debug("Waited for service %s to start", service_name)
 
 
 async def _get_repos_from_key(app: FastAPI, service_key: str) -> dict[str, list[str]]:
@@ -795,6 +780,7 @@ async def _start_docker_service(  # noqa: PLR0913
             "service_message": service_msg,
             "user_id": user_id,
             "project_id": project_id,
+            "product_name": LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
         }
 
     except ServiceStartTimeoutError:
@@ -960,6 +946,7 @@ async def _get_node_details(app: FastAPI, client: aiodocker.docker.Docker, servi
     service_uuid = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("node_id")]
     user_id = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("user_id")]
     project_id = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("project_id")]
+    product_name = service["Spec"]["Labels"][_to_simcore_runtime_docker_label_key("product_name")]
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -976,6 +963,7 @@ async def _get_node_details(app: FastAPI, client: aiodocker.docker.Docker, servi
         "service_message": service_msg,
         "user_id": user_id,
         "project_id": project_id,
+        "product_name": product_name,
     }
 
 
@@ -1041,11 +1029,7 @@ async def _save_service_state(service_host_name: str, client: httpx.AsyncClient)
         response.raise_for_status()
 
     except httpx.HTTPStatusError as err:
-        if err.response.status_code in (
-            status.HTTP_405_METHOD_NOT_ALLOWED,
-            status.HTTP_404_NOT_FOUND,
-            status.HTTP_501_NOT_IMPLEMENTED,
-        ):
+        if err.response.status_code in _STATE_SAVE_IGNORED_STATUS_CODES:
             # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
             # therefore we assume there is nothing to be saved and do not raise exception
             # Responses found so far:

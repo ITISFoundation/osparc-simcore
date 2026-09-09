@@ -285,6 +285,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
+      workbench.addListener("nodeAddedToBackend", e => this.__markNodeAsSynced(e.getData()), this);
+
       study.listenToChanges(); // this includes the listener on the workbench and ui
       study.addListener("projectDocumentChanged", e => this.__projectDocumentChanged(e.getData()), this);
 
@@ -302,6 +304,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           delete this.__lastSyncedProjectDocument["workbench"][nodeId]["runHash"];
         }
       });
+    },
+
+    __markNodeAsSynced: function(node) {
+      if (!this.__lastSyncedProjectDocument) {
+        return;
+      }
+      this.__lastSyncedProjectDocument["workbench"][node.getNodeId()] = {
+        key: node.getKey(),
+        version: node.getVersion(),
+      };
     },
 
     __attachSocketEventHandlers: function() {
@@ -479,16 +491,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const workbenchPatches = [];
       const studyPatches = [];
       for (const jsonPatch of jsonPatches) {
-        if (jsonPatch.path.startsWith('/ui/')) {
+        if (jsonPatch.path.startsWith("/ui/")) {
           uiPatches.push(jsonPatch);
-        } else if (jsonPatch.path.startsWith('/workbench/')) {
+        } else if (jsonPatch.path.startsWith("/workbench/")) {
           workbenchPatches.push(jsonPatch);
         } else {
           studyPatches.push(jsonPatch);
         }
       }
       if (workbenchPatches.length > 0) {
-        this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches, uiPatches);
+        this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches);
       }
       if (uiPatches.length > 0) {
         this.getStudy().getUi().updateUiFromPatches(uiPatches);
@@ -592,8 +604,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           ttlMap.addOrUpdateEntry(walletId);
           const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
           const walletName = usedWallet.getName();
-          const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
-          osparc.FlashMessenger.logError(this.tr(text), null, flashMessageDisplayDuration);
+          const text = this.tr("Wallet \"%1\", running your service(s) has run out of credits. Stopping service(s) gracefully.", walletName);
+          osparc.FlashMessenger.logError(text, null, flashMessageDisplayDuration);
         }, this);
       }
     },
@@ -616,7 +628,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               const workbench = this.getStudy().getWorkbench();
               const node = workbench.getNode(nodeId);
               const label = node.getLabel();
-              const text = `New inputs for service ${label}. Please reload to refresh service.`;
+              const text = this.tr("New inputs for service %1. Please reload to refresh service.", label);
               osparc.FlashMessenger.logAs(text, "INFO");
             }
           }

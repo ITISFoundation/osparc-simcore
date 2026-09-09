@@ -48,10 +48,16 @@ _REACT_BLUR_SETTLE_MS: Final[int] = 500
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 EXPECTED_MOGA_KEY: Final[str] = "moga"
-_SAMPLING_TIMEOUT: Final[int] = 10 * MINUTE
+
+# Heuristically 10 minutes is enough for these jobs to run
+# However, when the dv2 / dask restarts during the run, things get delayed
+# Add factor 2 to handle this case
+_SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
+
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
-_NUM_SAMPLING_POINTS: Final[int] = 40
+# CI can override this via --mmux-num-sampling-points, e.g. for weaker deployments
+_DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
@@ -61,7 +67,7 @@ _TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
 _TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
 _TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
 _TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
-_EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
+_EXPECTED_LHS_INPUT_VALUES_40: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
     1.5227525095,
@@ -104,9 +110,30 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.7291886695,
 ]
 
+# Generated the same way as _EXPECTED_LHS_INPUT_VALUES_40, with n=5
+_EXPECTED_LHS_INPUT_VALUES_5: Final[list[float]] = [
+    2.404167764,
+    4.3708610696,
+    6.3879263578,
+    7.5879454763,
+    9.5564287577,
+]
+# Only known CI overrides have precomputed expected values to check against
+_EXPECTED_LHS_INPUT_VALUES_BY_COUNT: Final[dict[int, list[float]]] = {
+    40: _EXPECTED_LHS_INPUT_VALUES_40,
+    5: _EXPECTED_LHS_INPUT_VALUES_5,
+}
+
 
 class _TeardownDeleteError(Exception):
     """Raised when a resource DELETE request fails (non-ok, non-404 status)."""
+
+
+class _SamplingFailedError(Exception):
+    """Raised when a sampling job reaches a terminal failed state.
+
+    Raise an exception that is not an assert to let tenacity stop polling
+    """
 
 
 @retry(
@@ -159,6 +186,19 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     api_host = f"api.{parsed.hostname}"
     api_netloc = f"{api_host}:{parsed.port}" if parsed.port else api_host
     return urlunparse(parsed._replace(netloc=api_netloc))
+
+
+@pytest.fixture(scope="session")
+def num_sampling_points(request: pytest.FixtureRequest) -> int:
+    value = (
+        int(passed)
+        if (passed := request.config.getoption("--mmux-num-sampling-points")) is not None
+        else _DEFAULT_NUM_SAMPLING_POINTS
+    )
+    assert value in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
+        f"No expected LHS values for num_sampling_points={value}, add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
+    )
+    return value
 
 
 @retry(
@@ -373,7 +413,9 @@ def _assert_sampling_completed(
     check_sampling_status: Callable[[Any, Page], str],
 ) -> None:
     status = check_sampling_status(service_iframe, page)
-    assert status != "failed", "Sampling job failed! Check the deployment logs."
+    if status == "failed":
+        msg = "Sampling job failed! Check the deployment logs."
+        raise _SamplingFailedError(msg)
     assert status == "complete", "Sampling is still running"
 
 
@@ -453,6 +495,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
+    num_sampling_points: int,
 ):
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
@@ -848,7 +891,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
+            samplingInput.fill(f"{num_sampling_points}")
             samplingInput.press("Enter")
 
             seed_was_set = False
@@ -905,6 +948,22 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 plotly_graph.wait_for(state="visible", timeout=2 * MINUTE)
             page.wait_for_timeout(2000)
 
+        if EXPECTED_MOGA_KEY in local_service_key.lower():
+            with log_context(logging.INFO, "Verifying MOGA Pareto optimization produced some results..."):
+                moga_pareto_container = service_iframe.locator('[mmux-testid="moga-pareto-plot"]')
+                moga_pareto_container.wait_for(state="visible", timeout=2 * MINUTE)
+                moga_pareto_plot = moga_pareto_container.locator(".js-plotly-plot")
+                moga_pareto_plot.wait_for(state="visible", timeout=2 * MINUTE)
+
+                moga_trace_lengths = moga_pareto_plot.evaluate(
+                    "el => (el.data || []).map(trace => Math.max((trace.x || []).length, (trace.y || []).length))"
+                )
+                total_moga_points = sum(moga_trace_lengths)
+                assert total_moga_points > 0, (
+                    f"MOGA Pareto plot rendered but contains no data points (traces={moga_trace_lengths})"
+                )
+                logging.info("MOGA Pareto plot traces: %s", moga_trace_lengths)
+
         with log_context(logging.INFO, f"Verifying sampling results for {local_service_key}..."):
             api_server_url = _get_api_server_url(product_url)
             _api_key, _api_secret = api_key_and_secret
@@ -942,13 +1001,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 )
 
                 if "uq" not in local_service_key.lower():
-                    assert len(input_values) == _NUM_SAMPLING_POINTS, (
-                        f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+                    assert len(input_values) == num_sampling_points, (
+                        f"Expected {num_sampling_points} input values, got {len(input_values)}"
                     )
                     if seed_was_set:
-                        for i, (actual, expected) in enumerate(
-                            zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)
-                        ):
+                        expected_values = _EXPECTED_LHS_INPUT_VALUES_BY_COUNT[num_sampling_points]
+                        for i, (actual, expected) in enumerate(zip(input_values, expected_values, strict=True)):
                             assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
         with (

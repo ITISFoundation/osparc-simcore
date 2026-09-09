@@ -2,6 +2,7 @@
 
 import logging
 import urllib.parse
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import partial
@@ -9,10 +10,14 @@ from typing import Any, Final, Self
 from uuid import UUID
 
 import httpx
+from common_library.gettext_support import SupportedLocale
 from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from cryptography import fernet
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.projects import (
@@ -44,6 +49,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.common_headers import (
+    X_SIMCORE_LANGUAGE,
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
@@ -73,6 +79,7 @@ from ..exceptions.backend_errors import (
     WalletNotFoundError,
 )
 from ..exceptions.service_errors_utils import (
+    ServiceHTTPStatus,
     service_exception_handler,
     service_exception_mapper,
 )
@@ -87,7 +94,7 @@ from ..models.schemas.model_adapter import (
 from ..models.schemas.profiles import Profile, ProfileUpdate, UserRoleEnum
 from ..models.schemas.solvers import SolverKeyId
 from ..models.schemas.studies import StudyPort
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 _logger = logging.getLogger(__name__)
 
@@ -96,15 +103,15 @@ _exception_mapper = partial(service_exception_mapper, service_name="Webserver")
 _POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
 
 _JOB_STATUS_MAP = {
-    status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
-    status.HTTP_404_NOT_FOUND: JobNotFoundError,
+    ServiceHTTPStatus(status.HTTP_402_PAYMENT_REQUIRED): PaymentRequiredError,
+    ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): JobNotFoundError,
 }
 
-_PROFILE_STATUS_MAP = {status.HTTP_404_NOT_FOUND: ProfileNotFoundError}
+_PROFILE_STATUS_MAP = {ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProfileNotFoundError}
 
 _WALLET_STATUS_MAP = {
-    status.HTTP_404_NOT_FOUND: WalletNotFoundError,
-    status.HTTP_403_FORBIDDEN: ForbiddenWalletError,
+    ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): WalletNotFoundError,
+    ServiceHTTPStatus(status.HTTP_403_FORBIDDEN): ForbiddenWalletError,
 }
 
 
@@ -151,6 +158,7 @@ class AuthSession:
 
     vtag: str
     session_cookies: dict | None = None
+    _locale: SupportedLocale | None = None
 
     @classmethod
     def create(
@@ -159,6 +167,7 @@ class AuthSession:
         session_cookies: dict,
         user_id: UserID,
         product_name: ProductName,
+        locale: SupportedLocale | None = None,
     ) -> Self:
         # WARNING: this client lifespan is tied to the app
         app_http_webserver_client = WebserverApi.get_instance(app)
@@ -177,6 +186,7 @@ class AuthSession:
             _long_running_task_client=app_http_lrt_webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
+            _locale=locale,
         )
 
     def _get_session_headers(
@@ -192,6 +202,9 @@ class AuthSession:
 
         if parent_node_id is not None:
             headers[X_SIMCORE_PARENT_NODE_ID] = str(parent_node_id)
+
+        if self._locale is not None:
+            headers[X_SIMCORE_LANGUAGE] = self._locale
 
         return headers
 
@@ -222,7 +235,7 @@ class AuthSession:
 
         with service_exception_handler(
             service_name="Webserver",
-            http_status_map={status.HTTP_404_NOT_FOUND: ListJobsError},
+            http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ListJobsError},
             rpc_exception_map={},
         ):
             resp = await self.client.get(
@@ -295,6 +308,7 @@ class AuthSession:
         return Profile(
             first_name=got.first_name,
             last_name=got.last_name,
+            language=got.language,
             id=got.id,
             login=got.login,
             role=UserRoleEnum(got.role),
@@ -308,6 +322,7 @@ class AuthSession:
             _fields_set=profile_update.model_fields_set,
             first_name=profile_update.first_name,
             last_name=profile_update.last_name,
+            language=profile_update.language,
         )
 
         response = await self.client.patch(
@@ -407,7 +422,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectPortsNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProjectPortsNotFoundError})
     async def get_project_metadata_ports(self, *, project_id: ProjectID) -> list[StudyPort]:
         """
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
@@ -424,7 +439,7 @@ class AuthSession:
         assert isinstance(data, list)  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProjectMetadataNotFoundError})
     async def get_project_metadata(self, *, project_id: ProjectID) -> ProjectMetadataGet:
         response = await self.client.get(
             f"/projects/{project_id}/metadata",
@@ -446,7 +461,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProjectMetadataNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProjectMetadataNotFoundError})
     async def update_project_metadata(
         self, *, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
@@ -461,7 +476,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(self, *, project_id: UUID, node_id: UUID) -> PricingUnitGetLegacy:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
@@ -474,7 +489,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): PricingUnitNotFoundError})
     async def connect_pricing_unit_to_project_node(
         self,
         *,
@@ -493,23 +508,36 @@ class AuthSession:
     @_exception_mapper(
         http_status_map=_JOB_STATUS_MAP
         | {
-            status.HTTP_409_CONFLICT: ProjectAlreadyStartedError,
-            status.HTTP_503_SERVICE_UNAVAILABLE: ConfigurationError,
+            ServiceHTTPStatus(status.HTTP_409_CONFLICT): ProjectAlreadyStartedError,
+            ServiceHTTPStatus(status.HTTP_503_SERVICE_UNAVAILABLE): ConfigurationError,
         }
     )
     async def start_project(
         self,
         *,
         project_id: UUID,
+        encryption: JobEncryptionContextMetadata | None,
     ) -> None:
         body_input: dict[str, Any] = {}
+        if encryption is not None:
+            body_input["encryption"] = encryption
 
         body: ComputationStart = ComputationStart(**body_input)
+        # NOTE: `encryption.encrypted_root_key` is an AWS KMS ciphertext blob (not the plaintext
+        # root key) by the time it gets here - it is still wrapped in a SecretStr for defense in
+        # depth/consistency, so we use model_dump_with_secrets with show_secrets=True to serialize it.
+        body_data = model_dump_with_secrets(
+            body,
+            show_secrets=True,
+            mode="json",
+            exclude_unset=True,
+            exclude_defaults=True,
+        )
         response = await self.client.post(
             f"/computations/{project_id}:start",
             cookies=self.session_cookies,
             headers=self._get_session_headers(),
-            json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
+            json=body_data,
         )
         response.raise_for_status()
 
@@ -549,7 +577,7 @@ class AuthSession:
         assert data is not None  # nosec
         return data
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: SolverOutputNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): SolverOutputNotFoundError})
     async def get_project_outputs(self, *, project_id: ProjectID) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.get(
             f"/projects/{project_id}/outputs",
@@ -615,7 +643,7 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: ProductPriceNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): ProductPriceNotFoundError})
     async def get_product_price(self) -> GetCreditPriceLegacy:
         response = await self.client.get(
             "/credits-price",
@@ -629,7 +657,7 @@ class AuthSession:
 
     # SERVICES -------------------------------------------------
 
-    @_exception_mapper(http_status_map={status.HTTP_404_NOT_FOUND: PricingPlanNotFoundError})
+    @_exception_mapper(http_status_map={ServiceHTTPStatus(status.HTTP_404_NOT_FOUND): PricingPlanNotFoundError})
     async def get_service_pricing_plan(
         self, *, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
@@ -658,33 +686,37 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(
+def configure(
     app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
     webserver_settings: WebServerSettings,
     tracing_settings: TracingSettings | None,
 ) -> None:
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         WebserverApi,
         api_baseurl=webserver_settings.api_base_url,
         service_name="webserver",
         tracing_settings=tracing_settings,
     )
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         LongRunningTasksClient,
         api_baseurl="",
         service_name="long_running_tasks_client",
         tracing_settings=tracing_settings,
     )
 
-    def _on_startup() -> None:
-        # normalize & encrypt
-        secret_key = webserver_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
-        app.state.webserver_fernet = fernet.Fernet(secret_key)
+    async def _webserver_lifespan(lifespan_app: FastAPI) -> AsyncIterator[State]:
+        try:
+            # normalize & encrypt
+            secret_key = webserver_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+            lifespan_app.state.webserver_fernet = fernet.Fernet(secret_key)
 
-    async def _on_shutdown() -> None:
-        _logger.debug("Webserver closed successfully")
+            yield {}
+        finally:
+            _logger.debug("Webserver closed successfully")
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_webserver_lifespan)

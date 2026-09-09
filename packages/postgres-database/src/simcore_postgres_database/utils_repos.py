@@ -1,10 +1,11 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import sqlalchemy as sa
 from pydantic import BaseModel
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 _logger = logging.getLogger(__name__)
@@ -83,3 +84,36 @@ def get_columns_from_db_model(table: sa.Table, model_cls: type[SQLModel]) -> lis
                 )
     """
     return [table.columns[field_name] for field_name in model_cls.model_fields]
+
+
+def merge_jsonb_patch_expression(column: sa.Column, patch: dict[str, Any]) -> sa.ColumnElement[Any]:
+    """Builds an UPDATE expression that shallow-merges `patch` into a JSONB `column`.
+
+    Use it to patch a compound JSONB object without replacing it, so untouched
+    top-level keys are preserved. Keys with a non-null value are set/overwritten,
+    keys mapped to None are removed from the stored object. A stored SQL NULL or
+    JSON `null` is treated as an empty object.
+
+    Usage example:
+
+        query = (
+            table.update()
+            .where(...)
+            .values(ui=merge_jsonb_patch_expression(table.c.ui, {"position": {...}, "marker": None}))
+        )
+    """
+    stored_object = sa.case(
+        (
+            sa.func.jsonb_typeof(column) == "object",
+            column,
+        ),
+        else_=sa.type_coerce({}, postgresql.JSONB),
+    )
+
+    keys_to_set = {k: v for k, v in patch.items() if v is not None}
+    keys_to_delete = patch.keys() - keys_to_set.keys()
+
+    merged = stored_object.concat(sa.type_coerce(keys_to_set, postgresql.JSONB))
+    for key in keys_to_delete:
+        merged = merged.self_group().op("-")(sa.cast(key, sa.String))
+    return merged

@@ -309,7 +309,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
     __createNewTokenForm: function(supportedExternalServices) {
       const form = new qx.ui.form.Form();
 
-      form.addGroupHeader("Add new service API tokens");
+      form.addGroupHeader(this.tr("Add new service API tokens"));
 
       const newTokenService = new qx.ui.form.TextField();
       newTokenService.set({

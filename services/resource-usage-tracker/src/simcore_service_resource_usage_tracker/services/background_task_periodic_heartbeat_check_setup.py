@@ -1,10 +1,11 @@
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import TypedDict
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 
@@ -72,6 +73,12 @@ def _on_app_shutdown(
     return _stop
 
 
-def setup(app: FastAPI) -> None:
-    app.add_event_handler("startup", _on_app_startup(app))
-    app.add_event_handler("shutdown", _on_app_shutdown(app))
+def configure_periodic_heartbeat_check(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _periodic_heartbeat_check_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        try:
+            await _on_app_startup(app)()
+            yield {}
+        finally:
+            await _on_app_shutdown(app)()
+
+    app_lifespan.add(_periodic_heartbeat_check_lifespan)

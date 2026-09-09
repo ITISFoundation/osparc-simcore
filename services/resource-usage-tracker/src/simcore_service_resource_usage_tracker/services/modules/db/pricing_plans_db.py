@@ -1,5 +1,4 @@
 import logging
-from typing import cast
 
 import sqlalchemy as sa
 from models_library.products import ProductName
@@ -206,7 +205,7 @@ async def list_pricing_plans_by_product(
         result = await conn.execute(list_query.offset(offset).limit(limit))
 
     items = [PricingPlansDB.model_validate(row) for row in result.fetchall()]
-    return cast(int, total_count), items
+    return total_count, items
 
 
 async def create_pricing_plan(

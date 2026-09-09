@@ -43,7 +43,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
 
     invitationUrl: {
       check: "String",
-      nullable: false,
+      nullable: true,
       init: null,
       apply: "__applyInvitationUrl",
     },
@@ -74,6 +74,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       switch (id) {
         case "email-editor": {
           control = new osparc.po.EmailEditor();
+          control.showBccField();
           this._add(control, {
             flex: 1
           });
@@ -182,8 +183,12 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
     },
 
     __applyInvitationUrl: function(value) {
-      const invitationUrlField = this.getChildControl("invitation-url");
-      invitationUrlField.setValue(value);
+      const invitationUrlContainer = this.getChildControl("invitation-url-container");
+      invitationUrlContainer.setVisibility(value ? "visible" : "excluded");
+      if (value) {
+        const invitationUrlField = this.getChildControl("invitation-url");
+        invitationUrlField.setValue(value);
+      }
     },
 
     __applySubject: function(value) {
@@ -235,9 +240,11 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
+      const bccEmails = emailEditor.getBccEmails();
       const params = {
         data: {
           email,
+          bccEmails,
           invitationUrl,
           messageContent: {
             subject,
@@ -262,9 +269,11 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
+      const bccEmails = emailEditor.getBccEmails();
       const params = {
         data: {
           email,
+          bccEmails,
           messageContent: {
             subject,
             bodyHtml,

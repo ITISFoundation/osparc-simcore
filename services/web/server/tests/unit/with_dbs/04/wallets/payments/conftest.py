@@ -7,7 +7,7 @@
 
 from collections.abc import Callable, Iterator
 from decimal import Decimal
-from typing import Any, TypeAlias, cast
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pycountry
@@ -35,11 +35,8 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_transactions import payments_transactions
-from simcore_postgres_database.models.users_details import (
-    users_pre_registration_details,
-)
+from simcore_postgres_database.models.users_billing_details import users_billing_details
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.payments._methods_api import (
     _fake_cancel_creation_of_wallet_payment_method,
     _fake_delete_wallet_payment_method,
@@ -59,7 +56,7 @@ from simcore_service_webserver.payments.settings import (
     get_plugin_settings,
 )
 
-OpenApiDict: TypeAlias = dict[str, Any]
+type OpenApiDict = dict[str, Any]
 
 
 @pytest.fixture
@@ -105,7 +102,7 @@ def payments_transactions_clean_db(postgres_db: sa.engine.Engine) -> Iterator[No
 
 
 @pytest.fixture
-def mock_rpc_payments_service_api(
+def mock_rpc_payments_service_api(  # noqa: C901
     mocker: MockerFixture, faker: Faker, payments_transactions_clean_db: None
 ) -> dict[str, MagicMock]:
     async def _init(
@@ -309,34 +306,29 @@ def mock_rpc_payments_service_api(
 
 
 @pytest.fixture
-def setup_user_pre_registration_details_db(
+def setup_user_billing_details_db(
     postgres_db: sa.engine.Engine,
     logged_user: UserInfoDict,
     faker: Faker,
-    user_phone_number: PhoneNumberStr,
 ) -> Iterator[int]:
+    """The billing address is a property of the user (users_billing_details),
+    independent of any pre-registration.
+    """
     with postgres_db.connect() as con:
         result = con.execute(
-            users_pre_registration_details.insert()
+            users_billing_details.insert()
             .values(
                 user_id=logged_user["id"],
-                pre_email=faker.email(),
-                pre_first_name=faker.first_name(),
-                pre_last_name=faker.last_name(),
-                pre_phone=user_phone_number,
                 institution=faker.company(),
                 address=faker.address().replace("\n", ", "),
                 city=faker.city(),
                 state=faker.state(),
                 country=faker.random_element([c.name for c in pycountry.countries]),
                 postal_code=faker.postcode(),
-                created_by=None,
-                # NOTE: here product is not specified (i.e. product_name=None) on purspose to check
-                # backwards compatibility
             )
             .returning(sa.literal_column("*"))
         )
         row = result.fetchone()
         assert row
         yield cast(int, row[0])
-        con.execute(users_pre_registration_details.delete())
+        con.execute(users_billing_details.delete())

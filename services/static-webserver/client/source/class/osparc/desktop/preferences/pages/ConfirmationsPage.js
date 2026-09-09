@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       box.add(cbConfirmBackToDashboard);
 
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a ") + studyAlias);
+      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a %1", studyAlias));
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.addListener("changeValue", e => {
         if (e.getData()) {
@@ -126,7 +126,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
     __createExperimentalSettings: function() {
       // layout
-      const box = new osparc.widget.SectionBox("Experimental preferences");
+      const box = new osparc.widget.SectionBox(this.tr("Experimental preferences"));
       box.addHelper(this.tr("This is a list of experimental preferences"));
 
       const preferencesSettings = osparc.Preferences.getInstance();

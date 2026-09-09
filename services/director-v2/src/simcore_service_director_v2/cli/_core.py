@@ -6,6 +6,7 @@ from enum import Enum
 
 import typer
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
@@ -16,16 +17,19 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
+from servicelib.tracing import TracingConfig
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
 
+from .._meta import APP_NAME
 from ..core.application import create_base_app
 from ..core.settings import AppSettings
 from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
 from ..modules import db, director_v0, dynamic_sidecar
 from ..modules.catalog import CatalogClient
 from ..modules.db.repositories.projects import ProjectsRepository
+from ..modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ..modules.dynamic_sidecar import api_client
 from ..modules.projects_networks import requires_dynamic_sidecar
 from ..utils.db import get_repository
@@ -34,22 +38,24 @@ from ._client import ThinDV2LocalhostClient
 
 @asynccontextmanager
 async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
-    app = create_base_app()
-    settings: AppSettings = app.state.settings
+    settings = AppSettings.create_from_envs()
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.DIRECTOR_V2_TRACING)
+    app_lifespan: LifespanManager = LifespanManager()
+    app = create_base_app(settings, tracing_config, app_lifespan)
+
     # Initialize minimal required components for the application
-    db.setup(app, settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
+    db.configure_db(app_lifespan, settings=settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
 
     if not only_db:
-        dynamic_sidecar.setup(app)
-        director_v0.setup(
-            app,
+        dynamic_sidecar.configure_dynamic_sidecar(app, app_lifespan)
+        director_v0.configure_director_v0(
+            app_lifespan,
             director_v0_settings=settings.DIRECTOR_V0,
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
-    await app.router.startup()
-    yield app
-    await app.router.shutdown()
+    async with app_lifespan(app):
+        yield app
 
 
 ### PROJECT SAVE STATE
@@ -84,11 +90,13 @@ async def _save_node_state(
 async def async_project_save_state(project_id: ProjectID, save_attempts: int) -> None:
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
-        project_at_db = await projects_repository.get_project(project_id)
+        projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
+        project_at_db = await projects_repository.get(project_id)
+        workbench = await projects_nodes_repository.get_all(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
         nodes_failed_to_save: list[NodeIDStr] = []
-        for node_uuid, node_content in project_at_db.workbench.items():
+        for node_uuid, node_content in workbench.items():
             # only dynamic-sidecars are used
             if not await requires_dynamic_sidecar(
                 service_key=node_content.key,
@@ -213,12 +221,14 @@ async def _get_nodes_render_data(
     project_id: ProjectID,
 ) -> list[RenderData]:
     projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
+    projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
 
-    project_at_db = await projects_repository.get_project(project_id)
+    await projects_repository.get(project_id)
+    workbench = await projects_nodes_repository.get_all(project_id)
 
     render_data: list[RenderData] = []
     async with AsyncClient() as client:
-        for node_uuid, node_content in project_at_db.workbench.items():
+        for node_uuid, node_content in workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
             render_data.append(await _to_render_data(client, node_uuid, node_content.label, service_type))
     sorted_render_data: list[RenderData] = sorted(render_data, key=_get_node_id)

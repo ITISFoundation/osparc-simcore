@@ -206,6 +206,7 @@ def base_mock_envs(
         "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
+        "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": json.dumps(
             {
                 "REGISTRY_AUTH": "false",
@@ -266,7 +267,9 @@ def mock_environment(
             "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
             "DY_SIDECAR_USER_ID": f"{user_id}",
             "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
+            "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",
             "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+            "DYNAMIC_SIDECAR_TRACING": "null",
             "POSTGRES_DB": "test",
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",

@@ -6,13 +6,13 @@ import asyncio
 import contextlib
 import logging
 import re
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
 from typing import Any, NamedTuple
 from unittest import mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 import redis.asyncio as aioredis
@@ -20,11 +20,11 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers import webserver_projects
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -35,17 +35,17 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.celery.plugin import setup_celery
 from simcore_service_webserver.db.models import projects, users
 from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.director_v2.plugin import setup_director_v2
 from simcore_service_webserver.garbage_collector import _core as gc_core
-from simcore_service_webserver.garbage_collector._tasks_core import _GC_TASK_NAME
+from simcore_service_webserver.garbage_collector._tasks_utils import create_task_name
 from simcore_service_webserver.garbage_collector.plugin import setup_garbage_collector
 from simcore_service_webserver.groups._groups_service import create_standard_group
 from simcore_service_webserver.groups.groups_service import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects import _projects_repository
-from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
@@ -69,11 +69,12 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
-    "migration",  # NOTE: rebuild!
+    "migration",
     "postgres",
     "rabbit",
     "redis",
-    "storage",  # NOTE: rebuild!
+    "storage",
+    "sto-worker",
 ]
 pytest_simcore_ops_services_selection = [
     "minio",
@@ -106,17 +107,18 @@ async def _delete_all_redis_keys(redis_settings: RedisSettings):
 
 
 @pytest.fixture
-async def director_v2_service_mock(
+def director_v2_service_mock(
+    aioresponses_mocker: AioResponsesMock,
     mocker: MockerFixture,
-) -> AsyncIterable[aioresponses]:
+) -> AioResponsesMock:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
     Other than that it seems to behave nicely
     """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
     get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
     delete_computation_pattern = get_computation_pattern
+    stop_computation_pattern = get_computation_pattern
 
     mocker.patch(
         "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
@@ -124,19 +126,15 @@ async def director_v2_service_mock(
         return_value={},
     )
 
-    # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
-    # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined
-    # at different locations?? not sure..
-    # anyway I think this should disappear once the garbage collector moves to its own micro-service
-    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        mock.get(
-            get_computation_pattern,
-            status=status.HTTP_202_ACCEPTED,
-            payload={"state": str(RunningState.NOT_STARTED.value)},
-            repeat=True,
-        )
-        mock.delete(delete_computation_pattern, status=204, repeat=True)
-        yield mock
+    aioresponses_mocker.get(
+        get_computation_pattern,
+        status=status.HTTP_202_ACCEPTED,
+        payload={"state": str(RunningState.NOT_STARTED.value)},
+        repeat=True,
+    )
+    aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
+    aioresponses_mocker.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
+    return aioresponses_mocker
 
 
 @pytest.fixture
@@ -149,7 +147,7 @@ async def client(
     redis_client: aioredis.Redis,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
-    director_v2_service_mock: aioresponses,
+    director_v2_service_mock: AioResponsesMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> TestClient:
     cfg = deepcopy(app_config)
@@ -186,6 +184,7 @@ async def client(
     setup_socketio(app)
     setup_projects(app)
     setup_director_v2(app)
+    setup_celery(app)
 
     assert setup_resource_manager(app)
 
@@ -392,13 +391,13 @@ async def disconnect_user_from_socketio(client: TestClient, sio_connection_data:
 
 async def assert_users_count(asyncpg_engine: AsyncEngine, expected_users: int) -> None:
     async with asyncpg_engine.connect() as conn:
-        users_count = await conn.scalar(select(func.count()).select_from(users))
+        users_count = await conn.scalar(select(func.count()).select_from(users))  # pylint: disable=not-callable
         assert users_count == expected_users
 
 
 async def assert_projects_count(asyncpg_engine: AsyncEngine, expected_projects: int) -> None:
     async with asyncpg_engine.connect() as conn:
-        projects_count = await conn.scalar(select(func.count()).select_from(projects))
+        projects_count = await conn.scalar(select(func.count()).select_from(projects))  # pylint: disable=not-callable
         assert projects_count == expected_projects
 
 
@@ -512,7 +511,6 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     await assert_project_in_db(asyncpg_engine, empty_guest_user_project)
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     client: TestClient,
@@ -546,13 +544,6 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     await disconnect_user_from_socketio(client, sio_connection_data)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
-
-    # ensures all project delete tasks are
-    delete_tasks = get_scheduled_tasks(
-        project_uuid=UUID(empty_guest_user_project["uuid"]),
-        user_id=logged_guest_user["id"],
-    )
-    assert not delete_tasks or all(t.done() for t in delete_tasks)
 
     # check user and project are no longer in the DB
     async with asyncpg_engine.connect() as conn:
@@ -1052,7 +1043,8 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     EXPECTED: the project and all the users are removed
     """
 
-    gc_task: asyncio.Task = next(task for task in asyncio.all_tasks() if task.get_name() == _GC_TASK_NAME)
+    gc_task_name = create_task_name(gc_core.collect_garbage)
+    gc_task: asyncio.Task = next(task for task in asyncio.all_tasks() if task.get_name() == gc_task_name)
     assert not gc_task.done()
 
     u1 = await login_user(client, exit_stack=exit_stack)

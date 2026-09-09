@@ -38,6 +38,19 @@ qx.Class.define("osparc.ui.form.renderer.SingleWithWidget", {
     },
 
     // overridden
+    _onFormChange: function() {
+      // qx.ui.form.renderer.AbstractRenderer._onFormChange disposes and resets
+      // this._labels but leaves stale (disposed) label references in this._names.
+      // On a locale change, _onChangeLocale would then call setValue() on those
+      // disposed labels, whose content element is null, and crash. Resetting
+      // _names here keeps only the labels created by the upcoming re-render.
+      if (qx.core.Environment.get("qx.dynlocale")) {
+        this._names = [];
+      }
+      this.base(arguments);
+    },
+
+    // overridden
     addItems: function(items, names, title, itemOptions, headerOptions) {
       this.base(arguments, items, names, title, itemOptions, headerOptions);
 

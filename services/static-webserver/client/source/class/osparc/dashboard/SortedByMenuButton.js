@@ -122,9 +122,9 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     },
 
     hideOptionButton: function(field) {
-      const btn = this.getMenu().getChildren().find(btn => btn.field === field);
-      if (btn) {
-        btn.exclude();
+      const button = this.getMenu().getChildren().find(btn => btn.field === field);
+      if (button) {
+        button.exclude();
       }
     },
 

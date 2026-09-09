@@ -14,14 +14,19 @@ if TYPE_CHECKING:
     from .application_settings import ApplicationSettings
 
     APP_SETTINGS_APPKEY: Final = web.AppKey("APP_SETTINGS", ApplicationSettings)
+    APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY: Final = web.AppKey(
+        "APP_PUBLIC_CONFIG_PER_PRODUCT", dict[str, dict[str, object]]
+    )
 else:
     APP_SETTINGS_APPKEY: Final = web.AppKey("APP_SETTINGS", None)
+    APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY: Final = web.AppKey("APP_PUBLIC_CONFIG_PER_PRODUCT", dict)
 
 
 __all__: tuple[str, ...] = (
     "APP_CLIENT_SESSION_KEY",
     "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
+    "APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY",
     "APP_SETTINGS_APPKEY",
 )
 

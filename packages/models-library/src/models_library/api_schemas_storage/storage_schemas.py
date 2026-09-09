@@ -44,13 +44,13 @@ from ..projects_nodes_io import (
 )
 from ..users import UserID
 
-ETag: TypeAlias = str
+type ETag = str
 
-S3BucketName: TypeAlias = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
+type S3BucketName = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
 
-DatCoreDatasetName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)]
-DatCoreCollectionName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_COLLECTION_NAME_RE)]
-DatCorePackageName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
+type DatCoreDatasetName = Annotated[str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)]
+type DatCoreCollectionName = Annotated[str, StringConstraints(pattern=DATCORE_COLLECTION_NAME_RE)]
+type DatCorePackageName = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
 
 
 # /
@@ -83,7 +83,7 @@ class FileLocation(BaseModel):
     )
 
 
-FileLocationArray: TypeAlias = ListModel[FileLocation]
+FileLocationArray: TypeAlias = ListModel[FileLocation]  # noqa: UP040
 
 
 # /locations/{location_id}/datasets
@@ -129,7 +129,7 @@ class DatasetMetaDataGet(BaseModel):
     )
 
 
-UNDEFINED_SIZE_TYPE: TypeAlias = Literal[-1]
+type UNDEFINED_SIZE_TYPE = Literal[-1]
 UNDEFINED_SIZE: UNDEFINED_SIZE_TYPE = -1
 
 
@@ -167,7 +167,10 @@ class FileMetaDataGet(BaseModel):
     file_name: str = Field(..., description="Display name for a file")
     file_id: StorageFileID = Field(
         ...,
-        description="THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext for S3 and N:package:UUID for datcore",
+        description=(
+            "THIS IS the unique ID for the file. either (api|project_id)/node_id/file_name.ext "
+            "for S3 and N:package:UUID for datcore"
+        ),
     )
     created_at: datetime
     last_modified: datetime
@@ -176,7 +179,9 @@ class FileMetaDataGet(BaseModel):
     )
     entity_tag: ETag | None = Field(
         default=None,
-        description="Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore",
+        description=(
+            "Entity tag (or ETag), represents a specific version of the file, None if invalid upload or datcore"
+        ),
     )
     is_soft_link: bool = Field(
         default=False,
@@ -200,7 +205,9 @@ class FileMetaDataGet(BaseModel):
                         "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
                         "file_name": "work.zip",
                         "file_size": 17866343,
-                        "file_uuid": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                        "file_uuid": (
+                            "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip"
+                        ),
                         "is_soft_link": False,
                         "last_modified": "2020-06-22 13:48:13.398000+00:00",
                         "location_id": 0,
@@ -211,10 +218,14 @@ class FileMetaDataGet(BaseModel):
                     {
                         "created_at": "2020-06-17 12:28:55.705340",
                         "entity_tag": "8711cf258714b2de5498f5a5ef48cc7b",
-                        "file_id": "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace",
+                        "file_id": (
+                            "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace"
+                        ),
                         "file_name": "workspace",
                         "file_size": -1,
-                        "file_uuid": "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace",
+                        "file_uuid": (
+                            "9a759caa-9890-4537-8c26-8edefb7a4d7c/be165f45-ddbf-4911-a04d-bc0b885914ef/workspace"
+                        ),
                         "is_soft_link": False,
                         "last_modified": "2020-06-22 13:48:13.398000+00:00",
                         "location_id": 0,
@@ -366,6 +377,10 @@ class FileUploadCompleteState(Enum):
 class FileUploadCompleteFutureResponse(BaseModel):
     state: FileUploadCompleteState
     e_tag: ETag | None = Field(default=None)
+    last_modified: datetime | None = Field(
+        default=None,
+        description="Last modification timestamp reported by S3, set together with e_tag",
+    )
 
 
 # /simcore-s3/
@@ -431,13 +446,21 @@ class PathMetaDataGet(BaseModel):
                     },
                     # ls f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs
                     {
-                        "path": "f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5",
+                        "path": (
+                            "f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5"
+                        ),
                         "display_path": "my amazing project/awesome node/outputs/output5",
                     },
                     # ls f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output_5
                     {
-                        "path": f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
-                        "display_path": f"my amazing project/awesome node/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
+                        "path": (
+                            "f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5"
+                            f"/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}"
+                        ),
+                        "display_path": (
+                            "my amazing project/awesome node/outputs/output5/"
+                            f"{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}"
+                        ),
                         "file_meta_data": FileMetaDataGet.model_json_schema()["examples"][0],
                     },
                 ]
@@ -463,7 +486,10 @@ class PathTotalSizeCreate(BaseModel):
                     },
                     # 1 file
                     {
-                        "path": f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
+                        "path": (
+                            f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/"
+                            f"outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}"
+                        ),
                         "size": 1024,
                     },
                 ]

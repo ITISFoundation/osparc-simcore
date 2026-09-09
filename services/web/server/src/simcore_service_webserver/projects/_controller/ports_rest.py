@@ -11,17 +11,13 @@ from models_library.projects_nodes import PartialNode
 from models_library.projects_nodes_io import NodeID
 from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, TypeAdapter
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_headers_as,
-    parse_request_path_parameters_as,
-)
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import parse_request_body_as, parse_request_headers_as, parse_request_path_parameters_as
 from .. import _access_rights_service, _nodes_service, _ports_service
 from .._projects_service import create_project_document_and_notify
 from ._rest_exceptions import handle_plugin_requests_exceptions

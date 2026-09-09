@@ -21,10 +21,6 @@ from models_library.api_schemas_webserver.users import (
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -38,6 +34,7 @@ from ....security.decorators import (
     permission_required,
 )
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ....web_requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from ... import _accounts_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import UserAccountRestPreRegister, UsersRequestContext
@@ -229,6 +226,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         pre_registration_email=approval_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        bcc_emails=approval_data.bcc_emails,
         invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
@@ -246,6 +244,22 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
     assert req_ctx.product_name  # nosec
 
     approval_data = await parse_request_body_as(UserAccountPreviewApproval, request)
+
+    existing_user_id = await _accounts_service.get_registered_user_id_for_pending_request(
+        request.app,
+        email=approval_data.email,
+        product_name=req_ctx.product_name,
+    )
+
+    if existing_user_id is not None:
+        # Already-registered user: no invitation is generated, they keep their existing password
+        preview_result = await _accounts_service.preview_grant_product_access_user_account(
+            request.app,
+            approval_email=approval_data.email,
+            product_name=req_ctx.product_name,
+        )
+        response = UserAccountPreviewApprovalGet(**preview_result.model_dump())
+        return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 
     with log_context(
         _logger,
@@ -307,9 +321,10 @@ async def reject_user_account(request: web.Request) -> web.Response:
     # Reject the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _accounts_service.reject_user_account(
         request.app,
-        pre_registration_email=rejection_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        pre_registration_email=rejection_data.email,
+        bcc_emails=rejection_data.bcc_emails,
         message_content=rejection_data.message_content.model_dump() if rejection_data.message_content else None,
     )
     assert pre_registration_id  # nosec

@@ -4,12 +4,12 @@
 
 import pytest
 from faker import Faker
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.ec2 import (
-    _APPLICATION_TAG_KEY,
     all_created_ec2_instances_filter,
     compose_user_data,
     creation_ec2_tags,
@@ -28,28 +28,74 @@ def test_get_cluster_name(
     disabled_ssm: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ):
     assert app_settings.SWARM_STACK_NAME
+    manager_name = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-manager"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:{wallet_id}"
+    )
+    worker_name = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-worker"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:{wallet_id}"
+    )
+    manager_name_no_wallet = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-manager"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:None"
+    )
+    worker_name_no_wallet = (
+        f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}"
+        "osparc-computational-cluster-worker"
+        f"-{app_settings.SWARM_STACK_NAME}"
+        f"-user_id:{user_id}-wallet_id:None"
+    )
+
     # manager
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            is_manager=True,
+        )
+        == manager_name
     )
     # worker
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            is_manager=False,
+        )
+        == worker_name
     )
 
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=None, is_manager=True)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=None,
+            is_manager=True,
+        )
+        == manager_name_no_wallet
     )
     assert (
-        get_cluster_name(app_settings, user_id=user_id, wallet_id=None, is_manager=False)
-        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
+        get_cluster_name(
+            app_settings,
+            user_id=user_id,
+            wallet_id=None,
+            is_manager=False,
+        )
+        == worker_name_no_wallet
     )
 
 
@@ -59,18 +105,20 @@ def test_creation_ec2_tags(
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
+    product_name: ProductName,
     user_id: UserID,
     wallet_id: WalletID,
 ):
-    received_tags = creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id)
+    received_tags = creation_ec2_tags(app_settings, product_name=product_name, user_id=user_id, wallet_id=wallet_id)
     assert received_tags
     EXPECTED_TAG_KEY_NAMES = [
-        f"{_APPLICATION_TAG_KEY}.deploy",
-        f"{_APPLICATION_TAG_KEY}.version",
+        "io.simcore.clusters-keeper.deploy",
+        "io.simcore.clusters-keeper.version",
         "Name",
-        "user_id",
-        "wallet_id",
-        "role",
+        "io.simcore.product_name",
+        "io.simcore.user_id",
+        "io.simcore.wallet_id",
+        "io.simcore.clusters-keeper.role",
         "osparc-tag",
     ]
     assert all(tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES), (
@@ -91,7 +139,7 @@ def test_all_created_ec2_instances_filter(
     received_tags = all_created_ec2_instances_filter(app_settings)
     assert len(received_tags) == 1
     EXPECTED_TAG_KEY_NAMES = [
-        f"{_APPLICATION_TAG_KEY}.deploy",
+        "io.simcore.clusters-keeper.deploy",
     ]
     assert all(tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES), (
         f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"

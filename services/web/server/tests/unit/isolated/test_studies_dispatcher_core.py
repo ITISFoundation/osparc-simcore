@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import json
 import urllib.parse
 from typing import Any
@@ -57,7 +56,7 @@ def test_url_quoting_and_validation():
     # The URL quoting functions focus on taking program data and making it safe for use
     # as URL components by quoting special characters and appropriately encoding non-ASCII text.
     # They also support reversing these operations to recreate the original data from the contents
-    # of a URL component if that task isn’t already covered by the URL parsing functions above
+    # of a URL component if that task isn't already covered by the URL parsing functions above
     SPACE = " "
 
     class M(BaseModel):

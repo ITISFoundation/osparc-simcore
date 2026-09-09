@@ -107,7 +107,8 @@ class BaseDataManager(ABC):
         sha256_checksum: SHA256Str | None,
         is_directory: bool,
     ) -> UploadLinks:
-        """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
+        """creates one or more upload file links if user has the rights to,
+        expects the client to complete/abort upload"""
 
     @abstractmethod
     async def complete_file_upload(
@@ -130,6 +131,10 @@ class BaseDataManager(ABC):
     @abstractmethod
     async def delete_file(self, user_id: UserID, file_id: StorageFileID) -> None:
         """deletes file if user has the rights to"""
+
+    @abstractmethod
+    async def delete_path(self, user_id: UserID, path: Path) -> None:
+        """deletes an arbitrary path if user has the rights to"""
 
 
 @dataclass

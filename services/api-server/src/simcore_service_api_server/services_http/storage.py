@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager
 from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
@@ -27,9 +28,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
-from models_library.projects import ProjectID
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
-from models_library.users import UserID
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
 from tenacity import (
@@ -48,10 +47,10 @@ from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.domain.files import File
-from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
 _POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
-
+_EXPECTED_S3_PATH_PARTS: Final[int] = 3
 
 _logger = logging.getLogger(__name__)
 
@@ -214,7 +213,7 @@ class StorageApi(BaseServiceClientApi):
                     future_enveloped = Envelope[FileUploadCompleteFutureResponse].model_validate_json(resp.text)
                     assert future_enveloped.data  # nosec
                     if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                        raise TryAgain()
+                        raise TryAgain  # noqa: TRY301
 
                     assert future_enveloped.data.e_tag  # nosec
                     _logger.debug(
@@ -224,8 +223,8 @@ class StorageApi(BaseServiceClientApi):
                     )
                     return future_enveloped.data.e_tag
         except TryAgain as exc:
-            raise BackendTimeoutError() from exc
-        raise BackendTimeoutError()
+            raise BackendTimeoutError from exc
+        raise BackendTimeoutError
 
     @_exception_mapper(http_status_map={})
     async def abort_file_upload(self, *, user_id: int, file: File) -> None:
@@ -237,7 +236,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper(http_status_map={})
     async def create_soft_link(self, *, user_id: int, target_s3_path: str, as_file_id: UUID) -> File:
-        assert len(target_s3_path.split("/")) == 3  # nosec
+        assert len(target_s3_path.split("/")) == _EXPECTED_S3_PATH_PARTS  # nosec
 
         # define api-prefixed object-path for link
         file_id: str = f"{as_file_id}"
@@ -260,24 +259,22 @@ class StorageApi(BaseServiceClientApi):
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta
 
-    @_exception_mapper(http_status_map={})
-    async def delete_project_s3_assets(self, user_id: UserID, project_id: ProjectID) -> None:
-        response = await self.client.delete(
-            f"/simcore-s3/folders/{project_id}",
-            params={"user_id": user_id},
-        )
-        response.raise_for_status()
-
 
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: StorageSettings, tracing_settings: TracingSettings | None) -> None:
+def configure(
+    app: FastAPI,
+    app_lifespan: LifespanManager[FastAPI],
+    settings: StorageSettings,
+    tracing_settings: TracingSettings | None,
+) -> None:
     if not settings:
         settings = StorageSettings()
 
-    setup_client_instance(
+    configure_client_instance(
         app,
+        app_lifespan,
         StorageApi,
         api_baseurl=settings.api_base_url,
         service_name="storage",
@@ -288,6 +285,6 @@ def setup(app: FastAPI, settings: StorageSettings, tracing_settings: TracingSett
 __all__: tuple[str, ...] = (
     "StorageApi",
     "StorageFileMetaData",
-    "setup",
+    "configure",
     "to_file_api_model",
 )

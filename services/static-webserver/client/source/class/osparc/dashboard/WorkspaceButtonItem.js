@@ -235,6 +235,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           menu.add(deleteButton);
         }
         menuButton.setMenu(menu);
+        this._keepRevealedWhileMenuOpen(menu);
+        this._setHoverRevealWidget(menuButton);
       }
     },
 

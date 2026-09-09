@@ -13,9 +13,10 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -30,10 +31,12 @@ from ...api.dependencies.database import get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
+from ...core.errors import ProjectNotFoundError
 from ...modules import projects_networks
 from ...modules.catalog import CatalogClient
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
+from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.dynamic_services import ServicesClient
 from ...modules.dynamic_sidecar.docker_api import is_sidecar_running
@@ -53,8 +56,20 @@ from ..dependencies.dynamic_services import (
 
 _MAX_PARALLELISM: Final[NonNegativeInt] = 10
 
-router = APIRouter()
+router = APIRouter(prefix="/dynamic_services", tags=["dynamic services"])
 logger = logging.getLogger(__name__)
+
+
+async def _get_service_version_display(
+    catalog_client: CatalogClient,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: str,
+) -> str | None:
+    service_metadata = await catalog_client.get_service(user_id, service_key, service_version, product_name)
+    version_display: str | None = service_metadata.get("version_display")
+    return version_display
 
 
 @router.get(
@@ -123,6 +138,9 @@ async def create_dynamic_service(
         return RedirectResponse(str(redirect_url_with_query))
 
     if not await is_sidecar_running(service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME):
+        version_display = await _get_service_version_display(
+            catalog_client, service.user_id, service.key, service.version, service.product_name
+        )
         await scheduler.add_service(
             service=service,
             simcore_service_labels=simcore_service_labels,
@@ -131,6 +149,7 @@ async def create_dynamic_service(
             request_scheme=x_dynamic_sidecar_request_scheme,
             request_simcore_user_agent=x_simcore_user_agent,
             can_save=service.can_save,
+            version_display=version_display,
         )
 
     return await scheduler.get_stack_status(service.node_uuid)
@@ -268,6 +287,7 @@ async def update_projects_networks(
         ProjectsNetworksRepository, Depends(get_repository(ProjectsNetworksRepository))
     ],
     projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
@@ -276,6 +296,7 @@ async def update_projects_networks(
     await projects_networks.update_from_workbench(
         projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
+        projects_nodes_repository=projects_nodes_repository,
         scheduler=scheduler,
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
@@ -299,21 +320,23 @@ async def get_project_inactivity(
     max_inactivity_seconds: NonNegativeFloat,
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
+    projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
 ) -> GetProjectInactivityResponse:
     # A project is considered inactive when all it's services are inactive for
     # more than `max_inactivity_seconds`.
     # A `service` which does not support the inactivity callback is considered
     # inactive.
 
-    project: ProjectAtDB = await projects_repository.get_project(project_id)
+    if not await projects_repository.exists(project_id):
+        raise ProjectNotFoundError(project_id=project_id)
 
     inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(
         *[
-            scheduler.get_service_activity(NodeID(node_id))
-            for node_id in project.workbench
+            scheduler.get_service_activity(node_id)
+            for node_id in await projects_nodes_repository.list_nodes_ids(project_id)
             # NOTE: only new style services expose service inactivity information
             # director-v2 only tracks internally new style services
-            if scheduler.is_service_tracked(NodeID(node_id))
+            if scheduler.is_service_tracked(node_id)
         ],
         max_concurrency=_MAX_PARALLELISM,
     )

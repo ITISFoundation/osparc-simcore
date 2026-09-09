@@ -136,6 +136,8 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       menu.add(openLocationButton);
 
       menuButton.setMenu(menu);
+      this._keepRevealedWhileMenuOpen(menu);
+      this._setHoverRevealWidget(menuButton);
     },
   }
 });

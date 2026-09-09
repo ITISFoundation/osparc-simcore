@@ -7,6 +7,7 @@ from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
 from yarl import URL
@@ -19,7 +20,25 @@ log = logging.getLogger(__name__)
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
 
+# NOTE: only retry on transient failures (connection issues, timeouts, service temporarily
+# unavailable). Client errors (e.g. 404, 400, 422) are deterministic and must not be retried.
+_TRANSIENT_SERVER_ERROR_STATUS_CODES: set[int] = {
+    status.HTTP_502_BAD_GATEWAY,
+    status.HTTP_503_SERVICE_UNAVAILABLE,
+    status.HTTP_504_GATEWAY_TIMEOUT,
+}
+
+
+def _is_transient_error(exception: BaseException) -> bool:
+    if isinstance(exception, TimeoutError | aiohttp.ClientConnectionError):
+        return True
+    if isinstance(exception, DirectorV2ServiceError):
+        return exception.status in _TRANSIENT_SERVER_ERROR_STATUS_CODES
+    return False
+
+
 DEFAULT_RETRY_POLICY: dict[str, Any] = {
+    "retry": retry_if_exception(_is_transient_error),
     "wait": wait_random(0, 1),
     "stop": stop_after_attempt(2),
     "reraise": True,

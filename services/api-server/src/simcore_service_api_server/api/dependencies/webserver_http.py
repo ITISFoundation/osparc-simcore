@@ -1,9 +1,10 @@
 import time
 from typing import Annotated
 
+from common_library.gettext_support import SupportedLocale
 from common_library.json_serialization import json_dumps
 from cryptography.fernet import Fernet
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
@@ -54,10 +55,22 @@ def get_session_cookie(
     return {cookie_name: encrypted_cookie_data}
 
 
+def _get_request_locale(request: Request) -> SupportedLocale | None:
+    # NOTE: `Request` is auto-injected by FastAPI's dependency resolution
+    # (any dependency, not only path operations, can declare it). Wrapping it
+    # in this dedicated sub-dependency (rather than adding `request: Request`
+    # directly to `get_webserver_session`) keeps `get_webserver_session`
+    # callable outside an HTTP request context (e.g. from Celery workers,
+    # see `modules/celery/worker/_functions_tasks.py`), where `locale` simply
+    # defaults to `None`.
+    return getattr(request.state, "locale", None)
+
+
 def get_webserver_session(
     app: Annotated[FastAPI, Depends(get_app)],
     session_cookies: Annotated[dict, Depends(get_session_cookie)],
     identity: Annotated[Identity, Depends(get_current_identity)],
+    locale: Annotated[SupportedLocale | None, Depends(_get_request_locale)] = None,
 ) -> AuthSession:
     """
     Lifetime of AuthSession wrapper is one request because it needs different session cookies
@@ -68,6 +81,7 @@ def get_webserver_session(
         session_cookies=session_cookies,
         product_name=identity.product_name,
         user_id=identity.user_id,
+        locale=locale,
     )
     assert isinstance(session, AuthSession)  # nosec
     return session

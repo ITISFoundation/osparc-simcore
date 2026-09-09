@@ -3,6 +3,7 @@ from typing import Final
 from aiocache import cached  # type: ignore[import-untyped]
 from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -25,7 +26,11 @@ _GET_OR_CREATE_CLUSTER_METHOD_NAME: Final[RPCMethodName] = TypeAdapter(RPCMethod
     key_builder=lambda f, *_args, **kwargs: f"{f.__name__}_{kwargs['user_id']}_{kwargs['wallet_id']}",
 )
 async def get_or_create_cluster(
-    client: RabbitMQRPCClient, *, user_id: UserID, wallet_id: WalletID | None
+    client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    wallet_id: WalletID | None,
 ) -> OnDemandCluster:
     """**Remote method**
 
@@ -39,6 +44,7 @@ async def get_or_create_cluster(
         CLUSTERS_KEEPER_RPC_NAMESPACE,
         _GET_OR_CREATE_CLUSTER_METHOD_NAME,
         timeout_s=RPC_REMOTE_METHOD_TIMEOUT_S,
+        product_name=product_name,
         user_id=user_id,
         wallet_id=wallet_id,
     )

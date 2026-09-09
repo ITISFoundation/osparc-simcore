@@ -1,11 +1,11 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/share_project/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name or user.user_name }},</p>
+<p>{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}</p>
 
-<p>Great news! {{ sharer.user_name }} has shared a project with you on {{ product.display_name }}.</p>
+<p>{% trans sharer_name=sharer.user_name, product_name=product.display_name %}Great news! {{ sharer_name }} has shared a project with you on {{ product_name }}.{% endtrans %}</p>
 
-<p>To view the project and accept the sharing, follow below:</p>
+<p>{% trans %}To view the project and accept the sharing, follow below:{% endtrans %}</p>
 
 {% if sharer.message %}
 <div style="border: 1px solid #ccc; padding: 16px; border-radius: 8px; background-color: #f9f9f9; margin-top: 20px; margin-bottom: 20px;">
@@ -15,7 +15,7 @@
     <tr>
       <td style="{{ strong_button_td_style }}">
         <a href="{{ accept_link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
-          Open
+          {% trans %}Open{% endtrans %}
         </a>
       </td>
     </tr>
@@ -27,15 +27,17 @@
   <tr>
     <td style="{{ strong_button_td_style }}">
       <a href="{{ accept_link }}" target="_blank" rel="noopener noreferrer" style="{{ strong_button_link_style }}">
-        Open
+        {% trans %}Open{% endtrans %}
       </a>
     </td>
   </tr>
 </table>
 {% endif %}
 
-<p>Please don't hesitate to contact us at <a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a> if you need further help.</p>
+{% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
+<p>{% trans support_link=support_link %}Please don't hesitate to contact us at {{ support_link }} if you need further help.{% endtrans %}</p>
 
-<p>Best Regards,</p>
-<p>The <i>{{ product.display_name }}</i> Team</p>
+<p>{% trans %}Best Regards,{% endtrans %}</p>
+{% set product_name %}<i>{{ product.display_name }}</i>{% endset %}
+<p>{% trans product_name=product_name %}The {{ product_name }} Team{% endtrans %}</p>
 {% endblock %}

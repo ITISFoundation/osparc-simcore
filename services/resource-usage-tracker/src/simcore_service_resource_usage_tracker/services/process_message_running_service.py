@@ -76,18 +76,6 @@ async def _process_start_event(
     rabbitmq_client: RabbitMQClient,
     _rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
-    service_run_db = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=msg.service_run_id)
-    if service_run_db:
-        # NOTE: After we find out why sometimes RUT receives multiple start events and fix it, we can change it to log level `error`
-        _logger.warning(
-            "On process start event the service run id %s already exists in DB, INVESTIGATE! "
-            "Current msg created_at: %s, already stored msg created_at: %s",
-            msg.service_run_id,
-            msg.created_at,
-            service_run_db.started_at,
-        )
-        return
-
     # Prepare `service run` record (if billable `credit transaction`) in the DB
     service_type = (
         ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
@@ -132,6 +120,13 @@ async def _process_start_event(
         last_heartbeat_at=msg.created_at,
     )
     service_run_id = await service_runs_db.create_service_run(db_engine, data=create_service_run)
+    if service_run_id is None:
+        _logger.warning(
+            "On process start event the service run id %s for product %s was already created",
+            msg.service_run_id,
+            msg.product_name,
+        )
+        return
 
     if msg.wallet_id and msg.wallet_name:
         transaction_create = CreditTransactionCreate(
@@ -346,7 +341,9 @@ async def _process_stop_event(
             try:
                 await notify_user_of_credit_reimbursement(
                     rabbitmq_rpc_client,
+                    db_engine,
                     product_name=running_service.product_name,
+                    user_id=running_service.user_id,
                     user_email=running_service.user_email,
                     service_run_id=msg.service_run_id,
                     reimbursed_credits=computed_credits,

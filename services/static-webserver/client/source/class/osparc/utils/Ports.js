@@ -33,7 +33,7 @@ qx.Class.define("osparc.utils.Ports", {
       return (data !== null && typeof data === "object" && data.nodeUuid);
     },
 
-    isDataAParameter: function(data) {
+    isDataMustached: function(data) {
       return (data !== null && typeof data === "string" && data.startsWith("{{") && data.endsWith("}}"));
     },
 

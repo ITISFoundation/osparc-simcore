@@ -27,6 +27,7 @@ class CompPipelinesRepository(BaseRepository):
         self,
         project_id: ProjectID,
         dag_graph: nx.DiGraph,
+        *,
         publish: bool,
     ) -> None:
         pipeline_at_db = CompPipelineAtDB(
@@ -35,7 +36,6 @@ class CompPipelinesRepository(BaseRepository):
             state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
         insert_stmt = insert(comp_pipeline).values(**pipeline_at_db.model_dump(mode="json", by_alias=True))
-        # FIXME: This is not a nice thing. this part of the information should be kept in comp_runs.
         on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[comp_pipeline.c.project_id],
             set_=pipeline_at_db.model_dump(
@@ -50,9 +50,3 @@ class CompPipelinesRepository(BaseRepository):
     async def delete_pipeline(self, project_id: ProjectID) -> None:
         async with self.db_engine.begin() as conn:
             await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))
-
-    async def mark_pipeline_state(self, project_id: ProjectID, state: RunningState) -> None:
-        async with self.db_engine.begin() as conn:
-            await conn.execute(
-                sa.update(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)).values(state=state)
-            )

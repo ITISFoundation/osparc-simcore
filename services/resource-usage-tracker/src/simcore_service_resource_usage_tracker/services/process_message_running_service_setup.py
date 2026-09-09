@@ -1,8 +1,9 @@
 import functools
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.rabbitmq_messages import RabbitResourceTrackingBaseMessage
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
@@ -60,6 +61,12 @@ def on_app_shutdown(
     return _stop
 
 
-def setup(app: FastAPI) -> None:
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+def configure_process_message_running_service(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _process_message_running_service_lifespan(app: FastAPI) -> AsyncIterator[State]:
+        try:
+            await on_app_startup(app)()
+            yield {}
+        finally:
+            await on_app_shutdown(app)()
+
+    app_lifespan.add(_process_message_running_service_lifespan)

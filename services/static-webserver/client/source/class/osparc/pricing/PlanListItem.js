@@ -209,7 +209,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
         return;
       }
       const label = this.getChildControl("pp-id");
-      label.setValue("Id: " + id);
+      label.setValue(this.tr("Id: %1", id));
     },
 
     __applyPpKey: function(id) {
@@ -217,7 +217,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
         return;
       }
       const label = this.getChildControl("pp-key");
-      label.setValue("Key: " + id);
+      label.setValue(this.tr("Key: %1", id));
     },
 
     __applyIsActive: function(value) {

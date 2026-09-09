@@ -65,7 +65,7 @@ def app_environment(
 async def test_one_time_payment_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
-    setup_user_pre_registration_details_db: None,
+    setup_user_billing_details_db: None,
     rpc_client: RabbitMQRPCClient,
 ):
     assert client.app

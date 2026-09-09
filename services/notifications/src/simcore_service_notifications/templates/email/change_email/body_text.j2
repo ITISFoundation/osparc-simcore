@@ -1,10 +1,10 @@
-Dear {{ user.first_name or user.user_name }},
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
 
-You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen information in the link below:
+{% trans product_name=product.display_name %}You have requested to change the email address linked to your {{ product_name }} account. Please follow the on-screen information in the link below:{% endtrans %}
 
 {{ link }}
 
-Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+{% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
 
-Best Regards,
-The {{ product.display_name }} Team
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

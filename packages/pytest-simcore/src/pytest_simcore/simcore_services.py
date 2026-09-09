@@ -53,7 +53,6 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[dict[str, str]] = {
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
     "dynamic-schdlr": "/",
-    "efs-guardian": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",

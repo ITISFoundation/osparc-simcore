@@ -355,6 +355,11 @@ class RestartPolicy(StrEnum):
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
+class UserPreferencesVersionSource(StrEnum):
+    SERVICE_VERSION_IDENTIFIER = "service-version"
+    SERVICE_VERSION_DISPLAY = "version-display"
+
+
 class DynamicSidecarServiceLabels(BaseModel):
     """All "simcore.service.*" labels including keys"""
 
@@ -410,6 +415,20 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     ] = None
 
+    user_preferences_version_source: Annotated[
+        UserPreferencesVersionSource,
+        Field(
+            alias="simcore.service.user-preferences-version-source",
+            description=(
+                "selects which resolved version is used to namespace saved user preferences:\n"
+                "- `service-version` default, namespaces by the service's semantic version\n"
+                "- `version-display` namespaces by the catalog's human readable display version "
+                "instead, so preferences survive across semantic version bumps within the same "
+                "display release\n"
+            ),
+        ),
+    ] = UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
+
     restart_policy: Annotated[
         RestartPolicy,
         Field(
@@ -447,6 +466,14 @@ class DynamicSidecarServiceLabels(BaseModel):
             default_factory=CallbacksMapping,
         ),
     ] = DEFAULT_FACTORY
+
+    tracing: Annotated[
+        bool,
+        Field(
+            alias="simcore.service.tracing",
+            description="if True, enables OTEL trace collection for this service",
+        ),
+    ] = False
 
     @cached_property
     def needs_dynamic_sidecar(self) -> bool:
@@ -660,6 +687,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         ),
                         "simcore.service.user-preferences-path": json_dumps(
                             "/tmp/path_to_preferences"  # noqa: S108
+                        ),
+                        "simcore.service.user-preferences-version-source": (
+                            UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
                         ),
                         "simcore.service.is_collaborative": "False",
                     },

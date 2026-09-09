@@ -4,6 +4,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 
@@ -132,11 +133,21 @@ async def ensure_parametrized_queue_is_empty(
     rabbitmq_client = create_rabbitmq_client("pytest-purger")
 
     async def _queue_messages_purger() -> None:
-        assert rabbitmq_client._channel_pool  # noqa: SLF001
-        async with rabbitmq_client._channel_pool.acquire() as channel:  # noqa: SLF001
+        # NOTE: a passive get_queue() on a non-existing queue makes the broker close the
+        # channel (ChannelNotFoundEntity), which would poison the client's channel pool if
+        # that channel got reused. So we use a dedicated channel here and always close it,
+        # instead of going through `rabbitmq_client._channel_pool.acquire()`.
+        channel = await rabbitmq_client._get_channel()  # noqa: SLF001
+        try:
             assert isinstance(channel, aio_pika.RobustChannel)
             queue = await channel.get_queue(queue_name)
             await queue.purge()
+        except aio_pika.exceptions.ChannelNotFoundEntity:
+            # queue does not exist (yet): nothing to purge
+            pass
+        finally:
+            with contextlib.suppress(Exception):
+                await channel.close()
 
     await _queue_messages_purger()
     yield

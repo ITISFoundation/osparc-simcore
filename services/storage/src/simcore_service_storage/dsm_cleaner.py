@@ -1,36 +1,21 @@
-"""background task that cleans the DSM pending/expired uploads
-
-# Rationale:
- - for each upload an entry is created in the file_meta_data table in the database
- - then an upload link (S3/HTTP URL) is created through S3 backend and sent back to the client
- - the client shall upload the file and then notify DSM of completion
- - upon completion the corresponding entry in file_meta_data is updated:
-   - the file_size of the uploaded file is set
-   - the upload_expiration_date is set to null
-   - if the uploadId exists (for multipart uploads) it is set to null
-
-# DSM cleaner:
- - runs at an interval
- - list the entries that are expired in the database by checking "upload_expires_at" column
- - tries to update from S3 the database first, if that fails:
-   - removes the entries in the database that are expired:
-      - removes the entry
-      - aborts the multipart upload if any
-"""
+"""background task that periodically cleans up the DSM of expired uploads and exporter archives."""
 
 import asyncio
 import logging
+from asyncio import create_task
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import cast
+from typing import Final, cast
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
+from pydantic import NonNegativeInt
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 from servicelib.tracing import traced
+from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
 from .core.settings import get_application_settings
@@ -40,44 +25,59 @@ from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME_PERIODICALLY_CLEAN_DSM = "periodic_cleanup_of_dsm"
+_CANCEL_TASK_CONCURRENCY: Final[NonNegativeInt] = 4
+
+
+def _get_simcore_s3_dsm(app: FastAPI) -> SimcoreS3DataManager:
+    dsm = get_dsm_provider(app)
+    return cast(SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id()))
 
 
 @traced
-async def dsm_cleaner_task(app: FastAPI) -> None:
-    with log_context(_logger, logging.INFO, "dsm cleaner task"):
-        dsm = get_dsm_provider(app)
-        simcore_s3_dsm: SimcoreS3DataManager = cast(
-            SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
-        )
-        await simcore_s3_dsm.clean_expired_uploads()
+async def clean_expired_uploads(app: FastAPI) -> None:
+    with log_context(_logger, logging.INFO, "clean expired uploads"):
+        await _get_simcore_s3_dsm(app).clean_expired_uploads()
+
+
+@traced
+async def clean_expired_exports(app: FastAPI) -> None:
+    with log_context(_logger, logging.INFO, "clean expired exports"):
+        await _get_simcore_s3_dsm(app).clean_expired_exports()
 
 
 @asynccontextmanager
 async def _dsm_cleaner_lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Lifespan context manager for DSM cleaner."""
-    app.state.dsm_cleaner_task = None
-
+    tasks: list[asyncio.Task] = []
     try:
         cfg = get_application_settings(app)
-        assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
+        lock_client = get_redis_client_manager(app).client(RedisDatabase.LOCKS)
 
         @exclusive_periodic(
-            get_redis_client_manager(app).client(RedisDatabase.LOCKS),
-            task_interval=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
+            lock_client,
+            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPIRED_UPLOADS_INTERVAL,
             retry_after=timedelta(minutes=5),
         )
-        async def _periodic_dsm_clean() -> None:
-            await dsm_cleaner_task(app)
+        async def _run_clean_expired_uploads() -> None:
+            await clean_expired_uploads(app)
 
-        app.state.dsm_cleaner_task = asyncio.create_task(_periodic_dsm_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_DSM)
+        tasks.append(create_task(_run_clean_expired_uploads()))
+
+        @exclusive_periodic(
+            lock_client,
+            task_interval=cfg.STORAGE_CLEANER.STORAGE_CLEANER_EXPIRED_EXPORTS_INTERVAL,
+            retry_after=timedelta(minutes=5),
+        )
+        async def _run_clean_expired_exports() -> None:
+            await clean_expired_exports(app)
+
+        tasks.append(create_task(_run_clean_expired_exports()))
 
         yield
     finally:
-        if isinstance(app.state.dsm_cleaner_task, asyncio.Task):
-            await cancel_wait_task(app.state.dsm_cleaner_task)
+        await limited_gather(
+            *(cancel_wait_task(t) for t in tasks), reraise=False, limit=_CANCEL_TASK_CONCURRENCY, log=_logger
+        )
 
 
 def configure_dsm_cleaner(app_lifespan: LifespanManager) -> None:
-    """Configure DSM cleaner lifespan."""
     app_lifespan.add(_dsm_cleaner_lifespan)

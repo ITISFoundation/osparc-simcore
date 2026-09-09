@@ -120,7 +120,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
       const menu = new qx.ui.menu.Menu();
 
       if (btn.skipNode) {
-        const showButton = new qx.ui.menu.Button("Show", "@FontAwesomeSolid/eye/14");
+        const showButton = new qx.ui.menu.Button(this.tr("Show"), "@FontAwesomeSolid/eye/14");
         showButton.addListener("execute", () => {
           this.fireDataEvent("showNode", {
             nodeId: btn.nodeId,
@@ -129,14 +129,14 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
         });
         menu.add(showButton);
       } else {
-        const hideButton = new qx.ui.menu.Button("Hide", "@FontAwesomeSolid/eye-slash/14");
+        const hideButton = new qx.ui.menu.Button(this.tr("Hide"), "@FontAwesomeSolid/eye-slash/14");
         hideButton.addListener("execute", () => {
           this.fireDataEvent("hideNode", btn.nodeId);
         });
         menu.add(hideButton);
       }
 
-      const deleteButton = new qx.ui.menu.Button("Delete", "@FontAwesomeSolid/trash/14").set({
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesomeSolid/trash/14").set({
         appearance: "danger-button"
       });
       deleteButton.addListener("execute", () => {

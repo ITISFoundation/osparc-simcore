@@ -20,6 +20,7 @@ from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -735,6 +736,27 @@ async def test_rpc_get_service_ports_successful_retrieval(
     expected_inputs = expected_service["inputs"]
     expected_outputs = expected_service["outputs"]
     assert len(ports) == len(expected_inputs) + len(expected_outputs)
+
+
+async def test_rpc_get_service_labels(
+    background_sync_task_mocked: None,
+    mocked_director_rest_api: MockRouter,
+    rpc_client: RabbitMQRPCClient,
+    app: FastAPI,
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+):
+    assert app
+
+    expected_service = expected_director_rest_api_list_services[0]
+
+    labels = await catalog_rpc.get_service_labels(
+        rpc_client,
+        service_key=expected_service["key"],
+        service_version=expected_service["version"],
+    )
+
+    assert isinstance(labels, SimcoreServiceLabels)
+    assert labels.needs_dynamic_sidecar is False
 
 
 async def test_rpc_get_service_ports_not_found(

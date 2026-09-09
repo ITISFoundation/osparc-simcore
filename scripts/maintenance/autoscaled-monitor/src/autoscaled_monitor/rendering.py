@@ -13,7 +13,7 @@ from rich.console import Group
 from rich.style import Style
 from rich.table import Column, Table
 
-from . import dask, utils
+from . import dask, pricing, utils
 from .models import (
     ComputationalCluster,
     ComputationalTask,
@@ -364,15 +364,18 @@ def _format_dynamic_rut_cells(
     return "[green]\u2705 RUNNING[/green]", rate, elapsed, total, usd
 
 
-def print_dynamic_instances(  # noqa: C901, PLR0912
+async def print_dynamic_instances(  # noqa: C901, PLR0912, PLR0915
     instances: list[DynamicInstance],
     environment: dict[str, str | None],
     aws_region: str,
     output: Path | None,
     *,
     service_extra_info: dict[tuple[str, str], DynamicServiceExtraInfo] | None,
+    pricing_profile: str | None = None,
 ) -> None:
     time_now = arrow.utcnow()
+    aws_access_key_id = environment.get("AUTOSCALING_EC2_ACCESS_KEY_ID")
+    aws_secret_access_key = environment.get("AUTOSCALING_EC2_SECRET_ACCESS_KEY")
     table_title = f"dynamic autoscaled instances: {aws_region}"
     table = Table(
         Column("Instance"),
@@ -387,6 +390,8 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
         title_style=Style(color="red", encircle=True),
         expand=True,
     )
+    total_accrued_usd = 0.0
+    total_accrued_usd_known = True
     for instance in instances:
         service_table = "[i]n/a[/i]"
         if instance.running_services:
@@ -449,8 +454,24 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                     issues,
                     end_section=True,
                 )
+        elif instance.is_hot_buffer:
+            service_table = "[dim]hot buffer - no services running[/dim]"
         elif instance.is_warm_buffer:
             service_table = "[dim]warm buffer - no services running[/dim]"
+        else:
+            service_table = "[dim]potential hot buffer - no services running[/dim]"
+
+        cost_info = await pricing.get_cost_info(
+            instance.ec2_instance,
+            aws_region,
+            aws_access_key_id,
+            aws_secret_access_key,
+            profile_name=pricing_profile,
+        )
+        if cost_info.accrued_usd is not None:
+            total_accrued_usd += cost_info.accrued_usd
+        else:
+            total_accrued_usd_known = False
 
         instance_info = "\n".join(
             [
@@ -463,9 +484,10 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
                 f"PublicIP: {instance.ec2_instance.public_ip_address}",
                 f"PrivateIP: {instance.ec2_instance.private_ip_address}",
                 *_format_disk_usage_lines(instance.disk_usage),
+                *cost_info.lines,
             ]
         )
-        if instance.is_warm_buffer:
+        if not instance.running_services:
             instance_info = f"[dim]{instance_info}[/dim]"
         graylog_line = f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}"
         right_content = Group(graylog_line, service_table)
@@ -477,11 +499,15 @@ def print_dynamic_instances(  # noqa: C901, PLR0912
     if output:
         with output.open("w") as fp:
             rich.print(table, flush=True, file=fp)
+            if total_accrued_usd_known:
+                rich.print(f"[bold]Total cost so far: ${total_accrued_usd:.2f}[/bold]", file=fp)
     else:
         rich.print(table, flush=True)
+        if total_accrued_usd_known:
+            rich.print(f"[bold]Total cost so far: ${total_accrued_usd:.2f}[/bold]")
 
 
-def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
+async def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
     clusters: list[ComputationalCluster],
     environment: dict[str, str | None],
     aws_region: str,
@@ -493,6 +519,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
     ]
     | None,
     compact: bool,
+    pricing_profile: str | None = None,
 ) -> None:
     """Print computational clusters.
 
@@ -500,8 +527,20 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
     only worker count and task-level info are shown. Used by the top-level summary.
     """
     time_now = arrow.utcnow()
+    aws_access_key_id = environment.get("CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID")
+    aws_secret_access_key = environment.get("CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY")
+    total_accrued_usd = 0.0
+    total_accrued_usd_known = True
 
-    for cluster in clusters:
+    def _cluster_product_name(cluster: ComputationalCluster) -> str:
+        extra = (cluster_extra_info or {}).get((cluster.primary.user_id, cluster.primary.wallet_id))
+        return ((extra[2] if extra else None) or "").lower()
+
+    sorted_clusters = sorted(
+        clusters, key=lambda cluster: (cluster.primary.is_warm_buffer, _cluster_product_name(cluster))
+    )
+
+    for cluster in sorted_clusters:
         cluster_worker_metrics = dask.get_worker_metrics(cluster.scheduler_info)
         job_to_worker = build_job_to_worker(cluster)
 
@@ -554,9 +593,23 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
             dask_state_display = f"[red]{dask_state_display}[/red]"
         else:
             dask_state_display = "[green]Ready[/green]"
+        primary_label = utils.color_encode_with_state("Primary", cluster.primary.ec2_instance)
+        if cluster.primary.is_warm_buffer:
+            primary_label += " [dim](warm buffer)[/dim]"
+        primary_cost_info = await pricing.get_cost_info(
+            cluster.primary.ec2_instance,
+            aws_region,
+            aws_access_key_id,
+            aws_secret_access_key,
+            profile_name=pricing_profile,
+        )
+        if primary_cost_info.accrued_usd is not None:
+            total_accrued_usd += primary_cost_info.accrued_usd
+        else:
+            total_accrued_usd_known = False
         primary_info = "\n".join(
             [
-                f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
+                f"[bold]{primary_label}",
                 f"{cluster.primary.name}",
                 f"ID: {cluster.primary.ec2_instance.id}",
                 f"AMI: {cluster.primary.ec2_instance.image_id}",
@@ -566,6 +619,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 f"PublicIP: {cluster.primary.ec2_instance.public_ip_address}",
                 f"PrivateIP: {cluster.primary.ec2_instance.private_ip_address}",
                 *_format_disk_usage_lines(cluster.primary.disk_usage),
+                *primary_cost_info.lines,
             ]
         )
         if cluster.primary.is_warm_buffer:
@@ -614,7 +668,21 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 table.add_row()
                 indent = "  "
                 worker_label = utils.color_encode_with_state(f"Worker {index + 1}", worker.ec2_instance)
+                if worker.is_warm_buffer:
+                    worker_label += " [dim](warm buffer)[/dim]"
                 worker_up = utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)
+                worker_cost_info = await pricing.get_cost_info(
+                    worker.ec2_instance,
+                    aws_region,
+                    aws_access_key_id,
+                    aws_secret_access_key,
+                    profile_name=pricing_profile,
+                    indent=indent,
+                )
+                if worker_cost_info.accrued_usd is not None:
+                    total_accrued_usd += worker_cost_info.accrued_usd
+                else:
+                    total_accrued_usd_known = False
                 worker_info = "\n".join(
                     [
                         f"{indent}[italic]{worker_label}[/italic]",
@@ -628,6 +696,7 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                         f"{indent}PrivateIP: {worker.ec2_instance.private_ip_address}",
                         f"{indent}DaskWorkerIP: {worker.dask_ip}",
                         *_format_disk_usage_lines(worker.disk_usage, indent=indent),
+                        *worker_cost_info.lines,
                         "",
                     ]
                 )
@@ -649,6 +718,17 @@ def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 rich.print(table, file=fp)
         else:
             rich.print(table)
+
+    # NOTE: in compact mode, worker costs are never computed (workers aren't iterated), so the total
+    # would be missing the worker contributions and therefore wrong — better omit it than show a
+    # misleadingly low total.
+    if not compact and total_accrued_usd_known:
+        message = f"[bold]Total cost so far across all clusters: ${total_accrued_usd:.2f}[/bold]"
+        if output:
+            with output.open("a") as fp:
+                rich.print(message, file=fp)
+        else:
+            rich.print(message)
 
 
 def print_computational_tasks(
@@ -701,6 +781,7 @@ def print_summary_as_json(
                 "name": instance.name,
                 "ec2_instance_id": instance.ec2_instance.instance_id,
                 "is_warm_buffer": instance.is_warm_buffer,
+                "is_hot_buffer": instance.is_hot_buffer,
                 "running_services": [
                     {
                         "user_id": service.user_id,

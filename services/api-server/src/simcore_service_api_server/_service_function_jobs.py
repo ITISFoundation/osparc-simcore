@@ -295,6 +295,7 @@ class FunctionJobService:
                 version=function.solver_version,
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
+                encryption=None,
             )
             return await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,

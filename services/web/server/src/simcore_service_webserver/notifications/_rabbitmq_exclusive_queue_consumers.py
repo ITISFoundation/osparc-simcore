@@ -2,9 +2,10 @@ import asyncio
 import logging
 from collections import defaultdict
 from collections.abc import AsyncIterator, Generator, MutableMapping
-from typing import Final
+from typing import Annotated, Final
 
 from aiohttp import web
+from annotated_types import doc
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES
@@ -51,6 +52,20 @@ WALLET_SUBSCRIPTIONS_COUNT_APPKEY: Final = web.AppKey(
 )
 WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey("WALLET_SUBSCRIPTION_LOCK", asyncio.Lock)
 
+# NOTE: logs are high-volume and merely a UX nicety (unlike progress/pipeline-status/wallets
+# events); if a replica's consumer ever falls behind (e.g. stale subscriptions piling up),
+# cap the queue so dropping old log lines protects the broker instead of exhausting its memory.
+# Chosen well above real, self-recovering broker-wide bursts observed in production over the
+# past 45 days (up to ~920k ready messages within a single hour, always draining back down
+# within ~1h) so normal spiky traffic is never clipped - this is a last-resort circuit breaker
+# for genuine runaway growth (the 2026-08-26 incident reached ~7.4M before the broker crashed),
+# not a routine control.
+_LOGS_QUEUE_MAX_LENGTH: Final[int] = 1_500_000
+# NOTE: `_log_message_parser` is a cheap, I/O-bound handler (socket.io emit); the shared default
+# of 10 in-flight messages is otherwise the hard throughput ceiling for this high-volume queue,
+# regardless of how fast the handler itself runs
+_LOGS_QUEUE_PREFETCH_COUNT: Final[int] = 100
+
 
 async def _notify_comp_node_progress(app: web.Application, message: ProgressRabbitMessageNode) -> None:
     project = await _projects_service.get_project_for_user(
@@ -84,7 +99,9 @@ def _is_computational_node(node_key: str) -> bool:
     return "/comp/" in node_key
 
 
-async def _computational_pipeline_status_message_parser(app: web.Application, data: bytes) -> bool:
+async def _computational_pipeline_status_message_parser(
+    app: web.Application, data: bytes
+) -> Annotated[bool, doc("ACKs whether message was processed")]:
     rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
     try:
         project = await _projects_service.get_project_for_user(
@@ -94,25 +111,26 @@ async def _computational_pipeline_status_message_parser(app: web.Application, da
             include_state=True,
         )
     except ProjectNotFoundError:
+        # NOTE: the project is gone (e.g. deleted by the user): nothing to notify,
+        # so the message is still considered as processed (acked, not retried)
         _logger.warning(
             "Cannot notify user %s about project %s status: project not found",
             rabbit_message.user_id,
             rabbit_message.project_id,
         )
-        return True  # <-- telling RabbitMQ that message was processed
-
-    if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
-        # the pipeline finished, the frontend needs to update all computational nodes
-        computational_node_ids = (
-            n.node_id
-            for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
-            if _is_computational_node(n.key)
-        )
-        await limited_gather(
-            *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
-            limit=10,  # notify 10 nodes at a time
-        )
-    await _projects_service.notify_project_state_update(app, project)
+    else:
+        if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
+            # the pipeline finished, the frontend needs to update all computational nodes
+            computational_node_ids = (
+                n.node_id
+                for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
+                if _is_computational_node(n.key)
+            )
+            await limited_gather(
+                *[_projects_service.notify_project_node_update(app, project, n_id) for n_id in computational_node_ids],
+                limit=10,  # notify 10 nodes at a time
+            )
+        await _projects_service.notify_project_state_update(app, project)
 
     return True
 
@@ -202,7 +220,14 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubscribeArgumentsTuple, ...]] = (
     SubscribeArgumentsTuple(
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
-        {"topics": []},
+        {
+            "topics": [],
+            "max_length": _LOGS_QUEUE_MAX_LENGTH,
+            "prefetch_count": _LOGS_QUEUE_PREFETCH_COUNT,
+            # a stale log line has no value and dead-lettering it back into this same exchange
+            # would only add more publish traffic to an already-backlogged queue
+            "enable_dead_letter_requeue": False,
+        },
     ),
     SubscribeArgumentsTuple(
         ProgressRabbitMessageNode.get_channel_name(),

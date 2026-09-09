@@ -200,7 +200,7 @@ def mock_celery_worker(
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[WorkController]:
-    monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "true")
+    monkeypatch.setenv("NOTIFICATIONS_BOOT_SERVER_MODE", "AS_CELERY_WORKER")
 
     app_server = FastAPIAppServer(app=app_factory())
 

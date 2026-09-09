@@ -10,6 +10,7 @@
 --requirement _base.txt
 
 # installs this repo's packages
+simcore-aws-library @ ../../packages/aws-library/
 simcore-celery-library @ ../../packages/celery-library/
 simcore-models-library @ ../../packages/models-library
 simcore-common-library @ ../../packages/common-library/

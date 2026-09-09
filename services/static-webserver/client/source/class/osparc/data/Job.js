@@ -87,17 +87,17 @@ qx.Class.define("osparc.data.Job", {
 
   statics: {
     STATUS_LABELS: {
-      "UNKNOWN": "Unknown",
-      "NOT_STARTED": "Unknown",
-      "PUBLISHED": "Queued",
-      "PENDING": "Queued",
-      "RUNNING": "Running",
-      "STARTED": "Running",
-      "SUCCESS": "Finished",
-      "FAILED": "Failed",
-      "ABORTED": "Aborted",
-      "WAITING_FOR_RESOURCES": "Hardware is ready, installing solvers",
-      "WAITING_FOR_CLUSTER": "Creating your personal computing hardware",
+      "UNKNOWN": qx.locale.Manager.tr("Unknown"),
+      "NOT_STARTED": qx.locale.Manager.tr("Unknown"),
+      "PUBLISHED": qx.locale.Manager.tr("Queued"),
+      "PENDING": qx.locale.Manager.tr("Queued"),
+      "RUNNING": qx.locale.Manager.tr("Running"),
+      "STARTED": qx.locale.Manager.tr("Running"),
+      "SUCCESS": qx.locale.Manager.tr("Finished"),
+      "FAILED": qx.locale.Manager.tr("Failed"),
+      "ABORTED": qx.locale.Manager.tr("Aborted"),
+      "WAITING_FOR_RESOURCES": qx.locale.Manager.tr("Hardware is ready, installing solvers"),
+      "WAITING_FOR_CLUSTER": qx.locale.Manager.tr("Creating your personal computing hardware"),
     },
   },
 

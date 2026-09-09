@@ -61,6 +61,7 @@ qx.Class.define("osparc.support.HomePage", {
         alignY: "middle",
         marginLeft: 5
       });
+      // eslint-disable-next-line no-underscore-dangle
       button._add(icon);
     },
   },
@@ -137,10 +138,10 @@ qx.Class.define("osparc.support.HomePage", {
         const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesomeSolid/graduation-cap/14");
         const store = osparc.store.Store.getInstance();
         store.bind("currentStudy", tutorialsBtn, "enabled", {
-          converter: study => !Boolean(study)
+          converter: study => !study
         });
         tutorialsBtn.addListener("execute", () => qx.event.message.Bus.getInstance().dispatchByName("showTab", "tutorialsTab"), this);
-       learningButtons.push(tutorialsBtn);
+        learningButtons.push(tutorialsBtn);
       }
       const guidedToursButton = osparc.store.Support.getGuidedToursButton();
       if (guidedToursButton) {

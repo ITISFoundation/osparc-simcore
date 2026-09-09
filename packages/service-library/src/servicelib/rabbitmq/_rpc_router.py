@@ -54,7 +54,6 @@ class RPCRouter:
                     _logger,
                     logging.INFO,
                     msg=f"RPC call {_create_func_msg(func, args, kwargs)}",
-                    log_duration=True,
                 ):
                     try:
                         return await func(*args, **kwargs)

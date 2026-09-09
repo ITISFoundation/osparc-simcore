@@ -112,9 +112,11 @@ async def test_valid_upload_download(
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
         assert store_id == s3_simcore_location
         assert e_tag
+        assert upload_result.last_modified
         file_metadata = await filemanager.get_file_metadata(user_id=user_id, store_id=store_id, s3_object=file_id)
         assert file_metadata.location == store_id
         assert file_metadata.etag == e_tag
+        assert file_metadata.last_modified == upload_result.last_modified
 
         download_folder = Path(tmpdir) / "downloads"
         download_file_path = await filemanager.download_path_from_s3(

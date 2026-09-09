@@ -1,13 +1,13 @@
-Dear {{ user.first_name or user.user_name }},
+{% trans first_name=user.first_name or user.user_name %}Dear {{ first_name }},{% endtrans %}
 
-Great news! {{ sharer.user_name }} has shared a project with you on {{ product.display_name }}.
+{% trans sharer_name=sharer.user_name, product_name=product.display_name %}Great news! {{ sharer_name }} has shared a project with you on {{ product_name }}.{% endtrans %}
 
-To view the project and accept the sharing, follow below:
+{% trans %}To view the project and accept the sharing, follow below:{% endtrans %}
 
 {{ sharer.message }}
 {{ accept_link }}
 
-Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+{% trans support_email=product.support_email %}Please don't hesitate to contact us at {{ support_email }} if you need further help.{% endtrans %}
 
-Best Regards,
-The {{ product.display_name }} Team
+{% trans %}Best Regards,{% endtrans %}
+{% trans product_name=product.display_name %}The {{ product_name }} Team{% endtrans %}

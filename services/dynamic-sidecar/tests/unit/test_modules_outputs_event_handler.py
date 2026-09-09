@@ -2,14 +2,14 @@
 # pylint: disable=protected-access
 
 import asyncio
+import multiprocessing
 from collections.abc import AsyncIterable
+from multiprocessing.queues import Queue
 from pathlib import Path
 from typing import Any, Final
 from unittest.mock import Mock
 
-import aioprocessing
 import pytest
-from aioprocessing.queues import AioQueue
 from pydantic import PositiveFloat
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
@@ -66,8 +66,8 @@ async def outputs_manager(
 
 
 @pytest.fixture
-def health_check_queue() -> AioQueue:
-    return aioprocessing.AioQueue()
+def health_check_queue() -> Queue[int | None]:
+    return multiprocessing.Queue()
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def heart_beat_interval_s() -> PositiveFloat:
 
 async def test_event_handler_process_lifecycle(
     outputs_context: OutputsContext,
-    health_check_queue: AioQueue,
+    health_check_queue: Queue[int | None],
     heart_beat_interval_s: PositiveFloat,
 ):
     observer_process = _EventHandlerProcess(
@@ -141,7 +141,7 @@ def mock_state_path() -> Path:
     return _STATE_PATH
 
 
-class _MockAioQueue:
+class _MockQueue:
     def __init__(self) -> None:
         self.items: list[Any] = []
 
@@ -228,7 +228,7 @@ class _MockAioQueue:
 def test_port_keys_event_handler_triggers_for_events(
     mock_state_path: Path, event: FileSystemEvent, expected_port_key: str | None
 ) -> None:
-    queue = _MockAioQueue()
+    queue = _MockQueue()
 
     event_handler = _PortKeysEventHandler(mock_state_path, queue)
     event_handler.handle_set_outputs_port_keys(outputs_port_keys={"output_1"})

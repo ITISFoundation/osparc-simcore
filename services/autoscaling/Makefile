@@ -1,5 +1,7 @@
 #
 # DEVELOPMENT recipes for Auto scaling service
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-service.Makefile
+.DEFAULT_GOAL := help
+
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/service.mk

@@ -1,6 +1,8 @@
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from aiohttp import web
+from annotated_types import doc
+from common_library.gettext_support import SupportedLocale
 from models_library.celery import GroupUUID, TaskName, TaskUUID
 from models_library.groups import GroupID
 from models_library.notifications import (
@@ -29,6 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_message_from_template as remote_send_message_from_template,
 )
 
+from ..locale import resolve_effective_locale
 from ..models import WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
@@ -81,6 +84,7 @@ async def _create_email_addressing(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     reply_to: Contact | None = None,
+    bcc: list[Contact] | None = None,
 ) -> EmailAddressing:
     """Build email addressing (from/to) for all recipients.
 
@@ -101,6 +105,7 @@ async def _create_email_addressing(
     return EmailAddressing(
         to=to_contacts,
         reply_to=reply_to,
+        bcc=bcc,
     )
 
 
@@ -110,6 +115,7 @@ async def _create_email_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
+    bcc: list[Contact] | None = None,
 ) -> EmailMessage:
     """Build a single email message dict with all recipients.
 
@@ -120,6 +126,7 @@ async def _create_email_message(
         app,
         group_ids=group_ids,
         external_contacts=external_contacts,
+        bcc=bcc,
     )
 
     return EmailMessage(
@@ -168,6 +175,7 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
+    bcc: list[Contact] | None = None,
 ) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
         case Channel.email:
@@ -176,6 +184,7 @@ async def send_message(
                 group_ids=group_ids,
                 external_contacts=external_contacts,
                 content=content,
+                bcc=bcc,
             )
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
@@ -204,7 +213,30 @@ async def send_message_from_template(
     reply_to: Contact | None = None,
     template_name: str,
     context: dict[str, Any],
-) -> tuple[TaskUUID | GroupUUID, TaskName]:
+    locale: Annotated[
+        SupportedLocale | None,
+        doc("Enforces this locale; otherwise resolved from the recipient's DB-stored preference, falling back to EN"),
+    ] = None,
+) -> Annotated[
+    tuple[TaskUUID | GroupUUID, TaskName],
+    doc("(task or group uuid, task name) of the dispatched notification"),
+]:
+    """Sends a notification rendered from a template to a single user, external contacts, or group recipients.
+
+    See ``resolve_effective_locale`` for how the recipient's locale is determined.
+
+    Raises:
+        NotificationsUnsupportedChannelError: If `channel` is not supported.
+        NotificationsNoActiveRecipientsError: If no active recipients are found.
+    """
+
+    resolved_locale = await resolve_effective_locale(
+        app,
+        user_id=user_id,
+        group_ids=group_ids,
+        locale=locale,
+    )
+
     match channel:
         case Channel.email:
             addressing = await _create_email_addressing(
@@ -224,6 +256,7 @@ async def send_message_from_template(
             TemplateRef(channel=channel, template_name=template_name).model_dump()
         ),
         context=context,
+        locale=resolved_locale,
         owner_metadata=WebServerOwnerMetadata(
             user_id=user_id,
             product_name=product_name,

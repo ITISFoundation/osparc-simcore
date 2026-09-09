@@ -39,3 +39,23 @@ input::-webkit-search-cancel-button {
 input[type="search"] {
   appearance: textfield;
 }
+
+/* Chat composer text area: scrollbar matching the app-wide scroll knob
+   (colors come from the scrollbar-passive/active theme colors, see Application) */
+.osparc-chat-composer::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.osparc-chat-composer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.osparc-chat-composer::-webkit-scrollbar-thumb {
+  background: var(--osparc-scrollbar-thumb);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+}
+.osparc-chat-composer::-webkit-scrollbar-thumb:hover {
+  background: var(--osparc-scrollbar-thumb-hover);
+  background-clip: padding-box;
+}

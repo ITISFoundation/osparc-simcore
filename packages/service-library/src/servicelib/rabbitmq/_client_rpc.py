@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import functools
 import logging
 from collections.abc import AsyncIterator, Callable
@@ -11,6 +10,7 @@ import aio_pika
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
+from tenacity import retry
 
 from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
@@ -18,7 +18,10 @@ from ._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from ._models import RPCNamespacedMethodName
 from ._rpc_router import RPCRouter
-from ._utils import get_rabbitmq_client_unique_name
+from ._utils import (
+    RabbitMQRetryPolicyUponInitialization,
+    get_rabbitmq_client_unique_name,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -30,24 +33,35 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _rpc: aio_pika.patterns.RPC | None = None
     _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
+    _surface_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
     @classmethod
     async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
         client = cls(client_name=client_name, settings=settings, **kwargs)
         await client._rpc_initialize()
         return client
 
-    async def _rpc_initialize(self) -> None:
+    async def _create_connection(self) -> None:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
         #
         connection_name = f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
-        url = f"{self.settings.dsn}?name={connection_name}"
+        url = f"{self.settings.dsn}?name={connection_name}&heartbeat={self.heartbeat}"
         self._connection = await aio_pika.connect_robust(
             url,
             client_properties={"connection_name": connection_name},
         )
         self._connection.close_callbacks.add(self._connection_close_callback)
         self._connection.reconnect_callbacks.add(self._on_reconnect)
+
+    async def _close_connection(self) -> None:
+        connection, self._connection = self._connection, None
+        if connection is not None:
+            await connection.close()
+
+    async def _create_channel_and_rpc(self) -> None:
+        assert self._connection is not None  # nosec
+
         self._channel = await self._connection.channel()
         self._channel.close_callbacks.add(self._channel_close_callback)
 
@@ -55,52 +69,54 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         # rely on default queue configuration that should be reasonable
         # if overriding parameters, make sure their combination makes sense
         # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
-        await self._rpc.initialize()
+        #
+        await self._rpc.initialize(robust=False)
+
+    async def _close_channel_and_rpc(self) -> None:
+        # detach references first so a partial/failed close cannot leave stale objects behind
+        rpc, self._rpc = self._rpc, None
+        channel, self._channel = self._channel, None
+        try:
+            if rpc is not None:
+                await rpc.close()
+        finally:
+            if channel is not None:
+                await channel.close()
+
+    async def _rpc_initialize(self) -> None:
+        async with self._surface_lock:
+            await self._create_connection()
+            await self._create_channel_and_rpc()
+
+    @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
+    async def _rebuild_rpc_surface(self) -> None:
+        await self._close_channel_and_rpc()
+        await self._create_channel_and_rpc()
+        assert self._rpc is not None  # nosec
+        handlers = tuple(self._registered_handlers.items())
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Re-registering %d handler(s) on the rebuilt RPC surface (%s)",
+            len(handlers),
+            self.client_name,
+        ):
+            for namespaced_method_name, handler in handlers:
+                await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
 
     async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
-        """Re-register all RPC handlers after a reconnection event.
-
-        When the RabbitMQ connection drops (network issue, broker restart, Docker
-        networking), auto_delete queues used for RPC method registration are removed
-        by the broker. The robust connection restores the channel but does NOT
-        restore aio_pika.patterns.RPC internal state. This callback ensures all
-        previously registered handlers are re-registered on a fresh RPC instance.
-        """
-        if not self._registered_handlers:
-            self._healthy_state = True
-            return
-
-        assert self._channel is not None  # nosec
-
         with log_context(
             _logger,
             logging.WARNING,
-            msg=(
-                f"re-registering {len(self._registered_handlers)} RPC handler(s)"
-                f" after RabbitMQ reconnection ({self.client_name})"
-            ),
+            "RabbitMQ reconnection detected (%s): rebuilding RPC surface",
+            self.client_name,
         ):
-            # Close the previous RPC to avoid leaking its background consumer
-            if self._rpc is not None:
-                with contextlib.suppress(Exception):
-                    await self._rpc.close()
-
-            # Re-create RPC on the existing (restored) channel.
-            # NOTE: self._channel is a RobustChannel obtained from a RobustConnection,
-            # so aio-pika reopens it automatically after a reconnect. Only the
-            # application-level RPC state (auto_delete queues, handler registrations)
-            # needs to be rebuilt here.
-            self._rpc = aio_pika.patterns.RPC(self._channel)
-            await self._rpc.initialize()
-
-            for namespaced_method_name, handler in tuple(self._registered_handlers.items()):
-                await self._rpc.register(
-                    namespaced_method_name,
-                    handler,
-                    auto_delete=True,
-                )
-                _logger.debug("Re-registered RPC handler: %s", namespaced_method_name)
-
+            try:
+                async with self._surface_lock:
+                    await self._rebuild_rpc_surface()
+            except Exception:
+                self._healthy_state = False
+                raise
             self._healthy_state = True
 
     async def close(self) -> None:
@@ -109,13 +125,11 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             logging.INFO,
             msg=f"{self.client_name} closing connection to RabbitMQ",
         ):
-            # rpc is not always initialized
-            if self._rpc is not None:
-                await self._rpc.close()
-            if self._channel is not None:
-                await self._channel.close()
-            if self._connection is not None:
-                await self._connection.close()
+            async with self._surface_lock:
+                try:
+                    await self._close_channel_and_rpc()
+                finally:
+                    await self._close_connection()
 
     async def request(
         self,
@@ -136,13 +150,15 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             `namespaced_method_name`
         """
 
-        if not self._rpc:
+        # snapshot the RPC reference: a concurrent reconnection rebuild may swap
+        # self._rpc, so we bind the current one for the whole call
+        rpc = self._rpc
+        if rpc is None:
             raise RPCNotInitializedError
-
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
         try:
             queue_expiration_timeout = timeout_s
-            awaitable = self._rpc.call(
+            awaitable = rpc.call(
                 namespaced_method_name,
                 expiration=queue_expiration_timeout,
                 kwargs=kwargs,

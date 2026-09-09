@@ -10,7 +10,7 @@ inputs:
   uv-version:
     description: 'UV version to use'
     required: false
-    default: '0.10.x'
+    default: '0.12.x'
 
   cache-dependency-glob:
     description: 'Glob pattern for cache dependency files'
@@ -47,12 +47,12 @@ runs:
       uses: crazy-max/ghaction-github-runtime@v4
 
     - name: Setup Python environment
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python-version }}
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v10.0.1
       with:
         version: ${{ inputs.uv-version }}
         enable-cache: false

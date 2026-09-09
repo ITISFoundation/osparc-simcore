@@ -15,6 +15,7 @@ import aioboto3
 import pytest
 import sqlalchemy as sa
 from aiobotocore.session import ClientCreatorContext
+from asgi_lifespan import LifespanManager
 from async_asgi_testclient import TestClient
 from botocore.client import Config
 from botocore.exceptions import ClientError
@@ -75,7 +76,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
         result = conn.execute(stmt)
         row = result.first()
         assert row
-        prj_uuid = row[projects.c.uuid]
+        prj_uuid = row.uuid
 
     yield prj_uuid
 
@@ -126,8 +127,8 @@ def app(
 
 @pytest.fixture
 async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
-        yield client
+    async with LifespanManager(app):
+        yield TestClient(app)
 
 
 @pytest.fixture

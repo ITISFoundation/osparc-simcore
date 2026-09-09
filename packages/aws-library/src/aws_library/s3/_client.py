@@ -341,7 +341,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     async def delete_objects_recursively(self, *, bucket: S3BucketName, prefix: str) -> None:
         # NOTE: deletion of objects is done in batches of max 1000 elements,
         # the maximum accepted by the S3 API
-        with log_context(_logger, logging.DEBUG, f"deleting objects in {prefix=}", log_duration=True):
+        with log_context(_logger, logging.DEBUG, f"deleting objects in {prefix=}"):
             async for s3_objects in self.list_objects_paginated(bucket=bucket, prefix=prefix):
                 objects_to_delete: Sequence[ObjectIdentifierTypeDef] = [{"Key": f"{_.object_key}"} for _ in s3_objects]
                 if objects_to_delete:

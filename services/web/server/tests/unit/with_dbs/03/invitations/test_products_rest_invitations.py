@@ -21,9 +21,11 @@ from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
+from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.login.constants import MSG_LOGGED_OUT, MSG_REGISTRATION_SUCCESS
 from simcore_service_webserver.models import PhoneNumberStr
 
 
@@ -187,9 +189,12 @@ async def test_pre_registration_and_invitation_workflow(
         assert data["guest"] == guest_email
         got_invitation = InvitationGenerated.model_validate(data)
 
-    # register user
+    # register user: simulates the guest, who is anonymous, opening the invitation link
     assert got_invitation.invitation_link.fragment
     invitation_code = got_invitation.invitation_link.fragment.split("=")[-1]
+    response = await client.post(f"{client.app.router['auth_logout'].url_for()}")
+    await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_OUT)
+
     response = await client.post(
         "/v0/auth/register",
         json={
@@ -199,12 +204,17 @@ async def test_pre_registration_and_invitation_workflow(
             "invitation": invitation_code,
         },
     )
-    await assert_status(response, status.HTTP_200_OK)
+    # NOTE: registration grants login directly (no e-mail confirmation step), so
+    # the client is now logged in as the guest
+    # NOTE: Using the first part of the message for comparison since email is appended
+    await assert_status(response, status.HTTP_200_OK, MSG_REGISTRATION_SUCCESS.split(".")[0])
 
-    # find registered user
-    response = await client.get("/v0/admin/user-accounts:search", params={"email": guest_email})
-    data, _ = await assert_status(response, expected_status)
-    assert len(data) == 1
-    user_found = data[0]
-    assert user_found["registered"] is True
-    assert user_found["email"] == guest_email
+    # switch back to the PRODUCT_OWNER session to perform the final admin search
+    async with switch_client_session_to(client, logged_user):
+        # find registered user
+        response = await client.get("/v0/admin/user-accounts:search", params={"email": guest_email})
+        data, _ = await assert_status(response, expected_status)
+        assert len(data) == 1
+        user_found = data[0]
+        assert user_found["registered"] is True
+        assert user_found["email"] == guest_email

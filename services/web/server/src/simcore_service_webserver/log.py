@@ -3,7 +3,7 @@
 import logging
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
-from typing import Final, TypeAlias
+from typing import Final
 
 from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
 from aiohttp import web
@@ -25,9 +25,9 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "sqlalchemy",
 )
 
-_logger = logging.getLogger(__name__)
+_logger: Final = logging.getLogger(__name__)
 
-CleanupEvent: TypeAlias = Callable[[web.Application], Awaitable[None]]
+type CleanupEvent = Callable[[web.Application], Awaitable[None]]
 
 
 def setup_logging(app_settings: ApplicationSettings, tracing_config: TracingConfig) -> CleanupEvent:

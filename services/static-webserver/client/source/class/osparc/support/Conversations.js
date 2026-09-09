@@ -225,16 +225,16 @@ qx.Class.define("osparc.support.Conversations", {
       osparc.store.ConversationsSupport.getInstance().fetchConversationCounts()
         .then(counts => {
           if (counts.all !== undefined) {
-            this.getChildControl("filter-all-button").setLabel(this.tr("All") + ` (${counts.all})`);
+            this.getChildControl("filter-all-button").setLabel(this.tr("All (%1)", counts.all));
           }
           if (counts.unread !== undefined) {
-            this.getChildControl("filter-unread-button").setLabel(this.tr("Unread") + ` (${counts.unread})`);
+            this.getChildControl("filter-unread-button").setLabel(this.tr("Unread (%1)", counts.unread));
           }
           if (counts.active !== undefined) {
-            this.getChildControl("filter-active-button").setLabel(this.tr("Active") + ` (${counts.active})`);
+            this.getChildControl("filter-active-button").setLabel(this.tr("Active (%1)", counts.active));
           }
           if (counts.archived !== undefined) {
-            this.getChildControl("filter-archived-button").setLabel(this.tr("Archived") + ` (${counts.archived})`);
+            this.getChildControl("filter-archived-button").setLabel(this.tr("Archived (%1)", counts.archived));
           }
         })
         .catch(err => osparc.FlashMessenger.logError(err));

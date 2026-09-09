@@ -95,7 +95,7 @@ qx.Class.define("osparc.support.ConversationPage", {
             font: "text-14",
             alignY: "middle",
             allowGrowX: true,
-            });
+          });
           this.getChildControl("conversation-header-center-layout").addAt(control, 0);
           break;
         case "conversation-extra-layout":
@@ -103,19 +103,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
         case "menu-button": {
-          const buttonSize = 22;
-          control = new qx.ui.form.MenuButton().set({
-            appearance: "form-button-outlined",
-            backgroundColor: "background-main-3",
-            width: buttonSize,
-            height: buttonSize,
-            allowGrowX: false,
-            allowGrowY: false,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesomeSolid/ellipsis-v/14",
-            focusable: false
-          });
+          control = osparc.support.ConversationOptionsMenu.createMenuButton();
           this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
         }
@@ -163,7 +151,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
           title.setValue(this.tr("Ask a Question"));
           break;
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL: {
           title.setValue(this.tr("Book a Call"));
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
           bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Next"));
@@ -174,6 +162,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
           break;
+        }
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD: {
           title.setValue(this.tr("Book a Call 3rd"));
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
@@ -196,7 +185,10 @@ qx.Class.define("osparc.support.ConversationPage", {
       conversationContent.addSystemMessage(type);
 
       if (prefillText) {
-        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(prefillText);
+        this.getChildControl("conversation-content")
+          .getChildControl("add-message")
+          .getChildControl("comment-field")
+          .setText(prefillText);
       }
     },
 
@@ -222,17 +214,17 @@ qx.Class.define("osparc.support.ConversationPage", {
           extraContextLayout.removeAll();
           const extraContext = conversation.getExtraContext();
           if (extraContext && Object.keys(extraContext).length) {
-            const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${osparc.utils.Utils.uuidToShort(conversation.getConversationId())}`);
+            const ticketIdLabel = createExtraContextLabel(this.tr("Ticket ID: %1", osparc.utils.Utils.uuidToShort(conversation.getConversationId())));
             extraContextLayout.add(ticketIdLabel);
             const contextProjectId = conversation.getContextProjectId();
             if (contextProjectId) {
-              const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
+              const projectIdLabel = createExtraContextLabel(this.tr("Project ID: %1", osparc.utils.Utils.uuidToShort(contextProjectId)));
               extraContextLayout.add(projectIdLabel);
             }
             if (amISupporter) {
               const fogbugzLink = conversation.getFogbugzLink();
               if (fogbugzLink) {
-                const text = "Fogbugz Case: " + fogbugzLink.split("/").pop();
+                const text = this.tr("Fogbugz Case: %1", fogbugzLink.split("/").pop());
                 const fogbugzLabel = new osparc.ui.basic.LinkLabel(text, fogbugzLink).set({
                   font: "link-label-12",
                   textColor: "text-disabled",

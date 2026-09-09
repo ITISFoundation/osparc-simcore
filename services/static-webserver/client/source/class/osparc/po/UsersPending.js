@@ -278,7 +278,7 @@ qx.Class.define("osparc.po.UsersPending", {
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
             statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.WARNING);
-            const approveButton = this.__createApproveButton(pendingUser.email);
+            const approveButton = this.__createApproveButton(pendingUser);
             buttonsLayout.add(approveButton);
             const rejectButton = this.__createRejectButton(pendingUser.email);
             buttonsLayout.add(rejectButton);
@@ -288,7 +288,7 @@ qx.Class.define("osparc.po.UsersPending", {
           }
           case "REJECTED": {
             statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.ERROR);
-            const approveButton = this.__createApproveButton(pendingUser.email);
+            const approveButton = this.__createApproveButton(pendingUser);
             approveButton.setEnabled(false); // avoid changing decision for now
             buttonsLayout.add(approveButton);
             break;
@@ -380,11 +380,11 @@ qx.Class.define("osparc.po.UsersPending", {
       this.__addRows(this.__filterPendingUsers());
     },
 
-    __createApproveButton: function(email) {
+    __createApproveButton: function(pendingUser) {
       const button = new qx.ui.form.Button(null, "@MaterialIcons/check/14").set({
         toolTipText: qx.locale.Manager.tr("Approve"),
       });
-      button.addListener("execute", () => this.__openApproveDialog(email));
+      button.addListener("execute", () => this.__openApproveDialog(pendingUser));
       return button;
     },
 
@@ -396,7 +396,15 @@ qx.Class.define("osparc.po.UsersPending", {
       return button;
     },
 
-    __openApproveDialog: function(email) {
+    __openApproveDialog: function(pendingUser) {
+      const email = pendingUser.email;
+      if (pendingUser.registered) {
+        // Already has an account (e.g. requesting access to an additional product):
+        // skip the invitation altogether, they keep using their existing password.
+        this.__previewApproval(email, {});
+        return;
+      }
+
       const form = this.self().createInvitationForm(false);
       const approveBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Preview Approve")).set({
         appearance: "form-button"
@@ -438,7 +446,9 @@ qx.Class.define("osparc.po.UsersPending", {
       };
       osparc.data.Resources.fetch("poUsers", "previewApproval", params)
         .then(data => {
-          const invitationUrl = data["invitationUrl"];
+          // the "already registered" flow omits invitationUrl entirely; qooxdoo's
+          // nullable property rejects `undefined`, only `null` is accepted
+          const invitationUrl = data["invitationUrl"] || null;
           const messageContent = data["messageContent"];
           this.__openApprovalPreview(email, invitationUrl, messageContent);
         })

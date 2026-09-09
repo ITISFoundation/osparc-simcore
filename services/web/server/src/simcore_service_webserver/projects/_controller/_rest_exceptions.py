@@ -34,6 +34,7 @@ from ..exceptions import (
     InsufficientRoleForProjectTemplateTypeUpdateError,
     NodeNotFoundError,
     ParentNodeNotFoundError,
+    ProjectCopyingTrashedProjectError,
     ProjectDeleteError,
     ProjectGroupNotFoundError,
     ProjectInDebtCanNotChangeWalletError,
@@ -42,7 +43,6 @@ from ..exceptions import (
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
     ProjectNotFoundError,
-    ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
     ProjectTooManyProjectOpenedError,
@@ -84,6 +84,13 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
+    ProjectCopyingTrashedProjectError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "Cannot duplicate project {project_uuid} because it is in the trash. Restore it first and try again.",
+            _version=1,
+        ),
+    ),
     ProjectDeleteError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
@@ -123,13 +130,6 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
-    ),
-    ProjectOwnerNotFoundInTheProjectAccessRightsError: HttpErrorInfo(
-        status.HTTP_400_BAD_REQUEST,
-        user_message(
-            "The project owner could not be found in the project's access rights.",
-            _version=1,
-        ),
     ),
     ProjectTooManyProjectOpenedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,

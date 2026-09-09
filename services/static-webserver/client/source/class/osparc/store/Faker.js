@@ -73,14 +73,14 @@ qx.Class.define("osparc.store.Faker", {
         );
       }, delay);
 
-      return new Promise((resolve) => resolve());
+      return new Promise(resolve => resolve());
     },
 
     sendEmail: function(recipients, subject, bodyHtml, bodyText) {
       console.log("Faker sending email: ", subject, " to ", recipients);
       console.log("Body HTML: ", bodyHtml);
       console.log("Body Text: ", bodyText);
-      return new Promise((resolve) => resolve());
+      return new Promise(resolve => resolve());
     },
   }
 });

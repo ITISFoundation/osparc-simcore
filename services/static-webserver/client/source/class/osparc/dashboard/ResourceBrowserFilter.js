@@ -482,7 +482,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
 
       // hypertools filter
-      const button = new qx.ui.toolbar.RadioButton("Hypertool", null);
+      const button = new qx.ui.toolbar.RadioButton(this.tr("Hypertool"), null);
       button.exclude();
       osparc.store.Templates.getHypertools()
         .then(hypertools => {

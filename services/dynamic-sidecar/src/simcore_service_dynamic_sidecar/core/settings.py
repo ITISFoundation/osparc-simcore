@@ -12,7 +12,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import LegacyState
+from models_library.service_settings_labels import LegacyState, UserPreferencesVersionSource
 from models_library.services import DynamicServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
 from pydantic import (
@@ -36,15 +36,14 @@ from settings_library.resource_usage_tracker import (
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
+from ..modules.user_services_tracing import UserServicesTracingSettings
+
 
 class ResourceTrackingSettings(BaseApplicationSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: Annotated[
         timedelta,
-        Field(
-            default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
-            description="each time the status of the service is propagated",
-        ),
-    ]
+        Field(description="each time the status of the service is propagated"),
+    ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 
     _validate_resource_tracking_heartbeat_interval = validate_numeric_string_as_timedelta(
         "RESOURCE_TRACKING_HEARTBEAT_INTERVAL"
@@ -138,6 +137,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DY_SIDECAR_USER_PREFERENCES_PATH: Annotated[
         Path | None, Field(description="path where the user preferences should be saved")
     ] = None
+    DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE: Annotated[
+        UserPreferencesVersionSource,
+        Field(description="selects which resolved version is used to namespace saved user preferences"),
+    ]
     DY_SIDECAR_STATE_EXCLUDE: Annotated[
         set[str], Field(description="list of patterns to exclude files when saving states")
     ]
@@ -180,6 +183,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DY_SIDECAR_SERVICE_KEY: DynamicServiceKey | None = None
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
+    DY_SIDECAR_SERVICE_VERSION_DISPLAY: str | None = None
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
     NODE_PORTS_STORAGE_AUTH: Annotated[
@@ -204,6 +208,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="settings for opentelemetry tracing",
         ),
     ]
+
+    DYNAMIC_SIDECAR_USER_SERVICES_TRACING_CONFIG: Annotated[
+        UserServicesTracingSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+
+    DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN: Annotated[
+        bool,
+        Field(
+            description=(
+                "per-service opt-in flag for OTEL trace collection "
+                "(set by director-v2 from simcore.service.tracing label) "
+                "used together with DYNAMIC_SIDECAR_TRACING to determine if the OTEL Collector should "
+                "be injected and run for user services"
+            )
+        ),
+    ] = False
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:

@@ -21,6 +21,7 @@ async def _run(
     *,
     output_json: bool,
     output: Path | None,
+    use_profile: str | None,
 ) -> bool:
     assert state.ec2_resource_autoscaling
 
@@ -47,12 +48,13 @@ async def _run(
             cluster_task_rows=None,
         )
     else:
-        rendering.print_dynamic_instances(
+        await rendering.print_dynamic_instances(
             dynamic_autoscaled_instances,
             state.environment,
             state.ec2_resource_autoscaling.meta.client.meta.region_name,
             output=output,
             service_extra_info=service_extra_info,
+            pricing_profile=use_profile,
         )
 
     time_threshold = arrow.utcnow().shift(minutes=-30).datetime
@@ -68,6 +70,13 @@ def summary(
     user_id: Annotated[int, typer.Option(help="filters by the user ID")] = 0,
     as_json: Annotated[bool, typer.Option(help="outputs as json")] = False,
     output: Annotated[Path | None, typer.Option(help="outputs to a file")] = None,
+    use_profile: Annotated[
+        str | None,
+        typer.Option(
+            help="AWS profile (e.g. from ~/.aws/credentials) to use for AWS cost lookups "
+            "(pricing:GetProducts, ec2:DescribeVolumes), in case the deploy-config credentials lack access"
+        ),
+    ] = None,
 ) -> None:
     """Verbose view of dynamic autoscaled instances and their running services."""
 
@@ -77,6 +86,7 @@ def summary(
             user_id or None,
             output_json=as_json,
             output=output,
+            use_profile=use_profile,
         )
     ):
         raise typer.Exit(1)

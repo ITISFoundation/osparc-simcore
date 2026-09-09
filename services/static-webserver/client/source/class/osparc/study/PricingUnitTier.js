@@ -71,7 +71,7 @@ qx.Class.define("osparc.study.PricingUnitTier", {
             center: true,
           });
           this.bind("selected", control, "label", {
-            converter: selected => selected ? "Selected" : "Select"
+            converter: selected => selected ? this.tr("Selected") : this.tr("Select")
           });
           this.bind("selected", control, "icon", {
             converter: selected => selected ? "@FontAwesomeSolid/check/12" : null
@@ -93,7 +93,7 @@ qx.Class.define("osparc.study.PricingUnitTier", {
       // add price info
       const price = this.getChildControl("price");
       pricingUnit.bind("cost", price, "value", {
-        converter: v => qx.locale.Manager.tr("Credits/h") + ": " + v
+        converter: v => qx.locale.Manager.tr("Credits/h: %1", v)
       });
 
       // add aws specific info

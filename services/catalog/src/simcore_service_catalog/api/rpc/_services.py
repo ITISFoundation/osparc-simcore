@@ -16,6 +16,7 @@ from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, PageLimitInt
+from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError, validate_call
@@ -322,6 +323,22 @@ async def get_service_ports(
         )
         for port in service_ports
     ]
+
+
+@router.expose(reraise_if_error_type=(ValidationError,))
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_service_labels(
+    app: FastAPI,
+    *,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> SimcoreServiceLabels:
+    """Get the docker image labels of a specific service version"""
+    return await catalog_services.get_catalog_service_labels(
+        get_director_client(app),
+        service_key=service_key,
+        service_version=service_version,
+    )
 
 
 @router.expose(reraise_if_error_type=(CatalogForbiddenRpcError, ValidationError))

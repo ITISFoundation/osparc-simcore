@@ -42,6 +42,12 @@ qx.Class.define("osparc.Application", {
       // Call super class
       this.base();
 
+      // remove the up/down caps and track border from every scrollbar (see the mixin)
+      qx.Class.patch(qx.ui.core.scroll.ScrollBar, osparc.wrapper.MScrollBar);
+
+      // keep font icons at their postfix size across re-layouts / theme switches (see the class)
+      osparc.wrapper.ImageFontIcon.patch();
+
       // Enable logging in debug variant
       if (qx.core.Environment.get("qx.debug")) {
         // support native logging capabilities, e.g. Firebug for Firefox
@@ -52,9 +58,16 @@ qx.Class.define("osparc.Application", {
 
       this.__preventAutofillBrowserStyles();
       this.__loadCommonCss();
+      this.__setupScrollbarColors();
       this.__updateTabName();
+      if (osparc.product.Utils.isLocaleEnabled()) {
+        // Sanitize malformed CLDR entries (e.g. Chinese number separators) before any widget is built
+        osparc.utils.LanguageManager.normalizeCldrData();
+        // No user profile yet: apply the browser locale so the login flow respects the browser language
+        // Overridden with the profile's language once the user logs in
+        osparc.utils.LanguageManager.applyUsersLocale();
+      }
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        osparc.utils.LanguageManager.applyStoredLocale();
         this.__updateMetaTags();
         this.__setDeviceSpecificIcons();
       }
@@ -129,7 +142,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __rerouteNav: function (urlFragment) {
+    __rerouteNav: function(urlFragment) {
       const page = urlFragment.nav[0];
       switch (page) {
         case "study": {
@@ -478,7 +491,7 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function (loadAfterLogin = null) {
+    __loadMainPage: function(loadAfterLogin = null) {
       // logged in
       osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
@@ -525,6 +538,11 @@ qx.Class.define("osparc.Application", {
               });
             }
 
+            if (osparc.product.Utils.isLocaleEnabled()) {
+              // applyUsersLocale falls back to the browser locale when the profile has no persisted language
+              osparc.utils.LanguageManager.applyUsersLocale(profile["language"]);
+            }
+
             if (loadAfterLogin) {
               if (loadAfterLogin["id"] === "startStudy" && loadAfterLogin["studyId"]) {
                 const studyId = loadAfterLogin["studyId"];
@@ -558,7 +576,7 @@ qx.Class.define("osparc.Application", {
             if (wsInstance.isAppConnected()) {
               loadViewerPage();
             } else {
-              const listenerId = wsInstance.addListener("changeAppConnected", function (e) {
+              const listenerId = wsInstance.addListener("changeAppConnected", function(e) {
                 if (e.getData()) {
                   wsInstance.removeListenerById(listenerId);
                   loadViewerPage();
@@ -570,7 +588,7 @@ qx.Class.define("osparc.Application", {
         .catch(err => console.error(err));
     },
 
-    __loadNodeViewerPage: function (studyId, viewerNodeId) {
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
 
       const loadNodeViewerPage = () => {
@@ -591,7 +609,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loadView: function (view, opts, clearUrl = true) {
+    __loadView: function(view, opts, clearUrl = true) {
       const options = {
         top: 0,
         bottom: 0,
@@ -619,7 +637,7 @@ qx.Class.define("osparc.Application", {
     /**
      * Resets session and restarts
     */
-    logout: function (forcedReason) {
+    logout: function(forcedReason) {
       const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
       if (isLoggedIn) {
         osparc.auth.Manager.getInstance().logout()
@@ -629,7 +647,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __loggedOut: function (forcedReason) {
+    __loggedOut: function(forcedReason) {
       if (forcedReason) {
         osparc.FlashMessenger.logAs(forcedReason, "WARNING", 0);
       } else {
@@ -707,6 +725,19 @@ qx.Class.define("osparc.Application", {
     __loadCommonCss: function() {
       const commonCssUri = qx.util.ResourceManager.getInstance().toUri("common/common.css");
       qx.module.Css.includeStylesheet(commonCssUri);
+    },
+
+    // feed the native (webkit) scrollbar CSS with the theme scrollbar colors,
+    // kept in sync when the theme changes
+    __setupScrollbarColors: function() {
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const update = () => {
+        const root = document.documentElement;
+        root.style.setProperty("--osparc-scrollbar-thumb", colorManager.resolve("scrollbar-passive"));
+        root.style.setProperty("--osparc-scrollbar-thumb-hover", colorManager.resolve("scrollbar-active"));
+      };
+      update();
+      colorManager.addListener("changeTheme", update);
     }
   }
 });

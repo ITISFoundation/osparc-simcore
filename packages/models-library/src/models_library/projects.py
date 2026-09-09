@@ -106,8 +106,11 @@ class BaseProjectModel(BaseModel):
     creation_date: datetime
     last_change_date: datetime
 
-    # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: Annotated[NodesDict, Field(description="Project's pipeline")]
+    workbench: Annotated[
+        # NOTE: will be definitely removed in https://github.com/ITISFoundation/osparc-simcore/pull/9303
+        NodesDict,
+        Field(deprecated=True, default_factory=dict),
+    ] = DEFAULT_FACTORY
 
 
 class ProjectAtDB(BaseProjectModel):

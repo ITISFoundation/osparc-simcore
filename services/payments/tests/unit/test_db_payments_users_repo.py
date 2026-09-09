@@ -64,7 +64,7 @@ async def user(
     """
     assert user_id == user["id"]
     async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        get_engine(app), **user
+        get_engine(app), **{**user, "language": "es_ES"}
     ) as user_row:
         yield user_row
 
@@ -141,3 +141,4 @@ async def test_get_notification_data(
     assert data.last_name == user["last_name"]
     assert data.email == user["email"]
     assert data.product_name == product["name"]
+    assert data.language == "es_ES"

@@ -13,6 +13,7 @@ from typing import Any, cast
 
 from aiodocker import DockerError
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.logging_utils import guess_message_log_level
 
 from ..core.rabbitmq import post_log_message
@@ -27,9 +28,8 @@ async def _logs_fetcher_worker(container_name: str, dispatch_log: Callable[..., 
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
-        # extract image to display in logs, Eg: from
+        # Extract the short image name from the registry-qualified name.
         # registry:5000/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar:2.0.2
-        # "dy-static-file-server-dynamic-sidecar:2.0.2"
         container_inspect = await container.show()
         image_name = container_inspect["Config"]["Image"].split("/")[-1]
 
@@ -111,19 +111,17 @@ async def stop_log_fetching(app: FastAPI, container_name: str) -> None:
         await background_log_fetcher.stop_log_fetching(container_name)
 
 
-def setup_background_log_fetcher(app: FastAPI) -> None:
-    async def on_startup() -> None:
+def configure_background_log_fetcher(
+    app_lifespan: LifespanManager[FastAPI],
+) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
         app.state.background_log_fetcher = BackgroundLogFetcher(app)
-
         logger.info("Started background container log fetcher")
 
-    async def on_shutdown() -> None:
-        if app.state.background_log_fetcher is None:
-            logger.warning("No background_log_fetcher to stop")
-            return
+        try:
+            yield
+        finally:
+            await app.state.background_log_fetcher.stop_fetcher()
+            logger.info("Stopped background container log fetcher")
 
-        await app.state.background_log_fetcher.stop_fetcher()
-        logger.info("stopped background container log fetcher")
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)

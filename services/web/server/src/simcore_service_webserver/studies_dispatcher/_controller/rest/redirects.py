@@ -5,12 +5,12 @@ import logging
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 
 from ....db.plugin import get_asyncpg_engine
 from ....dynamic_scheduler import api as dynamic_scheduler_service
 from ....products import products_web
 from ....utils_aiohttp import create_redirect_to_page_response, get_api_base_url
+from ....web_requests_validation import parse_request_query_parameters_as
 from ... import _service
 from ..._catalog import ValidService, validate_requested_service
 from ..._errors import (

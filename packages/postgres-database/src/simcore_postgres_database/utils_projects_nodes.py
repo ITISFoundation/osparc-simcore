@@ -4,16 +4,13 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
-import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql.selectable import Subquery
 
-from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
 from .utils_aiosqlalchemy import map_db_exception
@@ -51,7 +48,6 @@ class ProjectNodeCreate(BaseModel):
     version: str
     label: str
     progress: float | None = None
-    thumbnail: str | None = None
     input_access: dict[str, Any] | None = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
@@ -61,6 +57,7 @@ class ProjectNodeCreate(BaseModel):
     run_hash: str | None = None
     state: dict[str, Any] | None = None
     boot_options: dict[str, Any] | None = None
+    ui: dict[str, Any] | None = None
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
@@ -91,52 +88,6 @@ class ProjectNode(ProjectNodeCreate):
     modified: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
-def create_workbench_subquery(project_id: str) -> Subquery:
-    workbench_obj = sa.func.json_strip_nulls(
-        sa.func.json_build_object(
-            "key",
-            projects_nodes.c.key,
-            "version",
-            projects_nodes.c.version,
-            "label",
-            projects_nodes.c.label,
-            "progress",
-            projects_nodes.c.progress,
-            "thumbnail",
-            projects_nodes.c.thumbnail,
-            "inputAccess",
-            projects_nodes.c.input_access,
-            "inputNodes",
-            projects_nodes.c.input_nodes,
-            "inputs",
-            projects_nodes.c.inputs,
-            "inputsRequired",
-            projects_nodes.c.inputs_required,
-            "inputsUnits",
-            projects_nodes.c.inputs_units,
-            "outputs",
-            projects_nodes.c.outputs,
-            "runHash",
-            projects_nodes.c.run_hash,
-            "state",
-            projects_nodes.c.state,
-            "bootOptions",
-            projects_nodes.c.boot_options,
-        )
-    )
-
-    return (
-        sa.select(
-            projects_nodes.c.project_uuid,
-            sa.func.json_object_agg(projects_nodes.c.node_id, workbench_obj).label("workbench"),
-        )
-        .select_from(projects_nodes.join(projects, projects_nodes.c.project_uuid == projects.c.uuid))
-        .where(projects.c.uuid == project_id)
-        .group_by(projects_nodes.c.project_uuid)
-        .subquery()
-    )
 
 
 @dataclass(frozen=True, kw_only=True)

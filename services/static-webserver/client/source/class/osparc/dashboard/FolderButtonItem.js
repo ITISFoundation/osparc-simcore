@@ -327,6 +327,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
 
       menuButton.setMenu(menu);
+      this._keepRevealedWhileMenuOpen(menu);
+      this._setHoverRevealWidget(menuButton);
     },
 
     __itemSelected: function() {

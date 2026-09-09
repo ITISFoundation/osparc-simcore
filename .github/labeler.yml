@@ -63,10 +63,6 @@
   - changed-files:
       - any-glob-to-any-file: services/dynamic-sidecar/**
 
-"a:efs-guardian":
-  - changed-files:
-      - any-glob-to-any-file: services/efs-guardian/**
-
 "a:invitations":
   - changed-files:
       - any-glob-to-any-file: services/invitations/**
@@ -191,7 +187,9 @@
 
 e2e:
   - changed-files:
-      - any-glob-to-any-file: tests/e2e/**
+      - any-glob-to-any-file:
+        - tests/e2e-playwright/**
+        - tests/e2e-performance/**
 
 dependencies:
   - changed-files:

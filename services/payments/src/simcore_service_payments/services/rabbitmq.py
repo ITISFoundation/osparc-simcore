@@ -1,17 +1,17 @@
-import logging
 from typing import cast
 
 from fastapi import FastAPI
 from fastapi.requests import Request
+from fastapi_lifespan_manager import LifespanManager
 from models_library.rabbitmq_messages import RabbitMessageBase
-from servicelib.rabbitmq import (
-    RabbitMQClient,
-    RabbitMQRPCClient,
-    wait_till_rabbitmq_responsive,
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_client as _configure_rabbitmq_client,
 )
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_rpc_client as _configure_rabbitmq_rpc_client,
+)
+from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
-
-_logger = logging.getLogger(__name__)
 
 
 def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
@@ -19,28 +19,23 @@ def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
     return settings
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
-    settings: RabbitSettings = get_rabbitmq_settings(app)
-    app.state.rabbitmq_client = None
-
-    async def _on_startup() -> None:
-        await wait_till_rabbitmq_responsive(settings.dsn)
-
-        app.state.rabbitmq_client = RabbitMQClient(client_name="payments", settings=settings)
-        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="payments_rpc_client", settings=settings
-        )
-
-    async def _on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
-            app.state.rabbitmq_client = None
-        if app.state.rabbitmq_rpc_client:
-            await app.state.rabbitmq_rpc_client.close()
-            app.state.rabbitmq_rpc_client = None
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+def configure_rabbitmq(
+    app_lifespan: LifespanManager[FastAPI],
+    *,
+    settings: RabbitSettings,
+) -> None:
+    _configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings,
+        client_name="payments",
+        wait_for_connectivity=True,
+    )
+    _configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings,
+        client_name="payments_rpc_client",
+        wait_for_connectivity=False,
+    )
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:

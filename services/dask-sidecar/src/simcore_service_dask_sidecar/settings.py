@@ -8,6 +8,7 @@ from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
+from settings_library.kms import KMSSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -44,7 +45,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "DASK_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. WARNING: make sure it is disabled if you "
+                "want to have structured logs!"
+            ),
         ),
     ] = False
     DASK_LOG_FILTER_MAPPING: Annotated[
@@ -52,11 +56,22 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("DASK_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or "
+                "'gunicorn.access') to a list of log message patterns that should be filtered out."
+            ),
         ),
     ]
 
     DASK_SIDECAR_RABBITMQ: Annotated[RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
+
+    DASK_SIDECAR_KMS: Annotated[
+        KMSSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="KMS client used to decrypt job root keys just before use (None disables encryption support)",
+        ),
+    ]
 
     DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT: Annotated[
         datetime.timedelta,

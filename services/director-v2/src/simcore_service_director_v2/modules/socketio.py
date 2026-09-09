@@ -1,7 +1,9 @@
 import logging
+from collections.abc import AsyncIterator
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 
 from ..core.settings import AppSettings
@@ -9,23 +11,22 @@ from ..core.settings import AppSettings
 _logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI):
-    settings: AppSettings = app.state.settings
-
-    async def _on_startup() -> None:
+def configure_socketio(app_lifespan: LifespanManager) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        settings: AppSettings = app.state.settings
         assert app.state.rabbitmq_client  # nosec
 
         # Connect to the as an external process in write-only mode
         # SEE https://python-socketio.readthedocs.io/en/stable/server.html#emitting-from-external-processes
-        app.state.external_socketio = socketio.AsyncAioPikaManager(
+        external_socketio = socketio.AsyncAioPikaManager(
             url=settings.DIRECTOR_V2_RABBITMQ.dsn,
             logger=_logger,
             write_only=True,
         )
-
-    async def _on_shutdown() -> None:
-        if external_socketio := getattr(app.state, "external_socketio"):  # noqa: B009
+        app.state.external_socketio = external_socketio
+        try:
+            yield
+        finally:
             await cleanup_socketio_async_pubsub_manager(server_manager=external_socketio)
 
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

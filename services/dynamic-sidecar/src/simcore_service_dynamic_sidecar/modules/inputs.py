@@ -1,4 +1,7 @@
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from pydantic import BaseModel, Field
 
 
@@ -16,8 +19,10 @@ def disable_inputs_pulling(app: FastAPI) -> None:
     inputs_state.inputs_pulling_enabled = False
 
 
-def setup_inputs(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app.state.inputs_state = InputsState()
+async def _inputs_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    app.state.inputs_state = InputsState()
+    yield
 
-    app.add_event_handler("startup", on_startup)
+
+def configure_inputs(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_inputs_lifespan)

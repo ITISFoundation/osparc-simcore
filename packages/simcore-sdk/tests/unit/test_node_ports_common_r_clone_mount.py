@@ -9,7 +9,7 @@ import tempfile
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterator
 from pathlib import Path
 from typing import Any, cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import aioboto3
 import aiodocker
@@ -20,7 +20,9 @@ from aiobotocore.session import ClientCreatorContext
 from aiodocker import Docker
 from aiodocker.types import JSONObject
 from botocore.client import Config
+from common_library.async_tools import cancel_wait_task
 from faker import Faker
+from httpx import HTTPError
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
@@ -29,16 +31,23 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
+from settings_library.basic_types import PortInt
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
+    InvalidContainerLabelsError,
     InvalidRemotePathError,
     MountActivity,
+    MountPathConflictError,
     MountRemoteType,
     NoMountFoundForRemotePathError,
     RCloneMountManager,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._container import ContainerManager, _ContainerCreateResult
+from simcore_sdk.node_ports_common.r_clone_mount._docker_utils import _DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY
+from simcore_sdk.node_ports_common.r_clone_mount._errors import PortNotAssignedError
 from simcore_sdk.node_ports_common.r_clone_mount._manager import (
+    RemoteControlHttpClient,
     _TrackedMount,
 )
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
@@ -409,7 +418,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
     mount_id = get_mount_id(local_mount_path, index)
     tracked_mount = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
     container_name = (
-        tracked_mount._container_manager._r_clone_container_name  # noqa: SLF001
+        tracked_mount._container_manager.r_clone_container_name  # noqa: SLF001
     )
 
     # Shutdown the container to trigger the shutdown handler
@@ -537,6 +546,50 @@ async def test_ensure_mounted_handles_optional_s3_prefix(
     mount_id = get_mount_id(local_mount_path, 0)
     tracked_mount = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
     assert tracked_mount._container_manager.remote_path == expected_remote_path  # noqa: SLF001
+
+    r_clone_mount_manager._tracked_mounts.clear()  # noqa: SLF001
+    r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
+
+
+async def test_ensure_mounted_is_idempotent(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    local_mount_path: Path,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    index: int,
+):
+    start_mount_call_count = 0
+
+    async def _fake_start_mount(self: _TrackedMount) -> None:
+        nonlocal start_mount_call_count
+        start_mount_call_count += 1
+
+    monkeypatch.setattr(_TrackedMount, "start_mount", _fake_start_mount)
+
+    r_clone_mount_manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
+
+    mount_kwargs = {
+        "local_mount_path": local_mount_path,
+        "remote_type": MountRemoteType.S3,
+        "remote_path": remote_path,
+        "mount_s3_link": mount_s3_link_from_remote(remote_path),
+        "node_id": node_id,
+        "index": index,
+    }
+
+    # First call — creates the mount
+    await r_clone_mount_manager.ensure_mounted(**mount_kwargs)
+    assert start_mount_call_count == 1
+
+    # Second call with same arguments — must not raise and must not start a new mount
+    await r_clone_mount_manager.ensure_mounted(**mount_kwargs)
+    assert start_mount_call_count == 1, "start_mount must only be called once for the same path"
 
     r_clone_mount_manager._tracked_mounts.clear()  # noqa: SLF001
     r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
@@ -705,3 +758,294 @@ async def test_is_healthy(
         mock_is_responsive.return_value = is_resp
         result = await mount.is_healthy()
         assert result is expected, f"Step {i}: is_responsive={is_resp}, expected is_healthy={expected}, got {result}"
+
+
+async def test_reconnects_to_existing_rclone_container_after_sidecar_restart(
+    docker_swarm: None,
+    moto_server: None,
+    r_clone_mount_manager: RCloneMountManager,
+    r_clone_settings: RCloneSettings,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    local_mount_path: Path,
+    index: int,
+):
+    # === First sidecar session (via fixture) ===
+    await r_clone_mount_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
+        node_id=node_id,
+        index=index,
+    )
+
+    mount_id = get_mount_id(local_mount_path, index)
+    first_tracked = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
+    assert first_tracked._rc_http_client is not None  # noqa: SLF001
+    original_port = first_tracked._rc_http_client.rc_port  # noqa: SLF001
+
+    # Simulate sidecar crash: cancel background tasks and drop in-memory state,
+    # leaving the rclone container running.
+    if r_clone_mount_manager._task_ensure_mounts_working is not None:  # noqa: SLF001
+        r_clone_mount_manager._task_ensure_mounts_working.cancel()  # noqa: SLF001
+        await asyncio.gather(r_clone_mount_manager._task_ensure_mounts_working, return_exceptions=True)  # noqa: SLF001
+    r_clone_mount_manager._tracked_mounts.clear()  # noqa: SLF001
+    r_clone_mount_manager._reverse_path_search.clear()  # noqa: SLF001
+
+    # === Second sidecar session (restart): fresh manager, same delegate ===
+    second_manager = RCloneMountManager(
+        r_clone_settings,
+        requires_data_mounting=True,
+        delegate=r_clone_mount_manager.delegate,
+    )
+    await second_manager.setup()
+    await second_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_link=mount_s3_link_from_remote(remote_path),
+        node_id=node_id,
+        index=index,
+    )
+
+    reconnected = second_manager._tracked_mounts[mount_id]  # noqa: SLF001
+    assert reconnected._rc_http_client is not None  # noqa: SLF001
+    assert reconnected._rc_http_client.rc_port == original_port, (  # noqa: SLF001
+        "Reconnect must reuse the same running container (same port)"
+    )
+
+    await second_manager.teardown()
+
+
+@pytest.fixture
+async def rclone_container_without_labels(container_config: dict, node_id: NodeID, index: int) -> AsyncIterator[str]:
+    container_name = f"test-no-labels-{node_id}-{index}"
+    async with aiodocker.Docker() as client:
+        await client.containers.run(config=container_config, name=container_name)
+    try:
+        yield container_name
+    finally:
+        async with aiodocker.Docker() as client:
+            try:
+                c = await client.containers.get(container_name)
+                await c.delete(force=True)
+            except aiodocker.exceptions.DockerError:
+                pass
+
+
+@pytest.mark.parametrize(
+    "container_config, expected_error",
+    [
+        pytest.param(
+            {"Image": "rclone/rclone:latest", "Cmd": ["version"]},
+            PortNotAssignedError,
+            id="no_port_no_labels",
+        ),
+        pytest.param(
+            {
+                "Image": "rclone/rclone:latest",
+                "Cmd": ["version"],
+                "ExposedPorts": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: {}},
+                "HostConfig": {"PortBindings": {_DOCKER_INSPECT_NETWORK_SETTINGS_PORTS_KEY: [{"HostPort": "0"}]}},
+            },
+            InvalidContainerLabelsError,
+            id="with_port_no_labels",
+        ),
+    ],
+)
+async def test_create_raises_for_container_without_labels(
+    docker_swarm: None,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    node_id: NodeID,
+    local_mount_path: Path,
+    index: int,
+    rclone_container_without_labels: str,
+    expected_error: type[Exception],
+):
+    manager = ContainerManager(
+        r_clone_settings=r_clone_settings,
+        node_id=node_id,
+        local_mount_path=local_mount_path,
+        index=index,
+        r_clone_config_content="[s3]\ntype = s3",
+        remote_path="project/node/data",
+        rc_user="u",
+        rc_password="p",  # nosec  # noqa: S106
+        delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown),
+    )
+    manager.__dict__["r_clone_container_name"] = rclone_container_without_labels
+
+    with pytest.raises(expected_error):
+        await manager.create()
+
+
+async def test_ensure_mounted_raises_on_remote_path_conflict(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    local_mount_path: Path,
+    mount_s3_link_from_remote: Callable[[StorageFileID], AnyUrl],
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    fake_remote_path: Callable[[], StorageFileID],
+    index: int,
+):
+    async def _fake_start_mount(self: _TrackedMount) -> None:
+        return
+
+    monkeypatch.setattr(_TrackedMount, "start_mount", _fake_start_mount)
+
+    manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
+
+    # 1. idempotent call OK
+    for _ in range(2):
+        await manager.ensure_mounted(
+            local_mount_path=local_mount_path,
+            remote_type=MountRemoteType.S3,
+            remote_path=remote_path,
+            mount_s3_link=mount_s3_link_from_remote(remote_path),
+            node_id=node_id,
+            index=index,
+        )
+
+    # 2. wrong index raises error
+    different_remote_path = fake_remote_path()
+    with pytest.raises(MountPathConflictError):
+        await manager.ensure_mounted(
+            local_mount_path=local_mount_path,
+            remote_type=MountRemoteType.S3,
+            remote_path=different_remote_path,
+            mount_s3_link=mount_s3_link_from_remote(different_remote_path),
+            node_id=node_id,
+            index=index,
+        )
+
+
+@pytest.fixture
+def remove_container_call_count() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def mocked_delegate(
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_shutdown: AsyncMock,
+    vfs_cache_path: Path,
+    remove_container_call_count: Mock,
+) -> _TestingDelegate:
+    delegate = _TestingDelegate(vfs_cache_path, mocked_shutdown)
+
+    async def _mock_remove_container(container_name: str) -> None:
+        remove_container_call_count()
+
+    monkeypatch.setattr(delegate, "remove_container", _mock_remove_container)
+    monkeypatch.setattr(delegate, "get_node_address", AsyncMock(return_value="127.0.0.1"))
+
+    return delegate
+
+
+@pytest.fixture
+def wait_ready_call_count() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def mocked_remote_control_http_client(monkeypatch: pytest.MonkeyPatch, wait_ready_call_count: Mock) -> None:
+    async def _mock_wait_for_interface_to_be_ready(self: RemoteControlHttpClient) -> None:
+        wait_ready_call_count()
+        if wait_ready_call_count.call_count == 1:
+            msg = "stale container not responding"
+            raise HTTPError(msg)
+
+    monkeypatch.setattr(RemoteControlHttpClient, "wait_for_interface_to_be_ready", _mock_wait_for_interface_to_be_ready)
+
+
+@pytest.fixture
+def create_call_count() -> Mock:
+    return Mock()
+
+
+@pytest.fixture
+def stale_port() -> PortInt:
+    return 12345
+
+
+@pytest.fixture
+def fresh_port() -> PortInt:
+    return 54321
+
+
+@pytest.fixture
+async def mocked_tracked_mount(
+    monkeypatch: pytest.MonkeyPatch,
+    r_clone_settings: RCloneSettings,
+    local_mount_path: Path,
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    index: int,
+    mocked_delegate: _TestingDelegate,
+    create_call_count: Mock,
+    fresh_port: PortInt,
+    stale_port: PortInt,
+) -> AsyncIterable[_TrackedMount]:
+    tracked_mount = _TrackedMount(
+        node_id,
+        r_clone_settings,
+        MountRemoteType.S3,
+        remote_path=remote_path,
+        mount_s3_path="bucket/proj/node",
+        local_mount_path=local_mount_path,
+        index=index,
+        delegate=mocked_delegate,
+    )
+
+    async def _mock_create() -> _ContainerCreateResult:
+        create_call_count()
+        reconnected = create_call_count.call_count == 1  # first call is a "reconnect"
+        port = stale_port if reconnected else fresh_port
+        return _ContainerCreateResult(
+            rc_user="u",
+            rc_password="p",  # nosec  # noqa: S106
+            vfs_write_back_s=30,
+            assigned_port=port,
+            reconnected=reconnected,
+        )
+
+    monkeypatch.setattr(tracked_mount._container_manager, "create", _mock_create)  # noqa: SLF001
+
+    yield tracked_mount
+
+    if tracked_mount._task_mount_activity:  # noqa: SLF001
+        await cancel_wait_task(tracked_mount._task_mount_activity)  # noqa: SLF001
+
+
+async def test_start_mount_recreates_stale_reconnected_container(
+    mocked_remote_control_http_client: None,
+    wait_ready_call_count: Mock,
+    mocked_tracked_mount: _TrackedMount,
+    remove_container_call_count: Mock,
+    create_call_count: Mock,
+    fresh_port: PortInt,
+):
+    """Scenario: sidecar reboot finds a stale (stopped) rclone container.
+
+    After reconnecting, wait_for_interface_to_be_ready fails because rclone is
+    not running inside the stopped container.  start_mount must:
+    1. detect it was a reconnect (not a fresh create)
+    2. remove the stale container
+    3. create a fresh container
+    4. succeed on the second wait_for_interface_to_be_ready
+    """
+    await mocked_tracked_mount.start_mount()
+
+    assert create_call_count.call_count == 2, "create() must be called twice: stale reconnect then fresh container"
+    assert remove_container_call_count.call_count == 1, "stale container must be removed exactly once"
+    assert wait_ready_call_count.call_count == 2, "interface readiness must be checked for both attempts"
+    assert mocked_tracked_mount._rc_client.rc_port == fresh_port, "new container uses the fresh port"  # noqa: SLF001

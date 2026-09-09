@@ -1,5 +1,6 @@
 import logging
 
+from aws_library.s3._errors import S3KeyNotFoundError
 from celery import Celery  # type: ignore[import-untyped]
 from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
@@ -39,5 +40,5 @@ def register_worker_tasks(app: Celery) -> None:
         register_task(app, compute_path_size)
         register_task(app, complete_upload_file)
         register_task(app, delete_paths)
-        register_task(app, deep_copy_files_from_project)
+        register_task(app, deep_copy_files_from_project, dont_autoretry_for=(S3KeyNotFoundError,))
         register_task(app, search, task_name=SEARCH_TASK_NAME)

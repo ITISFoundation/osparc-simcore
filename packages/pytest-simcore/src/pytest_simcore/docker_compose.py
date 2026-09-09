@@ -114,7 +114,6 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
             "DIRECTOR_TRACING",
             "DIRECTOR_V2_TRACING",
             "DYNAMIC_SCHEDULER_TRACING",
-            "EFS_GUARDIAN_TRACING",
             "INVITATIONS_TRACING",
             "PAYMENTS_TRACING",
             "RESOURCE_USAGE_TRACKER_TRACING",

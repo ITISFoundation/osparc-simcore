@@ -46,20 +46,17 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["workbench"][newUuid] = {
               "key": metadata["key"],
               "version": metadata["version"],
-              "label": metadata["name"]
+              "label": metadata["name"],
+              "ui": {
+                "position": {
+                  "x": 250,
+                  "y": 100
+                }
+              }
             };
             if (!("ui" in minStudyData)) {
               minStudyData["ui"] = {};
             }
-            if (!("workbench" in minStudyData["ui"])) {
-              minStudyData["ui"]["workbench"] = {};
-            }
-            minStudyData["ui"]["workbench"][newUuid] = {
-              "position": {
-                "x": 250,
-                "y": 100
-              }
-            };
             if (!("mode" in minStudyData["ui"])) {
               minStudyData["ui"]["mode"] = metadata["type"] && metadata["type"] === "dynamic" ? "standalone" : "pipeline";
             }
@@ -121,41 +118,10 @@ qx.Class.define("osparc.study.Utils", {
             const interval = 1000;
             pollTasks.createPollingTask(pollPromise, interval)
               .then(task => {
-                const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
-                const progressSequence = new osparc.widget.ProgressSequence(title).set({
-                  minHeight: 180 // four tasks
-                });
-                progressSequence.addOverallProgressBar();
-                loadingPage.clearMessages();
-                loadingPage.addWidgetToMessages(progressSequence);
+                const progressSequence = osparc.widget.ProgressSequence.createCreatingStudyProgress(loadingPage);
                 task.addListener("updateReceived", e => {
-                  const updateData = e.getData();
-                  if ("task_progress" in updateData && loadingPage) {
-                    const taskProgress = updateData["task_progress"];
-                    const message = taskProgress["message"];
-                    const percent = osparc.data.PollTask.extractProgress(updateData);
-                    progressSequence.setOverallProgress(percent);
-                    const existingTask = progressSequence.getTask(message);
-                    if (existingTask) {
-                      // update task
-                      osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
-                        value: percent,
-                        progressLabel: osparc.utils.Utils.safeToFixed(percent * 100, 2) + "%"
-                      });
-                    } else {
-                      // new task
-                      // all the previous steps to 100%
-                      progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
-                        value: 1,
-                        progressLabel: "100%"
-                      }));
-                      // and move to the next new task
-                      const subTask = progressSequence.addNewTask(message);
-                      osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
-                        value: percent,
-                        progressLabel: "0%"
-                      });
-                    }
+                  if (loadingPage) {
+                    progressSequence.applyPollTaskUpdate(e.getData());
                   }
                 }, this);
                 task.addListener("resultReceived", e => {
@@ -187,13 +153,13 @@ qx.Class.define("osparc.study.Utils", {
       });
       templateTypeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       const templateTypes = [{
-        label: "Template",
+        label: qx.locale.Manager.tr("Template"),
         id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
       }, {
-        label: "Tutorial",
+        label: qx.locale.Manager.tr("Tutorial"),
         id: osparc.data.model.StudyUI.TUTORIAL_TYPE,
       }, {
-        label: "Hypertool",
+        label: qx.locale.Manager.tr("Hypertool"),
         id: osparc.data.model.StudyUI.HYPERTOOL_TYPE,
       }]
       templateTypes.forEach(tempType => {

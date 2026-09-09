@@ -6,7 +6,7 @@
 
 import json
 from collections.abc import Iterator
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import simcore_postgres_database.cli
@@ -135,7 +135,7 @@ async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_d
         "email": faker.email(),
         "password_hash": "foo",
         "status": UserStatus.ACTIVE,
-        "expires_at": datetime.utcnow(),  # noqa: DTZ003
+        "expires_at": datetime.now(tz=UTC).replace(tzinfo=None),
     }
     repo = UsersRepo(asyncpg_engine)
     new_user = await repo.new_user(**data)
@@ -162,7 +162,7 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     # creates trial user
-    client_now = datetime.utcnow()  # noqa: DTZ003
+    client_now = datetime.now(tz=UTC).replace(tzinfo=None)
     async with transaction_context(asyncpg_engine) as connection:
         user_id: int | None = await connection.scalar(
             users.insert()
@@ -247,6 +247,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.select(sa.func.count()).select_from(sa.table("users_secrets"))).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        conn.rollback()
 
         # INSERT users with password hashes (emulates data in-place before migration)
         users_data_with_hashed_password = [
@@ -294,6 +295,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         assert len(password_hashes_before) == 2
         assert password_hashes_before[inserted_user_ids[0]] == "hashed_password_1"
         assert password_hashes_before[inserted_user_ids[1]] == "hashed_password_2"
+        conn.commit()
 
     # MIGRATE UPGRADE: this should move password hashes to users_secrets
     # packages/postgres-database/src/simcore_postgres_database/migration/versions/5679165336c8_new_users_secrets.py
@@ -313,6 +315,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT password_hash FROM users"))
         assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
+        conn.rollback()
 
     # MIGRATE DOWNGRADE: this should move password hashes back to users
     simcore_postgres_database.cli.downgrade.callback("61b98a60e934")
@@ -322,6 +325,7 @@ def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: s
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(sa.text("SELECT COUNT(*) FROM users_secrets")).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+        conn.rollback()
 
         # Verify password hashes are back in users table
         result = conn.execute(
@@ -541,7 +545,7 @@ def test_pre_registration_reconciliation_migration_upgrade_downgrade(  # noqa: P
                 "pre_email": "rejected@example.com",
                 "status": "REJECTED",
                 "reviewed_by": po_user_id,
-                "reviewed_at": datetime.utcnow(),  # noqa: DTZ003
+                "reviewed_at": datetime.now(tz=UTC),
                 "product_name": "osparc",
                 "created_by": po_user_id,
                 "extras": "{}",
@@ -556,12 +560,13 @@ def test_pre_registration_reconciliation_migration_upgrade_downgrade(  # noqa: P
                 "pre_email": "approved@example.com",
                 "status": "APPROVED",
                 "reviewed_by": po_user_id,
-                "reviewed_at": datetime.utcnow(),  # noqa: DTZ003
+                "reviewed_at": datetime.now(tz=UTC),
                 "product_name": "osparc",
                 "created_by": po_user_id,
                 "extras": "{}",
             },
         ).scalar_one()
+        conn.commit()
 
     # --- ACT: run migration upgrade ---
     simcore_postgres_database.cli.upgrade.callback("7f8d9b1c2e4f")

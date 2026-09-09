@@ -82,12 +82,6 @@ projects_nodes = sa.Table(
         comment="Progress value (0-100)",
     ),
     sa.Column(
-        "thumbnail",
-        sa.String,
-        nullable=True,
-        comment="Url of the latest screenshot",
-    ),
-    sa.Column(
         "input_access",
         JSONB,
         nullable=True,
@@ -141,6 +135,14 @@ projects_nodes = sa.Table(
         nullable=True,
         comment="Some services provide alternative parameters to be injected at boot time."
         "The user selection should be stored here, and it will overwrite the services's defaults",
+    ),
+    # FRONT-END ----------------------------
+    sa.Column(
+        "ui",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="UI components",
     ),
     sa.UniqueConstraint("project_uuid", "node_id"),
 )

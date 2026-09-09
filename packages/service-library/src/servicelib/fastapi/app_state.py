@@ -1,4 +1,4 @@
-from typing import Self, TypeVar
+from typing import ClassVar, Self, TypeVar
 
 from fastapi import FastAPI
 
@@ -10,7 +10,7 @@ class SingletonInAppStateMixin:
     Mixin to get, set and delete an instance of 'self' from/to app.state
     """
 
-    app_state_name: str  # Name used in app.state.$(app_state_name)
+    app_state_name: ClassVar[str]  # Name used in app.state.$(app_state_name)
     frozen: bool = True  # Will raise if set multiple times
 
     @classmethod

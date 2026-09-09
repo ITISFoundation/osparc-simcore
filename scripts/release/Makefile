@@ -2,9 +2,8 @@
 
 SHELL := /bin/bash
 
-
-help: ## help on rule's targets
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
+include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 
 .PHONY: install install-dev

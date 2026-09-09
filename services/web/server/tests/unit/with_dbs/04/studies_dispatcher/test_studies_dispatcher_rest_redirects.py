@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 import re
 import urllib.parse
 from typing import Any
@@ -23,6 +22,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._models import ViewerInfo
+from simcore_service_webserver.trash import trash_service
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -317,8 +317,10 @@ async def test_dispatch_logged_in_user(
     # delete before exiting
     url = client.app.router["delete_project"].url_for(project_id=expected_project_id)
     response = await client.delete(f"{url}")
-    await asyncio.sleep(2)  # needed to let task finish
     response.raise_for_status()
+    # NOTE: delete only marks the project for immediate deletion; actual removal happens
+    # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
+    await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
 
 def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:

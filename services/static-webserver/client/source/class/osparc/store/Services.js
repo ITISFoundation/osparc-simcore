@@ -407,11 +407,11 @@ qx.Class.define("osparc.store.Services", {
       const version = "0.0.0";
       const versionDisplay = "Unknown";
       const releaseInfo = {
-          version,
-          versionDisplay,
-          retired: null,
-          released: "2025-08-07T11:00:00.000000",
-          compatibility: null,
+        version,
+        versionDisplay,
+        retired: null,
+        released: "2025-08-07T11:00:00.000000",
+        compatibility: null,
       };
       return {
         key,

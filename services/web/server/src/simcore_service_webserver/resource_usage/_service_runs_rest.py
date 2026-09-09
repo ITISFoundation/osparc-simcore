@@ -23,7 +23,6 @@ from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.wallets import WalletID
 from pydantic import ConfigDict, Field, Json, TypeAdapter
-from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -33,6 +32,7 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
+from ..web_requests_validation import parse_request_query_parameters_as
 from . import _service_runs_service as api
 
 #
@@ -89,7 +89,7 @@ class ServicesResourceUsagesReportQueryParams(
         | None
     ) = Field(
         default=None,
-        description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
+        description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",  # noqa: E501
         examples=['{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'],
     )
 

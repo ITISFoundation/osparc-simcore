@@ -1,3 +1,4 @@
+from ._account_added_to_product import AccountAddedToProductTemplateContext
 from ._account_approved import AccountApprovedTemplateContext
 from ._account_rejected import AccountRejectedTemplateContext
 from ._account_requested import AccountRequestedTemplateContext
@@ -12,6 +13,7 @@ from ._support_reply import SupportReplyTemplateContext
 from ._unregister import UnregisterTemplateContext
 
 __all__: tuple[str, ...] = (
+    "AccountAddedToProductTemplateContext",
     "AccountApprovedTemplateContext",
     "AccountRejectedTemplateContext",
     "AccountRequestedTemplateContext",

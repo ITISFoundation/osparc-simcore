@@ -26,6 +26,7 @@ from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
     RestartPolicy,
+    UserPreferencesVersionSource,
 )
 from models_library.service_settings_nat_rule import NATRule
 from models_library.services import BootOptions, ServiceMetaDataPublished
@@ -226,12 +227,17 @@ class RuntimeConfig(BaseModel):
     is_collaborative: bool = False
 
     user_preferences_path: Path | None = None
+    user_preferences_version_source: UserPreferencesVersionSource = (
+        UserPreferencesVersionSource.SERVICE_VERSION_IDENTIFIER
+    )
     boot_options: BootOptions | None = None
     min_visible_inputs: NonNegativeInt | None = None
 
     containers_allowed_outgoing_permit_list: dict[str, list[NATRule]] | None = None
 
     containers_allowed_outgoing_internet: set[str] | None = None
+
+    tracing: bool = False
 
     settings: Annotated[list[SettingsItem], Field(default_factory=list)] = DEFAULT_FACTORY
 

@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from collections.abc import AsyncGenerator, Mapping
+from contextlib import aclosing
 from typing import Any, Final, cast
 
 import httpx
@@ -348,8 +349,11 @@ async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=Fals
 
 async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     image_tags = []
-    async for tags in list_image_tags_gen(app, image_key):
-        image_tags.extend(tags)
+    # NOTE: aclosing() ensures the generator is closed in this task's context even on early
+    # exit, avoiding cross-context OTel span teardown (GeneratorExit thrown by GC otherwise)
+    async with aclosing(list_image_tags_gen(app, image_key)) as tags_gen:
+        async for tags in tags_gen:
+            image_tags.extend(tags)
     return image_tags
 
 
@@ -475,14 +479,17 @@ async def get_image_details(app: FastAPI, image_key: str, image_tag: str, *, upd
 
 async def get_repo_details(app: FastAPI, image_key: str, *, update_cache=False) -> list[dict[str, Any]]:
     repo_details = []
-    async for image_tags in list_image_tags_gen(app, image_key, update_cache=update_cache):
-        async for image_details_future in limited_as_completed(
-            (get_image_details(app, image_key, tag, update_cache=update_cache) for tag in image_tags),
-            limit=get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
-        ):
-            with log_catch(_logger, reraise=False):
-                if image_details := await image_details_future:
-                    repo_details.append(image_details)
+    # NOTE: aclosing() ensures the generator is closed in this task's context even on early
+    # exit, avoiding cross-context OTel span teardown (GeneratorExit thrown by GC otherwise)
+    async with aclosing(list_image_tags_gen(app, image_key, update_cache=update_cache)) as tags_gen:
+        async for image_tags in tags_gen:
+            async for image_details_future in limited_as_completed(
+                (get_image_details(app, image_key, tag, update_cache=update_cache) for tag in image_tags),
+                limit=get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS,
+            ):
+                with log_catch(_logger, reraise=False):
+                    if image_details := await image_details_future:
+                        repo_details.append(image_details)
     return repo_details
 
 
@@ -490,15 +497,18 @@ async def list_services(app: FastAPI, service_type: ServiceType, *, update_cache
     with log_context(_logger, logging.DEBUG, msg="listing services"):
         services = []
         concurrency_limit = get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS
-        async for repos in _list_repositories_gen(app, service_type, update_cache=update_cache):
-            # only list as service if it actually contains the necessary labels
-            async for repo_details_future in limited_as_completed(
-                (get_repo_details(app, repo, update_cache=update_cache) for repo in repos),
-                limit=concurrency_limit,
-            ):
-                with log_catch(_logger, reraise=False):
-                    if repo_details := await repo_details_future:
-                        services.extend(repo_details)
+        # NOTE: aclosing() ensures the generator is closed in this task's context even on early
+        # exit, avoiding cross-context OTel span teardown (GeneratorExit thrown by GC otherwise)
+        async with aclosing(_list_repositories_gen(app, service_type, update_cache=update_cache)) as repos_gen:
+            async for repos in repos_gen:
+                # only list as service if it actually contains the necessary labels
+                async for repo_details_future in limited_as_completed(
+                    (get_repo_details(app, repo, update_cache=update_cache) for repo in repos),
+                    limit=concurrency_limit,
+                ):
+                    with log_catch(_logger, reraise=False):
+                        if repo_details := await repo_details_future:
+                            services.extend(repo_details)
 
         return services
 

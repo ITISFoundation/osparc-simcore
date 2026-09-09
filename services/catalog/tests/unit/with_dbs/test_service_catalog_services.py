@@ -5,7 +5,7 @@
 
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -179,7 +179,10 @@ async def test_batch_get_my_services(
     other_service_key = "simcore/services/comp/other-service"
     other_service_version = "2.1.2"
 
-    expected_retirement = datetime.utcnow() + timedelta(days=1)  # NOTE: old offset-naive column
+    expected_retirement = (datetime.now(tz=UTC) + timedelta(days=1)).replace(
+        # NOTE: old offset-naive column
+        tzinfo=None
+    )
 
     # Owned by user
     fake_service_1 = create_fake_service_data(

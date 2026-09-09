@@ -1,8 +1,11 @@
 import contextlib
+from collections.abc import AsyncIterator
+from typing import ClassVar
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_dynamic_sidecar.ports import (
     InputPortStatus,
     InputStatus,
@@ -26,11 +29,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
+from pydantic import NonNegativeInt
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
 class Notifier(SingletonInAppStateMixin):
-    app_state_name: str = "notifier"
+    app_state_name: ClassVar[str] = "notifier"
 
     def __init__(self, sio_manager: socketio.AsyncAioPikaManager):
         self._sio_manager = sio_manager
@@ -96,7 +100,7 @@ class Notifier(SingletonInAppStateMixin):
         node_id: NodeID,
         status: MountActivityStatus,
         *,
-        vfs_write_back_s: int,
+        vfs_write_back_s: NonNegativeInt,
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_STATE_PATHS_EVENT,
@@ -112,19 +116,19 @@ class Notifier(SingletonInAppStateMixin):
         )
 
 
-def setup_notifier(app: FastAPI):
-    async def _on_startup() -> None:
-        assert app.state.external_socketio  # nosec
+def configure_notifier(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        notifier: Notifier | None = None
+        try:
+            assert app.state.external_socketio  # nosec
 
-        notifier = Notifier(
-            sio_manager=app.state.external_socketio,
-        )
-        notifier.set_to_app_state(app)
-        assert Notifier.get_from_app_state(app) == notifier  # nosec
+            notifier = Notifier(sio_manager=app.state.external_socketio)
+            notifier.set_to_app_state(app)
+            assert Notifier.get_from_app_state(app) == notifier  # nosec
+            yield
+        finally:
+            if notifier is not None:
+                with contextlib.suppress(AttributeError):
+                    Notifier.pop_from_app_state(app)
 
-    async def _on_shutdown() -> None:
-        with contextlib.suppress(AttributeError):
-            Notifier.pop_from_app_state(app)
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

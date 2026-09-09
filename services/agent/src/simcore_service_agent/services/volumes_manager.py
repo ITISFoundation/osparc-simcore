@@ -1,13 +1,15 @@
 import logging
 from asyncio import Lock, Task
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Final
+from typing import ClassVar, Final
 
 import arrow
 from aiodocker.docker import Docker
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
 from servicelib.background_task import create_periodic_task
@@ -31,7 +33,8 @@ _VOLUMES_TO_NEVER_BACKUP: Final[set[str]] = {
     "stuptuo",  # outputs -> can be regenerated, usually all services use this name
     "erots-derahs",  # shared-store -> defined by the dynamic-sidecar
     f"{DEFAULT_VFS_CACHE_PATH}".strip("/")[::-1],  # vfs-cache
-    "secnereferP",  # Preferences -> usually defined by the user this is the one we use in the only service that supports if for now
+    "secnereferP",  # Preferences -> usually defined by the user
+    "secart",  # traces -> OTEL trace data collected by the dynamic-sidecar
 }
 
 
@@ -52,7 +55,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
 
     _task_periodic_volume_cleanup: Task | None = None
 
-    app_state_name: str = "volumes_manager"
+    app_state_name: ClassVar[str] = "volumes_manager"
 
     async def setup(self) -> None:
         self._task_bookkeeping = create_periodic_task(
@@ -176,8 +179,8 @@ def get_volumes_manager(app: FastAPI) -> VolumesManager:
     return VolumesManager.get_from_app_state(app)
 
 
-def setup_volume_manager(app: FastAPI) -> None:
-    async def _on_startup() -> None:
+def configure_volume_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _volumes_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
         settings: ApplicationSettings = app.state.settings
 
         volumes_manager = VolumesManager(
@@ -188,9 +191,9 @@ def setup_volume_manager(app: FastAPI) -> None:
         )
         volumes_manager.set_to_app_state(app)
         await volumes_manager.setup()
+        try:
+            yield {}
+        finally:
+            await VolumesManager.get_from_app_state(app).shutdown()
 
-    async def _on_shutdown() -> None:
-        await VolumesManager.get_from_app_state(app).shutdown()
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_volumes_manager_lifespan)

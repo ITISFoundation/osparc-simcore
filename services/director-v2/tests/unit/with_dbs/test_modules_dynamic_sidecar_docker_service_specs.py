@@ -5,7 +5,6 @@
 
 import json
 from typing import Any, cast
-from unittest.mock import Mock
 
 import pytest
 import respx
@@ -243,6 +242,7 @@ def expected_dynamic_sidecar_spec(
                     ),
                     "DY_SIDECAR_USER_ID": "234",
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
+                    "DY_SIDECAR_USER_SERVICES_TRACING_OPT_IN": "False",
                     "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "True",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
@@ -263,6 +263,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
                     "DY_SIDECAR_PRODUCT_NAME": osparc_product_name,
                     "DY_SIDECAR_USER_PREFERENCES_PATH": "None",
+                    "DY_SIDECAR_USER_PREFERENCES_VERSION_SOURCE": "service-version",
                     "DY_SIDECAR_LEGACY_STATE": "null",
                     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": "True",
                     "POSTGRES_DB": "test",
@@ -464,7 +465,7 @@ async def test_get_dynamic_proxy_spec(
     for count in range(1, 11):  # loop to check it does not repeat copies
         print(f"{count:*^50}")
 
-        dynamic_sidecar_spec: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
+        dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -477,10 +478,8 @@ async def test_get_dynamic_proxy_spec(
             user_extra_properties=UserExtraProperties(
                 is_internet_enabled=False,
                 is_telemetry_enabled=True,
-                is_efs_enabled=False,
                 mount_data=True,
             ),
-            rpc_client=Mock(),
         )
 
         exclude_keys = {
@@ -544,7 +543,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     hardware_info: HardwareInfo,
     fake_service_specifications: dict[str, Any],
 ):
-    dynamic_sidecar_spec: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
+    dynamic_sidecar_spec: AioDockerServiceSpec = get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -557,10 +556,8 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         user_extra_properties=UserExtraProperties(
             is_internet_enabled=False,
             is_telemetry_enabled=True,
-            is_efs_enabled=False,
             mount_data=True,
         ),
-        rpc_client=Mock(),
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.model_dump()

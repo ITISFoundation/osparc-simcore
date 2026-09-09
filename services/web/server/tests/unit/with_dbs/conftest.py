@@ -75,6 +75,7 @@ from simcore_service_webserver.constants import (
     INDEX_RESOURCE_NAME,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
@@ -417,13 +418,13 @@ async def storage_subsystem_mock(mocker: MockerFixture, faker: Faker) -> MockedS
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._projects_service_delete.storage_service.delete_project_data_folders",
         autospec=True,
         side_effect=async_mock,
     )
 
     mock2 = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.storage_service.delete_data_folders_of_project_node",
+        "simcore_service_webserver.projects._projects_service.storage_service.delete_project_node_data_folders",
         autospec=True,
         return_value=None,
     )
@@ -457,9 +458,22 @@ async def mocked_dynamic_services_interface(
         )
 
     mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
-        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
+        f"{director_v2_service.__name__}.create_or_update_pipeline",
         autospec=True,
         return_value=None,
+    )
+    mock["director_v2.api.delete_pipeline"] = mocker.patch(
+        f"{director_v2_service.__name__}.delete_pipeline",
+        autospec=True,
+    )
+    mock["director_v2.api.is_pipeline_running"] = mocker.patch(
+        f"{director_v2_service.__name__}.is_pipeline_running",
+        autospec=True,
+        return_value=False,
+    )
+    mock["director_v2.api.stop_pipeline"] = mocker.patch(
+        f"{director_v2_service.__name__}.stop_pipeline",
+        autospec=True,
     )
     return mock
 
@@ -485,6 +499,7 @@ def create_dynamic_service_mock(
             "service_state": random.choice(list(ServiceState)),  # noqa: S311
             "user_id": faker.pyint(min_value=1),
             "project_id": faker.uuid4(cast_to=None),
+            "product_name": "osparc",
         } | service_override_kwargs
 
         running_service = DynamicServiceGet(**service_config)
@@ -519,7 +534,7 @@ def postgres_dsn(docker_services: Services, docker_ip: str | Any, default_app_cf
 
 @pytest.fixture(scope="session")
 def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
-    DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
+    DSN = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
     url = DSN.format(**postgres_dsn)
 
     # Wait until service is responsive.
@@ -560,7 +575,8 @@ def postgres_db(postgres_dsn: dict, postgres_service: str) -> Iterator[sa.engine
 @pytest.fixture
 async def asyncpg_engine(postgres_db: sa.engine.Engine, is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
     # NOTE: call to postgres BEFORE app starts
-    dsn = f"{postgres_db.url}".replace("postgresql://", "postgresql+asyncpg://")
+    sync_dsn = postgres_db.url.render_as_string(hide_password=False)
+    dsn = sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
     minsize = 1
     maxsize = 50
 

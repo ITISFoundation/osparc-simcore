@@ -1,6 +1,6 @@
 #
 # Targets to pip-compile requirements
 #
-include ../../../requirements/base.Makefile
+include ../../../scripts/makefiles/requirements.mk
 
 _migration.txt: _base.txt

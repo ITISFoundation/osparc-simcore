@@ -29,8 +29,7 @@ class _DispatchQueryParams(BaseModel):
 @router.post(
     "/studies/{study_id}:dispatch",
     response_model=Envelope[TaskGet],
-    description="Start an async clone of a published study into the requesting user's account. "
-    "Returns 202 Accepted + TaskGet for polling via /tasks-legacy/{task_id}.",
+    description="Start an async clone of a published study into the requesting user's account",
     status_code=status.HTTP_202_ACCEPTED,
     name="dispatch_study",
 )

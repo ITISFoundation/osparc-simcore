@@ -12,22 +12,21 @@ from ._groups_service import (
 )
 from ._projects_service import (
     batch_get_project_name,
-    delete_project_by_user,
-    get_project_dict_legacy,
+    clone_project_data,
+    copy_allow_guests_to_push_states_and_output_ports,
+    get_project_dict_and_type,
     patch_project_and_notify_users,
 )
 
 __all__: tuple[str, ...] = (
     "batch_get_project_name",
     "check_user_project_permission",
+    "clone_project_data",
+    "copy_allow_guests_to_push_states_and_output_ports",
     "create_project_group_without_checking_permissions",
-    "delete_project_by_user",
     "delete_project_group_without_checking_permissions",
-    "get_project_dict_legacy",
+    "get_project_dict_and_type",
     "has_user_project_access_rights",
     "list_projects",
     "patch_project_and_notify_users",
-)
-
-
-# nopycln: file
+)  # nopycln: file

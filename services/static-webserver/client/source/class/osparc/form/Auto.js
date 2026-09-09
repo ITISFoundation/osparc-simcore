@@ -303,7 +303,7 @@ qx.Class.define("osparc.form.Auto", {
         s.set.value = String(0);
       }
       const parsedDefault = parseFloat(s.defaultValue);
-      const defaultNumber = !isNaN(parsedDefault) ? parsedDefault : 0;
+      const defaultNumber = isNaN(parsedDefault) ? 0 : parsedDefault;
       const model2target = {
         converter: function(data) {
           if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {

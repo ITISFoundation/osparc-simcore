@@ -6,6 +6,7 @@
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
+aiocache
 dask[distributed]
 pydantic[email]
 # for the Annotated type

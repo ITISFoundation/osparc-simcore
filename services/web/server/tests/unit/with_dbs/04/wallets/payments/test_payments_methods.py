@@ -318,7 +318,7 @@ async def wallet_payment_method_id(
 def mock_payment_dependencies(
     mocker: MockerFixture,
     latest_osparc_price: Decimal,  # product is billable
-    setup_user_pre_registration_details_db: None,  # user is pre-registered to have billable information
+    setup_user_billing_details_db: None,  # user has billing information on file
 ):
     """Fixture that mocks common payment dependencies; ensures that product is billable and user pre-registered with billable information"""  # noqa: E501
 

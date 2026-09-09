@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field, fields
-from typing import Any, TypeAlias
+from typing import Any
 
 from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
@@ -10,6 +10,7 @@ from models_library.docker import (
     DockerLabelKey,
 )
 from models_library.generated_models.docker_rest_api import Node
+from models_library.products import ProductName
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
@@ -19,6 +20,8 @@ class _TaskAssignmentMixin:
     available_resources: Resources | None = None
     # Track labels required by assigned tasks (will be applied during activation)
     _pending_label_requirements: dict[DockerLabelKey, str] = field(default_factory=dict)
+    # Track product names of assigned tasks (used to tag the instance if uniform across all of them)
+    _assigned_task_product_names: set[ProductName] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         # Fallback 1: If used directly or by a child class without its own logic, default to empty
@@ -30,6 +33,7 @@ class _TaskAssignmentMixin:
         task,
         task_resources: Resources,
         task_required_node_labels: dict[DockerLabelKey, str],
+        task_product_name: ProductName | None = None,
     ) -> None:
         self.assigned_tasks.append(task)
         assert self.available_resources is not None  # nosec
@@ -40,6 +44,12 @@ class _TaskAssignmentMixin:
                 "_pending_label_requirements",
                 self._pending_label_requirements | task_required_node_labels,
             )
+        if task_product_name is not None:
+            object.__setattr__(
+                self,
+                "_assigned_task_product_names",
+                self._assigned_task_product_names | {task_product_name},
+            )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
         assert self.available_resources is not None  # nosec
@@ -47,6 +57,12 @@ class _TaskAssignmentMixin:
 
     def tasks_required_pending_labels(self) -> dict[DockerLabelKey, str]:
         return self._pending_label_requirements
+
+    def assigned_task_product_name_if_uniform(self) -> ProductName | None:
+        """Returns the product name shared by all assigned tasks, or None if there are none/several."""
+        if len(self._assigned_task_product_names) == 1:
+            return next(iter(self._assigned_task_product_names))
+        return None
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -108,7 +124,8 @@ class NonAssociatedInstance(_BaseInstance): ...
 class Cluster:  # pylint: disable=too-many-instance-attributes
     active_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2-backed docker node which is active and ready to receive tasks (or with running tasks)"
+            "description": "This is a EC2-backed docker node which is active and ready to receive tasks "
+            "(or with running tasks)"
         }
     )
     pending_nodes: list[AssociatedInstance] = field(
@@ -119,7 +136,8 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
     )
     hot_buffer_drained_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled (with no tasks, a.k.a. hot buffer)"
+            "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled "
+            "(with no tasks, a.k.a. hot buffer)"
         }
     )
     pending_ec2s: list[NonAssociatedInstance] = field(
@@ -127,12 +145,14 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
     )
     broken_ec2s: list[NonAssociatedInstance] = field(
         metadata={
-            "description": "This is an existing EC2 instance that never properly joined the cluster and is deemed as broken and will be terminated"
+            "description": "This is an existing EC2 instance that never properly joined the cluster and is deemed "
+            "as broken and will be terminated"
         }
     )
     warm_buffer_ec2s: list[NonAssociatedInstance] = field(
         metadata={
-            "description": "This is a prepared stopped EC2 instance, not yet associated to a docker node, ready to be used (a.k.a. warm buffer)"
+            "description": "This is a prepared stopped EC2 instance, not yet associated to a docker node, ready "
+            "to be used (a.k.a. warm buffer)"
         }
     )
     disconnected_nodes: list[Node] = field(
@@ -143,7 +163,8 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
     )
     retired_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2-backed docker node which was retired and waiting to be drained and eventually terminated or re-used"
+            "description": "This is a EC2-backed docker node which was retired and waiting to be drained and "
+            "eventually terminated or re-used"
         }
     )
     terminated_instances: list[NonAssociatedInstance]
@@ -181,7 +202,8 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             f"Cluster(active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
             f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
             f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
-            f"hot-buffer-drained-nodes: count={len(self.hot_buffer_drained_nodes)} {_get_instance_ids(self.hot_buffer_drained_nodes)}, "
+            f"hot-buffer-drained-nodes: count={len(self.hot_buffer_drained_nodes)} "
+            f"{_get_instance_ids(self.hot_buffer_drained_nodes)}, "
             f"pending-ec2s: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
             f"broken-ec2s: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
             f"warm-buffer-ec2s: count={len(self.warm_buffer_ec2s)} {_get_instance_ids(self.warm_buffer_ec2s)}, "
@@ -192,7 +214,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         )
 
 
-DaskTaskId: TypeAlias = str
+type DaskTaskId = str
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -280,6 +302,7 @@ class InstanceToLaunch:
 
     instance_type: EC2InstanceType
     node_labels: dict[DockerLabelKey, str]
+    product_name: ProductName | None = None
 
     def __hash__(self) -> int:
-        return hash((self.instance_type, frozenset(self.node_labels.items())))
+        return hash((self.instance_type, frozenset(self.node_labels.items()), self.product_name))

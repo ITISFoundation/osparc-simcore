@@ -117,3 +117,22 @@ def test_connection_close_callback_with_unexpected_error_marks_unhealthy(
 ):
     client_base._connection_close_callback(sender="1", exc=RuntimeError("unexpected"))
     assert client_base.healthy is False
+
+
+# ---------------------------------------------------------------------------
+# _connection_reconnect_callback — recovery guard
+# ---------------------------------------------------------------------------
+
+
+def test_connection_reconnect_callback_restores_healthy_state(
+    client_base: RabbitMQClientBase,
+):
+    """After a transient broker disruption flips the client to unhealthy, a
+    successful (re)connection must restore the healthy state. Without this the
+    `_healthy_state` latch stays False forever and the liveness probe keeps
+    restarting the service."""
+    client_base._connection_close_callback(sender="1", exc=RuntimeError("unexpected"))
+    assert client_base.healthy is False
+
+    client_base._connection_reconnect_callback()
+    assert client_base.healthy is True

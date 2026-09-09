@@ -41,8 +41,8 @@ def _create_insert_query(
             licensed_resource_type=licensed_resource_type,
             licensed_resource_data=licensed_resource_data,
             display_name=display_name,
-            created=func.now(),
-            modified=func.now(),
+            created=func.now(),  # pylint: disable=not-callable
+            modified=func.now(),  # pylint: disable=not-callable
         )
         .returning(*_SELECTION_ARGS)
     )
@@ -115,13 +115,13 @@ async def update(
     # NOTE: at least 'touch' if updated_values is empty
     _updates = {
         **updates.model_dump(exclude_unset=True),
-        licensed_resources.c.modified.name: func.now(),
+        licensed_resources.c.modified.name: func.now(),  # pylint: disable=not-callable
     }
 
     # trashing
     assert "trash" in dict(LicensedResourcePatchDB.model_fields)  # nosec
     if trash := _updates.pop("trash", None):
-        _updates[licensed_resources.c.trashed.name] = func.now() if trash else None
+        _updates[licensed_resources.c.trashed.name] = func.now() if trash else None  # pylint: disable=not-callable
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

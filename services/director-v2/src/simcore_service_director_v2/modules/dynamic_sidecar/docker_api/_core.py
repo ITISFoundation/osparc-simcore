@@ -42,12 +42,6 @@ from ..docker_states import (
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
 from ._utils import docker_client
 
-NO_PENDING_OVERWRITE = {
-    ServiceState.FAILED,
-    ServiceState.COMPLETE,
-    ServiceState.RUNNING,
-}
-
 _logger = logging.getLogger(__name__)
 
 

@@ -21,10 +21,6 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import API_VTAG as VTAG
@@ -49,6 +45,7 @@ from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedEr
 from ..security.decorators import permission_required
 from ..users.errors import BillingDetailsNotFoundError, UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from . import _api
 from ._constants import (
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,

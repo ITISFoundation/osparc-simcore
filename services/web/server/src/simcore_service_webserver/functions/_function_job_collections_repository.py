@@ -195,8 +195,11 @@ async def list_function_job_collections(
             function_job_collections_table.c.uuid.in_(access_subquery),
         )
 
-        total_count_result = await conn.scalar(
-            func.count().select().select_from(function_job_collections_table).where(filter_and_access_condition)
+        total_count_result = (
+            await conn.scalar(
+                func.count().select().select_from(function_job_collections_table).where(filter_and_access_condition)
+            )
+            or 0
         )
         if total_count_result == 0:
             return [], PageMetaInfoLimitOffset(total=0, offset=pagination_offset, limit=pagination_limit, count=0)

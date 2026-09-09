@@ -39,8 +39,34 @@
     "semi": "off",
     "comma-dangle": "off",
     "object-curly-spacing": "off",
+    "object-property-newline": [
+      "error",
+      {
+        "allowAllPropertiesOnSameLine": true
+      }
+    ],
+    "no-multi-spaces": [
+      "error",
+      {
+        "ignoreEOLComments": true
+      }
+    ],
     "no-implicit-coercion": "off",
-    "arrow-body-style": "off"
+    "arrow-body-style": "off",
+    "space-before-function-paren": [
+      "error",
+      {
+        "anonymous": "never",
+        "named": "never",
+        "asyncArrow": "always"
+      }
+    ],
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": false
+      }
+    ]
   },
   "env": {
     "browser": true

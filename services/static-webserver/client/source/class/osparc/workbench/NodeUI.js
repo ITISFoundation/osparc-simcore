@@ -268,7 +268,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           } else if (this.getNode().isUnknown()) {
             control.set({
               icon: "@FontAwesomeSolid/question/14",
-              toolTipText: "Unknown",
+              toolTipText: this.tr("Unknown"),
             });
           }
           this.getChildControl("middle-container").addAt(control, 0);
@@ -471,9 +471,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
               const myGroupId = osparc.auth.Data.getInstance().getGroupId();
               const currentUserGroupIds = lockState.getCurrentUserGroupIds();
               return currentUserGroupIds.includes(myGroupId) ? "excluded" : "visible";
-            } else {
-              return "visible";
             }
+            return "visible";
           }
           return "excluded";
         }

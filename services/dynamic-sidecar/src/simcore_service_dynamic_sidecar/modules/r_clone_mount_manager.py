@@ -12,6 +12,7 @@ from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
@@ -231,24 +232,25 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             return node_address
 
 
-def setup_r_clone_mount_manager(app: FastAPI):
-    async def _on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+def configure_r_clone_mount_manager(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        r_clone_mount_manager: RCloneMountManager | None = None
+        try:
+            settings: ApplicationSettings = app.state.settings
+            mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
-        app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
-            settings.DY_SIDECAR_R_CLONE_SETTINGS,
-            requires_data_mounting=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
-            delegate=DynamicSidecarRCloneMountDelegate(app, settings, mounted_volumes),
-        )
-        await r_clone_mount_manager.setup()
+            r_clone_mount_manager = app.state.r_clone_mount_manager = RCloneMountManager(
+                settings.DY_SIDECAR_R_CLONE_SETTINGS,
+                requires_data_mounting=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
+                delegate=DynamicSidecarRCloneMountDelegate(app, settings, mounted_volumes),
+            )
+            await r_clone_mount_manager.setup()
+            yield
+        finally:
+            if r_clone_mount_manager is not None:
+                await r_clone_mount_manager.teardown()
 
-    async def _on_shutdown() -> None:
-        r_clone_mount_manager: RCloneMountManager = app.state.r_clone_mount_manager
-        await r_clone_mount_manager.teardown()
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 def get_r_clone_mount_manager(app: FastAPI) -> RCloneMountManager:

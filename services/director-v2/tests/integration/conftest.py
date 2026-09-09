@@ -6,7 +6,6 @@ import asyncio
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
-from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -124,13 +123,10 @@ async def create_pipeline(
 
 @pytest.fixture
 def mock_projects_repository(mocker: MockerFixture) -> None:
-    mocked_obj = AsyncMock()
-    mocked_obj.is_node_present_in_workbench(return_value=True)
-
-    module_base = "simcore_service_director_v2.modules.db.repositories.projects"
+    module_base = "simcore_service_director_v2.modules.db.repositories.projects_nodes"
     mocker.patch(
-        f"{module_base}.ProjectsRepository.is_node_present_in_workbench",
-        return_value=mocked_obj,
+        f"{module_base}.ProjectsNodesRepository.exists",
+        return_value=True,
     )
 
 

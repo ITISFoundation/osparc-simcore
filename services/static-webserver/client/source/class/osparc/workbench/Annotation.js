@@ -250,7 +250,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       const svgCanvas = this.getSvgCanvas();
       if (svgCanvas === null) {
         return;
-      };
+      }
 
       const representation = this.getRepresentation();
       if (representation) {

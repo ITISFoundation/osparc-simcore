@@ -49,6 +49,7 @@ from settings_library.s3 import S3Settings
 
 from ..settings import ApplicationSettings
 from ..utils.dask import TaskPublisher
+from ..utils.encryption import TransferEncryptionSettings
 from ..utils.files import push_file_to_remote
 from .constants import LEGACY_SERVICE_LOG_FILE_NAME
 from .models import (
@@ -200,6 +201,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     with log_context(
@@ -239,10 +241,16 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
         finally:
             # copy the log file to the log_file_url
             if log_file.exists():
-                await push_file_to_remote(log_file, log_file_url, log_publishing_cb, s3_settings)
+                await push_file_to_remote(
+                    log_file,
+                    log_file_url,
+                    log_publishing_cb=log_publishing_cb,
+                    s3_settings=s3_settings,
+                    encryption=encryption,
+                )
 
 
-async def _parse_container_docker_logs(
+async def _parse_container_docker_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     *,
     container: DockerContainer,
     progress_regexp: re.Pattern[str],
@@ -254,6 +262,7 @@ async def _parse_container_docker_logs(
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     """
 
@@ -329,7 +338,13 @@ async def _parse_container_docker_logs(
             finally:
                 with log_context(_logger, logging.INFO, "uploading docker logs file"):
                     # copy the log file to the log_file_url
-                    await push_file_to_remote(log_file_path, log_file_url, log_publishing_cb, s3_settings)
+                    await push_file_to_remote(
+                        log_file_path,
+                        log_file_url,
+                        log_publishing_cb=log_publishing_cb,
+                        s3_settings=s3_settings,
+                        encryption=encryption,
+                    )
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
@@ -345,6 +360,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -374,6 +390,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
                 log_publishing_cb=log_publishing_cb,
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
+                encryption=encryption,
             )
         else:
             await _parse_container_log_file(
@@ -388,6 +405,7 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
                 log_publishing_cb=log_publishing_cb,
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
+                encryption=encryption,
             )
 
 
@@ -424,6 +442,7 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
     log_publishing_cb: LogPublishingCB,
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
+    encryption: TransferEncryptionSettings | None,
 ) -> AsyncIterator[Awaitable[None]]:
     """
     Raises:
@@ -451,6 +470,7 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
                 log_publishing_cb=log_publishing_cb,
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
+                encryption=encryption,
             )
 
         monitoring_task = asyncio.create_task(

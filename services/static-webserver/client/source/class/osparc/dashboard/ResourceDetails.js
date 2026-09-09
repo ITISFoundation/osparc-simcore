@@ -76,11 +76,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               });
             break;
           case "function": {
-            addPages = (functionData, templateData = null) => {
+            const addPages = (functionData, templateData = null) => {
               this.__resourceModel = new osparc.data.model.Function(functionData, templateData);
               this.__resourceModel["resourceType"] = resourceData["resourceType"];
               this.__addPages();
-            }
+            };
             // use latestResourceData, resourceData doesn't have the functionClass nor the templateId
             if (latestResourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
               // this is only required for functions that have a template linked

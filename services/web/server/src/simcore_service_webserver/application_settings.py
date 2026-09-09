@@ -123,6 +123,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = False
 
+    WEBSERVER_LOCALIZED_MESSAGES_ENABLED: Annotated[
+        bool,
+        Field(
+            description="Enable server-side translation for user-facing messages.",
+        ),
+    ] = False
+
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
@@ -275,7 +282,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     WEBSERVER_LICENSES: Annotated[
-        LicensesSettings | None | bool,
+        LicensesSettings | bool | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
             # NOTE: `bool` is to keep backwards compatibility
@@ -559,7 +566,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def public_dict(self) -> dict[str, Any]:
         """Config publicly available"""
 
-        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT
+        config = {"invitation_required": False}  # SEE APP_PUBLIC_CONFIG_PER_PRODUCT_APPKEY
         config.update(
             self._export_by_alias(
                 include={
@@ -588,6 +595,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_DEV_FEATURES_ENABLED": True,
+                "WEBSERVER_LOCALIZED_MESSAGES_ENABLED": True,
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",

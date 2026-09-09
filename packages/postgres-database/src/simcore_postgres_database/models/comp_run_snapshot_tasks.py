@@ -95,4 +95,5 @@ comp_run_snapshot_tasks = sa.Table(
         nullable=True,
         doc="Hardware information of this task",
     ),
+    sa.Index("ix_comp_run_snapshot_tasks_run_id_node_id", "run_id", "node_id"),
 )

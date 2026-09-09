@@ -8,8 +8,8 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,
-    BUFFER_MACHINE_TAG_KEY,
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
+    WARM_BUFFER_MACHINE_TAG_KEY,
 )
 from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
     ComputationalAutoscalingProvider,
@@ -92,7 +92,7 @@ def test_get_deactivated_buffer_ec2_tags_computational(
     "tags, expected_is_buffer",
     [
         ({"whatever_key": "whatever_value"}, False),
-        ({BUFFER_MACHINE_TAG_KEY: "whatever_value"}, True),
+        ({WARM_BUFFER_MACHINE_TAG_KEY: "whatever_value"}, True),
     ],
 )
 def test_is_buffer_machine(tags: EC2Tags, expected_is_buffer: bool):

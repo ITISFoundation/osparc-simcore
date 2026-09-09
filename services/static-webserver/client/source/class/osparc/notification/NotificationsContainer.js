@@ -69,7 +69,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
         });
       } else {
         const aboutLabel = new qx.ui.basic.Label().set({
-          value: "If something is shared with you, it will appear here",
+          value: this.tr("If something is shared with you, it will appear here"),
           font: "text-14",
           padding: osparc.notification.NotificationUI.PADDING,
           rich: true,

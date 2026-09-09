@@ -61,10 +61,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         const eventHandler = conversationData => {
           if (conversationData && types.includes(conversationData["type"])) {
             switch (eventName) {
-              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED: {
                 const conversation = this.__addToCache(conversationData);
                 this.fireDataEvent("conversationCreated", conversation);
                 break;
+              }
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
                 this.__updateConversation(conversationData);
                 break;
@@ -182,18 +183,17 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           };
           return conversationCounts;
         });
-      } else {
-        return Promise.all([
-          this.fetchConversationCount("all"),
-          this.fetchConversationCount("unread"),
-        ]).then(counts => {
-          const conversationCounts = {
-            all: counts[0],
-            unread: counts[1],
-          };
-          return conversationCounts;
-        });
       }
+      return Promise.all([
+        this.fetchConversationCount("all"),
+        this.fetchConversationCount("unread"),
+      ]).then(counts => {
+        const conversationCounts = {
+          all: counts[0],
+          unread: counts[1],
+        };
+        return conversationCounts;
+      });
     },
 
     getConversation: function(conversationId) {

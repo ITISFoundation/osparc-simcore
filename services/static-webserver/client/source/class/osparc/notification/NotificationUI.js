@@ -183,7 +183,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (resourceId) {
             const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
             if (org) {
-              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'");
+              descriptionLabel.setValue(this.tr("You're now member of '%1'", org.getLabel()));
             } else {
               this.setEnabled(false);
             }
@@ -203,7 +203,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user.getLabel());
+              descriptionLabel.setValue(this.tr("was shared by %1", user.getLabel()));
             }
           }
           break;
@@ -220,33 +220,33 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user.getLabel());
+              descriptionLabel.setValue(this.tr("was shared by %1", user.getLabel()));
             }
           }
           break;
         case "CONVERSATION_NOTIFICATION":
           if (resourceId) {
             osparc.store.Study.getInstance().getOne(resourceId)
-              .then(study => titleLabel.setValue(`You were notified in '${study["name"]}'`))
+              .then(study => titleLabel.setValue(this.tr("You were notified in '%1'", study["name"])))
               .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue(user.getLabel() + " wants you to check the conversation");
+              descriptionLabel.setValue(this.tr("%1 wants you to check the conversation", user.getLabel()));
             }
           }
           break;
         case "ANNOTATION_NOTE":
           if (resourceId) {
             osparc.store.Study.getInstance().getOne(resourceId)
-              .then(study => titleLabel.setValue(`Note added in '${study["name"]}'`))
+              .then(study => titleLabel.setValue(this.tr("Note added in '%1'", study["name"])))
               .catch(() => this.setEnabled(false));
           }
           if (userFromId) {
             const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
             if (user) {
-              descriptionLabel.setValue("was added by " + user.getLabel());
+              descriptionLabel.setValue(this.tr("was added by %1", user.getLabel()));
             }
           }
           break;

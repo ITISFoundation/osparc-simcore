@@ -2,8 +2,10 @@ import os
 from collections.abc import AsyncGenerator, Generator, Iterator
 from functools import cached_property
 from pathlib import Path
+from typing import Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
@@ -11,6 +13,8 @@ from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
 from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
+
+_TRACES_PATH: Final[Path] = Path("/traces")
 
 
 def _ensure_path(path: Path) -> Path:
@@ -90,6 +94,13 @@ class MountedVolumes:
             f"_{_name_from_full_path(self.user_preferences_path)[::-1]}"
         )
 
+    @cached_property
+    def volume_name_traces(self) -> str:
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
+            f"_{_name_from_full_path(_TRACES_PATH)[::-1]}"
+        )
+
     def volume_name_state_paths(self) -> Generator[str]:
         for state_path in self.state_paths:
             yield (
@@ -108,6 +119,10 @@ class MountedVolumes:
     @cached_property
     def vfs_cache_path(self) -> Path:
         return _ensure_path(self._dy_volumes / DEFAULT_VFS_CACHE_PATH.relative_to("/"))
+
+    @cached_property
+    def disk_traces_path(self) -> Path:
+        return _ensure_path(self._dy_volumes / _TRACES_PATH.relative_to("/"))
 
     def disk_state_paths_iter(self) -> Iterator[Path]:
         for state_path in self.state_paths:
@@ -144,6 +159,10 @@ class MountedVolumes:
         bind_path: Path = await self._get_bind_path_from_label(self.volume_name_vfs_cache, service_run_id)
         return f"{bind_path}:{self.vfs_cache_path}"
 
+    async def get_traces_docker_volume(self, service_run_id: ServiceRunID) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_traces, service_run_id)
+        return f"{bind_path}:{_TRACES_PATH}"
+
     async def get_user_preferences_path_volume(self, service_run_id: ServiceRunID) -> str | None:
         if self.volume_user_preferences is None:
             return None
@@ -157,19 +176,20 @@ class MountedVolumes:
             yield f"{bind_path}:{state_path}"
 
 
-def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
-    settings: ApplicationSettings = app.state.settings
+def configure_mounted_fs(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        settings: ApplicationSettings = app.state.settings
+        app.state.mounted_volumes = MountedVolumes(
+            service_run_id=settings.DY_SIDECAR_RUN_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
+            inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
+            outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
+            user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
+            state_paths=settings.DY_SIDECAR_STATE_PATHS,
+            state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
+            compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
+            dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
+        )
+        yield
 
-    app.state.mounted_volumes = mounted_volumes = MountedVolumes(
-        service_run_id=settings.DY_SIDECAR_RUN_ID,
-        node_id=settings.DY_SIDECAR_NODE_ID,
-        inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
-        outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
-        user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
-        state_paths=settings.DY_SIDECAR_STATE_PATHS,
-        state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
-        compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
-        dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
-    )
-
-    return mounted_volumes
+    app_lifespan.add(_lifespan)

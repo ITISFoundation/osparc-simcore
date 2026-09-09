@@ -1,9 +1,10 @@
 import logging
-from asyncio import CancelledError, Task, create_task
+from asyncio import CancelledError, Task, create_task, to_thread
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
@@ -30,7 +31,7 @@ class OutputsWatcher:
 
     async def _worker_events(self) -> None:
         while True:
-            event: str | None = await self.outputs_context.port_key_events_queue.coro_get()
+            event: str | None = await to_thread(self.outputs_context.port_key_events_queue.get)
             if event is None:
                 break
 
@@ -61,27 +62,26 @@ class OutputsWatcher:
                     await self._task_events_worker
 
 
-def setup_outputs_watcher(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        assert isinstance(app.state.outputs_context, OutputsContext)  # nosec
-        outputs_context: OutputsContext = app.state.outputs_context
-        outputs_manager: OutputsManager
-        outputs_manager = app.state.outputs_manager  # nosec
+def configure_outputs_watcher(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        outputs_watcher: OutputsWatcher | None = None
+        try:
+            assert isinstance(app.state.outputs_context, OutputsContext)  # nosec
+            outputs_context: OutputsContext = app.state.outputs_context
+            outputs_manager: OutputsManager = app.state.outputs_manager  # nosec
 
-        app.state.outputs_watcher = OutputsWatcher(
-            outputs_manager=outputs_manager,
-            outputs_context=outputs_context,
-        )
-        await app.state.outputs_watcher.start()
-        await disable_event_propagation(app)
+            outputs_watcher = app.state.outputs_watcher = OutputsWatcher(
+                outputs_manager=outputs_manager,
+                outputs_context=outputs_context,
+            )
+            await outputs_watcher.start()
+            await disable_event_propagation(app)
+            yield
+        finally:
+            if outputs_watcher is not None:
+                await outputs_watcher.shutdown()
 
-    async def on_shutdown() -> None:
-        outputs_watcher: OutputsWatcher | None = app.state.outputs_watcher
-        if outputs_watcher is not None:
-            await outputs_watcher.shutdown()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 async def disable_event_propagation(app: FastAPI) -> None:

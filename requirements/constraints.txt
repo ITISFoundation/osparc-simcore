@@ -33,10 +33,6 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 # Breaking changes -----------------------------------------------------------------------------------------
 #
 
-# with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases).
-# TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
-sqlalchemy<2.0
-
 
 
 #
@@ -49,16 +45,6 @@ httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pul
 #
 # Compatibility/coordination -----------------------------------------------------------------------------------------
 #
-# Needs to fix issubclass errors in packages/common-library/src/common_library/pydantic_fields_extension.py
-# https://github.com/ITISFoundation/osparc-simcore/issues/8596
-pydantic>=2.10.0,<2.12.0    # Avoids inter-version compatibility serialization errors as: _pickle.UnpicklingError: NEWOBJ class argument must be a type, not _AnnotatedAlias
-
-# See issue https://github.com/ITISFoundation/osparc-simcore/issues/7300
-pydantic-settings<2.7.1
-
-# avoid downgrades of openapi-spec-validator related libraries
-referencing<=0.35.1
-
 
 #
 # Blocked -----------------------------------------------------------------------------------------

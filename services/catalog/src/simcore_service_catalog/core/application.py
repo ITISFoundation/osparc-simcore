@@ -45,10 +45,11 @@ def _configure_plugins(
     )
     configure_default_product_name(app_lifespan)
     configure_rabbitmq_client(app_lifespan, settings=settings.CATALOG_RABBITMQ)
-    configure_rpc_api(app_lifespan)
     configure_director(app_lifespan)
     configure_function_services(app_lifespan)
     configure_background_tasks(app_lifespan)
+
+    configure_rpc_api(app_lifespan)
 
     if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         configure_prometheus_instrumentation(app, app_lifespan)

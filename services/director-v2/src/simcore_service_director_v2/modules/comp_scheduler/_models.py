@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from dask_task_models_library.models import DaskJobID
 from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import RabbitMessageBase
 from models_library.users import UserID
 
-from ...models.comp_runs import Iteration
+from ...models.comp_runs import Iteration, RunID, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 
 
@@ -14,6 +15,21 @@ class SchedulePipelineRabbitMessage(RabbitMessageBase):
     user_id: UserID
     project_id: ProjectID
     iteration: Iteration
+
+    def routing_key(self) -> str | None:  # pylint: disable=no-self-use # abstract
+        return None
+
+
+class ReleaseTaskResultRabbitMessage(RabbitMessageBase):
+    channel_name: Literal["simcore.services.director-v2.release-task-result"] = (
+        "simcore.services.director-v2.release-task-result"
+    )
+    user_id: UserID
+    project_id: ProjectID
+    run_id: RunID
+    use_on_demand_clusters: bool
+    run_metadata: RunMetadataDict
+    job_ids: list[DaskJobID]
 
     def routing_key(self) -> str | None:  # pylint: disable=no-self-use # abstract
         return None

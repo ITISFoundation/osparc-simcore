@@ -5,6 +5,7 @@ from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node as DockerNode
+from models_library.products import ProductName
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...models import AssociatedInstance
@@ -26,6 +27,8 @@ class AutoscalingProvider(Protocol):
     async def get_task_defined_instance(self, app: FastAPI, task) -> InstanceTypeType | None: ...
 
     async def get_task_instance_required_docker_tags(self, app: FastAPI, task) -> dict[DockerLabelKey, str]: ...
+
+    def get_task_product_name(self, task) -> ProductName | None: ...
 
     async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources: ...
 

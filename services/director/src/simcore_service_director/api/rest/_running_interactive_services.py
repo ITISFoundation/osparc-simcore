@@ -11,6 +11,7 @@ from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 
 from ... import producer
+from ...constants import LEGACY_SERVICES_PINNED_OSPARC_PRODUCT
 from ...core.errors import (
     RegistryConnectionError,
     ServiceNotAvailableError,
@@ -57,9 +58,11 @@ async def start_service(
     x_simcore_user_agent: str = Header(...),
 ) -> Envelope[dict[str, Any]]:
     _logger.debug(
-        "Client does start_service with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s, request_simcore_user_agent %s",
+        "Client does start_service with user_id %s, project_id %s, product_name %s, service %s:%s, service_uuid %s, "
+        "service_basepath %s, request_simcore_user_agent %s",
         user_id,
         project_id,
+        LEGACY_SERVICES_PINNED_OSPARC_PRODUCT,
         service_key,
         service_tag,
         service_uuid,
@@ -109,6 +112,7 @@ async def get_running_service(
 async def stop_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_uuid: UUID,
+    *,
     save_state: bool = True,
 ) -> None:
     _logger.debug(

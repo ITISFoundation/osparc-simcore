@@ -22,7 +22,9 @@
   "defaultTarget": "source",
   "locales": [
     "en_US",
-    "es_ES"
+    "es_ES",
+    "ko_KR",
+    "zh"
   ],
   "writeAllTranslations": true,
   "applications": [

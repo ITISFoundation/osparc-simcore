@@ -1,8 +1,10 @@
 #
 # Targets for DEVELOPMENT of tests/public-api
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-package.Makefile
+.DEFAULT_GOAL := help
+
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/package.mk
 
 # MAIN ------------------
 

@@ -81,6 +81,7 @@ def create_model_from_scheduler_data(
             "service_state": service_state.value,
             "service_message": service_message,
             "is_collaborative": scheduler_data.is_collaborative,
+            "product_name": scheduler_data.product_name,
         }
     )
 

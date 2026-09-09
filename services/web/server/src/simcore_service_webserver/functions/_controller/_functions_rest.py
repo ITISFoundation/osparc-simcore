@@ -26,11 +26,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    handle_validation_as_http_error,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
+from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
@@ -39,6 +35,7 @@ from ...projects import _projects_service
 from ...projects.models import ProjectDBGet
 from ...security.decorators import permission_required
 from ...utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ...web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from .. import _functions_service
 from .._services_metadata import proxy as _services_metadata_proxy
 from .._services_metadata.proxy import ServiceMetadata

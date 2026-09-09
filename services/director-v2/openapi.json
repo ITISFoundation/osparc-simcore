@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": "Orchestrates the pipeline of services defined by the user",
-    "version": "2.4.0"
+    "version": "2.6.0"
   },
   "servers": [
     {
@@ -134,9 +134,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -195,6 +193,9 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "409": {
+            "description": "Pipeline could not be stopped in time"
           },
           "422": {
             "description": "Validation Error",
@@ -287,9 +288,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -355,9 +354,7 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "title": "User Id"
+              "$ref": "#/components/schemas/_UserIDInt"
             }
           }
         ],
@@ -456,8 +453,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer",
-                  "exclusiveMinimum": 0
+                  "$ref": "#/components/schemas/_UserIDInt"
                 },
                 {
                   "type": "null"
@@ -1164,6 +1160,154 @@
           }
         }
       }
+    },
+    "/task": {
+      "get": {
+        "summary": "List Tasks",
+        "operationId": "list_tasks_task_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaskGet"
+                  },
+                  "type": "array",
+                  "title": "Response List Tasks Task Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/task/{task_id}": {
+      "get": {
+        "summary": "Get Task Status",
+        "operationId": "get_task_status_task__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task does not exist"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancels and removes a task",
+        "operationId": "remove_task_task__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Task does not exist"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/task/{task_id}/result": {
+      "get": {
+        "summary": "Get Task Result",
+        "operationId": "get_task_result_task__task_id__result_get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TaskResult"
+                    },
+                    {}
+                  ],
+                  "title": "Response Get Task Result Task  Task Id  Result Get"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Task cancelled or finished with exception"
+          },
+          "404": {
+            "description": "Task does not exist"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1264,9 +1408,7 @@
       "ComputationCreate": {
         "properties": {
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "project_id": {
             "type": "string",
@@ -1360,6 +1502,17 @@
             ],
             "title": "Collection Run Id",
             "description": "In case start_pipeline is True, this is the collection run id to which the comp run belongs."
+          },
+          "encryption": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobEncryptionContextMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional job encryption context to decrypt input files and encrypt output files"
           }
         },
         "type": "object",
@@ -1374,9 +1527,7 @@
       "ComputationDelete": {
         "properties": {
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "force": {
             "anyOf": [
@@ -1390,6 +1541,13 @@
             "title": "Force",
             "description": "if True then the pipeline will be removed even if it is running",
             "default": false
+          },
+          "wait_for": {
+            "type": "string",
+            "format": "duration",
+            "title": "Wait For",
+            "description": "timeout when waiting for pipeline to stop",
+            "default": "PT30S"
           }
         },
         "type": "object",
@@ -1516,9 +1674,7 @@
       "ComputationStop": {
         "properties": {
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           }
         },
         "type": "object",
@@ -1783,9 +1939,7 @@
             "description": "semantic version number of the node"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "project_id": {
             "type": "string",
@@ -2092,6 +2246,12 @@
         ],
         "title": "DynamicSidecarStatus"
       },
+      "EncryptedRootKeyStr": {
+        "type": "string",
+        "format": "password",
+        "description": "base64-encoded AWS KMS ciphertext blob wrapping the job's AES-256 root key",
+        "writeOnly": true
+      },
       "ErrorDict": {
         "properties": {
           "loc": {
@@ -2122,6 +2282,7 @@
             "title": "Ctx"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "loc",
@@ -2130,6 +2291,12 @@
         ],
         "title": "ErrorDict",
         "description": "Structured dataset returned by pydantic's ValidationError.errors() -> List[ErrorDict]"
+      },
+      "FileIDStr": {
+        "type": "string",
+        "maxLength": 65535,
+        "minLength": 1,
+        "description": "client-chosen file identifier mixed into HKDF key derivation"
       },
       "GetProjectInactivityResponse": {
         "properties": {
@@ -2146,10 +2313,6 @@
         "example": {
           "is_inactive": "false"
         }
-      },
-      "GroupID": {
-        "type": "integer",
-        "exclusiveMinimum": 0
       },
       "HTTPValidationError": {
         "properties": {
@@ -2340,6 +2503,32 @@
           }
         }
       },
+      "JobEncryptionContextMetadata": {
+        "properties": {
+          "encrypted_root_key": {
+            "$ref": "#/components/schemas/EncryptedRootKeyStr"
+          },
+          "input_port_to_file_id": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/FileIDStr"
+              },
+              "type": "object"
+            },
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "type": "object",
+            "title": "Input Port To File Id",
+            "description": "Per computational node, maps each encrypted input port key to the file_id the client used to derive its key (may differ from the port key). Only listed inputs are decrypted."
+          }
+        },
+        "type": "object",
+        "required": [
+          "encrypted_root_key"
+        ],
+        "title": "JobEncryptionContextMetadata"
+      },
       "LegacyState": {
         "properties": {
           "old_state_path": {
@@ -2434,7 +2623,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/GroupID"
+                  "$ref": "#/components/schemas/_GroupIDInt"
                 },
                 "type": "array"
               },
@@ -2554,6 +2743,11 @@
           "is_disabled"
         ],
         "title": "ObservationItem"
+      },
+      "OutputName": {
+        "type": "string",
+        "maxLength": 100,
+        "minLength": 1
       },
       "PathMappingsLabel": {
         "properties": {
@@ -2814,9 +3008,7 @@
             "description": "semantic version number of the node"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "project_id": {
             "type": "string",
@@ -2907,6 +3099,11 @@
             "title": "Is Collaborative",
             "description": "True if service allows collaboration (multi-tenant access)",
             "default": false
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Product upon which this service is scheduled."
           }
         },
         "type": "object",
@@ -2918,7 +3115,8 @@
           "service_uuid",
           "service_host",
           "service_port",
-          "service_state"
+          "service_state",
+          "product_name"
         ],
         "title": "RunningDynamicServiceDetails"
       },
@@ -2985,6 +3183,10 @@
             ],
             "title": "User Preferences Path"
           },
+          "user_preferences_version_source": {
+            "$ref": "#/components/schemas/UserPreferencesVersionSource",
+            "default": "service-version"
+          },
           "simcore.service.restart-policy": {
             "$ref": "#/components/schemas/RestartPolicy",
             "description": "the dynamic-sidecar can restart all running containers on certain events. Supported events:\n- `no-restart` default\n- `on-inputs-downloaded` after inputs are downloaded\n",
@@ -3027,6 +3229,11 @@
           "callbacks_mapping": {
             "$ref": "#/components/schemas/CallbacksMapping"
           },
+          "tracing": {
+            "type": "boolean",
+            "title": "Tracing",
+            "default": false
+          },
           "service_key": {
             "type": "string",
             "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
@@ -3040,9 +3247,7 @@
             "description": "semantic version number of the node"
           },
           "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "User Id"
+            "$ref": "#/components/schemas/_UserIDInt"
           },
           "project_id": {
             "type": "string",
@@ -3178,6 +3383,11 @@
             "description": "contains hardware information so we know on which hardware to run the service"
           },
           "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Current product upon which this service is scheduled"
+          },
+          "version_display": {
             "anyOf": [
               {
                 "type": "string"
@@ -3186,8 +3396,8 @@
                 "type": "null"
               }
             ],
-            "title": "Product Name",
-            "description": "Current product upon which this service is scheduledIf set to None, the current product is undefined. Mostly for backwards compatibility"
+            "title": "Version Display",
+            "description": "catalog's human readable name for this service version"
           },
           "product_api_base_url": {
             "anyOf": [
@@ -3220,7 +3430,8 @@
           "request_dns",
           "request_scheme",
           "request_simcore_user_agent",
-          "proxy_service_name"
+          "proxy_service_name",
+          "product_name"
         ],
         "title": "SchedulerData"
       },
@@ -3331,6 +3542,55 @@
         "title": "Status1",
         "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
       },
+      "TaskGet": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "status_href": {
+            "type": "string",
+            "title": "Status Href"
+          },
+          "abort_href": {
+            "type": "string",
+            "title": "Abort Href"
+          },
+          "result_href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Href"
+          },
+          "stream_href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stream Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status_href",
+          "abort_href"
+        ],
+        "title": "TaskGet"
+      },
       "TaskLogFileGet": {
         "properties": {
           "task_id": {
@@ -3359,14 +3619,101 @@
         ],
         "title": "TaskLogFileGet"
       },
+      "TaskProgress": {
+        "properties": {
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          },
+          "percent": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Percent",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "TaskProgress",
+        "description": "Helps the user to keep track of the progress. Progress is expected to be\ndefined as a float bound between 0.0 and 1.0"
+      },
+      "TaskResult": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "result",
+          "error"
+        ],
+        "title": "TaskResult"
+      },
+      "TaskStatus": {
+        "properties": {
+          "task_progress": {
+            "$ref": "#/components/schemas/TaskProgress"
+          },
+          "done": {
+            "type": "boolean",
+            "title": "Done"
+          },
+          "started": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_progress",
+          "done",
+          "started"
+        ],
+        "title": "TaskStatus"
+      },
       "TasksOutputs": {
         "properties": {
           "nodes_outputs": {
             "additionalProperties": {
               "additionalProperties": true,
               "propertyNames": {
-                "maxLength": 100,
-                "minLength": 1
+                "$ref": "#/components/schemas/OutputName"
               },
               "type": "object"
             },
@@ -3399,6 +3746,14 @@
           "nodes_ids"
         ],
         "title": "TasksSelection"
+      },
+      "UserPreferencesVersionSource": {
+        "type": "string",
+        "enum": [
+          "service-version",
+          "version-display"
+        ],
+        "title": "UserPreferencesVersionSource"
       },
       "UserServiceCommand": {
         "properties": {
@@ -3461,6 +3816,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",
@@ -3474,9 +3836,7 @@
       "WalletInfo-Input": {
         "properties": {
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "wallet_name": {
             "type": "string",
@@ -3488,7 +3848,8 @@
                 "type": "number"
               },
               {
-                "type": "string"
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
               }
             ],
             "title": "Wallet Credit Amount"
@@ -3505,9 +3866,7 @@
       "WalletInfo-Output": {
         "properties": {
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Wallet Id"
+            "$ref": "#/components/schemas/_WalletIDInt"
           },
           "wallet_name": {
             "type": "string",
@@ -3515,6 +3874,7 @@
           },
           "wallet_credit_amount": {
             "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Wallet Credit Amount"
           }
         },
@@ -3525,6 +3885,10 @@
           "wallet_credit_amount"
         ],
         "title": "WalletInfo"
+      },
+      "_GroupIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "_PortRange": {
         "properties": {
@@ -3580,6 +3944,14 @@
         ],
         "title": "_PortRange",
         "description": "`lower` and `upper` are included"
+      },
+      "_UserIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
+      },
+      "_WalletIDInt": {
+        "type": "integer",
+        "exclusiveMinimum": 0
       },
       "models_library__generated_models__docker_rest_api__Status": {
         "type": "string",

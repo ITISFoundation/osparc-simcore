@@ -6,6 +6,7 @@
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import pytest
 import simcore_postgres_database.cli
@@ -49,9 +50,11 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
         config = yaml.safe_load(fh)
     environ = config["services"]["postgres"]["environment"]
 
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=environ["POSTGRES_USER"],
-        password=environ["POSTGRES_PASSWORD"],
+    user = quote_plus(environ["POSTGRES_USER"])
+    password = quote_plus(environ["POSTGRES_PASSWORD"])
+    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+        user=user,
+        password=password,
         host=docker_ip,
         port=docker_services.port_for("postgres", 5432),
         database=environ["POSTGRES_DB"],
@@ -76,7 +79,7 @@ def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
 @pytest.fixture
 def _make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
     # NOTE: users is responsible of `await engine.dispose()`
-    dsn = postgres_service.replace("postgresql://", "postgresql+asyncpg://")
+    dsn = postgres_service.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
     minsize = 2
     maxsize = 50
 

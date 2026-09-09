@@ -13,6 +13,7 @@ from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
     Awaitable,
+    Callable,
     Coroutine,
     Generator,
     Iterable,
@@ -20,7 +21,7 @@ from collections.abc import (
 from functools import lru_cache
 from importlib import resources
 from pathlib import Path
-from typing import Any, Final, Literal, TypeVar, cast, overload
+from typing import Any, Final, Literal, cast, overload
 
 import toolz  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
@@ -30,6 +31,17 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_GATHER_TASKS_GROUP_PREFIX: Final[str] = "gathered"
 _DEFAULT_LOGGER: Final[logging.Logger] = _logger
 _DEFAULT_LIMITED_CONCURRENCY: Final[int] = 1
+
+
+def get_callable_namespaced_name(obj: Callable[..., Any]) -> str:
+    """Builds a namespaced identifier for a callable, analogous to logger names
+    (e.g. ``logging.getLogger(__name__)``), so the name can be used to filter and
+    trace where a callable originates, e.g.
+    ``simcore_service_catalog.core.background_tasks._run_sync_services``.
+    """
+    qualname = getattr(obj, "__qualname__", None) or getattr(obj, "__name__", None) or repr(obj)
+    module = getattr(obj, "__module__", None)
+    return f"{module}.{qualname}" if module else qualname
 
 
 def is_production_environ() -> bool:
@@ -47,7 +59,7 @@ def get_http_client_request_total_timeout() -> int | None:
 
 
 def get_http_client_request_aiohttp_connect_timeout() -> int | None:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", 0)) or None
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "0")) or None
 
 
 def get_http_client_request_aiohttp_sock_connect_timeout() -> int | None:
@@ -118,7 +130,8 @@ async def logged_gather(
         use directly asyncio.gather(*tasks, return_exceptions=True).
 
     :param reraise: reraises first exception (in order the tasks were passed) concurrent tasks, defaults to True
-    :param log: passing the logger gives a chance to identify the origin of the gather call, defaults to current submodule's logger
+    :param log: passing the logger gives a chance to identify the origin of the gather call,
+                defaults to current submodule's logger
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
     """
     wrapped_tasks: tuple | list
@@ -186,10 +199,7 @@ def unused_port() -> int:
         return cast(int, s.getsockname()[1])
 
 
-T = TypeVar("T")
-
-
-async def limited_as_completed(
+async def limited_as_completed[T](
     awaitables: Iterable[Awaitable[T]] | AsyncIterable[Awaitable[T]],
     *,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
@@ -254,7 +264,7 @@ async def limited_as_completed(
         raise
 
 
-async def _wrapped(
+async def _wrapped[T](
     awaitable: Awaitable[T], *, index: int, reraise: bool, logger: logging.Logger
 ) -> tuple[int, T | BaseException]:
     try:
@@ -279,7 +289,7 @@ async def _wrapped(
 
 
 @overload
-async def limited_gather(
+async def limited_gather[T](
     *awaitables: Awaitable[T],
     reraise: Literal[True] = True,
     log: logging.Logger = _DEFAULT_LOGGER,
@@ -289,7 +299,7 @@ async def limited_gather(
 
 
 @overload
-async def limited_gather(
+async def limited_gather[T](
     *awaitables: Awaitable[T],
     reraise: Literal[False] = False,
     log: logging.Logger = _DEFAULT_LOGGER,
@@ -298,7 +308,7 @@ async def limited_gather(
 ) -> list[T | BaseException]: ...
 
 
-async def limited_gather(
+async def limited_gather[T](
     *awaitables: Awaitable[T],
     reraise: bool = True,
     log: logging.Logger = _DEFAULT_LOGGER,

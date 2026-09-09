@@ -45,17 +45,17 @@ qx.Class.define("osparc.info.Utils", {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const decorateAction = action => {
-          action.button.set({
-            alignY: "middle",
-          });
-          action.button.addListener("execute", () => {
-            const cb = action.callback;
-            if (typeof cb === "string") {
-              action.ctx.fireEvent(cb);
-            } else {
-              cb.call(action.ctx);
-            }
-          }, this);
+        action.button.set({
+          alignY: "middle",
+        });
+        action.button.addListener("execute", () => {
+          const cb = action.callback;
+          if (typeof cb === "string") {
+            action.ctx.fireEvent(cb);
+          } else {
+            cb.call(action.ctx);
+          }
+        }, this);
       };
 
       if ("TITLE" in infoElements) {

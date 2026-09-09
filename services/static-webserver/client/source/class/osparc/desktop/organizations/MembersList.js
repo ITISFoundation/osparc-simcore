@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         serializedData["resourceType"] = "organization";
         const showOrganizations = false;
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
-        collaboratorsManager.setCaption("Add Members");
+        collaboratorsManager.setCaption(this.tr("Add Members"));
         collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
         collaboratorsManager.addListener("addCollaborators", e => {
           const {

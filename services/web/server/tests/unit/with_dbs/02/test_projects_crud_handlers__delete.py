@@ -33,9 +33,9 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis import with_project_locked
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
+from simcore_service_webserver.trash import trash_service
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
@@ -71,13 +71,10 @@ async def test_delete_project(
 
     user_id: int = logged_user["id"]
 
-    tasks = _crud_api_delete.get_scheduled_tasks(project_uuid=user_project["uuid"], user_id=user_id)
-
     if expected.no_content == status.HTTP_204_NO_CONTENT:
-        # Waits until deletion tasks are done
-        assert len(tasks) == 1, f"Only one delete fire&forget task expected, got {tasks=}"
-        # might have finished, and therefore there is no need to waith
-        await tasks[0]
+        # NOTE: delete only marks the project for immediate deletion; actual removal happens
+        # exclusively via the periodic trash-pruning GC. Trigger it explicitly here
+        await trash_service.safe_delete_expired_trash_as_admin(client.app)
 
         mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].assert_called_once()
 
@@ -99,11 +96,6 @@ async def test_delete_project(
         mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(expected_calls)
 
         await assert_get_same_project_caller(client, user_project, status.HTTP_404_NOT_FOUND)
-
-    else:
-        assert len(tasks) == 0, (
-            f"NO delete fire&forget tasks expected when response is {expected.no_content}, got {tasks=}"
-        )
 
 
 @pytest.mark.parametrize(

@@ -166,7 +166,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         folderId,
         loaded: false,
         children: [{
-          label: "Loading...",
+          label: qx.locale.Manager.tr("Loading..."),
         }],
       };
     },

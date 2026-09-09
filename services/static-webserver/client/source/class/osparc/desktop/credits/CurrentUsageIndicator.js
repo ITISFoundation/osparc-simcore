@@ -84,7 +84,7 @@ qx.Class.define("osparc.desktop.credits.CurrentUsageIndicator", {
       });
       const label = this.getChildControl("credits-label");
       currentUsage.bind("usedCredits", label, "value", {
-        converter: usedCredits => usedCredits + this.tr(" used")
+        converter: usedCredits => this.tr("%1 used", usedCredits)
       });
       currentUsage.addListener("changeUsedCredits", e => {
         if (e.getData() !== null) {

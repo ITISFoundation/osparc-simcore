@@ -4,7 +4,7 @@ from models_library.basic_types import VersionStr
 
 from ..._meta import API_VERSION, API_VTAG
 
-router = APIRouter()
+router = APIRouter(prefix="/meta")
 
 
 @router.get("", response_model=BaseMeta)

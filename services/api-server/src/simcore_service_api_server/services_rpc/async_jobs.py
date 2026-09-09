@@ -11,6 +11,7 @@ from models_library.api_schemas_async_jobs.async_jobs import (
 from models_library.api_schemas_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
+    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
 )
@@ -21,6 +22,7 @@ from ..exceptions.service_errors_utils import service_exception_mapper
 from ..exceptions.task_errors import (
     TaskCancelledError,
     TaskError,
+    TaskMissingError,
     TaskResultMissingError,
     TaskSchedulerError,
 )
@@ -46,6 +48,7 @@ class AsyncJobClient:
 
     @_exception_mapper(
         rpc_exception_map={
+            JobMissingError: TaskMissingError,
             JobSchedulerError: TaskSchedulerError,
         }
     )
@@ -58,6 +61,7 @@ class AsyncJobClient:
 
     @_exception_mapper(
         rpc_exception_map={
+            JobMissingError: TaskMissingError,
             JobSchedulerError: TaskSchedulerError,
             JobNotDoneError: TaskResultMissingError,
             JobAbortedError: TaskCancelledError,

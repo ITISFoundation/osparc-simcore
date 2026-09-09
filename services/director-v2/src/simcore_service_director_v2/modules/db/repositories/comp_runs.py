@@ -9,6 +9,7 @@ import sqlalchemy.exc as sql_exc
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGet,
     ComputationRunRpcGet,
+    ComputationRunStateRpcGet,
 )
 from models_library.basic_types import IDStr
 from models_library.computations import CollectionRunID
@@ -17,15 +18,15 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy import CursorResult
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import or_
-from sqlalchemy.sql.elements import literal_column
+from sqlalchemy.sql.elements import ColumnElement, literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....core.errors import (
@@ -34,7 +35,7 @@ from ....core.errors import (
     ProjectNotFoundError,
     UserNotFoundError,
 )
-from ....models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ....models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository
@@ -50,14 +51,14 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[dict[sa.Column, tuple[type[DirectorError
 }
 
 
-async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> PositiveInt:
+async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> Iteration:
     """Calculate the next iteration number for a project"""
     last_iteration = await conn.scalar(
         sa.select(comp_runs.c.iteration)
         .where((comp_runs.c.user_id == user_id) & (comp_runs.c.project_uuid == f"{project_id}"))
         .order_by(desc(comp_runs.c.iteration))
     )
-    return cast(PositiveInt, (last_iteration or 0) + 1)
+    return cast(Iteration, (last_iteration or 0) + 1)
 
 
 def _handle_foreign_key_violation(exc: sql_exc.IntegrityError, **error_keys: Any) -> None:
@@ -110,7 +111,7 @@ class CompRunsRepository(BaseRepository):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt | None = None,
+        iteration: Iteration | None = None,
     ) -> CompRunsAtDB:
         """returns the run defined by user_id, project_id and iteration
         In case iteration is None then returns the last iteration
@@ -150,6 +151,37 @@ class CompRunsRepository(BaseRepository):
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
 
+    async def batch_get_latest_run_states_by_projects(
+        self,
+        project_ids: list[ProjectID],
+    ) -> list[ComputationRunStateRpcGet]:
+        if not project_ids:
+            return []
+
+        query = (
+            sa.select(
+                comp_runs.c.project_uuid,
+                comp_runs.c.result.label("state"),
+            )
+            .where(comp_runs.c.project_uuid.in_([f"{project_id}" for project_id in project_ids]))
+            .distinct(comp_runs.c.project_uuid)
+            .order_by(
+                comp_runs.c.project_uuid,
+                desc(comp_runs.c.run_id),
+            )
+        )
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(query)
+
+            return [
+                ComputationRunStateRpcGet(
+                    project_uuid=row.project_uuid,
+                    state=DB_TO_RUNNING_STATE[row.state],
+                )
+                for row in result
+            ]
+
     async def list_(
         self,
         *,
@@ -171,11 +203,11 @@ class CompRunsRepository(BaseRepository):
                                 which are not processed since then (default: {None})
         """
 
-        conditions = []
+        conditions: list[ColumnElement[bool]] = []
         if filter_by_state:
             conditions.append(or_(*[comp_runs.c.result == RUNNING_STATE_TO_DB[s] for s in filter_by_state]))
 
-        scheduling_or_conditions = []
+        scheduling_or_conditions: list[ColumnElement[bool]] = []
         if never_scheduled:
             scheduling_or_conditions.append(comp_runs.c.scheduled.is_(None))
         if scheduled_since is not None:
@@ -453,7 +485,7 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt | None = None,
+        iteration: Iteration | None = None,
         metadata: RunMetadataDict,
         use_on_demand_clusters: bool,
         dag_adjacency_list: dict[str, list[str]],
@@ -464,7 +496,7 @@ class CompRunsRepository(BaseRepository):
                 if iteration is None:
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
-                result = await conn.execute(
+                result: CursorResult = await conn.execute(
                     comp_runs.insert()
                     .values(
                         user_id=user_id,
@@ -485,10 +517,10 @@ class CompRunsRepository(BaseRepository):
             raise DirectorError from exc
 
     async def update(
-        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
+        self, user_id: UserID, project_id: ProjectID, iteration: Iteration, **values
     ) -> CompRunsAtDB | None:
         async with transaction_context(self.db_engine) as conn:
-            result = await conn.execute(
+            result: CursorResult = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == f"{project_id}")
@@ -506,7 +538,7 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         result_state: RunningState,
         final_state: bool | None = False,
     ) -> CompRunsAtDB | None:
@@ -543,7 +575,7 @@ class CompRunsRepository(BaseRepository):
         *,
         user_id: UserID,
         project_id: ProjectID,
-        iteration: PositiveInt,
+        iteration: Iteration,
         started_time: datetime.datetime,
     ) -> CompRunsAtDB | None:
         return await self.update(
@@ -554,7 +586,7 @@ class CompRunsRepository(BaseRepository):
         )
 
     async def mark_for_cancellation(
-        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,
@@ -564,7 +596,7 @@ class CompRunsRepository(BaseRepository):
         )
 
     async def mark_for_scheduling(
-        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,
@@ -575,7 +607,7 @@ class CompRunsRepository(BaseRepository):
         )
 
     async def mark_as_processed(
-        self, *, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+        self, *, user_id: UserID, project_id: ProjectID, iteration: Iteration
     ) -> CompRunsAtDB | None:
         return await self.update(
             user_id,

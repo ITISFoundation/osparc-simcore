@@ -20,6 +20,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "product-color": "rgba(0, 144, 208, 1)", // override in product
     "strong-main": "product-color",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
+    "pb-hovered": "rgba(0, 0, 0, 0.1)", // subtle darken overlay on hover
 
     // main
     "background-main": "c01",

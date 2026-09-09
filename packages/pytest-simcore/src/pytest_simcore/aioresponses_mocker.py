@@ -1,7 +1,13 @@
+import inspect
+import warnings
 from collections.abc import Iterator
+from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from aiohttp import ClientResponse
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
+from pytest_mock import MockerFixture
 
 from .helpers.host import get_localhost_ip
 
@@ -15,8 +21,16 @@ PASSTHROUGH_REQUESTS_PREFIXES = [
 ]
 
 
+def _is_stream_writer_patch_needed() -> bool:
+    client_response_init_signature = inspect.signature(ClientResponse.__init__)
+    stream_writer_parameter = client_response_init_signature.parameters.get("stream_writer")
+    if stream_writer_parameter is None:
+        return False
+    return stream_writer_parameter.default is inspect.Parameter.empty
+
+
 @pytest.fixture
-def aioresponses_mocker() -> Iterator[AioResponsesMock]:
+def aioresponses_mocker(mocker: MockerFixture) -> Iterator[AioResponsesMock]:
     """Generick aioresponses mock
 
     SEE https://github.com/pnuckowski/aioresponses
@@ -30,5 +44,24 @@ def aioresponses_mocker() -> Iterator[AioResponsesMock]:
                 async with session.get("https://foo.io") as response:
                     assert response.status == 200
     """
+    if _is_stream_writer_patch_needed():
+        original_client_response_init = ClientResponse.__init__
+
+        def _patched_client_response_init(self: ClientResponse, *args: Any, **kwargs: Any) -> None:
+            kwargs.setdefault("stream_writer", Mock(output_size=0))
+            original_client_response_init(self, *args, **kwargs)
+
+        warnings.warn(
+            "aioresponses does not provide aiohttp's required stream_writer argument, therefore it is manually mocked. "
+            "TIP: periodically check if it gets updated https://github.com/pnuckowski/aioresponses/issues/289",
+            UserWarning,
+            stacklevel=1,
+        )
+        mocker.patch.object(
+            ClientResponse,
+            "__init__",
+            _patched_client_response_init,
+        )
+
     with AioResponsesMock(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
         yield mock

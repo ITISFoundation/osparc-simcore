@@ -3,7 +3,8 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 from models_library.licenses import LicensedItemID
-from pydantic import PositiveInt
+from models_library.users import UserID
+from models_library.wallets import WalletID
 
 from ...api.dependencies.authentication import get_current_user_id, get_product_name
 from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
@@ -66,7 +67,7 @@ async def get_default_wallet(
     ),
 )
 async def get_wallet(
-    wallet_id: int,
+    wallet_id: WalletID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     return await webserver_api.get_wallet(wallet_id=wallet_id)
@@ -85,11 +86,11 @@ async def get_wallet(
     ),
 )
 async def get_available_licensed_items_for_wallet(
-    wallet_id: int,
+    wallet_id: WalletID,
     page_params: Annotated[PaginationParams, Depends()],
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     product_name: Annotated[str, Depends(get_product_name)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
 ):
     return await web_api_rpc.get_available_licensed_items_for_wallet(
         product_name=product_name,
@@ -107,11 +108,11 @@ async def get_available_licensed_items_for_wallet(
     description="Checkout licensed item",
 )
 async def checkout_licensed_item(
-    wallet_id: int,
+    wallet_id: WalletID,
     licensed_item_id: LicensedItemID,
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     product_name: Annotated[str, Depends(get_product_name)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     checkout_data: LicensedItemCheckoutData,
 ):
     return await web_api_rpc.checkout_licensed_item_for_wallet(

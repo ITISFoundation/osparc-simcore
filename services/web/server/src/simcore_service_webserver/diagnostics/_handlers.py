@@ -9,7 +9,6 @@ from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
 from pydantic import BaseModel
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.utils import logged_gather
 
 from .._meta import API_VERSION, APP_NAME, api_version_prefix
@@ -22,6 +21,7 @@ from ..security.decorators import permission_required
 from ..storage import api as storage_service
 from ..utils import TaskInfoDict, get_task_info, get_tracemalloc_info
 from ..utils_aiohttp import envelope_json_response
+from ..web_requests_validation import parse_request_query_parameters_as
 
 _logger = logging.getLogger(__name__)
 

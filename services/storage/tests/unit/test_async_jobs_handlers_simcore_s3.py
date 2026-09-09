@@ -7,11 +7,11 @@
 # pylint:disable=unused-variable
 
 import asyncio
-import datetime
 import logging
 import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal
 from unittest.mock import Mock
@@ -54,7 +54,9 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.celery.async_jobs.storage.paths import DELETE_PATHS_TASK_NAME, submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -79,7 +81,7 @@ async def _request_copy_folders(
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
     *,
-    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: timedelta = timedelta(seconds=60),
 ) -> dict[str, Any]:
     with log_context(
         logging.INFO,
@@ -185,17 +187,11 @@ async def test_copy_folders_from_empty_project(
 
 
 @pytest.fixture
-def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
-    monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "1")
-    return 1
+def short_dsm_cleaner_interval(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> timedelta:
+    monkeypatch.setenv("STORAGE_CLEANER", '{"STORAGE_CLEANER_EXPIRED_UPLOADS_INTERVAL": "PT1S"}')
+    return timedelta(seconds=1)
 
 
-@pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
 @pytest.mark.parametrize(
     "project_params",
     [
@@ -214,20 +210,20 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 )
 async def test_copy_folders_from_valid_project_with_one_large_file(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with 1 large file
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_projects_list = await project_with_seeded_files_factory(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -266,12 +262,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -298,21 +288,21 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     ids=str,
 )
 async def test_copy_folders_from_valid_project(
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     initialized_app: FastAPI,
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with some files
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_projects_list = await project_with_seeded_files_factory(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -361,7 +351,7 @@ async def _create_and_delete_folders_from_project(
     project_db_creator: Callable,
     check_list_files: bool,
     *,
-    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: timedelta = timedelta(seconds=60),
 ) -> None:
     destination_project, nodes_map = clone_project_data(project)
     await project_db_creator(**destination_project)
@@ -397,14 +387,30 @@ async def _create_and_delete_folders_from_project(
         data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
     # DELETING
-    url = url_from_operation_id(
-        client,
-        initialized_app,
-        "delete_folders_of_project",
-        folder_id=project_id,
-    ).with_query(user_id=f"{user_id}")
-    resp = await client.delete(f"{url}")
-    assert_status(resp, status.HTTP_204_NO_CONTENT, None)
+    owner_metadata = _TestOwnerMetadata(
+        user_id=user_id,
+        product_name=product_name,
+        owner="PYTEST_CLIENT_NAME",
+    )
+    task_id, task_name = await submit_delete_paths_task(
+        task_manager,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
+        product_name=product_name,
+        location_id=SimcoreS3DataManager.get_location_id(),
+        paths={Path(f"{project_id}")},
+    )
+    assert task_name == DELETE_PATHS_TASK_NAME
+    with log_context(logging.INFO, f"Deleting project {project_id} from S3") as ctx:
+        async for job_update in wait_and_get_job_result(
+            task_manager,
+            owner_metadata=owner_metadata,
+            job_id=task_id,
+            stop_after=stop_after,
+        ):
+            ctx.logger.info(
+                "Waiting for deletion of project %s from S3 with task_id=%s: %s", project_id, task_id, job_update
+            )
 
     # list data is gone
     if check_list_files:
@@ -441,12 +447,6 @@ def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> N
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -468,7 +468,7 @@ async def test_create_and_delete_folders_from_project(
     client: httpx.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
-    with_random_project_with_files: tuple[
+    project_with_seeded_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
@@ -476,7 +476,7 @@ async def test_create_and_delete_folders_from_project(
     mock_datcore_download,
     num_concurrent_calls: int,
 ):
-    project_in_db, _ = with_random_project_with_files
+    project_in_db, _ = project_with_seeded_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
     await asyncio.gather(
         *[
@@ -489,7 +489,7 @@ async def test_create_and_delete_folders_from_project(
                 initialized_app,
                 create_project,
                 check_list_files=False,
-                stop_after=datetime.timedelta(seconds=300),
+                stop_after=timedelta(seconds=300),
             )
             for _ in range(num_concurrent_calls)
         ]
@@ -503,7 +503,7 @@ async def _request_start_export_data(
     product_name: ProductName,
     paths_to_export: list[PathToExport],
     *,
-    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: timedelta = timedelta(seconds=60),
 ) -> str:
     with log_context(
         logging.INFO,
@@ -546,12 +546,6 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 
 
 @pytest.mark.parametrize(
-    "location_id",
-    [SimcoreS3DataManager.get_location_id()],
-    ids=[SimcoreS3DataManager.get_location_name()],
-    indirect=True,
-)
-@pytest.mark.parametrize(
     "project_params",
     [
         ProjectWithFilesParams(
@@ -573,14 +567,14 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 )
 async def test_start_export_data(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    random_project_with_files: Callable[
+    project_with_seeded_files_factory: Callable[
         [ProjectWithFilesParams],
         Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
@@ -588,7 +582,7 @@ async def test_start_export_data(
     task_progress_spy: Mock,
     task_name: Literal["export_data", "export_data_as_download_link"],
 ):
-    _, src_projects_list = await random_project_with_files(project_params)
+    _, src_projects_list = await project_with_seeded_files_factory(project_params)
 
     all_available_files: set[SimcoreS3FileID] = set()
     for x in src_projects_list.values():
@@ -631,7 +625,7 @@ async def test_start_export_data(
 )
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
     user_id: UserID,
@@ -647,7 +641,7 @@ async def test_start_export_data_access_error(
             user_id,
             product_name,
             paths_to_export=[path_to_export],
-            stop_after=datetime.timedelta(seconds=60),
+            stop_after=timedelta(seconds=60),
         )
 
     assert isinstance(exc.value, JobError)
@@ -658,7 +652,7 @@ async def test_start_export_data_access_error(
 
 async def test_start_export_invalid_export_format(
     initialized_app: FastAPI,
-    short_dsm_cleaner_interval: int,
+    short_dsm_cleaner_interval: timedelta,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
     user_id: UserID,
@@ -673,7 +667,7 @@ async def test_start_export_invalid_export_format(
             user_id,
             product_name,
             paths_to_export=[path_to_export],
-            stop_after=datetime.timedelta(seconds=60),
+            stop_after=timedelta(seconds=60),
         )
 
     assert exc.value.exc_type == "NotRegistered"

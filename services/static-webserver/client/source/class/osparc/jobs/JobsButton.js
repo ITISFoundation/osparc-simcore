@@ -93,9 +93,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
       const resolveWResponse = true;
       jobsStore.fetchJobsLatest(runningOnly, offset, limit, orderBy, filters, resolveWResponse)
         .then(resp => {
-          // here we have the real number of jobs running
-          this.__updateJobsButton(Boolean(resp["_meta"]["total"]));
-        });
+          if (resp && resp["_meta"] && resp["_meta"]["total"] !== undefined) {
+            // here we have the real number of jobs running
+            this.__updateJobsButton(Boolean(resp["_meta"]["total"]));
+          }
+        })
+        .catch(err => console.error(err));
     },
 
     __attachSocketListener: function() {

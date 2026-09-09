@@ -18,8 +18,6 @@ Faker
 fakeredis[lua]
 fastapi-pagination
 fastapi[standard]
-# constraint to avoid sissues with uvicorn
-fastapi<=0.116.1
 flaky
 hypothesis
 jsonref

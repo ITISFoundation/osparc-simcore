@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 class UserServicesPreferencesManager:
     user_preferences_path: Path
     service_key: ServiceKey
-    service_version: ServiceVersion
+    resolved_version: ServiceVersion
     user_id: UserID
     product_name: ProductName
     application_name: str
@@ -26,7 +26,7 @@ class UserServicesPreferencesManager:
         await _db.load_preferences(
             user_preferences_path=self.user_preferences_path,
             service_key=self.service_key,
-            service_version=self.service_version,
+            resolved_version=self.resolved_version,
             user_id=self.user_id,
             product_name=self.product_name,
             application_name=self.application_name,
@@ -40,7 +40,7 @@ class UserServicesPreferencesManager:
         await _db.save_preferences(
             user_preferences_path=self.user_preferences_path,
             service_key=self.service_key,
-            service_version=self.service_version,
+            resolved_version=self.resolved_version,
             user_id=self.user_id,
             product_name=self.product_name,
             application_name=self.application_name,

@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=protected-access
 
+import inspect
 import json
 from collections.abc import Callable
 from typing import Annotated, Any
@@ -13,7 +14,7 @@ import pytest
 import settings_library.base
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -128,7 +129,8 @@ def test_create_settings_class(
 
     assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
 
-    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
+    # call_default_factory=True: default_factory takes priority over the (ignored) static default
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].get_default(call_default_factory=True) is None
 
     assert M.model_fields["VALUE_DEFAULT_ENV"].default_factory
 
@@ -337,31 +339,16 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
 
 def test_fixed_issubclass_type_error_with_pydantic_models():
     assert not issubclass(dict, BaseSettings)
-    assert not issubclass(
-        # FIXED with
-        #
-        # pydantic                 2.11.7
-        # pydantic_core            2.33.2
-        # pydantic-extra-types     2.10.5
-        # pydantic-settings        2.7.0
-        #
-        #
-        # TypeError: issubclass() arg 1 must be a class
-        #
-        # SEE https://github.com/pydantic/pydantic/issues/545
-        #
-        # >> issubclass(dict, BaseSettings)
-        # False
-        # >> issubclass(dict[str, str], BaseSettings)
-        # Traceback (most recent call last):
-        # File "<string>", line 1, in <module>
-        # File "/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
-        #     return _abc_subclasscheck(cls, subclass)
-        # TypeError: issubclass() arg 1 must be a class
-        #
-        dict[str, str],
-        BaseSettings,
-    )
+    # @ANE, @PC Please review this and let # spellchecker:disable-line
+    # me know what the problem was I cannot find it in github
+
+    # NOTE: dict[str, str] is a types.GenericAlias, not a class, so issubclass() on it
+    # ALWAYS raises TypeError regardless of pydantic/python version.
+    # This is unrelated to https://github.com/pydantic/pydantic/issues/545 (a pydantic v1 issue).
+    # The real bugfix is in BaseCustomSettings.__pydantic_init_subclass__, which must guard
+    # with `isinstance(field_type, type)` before calling issubclass on a resolved field type.
+    with pytest.raises(TypeError, match="issubclass"):
+        issubclass(dict[str, str], BaseSettings)
 
     # here reproduces the problem with our settings that ANE and PC had  # spellchecker:disable-line
     class SettingsClassThatFailed(BaseCustomSettings):
@@ -381,3 +368,28 @@ def test_upgrade_failure_to_pydantic_settings_2_6(
 
     settings = ProblematicSettings()
     assert settings.WEBSERVER_TRACING is not None
+
+
+def test_env_settings_source_init_signature_is_pinned():
+    # EnvSettingsWithAutoDefaultSource.__init__ forwards every parameter of
+    # EnvSettingsSource.__init__ explicitly by keyword. If pydantic-settings adds a
+    # new parameter, this test MUST fail so we notice and forward it too instead of
+    # silently defaulting it.
+    expected_params = {
+        "self",
+        "settings_cls",
+        "case_sensitive",
+        "env_prefix",
+        "env_prefix_target",
+        "env_nested_delimiter",
+        "env_nested_max_split",
+        "env_ignore_empty",
+        "env_parse_none_str",
+        "env_parse_enums",
+    }
+    actual_params = set(inspect.signature(EnvSettingsSource.__init__).parameters)
+    assert actual_params == expected_params, (
+        "EnvSettingsSource.__init__ signature changed: "
+        f"added={actual_params - expected_params}, removed={expected_params - actual_params}. "
+        "Update EnvSettingsWithAutoDefaultSource.__init__ in settings_library.base accordingly."
+    )

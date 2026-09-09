@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from aiodocker.volumes import DockerVolume
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -52,9 +53,14 @@ def max_response_time() -> int:
 
 
 @pytest.fixture
-async def test_client(app: FastAPI, max_response_time: int) -> AsyncIterable[TestClient]:
-    async with TestClient(app, timeout=max_response_time) as client:
-        yield client
+async def initialized_app(app: FastAPI) -> AsyncIterable[FastAPI]:
+    try:
+        AppState(app)
+    except ValueError:
+        async with ASGILifespanManager(app):
+            yield app
+    else:
+        yield app
 
 
 #
@@ -64,14 +70,19 @@ async def test_client(app: FastAPI, max_response_time: int) -> AsyncIterable[Tes
 
 
 @pytest.fixture
+def test_client(initialized_app: FastAPI, max_response_time: int) -> TestClient:
+    return TestClient(initialized_app, timeout=max_response_time)
+
+
+@pytest.fixture
 async def ensure_external_volumes(
-    app: FastAPI,
+    initialized_app: FastAPI,
 ) -> AsyncIterator[tuple[DockerVolume, ...]]:
     """ensures inputs and outputs volumes for the service are present
 
     Emulates creation of volumes by the directorv2 when it spawns the dynamic-sidecar service
     """
-    app_state = AppState(app)
+    app_state = AppState(initialized_app)
     volume_labels_source = [
         app_state.mounted_volumes.volume_name_inputs,
         app_state.mounted_volumes.volume_name_outputs,
@@ -110,8 +121,8 @@ async def ensure_external_volumes(
 
 
 @pytest.fixture
-async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
-    app_state = AppState(app)
+async def cleanup_containers(initialized_app: FastAPI) -> AsyncIterator[None]:
+    app_state = AppState(initialized_app)
 
     yield
     # run docker compose down here

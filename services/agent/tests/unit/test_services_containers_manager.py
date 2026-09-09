@@ -9,6 +9,7 @@ from aiodocker import Docker, DockerError
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from models_library.api_schemas_directorv2.services import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX,
@@ -16,15 +17,16 @@ from models_library.api_schemas_directorv2.services import (
 )
 from models_library.projects_nodes_io import NodeID
 from simcore_service_agent.services.containers_manager import (
+    configure_containers_manager,
     get_containers_manager,
-    setup_containers_manager,
 )
 
 
 @pytest.fixture
 async def app() -> AsyncIterable[FastAPI]:
-    app = FastAPI()
-    setup_containers_manager(app)
+    app_lifespan = AppLifespanManager()
+    app = FastAPI(lifespan=app_lifespan)
+    configure_containers_manager(app_lifespan)
 
     async with LifespanManager(app):
         yield app

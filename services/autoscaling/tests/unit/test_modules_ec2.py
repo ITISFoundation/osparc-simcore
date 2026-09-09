@@ -7,12 +7,17 @@ from collections.abc import Callable
 from typing import TypedDict
 
 import pytest
-from aws_library.ec2 import EC2InstanceConfig, EC2InstanceType, Resources
+from asgi_lifespan import LifespanManager
+from aws_library.ec2 import EC2InstanceConfig, EC2InstanceType, Resources, SimcoreEC2API
 from faker import Faker
 from fastapi import FastAPI
 from prometheus_client.metrics import MetricWrapperBase
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from servicelib.tracing import TracingConfig
+from simcore_service_autoscaling.core.application import create_app
 from simcore_service_autoscaling.core.errors import ConfigurationError
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.ec2 import get_ec2_client
 from simcore_service_autoscaling.modules.instrumentation import (
     get_instrumentation,
@@ -208,3 +213,29 @@ async def test_ec2_with_instrumentation_enabled(
             "labels": {"instance_type": "a1.2xlarge"},
         },
     )
+
+
+async def test_ec2_client_is_closed_if_instrumentation_wiring_fails(
+    disabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+):
+    # the ec2 client is created successfully (holding real resources) but wiring
+    # instrumentation onto it fails afterwards: it must still be closed, not leaked
+    close_spy = mocker.patch.object(SimcoreEC2API, "close", autospec=True)
+    mocker.patch(
+        "aws_library.ec2._instrumentation.instrument_ec2_client",
+        side_effect=RuntimeError("boom"),
+    )
+
+    settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(service_name=settings.APP_NAME, tracing_settings=None)
+    app = create_app(settings, tracing_config=tracing_config)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        async with LifespanManager(app, startup_timeout=10, shutdown_timeout=10):
+            pytest.fail("lifespan startup should fail before entering the context")
+
+    close_spy.assert_called_once()

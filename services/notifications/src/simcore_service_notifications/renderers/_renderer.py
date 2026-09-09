@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from common_library.gettext_support import DEFAULT_LOCALE, SupportedLocale
+
 from ..models.content import Content
 from ..models.template import Template, TemplatePreview
 
@@ -11,4 +13,6 @@ class Renderer(ABC):
         self,
         template: Template,
         context: dict[str, Any],
+        *,
+        locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> TemplatePreview[Content]: ...

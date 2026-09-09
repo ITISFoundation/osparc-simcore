@@ -178,14 +178,10 @@ def _list_user_groups_with_read_access_query(
     if product_name is None:
         return base_query
 
-    # Exclude standard groups linked by another product row as either the
-    # product group or the product support group. These groups are
+    # Exclude standard groups linked by another product row (product group). These groups are
     # product-internal and must not leak across products.
     other_product_group_or_support_group_exists = sa.exists(
-        sa.select(sa.literal(1)).where(
-            (products.c.name != product_name)
-            & ((products.c.group_id == groups.c.gid) | (products.c.support_standard_group_id == groups.c.gid))
-        )
+        sa.select(sa.literal(1)).where((products.c.name != product_name) & (products.c.group_id == groups.c.gid))
     )
     return base_query.where((groups.c.type != GroupType.STANDARD) | ~other_product_group_or_support_group_exists)
 
@@ -244,33 +240,12 @@ async def get_ids_of_all_user_groups_with_read_access(
         return [row.gid async for row in result]
 
 
-async def get_all_user_groups(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-) -> list[Group]:
-    """
-    Returns all user's groups
-    """
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            sa.select(*_GROUP_COLUMNS)
-            .select_from(
-                user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
-            )
-            .where(user_to_groups.c.uid == user_id)
-        )
-        return [Group.model_validate(row) async for row in result.mappings()]
-
-
 async def get_ids_of_all_user_groups(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
 ) -> list[GroupID]:
-    # thin version of `get_all_user_groups`
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             sa.select(
@@ -613,7 +588,7 @@ async def get_user_in_group(
     *,
     caller_id: UserID,
     group_id: GroupID,
-    the_user_id_in_group: int,
+    the_user_id_in_group: UserID,
 ) -> GroupMember:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
@@ -831,12 +806,12 @@ async def auto_add_user_to_groups(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(query)
         async for row in result:
-            inclusion_rules = row[groups.c.inclusion_rules]
+            inclusion_rules = row.inclusion_rules
             for prop, rule_pattern in inclusion_rules.items():
                 if prop not in user:
                     continue
                 if re.search(rule_pattern, user[prop]):
-                    possible_group_ids.add(row[groups.c.gid])
+                    possible_group_ids.add(row.gid)
 
         # now add the user to these groups if possible
         for gid in possible_group_ids:
@@ -860,7 +835,7 @@ async def auto_add_user_to_product_group(
     product_name: str,
 ) -> GroupID:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        product_group_id: GroupID = await get_or_create_product_group(conn, product_name)
+        product_group_id: GroupID = GroupID(await get_or_create_product_group(conn, product_name))
 
         await conn.execute(
             # pylint: disable=no-value-for-parameter

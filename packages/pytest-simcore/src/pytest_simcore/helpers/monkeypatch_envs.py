@@ -9,6 +9,7 @@ from pathlib import Path
 
 import dotenv
 import pytest
+from pydantic import SecretBytes, SecretStr
 
 from .typing_env import EnvVarsDict, EnvVarsIterable
 
@@ -17,7 +18,10 @@ from .typing_env import EnvVarsDict, EnvVarsIterable
 #
 
 
-def setenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: Mapping[str, str | bool]) -> EnvVarsDict:
+def setenvs_from_dict(
+    monkeypatch: pytest.MonkeyPatch,
+    envs: Mapping[str, str | bool | int | float | SecretStr | SecretBytes],
+) -> EnvVarsDict:
     env_vars = {}
 
     for key, value in envs.items():
@@ -31,6 +35,12 @@ def setenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: Mapping[str, str | 
 
         if isinstance(value, int | float):
             v = f"{value}"
+
+        if isinstance(value, SecretStr):
+            v = value.get_secret_value()
+
+        if isinstance(value, SecretBytes):
+            v = value.get_secret_value().decode()
 
         assert isinstance(v, str), (
             "caller MUST explicitly stringify values since some cannot be done automatically"

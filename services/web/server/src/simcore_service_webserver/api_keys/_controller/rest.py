@@ -13,17 +13,17 @@ from models_library.basic_types import IDStr
 from models_library.rest_base import StrictRequestParameters
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 
 from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _service
 from ..models import ApiKey
 from .rest_exceptions import handle_plugin_requests_exceptions

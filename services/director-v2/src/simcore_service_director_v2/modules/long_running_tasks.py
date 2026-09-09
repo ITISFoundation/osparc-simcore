@@ -1,22 +1,23 @@
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.long_running_tasks.long_running_client_helper import (
     LongRunningClientHelper,
 )
 
 
-def setup(app: FastAPI):
-    async def _on_startup() -> None:
-        long_running_client_helper = app.state.long_running_client_helper = LongRunningClientHelper(
-            redis_settings=app.state.settings.REDIS
-        )
+def configure_long_running_tasks(app_lifespan: LifespanManager) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        long_running_client_helper = LongRunningClientHelper(redis_settings=app.state.settings.REDIS)
         await long_running_client_helper.setup()
+        app.state.long_running_client_helper = long_running_client_helper
+        try:
+            yield
+        finally:
+            await long_running_client_helper.shutdown()
 
-    async def _on_shutdown() -> None:
-        long_running_client_helper: LongRunningClientHelper = app.state.long_running_client_helper
-        await long_running_client_helper.shutdown()
-
-    app.add_event_handler("startup", _on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 def get_long_running_client_helper(app: FastAPI) -> LongRunningClientHelper:

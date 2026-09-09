@@ -229,7 +229,12 @@ async def push_file_to_store(
     )
     assert isinstance(upload_result, UploadedFile)  # nosec
     log.debug("file path %s uploaded, received ETag %s", file, upload_result.etag)
-    return FileLink(store=upload_result.store_id, path=s3_object, eTag=upload_result.etag)
+    return FileLink(
+        store=upload_result.store_id,
+        path=s3_object,
+        eTag=upload_result.etag,
+        lastModified=upload_result.last_modified,
+    )
 
 
 async def pull_file_from_download_link(
@@ -285,4 +290,9 @@ async def get_file_link_from_url(
         s3_object=s3_object,
     )
     log.debug("file meta data for %s found, received ETag %s", new_value, file_metadata.etag)
-    return FileLink(store=file_metadata.location, path=s3_object, eTag=file_metadata.etag)
+    return FileLink(
+        store=file_metadata.location,
+        path=s3_object,
+        eTag=file_metadata.etag,
+        lastModified=file_metadata.last_modified,
+    )

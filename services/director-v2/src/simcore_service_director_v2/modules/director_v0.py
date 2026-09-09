@@ -1,12 +1,14 @@
 """Module that takes care of communications with director v0 service"""
 
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, cast
 
 import httpx
 import yarl
 from fastapi import FastAPI, HTTPException, status
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
@@ -27,15 +29,16 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(
-    app: FastAPI,
+def configure_director_v0(
+    app_lifespan: LifespanManager,
+    *,
     director_v0_settings: DirectorV0Settings | None,
     tracing_settings: TracingSettings | None,
-):
+) -> None:
     if not director_v0_settings:
         director_v0_settings = DirectorV0Settings()
 
-    def on_startup() -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         client = httpx.AsyncClient(
             base_url=f"{director_v0_settings.endpoint}",
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
@@ -50,15 +53,13 @@ def setup(
             client=client,
         )
         logger.debug("created client for director-v0: %s", director_v0_settings.endpoint)
+        try:
+            yield
+        finally:
+            await client.aclose()
+            logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
 
-    async def on_shutdown() -> None:
-        client = DirectorV0Client.instance(app).client
-        await client.aclose()
-        del client
-        logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 @dataclass

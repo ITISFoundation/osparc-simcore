@@ -22,10 +22,11 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
-from pytest_localftpserver.servers import ProcessFTPServer
+from pytest_localftpserver.servers import PytestLocalFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.kms import KMSSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from simcore_service_dask_sidecar.utils.files import (
@@ -111,6 +112,27 @@ def app_environment(
 
 
 @pytest.fixture
+def kms_settings(mocked_kms_server_envs: EnvVarsDict) -> KMSSettings:
+    return KMSSettings.create_from_envs()
+
+
+@pytest.fixture
+def app_environment_with_kms(
+    app_environment: EnvVarsDict,
+    kms_settings: KMSSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    """Layers DASK_SIDECAR_KMS on top of app_environment - NOTE: must be requested by the test
+    BEFORE dask_client/local_cluster so the env var is set before the worker process(es) start.
+    """
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {"DASK_SIDECAR_KMS": json_dumps(model_dump_with_secrets(kms_settings, show_secrets=True))},
+    )
+    return {**app_environment, **envs}
+
+
+@pytest.fixture
 def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalCluster]:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
@@ -148,6 +170,10 @@ async def async_local_cluster(
         resources={"CPU": 10, "GPU": 10},
         preload="simcore_service_dask_sidecar.worker",
         asynchronous=True,
+        # NOTE: disable the dashboard: bokeh's BokehTornado.stop() raises
+        # "Cannot synchronously wait on a running event loop" when the scheduler
+        # closes from within a running loop, as happens on async cluster teardown
+        scheduler_kwargs={"dashboard": False},
     ) as cluster:
         assert cluster
         assert isinstance(cluster, distributed.LocalCluster)
@@ -163,7 +189,7 @@ async def async_dask_client(
 
 
 @pytest.fixture(scope="module")
-def ftp_server(ftpserver: ProcessFTPServer) -> list[URL]:
+def ftp_server(ftpserver: PytestLocalFTPServer) -> list[URL]:
     faker = Faker()
 
     files = ["file_1", "file_2", "file_3"]

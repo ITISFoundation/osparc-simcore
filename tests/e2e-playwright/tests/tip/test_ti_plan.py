@@ -22,6 +22,7 @@ from _tip_steps import (
     POST_PRO_REPORTING_MAX_TIME,
     POST_PRO_RUN_OPTIMIZATION_MAX_TIME,
     POST_PRO_TARGET_TISSUE_APPEARANCE_TIME,
+    get_node_id_from_service_key,
     run_optimization_and_load_analysis,
     set_fast_optimization_settings,
     wait_and_select_target_tissue,
@@ -271,13 +272,13 @@ def test_classic_ti_plan(
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(project_data["workbench"], dict), "Expected workbench to be a dict!"
-    node_ids: list[str] = list(project_data["workbench"])
+    workbench: dict = project_data["workbench"]
 
     # count the number of elements with test id matching the pattern
     # 1. Classic TI (ti-postpro)
     # 2. Exposure Analysis (sim4life-postpro) - only in full product
     expected_number_of_steps = 2 if not is_product_lite else 1
-    assert len(node_ids) == expected_number_of_steps, f"Expected {expected_number_of_steps=} in the app-mode"
+    assert len(workbench) == expected_number_of_steps, f"Expected {expected_number_of_steps=} in the app-mode"
     step_buttons_count = page.locator("[osparc-test-id^='AppMode_StepBtn_']").count()
     assert step_buttons_count == expected_number_of_steps, (
         f"Expected {expected_number_of_steps=} visible in the app-mode, got {step_buttons_count=}"
@@ -293,12 +294,14 @@ def test_classic_ti_plan(
     )
 
     with log_context(logging.INFO, "Classic TI step (1/%s)", expected_number_of_steps) as log_ctx:
-        restartable_jlab_websocket = _run_classic_ti_step(params, node_ids[0], log_ctx)
+        classic_ti_node_id = get_node_id_from_service_key(workbench, "simcore/services/dynamic/ti-postpro")
+        restartable_jlab_websocket = _run_classic_ti_step(params, classic_ti_node_id, log_ctx)
 
     if is_product_lite:
         assert expected_number_of_steps == 1
     else:
         with log_context(logging.INFO, "Exposure Analysis step (2/%s)", expected_number_of_steps) as log_ctx:
-            _run_exposure_analysis_step(params, node_ids[1], log_ctx)
+            exposure_analysis_node_id = get_node_id_from_service_key(workbench, "simcore/services/dynamic/s4l-ui")
+            _run_exposure_analysis_step(params, exposure_analysis_node_id, log_ctx)
 
     restartable_jlab_websocket.auto_reconnect = False

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -52,16 +53,25 @@ from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
+from ..modules.file_notification_subscriber import enable_notifications_processing
 from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
-from ..modules.outputs import OutputsManager, event_propagation_disabled
+from ..modules.outputs import (
+    OutputsManager,
+    event_propagation_disabled,
+)
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
 )
 from .resource_tracking import send_service_started, send_service_stopped
+from .user_services_tracing import (
+    create_user_services_trace_collector,
+    is_user_services_tracing_enabled,
+    remove_user_services_trace_collector,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -204,6 +214,9 @@ async def create_user_services(
         _logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
+
+        if is_user_services_tracing_enabled(app):
+            await create_user_services_trace_collector(app)
     else:
         application_health.is_healthy = False
         application_health.error_message = message
@@ -263,6 +276,9 @@ async def remove_user_services(
 
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
+
+        if is_user_services_tracing_enabled(app):
+            await remove_user_services_trace_collector(app)
 
         await progress.update(message="stopping logs", percent=0.9)
         for container_name in shared_store.container_names:
@@ -378,7 +394,7 @@ async def restore_user_services_state_paths(
                     state_path=path,
                     index=k,
                 )
-                for k, path in enumerate(mounted_volumes.disk_state_paths_iter())
+                for k, path in enumerate(sorted(state_paths))
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
             reraise=True,  # this should raise if there is an issue
@@ -387,6 +403,9 @@ async def restore_user_services_state_paths(
     await post_sidecar_log_message(app, "Finished state downloading", log_level=logging.INFO)
 
     size = await _get_state_folders_size_async(state_paths)
+
+    enable_notifications_processing(app)
+
     await progress.update(message="state restored", percent=0.99)
     return size
 
@@ -588,27 +607,27 @@ async def restart_user_services(
         await progress.update(message="started log fetching", percent=0.99)
 
 
-def setup_long_running_tasks(app: FastAPI) -> None:
+def configure_long_running_tasks(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    long_running_tasks.server.setup(
+    long_running_tasks.server.configure_server(
         app,
+        app_lifespan,
         redis_settings=app_settings.REDIS_SETTINGS,
         rabbit_settings=app_settings.RABBIT_SETTINGS,
         lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
     )
 
-    task_context: dict[TaskProtocol, dict[str, Any]] = {}
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        registered_handlers: list[TaskProtocol] = []
+        try:
+            shared_store: SharedStore = app.state.shared_store
+            settings: ApplicationSettings = app.state.settings
+            application_health: ApplicationHealth = app.state.application_health
+            mounted_volumes: MountedVolumes = app.state.mounted_volumes
+            outputs_manager: OutputsManager = app.state.outputs_manager
+            inputs_state: InputsState = app.state.inputs_state
 
-    async def on_startup() -> None:
-        shared_store: SharedStore = app.state.shared_store
-        settings: ApplicationSettings = app.state.settings
-        application_health: ApplicationHealth = app.state.application_health
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        outputs_manager: OutputsManager = app.state.outputs_manager
-        inputs_state: InputsState = app.state.inputs_state
-
-        task_context.update(
-            {
+            task_context: dict[TaskProtocol, dict[str, Any]] = {
                 pull_user_services_images: {
                     "shared_store": shared_store,
                     "app": app,
@@ -655,14 +674,13 @@ def setup_long_running_tasks(app: FastAPI) -> None:
                     "shared_store": shared_store,
                 },
             }
-        )
 
-        for handler, context in task_context.items():
-            TaskRegistry.register(handler, **context)
+            for handler, context in task_context.items():
+                TaskRegistry.register(handler, **context)
+                registered_handlers.append(handler)
+            yield
+        finally:
+            for handler in registered_handlers:
+                TaskRegistry.unregister(handler)
 
-    async def _on_shutdown() -> None:
-        for handler in task_context:
-            TaskRegistry.unregister(handler)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

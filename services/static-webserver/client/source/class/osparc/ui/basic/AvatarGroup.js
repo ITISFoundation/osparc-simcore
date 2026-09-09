@@ -57,7 +57,6 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __avatars: null,
     __collapseTimeout: null,
     __isPointerInside: null,
-    __onGlobalPointerMove: null,
 
     setUserGroupIds: function(userGroupIds) {
       if (
@@ -162,7 +161,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       });
     },
 
-    __onGlobalPointerMove(e) {
+    __onGlobalPointerMove: function(e) {
       const domEl = this.getContentElement().getDomElement();
       if (!domEl) {
         return;
@@ -184,16 +183,14 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
           }
           this.__expand(true);
         }
-      } else {
-        if (this.__isPointerInside) {
-          this.__isPointerInside = false;
-          if (this.__collapseTimeout) {
-            clearTimeout(this.__collapseTimeout);
-          }
-          this.__collapseTimeout = setTimeout(() => {
-            this.__expand(false);
-          }, 200);
+      } else if (this.__isPointerInside) {
+        this.__isPointerInside = false;
+        if (this.__collapseTimeout) {
+          clearTimeout(this.__collapseTimeout);
         }
+        this.__collapseTimeout = setTimeout(() => {
+          this.__expand(false);
+        }, 200);
       }
     }
   },

@@ -4,12 +4,12 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi import APIRouter, Body, Depends, Header, Query, Request, status
 from fastapi.responses import JSONResponse
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.types import PositiveInt
+from models_library.users import UserID
 
 from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ...exceptions.backend_errors import (
@@ -21,6 +21,7 @@ from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     Job,
+    JobEncryptionInputs,
     JobID,
     JobInputs,
     JobMetadata,
@@ -93,7 +94,7 @@ async def create_solver_job(
     inputs: JobInputs,
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    hidden: Annotated[bool, Query()] = True,
+    hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ):
@@ -208,6 +209,7 @@ async def start_job(
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
+    encryption: Annotated[JobEncryptionInputs | None, Body()] = None,
 ):
     pricing_spec = JobPricingSpecification.create_from_headers(headers=request.headers)
 
@@ -217,6 +219,7 @@ async def start_job(
             version=version,
             job_id=job_id,
             pricing_spec=pricing_spec,
+            encryption=encryption,
         )
     except ProjectAlreadyStartedError:
         job_status = await job_service.inspect_solver_job(solver_key=solver_key, version=version, job_id=job_id)
@@ -238,7 +241,7 @@ async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     job_name = compose_solver_job_resource_name(solver_key, version, job_id)

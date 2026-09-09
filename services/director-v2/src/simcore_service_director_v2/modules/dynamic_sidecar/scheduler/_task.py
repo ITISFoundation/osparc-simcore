@@ -70,6 +70,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         request_simcore_user_agent: str,
         *,
         can_save: bool,
+        version_display: str | None = None,
     ) -> None:
         return await self.scheduler.add_service(
             service=service,
@@ -79,6 +80,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
             request_scheme=request_scheme,
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
+            version_display=version_display,
         )
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:

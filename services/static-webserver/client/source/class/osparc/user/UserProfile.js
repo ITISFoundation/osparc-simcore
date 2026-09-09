@@ -83,7 +83,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "userName": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("UserName"), {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label(this.tr("UserName")), {
             row: this.self().TOP_GRID.USERNAME,
             column: 0
           });
@@ -95,7 +95,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "fullname": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("Full Name"), {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label(this.tr("Full Name")), {
             row: this.self().TOP_GRID.FULLNAME,
             column: 0
           });
@@ -107,7 +107,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "email": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("Email"), {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label(this.tr("Email")), {
             row: this.self().TOP_GRID.EMAIL,
             column: 0
           });
@@ -119,7 +119,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "phone": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("Phone"), {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label(this.tr("Phone")), {
             row: this.self().TOP_GRID.PHONE,
             column: 0
           });
@@ -131,7 +131,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "user-id": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("User ID"), {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label(this.tr("User ID")), {
             row: this.self().TOP_GRID.USER_ID,
             column: 0
           });
@@ -143,7 +143,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "group-id": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("Group ID"), {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label(this.tr("Group ID")), {
             row: this.self().TOP_GRID.GROUP_ID,
             column: 0
           });
@@ -155,7 +155,7 @@ qx.Class.define("osparc.user.UserProfile", {
           break;
         }
         case "institution":
-          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Institution"), {
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label(this.tr("Institution")), {
             row: this.self().MIDDLE_GRID.INSTITUTION,
             column: 0
           });
@@ -166,7 +166,7 @@ qx.Class.define("osparc.user.UserProfile", {
           });
           break;
         case "address":
-          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Address"), {
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label(this.tr("Address")), {
             row: this.self().MIDDLE_GRID.ADDRESS,
             column: 0
           });
@@ -177,7 +177,7 @@ qx.Class.define("osparc.user.UserProfile", {
           });
           break;
         case "city":
-          this.getChildControl("middle-info").add(new qx.ui.basic.Label("City"), {
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label(this.tr("City")), {
             row: this.self().MIDDLE_GRID.CITY,
             column: 0
           });
@@ -188,7 +188,7 @@ qx.Class.define("osparc.user.UserProfile", {
           });
           break;
         case "state":
-          this.getChildControl("middle-info").add(new qx.ui.basic.Label("State"), {
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label(this.tr("State")), {
             row: this.self().MIDDLE_GRID.STATE,
             column: 0
           });
@@ -199,7 +199,7 @@ qx.Class.define("osparc.user.UserProfile", {
           });
           break;
         case "country":
-          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Country"), {
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label(this.tr("Country")), {
             row: this.self().MIDDLE_GRID.COUNTRY,
             column: 0
           });
@@ -210,7 +210,7 @@ qx.Class.define("osparc.user.UserProfile", {
           });
           break;
         case "postal-code":
-          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Postal Code"), {
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label(this.tr("Postal Code")), {
             row: this.self().MIDDLE_GRID.POSTAL_CODE,
             column: 0
           });

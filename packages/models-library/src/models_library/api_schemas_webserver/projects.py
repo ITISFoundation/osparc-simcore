@@ -246,7 +246,6 @@ class ProjectPatch(InputSchema):
         PlainSerializer(lambda x: str(x) if x is not None else None),
     ] = None
 
-    access_rights: dict[GroupIDStr, AccessRights] | None = None
     classifiers: list[ClassifierID] | None = None
     dev: dict | None = None
     ui: Annotated[

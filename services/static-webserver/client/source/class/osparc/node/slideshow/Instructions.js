@@ -25,10 +25,10 @@ qx.Class.define("osparc.node.slideshow.Instructions", {
       const instructions = node.getSlideshowInstructions();
       if (instructions) {
         const markdownInstructions = new osparc.ui.markdown.Markdown().set({
-          value: instructions,
           padding: 3,
           font: "text-14"
         });
+        markdownInstructions.setValueSmart(instructions);
         const title = node.getLabel();
         const win = osparc.ui.window.Window.popUpInWindow(markdownInstructions, title, this.WIDTH, this.MIN_HEIGHT).set({
           modal: false,

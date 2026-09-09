@@ -1,20 +1,18 @@
 from typing import cast
 
-from aws_library.ec2 import SimcoreEC2API
+from aws_library.ec2 import SimcoreEC2API, create_instrumented_ec2_client
 from aws_library.ec2 import configure_ec2_client as _configure_ec2_client
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from settings_library.ec2 import EC2Settings
 
 from ..core.errors import ConfigurationError
-from .instrumentation import has_instrumentation, instrument_ec2_client_methods
+from .instrumentation import get_instrumentation, has_instrumentation
 
 
 async def _create_ec2_client(app: FastAPI, settings: EC2Settings) -> SimcoreEC2API:
-    ec2_client = await SimcoreEC2API.create(settings)
-    if not has_instrumentation(app):
-        return ec2_client
-    return instrument_ec2_client_methods(app, ec2_client)
+    ec2_client_metrics = get_instrumentation(app).ec2_client_metrics if has_instrumentation(app) else None
+    return await create_instrumented_ec2_client(settings, ec2_client_metrics)
 
 
 def configure_ec2_client(

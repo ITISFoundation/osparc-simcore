@@ -8,7 +8,6 @@
 # pylint:disable=unused-variable
 
 
-import datetime
 import logging
 import re
 from collections.abc import Callable
@@ -16,7 +15,8 @@ from typing import Any, Final
 
 from packaging.version import Version
 from packaging.version import parse as parse_version
-from playwright.sync_api import Page
+from playwright.sync_api import APIRequestContext, Page
+from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import (
     ContextMessages,
     log_context,
@@ -24,21 +24,20 @@ from pytest_simcore.helpers.logging_tools import (
 )
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    SECOND,
+    PipelineStageTimeouts,
     RobustWebSocket,
-    RunningState,
     ServiceType,
     SocketIOEvent,
+    check_node_outputs,
     retrieve_project_state_from_decoded_message,
-    wait_for_pipeline_state,
+    wait_for_computation_done,
+    wait_for_nodes_outputs_updated,
 )
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
-_WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
-_WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
-_WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
-_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
-_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
+# NOTE: small grace budget for stages a non-autoscaled deployment should never actually enter
+_NON_AUTOSCALED_STAGE_GRACE_TIME: Final[int] = 30 * SECOND
 
 _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
     parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
@@ -53,32 +52,16 @@ def _get_expected_file_names_for_version(version: Version) -> list[str]:
     return []
 
 
-@retry(
-    stop=stop_after_delay(_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME),
-    retry=retry_if_exception_type(AssertionError),
-    reraise=True,
-    wait=wait_fixed(_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL),
-)
-def _get_file_names(page: Page) -> list[str]:
-    file_names_found = []
-    page.get_by_test_id("folderGridView").click()
-    for file in page.get_by_test_id("FolderViewerItem").all():
-        file_name = file.text_content()
-        assert file_name
-        file_name = file_name.removesuffix("\ue24d")
-        file_names_found.append(file_name)
-    assert file_names_found
-
-    return file_names_found
-
-
 def test_sleepers(
     page: Page,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
     log_in_and_out: RobustWebSocket,
     create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
+    is_autoscaled: bool,
 ):
     project_data = create_project_from_service_dashboard(ServiceType.COMPUTATIONAL, "sleeper", "itis", None)
 
@@ -120,6 +103,13 @@ def test_sleepers(
             workbench_selector.click()
         break
 
+    # collect all sleeper node ids upfront, so we can watch their websocket updates below
+    sleeper_node_ids: list[str] = []
+    for sleeper in page.get_by_test_id("nodeTreeItem").all()[1:]:
+        node_id = sleeper.get_attribute("osparc-test-key")
+        assert node_id
+        sleeper_node_ids.append(node_id)
+
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -135,61 +125,40 @@ def test_sleepers(
     # start the pipeline (depending on the state of the cluster, we might receive one of
     # in [] are optional states depending on the state of the clusters and if we have external clusters
     # sometimes they may jump
-    # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
-    socket_io_event = start_and_stop_pipeline()
-    current_state = retrieve_project_state_from_decoded_message(socket_io_event)
-    test_logger.info("pipeline is in %s", f"{current_state=}")
-
-    # this should not stay like this for long, it will either go to PENDING, WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
-        ),
-        expected_states=(
-            RunningState.WAITING_FOR_CLUSTER,
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.SUCCESS,
-        ),
-        timeout_ms=_WAITING_FOR_PIPELINE_TO_CHANGE_STATE,
+    # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] ->
+    # (PENDING) -> STARTED -> SUCCESS/FAILED
+    # NOTE: asserts every sleeper actually pushes a NodeUpdated websocket message with its
+    # outputs, instead of only relying on the after-the-fact REST check below
+    # on non-autoscaled deployments the cluster/resources stages are never entered, so keep
+    # their budget minimal instead of the full 5 min each (would otherwise slow down failures)
+    stage_timeouts = PipelineStageTimeouts(
+        waiting_for_cluster_ms=(5 * MINUTE) if is_autoscaled else _NON_AUTOSCALED_STAGE_GRACE_TIME,
+        waiting_for_resources_ms=(5 * MINUTE) if is_autoscaled else _NON_AUTOSCALED_STAGE_GRACE_TIME,
+        started_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
     )
+    with wait_for_nodes_outputs_updated(
+        log_in_and_out,
+        node_id_to_expected_number_of_outputs=dict.fromkeys(sleeper_node_ids, len(sleeper_expected_output_files)),
+        # NOTE: covers every autoscaling stage (cold cluster/worker scale-up), not just STARTED
+        timeout=stage_timeouts.total_ms,
+    ):
+        socket_io_event = start_and_stop_pipeline()
+        current_state = retrieve_project_state_from_decoded_message(socket_io_event)
+        test_logger.info("pipeline is in %s", f"{current_state=}")
 
-    # in case we are in WAITING_FOR_CLUSTER, that means we have a new cluster OR that there is something restarting in a non billable deployment
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
-        expected_states=(
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.SUCCESS,
-        ),
-        timeout_ms=_WAITING_FOR_CLUSTER_MAX_WAITING_TIME,
-    )
+        # handles the autoscaled-deployment state machine (cold cluster/worker scale-up can take
+        # several minutes without the pipeline actually being stuck)
+        current_state = wait_for_computation_done(
+            current_state,
+            websocket=log_in_and_out,
+            stage_timeouts=stage_timeouts,
+        )
 
-    # now we wait for the workers
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
-        expected_states=(
-            RunningState.STARTED,
-            RunningState.SUCCESS,
-        ),
-        timeout_ms=_WAITING_FOR_STARTED_MAX_WAITING_TIME,
-    )
-
-    # check that we get success state now
-    current_state = wait_for_pipeline_state(
-        current_state,
-        websocket=log_in_and_out,
-        if_in_states=(RunningState.STARTED,),
-        expected_states=(RunningState.SUCCESS,),
-        timeout_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
-    )
+    # NOTE: `project_data["workbench"]` predates the sleeper nodes created via the UI above, so
+    # the project is re-fetched here to get an up-to-date workbench
+    get_prj_response = api_request_context.get(f"{product_url}v0/projects/{project_data['uuid']}")
+    assert get_prj_response.ok, f"Failed to GET project: {get_prj_response.status} {get_prj_response.text()}"
+    workbench = get_prj_response.json()["data"]["workbench"]
 
     # check the outputs (the first item is the title, so we skip it)
     with log_context(
@@ -199,16 +168,15 @@ def test_sleepers(
             done="<- All good, we're done here! This was really great!",
             raised="! Error checking outputs!",
         ),
-    ) as ctx:
-        for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+    ):
+        for sleeper in page.get_by_test_id("nodeTreeItem").all()[1:]:
+            node_id = sleeper.get_attribute("osparc-test-key")
+            assert node_id
             sleeper.click()
-            # waiting for this response is not enough, the frontend needs some time to show the files
-            # therefore _get_file_names is wrapped with tenacity
-            with page.expect_response(re.compile(r"paths\?file_filter=")):
-                page.get_by_test_id("nodeFilesBtn").click()
-                output_file_names_found = _get_file_names(page)
-
-            msg = f"found {output_file_names_found=} in sleeper {index} service outputs."
-            ctx.logger.info(msg)
-            assert output_file_names_found == sleeper_expected_output_files
-            page.get_by_test_id("nodeDataManagerCloseBtn").click()
+            check_node_outputs(
+                page,
+                study_id=project_data["uuid"],
+                workbench=workbench,
+                node_id=node_id,
+                expected_file_names=sleeper_expected_output_files,
+            )

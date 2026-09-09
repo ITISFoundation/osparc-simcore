@@ -328,27 +328,24 @@ def mock_event_filter_enqueue(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> 
 
 
 @pytest.fixture
-async def mocked_port_key_events_queue_coro_get(app: FastAPI, mocker: MockerFixture) -> Mock:
+async def mocked_port_key_events_queue_get(app: FastAPI, mocker: MockerFixture) -> Mock:
     outputs_context: OutputsContext = app.state.outputs_context
 
-    target = getattr(outputs_context.port_key_events_queue, "coro_get")  # noqa: B009
+    target = outputs_context.port_key_events_queue.get
 
     mock_result_tracker = Mock()
 
-    async def _wrapped_coroutine() -> Any:
-        # NOTE: coro_get returns a future, naming is unfortunate
-        # and can cause confusion, normally an async def function
-        # will return a coroutine not a future object.
-        future: asyncio.Future = target()
-        result = await future
+    def _wrapped() -> Any:
+        # NOTE: runs in the thread used by `asyncio.to_thread`
+        result = target()
         mock_result_tracker(result)
 
         return result
 
     mocker.patch.object(
         outputs_context.port_key_events_queue,
-        "coro_get",
-        side_effect=_wrapped_coroutine,
+        "get",
+        side_effect=_wrapped,
     )
 
     return mock_result_tracker
@@ -445,7 +442,7 @@ async def test_container_docker_error(
 
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
-    mocked_port_key_events_queue_coro_get: Mock,
+    mocked_port_key_events_queue_get: Mock,
     mock_event_filter_enqueue: AsyncMock,
 ):
     assert isinstance(test_client.application, FastAPI)
@@ -469,9 +466,7 @@ async def test_outputs_watcher_disabling(
             with attempt:
                 # check events were triggered after generation
                 events_in_dir: list[str] = [
-                    c.args[0]
-                    for c in mocked_port_key_events_queue_coro_get.call_args_list
-                    if c.args[0] == random_subdir
+                    c.args[0] for c in mocked_port_key_events_queue_get.call_args_list if c.args[0] == random_subdir
                 ]
 
                 if is_propagation_enabled:

@@ -1,6 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
+import sqlalchemy as sa
 from aiohttp import web
 from models_library.functions import (
     FunctionAccessRightsDB,
@@ -96,21 +97,18 @@ async def _internal_get_group_permissions(
             rows = [
                 row
                 async for row in await conn.stream(
-                    access_rights_table.select().where(
+                    sa.select(
+                        access_rights_table.c.group_id,
+                        access_rights_table.c.read,
+                        access_rights_table.c.write,
+                        access_rights_table.c.execute,
+                    ).where(
                         getattr(access_rights_table.c, field_name) == object_id,
                         access_rights_table.c.product_name == product_name,
                     )
                 )
             ]
-            group_permissions = [
-                FunctionGroupAccessRights(
-                    group_id=row.group_id,
-                    read=row.read,
-                    write=row.write,
-                    execute=row.execute,
-                )
-                for row in rows
-            ]
+            group_permissions = [FunctionGroupAccessRights.model_validate(row) for row in rows]
             access_rights_list.append((object_id, group_permissions))
 
         return access_rights_list
@@ -250,7 +248,11 @@ async def _internal_set_group_permissions(
         for object_id in object_ids:
             # Check if the group already has access rights for the function
             result = await transaction.execute(
-                access_rights_table.select().where(
+                sa.select(
+                    access_rights_table.c.read,
+                    access_rights_table.c.write,
+                    access_rights_table.c.execute,
+                ).where(
                     getattr(access_rights_table.c, field_name) == object_id,
                     access_rights_table.c.group_id == permission_group_id,
                 )
@@ -277,13 +279,18 @@ async def _internal_set_group_permissions(
                     )
                 )
                 row = result.one()
-                access_rights_list.append((object_id, FunctionGroupAccessRights(**row)))
+                access_rights_list.append(
+                    (
+                        object_id,
+                        FunctionGroupAccessRights.model_validate(row),
+                    )
+                )
             else:
                 # Update existing access rights only for non-None values
                 update_values = {
-                    "read": read if read is not None else row["read"],
-                    "write": write if write is not None else row["write"],
-                    "execute": execute if execute is not None else row["execute"],
+                    "read": read if read is not None else row.read,
+                    "write": write if write is not None else row.write,
+                    "execute": execute if execute is not None else row.execute,
                 }
 
                 update_result = await transaction.execute(
@@ -301,7 +308,12 @@ async def _internal_set_group_permissions(
                     )
                 )
                 updated_row = update_result.one()
-                access_rights_list.append((object_id, FunctionGroupAccessRights(**updated_row)))
+                access_rights_list.append(
+                    (
+                        object_id,
+                        FunctionGroupAccessRights.model_validate(updated_row),
+                    )
+                )
 
         return access_rights_list
 

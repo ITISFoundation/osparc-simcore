@@ -8,6 +8,7 @@ loads(dumps(my_object))
 
 """
 
+import asyncio
 import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -20,6 +21,7 @@ from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.encryption import JobEncryptionContext
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
@@ -47,6 +49,7 @@ from dask_task_models_library.models import (
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
@@ -72,10 +75,11 @@ from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
+    ComputationalBackendTaskResultsReleaseError,
     TaskSchedulingError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
-from ..models.comp_runs import RunMetadataDict
+from ..models.comp_runs import RunID, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
@@ -154,7 +158,7 @@ class DaskClient:
                     )
                     _logger.info(
                         "Scheduler info:\n%s",
-                        json_dumps(backend.client.scheduler_info(), indent=2),
+                        json_dumps(await get_scheduler_details(backend.client), indent=2),
                     )
                     return instance
         # this is to satisfy pylance
@@ -184,6 +188,7 @@ class DaskClient:
         task_labels: ContainerLabelsDict,
         task_owner: TaskOwner,
         s3_settings: S3Settings | None,
+        encryption: JobEncryptionContext | None,
         dask_resources: DaskResources,
         node_id: NodeID,
         job_id: DaskJobID,
@@ -195,6 +200,7 @@ class DaskClient:
             docker_auth: DockerBasicAuth,
             log_file_url: LogFileUploadURL,
             s3_settings: S3Settings | None,
+            encryption: JobEncryptionContext | None,
         ) -> TaskOutputData:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
@@ -208,6 +214,7 @@ class DaskClient:
                 docker_auth=docker_auth,
                 log_file_url=log_file_url,
                 s3_settings=s3_settings,
+                encryption=encryption,
             )
 
         if remote_fct is None:
@@ -236,6 +243,7 @@ class DaskClient:
                 ),
                 log_file_url=log_file_url,
                 s3_settings=s3_settings,
+                encryption=encryption,
                 key=job_id,
                 resources=dask_resources,
                 retries=0,
@@ -244,12 +252,21 @@ class DaskClient:
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
 
-            await dask_utils.wrap_client_async_routine(self.backend.client.publish_dataset(task_future, name=job_id))
+            try:
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.publish_dataset(task_future, name=job_id)
+                )
+            except KeyError as exc:
+                if "already exists" not in f"{exc}":
+                    raise
+                # NOTE: job_id (stable per run_id) was already published -> resubmission is a no-op.
+                _logger.info("dask task %s was already published, this should not happen but is harmless", f"{job_id=}")
 
             _logger.info(
-                "Dask task %s started [%s]",
+                "Dask task %s started [%s] with encryption [%s]",
                 f"{job_id=}",
                 f"{node_image.command=}",
+                f"{'enabled' if encryption else 'disabled'}",
             )
             return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
         except Exception:
@@ -269,9 +286,12 @@ class DaskClient:
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
         resource_tracking_run_id: ServiceRunID,
+        run_id: RunID,
     ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started.
+
+        `run_id` makes the job_id stable for a given (project_id, node_id, run_id), enabling idempotent resubmission.
 
         Raises:
           - ComputationalBackendNoS3AccessError when storage is not accessible
@@ -283,6 +303,7 @@ class DaskClient:
         """
 
         list_of_node_id_to_job_id: list[PublishedComputationTask] = []
+
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
                 service_key=node_image.name,
@@ -290,6 +311,7 @@ class DaskClient:
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
+                run_id=run_id,
             )
             assert node_image.node_requirements  # nosec
             dask_resources = dask_utils.from_node_reqs_to_dask_resources(node_image.node_requirements)
@@ -308,7 +330,7 @@ class DaskClient:
                 dask_utils.check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
-                    scheduler_info=self.backend.client.scheduler_info(),
+                    scheduler_info=await get_scheduler_details(self.backend.client),
                     task_resources=dask_resources,
                     node_image=node_image,
                 )
@@ -368,6 +390,10 @@ class DaskClient:
                 task_owner = dask_utils.compute_task_owner(
                     user_id, project_id, node_id, metadata.get("project_metadata", {})
                 )
+                encryption_metadata = dask_utils.get_job_encryption_context_metadata(metadata)
+                encryption = (
+                    JobEncryptionContext.from_metadata(encryption_metadata, node_id) if encryption_metadata else None
+                )
                 list_of_node_id_to_job_id.append(
                     await self._publish_in_dask(
                         remote_fct=remote_fct,
@@ -379,6 +405,7 @@ class DaskClient:
                         task_labels=task_labels,
                         task_owner=task_owner,
                         s3_settings=s3_settings,
+                        encryption=encryption,
                         dask_resources=dask_resources,
                         node_id=node_id,
                         job_id=job_id,
@@ -532,11 +559,15 @@ class DaskClient:
 
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
-        try:
+
+        async def _get_and_unpublish_dataset() -> None:
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(self.backend.client.get_dataset(name=job_id))
-
             await dask_utils.wrap_client_async_routine(self.backend.client.unpublish_dataset(name=job_id))
 
+        try:
+            await asyncio.wait_for(_get_and_unpublish_dataset(), timeout=_DASK_DEFAULT_TIMEOUT_S)
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
+        except TimeoutError as exc:
+            raise ComputationalBackendTaskResultsReleaseError(job_id=job_id) from exc

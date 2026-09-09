@@ -6,7 +6,6 @@ from models_library.api_schemas_webserver.products import (
     ProductGet,
     ProductUIGet,
 )
-from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
@@ -15,6 +14,7 @@ from ...security.decorators import (
     permission_required,
 )
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import parse_request_path_parameters_as
 from .. import _service, products_web
 from .._repository import ProductRepository
 from ..models import Product
@@ -55,10 +55,7 @@ async def _get_product(request: web.Request):
     req_ctx = ProductsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProductsRequestParams, request)
 
-    if path_params.product_name == "current":
-        product_name = req_ctx.product_name
-    else:
-        product_name = path_params.product_name
+    product_name = req_ctx.product_name if path_params.product_name == "current" else path_params.product_name
 
     product: Product = _service.get_product(request.app, product_name=product_name)
 

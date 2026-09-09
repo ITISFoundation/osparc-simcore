@@ -74,7 +74,7 @@ qx.Class.define("osparc.support.SuggestedQuestion", {
       this.__addAnswers(answers);
     },
 
-    shareProject: function() {
+    shareProject: function(answers) {
       this._removeAll();
       this.__addProductThumbnail();
       this.__addQuestionLabel(this.tr("Do you want to share this project with Support?"));

@@ -15,7 +15,7 @@ from models_library.api_schemas_directorv2.services import (
     ServiceExtras,
 )
 from models_library.function_services_catalog import iter_service_docker_data
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -302,6 +302,7 @@ async def _update_project_node_resources_from_hardware_info(
 async def generate_tasks_list_from_project(
     *,
     project: ProjectAtDB,
+    project_nodes: NodesDict,
     catalog_client: CatalogClient,
     published_nodes: list[NodeID],
     user_id: UserID,
@@ -320,7 +321,7 @@ async def generate_tasks_list_from_project(
 
     unique_service_key_versions: set[ServiceKeyVersion] = {
         ServiceKeyVersion(key=node.key, version=node.version)  # the service key version is frozen
-        for node in project.workbench.values()
+        for node in project_nodes.values()
     }
 
     key_version_to_node_infos = {
@@ -333,8 +334,8 @@ async def generate_tasks_list_from_project(
         for key_version in unique_service_key_versions
     }
 
-    for internal_id, node_id in enumerate(project.workbench, 1):
-        node: Node = project.workbench[node_id]
+    for internal_id, node_id in enumerate(project_nodes, 1):
+        node: Node = project_nodes[node_id]
         node_key_version = ServiceKeyVersion(key=node.key, version=node.version)
         node_details, node_extras, node_labels = key_version_to_node_infos.get(
             node_key_version,

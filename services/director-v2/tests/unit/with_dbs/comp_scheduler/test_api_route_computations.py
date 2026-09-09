@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-positional-arguments
 
+import base64
 import datetime as dt
 import json
 import re
@@ -26,7 +27,12 @@ from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.computations import (
     ComputationCreate,
+    ComputationDelete,
     ComputationGet,
+    ComputationStop,
+)
+from models_library.api_schemas_directorv2.encryption import (
+    JobEncryptionContextMetadata,
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
@@ -50,6 +56,7 @@ from models_library.wallets import WalletInfo
 from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
@@ -60,6 +67,7 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
     _RAM_SAFE_MARGIN_RATIO,
 )
 from simcore_service_director_v2.utils.computations import to_node_class
+from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
@@ -698,6 +706,59 @@ async def test_start_computation(
     assert mocked_get_service_resources.call_count == len(fake_workbench_without_outputs)
 
 
+async def test_start_computation_with_encryption_propagates_context_to_pipeline(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    product_name: str,
+    product_api_base_url: AnyHttpUrl,
+    fake_workbench_without_outputs: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
+    mocker: MockerFixture,
+):
+    mocked_run_new_pipeline = mocker.patch(
+        "simcore_service_director_v2.api.routes.computations.run_new_pipeline",
+        autospec=True,
+    )
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+
+    root_key_b64 = base64.b64encode(b"0" * 32).decode("ascii")
+    # encryption is defined per computational node of the pipeline
+    encrypted_node_id = next(iter(proj.workbench))
+    node_input_port_to_file_id = {"input_1": "input_1"}
+
+    create_computation_url = httpx.URL("/v2/computations")
+    body = jsonable_encoder(
+        ComputationCreate(
+            user_id=user["id"],
+            project_id=proj.uuid,
+            start_pipeline=True,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            collection_run_id=fake_collection_run_id,
+        )
+    )
+    # NOTE: the SecretStr root_key would be masked by jsonable_encoder, so we inject the
+    # encryption payload as a raw JSON dict carrying the base64-encoded (fake) ciphertext
+    body["encryption"] = {
+        "encrypted_root_key": root_key_b64,
+        "input_port_to_file_id": {encrypted_node_id: node_input_port_to_file_id},
+    }
+    response = await async_client.post(create_computation_url, json=body)
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+
+    mocked_run_new_pipeline.assert_called_once()
+    run_metadata = mocked_run_new_pipeline.call_args.kwargs["run_metadata"]
+    stored_encryption = run_metadata["encryption"]
+    assert stored_encryption["encrypted_root_key"] == root_key_b64
+    reparsed = JobEncryptionContextMetadata.model_validate(stored_encryption)
+    assert reparsed.input_port_to_file_id == {NodeID(encrypted_node_id): node_input_port_to_file_id}
+
+
 async def test_start_computation_with_project_node_resources_defined(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
@@ -943,3 +1004,168 @@ async def test_get_computation_from_published_computation_task(
     assert returned_computation.model_dump(include=_CHANGED_FIELDS) != expected_computation.model_dump(
         include=_CHANGED_FIELDS
     )
+
+
+async def test_delete_computation_success(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    """Test successful pipeline deletion when pipeline is not running."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+    await create_comp_run(
+        user=user,
+        project=proj,
+        result=StateType.SUCCESS,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    response = await async_client.request(
+        "DELETE",
+        delete_computation_url,
+        json=ComputationDelete(user_id=user["id"], force=False).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+
+    # calling a second time returns 204 as well, since the pipeline is already deleted (idempotent)
+    response = await async_client.request(
+        "DELETE",
+        delete_computation_url,
+        json=ComputationDelete(user_id=user["id"], force=False).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+
+
+async def test_delete_computation_fails_when_pipeline_does_not_stop_in_time(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    async_client: httpx.AsyncClient,
+    mocker: MockerFixture,
+):
+    """Test that deletion raises 409 when pipeline doesn't stop within timeout."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+
+    # Create a comp_run that is always in PUBLISHED (running) state
+    await create_comp_run(
+        user=user,
+        project=proj,
+        result=StateType.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    # Mock stop_pipeline to succeed silently
+    mocker.patch(
+        "simcore_service_director_v2.api.routes.computations.stop_pipeline",
+        autospec=True,
+    )
+
+    # NOTE: check_pipeline_stopped is a nested function and cannot be mocked directly.
+    # Instead, use a short wait_for so the real retry loop times out quickly: since the
+    # comp_run stays PUBLISHED (no scheduler advances it in this test), the pipeline
+    # never reports as stopped.
+    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    response = await async_client.request(
+        "DELETE",
+        delete_computation_url,
+        json=ComputationDelete(user_id=user["id"], force=True, wait_for=dt.timedelta(seconds=0.2)).model_dump(
+            mode="json"
+        ),
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+    assert "could not be stopped properly after" in response.text.lower()
+
+
+async def test_stop_computation_can_be_called_again_once_pipeline_stopped(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    async_client: httpx.AsyncClient,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    """Stopping a computation must be safe to call again once the pipeline has
+    actually stopped, without raising any error (e.g. it must not rely on the
+    now-removed ComputationalSchedulerError handling)."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+    await create_comp_run(
+        user=user,
+        project=proj,
+        result=StateType.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    stop_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}:stop")
+
+    # first call: the pipeline is running, so it gets marked for cancellation
+    response = await async_client.post(
+        stop_computation_url,
+        json=ComputationStop(user_id=user["id"]).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+
+    # wait for the pipeline to stop (simulates the scheduler eventually reporting it as stopped)
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_runs.update()
+            .where((comp_runs.c.user_id == user["id"]) & (comp_runs.c.project_uuid == f"{proj.uuid}"))
+            .values(result=RUNNING_STATE_TO_DB[RunningState.ABORTED])
+        )
+
+    # second call: the pipeline is already stopped, this must not raise
+    response = await async_client.post(
+        stop_computation_url,
+        json=ComputationStop(user_id=user["id"]).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+
+
+async def test_stop_computation_that_was_never_run_does_not_fail(
+    minimal_configuration: None,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    """Stopping a computation that has a pipeline but was never run (i.e. no
+    comp_run entry exists yet) must not fail (e.g. it must not raise/propagate
+    ComputationalRunNotFoundError)."""
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+
+    # NOTE: no comp_run is created here, simulating a pipeline that was never started
+
+    stop_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}:stop")
+    response = await async_client.post(
+        stop_computation_url,
+        json=ComputationStop(user_id=user["id"]).model_dump(mode="json"),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    returned_computation = ComputationGet.model_validate(response.json())
+    assert returned_computation.state == RunningState.NOT_STARTED
+    assert returned_computation.iteration is None
+    assert returned_computation.started is None
+    assert returned_computation.stopped is None
+    assert returned_computation.submitted is None

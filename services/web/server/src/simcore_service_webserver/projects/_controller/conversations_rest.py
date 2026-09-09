@@ -19,11 +19,6 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, ConfigDict, field_validator
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-    parse_request_query_parameters_as,
-)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -31,6 +26,11 @@ from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
+from ...web_requests_validation import (
+    parse_request_body_as,
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from .. import _conversations_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
@@ -63,7 +63,8 @@ class _ProjectConversationsCreateBodyParams(InputSchema):
             ConversationType.PROJECT_ANNOTATION,
             ConversationType.PROJECT_STATIC,
         ]:
-            raise ValueError("Only project conversations are allowed")
+            _msg = "Only project conversations are allowed"
+            raise ValueError(_msg)
         return value
 
 

@@ -11,6 +11,7 @@ import sys
 from collections.abc import AsyncGenerator, Callable, Iterable
 from pathlib import Path
 from typing import TypedDict
+from urllib.parse import quote_plus
 
 import httpx
 import pytest
@@ -30,10 +31,10 @@ from pytest_simcore.helpers.faker_factories import (
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
-from simcore_service_api_server.clients.postgres import get_engine
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -95,7 +96,15 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> P
         "database": environ["POSTGRES_DB"],
     }
 
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**config)
+    user = quote_plus(config["user"])
+    password = quote_plus(config["password"])
+    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+        user=user,
+        password=password,
+        host=config["host"],
+        port=config["port"],
+        database=config["database"],
+    )
 
     def _create_checker() -> Callable:
         def is_postgres_responsive() -> bool:
@@ -161,8 +170,8 @@ def app_environment(
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
-    mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
-    mocker.patch("simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation")
+    mocker.patch("simcore_service_api_server.core.application.configure_rabbitmq")
+    mocker.patch("simcore_service_api_server.core.application.configure_api_server_prometheus_instrumentation")
 
     envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
     assert "API_SERVER_POSTGRES" not in envs

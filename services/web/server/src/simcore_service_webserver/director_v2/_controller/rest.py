@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.encryption import JobEncryptionContextMetadata
 from models_library.api_schemas_webserver.computations import (
     ComputationGet,
     ComputationPathParams,
@@ -14,10 +15,6 @@ from models_library.api_schemas_webserver.computations import (
 from models_library.projects import CommitID, ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -32,6 +29,7 @@ from ...projects.projects_metadata_service import (
 )
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
+from ...web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from .. import _comp_runs_collections_service, _director_v2_service
 from .._client import DirectorV2RestClient
 from .._comp_runs_collections_models import CompRunCollectionDBGet
@@ -56,10 +54,14 @@ async def start_computation(request: web.Request) -> web.Response:
 
     subgraph: set[str] = set()
     force_restart: bool = False  # NOTE: deprecate this entry
+    encryption: JobEncryptionContextMetadata | None = None
     if request.can_read_body:
         body_params = await parse_request_body_as(ComputationStart, request)
-        subgraph = body_params.subgraph
-        force_restart = body_params.force_restart
+        subgraph, force_restart, encryption = (
+            body_params.subgraph,
+            body_params.force_restart,
+            body_params.encryption,
+        )
 
     # Group properties
     group_properties = await _director_v2_service.get_group_properties(
@@ -122,6 +124,7 @@ async def start_computation(request: web.Request) -> web.Response:
         "use_on_demand_clusters": group_properties.use_on_demand_clusters,
         "wallet_info": wallet_info,
         "collection_run_id": collection_run_id,
+        **({"encryption": encryption} if encryption is not None else {}),
     }
 
     run_policy = get_project_run_policy(request.app)
@@ -173,8 +176,9 @@ async def start_computation(request: web.Request) -> web.Response:
 
     # Return 200 only when ALL pipelines are up-to-date (nothing to run)
     all_ok = bool(_response_statuses) and all(s == status.HTTP_200_OK for s in _response_statuses)
-    response_cls = web.HTTPOk if all_ok else web.HTTPCreated
-    return envelope_json_response(ComputationStarted.model_validate(data), status_cls=response_cls)
+    return envelope_json_response(
+        ComputationStarted.model_validate(data), status_cls=web.HTTPOk if all_ok else web.HTTPCreated
+    )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:stop", name="stop_computation")

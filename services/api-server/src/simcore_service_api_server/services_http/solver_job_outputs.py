@@ -3,6 +3,7 @@ from typing import Any, TypeAlias
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.users import UserID
 from pydantic import StrictBool, StrictFloat, StrictInt, TypeAdapter
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
@@ -14,11 +15,15 @@ from ..exceptions.backend_errors import SolverOutputNotFoundError
 log = logging.getLogger(__name__)
 
 # ResultsTypes are types used in the job outputs (see ArgumentType)
-ResultsTypes: TypeAlias = StrictFloat | StrictInt | StrictBool | BaseFileLink | str | list | None
+# NOTE: kept as a legacy `TypeAlias` (not PEP 695 `type` statement) on purpose: this alias feeds
+# into response models used to generate the OpenAPI spec, and PEP 695 `type` aliases
+# (`TypeAliasType`) are not resolved the same way, causing OpenAPI schema generation issues.
+# SEE models_library/clusters.py::ClusterAuthentication for the analogous pydantic-settings case.
+ResultsTypes: TypeAlias = StrictFloat | StrictInt | StrictBool | BaseFileLink | str | list | None  # noqa: UP040
 
 
 async def get_solver_output_results(
-    user_id: int, project_uuid: ProjectID, node_uuid: NodeID, db_engine: AsyncEngine
+    user_id: UserID, project_uuid: ProjectID, node_uuid: NodeID, db_engine: AsyncEngine
 ) -> dict[str, ResultsTypes]:
     """
     Wraps calls via node_ports to retrieve project's output

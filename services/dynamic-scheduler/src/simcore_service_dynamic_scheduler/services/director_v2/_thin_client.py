@@ -2,8 +2,8 @@ import datetime
 from typing import cast
 
 from common_library.exclude import as_dict_exclude_none
-from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -39,7 +39,6 @@ class DirectorV2ThinClient(BaseThinClient):
             total_retry_interval=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
             default_http_client_timeout=Timeout(DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S),
-            extra_allowed_method_names={"attach_lifespan_to"},
             tracing_config=get_tracing_config(app),
         )
 
@@ -75,7 +74,7 @@ class DirectorV2ThinClient(BaseThinClient):
 
         return await self.client.post(
             "/dynamic_services",
-            content=json_dumps(post_data),
+            json=jsonable_encoder(post_data),
             headers=headers,
             follow_redirects=True,
         )
@@ -119,7 +118,7 @@ class DirectorV2ThinClient(BaseThinClient):
         post_data = {"port_keys": port_keys}
         return await self.client.post(
             f"/dynamic_services/{node_id}:retrieve",
-            content=json_dumps(post_data),
+            json=jsonable_encoder(post_data),
             timeout=timeout.total_seconds(),
         )
 

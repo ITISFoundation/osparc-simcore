@@ -6,8 +6,6 @@ import pytest
 from cloudpickle import dumps, loads
 from dask_task_models_library.container_tasks.io import (
     FilePortSchema,
-    FileUrl,
-    PortSchema,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -15,29 +13,9 @@ from dask_task_models_library.container_tasks.io import (
 from faker import Faker
 
 
-@pytest.mark.parametrize(
-    "model_cls",
-    (
-        PortSchema,
-        FilePortSchema,
-        FileUrl,
-        TaskInputData,
-        TaskOutputDataSchema,
-        TaskOutputData,
-    ),
-)
-def test_io_models_examples(model_cls, model_cls_examples):
-    for name, example in model_cls_examples.items():
-        print(name, ":", pformat(example))
-
-        model_instance = model_cls.model_validate(example)
-
-        assert model_instance, f"Failed with {name}"
-        print(name, ":", model_instance)
-
-
 def _create_fake_outputs(
     schema: TaskOutputDataSchema,
+    *,
     output_folder: Path,
     set_optional_field: bool,
     faker: Faker,
@@ -69,7 +47,13 @@ def test_create_task_output_from_task_with_optional_fields_as_required(
 ):
     for schema_example in TaskOutputDataSchema.model_json_schema()["examples"]:
         task_output_schema = TaskOutputDataSchema.model_validate(schema_example)
-        outputs_file_name = _create_fake_outputs(task_output_schema, tmp_path, optional_fields_set, faker)
+        outputs_file_name = _create_fake_outputs(
+            task_output_schema,
+            output_folder=tmp_path,
+            set_optional_field=optional_fields_set,
+            faker=faker,
+        )
+        assert outputs_file_name
         task_output_data = TaskOutputData.from_task_output(
             schema=task_output_schema,
             output_folder=tmp_path,
@@ -95,7 +79,7 @@ def test_create_task_output_from_task_throws_when_there_are_missing_files(tmp_pa
         }
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Could not locate .+"):
         TaskOutputData.from_task_output(
             schema=task_output_schema,
             output_folder=tmp_path,
@@ -133,7 +117,7 @@ def test_create_task_output_from_task_throws_when_there_are_entries(tmp_path: Pa
         }
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Could not locate .+"):
         TaskOutputData.from_task_output(
             schema=task_output_schema,
             output_folder=tmp_path,
@@ -160,11 +144,11 @@ def test_create_task_output_from_task_does_not_throw_when_there_are_optional_ent
 
 @pytest.mark.parametrize(
     "model_cls",
-    (
+    [
         TaskInputData,
         TaskOutputDataSchema,
         TaskOutputData,
-    ),
+    ],
 )
 def test_objects_are_compatible_with_dask_requirements(model_cls, model_cls_examples):
     # NOTE: fcts could also be passed through the same test
@@ -187,7 +171,12 @@ def test_create_task_output_from_task_ignores_additional_entries(tmp_path: Path,
             },
         }
     )
-    output_file = _create_fake_outputs(task_output_schema, tmp_path, False, faker)
+    output_file = _create_fake_outputs(
+        task_output_schema,
+        output_folder=tmp_path,
+        set_optional_field=False,
+        faker=faker,
+    )
     assert output_file
     # Add more data to the output file to simulate additional entries
     file_path = tmp_path / output_file

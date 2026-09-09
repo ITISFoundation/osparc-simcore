@@ -191,8 +191,8 @@ def ec2_instance_custom_tags(
     # NOTE: we override here the config as the autoscaling in computational case is started with more custom tags
     return {
         **ec2_instance_custom_tags,
-        "user_id": faker.word(),
-        "wallet_id": faker.word(),
+        "io.simcore.user_id": faker.word(),
+        "io.simcore.wallet_id": faker.word(),
     }
 
 

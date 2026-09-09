@@ -97,7 +97,7 @@ async def test_send_mail_with_bcc_and_attachment(
         message=EmailMessage(
             from_=EmailContact(email="support@test-domain.com"),
             to=EmailContact(email=faker.email()),
-            bcc=bcc_contact,
+            bcc=[bcc_contact],
             content=EmailContent(
                 subject="Test with BCC and attachment",
                 body_text="Plain text body",

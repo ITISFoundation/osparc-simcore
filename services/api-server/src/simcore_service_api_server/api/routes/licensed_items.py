@@ -5,7 +5,7 @@ from models_library.licenses import LicensedItemID
 from models_library.resource_tracker_licensed_items_checkouts import (
     LicensedItemCheckoutID,
 )
-from pydantic import PositiveInt
+from models_library.users import UserID
 
 from ...api.dependencies.authentication import get_current_user_id, get_product_name
 from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
@@ -51,7 +51,7 @@ async def release_licensed_item(
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     rut_rpc: Annotated[ResourceUsageTrackerClient, Depends(get_resource_usage_tracker_client)],
     product_name: Annotated[str, Depends(get_product_name)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     licensed_item_id: LicensedItemID,
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ):
@@ -61,7 +61,8 @@ async def release_licensed_item(
     if _licensed_item_checkout.licensed_item_id != licensed_item_id:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"{licensed_item_id} is not the license_item_id associated with the checked out item {licensed_item_checkout_id}",
+            detail=f"{licensed_item_id} is not the license_item_id associated "
+            f"with the checked out item {licensed_item_checkout_id}",
         )
     return await web_api_rpc.release_licensed_item_for_wallet(
         product_name=product_name,

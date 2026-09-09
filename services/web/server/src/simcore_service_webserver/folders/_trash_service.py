@@ -288,20 +288,28 @@ async def batch_delete_trashed_folders_as_admin(
     """
     errors: list[tuple[FolderID, Exception]] = []
 
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    # NOTE: this loop deletes matching rows as it goes, so re-query from offset=0 each
+    # round (iter_pagination_params assumes a stable collection, which doesn't hold here).
+    # Failed (non-deleted) folders stay in the DB and remain first in the trashed-ASC
+    # ordering, so only skip past them via offset to avoid refetching them forever.
+    offset = 0
+    while True:
         (
-            page_params.total_number_of_items,
+            _,
             expired_trashed_folders,
         ) = await _folders_repository.list_folders_db_as_admin(
             app,
             trashed_explicitly=True,
             trashed_before=trashed_before,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=offset,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),
         )
+        if not expired_trashed_folders:
+            break
 
         # BATCH delete
+        newly_failed = 0
         for folder in expired_trashed_folders:
             try:
                 await _folders_repository.delete_recursively(app, folder_id=folder.folder_id, product_name=product_name)
@@ -311,6 +319,9 @@ async def batch_delete_trashed_folders_as_admin(
                 if fail_fast:
                     raise
                 errors.append((folder.folder_id, err))
+                newly_failed += 1
+
+        offset += newly_failed
 
     if errors:
         raise FolderBatchDeleteError(errors=errors, trashed_before=trashed_before, product_name=product_name)
@@ -332,18 +343,25 @@ async def batch_delete_folders_with_content_in_root_workspace_as_admin(
     deleted_folder_ids: list[FolderID] = []
     errors: list[tuple[FolderID, Exception]] = []
 
-    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    # NOTE: see batch_delete_trashed_folders_as_admin for why we avoid
+    # iter_pagination_params and re-query from offset=0, skipping only past failures.
+    offset = 0
+    while True:
         (
-            page_params.total_number_of_items,
+            _,
             folders_for_deletion,
         ) = await _folders_repository.list_folders_db_as_admin(
             app,
             shared_workspace_id=workspace_id,  # <-- Workspace filter
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=offset,
+            limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
             order_by=OrderBy(field=IDStr("folder_id")),
         )
+        if not folders_for_deletion:
+            break
+
         # BATCH delete
+        newly_failed = 0
         for folder in folders_for_deletion:
             try:
                 await _folders_repository.delete_recursively(app, folder_id=folder.folder_id, product_name=product_name)
@@ -352,6 +370,9 @@ async def batch_delete_folders_with_content_in_root_workspace_as_admin(
                 if fail_fast:
                     raise
                 errors.append((folder.folder_id, err))
+                newly_failed += 1
+
+        offset += newly_failed
 
     if errors:
         raise FolderBatchDeleteError(

@@ -1,6 +1,7 @@
 import logging
 
 from aws_library.s3 import S3AccessError, S3KeyNotFoundError
+from celery_library.errors import TaskManagerError, TaskOrGroupNotFoundError
 from fastapi import FastAPI, status
 from servicelib.fastapi.http_error import (
     make_http_error_handler_for_exception,
@@ -44,6 +45,7 @@ def set_exception_handlers(app: FastAPI) -> None:
         S3KeyNotFoundError,
         ProjectNotFoundError,
         DatcoreAdapterFileNotFoundError,
+        TaskOrGroupNotFoundError,
     ):
         app.add_exception_handler(
             exc_not_found,
@@ -68,6 +70,7 @@ def set_exception_handlers(app: FastAPI) -> None:
     for exc_3rd_party in (
         DBAPIError,
         S3AccessError,
+        TaskManagerError,
     ):
         app.add_exception_handler(
             exc_3rd_party,

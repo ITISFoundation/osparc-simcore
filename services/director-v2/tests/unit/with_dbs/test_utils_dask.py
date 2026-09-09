@@ -13,6 +13,7 @@ from random import choice
 from typing import Any
 from unittest import mock
 
+import distributed
 import pytest
 from _helpers import PublishedProject, set_comp_task_inputs, set_comp_task_outputs
 from dask_task_models_library.container_tasks.io import (
@@ -25,6 +26,7 @@ from dask_task_models_library.container_tasks.protocol import (
     ContainerLabelsDict,
 )
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from distributed import SpecCluster
 from faker import Faker
 from fastapi import FastAPI
@@ -91,7 +93,7 @@ async def mocked_node_ports_filemanager_fcts(
         "get_upload_links_from_s3": mocker.patch(
             "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_links_from_s3",
             autospec=True,
-            side_effect=lambda **kwargs: (
+            side_effect=lambda **kwargs: (  # noqa: ARG005
                 0,
                 FileUploadSchema(
                     urls=[
@@ -198,6 +200,7 @@ async def test_parse_output_data(
     fake_io_schema: dict[str, dict[str, str]],
     fake_task_output_data: TaskOutputData,
     mocker: MockerFixture,
+    faker: Faker,
 ):
     # need some fakes set in the DB
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
@@ -213,6 +216,7 @@ async def test_parse_output_data(
         user_id,
         published_project.project.uuid,
         sleeper_task.node_id,
+        run_id=faker.pyint(min_value=1),
     )
     await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data)
 
@@ -395,7 +399,8 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mock.call(
             user_id=user_id,
             store_id=0,
-            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/"
+            f"{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
         )
         for key in fake_outputs
     ] + [
@@ -478,8 +483,57 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
             node_id=node_id,
             node_image=sleeper_task.image,
-            scheduler_info=dask_client.backend.client.scheduler_info(),
+            scheduler_info=await get_scheduler_details(dask_client.backend.client),
             task_resources={},
+        )
+
+
+@pytest.fixture
+def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
+    """6 workers, only the last one exposing a distinctive resource."""
+    return {
+        f"worker-{i}": {
+            "cls": distributed.Worker,
+            "options": {
+                "nthreads": 1,
+                "resources": {"CPU": 1, "RAM": 1e9, "SPECIAL": 1} if i == 5 else {"CPU": 1, "RAM": 1e9},
+            },
+        }
+        for i in range(6)
+    }
+
+
+async def test_check_if_cluster_is_able_to_run_pipeline_with_more_than_5_workers(
+    dask_workers_config_with_more_than_5_workers: dict[str, Any],
+    dask_scheduler_config: dict[str, Any],
+    project_id: ProjectID,
+    node_id: NodeID,
+    published_project: PublishedProject,
+):
+    """Regression test: for asynchronous clients, scheduler_info()'s "workers" is permanently
+    empty (its periodic background refresh always fetches with n_workers=0, see distributed#9308's
+    discussion), which would make check_if_cluster_is_able_to_run_pipeline() miss all resources.
+    get_scheduler_details() uses a live RPC instead and must return all workers reliably."""
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    async with (
+        distributed.SpecCluster(
+            workers=dask_workers_config_with_more_than_5_workers,
+            scheduler=dask_scheduler_config,
+            asynchronous=True,
+        ) as cluster,
+        distributed.Client(cluster.scheduler_address, asynchronous=True) as client,
+    ):
+        await client.wait_for_workers(6, timeout=10)
+        scheduler_info = await get_scheduler_details(client)
+        assert len(scheduler_info["workers"]) == 6, "get_scheduler_details() must return all 6 workers"
+
+        # the resource only present on the 6th worker must still be discoverable
+        check_if_cluster_is_able_to_run_pipeline(
+            project_id=project_id,
+            node_id=node_id,
+            node_image=sleeper_task.image,
+            scheduler_info=scheduler_info,
+            task_resources={"SPECIAL": 1},
         )
 
 

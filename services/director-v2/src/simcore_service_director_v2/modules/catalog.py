@@ -1,10 +1,12 @@
 import logging
 import urllib.parse
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, status
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceVersion
@@ -22,15 +24,16 @@ from ..utils.client_decorators import handle_errors, handle_retry
 logger = logging.getLogger(__name__)
 
 
-def setup(
-    app: FastAPI,
+def configure_catalog(
+    app_lifespan: LifespanManager,
+    *,
     catalog_settings: CatalogSettings | None,
     tracing_settings: TracingSettings | None,
 ) -> None:
     if not catalog_settings:
         catalog_settings = CatalogSettings()
 
-    async def on_startup() -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         client = httpx.AsyncClient(
             base_url=f"{catalog_settings.api_base_url}",
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
@@ -49,14 +52,12 @@ def setup(
 
         # Here we currently do not ensure the catalog is up on start
         # This will need to be assessed.
+        try:
+            yield
+        finally:
+            await client.aclose()
 
-    async def on_shutdown() -> None:
-        client = CatalogClient.instance(app).client
-        await client.aclose()
-        del client
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 @dataclass

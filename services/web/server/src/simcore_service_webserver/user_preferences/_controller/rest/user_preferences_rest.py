@@ -4,14 +4,11 @@ from models_library.api_schemas_webserver.users_preferences import (
     PatchRequestBody,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import (
-    parse_request_body_as,
-    parse_request_path_parameters_as,
-)
 
 from ...._meta import API_VTAG
 from ....login.decorators import login_required
 from ....models import AuthenticatedRequestContext
+from ....web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from ... import _service
 from ._rest_exceptions import handle_rest_requests_exceptions
 

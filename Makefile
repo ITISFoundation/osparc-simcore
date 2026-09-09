@@ -41,7 +41,6 @@ SERVICES_NAMES_TO_BUILD := \
   director \
   director-v2 \
   dynamic-sidecar \
-	efs-guardian \
 	invitations \
   migration \
 	notifications \
@@ -64,18 +63,26 @@ export VCS_STATUS_CLIENT:= $(if $(shell git status -s),'modified/untracked','cle
 export BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # api-versions
-export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
+export AGENT_API_VERSION := $(shell cat $(CURDIR)/services/agent/VERSION)
 export API_SERVER_API_VERSION := $(shell cat $(CURDIR)/services/api-server/VERSION)
 export AUTOSCALING_API_VERSION := $(shell cat $(CURDIR)/services/autoscaling/VERSION)
 export CATALOG_API_VERSION    := $(shell cat $(CURDIR)/services/catalog/VERSION)
+export CLUSTERS_KEEPER_API_VERSION := $(shell cat $(CURDIR)/services/clusters-keeper/VERSION)
+export DASK_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dask-sidecar/VERSION)
 export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION)
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
+export DOCKER_API_PROXY_API_VERSION := $(shell cat $(CURDIR)/services/docker-api-proxy/VERSION)
+export DYNAMIC_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dynamic-sidecar/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
+export MIGRATION_API_VERSION := $(shell cat $(CURDIR)/services/migration/VERSION)
 export PAYMENTS_API_VERSION  := $(shell cat $(CURDIR)/services/payments/VERSION)
 export DYNAMIC_SCHEDULER_API_VERSION  := $(shell cat $(CURDIR)/services/dynamic-scheduler/VERSION)
 export NOTIFICATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/notifications/VERSION)
 export DATCORE_ADAPTER_API_VERSION    := $(shell cat $(CURDIR)/services/datcore-adapter/VERSION)
+export RESOURCE_USAGE_TRACKER_API_VERSION := $(shell cat $(CURDIR)/services/resource-usage-tracker/VERSION)
+export SERVICE_INTEGRATION_API_VERSION := $(shell cat $(CURDIR)/packages/service-integration/VERSION)
+export STATIC_WEBSERVER_API_VERSION := $(shell cat $(CURDIR)/services/static-webserver/VERSION)
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
@@ -86,6 +93,9 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 # version tags
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
+
+# content-hash tag of the shared simcore base images (see services/_base_images/Dockerfile)
+export BASE_TAG ?= $(shell ci/helpers/compute_base_image_tag.bash)
 
 MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -mindepth 2 -type f -name 'Makefile' -not -path '*/.*' -exec grep -l '^openapi-specs:' {} \; | xargs realpath)
 
@@ -147,10 +157,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-.PHONY: help
-
-help: ## help on rule's targets
-	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
+include scripts/makefiles/help.mk
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
@@ -164,7 +171,7 @@ _check_venv_active:
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
-## DOCKER BUILD -------------------------------
+##@ Docker Build
 #
 # - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
@@ -189,6 +196,16 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 	,) \
 )\
 docker buildx bake --allow=fs.read=.. \
+	--set *.args.BASE_TAG=$(BASE_TAG) \
+	--set *.args.DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	--set *.annotations+="org.opencontainers.image.created=$(BUILD_DATE)" \
+	--set *.annotations+="org.opencontainers.image.source=$(VCS_URL)" \
+	--set *.annotations+="org.opencontainers.image.revision=$(VCS_REF)" \
+	--set *.annotations+="org.opencontainers.image.vendor=IT'IS Foundation" \
+	--set *.annotations+="org.opencontainers.image.licenses=MIT" \
+	$(foreach service, $(if $(target),$(target),$(INCLUDED_SERVICES)),\
+		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-runtime-base:$(BASE_TAG)=target:simcore-runtime-base \
+		--set $(service).contexts.$(DOCKER_REGISTRY)/simcore-build-base:$(BASE_TAG)=target:simcore-build-base) \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
@@ -196,19 +213,19 @@ docker buildx bake --allow=fs.read=.. \
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
       --allow=fs.write=$(local-dest) \
-			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
-			,--load\
+			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar$(comma)name=local/$(service):production") \
+			,$(if $(push),,--load)\
 		)\
 	)\
 	$(if $(push),\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-				--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
+				--set $(service).tags= \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).output="type=registry$(comma)\
-			compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
+			--set $(service).output="type=image$(comma)name=$(DOCKER_REGISTRY)/$(service)$(if $(push-by-digest),,:$(DOCKER_IMAGE_TAG))$(comma)push=true$(if $(push-by-digest),$(comma)push-by-digest=true,)$(comma)compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
 		)\
 	,) \
+	$(if $(metadata-file),--metadata-file $(metadata-file),) \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
@@ -219,7 +236,7 @@ popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`. To push: `make push=true DOCKER_REGISTRY=... DOCKER_IMAGE_TAG=...`. To push untagged by digest instead (capturing the digest via a metadata file): `make push=true push-by-digest=true metadata-file=/tmp/metadata.json DOCKER_REGISTRY=...`
 	# Building service$(if $(target),,s) $(target) $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 	# List production images
@@ -257,7 +274,7 @@ shell:
 	docker run -it local/$(target):production /bin/sh
 
 
-## DOCKER SWARM -------------------------------
+##@ Docker Swarm
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
 #
@@ -535,7 +552,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 
-## DOCKER TAGS  -------------------------------
+##@ Docker Tags
 
 .PHONY: tag-local tag-version tag-latest
 
@@ -557,7 +574,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 
-## DOCKER PULL/PUSH  -------------------------------
+##@ Docker Pull/Push
 
 .PHONY: pull-version
 
@@ -572,11 +589,15 @@ push-latest: tag-latest
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) push-version
 
-# below BUILD_TARGET gets overwritten but is required when merging yaml files
 push-version: tag-version
 	# pushing '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# below BUILD_TARGET gets overwritten but is required when merging yaml files
+	# NOTE: services/docker-compose-build.yml is merged in only so each service carries
+	# a 'build:' section (docker compose push skips any service without one). The push
+	# is scoped to SERVICES_NAMES_TO_BUILD so the shared base images (simcore-runtime-base,
+	# simcore-build-base) defined there are never pushed by this target.
 	@export BUILD_TARGET=undefined; \
-	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
+	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push $(SERVICES_NAMES_TO_BUILD)
 
 pull-externals: ## pulls non-simcore external images defined in docker-compose.yml
 	# Pulling external images
@@ -590,13 +611,8 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 		xargs -r -n 1 docker pull
 
 
-.PHONY: promote-version
-promote-version: guard-FROM_DOCKER_TAG_PREFIX guard-TO_DOCKER_TAG_PREFIX guard-GIT_TAG guard-DOCKER_USERNAME guard-DOCKER_PASSWORD guard-DOCKER_REGISTRY guard-OWNER ## Promotes registry images from one docker tag family to another without loading images locally
-	# Delegates implementation to ci/deploy/dockerhub-tag-version.bash
-	@bash ci/deploy/dockerhub-tag-version.bash
 
-
-## ENVIRONMENT -------------------------------
+##@ Environment
 
 .PHONY: devenv devenv-all node-env
 
@@ -654,7 +670,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 
-## TOOLS -------------------------------
+##@ Tools
 
 .PHONY: pylint
 
@@ -744,7 +760,7 @@ postgres-upgrade: ## initialize or upgrade postgres db to latest state
 CITATION-validate: ## validates CITATION.cff file
 	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
-## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
+##@ Local Docker Registry (local-dev)
 
 LOCAL_REGISTRY_HOSTNAME := registry
 LOCAL_REGISTRY_VOLUME   := $(LOCAL_REGISTRY_HOSTNAME)
@@ -834,7 +850,7 @@ info-registry: ## info on local registry (if any)
 	@echo No target set)
 
 
-## INFO -------------------------------
+##@ Info
 
 .PHONY: info info-images info-swarm
 info: ## displays setup information
@@ -900,7 +916,7 @@ endif
 
 
 
-## CLEAN -------------------------------
+##@ Clean
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
 
@@ -952,7 +968,8 @@ reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
 
 
-# RELEASE --------------------------------------------------------------------------------------------------------------------------------------------
+
+##@ Release
 
 staging_prefix := staging_
 prod_prefix := v
@@ -990,9 +1007,7 @@ define create_github_release_url
 endef
 
 # NOTE: 'staging-latest' is a movable tag that always points to the most recent staging release commit.
-# It is updated only for staging releases (guarded via $(findstring -staging, $@)).
 define create_staging_latest_tag
-	# move the movable 'staging-latest' tag to the released commit and force-push it
 	git tag --force staging-latest $(_url_encoded_target) && \
 	git push --force origin staging-latest && \
 	echo -e "\e[32mUpdated movable tag 'staging-latest' -> $(_url_encoded_target) on origin"

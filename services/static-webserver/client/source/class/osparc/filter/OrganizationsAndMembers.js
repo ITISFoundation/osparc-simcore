@@ -68,11 +68,11 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
       // sort them first
       visibleCollaborators.sort((a, b) => {
         const typeDiff = collabTypeOrder.indexOf(a["collabType"]) - collabTypeOrder.indexOf(b["collabType"]);
-          if (typeDiff !== 0) {
-            return typeDiff;
-          }
-          // fallback: sort alphabetically by label
-          return a.getLabel().localeCompare(b.getLabel());
+        if (typeDiff !== 0) {
+          return typeDiff;
+        }
+        // fallback: sort alphabetically by label
+        return a.getLabel().localeCompare(b.getLabel());
       });
 
       visibleCollaborators.forEach(visibleCollaborator => {

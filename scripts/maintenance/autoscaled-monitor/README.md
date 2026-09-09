@@ -66,9 +66,17 @@ autoscaled-monitor --deploy-config PATH/TO/DEPLOYMENT computational cancel-jobs
 
 #### `computational terminate` — terminate computational instances
 
+Triggers a graceful termination process for a computational cluster with the following phases:
+
+1. **Phase 1 - Graceful Termination**: Cancels all running jobs and sets the heartbeat tag to 1 hour ago
+2. **Phase 2 - Graceful Wait**: Waits up to 2x `CLUSTERS_KEEPER_TASK_INTERVAL` for clusters-keeper to remove the cluster
+3. **Phase 3 - Direct Fallback**: If the cluster is still present after the grace period, directly terminates the EC2 instances
+
 ```bash
-autoscaled-monitor --deploy-config PATH/TO/DEPLOYMENT computational terminate
+autoscaled-monitor --deploy-config PATH/TO/DEPLOYMENT computational terminate --user-id 123 --wallet-id 456
 ```
+
+The command provides real-time feedback during each phase and shows the countdown timer during the graceful wait period.
 
 #### `db check` — test database connectivity
 
@@ -78,15 +86,15 @@ autoscaled-monitor --deploy-config PATH/TO/DEPLOYMENT db check
 
 ## Options
 
-| Option | Description |
-|--------|-------------|
+| Option                 | Description                                                                                                                                     |
+|------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | `--deploy-config PATH` | **(required)** Path to the deployment configuration directory (must contain `repo.config`, `ansible/inventory.ini`, and an SSH key `.pem` file) |
 
 ### Command-specific options
 
-| Option | Available on | Description |
-|--------|-------------|-------------|
-| `--user-id INT` | `summary`, `dynamic summary`, `computational summary` | Filter by user ID |
-| `--wallet-id INT` | `summary`, `computational summary` | Filter by wallet ID |
-| `--as-json` | `summary`, `dynamic summary`, `computational summary` | Output as JSON |
-| `--output PATH` | `summary`, `dynamic summary`, `computational summary` | Write output to file |
+| Option            | Available on                                          | Description          |
+|-------------------|-------------------------------------------------------|----------------------|
+| `--user-id INT`   | `summary`, `dynamic summary`, `computational summary` | Filter by user ID    |
+| `--wallet-id INT` | `summary`, `computational summary`                    | Filter by wallet ID  |
+| `--as-json`       | `summary`, `dynamic summary`, `computational summary` | Output as JSON       |
+| `--output PATH`   | `summary`, `dynamic summary`, `computational summary` | Write output to file |

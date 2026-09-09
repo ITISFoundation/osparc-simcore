@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import cast
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     DynamicServiceRunningMessage,
@@ -14,7 +15,11 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
     RabbitResourceTrackingMessages,
 )
-from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
+from servicelib.fastapi.rabbitmq_lifespan import (
+    configure_rabbitmq_client,
+    configure_rabbitmq_rpc_client,
+)
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 from servicelib.rabbitmq import RabbitMQClient, is_rabbitmq_responsive
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -111,28 +116,19 @@ def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 
 
-def setup_rabbitmq(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        app_settings: ApplicationSettings = app.state.settings
-        assert app_settings.RABBIT_SETTINGS  # nosec
-        settings = app_settings.RABBIT_SETTINGS
+def configure_rabbitmq(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    settings = app_settings.RABBIT_SETTINGS
 
-        with log_context(_logger, logging.INFO, msg="Create RabbitMQClient"):
-            app.state.rabbitmq_client = RabbitMQClient(
-                client_name=f"dynamic-sidecar_{app_settings.DY_SIDECAR_NODE_ID}",
-                settings=settings,
-            )
-        with log_context(_logger, logging.INFO, msg="Create RabbitMQRPCClient"):
-            app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-                client_name=f"dynamic-sidecar_rpc_client_{app_settings.DY_SIDECAR_NODE_ID}",
-                settings=settings,
-            )
-
-    async def on_shutdown() -> None:
-        if app.state.rabbitmq_client:
-            await app.state.rabbitmq_client.close()
-        if app.state.rabbitmq_rpc_client:
-            await app.state.rabbitmq_rpc_client.close()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    configure_rabbitmq_client(
+        app_lifespan,
+        settings=settings,
+        client_name=f"dynamic-sidecar_{app_settings.DY_SIDECAR_NODE_ID}",
+        wait_for_connectivity=False,
+    )
+    configure_rabbitmq_rpc_client(
+        app_lifespan,
+        settings=settings,
+        client_name=f"dynamic-sidecar_rpc_client_{app_settings.DY_SIDECAR_NODE_ID}",
+        wait_for_connectivity=False,
+    )

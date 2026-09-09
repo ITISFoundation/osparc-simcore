@@ -114,7 +114,7 @@ qx.Class.define("osparc.admin.Announcements", {
           widgets.push("user-menu");
         }
         if (widgets.length === 0) {
-          const msg = "Select at least one widget";
+          const msg = this.tr("Select at least one widget");
           osparc.FlashMessenger.logAs(msg, "WARNING");
         }
         const announcementData = {

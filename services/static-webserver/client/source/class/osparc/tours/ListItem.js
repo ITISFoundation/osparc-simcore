@@ -35,7 +35,7 @@ qx.Class.define("osparc.tours.ListItem", {
 
     osparc.utils.Utils.setIdToWidget(this, "tourListItem-" + tour.id);
 
-    const titleLabel = new qx.ui.basic.Label(tour.name).set({
+    const titleLabel = new qx.ui.basic.Label(qx.locale.Manager.tr(tour.name)).set({
       font: "text-14",
       rich: true
     });
@@ -44,7 +44,7 @@ qx.Class.define("osparc.tours.ListItem", {
       column: 0
     });
     if (tour.description) {
-      const descriptionLabel = new qx.ui.basic.Label(tour.description).set({
+      const descriptionLabel = new qx.ui.basic.Label(qx.locale.Manager.tr(tour.description)).set({
         font: "text-13",
         rich: true
       });
