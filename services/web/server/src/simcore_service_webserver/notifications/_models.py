@@ -5,6 +5,8 @@ from common_library.network import replace_email_parts
 from models_library.notifications import Channel, TemplateName
 from pydantic import BaseModel, ConfigDict, EmailStr
 
+from ..models import PhoneNumberStr
+
 
 class TemplateRef(BaseModel):
     channel: Channel
@@ -105,6 +107,41 @@ class EmailMessage(BaseModel):
     )
 
 
+class SmsContact(BaseModel):
+    phone_number: PhoneNumberStr
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+
+class SmsContent(BaseModel):
+    body: str
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+
+class SmsAddressing(BaseModel):
+    to: list[SmsContact]
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+
+class SmsMessage(BaseModel):
+    channel: Channel = Channel.sms
+
+    addressing: SmsAddressing
+    content: SmsContent
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+
 class TemplatePreview(BaseModel):
     ref: TemplateRef
     message_content: dict[str, Any]
@@ -119,5 +156,5 @@ class Template(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
-type Contact = EmailContact
-type Message = EmailMessage
+type Contact = EmailContact | SmsContact
+type Message = EmailMessage | SmsMessage

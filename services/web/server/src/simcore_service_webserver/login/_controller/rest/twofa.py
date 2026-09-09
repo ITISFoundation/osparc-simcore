@@ -55,8 +55,6 @@ async def resend_2fa_code(request: web.Request):
 
     # guaranteed by LoginSettingsForProduct
     assert settings.LOGIN_2FA_REQUIRED  # nosec
-    assert settings.LOGIN_TWILIO  # nosec
-    assert product.twilio_messaging_sid  # nosec
 
     # creates and stores code
     code = await _twofa_service.create_2fa_code(
@@ -75,10 +73,11 @@ async def resend_2fa_code(request: web.Request):
             request.app,
             phone_number=user_phone_number,
             code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"] or user["name"],
+            user_name=user["name"],
+            product_name=product.name,
+            host=request.host,
+            ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             user_id=user["id"],
             locale=get_locale_or_none(request),
         )

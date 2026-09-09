@@ -281,16 +281,6 @@ async def register_phone(request: web.Request):
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
     assert settings.LOGIN_2FA_REQUIRED  # nosec
-    assert settings.LOGIN_TWILIO  # nosec
-    if not product.twilio_messaging_sid:
-        _logger.error(
-            "Messaging SID is not configured for product '%s'. Update product's twilio_messaging_sid in database.",
-            product.name,
-        )
-        raise web.HTTPServiceUnavailable(
-            text="Currently we cannot register phone numbers",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
 
     try:
         code = await _twofa_service.create_2fa_code(
@@ -302,10 +292,11 @@ async def register_phone(request: web.Request):
             request.app,
             phone_number=registration.phone,
             code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=_registration_service.get_user_name_from_email(registration.email),
+            user_name=_registration_service.get_user_name_from_email(registration.email),
+            product_name=product.name,
+            host=request.host,
+            ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             locale=get_locale_or_none(request),
         )
 

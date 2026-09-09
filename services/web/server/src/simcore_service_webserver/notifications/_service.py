@@ -41,6 +41,8 @@ from ._models import (
     EmailContact,
     EmailContent,
     EmailMessage,
+    SmsAddressing,
+    SmsContact,
     Template,
     TemplatePreview,
     TemplateRef,
@@ -97,16 +99,32 @@ async def _create_email_addressing(
         to_contacts = await _collect_active_recipients(app, group_ids=group_ids)
 
     if external_contacts:
-        to_contacts.extend(external_contacts)
+        to_contacts.extend(c for c in external_contacts if isinstance(c, EmailContact))
 
     if not to_contacts:
         raise NotificationsNoActiveRecipientsError
 
     return EmailAddressing(
         to=to_contacts,
-        reply_to=reply_to,
-        bcc=bcc,
+        reply_to=reply_to if isinstance(reply_to, EmailContact) else None,
+        bcc=[c for c in bcc if isinstance(c, EmailContact)] if bcc else None,
     )
+
+
+def _create_sms_addressing(
+    external_contacts: list[Contact] | None,
+) -> SmsAddressing:
+    """Build sms addressing (to) for all recipients.
+
+    Raises:
+        NotificationsNoActiveRecipientsError: If no active recipients found.
+    """
+    to_contacts = [c for c in (external_contacts or []) if isinstance(c, SmsContact)]
+
+    if not to_contacts:
+        raise NotificationsNoActiveRecipientsError
+
+    return SmsAddressing(to=to_contacts)
 
 
 async def _create_email_message(
@@ -245,6 +263,8 @@ async def send_message_from_template(
                 external_contacts=external_contacts,
                 reply_to=reply_to,
             )
+        case Channel.sms:
+            addressing = _create_sms_addressing(external_contacts)
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
