@@ -18,7 +18,7 @@ class SmsContact(BaseModel):
 
 
 class SmsMessage(BaseModel):
-    channel: Literal[Channel.SMS] = Channel.SMS
+    channel: Literal[Channel.sms] = Channel.sms
 
     to: SmsContact
     body: Annotated[str, Field(min_length=1, max_length=1600)]

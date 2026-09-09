@@ -36,7 +36,7 @@ class EmailContent(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    channel: Literal[Channel.EMAIL] = Channel.EMAIL
+    channel: Literal[Channel.email] = Channel.email
 
     # Envelope fields
     from_: Annotated[EmailContact, Field(alias="from")]
