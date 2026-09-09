@@ -38,7 +38,9 @@ class ResponseObjectType(StrEnum):
     RESPONSE = "response"
 
 
-ChatModel = Literal["gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2", "gpt-5.6-sol"]
+ChatModel = Literal[
+    "gpt-3.5-turbo", "gpt-4.1-nano", "gpt-4o-mini", "gpt-5.2", "gpt-5.6-sol"
+]  # TODO: supported chat models should be sent to settings somewhere  # noqa: FIX002
 
 
 class ResponseFormatTextType(StrEnum):
@@ -117,9 +119,14 @@ class CreateResponseRequest(ApiServerInputSchema):
     """Request body for POST /responses."""
 
     background: Literal[True]
-    input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
-    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
+    input: Annotated[
+        list[InputMessage], Field(min_length=1, max_length=50)
+    ]  # TODO: whi is this 50 maybe we can max add 50 items to the input must be changed  # noqa: FIX002
+    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = (
+        None  # usnsure why this is also this low
+    )
     model: Any  # validation is done in validator because of OpenAI's tricky OAS
+    stream: bool = False
     temperature: Temperature
     text: TextParam = TextParam()
 
@@ -129,8 +136,15 @@ class CreateResponseRequest(ApiServerInputSchema):
         supported = get_args(ChatModel)
         if not isinstance(v, str) or v not in supported:
             msg = f"Model '{v}' is not supported. Supported models: {sorted(supported)}"
+            # TODO: we need to trap and add custom handlers that transform the base errors into OPENAPI standard so that the FE can render them properly. We need a translation layer here # noqa: FIX002
             raise ValueError(msg)
         return v
+
+    def to_chat_response_format(self) -> ChatResponseFormat | None:
+        fmt = self.text.format
+        if isinstance(fmt, TextResponseFormatJsonSchema):
+            return fmt.to_domain()
+        return None
 
 
 class OutputTextContent(ApiServerOutputSchema):
@@ -155,4 +169,4 @@ class ResponseObject(ApiServerOutputSchema):
     error: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
-    status: ResponseStatus = ResponseStatus.IN_PROGRESS
+    status: ResponseStatus
