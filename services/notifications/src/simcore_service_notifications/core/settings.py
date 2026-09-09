@@ -241,6 +241,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Maximum number of recipients per email message"),
     ] = 20
 
+    NOTIFICATIONS_SMS_MAX_RECIPIENTS_PER_MESSAGE: Annotated[
+        int,
+        Field(description="Maximum number of recipients per sms message"),
+    ] = 20
+
     NOTIFICATIONS_EMAIL_RATE_LIMIT: Annotated[
         str,
         Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
