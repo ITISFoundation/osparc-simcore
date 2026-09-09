@@ -8,16 +8,24 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-08-27T13:09:22Z\n"
+"X-Translation-Date: 2026-09-09T08:44:56Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
-# CTX-INTERPRETATION: The string "About " appears as part of a label or title,
-# likely indicating a section or information related to "About" within a user
-# interface, possibly in a product or application introduction.
+# CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
+# menu item to display a customized message indicating the product name,
+# allowing users to access information about the specific product they are
+# using.
 #: services/static-webserver/client/source/class/osparc/About.js:24
-#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
-msgid "About "
-msgstr "关于 "
+#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
+msgid "About %1"
+msgstr "关于 %1"
+
+# CTX-INTERPRETATION: This string appears in the About section of osparc,
+# indicating that the application is powered by the OSPARC platform and
+# providing a link to its GitHub repository.
+#: services/static-webserver/client/source/class/osparc/About.js:68
+msgid "%1 is powered by the %2 platform."
+msgstr "该字符串出现在osparc的关于部分中，表明该应用程序由OSPARC平台提供支持，并提供指向其GitHub仓库的链接。"
 
 # CTX-INTERPRETATION: This string appears in the About.js file, describing the
 # SPARC program and its online computational modeling platform for
@@ -274,14 +282,14 @@ msgstr "登出"
 # CTX-INTERPRETATION: The string is part of a message displayed to the user,
 # informing them about the optimal window size for the application's
 # performance, along with a message about touchscreen support.
-#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:111
+#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:121
 msgid "This app performs better for larger window size: "
 msgstr "此应用程序在较大的窗口尺寸下运行效果更好： "
 
 # CTX-INTERPRETATION: This string appears within a function that constructs a
 # message indicating that touchscreen devices are not currently supported,
 # likely related to window size or display settings.
-#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:113
+#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:123
 msgid "Touchscreen devices are not supported yet."
 msgstr "目前不支持触摸屏设备。"
 
@@ -2314,6 +2322,7 @@ msgstr "您想现在更新它们吗？"
 # or version of a service.
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceDetails.js:385
 #: services/static-webserver/client/source/class/osparc/info/ServiceLarge.js:245
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:226
 #: services/static-webserver/client/source/class/osparc/workbench/ServiceCatalog.js:177
 msgid "Version"
 msgstr "版本"
@@ -2634,6 +2643,7 @@ msgstr "排序"
 #: services/static-webserver/client/source/class/osparc/snapshots/Iterations.js:44
 #: services/static-webserver/client/source/class/osparc/snapshots/Loading.js:37
 #: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:83
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:223
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:35
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:41
 msgid "Name"
@@ -2755,7 +2765,7 @@ msgstr "搜索文件"
 # licensed item details view.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1654
 #: services/static-webserver/client/source/class/osparc/study/Import.js:42
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:342
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:354
 msgid "Import"
 msgstr "导入"
 
@@ -3155,22 +3165,22 @@ msgstr "正在加载教程..."
 # CTX-INTERPRETATION: The string "Update all" appears in a confirmation dialog
 # within a tutorial browser, prompting the user to confirm updating all
 # templates associated with a study.
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:172
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:181
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:175
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:184
 #: services/static-webserver/client/source/class/osparc/metadata/ServicesInStudyUpdate.js:138
 msgid "Update all"
 msgstr "全部更新"
 
 # CTX-INTERPRETATION: This string appears in a confirmation dialog within the
 # TutorialBrowser, prompting the user to confirm updating all templates.
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:178
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:181
 msgid "Are you sure you want to update all "
 msgstr "您确定要更新所有模板吗？ "
 
 # CTX-INTERPRETATION: The string "Update" is used as part of a confirmation
 # message, likely indicating that an update or refresh operation is about to
 # occur, possibly related to templates or study updates.
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:180
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:183
 #: services/static-webserver/client/source/class/osparc/metadata/ServicesInStudyUpdate.js:214
 #: services/static-webserver/client/source/class/osparc/node/LifeCycleView.js:103
 msgid "Update"
@@ -5233,6 +5243,7 @@ msgstr "在这里显示与您的个人账户相关的以美元进行的充值和
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:196
 #: services/static-webserver/client/source/class/osparc/tester/ConsoleErrors.js:39
 #: services/static-webserver/client/source/class/osparc/tester/WebSocketMessages.js:39
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:219
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:48
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:54
 msgid "Date"
@@ -8012,14 +8023,6 @@ msgstr "关于 oSPARC"
 msgid "About Product"
 msgstr "关于产品"
 
-# CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
-# menu item to display a customized message indicating the product name,
-# allowing users to access information about the specific product they are
-# using.
-#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
-msgid "About %1"
-msgstr "关于 %1"
-
 # CTX-INTERPRETATION: The string "License" is used as the label for a button
 # in a user menu, likely providing access to licensing information or a
 # license agreement.
@@ -8204,7 +8207,7 @@ msgstr "哎呀，您的窗口有点小！"
 # CTX-INTERPRETATION: This string appears in a user interface element related
 # to notifications, specifically a button to dismiss a notification, likely
 # within a quick start guide or similar context.
-#: services/static-webserver/client/source/class/osparc/notification/RibbonNotifications.js:99
+#: services/static-webserver/client/source/class/osparc/notification/RibbonNotifications.js:100
 #: services/static-webserver/client/source/class/osparc/product/quickStart/Utils.js:77
 msgid "Don't show again"
 msgstr "不要再显示"
@@ -8873,6 +8876,13 @@ msgstr "定价单元创建器"
 #: services/static-webserver/client/source/class/osparc/pricing/UnitsList.js:114
 msgid "Pricing Unit Editor"
 msgstr "定价单元编辑器"
+
+# CTX-INTERPRETATION: The string "About " appears as part of a label or title,
+# likely indicating a section or information related to "About" within a user
+# interface, possibly in a product or application introduction.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
+msgid "About "
+msgstr "关于 "
 
 # CTX-INTERPRETATION: The string "Information is unavailable" is used within
 # the "AboutProduct" component to display a message when product information
@@ -10419,7 +10429,13 @@ msgid ""
 "      - at least one computational app\n"
 "      - no dynamic apps\n"
 "    "
-msgstr "\n为了创建函数，流程需要：\n- 至少有一个参数和一个探测器（数字）\n- 至少有一个计算应用程序\n- 没有动态应用程序\n    "
+msgstr ""
+"\n"
+"为了创建函数，流程需要：\n"
+"- 至少有一个参数和一个探测器（数字）\n"
+"- 至少有一个计算应用程序\n"
+"- 没有动态应用程序\n"
+"    "
 
 # CTX-INTERPRETATION: The string "Exposed" is used in a UI component for a
 # scientific simulation application, likely indicating whether a specific
@@ -10710,7 +10726,9 @@ msgstr "预约电话"
 msgid ""
 "\n"
 "- Topic: %1"
-msgstr "\n- 主题: %1"
+msgstr ""
+"\n"
+"- 主题: %1"
 
 # CTX-INTERPRETATION: This string is used within the Conversation.js file to
 # display additional information related to a call, specifically when
@@ -10719,7 +10737,9 @@ msgstr "\n- 主题: %1"
 msgid ""
 "\n"
 "- Extra Info: %1"
-msgstr "\n- 额外信息：%1"
+msgstr ""
+"\n"
+"- 额外信息：%1"
 
 # CTX-INTERPRETATION: This string is part of a greeting message used in a
 # conversational interface within the osparc application, likely to initiate a
@@ -11537,17 +11557,73 @@ msgstr "选择一个模型以获取更多详细信息"
 msgid "This bundle contains:"
 msgstr "此包包含:"
 
+# CTX-INTERPRETATION: The string "Age" is used as a label for an input field
+# related to age in the LicensedItemDetails component, likely for specifying
+# the age of a subject or entity.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:218
+msgid "Age"
+msgstr "年龄"
+
+# CTX-INTERPRETATION: The string "Ethnicity" is part of a user interface for
+# displaying details about a licensed item, likely related to species or
+# individual characteristics.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:220
+msgid "Ethnicity"
+msgstr "种族"
+
+# CTX-INTERPRETATION: The string "Functionality" appears as a label within a
+# user interface element, likely describing the capabilities or features of a
+# licensed item.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:221
+msgid "Functionality"
+msgstr "功能性"
+
+# CTX-INTERPRETATION: The string "Height" is part of a list of feature labels
+# used to display information about a licensed item in the Osparc VIP Market
+# application, likely related to physical characteristics.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:222
+msgid "Height"
+msgstr "身高"
+
+# CTX-INTERPRETATION: The string "Sex" is part of a list of feature labels
+# used to display information about an item in the LicensedItemDetails
+# component, likely related to biological or demographic characteristics.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:224
+msgid "Sex"
+msgstr "性别"
+
+# CTX-INTERPRETATION: The string "Species" is part of a list of feature labels
+# used to display information about a licensed item in the Osparc VIP Market,
+# likely related to biological or taxonomic data.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:225
+msgid "Species"
+msgstr "物种"
+
+# CTX-INTERPRETATION: The string "Weight" is used as a label for the weight
+# field in a table or form related to licensed items, likely within an
+# e-commerce or marketplace application.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:227
+msgid "Weight"
+msgstr "体重"
+
+# CTX-INTERPRETATION: The string "DOI" is used as a label within the
+# LicensedItemDetails component to display the Digital Object Identifier of a
+# licensed item.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:276
+msgid "DOI"
+msgstr "DOI"
+
 # CTX-INTERPRETATION: The string appears within a UI element, likely a label
 # or button, displaying the terms and conditions for a licensed item, as
 # indicated by the file path.
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:299
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:311
 msgid "<u>Terms and Conditions</u>"
 msgstr "《条款和条件》"
 
 # CTX-INTERPRETATION: The string "Terms and Conditions" appears as a caption
 # for a markdown window, likely displaying legal or usage terms related to a
 # licensed item.
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:329
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:341
 msgid "Terms and Conditions"
 msgstr "条款和条件"
 
@@ -11555,9 +11631,23 @@ msgstr "条款和条件"
 # within a user interface element, likely indicating whether a licensed item
 # can be imported into a system, possibly within a marketplace or licensing
 # platform.
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:392
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:404
 msgid "Available for Importing"
 msgstr "可导入"
+
+# CTX-INTERPRETATION: The string is used in the LicensedItemDetails.js file to
+# display the number of available seats and their expiration date to the user,
+# indicating seat availability.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:451
+msgid "%1 seats available until %2"
+msgstr "最多 %1 个座位，到 %2。"
+
+# CTX-INTERPRETATION: This string is used in the LicensedItemDetails.js file
+# to display the availability status and expiration date of a seat, indicating
+# whether there's one or more seats available.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:452
+msgid "%1 seat available until %2"
+msgstr "一个座位可用，直到 %2"
 
 # CTX-INTERPRETATION: The string "Loading Models..." appears as a label within
 # a UI element, likely indicating that the application is currently loading

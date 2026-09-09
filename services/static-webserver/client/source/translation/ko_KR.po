@@ -9,16 +9,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-08-27T13:09:18Z\n"
+"X-Translation-Date: 2026-09-09T08:44:40Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
-# CTX-INTERPRETATION: The string "About " appears as part of a label or title
-# within the OSPARC application, likely indicating information about a
-# specific product or feature.
+# CTX-INTERPRETATION: This string is used within the 'About Product' menu item
+# of a user interface, displaying the product name in the label.
 #: services/static-webserver/client/source/class/osparc/About.js:24
-#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
-msgid "About "
-msgstr "대략 \" "
+#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
+msgid "About %1"
+msgstr "%1 정보"
+
+# CTX-INTERPRETATION: This string appears in the 'About' section of the
+# application, indicating that the software is powered by the OSPARC platform
+# and providing a link to its GitHub repository.
+#: services/static-webserver/client/source/class/osparc/About.js:68
+msgid "%1 is powered by the %2 platform."
+msgstr "\"%1은 %2 플랫폼에서 구동됩니다. (이 애플리케이션의 About 섹션에 표시됨)\""
 
 # CTX-INTERPRETATION: This string appears in the About section of the SPARC
 # portal, providing a description of the platform and its purpose.
@@ -273,14 +279,14 @@ msgstr "로그 아웃"
 # size: " is part of a message displayed to the user, explaining the optimal
 # window size for the application and indicating that touchscreen support is
 # not yet available.
-#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:111
+#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:121
 msgid "This app performs better for larger window size: "
 msgstr "이 앱은 더 큰 창 크기에서 더 잘 작동합니다: "
 
 # CTX-INTERPRETATION: This string appears within the
 # `osparc/WindowSizeTracker.js` file, likely informing users about touchscreen
 # compatibility.
-#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:113
+#: services/static-webserver/client/source/class/osparc/WindowSizeTracker.js:123
 msgid "Touchscreen devices are not supported yet."
 msgstr "터치스크린 장치는 아직 지원되지 않습니다."
 
@@ -2291,6 +2297,7 @@ msgstr "지금 업데이트하시겠습니까?"
 # software or service version.
 #: services/static-webserver/client/source/class/osparc/dashboard/ResourceDetails.js:385
 #: services/static-webserver/client/source/class/osparc/info/ServiceLarge.js:245
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:226
 #: services/static-webserver/client/source/class/osparc/workbench/ServiceCatalog.js:177
 msgid "Version"
 msgstr "버전"
@@ -2602,6 +2609,7 @@ msgstr "정렬"
 #: services/static-webserver/client/source/class/osparc/snapshots/Iterations.js:44
 #: services/static-webserver/client/source/class/osparc/snapshots/Loading.js:37
 #: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:83
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:223
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:35
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:41
 msgid "Name"
@@ -2719,7 +2727,7 @@ msgstr "파일 검색"
 # within a study import dialog, likely allowing users to load data files.
 #: services/static-webserver/client/source/class/osparc/dashboard/StudyBrowser.js:1654
 #: services/static-webserver/client/source/class/osparc/study/Import.js:42
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:342
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:354
 msgid "Import"
 msgstr "가져오기"
 
@@ -3109,15 +3117,15 @@ msgstr "튜토리얼 로딩 중..."
 
 # CTX-INTERPRETATION: The string "Update all" appears in the context of
 # updating multiple templates within a tutorial or study update process.
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:172
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:181
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:175
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:184
 #: services/static-webserver/client/source/class/osparc/metadata/ServicesInStudyUpdate.js:138
 msgid "Update all"
 msgstr "모든 업데이트"
 
 # CTX-INTERPRETATION: This string appears in the confirmation dialog for
 # updating all templates, prompting the user to confirm their intention.
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:178
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:181
 msgid "Are you sure you want to update all "
 msgstr "모든 템플릿을 업데이트하시겠습니까? "
 
@@ -3125,7 +3133,7 @@ msgstr "모든 템플릿을 업데이트하시겠습니까? "
 # dialog caption to indicate that the user is updating templates or services
 # within a study, likely in the context of software updates or data
 # synchronization.
-#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:180
+#: services/static-webserver/client/source/class/osparc/dashboard/TutorialBrowser.js:183
 #: services/static-webserver/client/source/class/osparc/metadata/ServicesInStudyUpdate.js:214
 #: services/static-webserver/client/source/class/osparc/node/LifeCycleView.js:103
 msgid "Update"
@@ -5135,6 +5143,7 @@ msgstr "개인 계정에 연결된 미국 달러로의 충전 및 환불 내역�
 #: services/static-webserver/client/source/class/osparc/po/UsersPending.js:196
 #: services/static-webserver/client/source/class/osparc/tester/ConsoleErrors.js:39
 #: services/static-webserver/client/source/class/osparc/tester/WebSocketMessages.js:39
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:219
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:48
 #: services/static-webserver/client/source/class/osparc/vipMarket/SortModelsButtons.js:54
 msgid "Date"
@@ -7874,12 +7883,6 @@ msgstr "oSPARC에 대한 정보"
 msgid "About Product"
 msgstr "제품 정보"
 
-# CTX-INTERPRETATION: This string is used within the 'About Product' menu item
-# of a user interface, displaying the product name in the label.
-#: services/static-webserver/client/source/class/osparc/navigation/UserMenu.js:118
-msgid "About %1"
-msgstr "%1 정보"
-
 # CTX-INTERPRETATION: The string "License" appears in the UserMenu component,
 # likely representing a button or menu item that allows users to access
 # license information or download a license file.
@@ -8060,7 +8063,7 @@ msgstr "창이 너무 작아서 제대로 표시되지 않습니다."
 
 # CTX-INTERPRETATION: This string appears in the 'Don't show again' button of
 # a notification, allowing users to dismiss a specific announcement.
-#: services/static-webserver/client/source/class/osparc/notification/RibbonNotifications.js:99
+#: services/static-webserver/client/source/class/osparc/notification/RibbonNotifications.js:100
 #: services/static-webserver/client/source/class/osparc/product/quickStart/Utils.js:77
 msgid "Don't show again"
 msgstr "다시 표시하지 않음"
@@ -8718,6 +8721,13 @@ msgstr "가격 단위 생성기"
 msgid "Pricing Unit Editor"
 msgstr "가격 단위 편집기"
 
+# CTX-INTERPRETATION: The string "About " appears as part of a label or title
+# within the OSPARC application, likely indicating information about a
+# specific product or feature.
+#: services/static-webserver/client/source/class/osparc/product/AboutProduct.js:26
+msgid "About "
+msgstr "대략 \" "
+
 # CTX-INTERPRETATION: The string "Information is unavailable" appears in the
 # AboutProduct component to display a message when product information is not
 # available, likely during initial setup or configuration.
@@ -8733,7 +8743,9 @@ msgid ""
 "Sim4Life.web makes use of technologies developed by our research partner for"
 " the o<sup>2</sup>S<sup>2</sup>PARC platform, the IT’IS Foundation, and co-"
 "funded by the U.S. National Institutes of Health’s SPARC initiative."
-msgstr "Sim4Life.web은 연구 파트너가 개발한 기술을 사용하여 o<sup>2</sup>S<sup>2</sup>PARC 플랫폼, IT’IS Foundation 및 미국 국립 보건국 SPARC 이니셔티브의 자금을 지원받아 운영됩니다."
+msgstr ""
+"Sim4Life.web은 연구 파트너가 개발한 기술을 사용하여 o<sup>2</sup>S<sup>2</sup>PARC 플랫폼, IT’IS"
+" Foundation 및 미국 국립 보건국 SPARC 이니셔티브의 자금을 지원받아 운영됩니다."
 
 # CTX-INTERPRETATION: This string appears in the AboutProduct.js file and
 # provides a link to the Sim4Life website for users seeking more information.
@@ -9034,7 +9046,9 @@ msgid ""
 "        1) Start Sim4Life.lite: Click the <b>+ Start Sim4Life.lite</b> "
 "button to create a new project. This will start the user interface of "
 "Sim4Life.lite.      "
-msgstr "1) Start Sim4Life.lite: <b>+ Start Sim4Life.lite</b> 버튼을 클릭하여 새 프로젝트를 만듭니다. 그러면 Sim4Life.lite의 사용자 인터페이스가 시작됩니다."
+msgstr ""
+"1) Start Sim4Life.lite: <b>+ Start Sim4Life.lite</b> 버튼을 클릭하여 새 프로젝트를 만듭니다. "
+"그러면 Sim4Life.lite의 사용자 인터페이스가 시작됩니다."
 
 # CTX-INTERPRETATION: This string appears in the Dashboard component of the
 # application, explaining how to manage existing projects represented as
@@ -9046,7 +9060,10 @@ msgid ""
 "managed.         Click on the card to open the project. Click the “three "
 "dots” in the upper right corner of the card to perform operations such as "
 "rename, share, delete.      "
-msgstr "각 카드: 기존 프로젝트(자신의 프로젝트 또는 다른 사용자가 공유하는 프로젝트)를 표시하며, 액세스하고 관리할 수 있습니다. 카드를 클릭하여 프로젝트를 엽니다. 또한 카드의 오른쪽 상단 모서리에 있는 \"세 개의 점\"을 클릭하여 이름을 변경하거나 공유하거나 삭제하는 등의 작업을 수행할 수 있습니다."
+msgstr ""
+"각 카드: 기존 프로젝트(자신의 프로젝트 또는 다른 사용자가 공유하는 프로젝트)를 표시하며, 액세스하고 관리할 수 있습니다. 카드를 "
+"클릭하여 프로젝트를 엽니다. 또한 카드의 오른쪽 상단 모서리에 있는 \"세 개의 점\"을 클릭하여 이름을 변경하거나 공유하거나 삭제하는 "
+"등의 작업을 수행할 수 있습니다."
 
 # CTX-INTERPRETATION: This string describes the availability of pre-built
 # tutorial projects for Sim4Life.lite users, which are automatically copied
@@ -9100,7 +9117,11 @@ msgid ""
 "wireless communication         to medical applications. The access to "
 "Sim4Life.lite is available free of charge to students enrolled at registered"
 " universities.      "
-msgstr "Sim4Life.lite는 강력한 웹 기반 시뮬레이션 플랫폼으로, 실제 현상을 모델링하고 분석하며 검증된 환경에서 복잡한 기술 장치를 설계할 수 있도록 합니다. Sim4Life.lite는 무선 통신부터 의료 응용 분야에 이르기까지 다양한 주제에 대한 컴퓨팅 모델링 및 시뮬레이션을 이해하는 데 도움이 되도록 특별히 학생들을 위해 만들어졌습니다. 등록된 대학의 학생에게 무료로 Sim4Life.lite에 액세스할 수 있습니다."
+msgstr ""
+"Sim4Life.lite는 강력한 웹 기반 시뮬레이션 플랫폼으로, 실제 현상을 모델링하고 분석하며 검증된 환경에서 복잡한 기술 장치를 "
+"설계할 수 있도록 합니다. Sim4Life.lite는 무선 통신부터 의료 응용 분야에 이르기까지 다양한 주제에 대한 컴퓨팅 모델링 및 "
+"시뮬레이션을 이해하는 데 도움이 되도록 특별히 학생들을 위해 만들어졌습니다. 등록된 대학의 학생에게 무료로 Sim4Life.lite에 "
+"액세스할 수 있습니다."
 
 # CTX-INTERPRETATION: 이 문자열은 Sim4Life.lite 소프트웨어의 기능 설명 섹션에 나타나며, 사용 가능한 솔버 및
 # 모델 목록을 나열합니다.
@@ -9271,7 +9292,9 @@ msgid ""
 " shapes, electrode dimensions and         potential electrode locations "
 "(currently required to narrow down the huge exposure configuration search "
 "space) are selected.      "
-msgstr "첫 번째 단계에서 관련 종, 자극 대상, 전극 모양, 전극 크기 및 잠재적 전극 위치(현재는 광범위한 노출 구성 검색 공간을 좁히는 데 필요한)를 선택합니다."
+msgstr ""
+"첫 번째 단계에서 관련 종, 자극 대상, 전극 모양, 전극 크기 및 잠재적 전극 위치(현재는 광범위한 노출 구성 검색 공간을 좁히는 데 "
+"필요한)를 선택합니다."
 
 # CTX-INTERPRETATION: This string appears in the ElectrodeSelector.js file,
 # guiding the user on how to submit their configuration after completing the
@@ -11372,25 +11395,94 @@ msgstr "더 자세한 정보를 위해 모델을 선택하세요"
 msgid "This bundle contains:"
 msgstr "이 패키지에는 다음 내용이 포함되어 있습니다:"
 
+# CTX-INTERPRETATION: The string "Age" is used as a label for the age field in
+# a user interface, likely within a licensed item details view.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:218
+msgid "Age"
+msgstr "나이"
+
+# CTX-INTERPRETATION: The string "Ethnicity" is part of a list of feature
+# labels used to display information about a licensed item, likely in a user
+# interface.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:220
+msgid "Ethnicity"
+msgstr "민족"
+
+# CTX-INTERPRETATION: The string "Functionality" appears as a label within a
+# UI component displaying details of a licensed item, likely referring to the
+# features or capabilities offered.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:221
+msgid "Functionality"
+msgstr "기능"
+
+# CTX-INTERPRETATION: The string "Height" is likely part of a user interface
+# for displaying or inputting height information related to a licensed item,
+# possibly in a scientific or research context.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:222
+msgid "Height"
+msgstr "키"
+
+# CTX-INTERPRETATION: The string "Sex" is used as a label for a field related
+# to biological sex in the LicensedItemDetails component, likely within an
+# e-commerce or marketplace application.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:224
+msgid "Sex"
+msgstr "성별"
+
+# CTX-INTERPRETATION: The string "Species" is used as a label for a field in
+# the LicensedItemDetails component, likely representing the species of an
+# organism or item.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:225
+msgid "Species"
+msgstr "종류"
+
+# CTX-INTERPRETATION: The string "Weight" is used as a label for the weight
+# field in a table or form related to licensed items, likely within an
+# e-commerce or marketplace application.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:227
+msgid "Weight"
+msgstr "무게"
+
+# CTX-INTERPRETATION: The string "DOI" is used as a label within the
+# LicensedItemDetails component to display the Digital Object Identifier for a
+# licensed item.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:276
+msgid "DOI"
+msgstr "DOI"
+
 # CTX-INTERPRETATION: The string appears as a hyperlink within the
 # LicensedItemDetails component, likely providing access to the terms and
 # conditions associated with a licensed item.
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:299
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:311
 msgid "<u>Terms and Conditions</u>"
 msgstr "약관 및 조건"
 
 # CTX-INTERPRETATION: The string "Terms and Conditions" appears as a caption
 # for a window, likely displaying legal terms related to a licensed item.
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:329
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:341
 msgid "Terms and Conditions"
 msgstr "약관 및 조건"
 
 # CTX-INTERPRETATION: This string appears as a label within the
 # LicensedItemDetails component, indicating whether an item is currently
 # available for importing into the system.
-#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:392
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:404
 msgid "Available for Importing"
 msgstr "수입 가능"
+
+# CTX-INTERPRETATION: This string is used in the LicensedItemDetails.js file
+# to display the number of available seats and their expiration date to the
+# user.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:451
+msgid "%1 seats available until %2"
+msgstr "총 %1개의 좌석이 %2까지 남아 있습니다."
+
+# CTX-INTERPRETATION: This string is used in the LicensedItemDetails.js file
+# to display the availability of a single seat until a specific expiration
+# date, indicating whether there's one available or not.
+#: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:452
+msgid "%1 seat available until %2"
+msgstr "1개의 좌석이 %2까지 남아 있습니다."
 
 # CTX-INTERPRETATION: The string "Loading Models..." appears as a label within
 # a UI element, likely indicating that the application is currently loading
@@ -11835,7 +11927,9 @@ msgstr "새 프로젝트 만들기"
 msgid ""
 "Clicking on the (+) New button, allows you to create new Projects, start "
 "your favourite Apps or create new Folders to organize the projects"
-msgstr "(+) New 버튼을 클릭하면 새 프로젝트를 만들거나, 좋아하는 앱을 시작하거나, 프로젝트를 정리하기 위한 새 폴더를 만드는 데 사용할 수 있습니다."
+msgstr ""
+"(+) New 버튼을 클릭하면 새 프로젝트를 만들거나, 좋아하는 앱을 시작하거나, 프로젝트를 정리하기 위한 새 폴더를 만드는 데 사용할 "
+"수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in tour guides for various SPARCS
 # applications, explaining the functionality of a search and filter tool.
@@ -11915,7 +12009,10 @@ msgid ""
 "template, it saves a snapshot of your project. Later, you can click on it to"
 " start a fresh, independent copy.<br>Templates shared with you by others "
 "will also appear here, so you can build on their work too."
-msgstr "템플릿은 프로젝트를 일시 정지하고 필요할 때마다 재사용할 수 있게 해줍니다. 템플릿을 만들면 프로젝트의 스냅샷을 저장합니다. 나중에 클릭하여 새롭고 독립적인 복본을 시작할 수 있습니다.<br>다른 사람에게 공유된 템플릿도 여기에 표시되므로, 다른 사람의 작업을 기반으로 구축할 수도 있습니다."
+msgstr ""
+"템플릿은 프로젝트를 일시 정지하고 필요할 때마다 재사용할 수 있게 해줍니다. 템플릿을 만들면 프로젝트의 스냅샷을 저장합니다. 나중에 "
+"클릭하여 새롭고 독립적인 복본을 시작할 수 있습니다.<br>다른 사람에게 공유된 템플릿도 여기에 표시되므로, 다른 사람의 작업을 기반으로"
+" 구축할 수도 있습니다."
 
 # CTX-INTERPRETATION: This string appears in tour guides explaining Public
 # Projects, comparing them to templates and highlighting their shared nature
@@ -11927,7 +12024,9 @@ msgid ""
 "Just like templates, Public Projects are frozen snapshots—but they’re shared"
 " with the entire scientific community. Anyone can browse them and create "
 "their own copy and build upon."
-msgstr "템플릿과 마찬가지로, 공개 프로젝트는 정지된 스냅샷입니다—하지만 과학 커뮤니티 전체와 공유됩니다. 누구나 이를 탐색하고 자신의 복사본을 만들고 기반을 구축할 수 있습니다."
+msgstr ""
+"템플릿과 마찬가지로, 공개 프로젝트는 정지된 스냅샷입니다—하지만 과학 커뮤니티 전체와 공유됩니다. 누구나 이를 탐색하고 자신의 복사본을 "
+"만들고 기반을 구축할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in the 'osparc_tours.json',
 # 's4l_tours.json', and 's4llite_tours.json' files, likely as part of a user
@@ -12029,7 +12128,9 @@ msgid ""
 "Here you can track all your running jobs, recent activity, and completed "
 "tasks. If you want to check the results once these are ready, you will find "
 "more details in the Activity Overview on the Project card."
-msgstr "여기에 실행 중인 모든 작업, 최근 활동 및 완료된 작업을 추적할 수 있습니다. 결과가 준비되면 프로젝트 카드에 있는 Activity Overview에서 자세한 내용을 확인할 수 있습니다."
+msgstr ""
+"여기에 실행 중인 모든 작업, 최근 활동 및 완료된 작업을 추적할 수 있습니다. 결과가 준비되면 프로젝트 카드에 있는 Activity "
+"Overview에서 자세한 내용을 확인할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears within the 'beforeClick' section of
 # a tour guide, explaining the functionality of a notification button.
@@ -12132,7 +12233,9 @@ msgstr "Sim4Life.lite 시작"
 msgid ""
 "Clicking on the (+) New button, allows you to create new Sim4Life.lite "
 "projects or new Folders to organize the projects"
-msgstr "(+) New 버튼을 클릭하면 새로운 Sim4Life.lite 프로젝트를 만들거나 프로젝트를 구성하기 위한 새 폴더를 만드는 데 사용할 수 있습니다."
+msgstr ""
+"(+) New 버튼을 클릭하면 새로운 Sim4Life.lite 프로젝트를 만들거나 프로젝트를 구성하기 위한 새 폴더를 만드는 데 사용할 "
+"수 있습니다."
 
 # CTX-INTERPRETATION: This string describes the functionality of a filtering
 # and searching tool within the application, allowing users to refine project
