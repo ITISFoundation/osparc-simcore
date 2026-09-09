@@ -3910,7 +3910,7 @@ msgstr "Cerrar"
 # name.
 #: services/static-webserver/client/source/class/osparc/desktop/MainPage.js:149
 msgid "Do you want to save and close <b>%1</b>?"
-msgstr "¿Desea guardar y cerrar <b>%1</b>? (Nombre del estudio)"
+msgstr "¿Desea guardar y cerrar <b>%1</b>?"
 
 # CTX-INTERPRETATION: The string "Save & Close" appears as a button caption
 # within the application's main user interface, likely allowing the user to
