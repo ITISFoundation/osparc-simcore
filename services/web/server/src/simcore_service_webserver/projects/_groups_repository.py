@@ -30,21 +30,20 @@ async def create_project_group(
 ) -> ProjectGroupGetDB:
     row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        row = await (
-            await conn.ex(
-                project_to_groups.insert()
-                .values(
-                    project_uuid=f"{project_id}",
-                    gid=group_id,
-                    read=read,
-                    write=write,
-                    delete=delete,
-                    created=func.now(),
-                    modified=func.now(),
-                )
-                .returning(literal_column("*"))
+        result = await conn.execute(
+            project_to_groups.insert()
+            .values(
+                project_uuid=f"{project_id}",
+                gid=group_id,
+                read=read,
+                write=write,
+                delete=delete,
+                created=func.now(),
+                modified=func.now(),
             )
-        ).first()
+            .returning(literal_column("*"))
+        )
+        row = result.first()
         if row is None:
             raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)
