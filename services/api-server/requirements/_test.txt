@@ -23,10 +23,6 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
-annotated-types==0.7.0
-    # via
-    #   -c requirements/_base.txt
-    #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
 anyio==4.7.0
@@ -37,6 +33,8 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+ast-serialize==0.11.1
+    # via mypy
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt
@@ -44,9 +42,7 @@ attrs==24.2.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-aws-sam-translator==1.106.0
-    # via cfn-lint
-aws-xray-sdk==0.95
+aws-xray-sdk==2.15.0
     # via moto
 billiard==4.2.1
     # via
@@ -57,11 +53,11 @@ blinker==1.9.0
 boto3==1.40.61
     # via
     #   -c requirements/_base.txt
-    #   aws-sam-translator
     #   moto
 botocore==1.40.61
     # via
     #   -c requirements/_base.txt
+    #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
@@ -85,7 +81,7 @@ cffi==2.1.1
     #   -c requirements/_base.txt
     #   cryptography
     #   pact-python-ffi
-cfn-lint==1.47.1
+cfn-lint==1.56.2
     # via moto
 charset-normalizer==3.4.0
     # via
@@ -120,9 +116,9 @@ cryptography==50.0.0
     #   -c requirements/_base.txt
     #   joserfc
     #   moto
-debugpy==1.8.20
+debugpy==1.8.21
     # via pytest-celery
-docker==7.1.0
+docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -130,7 +126,7 @@ docker==7.1.0
     #   pytest-docker-tools
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.38.0
     # via -r requirements/_test.in
 flask==3.1.3
     # via
@@ -143,8 +139,12 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.11
+graphql-core==3.2.12
     # via moto
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -179,14 +179,12 @@ jmespath==1.1.0
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.5.0
+joserfc==1.7.5
     # via moto
 jsonpatch==1.33
     # via cfn-lint
 jsonpath-ng==1.8.0
     # via moto
-jsonpickle==4.1.1
-    # via aws-xray-sdk
 jsonpointer==3.1.1
     # via jsonpatch
 jsonref==1.1.0
@@ -196,7 +194,6 @@ jsonref==1.1.0
 jsonschema==4.26.0
     # via
     #   -c requirements/_base.txt
-    #   aws-sam-translator
     #   openapi-schema-validator
     #   openapi-spec-validator
 jsonschema-path==0.3.4
@@ -212,7 +209,7 @@ kombu==5.6.2
     #   celery
 lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-librt==0.8.1
+librt==0.15.0
     # via mypy
 mako==1.3.12
     # via
@@ -226,7 +223,7 @@ markupsafe==3.0.2
     #   jinja2
     #   mako
     #   werkzeug
-moto==5.2.2
+moto==5.2.3
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -235,7 +232,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==2.3.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -251,13 +248,13 @@ packaging==24.2
     #   aioresponses
     #   kombu
     #   pytest
-pact-python==3.2.1
+pact-python==3.4.0
     # via -r requirements/_test.in
-pact-python-ffi==0.4.28.2
+pact-python-ffi==0.5.4.1
     # via pact-python
 pathable==0.4.4
     # via jsonschema-path
-pathspec==1.0.4
+pathspec==1.1.1
     # via mypy
 pluggy==1.6.0
     # via
@@ -282,14 +279,6 @@ pycparser==2.22
     # via
     #   -c requirements/_base.txt
     #   cffi
-pydantic==2.13.4
-    # via
-    #   -c requirements/_base.txt
-    #   aws-sam-translator
-pydantic-core==2.46.4
-    # via
-    #   -c requirements/_base.txt
-    #   pydantic
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -347,19 +336,18 @@ referencing==0.35.1
     #   jsonschema-path
     #   jsonschema-specifications
     #   types-jsonschema
-regex==2026.7.19
+regex==2026.9.10
     # via cfn-lint
 requests==2.34.2
     # via
     #   -c requirements/_base.txt
-    #   aws-xray-sdk
     #   docker
     #   jsonschema-path
     #   moto
     #   responses
-responses==0.26.0
+responses==0.26.3
     # via moto
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
@@ -372,7 +360,7 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==80.9.0
+setuptools==84.0.0
     # via
     #   moto
     #   pytest-celery
@@ -400,15 +388,15 @@ tenacity==9.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-awscrt==0.34.1
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.42.70
+types-boto3==1.43.91
     # via -r requirements/_test.in
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20260518
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via types-boto3
@@ -416,17 +404,9 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   aws-sam-translator
     #   cfn-lint
     #   mypy
-    #   pydantic
-    #   pydantic-core
     #   sqlalchemy
-    #   typing-inspection
-typing-inspection==0.4.2
-    # via
-    #   -c requirements/_base.txt
-    #   pydantic
 tzdata==2025.2
     # via
     #   -c requirements/_base.txt

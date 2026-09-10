@@ -12,7 +12,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-ast-serialize==0.5.0
+ast-serialize==0.11.1
     # via mypy
 billiard==4.2.3
     # via
@@ -56,17 +56,21 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-debugpy==1.8.20
+debugpy==1.8.21
     # via pytest-celery
-docker==7.1.0
+docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   pytest-celery
     #   pytest-docker-tools
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.38.0
     # via -r requirements/_test.in
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -93,9 +97,9 @@ kombu==5.6.2
     #   -c requirements/_base.txt
     #   celery
     #   pytest-celery
-librt==0.11.0
+librt==0.15.0
     # via mypy
-mypy==2.1.0
+mypy==2.3.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy

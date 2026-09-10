@@ -21,6 +21,8 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+ast-serialize==0.11.1
+    # via mypy
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt
@@ -44,7 +46,7 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 faker==40.38.0
     # via -r requirements/_test.in
@@ -53,6 +55,10 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -82,14 +88,14 @@ jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-librt==0.8.1
+librt==0.15.0
     # via mypy
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.19.1
+mypy==2.3.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -97,7 +103,7 @@ packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-pathspec==1.0.4
+pathspec==1.1.1
     # via mypy
 pluggy==1.6.0
     # via
@@ -150,7 +156,7 @@ requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
-respx==0.22.0
+respx==0.23.1
     # via -r requirements/_test.in
 simple-websocket==1.1.0
     # via
@@ -168,13 +174,13 @@ sqlalchemy==2.0.51
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
-types-pyasn1==0.6.0.20250914
+types-pyasn1==0.6.0.20260724
     # via types-python-jose
-types-python-jose==3.5.0.20250531
+types-python-jose==3.5.0.20260408
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.14.1
     # via
