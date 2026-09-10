@@ -98,8 +98,8 @@ async def list_projects_db_get_as_admin(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
         assert isinstance(total_count, int)  # nosec
-        result = await conn.stream(list_query)
-        projects_list: list[ProjectDBGet] = [ProjectDBGet.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        projects_list = TypeAdapter(list[ProjectDBGet]).validate_python(result.mappings().all())
         return total_count, projects_list
 
 
