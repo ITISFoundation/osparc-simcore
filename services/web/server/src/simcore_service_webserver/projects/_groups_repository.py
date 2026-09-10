@@ -186,4 +186,4 @@ async def delete_all_project_groups(
     project_id: ProjectID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(project_to_groups.delete().where(project_to_groups.c.project_uuid == f"{project_id}"))
+        await conn.execute(project_to_groups.delete().where(project_to_groups.c.project_uuid == f"{project_id}"))
