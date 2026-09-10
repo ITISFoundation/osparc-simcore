@@ -115,18 +115,17 @@ async def replace_project_group(
 ) -> ProjectGroupGetDB:
     row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        row = await (
-            await conn.stream(
-                project_to_groups.update()
-                .values(
-                    read=read,
-                    write=write,
-                    delete=delete,
-                )
-                .where((project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id))
-                .returning(literal_column("*"))
+        result = await conn.execute(
+            project_to_groups.update()
+            .values(
+                read=read,
+                write=write,
+                delete=delete,
             )
-        ).first()
+            .where((project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id))
+            .returning(literal_column("*"))
+        )
+        row = result.first()
         if row is None:
             raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)
