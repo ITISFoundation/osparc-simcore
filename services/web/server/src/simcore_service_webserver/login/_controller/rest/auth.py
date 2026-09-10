@@ -9,7 +9,6 @@ from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.logging_utils import log_context
-from servicelib.utils_secrets import are_secrets_equal
 from simcore_postgres_database.models.users import UserRole
 
 from ...._meta import API_VTAG
@@ -215,10 +214,11 @@ async def login_2fa(request: web.Request):
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
-    _expected_2fa_code = await _twofa_service.get_2fa_code(request.app, login_2fa_.email)
-    if not _expected_2fa_code:
+    if not await _twofa_service.has_2fa_code(request.app, login_2fa_.email):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
-    if not are_secrets_equal(got=login_2fa_.code.get_secret_value(), expected=_expected_2fa_code):
+    if not await _twofa_service.verify_2fa_code(
+        request.app, user_email=login_2fa_.email, code=login_2fa_.code.get_secret_value()
+    ):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
     user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=login_2fa_.email))
