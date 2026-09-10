@@ -1,3 +1,4 @@
+import re
 from typing import Annotated, Self
 
 from celery_library.basic_types import BootServerMode
@@ -177,7 +178,7 @@ class ProductTwilioSettings(BaseModel):
     messaging_service_sid: Annotated[str, Field(description="Twilio Messaging Service SID")]
     alphanumeric_sender_id: Annotated[
         str,
-        Field(pattern=TWILIO_ALPHANUMERIC_SENDER_ID_RE),
+        Field(pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE)),
     ]
 
 
