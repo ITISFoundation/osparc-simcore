@@ -117,7 +117,7 @@ register_modified_datetime_auto_update_trigger(comp_tasks)
 
 DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
 DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
-DB_CHANNEL_NAME: str = "comp_tasks_output_events"
+DB_CHANNEL_NAME: str = "outbox_wakeup"
 
 # ------------------------ TRIGGERS
 
@@ -137,34 +137,14 @@ AFTER UPDATE OF outputs,state ON comp_tasks
 task_output_changed_procedure = sa.DDL(
     f"""
 CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
-    DECLARE
-        record RECORD;
-        payload JSON;
-        changes JSONB;
-    BEGIN
-        IF (TG_OP = 'DELETE') THEN
-            record = OLD;
-        ELSE
-            record = NEW;
-        END IF;
+BEGIN
+    INSERT INTO outbox_events (kind, aggregate_type, aggregate_id)
+    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text);
 
-        SELECT jsonb_agg(pre.key ORDER BY pre.key) INTO changes
-        FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
-        WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
+    PERFORM pg_notify('{DB_CHANNEL_NAME}', '');
 
-        payload = json_build_object(
-            'table', TG_TABLE_NAME,
-            'changes', changes,
-            'action', TG_OP,
-            'task_id', record.task_id,
-            'project_id', record.project_id,
-            'node_id', record.node_id
-        );
-
-        PERFORM pg_notify('{DB_CHANNEL_NAME}', payload::text);
-
-        RETURN NULL;
-    END;
+    RETURN NULL;
+END;
 $$ LANGUAGE plpgsql;
 """  # noqa: S608
 )

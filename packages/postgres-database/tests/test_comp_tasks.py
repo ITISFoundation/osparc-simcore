@@ -14,6 +14,7 @@ from simcore_postgres_database.models.comp_tasks import (
     NodeClass,
     comp_tasks,
 )
+from simcore_postgres_database.models.outbox_events import outbox_events
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql.elements import literal_column
 
@@ -65,31 +66,28 @@ async def task(
     return task
 
 
-async def _assert_notification_queue_status(notification_queue: asyncio.Queue, num_exp_messages: int) -> list[dict]:
+async def _assert_wakeup_notifications(notification_queue: asyncio.Queue, num_exp_messages: int) -> None:
+    """the outbox_wakeup channel only carries an empty payload: it's just a wake-up ping"""
     if num_exp_messages > 0:
         assert not notification_queue.empty()
 
-    tasks = []
     for _ in range(num_exp_messages):
-        msg = await notification_queue.get()
-
-        assert msg, "notification msg from postgres is empty!"
-        task_data = json.loads(msg)
-        expected_keys = [
-            "task_id",
-            "project_id",
-            "node_id",
-            "changes",
-            "action",
-            "table",
-        ]
-        for k in expected_keys:
-            assert k in task_data, f"invalid structure, expected [{k}] in {task_data}"
-
-        tasks.append(task_data)
+        msg = await asyncio.wait_for(notification_queue.get(), timeout=5)
+        assert msg == "", f"outbox_wakeup notification payload must be empty, got {msg!r}"
     assert notification_queue.empty(), f"there are {notification_queue.qsize()} remaining messages in the queue"
 
-    return tasks
+
+async def _assert_outbox_events_for_task(conn: AsyncConnection, task_id: int, num_exp_events: int) -> list[dict]:
+    result = await conn.execute(
+        outbox_events.select().where(outbox_events.c.aggregate_id == f"{task_id}").order_by(outbox_events.c.id)
+    )
+    rows = [dict(r) for r in result.mappings().all()]
+    assert len(rows) == num_exp_events, f"expected {num_exp_events} outbox events for task {task_id}, got {rows}"
+    for row in rows:
+        assert row["kind"] == "comp_task.sync.v1"
+        assert row["aggregate_type"] == "comp_task"
+        assert row["aggregate_id"] == f"{task_id}"
+    return rows
 
 
 async def _update_comp_task_with(conn: AsyncConnection, task: dict, **kwargs):
@@ -106,45 +104,28 @@ async def test_listen_query(
     task: dict,
 ):
     """this tests how the postgres LISTEN query and in particular the asyncpg implementation of it works"""
+    task_id = task["task_id"]
+
     # let's test the trigger
     updated_output = {"some new stuff": "it is new"}
     await _update_comp_task_with(db_connection, task, outputs=updated_output, state=StateType.ABORTED)
-    tasks = await _assert_notification_queue_status(db_notification_queue, 1)
-    assert tasks[0]["changes"] == ["modified", "outputs", "state"]
-    assert tasks[0]["action"] == "UPDATE"
-    assert tasks[0]["table"] == "comp_tasks"
-    assert tasks[0]["task_id"] == task["task_id"]
-    assert tasks[0]["project_id"] == task["project_id"]
-    assert tasks[0]["node_id"] == task["node_id"]
-
-    assert "data" not in tasks[0], "data is not expected in the notification payload anymore"
+    await _assert_wakeup_notifications(db_notification_queue, 1)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1)
+    await db_connection.execute(outbox_events.delete().where(outbox_events.c.aggregate_id == f"{task_id}"))
 
     # setting the exact same data twice triggers only ONCE
     updated_output = {"some new stuff": "it is newer"}
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
-    tasks = await _assert_notification_queue_status(db_notification_queue, 1)
-    assert tasks[0]["changes"] == ["modified", "outputs"]
-    assert tasks[0]["action"] == "UPDATE"
-    assert tasks[0]["table"] == "comp_tasks"
-    assert tasks[0]["task_id"] == task["task_id"]
-    assert tasks[0]["project_id"] == task["project_id"]
-    assert tasks[0]["node_id"] == task["node_id"]
-    # updating a number of times with different stuff comes out in FIFO order
+    await _assert_wakeup_notifications(db_notification_queue, 1)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1)
+    await db_connection.execute(outbox_events.delete().where(outbox_events.c.aggregate_id == f"{task_id}"))
+
+    # updating a number of times with different stuff comes out in FIFO order (one outbox event per update)
     NUM_CALLS = 20
-    update_outputs = []
     for n in range(NUM_CALLS):
         new_output = {"some new stuff": f"a {n} time"}
         await _update_comp_task_with(db_connection, task, outputs=new_output)
-        update_outputs.append(new_output)
 
-    tasks = await _assert_notification_queue_status(db_notification_queue, NUM_CALLS)
-
-    for n, output in enumerate(update_outputs):
-        assert output
-        assert tasks[n]["changes"] == ["modified", "outputs"]
-        assert tasks[n]["action"] == "UPDATE"
-        assert tasks[n]["table"] == "comp_tasks"
-        assert tasks[n]["task_id"] == task["task_id"]
-        assert tasks[n]["project_id"] == task["project_id"]
-        assert tasks[n]["node_id"] == task["node_id"]
+    await _assert_wakeup_notifications(db_notification_queue, NUM_CALLS)
+    await _assert_outbox_events_for_task(db_connection, task_id, NUM_CALLS)
