@@ -160,7 +160,7 @@ async def update_or_insert_project_group(
                 "modified": func.now(),
             },
         )
-        await conn.stream(on_update_stmt)
+        await conn.execute(on_update_stmt)
 
 
 async def delete_project_group(
