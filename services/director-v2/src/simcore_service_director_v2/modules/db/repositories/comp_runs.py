@@ -18,6 +18,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -49,6 +50,8 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[dict[sa.Column, tuple[type[DirectorError
         ("projects", "project_id"),
     ),
 }
+
+_COMP_RUNS_LIST_TYPE_ADAPTER: Final[TypeAdapter[list[CompRunsAtDB]]] = TypeAdapter(list[CompRunsAtDB])
 
 
 async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> Iteration:
@@ -236,15 +239,10 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with self.db_engine.connect() as conn:
-            return [
-                CompRunsAtDB.model_validate(row)
-                async for row in await conn.stream(
-                    sa.select(comp_runs).where(
-                        sa.and_(True, *conditions)  # noqa: FBT003
-                    )
-                )
-            ]
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(sa.select(comp_runs).where(sa.and_(*conditions)))
+            rows = result.mappings().all()
+            return _COMP_RUNS_LIST_TYPE_ADAPTER.validate_python(rows)
 
     _COMPUTATION_RUNS_RPC_GET_COLUMNS = [  # noqa: RUF012
         comp_runs.c.project_uuid,
