@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.5.0
     # via pre-commit
-click==8.2.1
+click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -39,7 +39,7 @@ mypy-extensions==1.1.0
     #   mypy
 nodeenv==1.10.0
     # via pre-commit
-packaging==24.2
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -72,7 +72,7 @@ ruff==0.15.6
     # via -r requirements/../../../requirements/devenv.txt
 tomlkit==0.14.0
     # via pylint
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
