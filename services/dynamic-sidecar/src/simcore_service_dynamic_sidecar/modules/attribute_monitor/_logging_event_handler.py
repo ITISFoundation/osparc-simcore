@@ -94,7 +94,7 @@ class _LoggingEventHandlerProcess:
 
         # This is accessible from the creating process and from
         # the process itself and is used to stop the process.
-        self._stop_queue: Queue[None] = multiprocessing.Queue()
+        self._stop_queue: Queue[None] | None = None
 
         self._process_lock: Lock = Lock()
         self._process: multiprocessing.Process | None = None
@@ -130,7 +130,9 @@ class _LoggingEventHandlerProcess:
             ),
             self._process_lock,
         ):
-            self._stop_queue.put(None)
+            if self._stop_queue is not None:
+                self._stop_queue.put(None)
+                self._stop_queue = None
 
             if self._process:
                 # force stop the process
