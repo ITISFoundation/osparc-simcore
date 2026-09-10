@@ -1368,10 +1368,7 @@ services:
       RESOURCE_MANAGER_RESOURCE_TTL_S: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 
     deploy:
-      # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/4286
-      # NOTE: this MUSTN'T change, or weird things might happen
-      # this will stay until all legacy dynamic services are gone.
-      replicas: 1
+      replicas: 2
     networks:
       - default
 
