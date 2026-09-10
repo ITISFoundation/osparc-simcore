@@ -51,8 +51,6 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[dict[sa.Column, tuple[type[DirectorError
     ),
 }
 
-_COMP_RUNS_LIST_TYPE_ADAPTER: Final[TypeAdapter[list[CompRunsAtDB]]] = TypeAdapter(list[CompRunsAtDB])
-
 
 async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> Iteration:
     """Calculate the next iteration number for a project"""
@@ -242,7 +240,7 @@ class CompRunsRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine) as conn:
             result = await conn.execute(sa.select(comp_runs).where(sa.and_(*conditions)))
             rows = result.mappings().all()
-            return _COMP_RUNS_LIST_TYPE_ADAPTER.validate_python(rows)
+            return TypeAdapter(list[CompRunsAtDB]).validate_python(rows)
 
     _COMPUTATION_RUNS_RPC_GET_COLUMNS = [  # noqa: RUF012
         comp_runs.c.project_uuid,
