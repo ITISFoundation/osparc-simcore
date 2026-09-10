@@ -4,7 +4,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
@@ -12,7 +12,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import func, literal_column
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
@@ -88,8 +88,8 @@ async def list_workspace_groups(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(stmt)
-        return [WorkspaceGroupGetDB.model_validate(row) async for row in result]
+        result = await conn.execute(stmt)
+        return TypeAdapter(list[WorkspaceGroupGetDB]).validate_python(result.mappings().all())
 
 
 async def update_workspace_group(
@@ -102,23 +102,20 @@ async def update_workspace_group(
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        row = await (
-            await conn.stream(
-                workspaces_access_rights.update()
-                .values(
-                    read=read,
-                    write=write,
-                    delete=delete,
-                )
-                .where(
-                    (workspaces_access_rights.c.workspace_id == workspace_id)
-                    & (workspaces_access_rights.c.gid == group_id)
-                )
-                .returning(literal_column("*"))
+        result = await conn.execute(
+            workspaces_access_rights.update()
+            .values(
+                read=read,
+                write=write,
+                delete=delete,
             )
-        ).first()
+            .where(
+                (workspaces_access_rights.c.workspace_id == workspace_id) & (workspaces_access_rights.c.gid == group_id)
+            )
+            .returning(*workspaces_access_rights.c)
+        )
+        row = result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(workspace_id=workspace_id, group_id=group_id)
         return WorkspaceGroupGetDB.model_validate(row)
