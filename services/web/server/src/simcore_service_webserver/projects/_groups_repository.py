@@ -70,8 +70,8 @@ async def list_project_groups(
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(stmt)
-        rows = await result.all() or []
+        result = await conn.execute(stmt)
+        rows = result.all()
         return TypeAdapter(list[ProjectGroupGetDB]).validate_python(rows)
 
 
