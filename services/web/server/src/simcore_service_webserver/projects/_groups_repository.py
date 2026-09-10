@@ -96,8 +96,8 @@ async def get_project_group(
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(stmt)
-        row = await result.first()
+        result = await conn.execute(stmt)
+        row = result.first()
         if row is None:
             raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)
