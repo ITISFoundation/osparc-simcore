@@ -31,7 +31,7 @@ async def create_project_group(
     row: object | None
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         row = await (
-            await conn.stream(
+            await conn.ex(
                 project_to_groups.insert()
                 .values(
                     project_uuid=f"{project_id}",
@@ -172,7 +172,7 @@ async def delete_project_group(
     group_id: GroupID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(
+        await conn.execute(
             project_to_groups.delete().where(
                 (project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id)
             )
