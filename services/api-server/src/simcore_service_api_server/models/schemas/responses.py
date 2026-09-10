@@ -130,7 +130,6 @@ class CreateResponseRequest(ApiServerInputSchema):
         supported = get_args(ChatModel)
         if not isinstance(v, str) or v not in supported:
             msg = f"Model '{v}' is not supported. Supported models: {sorted(supported)}"
-            # TODO: we need to trap and add custom handlers that transform the base errors into OPENAPI standard so that the FE can render them properly. We need a translation layer here # noqa: FIX002
             raise ValueError(msg)
         return v
 
