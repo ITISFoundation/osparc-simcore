@@ -25,22 +25,23 @@ from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB
-from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
-    _get_changed_comp_task_row,
+    _claim_and_process_outbox_events,
+    _claim_next_outbox_event,
+    _get_comp_task_row,
     _get_project_owner,
-    _handle_db_notification,
+    _process_outbox_event,
     create_comp_tasks_listening_task,
 )
-from simcore_service_webserver.db_listener._models import CompTaskNotificationPayload
 from simcore_service_webserver.projects import exceptions
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import stop_after_attempt
@@ -89,12 +90,12 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
 
 
 @pytest.fixture
-async def spied_get_changed_comp_task_row(
+async def spied_get_comp_task_row(
     mocker: MockerFixture,
 ) -> MockType:
     return mocker.spy(
         simcore_service_webserver.db_listener._db_comp_tasks_listening_task,  # noqa: SLF001
-        "_get_changed_comp_task_row",
+        "_get_comp_task_row",
     )
 
 
@@ -170,7 +171,7 @@ async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock]
 async def test_db_listener_triggers_on_event_with_multiple_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
-    spied_get_changed_comp_task_row: MockType,
+    spied_get_comp_task_row: MockType,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
@@ -204,12 +205,12 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
 
     # Assert the spy was called with the correct task_id
     if params.expected_calls:
-        assert any(call.args[1] == updated_task_id for call in spied_get_changed_comp_task_row.call_args_list), (
-            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}."
-            f" Calls: {spied_get_changed_comp_task_row.call_args_list}"
+        assert any(call.args[1] == updated_task_id for call in spied_get_comp_task_row.call_args_list), (
+            f"_get_comp_task_row was not called with task_id={updated_task_id}."
+            f" Calls: {spied_get_comp_task_row.call_args_list}"
         )
     else:
-        spied_get_changed_comp_task_row.assert_not_called()
+        spied_get_comp_task_row.assert_not_called()
 
 
 @pytest.fixture
@@ -263,7 +264,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
     fake_2connected_jupyterlabs_workbench: dict[str, Any],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
-    spied_get_changed_comp_task_row: MockType,
+    spied_get_comp_task_row: MockType,
     faker: Faker,
 ):
     some_project = await create_project(logged_user, workbench=fake_2connected_jupyterlabs_workbench)
@@ -388,7 +389,7 @@ async def test_get_project_owner_raises_when_project_missing(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_changed_comp_task_row_returns_task(
+async def test_get_comp_task_row_returns_task(
     sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -405,68 +406,44 @@ async def test_get_changed_comp_task_row_returns_task(
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_changed_comp_task_row(conn, task["task_id"])
+        row = await _get_comp_task_row(conn, task["task_id"])
     assert row is not None
     assert row.task_id == task["task_id"]
 
 
-async def test_get_changed_comp_task_row_returns_none_for_missing_task(
+async def test_get_comp_task_row_returns_none_for_missing_task(
     sqlalchemy_async_engine: AsyncEngine,
 ):
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_changed_comp_task_row(conn, 999999)
+        row = await _get_comp_task_row(conn, 999999)
     assert row is None
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_handle_db_notification_logs_warning_on_missing_project(
-    sqlalchemy_async_engine: AsyncEngine,
-    client: TestClient,
-    logged_user: UserInfoDict,
-    faker: Faker,
-    caplog: pytest.LogCaptureFixture,
-):
-    assert client.app
-    payload = CompTaskNotificationPayload(
-        action="UPDATE",
-        changes=["outputs"],
-        table="comp_tasks",
-        task_id=999999,
-        project_id=faker.uuid4(),
-        node_id=faker.uuid4(),
-    )
-    with caplog.at_level(logging.WARNING):
-        await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    assert "could not be found" in caplog.text or "not found" in caplog.text.lower()
+# --------- Unit tests for outbox claim/process functions ---------
+
+
+async def _get_outbox_events_for_task(engine: AsyncEngine, task_id: int) -> list[dict]:
+    async with engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().where(outbox_events.c.aggregate_id == f"{task_id}"))
+        return [dict(r) for r in result.mappings().all()]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_handle_db_notification_logs_warning_on_missing_comp_task(
+async def test_process_outbox_event_logs_warning_on_missing_comp_task(
     sqlalchemy_async_engine: AsyncEngine,
     client: TestClient,
     logged_user: UserInfoDict,
-    create_project: Callable[..., Awaitable[ProjectAtDB]],
     caplog: pytest.LogCaptureFixture,
-    faker: Faker,
 ):
     assert client.app
-    project = await create_project(logged_user)
-    payload = CompTaskNotificationPayload(
-        action="UPDATE",
-        changes=["outputs"],
-        table="comp_tasks",
-        task_id=999999,
-        project_id=project.uuid,
-        node_id=faker.uuid4(),
-    )
     with caplog.at_level(logging.WARNING):
-        await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    assert "No comp_tasks row found" in caplog.text
+        await _process_outbox_event(client.app, sqlalchemy_async_engine, 999999)
+    assert "not found" in caplog.text.lower()
 
 
 @pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_handle_db_notification_with_output_change(
+async def test_process_outbox_event_with_output_change(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
     client: TestClient,
@@ -487,21 +464,13 @@ async def test_handle_db_notification_with_output_change(
         outputs=json.dumps({"out1": "val1"}),
         node_class=task_class,
     )
-    payload = CompTaskNotificationPayload(
-        action="UPDATE",
-        changes=["outputs"],
-        table="comp_tasks",
-        task_id=task["task_id"],
-        project_id=project.uuid,
-        node_id=node_id,
-    )
-    await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
+    await _process_outbox_event(client.app, sqlalchemy_async_engine, task["task_id"])
     mock_project_subsystem["update_node_outputs"].assert_called_once()
 
 
 @pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_handle_db_notification_with_state_change(
+async def test_process_outbox_event_with_state_change(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
     client: TestClient,
@@ -527,22 +496,59 @@ async def test_handle_db_notification_with_state_change(
         await conn.execute(
             comp_tasks.update().values(state=StateType.ABORTED).where(comp_tasks.c.task_id == task["task_id"])
         )
-    payload = CompTaskNotificationPayload(
-        action="UPDATE",
-        changes=["state"],
-        table="comp_tasks",
-        task_id=task["task_id"],
-        project_id=project.uuid,
-        node_id=node_id,
-    )
-    await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
+    await _process_outbox_event(client.app, sqlalchemy_async_engine, task["task_id"])
     mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_handle_db_notification_ignores_non_output_non_state_changes(
+async def test_claim_next_outbox_event_deletes_claimed_row(
+    sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    # the comp_tasks trigger only fires on outputs/state UPDATE, so we generate one
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 1
+
+    claimed = await _claim_next_outbox_event(sqlalchemy_async_engine)
+    assert claimed is not None
+    assert claimed.aggregate_id == f"{task['task_id']}"
+    assert claimed.kind == "comp_task.sync.v1"
+
+    # the row must have been removed by the claim itself
+    rows_after = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert rows_after == []
+
+    # no more events pending
+    assert await _claim_next_outbox_event(sqlalchemy_async_engine) is None
+
+
+async def test_claim_next_outbox_event_returns_none_when_empty(
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    assert await _claim_next_outbox_event(sqlalchemy_async_engine) is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_claim_and_process_outbox_events_drains_all_pending_events(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
     client: TestClient,
@@ -555,28 +561,74 @@ async def test_handle_db_notification_ignores_non_output_non_state_changes(
     assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
-    node_id = faker.uuid4()
-    task = await create_comp_task(
-        project_id=f"{project.uuid}",
-        node_id=node_id,
-        outputs=json.dumps({}),
-        node_class=NodeClass.COMPUTATIONAL,
-    )
-    payload = CompTaskNotificationPayload(
-        action="UPDATE",
-        changes=["inputs"],
-        table="comp_tasks",
-        task_id=task["task_id"],
-        project_id=project.uuid,
-        node_id=node_id,
-    )
-    await _handle_db_notification(client.app, payload, sqlalchemy_async_engine)
-    for mocked_call in mock_project_subsystem.values():
-        mocked_call.assert_not_called()
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(3)
+    ]
+    async with sqlalchemy_async_engine.begin() as conn:
+        for task in tasks:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select())
+        assert len(result.fetchall()) == 3
+
+    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+
+    assert mock_project_subsystem["update_node_outputs"].call_count == 3
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select())
+        assert result.fetchall() == []
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_listen_notify_asyncpg_receives_notifications(
+async def test_claim_and_process_outbox_events_requeues_on_failure(
+    sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        side_effect=RuntimeError("boom"),
+    )
+    mocker.patch("asyncio.sleep", return_value=None)  # skip the retry backoff delay
+
+    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
+    assert rows[0]["attempts"] == 1
+    assert "boom" in rows[0]["last_error"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_concurrent_claims_do_not_double_process_same_event(
     sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -584,14 +636,44 @@ async def test_listen_notify_asyncpg_receives_notifications(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
-    """Tests that asyncpg LISTEN/NOTIFY callback receives notifications
-    when comp_tasks rows are updated (trigger fires NOTIFY)."""
+    """Simulates two replicas racing to claim the same outbox event: only one may win."""
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
-    node_id = faker.uuid4()
     task = await create_comp_task(
         project_id=f"{project.uuid}",
-        node_id=node_id,
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    results = await asyncio.gather(
+        _claim_next_outbox_event(sqlalchemy_async_engine),
+        _claim_next_outbox_event(sqlalchemy_async_engine),
+    )
+    claimed_rows = [r for r in results if r is not None]
+    assert len(claimed_rows) == 1, "exactly one concurrent claimant should have won the event"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_listen_notify_uses_pooled_connection_and_wakes_up(
+    sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Tests that a connection borrowed from the shared engine pool (not a standalone
+    connection) receives the outbox_wakeup notification when comp_tasks is updated."""
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
         outputs=json.dumps({}),
         node_class=NodeClass.COMPUTATIONAL,
     )
@@ -601,79 +683,20 @@ async def test_listen_notify_asyncpg_receives_notifications(
     def _on_notification(conn: object, pid: int, channel: str, payload: str) -> None:
         received.put_nowait(payload)
 
-    # Set up a raw asyncpg listener
+    # Borrow a connection from the engine's pool, exactly like the worker does
     async with sqlalchemy_async_engine.connect() as conn:
         raw_conn = await conn.get_raw_connection()
         asyncpg_conn = raw_conn.driver_connection
+        assert asyncpg_conn is not None
         await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_notification)
 
         try:
-            # Trigger an UPDATE that should fire the NOTIFY
             async with sqlalchemy_async_engine.begin() as write_conn:
                 await write_conn.execute(
                     comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
                 )
 
-            # Wait for the notification
             raw_payload = await asyncio.wait_for(received.get(), timeout=5.0)
-            parsed = CompTaskNotificationPayload.model_validate_json(raw_payload)
-            assert parsed.task_id == task["task_id"]
-            assert parsed.project_id == project.uuid
-            assert parsed.node_id == NodeID(node_id)
-            assert "outputs" in parsed.changes
-        finally:
-            await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)
-
-
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_listen_notify_asyncpg_multiple_rapid_updates(
-    sqlalchemy_async_engine: AsyncEngine,
-    logged_user: UserInfoDict,
-    create_project: Callable[..., Awaitable[ProjectAtDB]],
-    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
-    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
-    faker: Faker,
-):
-    """Tests that multiple rapid updates each produce a notification."""
-    project = await create_project(logged_user)
-    await create_pipeline(project_id=f"{project.uuid}")
-    node_id = faker.uuid4()
-    task = await create_comp_task(
-        project_id=f"{project.uuid}",
-        node_id=node_id,
-        outputs=json.dumps({}),
-        node_class=NodeClass.COMPUTATIONAL,
-    )
-
-    received: asyncio.Queue[str] = asyncio.Queue()
-
-    def _on_notification(conn: object, pid: int, channel: str, payload: str) -> None:
-        received.put_nowait(payload)
-
-    async with sqlalchemy_async_engine.connect() as conn:
-        raw_conn = await conn.get_raw_connection()
-        asyncpg_conn = raw_conn.driver_connection
-        await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_notification)
-
-        try:
-            num_updates = 5
-            for i in range(num_updates):
-                async with sqlalchemy_async_engine.begin() as write_conn:
-                    await write_conn.execute(
-                        comp_tasks.update()
-                        .values(outputs={f"output_{i}": f"data_{i}"})
-                        .where(comp_tasks.c.task_id == task["task_id"])
-                    )
-
-            # Collect all notifications
-            notifications = []
-            for _ in range(num_updates):
-                raw_payload = await asyncio.wait_for(received.get(), timeout=5.0)
-                notifications.append(CompTaskNotificationPayload.model_validate_json(raw_payload))
-
-            assert len(notifications) == num_updates
-            for n in notifications:
-                assert n.task_id == task["task_id"]
-                assert "outputs" in n.changes
+            assert raw_payload == ""
         finally:
             await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)
