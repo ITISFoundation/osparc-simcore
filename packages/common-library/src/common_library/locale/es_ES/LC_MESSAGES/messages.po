@@ -3590,3 +3590,15 @@ msgstr ""
 #~ msgstr ""
 #~ "No se pudo encontrar al propietario del proyecto en los derechos de acceso "
 #~ "del proyecto."
+
+# CTX-INTERPRETATION: This string appears in the context of a file copying
+# operation.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
+msgid "Copying files"
+msgstr "Copiando archivos"
+
+# CTX-INTERPRETATION: This string appears in the context of creating an
+# export archive.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
+msgid "Creating export archive"
+msgstr "Creando el archivo de exportación"
