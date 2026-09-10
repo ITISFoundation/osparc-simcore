@@ -64,12 +64,11 @@ def test_channel_close_callback_with_connection_closed_marks_unhealthy(
     assert client_base.healthy is False
 
 
-def test_channel_close_callback_with_cancelled_error_marks_unhealthy(
+def test_channel_close_callback_with_cancelled_error_stays_healthy(
     client_base: RabbitMQClientBase,
 ):
-    """asyncio.CancelledError during shutdown still marks the client unhealthy."""
     client_base._channel_close_callback(sender="1", exc=asyncio.CancelledError())
-    assert client_base.healthy is False
+    assert client_base.healthy is True
 
 
 def test_channel_close_callback_with_channel_closed_marks_unhealthy(
@@ -103,11 +102,11 @@ def test_channel_close_callback_with_no_exception_stays_healthy(
 # ---------------------------------------------------------------------------
 
 
-def test_connection_close_callback_with_cancelled_error_marks_unhealthy(
+def test_connection_close_callback_with_cancelled_error_stays_healthy(
     client_base: RabbitMQClientBase,
 ):
     client_base._connection_close_callback(sender="1", exc=asyncio.CancelledError())
-    assert client_base.healthy is False
+    assert client_base.healthy is True
 
 
 def test_connection_close_callback_with_connection_closed_marks_unhealthy(

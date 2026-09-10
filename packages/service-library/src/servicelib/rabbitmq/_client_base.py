@@ -52,50 +52,65 @@ class RabbitMQClientBase:
         sender: Any,  # pylint: disable=unused-argument
         exc: BaseException | None,
     ) -> None:
-        if exc:
-            if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ConnectionClosed):
-                _logger.info(
-                    **create_troubleshooting_log_kwargs(
-                        "RabbitMQ connection closed",
-                        error=exc,
-                        error_context={"sender": sender},
-                    )
+        if not exc:
+            return
+
+        if isinstance(exc, asyncio.CancelledError):
+            _logger.info(
+                **create_troubleshooting_log_kwargs(
+                    "RabbitMQ connection cancelled",
+                    error=exc,
+                    error_context={"sender": sender},
                 )
-            else:
-                _logger.error(
-                    **create_troubleshooting_log_kwargs(
-                        "RabbitMQ connection closed with unexpected error",
-                        error=exc,
-                        error_context={"sender": sender},
-                    )
-                )
-            self._mark_unhealthy()
+            )
+            return
+
+        _logger.error(
+            **create_troubleshooting_log_kwargs(
+                "RabbitMQ connection closed",
+                error=exc,
+                error_context={"sender": sender},
+            )
+        )
+        self._mark_unhealthy()
 
     def _channel_close_callback(
         self,
         sender: Any,
         exc: BaseException | None,
     ) -> None:
-        if exc:
-            if isinstance(exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed) or (
-                isinstance(exc, aiormq.exceptions.ConnectionClosed) and _AWS_MAINTENANCE_MODE_MESSAGE in f"{exc}"
-            ):
-                _logger.info(
-                    **create_troubleshooting_log_kwargs(
-                        "RabbitMQ channel closed gracefully (maintenance mode)",
-                        error=exc,
-                        error_context={"sender": sender},
-                    )
+        if not exc:
+            return
+
+        if isinstance(exc, asyncio.CancelledError):
+            _logger.info(
+                **create_troubleshooting_log_kwargs(
+                    "RabbitMQ channel cancelled",
+                    error=exc,
+                    error_context={"sender": sender},
                 )
-            else:
-                _logger.error(
-                    **create_troubleshooting_log_kwargs(
-                        "RabbitMQ channel closed with unexpected error",
-                        error=exc,
-                        error_context={"sender": sender},
-                    )
+            )
+            return
+
+        if isinstance(exc, aiormq.exceptions.ChannelClosed) or (
+            isinstance(exc, aiormq.exceptions.ConnectionClosed) and _AWS_MAINTENANCE_MODE_MESSAGE in f"{exc}"
+        ):
+            _logger.info(
+                **create_troubleshooting_log_kwargs(
+                    "RabbitMQ channel closed gracefully (maintenance mode)",
+                    error=exc,
+                    error_context={"sender": sender},
                 )
-            self._mark_unhealthy()
+            )
+        else:
+            _logger.error(
+                **create_troubleshooting_log_kwargs(
+                    "RabbitMQ channel closed with unexpected error",
+                    error=exc,
+                    error_context={"sender": sender},
+                )
+            )
+        self._mark_unhealthy()
 
     def _connection_reconnect_callback(
         self,
