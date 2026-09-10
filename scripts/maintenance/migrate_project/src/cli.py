@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from db import (
@@ -10,8 +11,10 @@ from db import (
 from models import Settings
 from r_clone import assemble_config_file, sync_file
 
+CONFIG_OPTION = typer.Option(..., exists=True)
 
-def main(config: Path = typer.Option(..., exists=True)):
+
+def main(config: Annotated[Path, CONFIG_OPTION]):
     assert config.exists()  # nosec
     settings = Settings.load_from_file(config)
     typer.echo(f"Detected settings:\n{settings.model_dump_json(indent=2)}\n")
@@ -19,12 +22,12 @@ def main(config: Path = typer.Option(..., exists=True)):
     r_clone_config_path = assemble_config_file(
         # source
         source_access_key=settings.source.s3.access_key,
-        source_secret_key=settings.source.s3.secret_key,
+        source_secret_key=settings.source.s3.secret_key.get_secret_value(),
         source_endpoint=settings.source.s3.endpoint,
         source_provider=settings.source.s3.provider,
         # destination
         destination_access_key=settings.destination.s3.access_key,
-        destination_secret_key=settings.destination.s3.secret_key,
+        destination_secret_key=settings.destination.s3.secret_key.get_secret_value(),
         destination_endpoint=settings.destination.s3.endpoint,
         destination_provider=settings.destination.s3.provider,
     )

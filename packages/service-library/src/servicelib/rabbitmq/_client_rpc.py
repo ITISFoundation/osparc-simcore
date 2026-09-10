@@ -115,9 +115,9 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                 async with self._surface_lock:
                     await self._rebuild_rpc_surface()
             except Exception:
-                self._healthy_state = False
+                self._mark_unhealthy()
                 raise
-            self._healthy_state = True
+            self._mark_healthy()
 
     async def close(self) -> None:
         with log_context(

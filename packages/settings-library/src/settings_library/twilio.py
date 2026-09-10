@@ -5,13 +5,13 @@ For twilio SMS services:
     SEE https://support.twilio.com/hc/en-us/articles/223136027-Auth-Tokens-and-How-to-Change-Them
 """
 
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
-from pydantic import BeforeValidator, Field, StringConstraints, TypeAdapter
+from pydantic import BeforeValidator, Field, SecretStr, StringConstraints, TypeAdapter
 
 from .base import BaseCustomSettings
 
-CountryCodeStr: TypeAlias = Annotated[
+type CountryCodeStr = Annotated[
     str,
     BeforeValidator(str),
     # Based on https://countrycode.org/
@@ -26,7 +26,7 @@ class TwilioSettings(BaseCustomSettings):
     ]
 
     TWILIO_AUTH_TOKEN: Annotated[
-        str,
+        SecretStr,
         Field(description="API tokens"),
     ]
 
