@@ -117,12 +117,8 @@ class CreateResponseRequest(ApiServerInputSchema):
     """Request body for POST /responses."""
 
     background: Literal[True]
-    input: Annotated[
-        list[InputMessage], Field(min_length=1, max_length=50)
-    ]  # TODO: whi is this 50 maybe we can max add 50 items to the input must be changed  # noqa: FIX002
-    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = (
-        None  # usnsure why this is also this low
-    )
+    input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
+    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
     model: Any  # validation is done in validator because of OpenAI's tricky OAS
     stream: bool = False
     temperature: Temperature
