@@ -50,15 +50,15 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-debugpy==1.8.20
+debugpy==1.8.21
     # via pytest-celery
-docker==7.1.0
+docker==7.2.0
     # via
     #   pytest-celery
     #   pytest-docker-tools
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.38.0
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint
@@ -92,16 +92,16 @@ kombu==5.6.2
     #   -c requirements/_base.txt
     #   celery
     #   pytest-celery
-lupa==2.6
+lupa==2.8
     # via fakeredis
 packaging==26.0
     # via
     #   -c requirements/_base.txt
     #   kombu
     #   pytest
-pint==0.25.2
+pint==0.25.3
     # via -r requirements/_test.in
-platformdirs==4.9.4
+platformdirs==4.11.8
     # via pint
 pluggy==1.6.0
     # via

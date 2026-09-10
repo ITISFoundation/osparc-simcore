@@ -2,38 +2,36 @@
 #    uv pip compile --output-file=requirements/_test.txt requirements/_test.in
 arrow==1.4.0
     # via -r requirements/_test.in
+ast-serialize==0.11.1
+    # via mypy
 attrs==26.1.0
     # via pytest-docker
-cffi==2.0.0
-    # via cryptography
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==50.0.0
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   types-paramiko
 faker==40.38.0
     # via -r requirements/_test.in
+greenlet==3.3.2
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 iniconfig==2.3.0
     # via pytest
-librt==0.8.1
+librt==0.15.0
     # via mypy
-mypy==1.19.1
+mypy==2.3.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-packaging==26.0
+packaging==26.3
     # via pytest
-pathspec==1.0.4
+pathspec==1.1.1
     # via mypy
 pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pycparser==3.0
-    # via cffi
 pygments==2.21.0
     # via pytest
 pytest==9.1.1
@@ -70,13 +68,11 @@ sqlalchemy==2.0.51
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   -r requirements/_test.in
-types-docker==7.1.0.20260109
+types-docker==7.2.0.20260827
     # via -r requirements/_test.in
-types-paramiko==4.0.0.20250822
-    # via types-docker
-types-psycopg2==2.9.21.20260223
+types-psycopg2==2.9.21.20260724
     # via -r requirements/_test.in
-types-requests==2.32.4.20260107
+types-requests==2.33.0.20260906
     # via types-docker
 typing-extensions==4.15.0
     # via
@@ -84,7 +80,7 @@ typing-extensions==4.15.0
     #   -c requirements/_migration.txt
     #   mypy
     #   sqlalchemy
-tzdata==2025.3
+tzdata==2026.3
     # via arrow
 urllib3==2.7.0
     # via

@@ -18,9 +18,9 @@ packaging==26.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pint==0.25.2
+pint==0.25.3
     # via -r requirements/_test.in
-platformdirs==4.9.4
+platformdirs==4.11.8
     # via pint
 pluggy==1.6.0
     # via

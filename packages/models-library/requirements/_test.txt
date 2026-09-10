@@ -22,13 +22,13 @@ idna==3.19
     #   yarl
 iniconfig==2.3.0
     # via pytest
-multidict==6.7.1
+multidict==6.8.0
     # via yarl
-packaging==26.0
+packaging==26.3
     # via pytest
-pint==0.25.2
+pint==0.25.3
     # via -r requirements/_test.in
-platformdirs==4.9.4
+platformdirs==4.11.8
     # via pint
 pluggy==1.6.0
     # via
@@ -83,9 +83,9 @@ rpds-py==0.30.0
     #   referencing
 termcolor==3.3.0
     # via pytest-sugar
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20260518
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via

@@ -14,7 +14,7 @@ icdiff==2.0.10
     # via pytest-icdiff
 iniconfig==2.3.0
     # via pytest
-packaging==26.0
+packaging==26.3
     # via pytest
 pluggy==1.6.0
     # via
@@ -32,7 +32,7 @@ pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pydantic-settings==2.14.2
+pydantic-settings==2.15.0
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
