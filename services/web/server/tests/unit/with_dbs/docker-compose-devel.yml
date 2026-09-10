@@ -48,7 +48,7 @@ services:
     depends_on:
       - postgres
   redis:
-    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
+    image: "valkey/valkey:7.2@sha256:1bbb912679bea3ec2c1b21af3860beb4397774e9118eddad4ae50d8e97fabb99"
     init: true
     ports:
       - "6379:6379"
@@ -57,7 +57,7 @@ services:
       TEST_REDIS_PASSWORD: ${TEST_REDIS_PASSWORD:-adminadminadmin}
     command:
       [
-        "redis-server",
+        "valkey-server",
         "--loglevel",
         "verbose",
         "--databases",
