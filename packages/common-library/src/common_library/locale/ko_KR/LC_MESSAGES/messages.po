@@ -3044,3 +3044,15 @@ msgid ""
 "We apologize for the inconvenience. The issue has been recorded, please "
 "report it if it persists."
 msgstr "불편을 드려 죄송합니다. 문제가 기록되었으며, 지속되면 보고해 주시기 바랍니다."
+
+# CTX-INTERPRETATION: This string appears in the context of a file copying
+# operation.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
+msgid "Copying files"
+msgstr "파일 복사 중"
+
+# CTX-INTERPRETATION: This string appears in the context of creating an
+# export archive.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
+msgid "Creating export archive"
+msgstr "내보내기 아카이브 생성"
