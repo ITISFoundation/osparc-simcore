@@ -14,7 +14,7 @@ icdiff==2.0.10
     # via pytest-icdiff
 iniconfig==2.3.0
     # via pytest
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -62,7 +62,7 @@ pyyaml==6.0.3
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   flexcache

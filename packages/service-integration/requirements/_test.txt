@@ -12,7 +12,7 @@ iniconfig==2.3.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -40,11 +40,11 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-referencing==0.35.1
+referencing==0.37.0
     # via
     #   -c requirements/_base.txt
     #   types-jsonschema
-rpds-py==0.30.0
+rpds-py==2026.6.3
     # via
     #   -c requirements/_base.txt
     #   referencing

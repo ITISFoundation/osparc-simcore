@@ -12,9 +12,10 @@ coverage==7.16.0
     #   pytest-cov
 faker==40.38.0
     # via -r requirements/_test.in
-greenlet==3.3.2
+greenlet==3.5.5
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_migration.txt
     #   sqlalchemy
 iniconfig==2.3.0
     # via pytest
@@ -62,7 +63,7 @@ pyyaml==6.0.3
     #   -r requirements/_test.in
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==2.0.52
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -74,7 +75,7 @@ types-psycopg2==2.9.21.20260724
     # via -r requirements/_test.in
 types-requests==2.33.0.20260906
     # via types-docker
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
