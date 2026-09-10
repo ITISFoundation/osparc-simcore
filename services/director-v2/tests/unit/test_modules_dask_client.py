@@ -223,6 +223,44 @@ async def dask_client(
     return client
 
 
+async def test_create_dask_client_recovers_from_scheduler_info_with_non_str_keys(
+    _minimal_dask_config: None,
+    dask_spec_local_cluster: distributed.SpecCluster,
+    minimal_app: FastAPI,
+    tasks_file_link_type: FileLinkType,
+    mocker: MockerFixture,
+):
+    original_get_scheduler_details = get_scheduler_details
+
+    async def _get_scheduler_details_with_non_str_keys(client: distributed.Client):
+        info = await original_get_scheduler_details(client)
+        return {
+            **info,
+            "workers": {
+                **info["workers"],
+                "fake-worker": {
+                    "metrics": {("execute", "prefix", "thread-noncpu", "seconds"): 1.23},
+                },
+            },
+        }
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.dask_client.get_scheduler_details",
+        side_effect=_get_scheduler_details_with_non_str_keys,
+    )
+
+    client = await DaskClient.create(
+        app=minimal_app,
+        settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
+        endpoint=TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address),
+        authentication=NoAuthentication(),
+        tasks_file_link_type=tasks_file_link_type,
+        cluster_type=ClusterTypeInModel.ON_PREMISE,
+    )
+    assert client
+    await client.delete()
+
+
 @pytest.fixture
 def project_id() -> ProjectID:
     return uuid4()

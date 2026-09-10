@@ -49,8 +49,7 @@ async def resend_2fa_code(request: web.Request):
         raise web.HTTPServiceUnavailable(text=user_message("2FA login is not available"))
 
     # Already a code?
-    previous_code = await _twofa_service.get_2fa_code(request.app, user_email=resend_2fa_.email)
-    if previous_code is not None:
+    if await _twofa_service.has_2fa_code(request.app, user_email=resend_2fa_.email):
         await _twofa_service.delete_2fa_code(request.app, user_email=resend_2fa_.email)
 
     # guaranteed by LoginSettingsForProduct
