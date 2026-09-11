@@ -1691,7 +1691,7 @@ msgstr "PROYECTOS"
 # content within the application.
 #: services/static-webserver/client/source/class/osparc/dashboard/Dashboard.js:118
 msgid "TUTORIALS"
-msgstr "Tutoriales"
+msgstr "TUTORIALES"
 
 # CTX-INTERPRETATION: The string "APPS" is likely a label for a tab or button
 # within a user interface, probably referring to applications or app-related
