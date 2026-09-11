@@ -143,8 +143,8 @@ async def get(
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(base_query)
-        row = await result.first()
+        result = await conn.execute(base_query)
+        row = result.first()
         if row is None:
             raise LicensedItemPurchaseNotFoundError(licensed_item_purchase_id=licensed_item_purchase_id)
         return LicensedItemsPurchasesDB.model_validate(row)

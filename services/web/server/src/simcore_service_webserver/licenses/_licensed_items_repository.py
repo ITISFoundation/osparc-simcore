@@ -14,7 +14,7 @@ from models_library.licenses import (
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId
 from models_library.rest_ordering import OrderBy, OrderDirection
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from simcore_postgres_database.models.licensed_item_to_resource import (
     licensed_item_to_resource,
 )
@@ -122,10 +122,8 @@ async def list_(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
-
-        result = await conn.stream(list_query)
-        items: list[LicensedItemDB] = [LicensedItemDB.model_validate(row) async for row in result]
-
+        result = await conn.execute(list_query)
+        items = TypeAdapter(list[LicensedItemDB]).validate_python(result.mappings().all())
         return cast(int, total_count), items
 
 

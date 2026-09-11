@@ -18,6 +18,7 @@ from models_library.groups import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID, UserNameID
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import get_or_create_product_group
@@ -206,8 +207,8 @@ async def get_all_user_groups_with_read_access(
     query = _list_user_groups_with_read_access_query(groups, user_id=user_id, product_name=product_name)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        async for row in result:
+        result = await conn.execute(query)
+        for row in result:
             if row.type == GroupType.EVERYONE:
                 assert row.access_rights["read"]  # nosec
                 everyone_group = _to_group_info_tuple(row)
@@ -236,8 +237,8 @@ async def get_ids_of_all_user_groups_with_read_access(
     query = _list_user_groups_with_read_access_query(groups.c.gid, user_id=user_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        return [row.gid async for row in result]
+        result = await conn.execute(query)
+        return TypeAdapter(list[GroupID]).validate_python(result.scalars().all())
 
 
 async def get_ids_of_all_user_groups(
@@ -247,7 +248,7 @@ async def get_ids_of_all_user_groups(
     user_id: UserID,
 ) -> list[GroupID]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(
                 groups.c.gid,
             )
@@ -256,7 +257,7 @@ async def get_ids_of_all_user_groups(
             )
             .where(user_to_groups.c.uid == user_id)
         )
-        return [row.gid async for row in result]
+        return TypeAdapter(list[GroupID]).validate_python(result.scalars().all())
 
 
 async def get_ids_of_all_user_groups_and_primary_gid(
@@ -348,7 +349,7 @@ async def create_standard_group(
         if not user:
             raise UserNotFoundError(user_id=user_id)
 
-        result = await conn.stream(
+        result = await conn.execute(
             # pylint: disable=no-value-for-parameter
             groups.insert()
             .values(
@@ -357,7 +358,7 @@ async def create_standard_group(
             )
             .returning(*_GROUP_COLUMNS)
         )
-        row = await result.fetchone()
+        row = result.first()
         assert row  # nosec
 
         await conn.execute(
@@ -443,12 +444,12 @@ async def get_user_from_email(
 
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(users.c.id).where(
                 (users.c.email == email) & is_public(users.c.privacy_hide_email, caller_id=caller_id)
             )
         )
-        user = await result.fetchone()
+        user = result.first()
         if not user:
             raise UserNotFoundError(email=email)
         return user
@@ -471,7 +472,7 @@ async def _get_user_in_group_or_raise(
     conn: AsyncConnection, *, caller_id: UserID, group_id: GroupID, user_id: UserID
 ) -> Row:
     # NOTE: that the caller_id might be different that the target user_id
-    result = await conn.stream(
+    result = await conn.execute(
         sa.select(
             *_group_user_cols(caller_id),
             user_to_groups.c.access_rights,
@@ -481,7 +482,7 @@ async def _get_user_in_group_or_raise(
         )
         .where((user_to_groups.c.gid == group_id) & (users.c.id == user_id))
     )
-    row = await result.fetchone()
+    row = result.first()
     if not row:
         raise UserInGroupNotFoundError(uid=user_id, gid=group_id)
     return row
@@ -543,8 +544,8 @@ async def list_users_in_group_with_caller_check(
         # GET users
         query = query.select_from(users.join(user_to_groups, isouter=True)).where(user_to_groups.c.gid == group_id)
 
-        aresult = await conn.stream(query)
-        return [GroupMember.model_validate(row, from_attributes=True) async for row in aresult]
+        result = await conn.execute(query)
+        return TypeAdapter(list[GroupMember]).validate_python(result.mappings().all())
 
 
 async def list_users_in_group(
@@ -578,8 +579,8 @@ async def list_users_in_group(
             .where(user_to_groups.c.gid == group_id)
         )
 
-        result = await conn.stream(query)
-        return [GroupMember.model_validate(row, from_attributes=True) async for row in result]
+        result = await conn.execute(query)
+        return TypeAdapter(list[GroupMember]).validate_python(result.mappings().all())
 
 
 async def get_user_in_group(
@@ -804,8 +805,8 @@ async def auto_add_user_to_groups(
     possible_group_ids = set()
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        async for row in result:
+        result = await conn.execute(query)
+        for row in result:
             inclusion_rules = row.inclusion_rules
             for prop, rule_pattern in inclusion_rules.items():
                 if prop not in user:

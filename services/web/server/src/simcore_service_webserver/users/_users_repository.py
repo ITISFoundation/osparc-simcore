@@ -126,8 +126,8 @@ async def search_public_user(
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(query)
-        return [got async for got in result]
+        result = await conn.execute(query)
+        return list(result.all())
 
 
 async def get_user_or_raise(
@@ -196,12 +196,12 @@ async def get_users_ids_in_group(
     group_id: GroupID,
 ) -> set[UserID]:
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(
                 user_to_groups.c.uid,
             ).where(user_to_groups.c.gid == group_id)
         )
-        return {row.uid async for row in result}
+        return TypeAdapter(set[UserID]).validate_python(result.scalars().all())
 
 
 async def get_active_users_email_data_by_ids(
@@ -225,8 +225,8 @@ async def get_active_users_email_data_by_ids(
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
-        result = await conn.stream(query)
-        return [row async for row in result]
+        result = await conn.execute(query)
+        return list(result.all())
 
 
 async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
@@ -280,16 +280,14 @@ async def get_guest_user_ids_and_names(
     app: web.Application,
 ) -> list[tuple[UserID, UserNameID]]:
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(
                 users.c.id,
                 users.c.name,
             ).where(users.c.role == UserRole.GUEST)
         )
 
-        return TypeAdapter(list[tuple[UserID, UserNameID]]).validate_python(
-            [(row.id, row.name) async for row in result]
-        )
+        return TypeAdapter(list[tuple[UserID, UserNameID]]).validate_python([(row.id, row.name) for row in result])
 
 
 async def get_user_role(app: web.Application, *, user_id: UserID) -> UserRole:
@@ -339,7 +337,7 @@ async def do_update_expired_users(
     connection: AsyncConnection | None = None,
 ) -> list[UserID]:
     async with transaction_context(engine, connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             users.update()
             .values(
                 status=UserStatus.EXPIRED,
@@ -351,7 +349,7 @@ async def do_update_expired_users(
             )
             .returning(users.c.id)
         )
-        return [row.id async for row in result]
+        return TypeAdapter(list[UserID]).validate_python(result.scalars().all())
 
 
 async def update_user_status(
@@ -403,8 +401,8 @@ async def get_user_products(
             .where(users.c.id == user_id)
             .order_by(groups.c.gid)
         )
-        result = await conn.stream(query)
-        return [row async for row in result]
+        result = await conn.execute(query)
+        return list(result.all())
 
 
 async def get_user_billing_details(
@@ -486,7 +484,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
     user_id = _parse_as_user(user_id)
 
     async with pass_or_acquire_connection(engine=get_asyncpg_engine(app)) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             sa.select(
                 # users -> MyProfile map
                 users.c.id,
@@ -514,7 +512,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 ).label("expiration_date"),
             ).where(users.c.id == user_id)
         )
-        row = await result.one_or_none()
+        row = result.one_or_none()
         if not row:
             raise UserNotFoundError(user_id=user_id)
 
