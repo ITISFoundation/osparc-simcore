@@ -2,10 +2,10 @@
 # pylint: disable=protected-access
 
 import asyncio
-import multiprocessing
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from multiprocessing.queues import Queue
 from pathlib import Path
+from time import sleep
 from typing import Any, Final
 from unittest.mock import Mock
 
@@ -28,6 +28,9 @@ from watchdog.events import (
     FileMovedEvent,
     FileSystemEvent,
 )
+
+_CONCURRENT_CALLS: Final[int] = 10
+_SLOW_KILL_DURATION_S: Final[float] = 0.1
 
 
 @pytest.fixture
@@ -65,16 +68,6 @@ async def outputs_manager(
     await outputs_manager.shutdown()
 
 
-@pytest.fixture
-def health_check_queue() -> Queue[int | None]:
-    return multiprocessing.Queue()
-
-
-@pytest.fixture
-def heart_beat_interval_s() -> PositiveFloat:
-    return 0.01
-
-
 async def test_event_handler_process_lifecycle(
     outputs_context: OutputsContext,
     health_check_queue: Queue[int | None],
@@ -89,6 +82,40 @@ async def test_event_handler_process_lifecycle(
     observer_process.start_process()
     await asyncio.sleep(heart_beat_interval_s * 10)
     observer_process.stop_process()
+
+    observer_process.shutdown()
+
+
+def test_event_handler_process_concurrent_stop_does_not_raise(
+    outputs_context: OutputsContext,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _EventHandlerProcess(
+        outputs_context=outputs_context,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+    # a slow kill() keeps `_process` set long enough for a concurrent caller to observe it
+    observer_process._process = Mock(kill=lambda: sleep(_SLOW_KILL_DURATION_S))  # noqa: SLF001
+
+    assert not run_concurrently([observer_process.stop_process] * _CONCURRENT_CALLS)
+
+
+def test_event_handler_process_concurrent_start_and_stop_does_not_raise(
+    outputs_context: OutputsContext,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _EventHandlerProcess(
+        outputs_context=outputs_context,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+
+    assert not run_concurrently([observer_process.start_process, observer_process.stop_process] * _CONCURRENT_CALLS)
 
     observer_process.shutdown()
 
