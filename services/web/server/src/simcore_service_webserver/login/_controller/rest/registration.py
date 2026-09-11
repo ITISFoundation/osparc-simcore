@@ -22,9 +22,7 @@ from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ....users._grant_product_access_aggregation_service import (
-    grant_user_access_to_product,
-)
+from ....users import users_product_access_service
 from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
@@ -187,7 +185,7 @@ async def register(request: web.Request):
     )
 
     # grant product access (groups + SIGNAL_ON_USER_CONFIRMATION)
-    await grant_user_access_to_product(
+    await users_product_access_service.grant_user_access_to_product(
         request.app,
         user_id=user["id"],
         product_name=product.name,

@@ -19,9 +19,7 @@ from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.users._grant_product_access_aggregation_service import (
-    grant_user_access_to_product,
-)
+from simcore_service_webserver.users import users_product_access_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 _SIGNAL_ON_USER_CONFIRMATION: str = "SIGNAL_ON_USER_CONFIRMATION"
@@ -119,7 +117,7 @@ async def test_grant_user_access_to_product_adds_groups_and_emits_signal(
     assert inclusion_rule_group["gid"] not in gids_before
     assert product_group_id not in gids_before
 
-    await grant_user_access_to_product(
+    await users_product_access_service.grant_user_access_to_product(
         client.app,
         user_id=user["id"],
         product_name=second_product_name,
@@ -153,7 +151,7 @@ async def test_grant_user_access_to_product_is_idempotent(
     assert client.app
 
     for _ in range(2):
-        await grant_user_access_to_product(
+        await users_product_access_service.grant_user_access_to_product(
             client.app,
             user_id=user["id"],
             product_name=second_product_name,
