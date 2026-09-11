@@ -4,19 +4,9 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 from celery_library.worker.app_server import get_app_server
 from models_library.celery import TaskKey
 
-from ....models.domain.chatbot import (
-    ChatResponseFormat,
-    CreateChatCompletionResponse,
-)
-from ....models.schemas.responses import CreateResponseRequest, TextResponseFormatJsonSchema
+from ....models.domain.chatbot import CreateChatCompletionResponse
+from ....models.schemas.responses import CreateResponseRequest
 from ....services_http.chatbot import ChatbotApi, ChatbotSession
-
-
-def _extract_response_format(request: CreateResponseRequest) -> ChatResponseFormat | None:
-    fmt = request.text.format
-    if isinstance(fmt, TextResponseFormatJsonSchema):
-        return fmt.to_domain()
-    return None
 
 
 async def run_chat_completion(
@@ -41,5 +31,5 @@ async def run_chat_completion(
         model=request.model,
         metadata=request.metadata or {},
         temperature=request.temperature,
-        response_format=_extract_response_format(request),
+        response_format=request.to_chat_response_format(),
     )

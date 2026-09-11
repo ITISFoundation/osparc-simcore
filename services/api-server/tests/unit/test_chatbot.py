@@ -2,8 +2,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 from typing import Final
 
+import httpx
 import pytest
 import respx
 from faker import Faker
@@ -143,6 +145,79 @@ async def test_create_chat_completion_raises_on_error(
             model="gpt-4o-mini",
             metadata={},
         )
+
+
+async def test_stream_chat_completion(
+    faker: Faker,
+    mocked_chatbot_backend: respx.MockRouter,
+    chatbot_session: ChatbotSession,
+):
+    sse_body = b'data: {"choices":[{"delta":{"content":"hello"}}]}\n\ndata: [DONE]\n\n'
+    mocked_chatbot_backend.post("/v1/chat/completions").respond(200, content=sse_body)
+
+    response = await chatbot_session.stream_chat_completion(
+        messages=[
+            _chat_message_adapter.validate_python({"role": "user", "content": faker.sentence()}),
+        ],
+        model="gpt-4o-mini",
+        metadata={},
+    )
+
+    assert response.status_code == 200
+    received = b"".join([chunk async for chunk in response.aiter_bytes()])
+    await response.aclose()
+
+    assert received == sse_body
+
+    request = mocked_chatbot_backend.calls[0].request
+    assert request.url.path == "/v1/chat/completions"
+    assert json.loads(request.content)["stream"] is True
+
+
+async def test_stream_chat_completion_sends_graph_name_in_metadata(
+    faker: Faker,
+    mocked_chatbot_backend: respx.MockRouter,
+    chatbot_session: ChatbotSession,
+):
+    mocked_chatbot_backend.post("/v1/chat/completions").respond(200, content=b"data: [DONE]\n\n")
+    metadata = {"session_id": faker.uuid4()}
+
+    response = await chatbot_session.stream_chat_completion(
+        messages=[
+            _chat_message_adapter.validate_python({"role": "user", "content": faker.sentence()}),
+        ],
+        model="gpt-4o-mini",
+        metadata=metadata,
+    )
+    await response.aread()
+    await response.aclose()
+
+    request_body = json.loads(mocked_chatbot_backend.calls[0].request.content)
+    assert request_body["metadata"] == {
+        "session_id": metadata["session_id"],
+        "graph_name": _GRAPH_NAME,
+    }
+    assert metadata == {"session_id": metadata["session_id"]}
+
+
+async def test_stream_chat_completion_raises_on_error(
+    faker: Faker,
+    mocked_chatbot_backend: respx.MockRouter,
+    chatbot_session: ChatbotSession,
+):
+    mocked_chatbot_backend.post("/v1/chat/completions").respond(500, text="downstream error")
+
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        await chatbot_session.stream_chat_completion(
+            messages=[
+                _chat_message_adapter.validate_python({"role": "user", "content": faker.sentence()}),
+            ],
+            model="gpt-4o-mini",
+            metadata={},
+        )
+
+    # body must already be readable even though stream_chat_completion closed the response
+    assert exc_info.value.response.text == "downstream error"
 
 
 @pytest.mark.parametrize("role", ["user", "assistant", "developer"])

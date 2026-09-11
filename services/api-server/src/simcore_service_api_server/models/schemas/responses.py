@@ -120,6 +120,7 @@ class CreateResponseRequest(ApiServerInputSchema):
     input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
     metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
     model: Any  # validation is done in validator because of OpenAI's tricky OAS
+    stream: bool = False
     temperature: Temperature
     text: TextParam = TextParam()
 
@@ -131,6 +132,12 @@ class CreateResponseRequest(ApiServerInputSchema):
             msg = f"Model '{v}' is not supported. Supported models: {sorted(supported)}"
             raise ValueError(msg)
         return v
+
+    def to_chat_response_format(self) -> ChatResponseFormat | None:
+        fmt = self.text.format
+        if isinstance(fmt, TextResponseFormatJsonSchema):
+            return fmt.to_domain()
+        return None
 
 
 class OutputTextContent(ApiServerOutputSchema):
@@ -155,4 +162,4 @@ class ResponseObject(ApiServerOutputSchema):
     error: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
-    status: ResponseStatus = ResponseStatus.IN_PROGRESS
+    status: ResponseStatus
