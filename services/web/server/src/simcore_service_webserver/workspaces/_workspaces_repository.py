@@ -63,7 +63,7 @@ async def create_workspace(
     thumbnail: str | None,
 ) -> Workspace:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             workspaces.insert()
             .values(
                 name=name,
@@ -76,7 +76,7 @@ async def create_workspace(
             )
             .returning(*_WORKSPACE_SELECTION_COLS)
         )
-        row = await result.first()
+        row = result.first()
         return Workspace.model_validate(row)
 
 
