@@ -42,6 +42,8 @@ from ..exceptions import (
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesInsufficientRightsError,
+    ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
@@ -79,6 +81,20 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
     ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message("Required input values for this project node have not been set.", _version=1),
+    ),
+    ProjectNodeResourcesInvalidError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "The resource configuration for this node isn't correct. Please review the settings and try again.",
+            _version=1,
+        ),
+    ),
+    ProjectNodeResourcesInsufficientRightsError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        user_message(
+            "You don't have permission to modify resources for this node. Contact support if you need access.",
+            _version=1,
+        ),
     ),
 }
 

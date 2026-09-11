@@ -25,6 +25,11 @@ ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list 
 
 APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey("APP_JSON_SCHEMA_SPECS_KEY", dict[str, object])
 
+_MSG_INVALID_JSON = user_message(
+    "The request body contains invalid JSON. Please check your request format and try again.",
+    _version=1,
+)
+
 
 @contextmanager
 def handle_validation_as_http_error(*, error_msg_template: str, resource_name: str) -> Iterator[None]:
@@ -176,7 +181,7 @@ async def parse_request_body_as(
             try:
                 body = await request.json()
             except json.decoder.JSONDecodeError as err:
-                raise web.HTTPBadRequest(text=f"Invalid json in body: {err}") from err
+                raise web.HTTPBadRequest(text=_MSG_INVALID_JSON) from err
 
         if hasattr(model_schema_cls, "model_validate"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError

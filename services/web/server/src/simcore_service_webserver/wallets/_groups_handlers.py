@@ -14,6 +14,10 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ..web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from . import _groups_api
+from ._constants import (
+    MSG_WALLET_ACCESS_FORBIDDEN_ERROR,
+    MSG_WALLET_GROUP_NOT_FOUND_ERROR,
+)
 from ._schemas import (
     WalletsPathParams,
     _WalletsGroupsBodyParams,
@@ -32,10 +36,10 @@ def _handle_wallets_groups_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletGroupNotFoundError as exc:
-            raise web.HTTPNotFound(text=f"{exc}") from exc
+            raise web.HTTPNotFound(text=MSG_WALLET_GROUP_NOT_FOUND_ERROR) from exc
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(text=f"{exc}") from exc
+            raise web.HTTPForbidden(text=MSG_WALLET_ACCESS_FORBIDDEN_ERROR) from exc
 
     return wrapper
 
