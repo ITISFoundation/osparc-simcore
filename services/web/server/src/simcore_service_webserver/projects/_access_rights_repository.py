@@ -134,8 +134,8 @@ async def batch_get_project_access_rights(
                 .where(project_to_groups.c.project_uuid.in_([f"{uuid}" for uuid in private_project_ids]))
                 .group_by(project_to_groups.c.project_uuid)
             )
-            private_result = await conn.stream(private_query)
-            async for row in private_result:
+            private_result = await conn.execute(private_query)
+            for row in private_result:
                 results[row.project_uuid] = row.access_rights
 
         # Query shared workspace projects by workspace_id
@@ -158,9 +158,9 @@ async def batch_get_project_access_rights(
                 .where(workspaces_access_rights.c.workspace_id.in_(shared_workspace_ids))
                 .group_by(workspaces_access_rights.c.workspace_id)
             )
-            shared_result = await conn.stream(shared_query)
+            shared_result = await conn.execute(shared_query)
             workspace_access_rights_map = {}
-            async for row in shared_result:
+            for row in shared_result:
                 workspace_access_rights_map[row.workspace_id] = row.access_rights
             # Assign access rights to each project in the workspace
             for wid, project_ids in workspace_to_project_ids.items():
