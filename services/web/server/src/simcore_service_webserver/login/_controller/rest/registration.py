@@ -12,10 +12,6 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
 from ...._meta import API_VTAG
-from ....groups.groups_service import (
-    auto_add_user_to_groups,
-    auto_add_user_to_product_group,
-)
 from ....invitations.api import is_service_invitation_code
 from ....locale import get_locale_or_none, translate_message
 from ....notifications import notifications_service
@@ -26,6 +22,7 @@ from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
+from ....users import users_service
 from ....utils import MINUTE
 from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
@@ -42,9 +39,6 @@ from ..._invitations_service import (
     check_and_consume_invitation,
     check_other_registrations,
     extract_email_from_invitation,
-)
-from ..._login_service import (
-    notify_user_confirmation,
 )
 from ...constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -190,15 +184,8 @@ async def register(request: web.Request):
         product.name == invitation.product if invitation and invitation.product else True
     )
 
-    # setup user groups
-    await auto_add_user_to_groups(app=request.app, user_id=user["id"])
-    await auto_add_user_to_product_group(
-        app=request.app,
-        user_id=user["id"],
-        product_name=product.name,
-    )
-
-    await notify_user_confirmation(
+    # grant product access (groups + SIGNAL_ON_USER_CONFIRMATION)
+    await users_service.grant_user_access_to_product(
         request.app,
         user_id=user["id"],
         product_name=product.name,
