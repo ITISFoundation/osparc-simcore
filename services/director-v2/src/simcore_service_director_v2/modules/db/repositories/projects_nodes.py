@@ -32,8 +32,7 @@ class ProjectsNodesRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine) as conn:
             stmt = sa.select(
                 sa.exists().where(
-                    projects_nodes.c.project_uuid == f"{project_id}",
-                    projects_nodes.c.node_id == f"{node_id}",
+                    (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
                 )
             )
             result = await conn.execute(stmt)

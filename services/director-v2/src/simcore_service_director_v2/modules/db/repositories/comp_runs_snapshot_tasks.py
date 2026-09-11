@@ -98,9 +98,6 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
 
         async with self.db_engine.connect() as conn:
             total_count = await conn.scalar(count_query)
-
-            items = [
-                CompRunSnapshotTaskDBGet.model_validate(row, from_attributes=True)
-                async for row in await conn.stream(list_query)
-            ]
+            result = await conn.execute(list_query)
+            items = [CompRunSnapshotTaskDBGet.model_validate(row, from_attributes=True) for row in result]
             return cast(int, total_count), items

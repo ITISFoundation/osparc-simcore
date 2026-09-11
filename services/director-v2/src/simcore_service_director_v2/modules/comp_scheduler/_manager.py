@@ -14,6 +14,7 @@ from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.tracing import traced
 from servicelib.utils import limited_gather
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...core.errors import ComputationalRunNotFoundError
@@ -168,16 +169,22 @@ _LOST_TASKS_FACTOR: Final[int] = 10
 )
 async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
-        db_engine = get_db_engine(app)
-        runs_to_schedule = await CompRunsRepository.instance(db_engine).list_(
-            filter_by_state=SCHEDULED_STATES,
-            never_scheduled=True,
-            processed_since=SCHEDULER_INTERVAL,
-        )
-        possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(db_engine).list_(
-            filter_by_state=SCHEDULED_STATES,
-            scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
-        )
+        engine = get_db_engine(app)
+        repo = CompRunsRepository.instance(get_db_engine(app))
+
+        async with pass_or_acquire_connection(engine) as conn:
+            runs_to_schedule = await repo.list_(
+                conn,
+                filter_by_state=SCHEDULED_STATES,
+                never_scheduled=True,
+                processed_since=SCHEDULER_INTERVAL,
+            )
+            possibly_lost_scheduled_pipelines = await repo.list_(
+                conn,
+                filter_by_state=SCHEDULED_STATES,
+                scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
+            )
+
         if possibly_lost_scheduled_pipelines:
             _logger.error(
                 "found %d lost pipelines, they will be re-scheduled now. '%s'",
@@ -191,7 +198,7 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
                 *(
                     request_pipeline_scheduling(
                         rabbitmq_client,
-                        db_engine,
+                        get_db_engine(app),
                         user_id=run.user_id,
                         project_id=run.project_uuid,
                         iteration=run.iteration,

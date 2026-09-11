@@ -18,11 +18,11 @@ from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import CursorResult
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import or_
@@ -184,6 +184,7 @@ class CompRunsRepository(BaseRepository):
 
     async def list_(
         self,
+        connection: AsyncConnection | None = None,
         *,
         filter_by_state: set[RunningState] | None = None,
         never_scheduled: bool = False,
@@ -236,15 +237,10 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with self.db_engine.connect() as conn:
-            return [
-                CompRunsAtDB.model_validate(row)
-                async for row in await conn.stream(
-                    sa.select(comp_runs).where(
-                        sa.and_(True, *conditions)  # noqa: FBT003
-                    )
-                )
-            ]
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            result = await conn.execute(sa.select(comp_runs).where(sa.and_(*conditions)))
+            rows = result.mappings().all()
+            return TypeAdapter(list[CompRunsAtDB]).validate_python(rows)
 
     _COMPUTATION_RUNS_RPC_GET_COLUMNS = [  # noqa: RUF012
         comp_runs.c.project_uuid,
@@ -320,7 +316,7 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
-
+            result = await conn.execute(list_query)
             items = [
                 ComputationRunRpcGet(
                     project_uuid=row.project_uuid,
@@ -331,7 +327,7 @@ class CompRunsRepository(BaseRepository):
                     started_at=row.started_at,
                     ended_at=row.ended_at,
                 )
-                async for row in await conn.stream(list_query)
+                for row in result
             ]
 
             return cast(int, total_count), items
@@ -373,7 +369,7 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
-
+            result = await conn.execute(list_query)
             items = [
                 ComputationRunRpcGet(
                     project_uuid=row.project_uuid,
@@ -384,7 +380,7 @@ class CompRunsRepository(BaseRepository):
                     started_at=row.started_at,
                     ended_at=row.ended_at,
                 )
-                async for row in await conn.stream(list_query)
+                for row in result
             ]
 
             return cast(int, total_count), items
@@ -395,7 +391,7 @@ class CompRunsRepository(BaseRepository):
         product_name: str,
         user_id: UserID,
     ) -> list[CollectionRunID]:
-        list_query = (
+        stmt = (
             sa.select(
                 comp_runs.c.collection_run_id,
             )
@@ -410,7 +406,8 @@ class CompRunsRepository(BaseRepository):
         )
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
-            return [CollectionRunID(row[0]) async for row in await conn.stream(list_query)]
+            result = await conn.execute(stmt)
+            return [CollectionRunID(collection_run_id) for collection_run_id in result.scalars()]
 
     async def list_group_by_collection_run_id(
         self,
@@ -463,21 +460,19 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
-            items = []
-            async for row in await conn.stream(list_query):
-                db_states = [DB_TO_RUNNING_STATE[s] for s in row.states]
-                resolved_state = _resolve_grouped_state(db_states)
-                items.append(
-                    ComputationCollectionRunRpcGet(
-                        collection_run_id=row.collection_run_id,
-                        project_ids=row.project_ids,
-                        state=resolved_state,
-                        info={} if row.info is None else row.info,
-                        submitted_at=row.submitted_at,
-                        started_at=row.started_at,
-                        ended_at=row.ended_at,
-                    )
+            result = await conn.execute(list_query)
+            items = [
+                ComputationCollectionRunRpcGet(
+                    collection_run_id=row.collection_run_id,
+                    project_ids=row.project_ids,
+                    state=_resolve_grouped_state([DB_TO_RUNNING_STATE[s] for s in row.states]),
+                    info={} if row.info is None else row.info,
+                    submitted_at=row.submitted_at,
+                    started_at=row.started_at,
+                    ended_at=row.ended_at,
                 )
+                for row in result
+            ]
             return cast(int, total_count), items
 
     async def create(
@@ -496,7 +491,7 @@ class CompRunsRepository(BaseRepository):
                 if iteration is None:
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
-                result: CursorResult = await conn.execute(
+                result = await conn.execute(
                     comp_runs.insert()
                     .values(
                         user_id=user_id,
@@ -508,7 +503,7 @@ class CompRunsRepository(BaseRepository):
                         dag_adjacency_list=dag_adjacency_list,
                         collection_run_id=f"{collection_run_id}",
                     )
-                    .returning(literal_column("*"))
+                    .returning(*comp_runs.c)
                 )
                 row = result.one()
                 return CompRunsAtDB.model_validate(row)
@@ -520,7 +515,7 @@ class CompRunsRepository(BaseRepository):
         self, user_id: UserID, project_id: ProjectID, iteration: Iteration, **values
     ) -> CompRunsAtDB | None:
         async with transaction_context(self.db_engine) as conn:
-            result: CursorResult = await conn.execute(
+            result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == f"{project_id}")
@@ -528,7 +523,7 @@ class CompRunsRepository(BaseRepository):
                     & (comp_runs.c.iteration == iteration)
                 )
                 .values(**values)
-                .returning(literal_column("*"))
+                .returning(*comp_runs.c)
             )
             row = result.one_or_none()
             return CompRunsAtDB.model_validate(row) if row else None
