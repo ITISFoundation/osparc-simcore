@@ -14,6 +14,7 @@ from models_library.wallets import WalletInfo
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
@@ -119,13 +120,12 @@ class CompTasksRepository(BaseRepository):
             return cast(int, total_count), items
 
     async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
-        async with self.db_engine.connect() as conn:
-            nid: str | None = await conn.scalar(
-                sa.select(comp_tasks.c.node_id).where(
-                    (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
-                )
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            stmt = sa.select(
+                sa.exists().where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}"))
             )
-            return nid is not None
+            result = await conn.execute(stmt)
+            return result.scalar_one()
 
     async def upsert_tasks_from_project(
         self,
