@@ -16,14 +16,13 @@ from simcore_postgres_database.models.users import UserStatus
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups import groups_service
 from ..invitations import invitations_service
-from ..login._login_service import notify_user_confirmation
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
 from ..products.errors import ProductNotFoundError
 from . import _accounts_repository, _users_repository
+from ._grant_product_access_aggregation_service import grant_user_access_to_product
 from ._models import PreviewApproval, PreviewRejection
 from .errors import (
     AlreadyPreRegisteredError,
@@ -274,6 +273,131 @@ async def search_users_accounts(
     ]
 
 
+async def _finalize_pre_registration_approval(
+    app: web.Application,
+    *,
+    engine: AsyncEngine,
+    pre_registration_id: int,
+    pre_registration_email: LowerCaseEmailStr,
+    product_name: ProductName,
+    reviewer_id: UserID,
+    extras: dict[str, Any] | None,
+    message_content: dict[str, Any] | None,
+    bcc_emails: list[LowerCaseEmailStr] | None,
+) -> int:
+    """Marks the pre-registration as APPROVED and optionally notifies the user."""
+    await _accounts_repository.review_user_pre_registration(
+        engine,
+        pre_registration_id=pre_registration_id,
+        reviewed_by=reviewer_id,
+        new_status=AccountRequestStatus.APPROVED,
+        extras=extras,
+    )
+
+    if message_content:
+        await notifications_service.send_message(
+            app,
+            user_id=reviewer_id,
+            product_name=product_name,
+            channel=Channel.email,
+            group_ids=None,
+            external_contacts=[EmailContact(email=pre_registration_email)],
+            content=message_content,
+            bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
+        )
+
+    return pre_registration_id
+
+
+async def _approve_existing_user(
+    app: web.Application,
+    *,
+    engine: AsyncEngine,
+    pre_registration: dict[str, Any],
+    pre_registration_email: LowerCaseEmailStr,
+    product_name: ProductName,
+    reviewer_id: UserID,
+    extra_credits_in_usd: PositiveInt | None,
+    message_content: dict[str, Any] | None,
+    bcc_emails: list[LowerCaseEmailStr] | None,
+) -> int:
+    """Grants product access to an already-registered user and approves the pre-registration."""
+    pre_registration_id: int = pre_registration["id"]
+    existing_user_id: UserID = pre_registration["user_id"]
+
+    user = await _users_repository.get_user_or_raise(engine, user_id=existing_user_id, return_column_names=["status"])
+    if user["status"] != UserStatus.ACTIVE:
+        raise UserAccountNotActiveError(user_id=existing_user_id, status=f"{user['status']}")
+
+    # Same grant sequence as registration (login/_controller/rest/registration.py):
+    # membership in rule-based and product groups + SIGNAL_ON_USER_CONFIRMATION
+    # (observers such as wallets/_events.py::_auto_add_default_wallet)
+    await grant_user_access_to_product(
+        app,
+        user_id=existing_user_id,
+        product_name=product_name,
+        extra_credits_in_usd=extra_credits_in_usd,
+    )
+
+    # Persist the PO's credits decision in the pre-registration extras for audit
+    approval_extras: dict[str, Any] | None = (
+        {"approval": {"extra_credits_in_usd": extra_credits_in_usd}} if extra_credits_in_usd is not None else None
+    )
+
+    return await _finalize_pre_registration_approval(
+        app,
+        engine=engine,
+        pre_registration_id=pre_registration_id,
+        pre_registration_email=pre_registration_email,
+        product_name=product_name,
+        reviewer_id=reviewer_id,
+        extras=approval_extras,
+        message_content=message_content,
+        bcc_emails=bcc_emails,
+    )
+
+
+async def _approve_new_user(
+    app: web.Application,
+    *,
+    engine: AsyncEngine,
+    pre_registration: dict[str, Any],
+    pre_registration_email: LowerCaseEmailStr,
+    product_name: ProductName,
+    reviewer_id: UserID,
+    invitation_url: str,
+    message_content: dict[str, Any] | None,
+    bcc_emails: list[LowerCaseEmailStr] | None,
+) -> int:
+    """Approves the pre-registration of a new user, storing the extracted invitation data.
+
+    NOTE: actual access is granted later, when the user registers
+    (login/_controller/rest/registration.py) with the invitation.
+    """
+    pre_registration_id: int = pre_registration["id"]
+
+    # Extract invitation data from the URL
+    invitation_result = await invitations_service.extract_invitation(
+        app,
+        invitation_url,
+    )
+    invitation_extras: dict[str, Any] | None = (
+        {"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None
+    )
+
+    return await _finalize_pre_registration_approval(
+        app,
+        engine=engine,
+        pre_registration_id=pre_registration_id,
+        pre_registration_email=pre_registration_email,
+        product_name=product_name,
+        reviewer_id=reviewer_id,
+        extras=invitation_extras,
+        message_content=message_content,
+        bcc_emails=bcc_emails,
+    )
+
+
 async def approve_user_account(
     app: web.Application,
     *,
@@ -311,97 +435,42 @@ async def approve_user_account(
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
         UserAccountNotActiveError: If the email is linked to an account that is not ACTIVE
+        InvitationUrlRequiredError: If the email is not linked to a registered user
+            and no invitation URL was provided
     """
     engine = get_asyncpg_engine(app)
 
     pre_registration = await _get_pending_pre_registration(
         engine, email=pre_registration_email, product_name=product_name
     )
-    pre_registration_id: int = pre_registration["id"]
-    existing_user_id: UserID | None = pre_registration["user_id"]
 
-    if existing_user_id is not None:
-        user = await _users_repository.get_user_or_raise(
-            engine, user_id=existing_user_id, return_column_names=["status"]
-        )
-        if user["status"] != UserStatus.ACTIVE:
-            raise UserAccountNotActiveError(user_id=existing_user_id, status=f"{user['status']}")
-
-        await groups_service.auto_add_user_to_product_group(app, user_id=existing_user_id, product_name=product_name)
-
-        # Emit the user-confirmation signal, just like registration does
-        # (login/_controller/rest/registration.py). Without it, observers such as
-        # wallets/_events.py::_auto_add_default_wallet never run and the user
-        # ends up without a default wallet (and without the extra credits the
-        # PO decided on) in the new product.
-        await notify_user_confirmation(
+    if pre_registration["user_id"] is not None:
+        return await _approve_existing_user(
             app,
-            user_id=existing_user_id,
+            engine=engine,
+            pre_registration=pre_registration,
+            pre_registration_email=pre_registration_email,
             product_name=product_name,
+            reviewer_id=reviewer_id,
             extra_credits_in_usd=extra_credits_in_usd,
+            message_content=message_content,
+            bcc_emails=bcc_emails,
         )
-
-        # Persist the PO's credits decision in the pre-registration extras for audit
-        approval_extras: dict[str, Any] | None = (
-            {"approval": {"extra_credits_in_usd": extra_credits_in_usd}} if extra_credits_in_usd is not None else None
-        )
-        await _accounts_repository.review_user_pre_registration(
-            engine,
-            pre_registration_id=pre_registration_id,
-            reviewed_by=reviewer_id,
-            new_status=AccountRequestStatus.APPROVED,
-            extras=approval_extras,
-        )
-
-        if message_content:
-            await notifications_service.send_message(
-                app,
-                user_id=reviewer_id,
-                product_name=product_name,
-                channel=Channel.email,
-                group_ids=None,
-                external_contacts=[EmailContact(email=pre_registration_email)],
-                content=message_content,
-                bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
-            )
-
-        return pre_registration_id
 
     if not invitation_url:
         raise InvitationUrlRequiredError(email=pre_registration_email)
 
-    # Extract invitation data from the URL
-    invitation_result = await invitations_service.extract_invitation(
+    return await _approve_new_user(
         app,
-        invitation_url,
+        engine=engine,
+        pre_registration=pre_registration,
+        pre_registration_email=pre_registration_email,
+        product_name=product_name,
+        reviewer_id=reviewer_id,
+        invitation_url=invitation_url,
+        message_content=message_content,
+        bcc_emails=bcc_emails,
     )
-    invitation_extras: dict[str, Any] | None = (
-        {"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None
-    )
-
-    # Update the pre-registration status to APPROVED using the reviewer's ID
-    await _accounts_repository.review_user_pre_registration(
-        engine,
-        pre_registration_id=pre_registration_id,
-        reviewed_by=reviewer_id,
-        new_status=AccountRequestStatus.APPROVED,
-        extras=invitation_extras,
-    )
-
-    # Send email to user if message content is provided
-    if message_content:
-        await notifications_service.send_message(
-            app,
-            user_id=reviewer_id,
-            product_name=product_name,
-            channel=Channel.email,
-            group_ids=None,
-            external_contacts=[EmailContact(email=pre_registration_email)],
-            content=message_content,
-            bcc=([EmailContact(email=email) for email in bcc_emails] if bcc_emails else None),
-        )
-
-    return pre_registration_id
 
 
 async def reject_user_account(
