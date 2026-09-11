@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..db.plugin import get_asyncpg_engine
 from ..groups import groups_service
 from ..invitations import invitations_service
+from ..login._login_service import notify_user_confirmation
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact, TemplateRef
 from ..products import products_service
@@ -280,6 +281,13 @@ async def approve_user_account(
     product_name: ProductName,
     reviewer_id: UserID,
     invitation_url: Annotated[str | None, doc("Optional URL to extract invitation data from")] = None,
+    extra_credits_in_usd: Annotated[
+        PositiveInt | None,
+        doc(
+            "Extra credits (in USD) to grant when the email belongs to an already-registered "
+            "user. For new users the credits travel inside the invitation instead."
+        ),
+    ] = None,
     message_content: Annotated[
         dict[str, Any] | None,
         doc("Optional message content to send to the approved user"),
@@ -321,11 +329,28 @@ async def approve_user_account(
 
         await groups_service.auto_add_user_to_product_group(app, user_id=existing_user_id, product_name=product_name)
 
+        # Emit the user-confirmation signal, just like registration does
+        # (login/_controller/rest/registration.py). Without it, observers such as
+        # wallets/_events.py::_auto_add_default_wallet never run and the user
+        # ends up without a default wallet (and without the extra credits the
+        # PO decided on) in the new product.
+        await notify_user_confirmation(
+            app,
+            user_id=existing_user_id,
+            product_name=product_name,
+            extra_credits_in_usd=extra_credits_in_usd,
+        )
+
+        # Persist the PO's credits decision in the pre-registration extras for audit
+        approval_extras: dict[str, Any] | None = (
+            {"approval": {"extra_credits_in_usd": extra_credits_in_usd}} if extra_credits_in_usd is not None else None
+        )
         await _accounts_repository.review_user_pre_registration(
             engine,
             pre_registration_id=pre_registration_id,
             reviewed_by=reviewer_id,
             new_status=AccountRequestStatus.APPROVED,
+            extras=approval_extras,
         )
 
         if message_content:
@@ -346,13 +371,13 @@ async def approve_user_account(
         raise InvitationUrlRequiredError(email=pre_registration_email)
 
     # Extract invitation data from the URL
-    invitation_extras: dict[str, Any] | None = None
     invitation_result = await invitations_service.extract_invitation(
         app,
         invitation_url,
     )
-    if invitation_result:
-        invitation_extras = {"invitation": invitation_result.model_dump(mode="json")}
+    invitation_extras: dict[str, Any] | None = (
+        {"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None
+    )
 
     # Update the pre-registration status to APPROVED using the reviewer's ID
     await _accounts_repository.review_user_pre_registration(
@@ -360,7 +385,7 @@ async def approve_user_account(
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.APPROVED,
-        invitation_extras=invitation_extras,
+        extras=invitation_extras,
     )
 
     # Send email to user if message content is provided

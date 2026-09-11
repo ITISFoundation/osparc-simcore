@@ -29553,6 +29553,10 @@
             ],
             "title": "Invitationurl"
           },
+          "extraCreditsInUsd": {
+            "$ref": "#/components/schemas/WelcomeCreditsAnnotated",
+            "description": "Extra credits (in USD) granted to an already-registered user when approving their request for a new product. For new users the credits travel inside the invitation instead, so this field is ignored when an invitation is used."
+          },
           "messageContent": {
             "anyOf": [
               {
