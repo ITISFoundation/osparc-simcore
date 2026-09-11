@@ -14,7 +14,7 @@ from models_library.workspaces import (
     WorkspaceID,
     WorkspaceUpdates,
 )
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_postgres_database.models.workspaces_access_rights import (
@@ -291,6 +291,6 @@ async def list_workspaces_db_get_as_admin(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        workspaces_list: list[WorkspaceDBGet] = [WorkspaceDBGet.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        workspaces_list = TypeAdapter(list[WorkspaceDBGet]).validate_python(result.mappings().all())
         return cast(int, total_count), workspaces_list
