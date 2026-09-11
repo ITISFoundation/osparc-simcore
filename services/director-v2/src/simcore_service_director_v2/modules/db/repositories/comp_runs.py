@@ -460,21 +460,19 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
-            items = []
-            async for row in await conn.stream(list_query):
-                db_states = [DB_TO_RUNNING_STATE[s] for s in row.states]
-                resolved_state = _resolve_grouped_state(db_states)
-                items.append(
-                    ComputationCollectionRunRpcGet(
-                        collection_run_id=row.collection_run_id,
-                        project_ids=row.project_ids,
-                        state=resolved_state,
-                        info={} if row.info is None else row.info,
-                        submitted_at=row.submitted_at,
-                        started_at=row.started_at,
-                        ended_at=row.ended_at,
-                    )
+            result = await conn.execute(list_query)
+            items = [
+                ComputationCollectionRunRpcGet(
+                    collection_run_id=row.collection_run_id,
+                    project_ids=row.project_ids,
+                    state=_resolve_grouped_state([DB_TO_RUNNING_STATE[s] for s in row.states]),
+                    info={} if row.info is None else row.info,
+                    submitted_at=row.submitted_at,
+                    started_at=row.started_at,
+                    ended_at=row.ended_at,
                 )
+                for row in result
+            ]
             return cast(int, total_count), items
 
     async def create(
