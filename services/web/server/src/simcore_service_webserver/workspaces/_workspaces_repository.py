@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from typing import cast
 
@@ -34,9 +33,6 @@ from sqlalchemy.sql import Select, select
 from ..db.plugin import get_asyncpg_engine
 from ._workspaces_models import WorkspaceDBGet
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
-
-_logger = logging.getLogger(__name__)
-
 
 _WORKSPACE_SELECTION_COLS = (
     workspaces.c.workspace_id,
