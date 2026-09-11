@@ -869,6 +869,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
+    _startStudyAfterCreating: function(studyId) {
+      const openCB = () => this._hideLoadingPage();
+      const cancelCB = () => {
+        this._hideLoadingPage();
+        osparc.store.Study.getInstance().deleteStudy(studyId);
+      };
+      const isStudyCreation = true;
+      this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+    },
+
+    // to be overridden by browsers that live in a workspace/folder context (e.g. StudyBrowser)
+    _getContextProps: function() {
+      return {};
+    },
+
     _createStudyFromTemplate: function(templateData) {
       if (!this._checkLoggedIn()) {
         return;
@@ -878,6 +893,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || studyAlias));
 
       if (osparc.store.StaticInfo.isBillableProduct()) {
+        // On billable products the wallet/tier must be chosen BEFORE the study is created.
+        // Pop up the StudyOptions first (gather mode) and only then create + patch the study.
         const studyOptions = new osparc.study.StudyOptions();
         // they will be patched once the study is created
         studyOptions.setPatchStudy(false);
@@ -900,7 +917,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           win.close();
 
           this._showLoadingPage(this.tr("Creating ") + (newName || studyAlias));
-          osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+          osparc.study.Utils.createStudy({
+            resourceType: templateData["resourceType"] || "template",
+            templateData,
+            loadingPage: this._loadingPage,
+            contextProps: this._getContextProps(),
+          })
             .then(newStudyData => {
               const studyId = newStudyData["uuid"];
               const openCB = () => {
@@ -974,17 +996,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             });
         });
       } else {
-        osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
-          .then(newStudyData => {
-            const studyId = newStudyData["uuid"];
-            const openCB = () => this._hideLoadingPage();
-            const cancelCB = () => {
-              this._hideLoadingPage();
-              osparc.store.Study.getInstance().deleteStudy(studyId);
-            };
-            const isStudyCreation = true;
-            this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-          })
+        // On non-billable products there are no options to gather, so create the
+        // study directly and open it.
+        osparc.study.Utils.createStudy({
+          resourceType: templateData["resourceType"] || "template",
+          templateData,
+          loadingPage: this._loadingPage,
+          contextProps: this._getContextProps(),
+        })
+          .then(newStudyData => this._startStudyAfterCreating(newStudyData["uuid"]))
           .catch(err => {
             this._hideLoadingPage();
             osparc.FlashMessenger.logError(err);
@@ -1000,16 +1020,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       this._showLoadingPage(this.tr("Creating ") + studyAlias);
 
-      osparc.study.Utils.createStudyFromService(key, version)
-        .then(studyId => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            osparc.store.Study.getInstance().deleteStudy(studyId);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
+      osparc.study.Utils.createStudy({
+        resourceType: "service",
+        serviceKey: key,
+        serviceVersion: version,
+        contextProps: this._getContextProps(),
+      })
+        .then(studyData => this._startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.logError(err);
