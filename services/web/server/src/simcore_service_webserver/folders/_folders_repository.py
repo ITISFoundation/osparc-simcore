@@ -19,7 +19,7 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
@@ -233,8 +233,8 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        folders: list[UserFolder] = [UserFolder.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        folders = TypeAdapter(list[UserFolder]).validate_python(result.mappings().all())
         return cast(int, total_count), folders
 
 
@@ -280,8 +280,8 @@ async def list_folders_db_as_admin(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        folders: list[FolderDB] = [FolderDB.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        folders = TypeAdapter(list[FolderDB]).validate_python(result.mappings().all())
         return cast(int, total_count), folders
 
 
@@ -332,8 +332,8 @@ async def get_for_user_or_workspace(
         query = query.where(folders_v2.c.workspace_id == workspace_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        result = await conn.execute(query)
+        row = result.first()
         if row is None:
             raise FolderAccessForbiddenError(
                 details=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
@@ -350,12 +350,12 @@ async def update(
     product_name: ProductName,
     # updatable columns
     name: str | Unset = Unset.VALUE,
-    parent_folder_id: FolderID | None | Unset = Unset.VALUE,
-    trashed: datetime | None | Unset = Unset.VALUE,
+    parent_folder_id: FolderID | Unset | None = Unset.VALUE,
+    trashed: datetime | Unset | None = Unset.VALUE,
     trashed_explicitly: bool | Unset = Unset.VALUE,
-    trashed_by: UserID | None | Unset = Unset.VALUE,  # who trashed
-    workspace_id: WorkspaceID | None | Unset = Unset.VALUE,
-    user_id: UserID | None | Unset = Unset.VALUE,  # ownership
+    trashed_by: UserID | Unset | None = Unset.VALUE,  # who trashed
+    workspace_id: WorkspaceID | Unset | None = Unset.VALUE,
+    user_id: UserID | Unset | None = Unset.VALUE,  # ownership
 ) -> FolderDB:
     """
     Batch/single patch of folder/s
@@ -385,8 +385,8 @@ async def update(
         query = query.where(folders_v2.c.folder_id == folders_id_or_ids)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        row = await result.first()
+        result = await conn.execute(query)
+        row = result.first()
         if row is None:
             raise FolderNotFoundError(details=f"Folder {folders_id_or_ids} not found.")
         return FolderDB.model_validate(row)
@@ -421,9 +421,9 @@ async def delete_recursively(
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
-        result = await conn.stream(final_query)
+        result = await conn.execute(final_query)
         # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-        rows = [row async for row in result]
+        rows = result.all()
 
         # Sort folders so that child folders come first
         sorted_folders = sorted(rows, key=lambda x: (x[1] is not None, x[1]), reverse=True)
@@ -470,9 +470,9 @@ async def get_projects_recursively_only_if_user_is_owner(
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
-        result = await conn.stream(final_query)
+        result = await conn.execute(final_query)
         # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-        folder_ids = [item[0] async for item in result]
+        folder_ids = TypeAdapter(list[FolderID]).validate_python(result.scalars().all())
 
         query = (
             sql.select(projects_to_folders.c.project_uuid)
@@ -485,8 +485,8 @@ async def get_projects_recursively_only_if_user_is_owner(
         if private_workspace_user_id_or_none is not None:
             query = query.where(projects.c.prj_owner == user_id)
 
-        result = await conn.stream(query)
-        return [ProjectID(row[0]) async for row in result]
+        result = await conn.execute(query)
+        return TypeAdapter(list[ProjectID]).validate_python(result.scalars().all())
 
 
 async def get_all_folders_and_projects_ids_recursively(
@@ -523,17 +523,17 @@ async def get_all_folders_and_projects_ids_recursively(
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
-        result = await conn.stream(final_query)
+        result = await conn.execute(final_query)
         # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-        folder_ids = [item.folder_id async for item in result]
+        folder_ids = TypeAdapter(list[FolderID]).validate_python(result.scalars().all())
 
         query = sql.select(projects_to_folders.c.project_uuid).where(
             (projects_to_folders.c.folder_id.in_(folder_ids))
             & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
         )
 
-        result = await conn.stream(query)
-        project_ids = [ProjectID(row.project_uuid) async for row in result]
+        result = await conn.execute(query)
+        project_ids = TypeAdapter(list[ProjectID]).validate_python(result.scalars().all())
 
         return folder_ids, project_ids
 
@@ -567,8 +567,8 @@ async def get_folders_recursively(
 
         # Step 4: Execute the query to get all descendants
         final_query = sql.select(folder_hierarchy_cte)
-        result = await conn.stream(final_query)
-        return cast(list[FolderID], [row.folder_id async for row in result])
+        result = await conn.execute(final_query)
+        return TypeAdapter(list[FolderID]).validate_python(result.scalars().all())
 
 
 def _select_trashed_by_primary_gid_query():
@@ -613,7 +613,7 @@ async def batch_get_trashed_by_primary_gid(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(query)
-        rows = {row.folder_id: row.trashed_by_primary_gid async for row in result}
+        result = await conn.execute(query)
+        rows = {row.folder_id: row.trashed_by_primary_gid for row in result}
 
     return [rows.get(folder_id) for folder_id in folders_ids]
