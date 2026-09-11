@@ -185,6 +185,7 @@ class CompRunsRepository(BaseRepository):
 
     async def list_(
         self,
+        connection: AsyncConnection | None = None,
         *,
         filter_by_state: set[RunningState] | None = None,
         never_scheduled: bool = False,
@@ -237,7 +238,7 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(sa.select(comp_runs).where(sa.and_(*conditions)))
             rows = result.mappings().all()
             return TypeAdapter(list[CompRunsAtDB]).validate_python(rows)
