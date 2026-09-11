@@ -165,6 +165,37 @@ PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s
 TRAILING_WHITESPACE_RE: Final = re.compile(r"(\s+)$")
 NPLURALS_RE: Final = re.compile(r"nplurals\s*=\s*(\d+)")
 
+# Sent to the model in every translate prompt. The placeholder tokenisation in
+# _protect() already swaps most markers for ⟨N⟩ tokens, but a model that does not
+# know the *why* tends to invent its own markup (e.g. {{0}}), transliterate a
+# trademark, or "improve" a marker by dropping its trailing conversion char
+# (writing %(product_name) instead of %(product_name)s).
+_MANDATORY_RULES: Final = """\
+MANDATORY RULES (violating any of these breaks the application):
+1. NEVER translate or transliterate acronyms, product names, or trademarks. Keep them
+   verbatim in Latin script exactly as written in the source, e.g. oSparc, SimCore,
+   CPU, GPU, API, URL, PDF, 2FA, OAuth, SMTP, IP, JSON, HTTP. Do not write them in
+   your own script's alphabet and do not add explanatory words around them.
+2. NEVER alter, translate, reorder, delete, or invent substitution markers. These are
+   program slots filled in at runtime, not text. Copy each one character-for-character
+   from the source message and place it where it belongs grammatically:
+   - Jinja/gettext named slots: %(product_name)s, %(support_email)s -- including the
+     leading "%(", the closing ")s" (or ")d"/")f"). Never drop the conversion letter.
+   - Python format/f-string slots: {product_name}, {count}, {min_size}.
+   - Positional slots: %s, %d, %1$s.
+   Use ONLY the markers present in the source message; never create new ones such as
+   {{0}} or [name], and never swap a %(name)s slot for a {name} slot (or vice versa).
+3. In the string to translate, every substitution marker from the source has been
+   replaced by a token like ⟨0⟩, ⟨1⟩. Each token must appear in the translation
+   exactly once, copied verbatim -- never expand it back into its original form, and
+   never invent extra tokens.
+4. Preserve letter case, especially capitalisation used for emphasis. If a word is
+   capitalised in the source for emphasis or meaning, render the equivalent word
+   emphasised in the translation: "This IS a sentence" -> "Esta ES una phrase". Do not
+   silently normalise "IS" to "es", and do not add emphasis the source does not have.
+   Keep the source's capitalisation style for headings, sentence starts, and ALL-CAPS
+   labels."""
+
 
 # Default base URLs per model prefix — prevents env-var bleed across providers.
 # (e.g. OPENAI_BASE_URL pointing to Ollama would otherwise break openai/* models)
@@ -336,9 +367,16 @@ def _filter_glossary(glossary: TermGlossaryDict, msgid: str, snippet: str) -> Te
 
     Passing the full glossary on every entry adds terms irrelevant to that particular
     string; filtering keeps the prompt minimal and reduces noise.
+
+    Matching is word-boundary based, so a term is not activated by an unrelated word or
+    by a placeholder that merely contains it (e.g. "job" inside ``{job_id}``).
     """
-    haystack = f"{msgid} {snippet}".lower()
-    return {term: translation for term, translation in glossary.items() if term.lower() in haystack}
+    haystack = f"{msgid} {snippet}"
+    return {
+        term: translation
+        for term, translation in glossary.items()
+        if re.search(rf"\b{re.escape(term)}\b", haystack, re.IGNORECASE)
+    }
 
 
 def _translate_entry(  # noqa: C901
@@ -371,7 +409,8 @@ def _translate_entry(  # noqa: C901
     # the model isn't given dead instructions (no snippet / no placeholders).
     sections = [
         "You are a technical software localizer for a scientific simulation application.",
-        f"Target language: {lang_name}",
+        f"TARGET LANGUAGE: **{lang_name}**",
+        _MANDATORY_RULES,
     ]
 
     if glossary:

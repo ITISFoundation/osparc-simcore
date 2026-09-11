@@ -15,6 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "X-Translation-Date: 2026-08-27T12:59:01Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
@@ -151,7 +152,7 @@ msgstr "您没有权限访问作业 {project_uuids}。"
 #: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:103
 #, python-brace-format
 msgid "The solver or project job {project_id} could not be found."
-msgstr "求解器或项目任务{project_id}无法找到。"
+msgstr "求解器或项目作业{project_id}无法找到。"
 
 # CTX-INTERPRETATION: This error message is displayed when the system cannot
 # locate the specified solver or project jobs identified by the placeholder
@@ -298,7 +299,7 @@ msgstr "无法检索求解器作业 '{job_id}' 的输出，因为它未成功完
 #: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
 #, python-brace-format
 msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
-msgstr "求解器任务 '{job_id}' 尚未停止。当前状态：{state}。"
+msgstr "求解器作业 '{job_id}' 尚未停止。当前状态：{state}。"
 
 # CTX-INTERPRETATION: This string is an error message displayed when a user
 # attempts to access the output of a project job that has not successfully
@@ -532,8 +533,8 @@ msgid ""
 " provided encryption key or context does not match the one used to encrypt "
 "the data."
 msgstr ""
-"该服务 {service_key}:{service_version} 无法安全地访问 {file_role} 文件 {file_id}: "
-"{error_message}。 提示：这通常意味着提供的加密密钥或上下文与用于加密数据时使用的密钥不匹配。"
+"该服务 {service_key}:{service_version} 无法安全地{operation} {file_role} 文件 "
+"{file_id}: {error_message}。 提示：这通常意味着提供的加密密钥或上下文与用于加密数据时使用的密钥不匹配。"
 
 # CTX-INTERPRETATION: This string appears in the `dask_task_models_library`
 # library, specifically within error handling related to Dask task execution,
@@ -571,7 +572,7 @@ msgstr "在任务调度过程中发生了意外错误。如果此问题仍然存
 # attempted again.
 #: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
 msgid "Variable resolution timed out during task scheduling, will retry."
-msgstr "在任务调度期间，变量分辨率超时，将重试。"
+msgstr "在任务调度期间，变量解析超时，将重试。"
 
 # CTX-INTERPRETATION: This message appears when the system fails to allocate
 # computational resources for a task, prompting the user to retry or seek
@@ -625,7 +626,7 @@ msgstr "您的请求已批准，您现在可以访问 %(product_name)s。"
 msgid ""
 "Since you already have an account on\n"
 "  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
-msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s。"
+msgstr "由于您已在 %(existing_product)s 上拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to guide
 # users who have already created an account to log in to a specific product
@@ -642,7 +643,7 @@ msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密
 # link to access the product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
 msgid "You can access %(product_name)s here: %(login_link)s"
-msgstr "您可以在这里访问：%(product_name)s。"
+msgstr "您可以在此访问 %(product_name)s：%(login_link)s"
 
 # CTX-INTERPRETATION: This string appears in an email body, providing contact
 # information for support in case of registration issues.
@@ -706,14 +707,14 @@ msgstr "%(product_name)s 团队"
 msgid ""
 "Since you already have an account on %(existing_product)s, please continue "
 "logging in to %(product_name)s with the same email and password."
-msgstr "由于您已经拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s."
+msgstr "由于您已在 %(existing_product)s 上拥有账户，请继续使用相同的电子邮件和密码登录到 %(product_name)s."
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # a user that they have been added to a product, providing a link to access
 # the product's homepage.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
 msgid "You can access %(product_name)s here: %(link)s"
-msgstr "您可以在这里访问：%(link)s"
+msgstr "您可以在此访问 %(product_name)s：%(link)s"
 
 # CTX-INTERPRETATION: This string is part of an email template used to provide
 # a support email address to the user.
@@ -747,8 +748,7 @@ msgstr "感谢您对 %(product_name)s 的关注。我们很高兴为您提供一
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:6
 msgid "Your account includes %(count)s day trial period."
 msgid_plural "Your account includes %(count)s days trial period."
-msgstr[0] "您的账户包含 1 天试用期。"
-msgstr[1] "您的账户包含 1 天试用期。"
+msgstr[0] "您的账户包含 %(count)s 天试用期。"
 
 # CTX-INTERPRETATION: This string appears in an email template used to notify
 # users that their account has been approved, and informs them about receiving
@@ -992,7 +992,7 @@ msgstr "您的积分已在 %(product_name)s 上退还"
 msgid ""
 "Please find below the Two-factor Authentication sign-in code for your "
 "%(host)s account."
-msgstr "请查阅以下两步验证登录代码，用于您的账户。"
+msgstr "请查阅以下用于您的 %(host)s 账户的双因素认证登录代码。"
 
 # CTX-INTERPRETATION: This string appears in an email body, informing the user
 # of their two-factor authentication (2FA) code.
@@ -1064,14 +1064,15 @@ msgid ""
 "%(price)s for the purchase of %(credits)s. The credits have been added to "
 "your %(product_name)s account, and you are all set to utilize them."
 msgstr ""
-"我们很高兴确认您的支付成功，金额为%(price)s，用于购买%(credits)s。%(credits)s积分已添加到您的%(product_name)s账户，您现在可以开始使用它们。"
+"我们很高兴确认您的支付 %(price)s 已成功处理，用于购买 %(credits)s。积分已添加到您的 %(product_name)s "
+"账户，您现在可以开始使用它们。"
 
 # CTX-INTERPRETATION: This string appears in an email body, specifically
 # within the 'body_html.j2' template, providing a link to view or download the
 # payment receipt.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
 msgid "For more details you can view or download your %(receipt_link)s."
-msgstr "为了获取更多详细信息，您可以查看或下载您的收据。"
+msgstr "为了获取更多详细信息，您可以查看或下载您的 %(receipt_link)s。"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that their payment has been successfully processed, including the
@@ -1215,7 +1216,7 @@ msgstr "%(host)s 上有人与您共享了一个项目"
 # 'support_reply' email template.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_html.j2:8
 msgid "There is a new reply in the Support conversation %(convo_name)s."
-msgstr "在支持对话中，有新的回复。"
+msgstr "在支持对话 %(convo_name)s 中，有新的回复。"
 
 # CTX-INTERPRETATION: This string is used in an email template to inform the
 # user about a new reply in a support conversation.
@@ -1234,7 +1235,7 @@ msgstr "前往对话"
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/body_text.j2:3
 msgid ""
 "There is a new reply in the Support conversation \"%(conversation_name)s\"."
-msgstr "在支持对话中，有新的回复。"
+msgstr "在支持对话 \"%(conversation_name)s\" 中，有新的回复。"
 
 # CTX-INTERPRETATION: This string appears in an email body template, providing
 # a link to view a conversation related to a support request.
@@ -1275,7 +1276,7 @@ msgid ""
 "your account by sending us an email to %(support_link)s. Afterwards it will "
 "be completely deleted from our system."
 msgstr ""
-"您的项目和数据将在指定期间安全地保留。在此期间，如果您决定返回，可以通过发送电子邮件至 %(support_link)s "
+"您的项目和数据将安全保留 %(retention_days)s 天。在此期间，如果您决定返回，可以通过发送电子邮件至 %(support_link)s "
 "来重新激活您的帐户。之后，它们将被完全从我们的系统中删除。"
 
 # CTX-INTERPRETATION: This string appears in an email body template used for
@@ -1698,7 +1699,7 @@ msgstr "请在登录前使用我们发送到您邮箱的激活链接激活您的
 #, python-brace-format
 msgid ""
 "Welcome! Your account has been created. You can now sign in as {email}."
-msgstr "欢迎！您的帐户已创建。您现在可以使用电子邮件登录。"
+msgstr "欢迎！您的帐户已创建。您现在可以使用 {email} 登录。"
 
 # CTX-INTERPRETATION: This string appears as an error message when a user
 # attempts to log in with incorrect credentials.
@@ -2171,7 +2172,7 @@ msgid ""
 "Unable to change the credit account linked to the project. The project is "
 "embargoed because the last transaction of {debt_amount} resulted in the "
 "credit account going negative."
-msgstr "无法更改与项目关联的信用账户。由于上一次交易导致信用账户余额为负，项目已被禁运。"
+msgstr "无法更改与项目关联的信用账户。由于上一次 {debt_amount} 的交易导致信用账户余额为负，项目已被禁运。"
 
 # CTX-INTERPRETATION: This error message appears when a user attempts to open
 # a project that is restricted due to a negative balance from the last
@@ -2882,6 +2883,18 @@ msgid ""
 "report it if it persists."
 msgstr "我们对给您带来的不便深表歉意。问题已被记录，如果问题持续，请报告。"
 
+# CTX-INTERPRETATION: This string appears in the context of a file copying
+# operation.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
+msgid "Copying files"
+msgstr "正在复制文件"
+
+# CTX-INTERPRETATION: This string appears in the context of creating an
+# export archive.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
+msgid "Creating export archive"
+msgstr "创建导出存档"
+
 # CTX-INTERPRETATION: This message appears in the application's user
 # interface, prompting the user to activate their account by clicking a
 # provided link.
@@ -2896,15 +2909,3 @@ msgstr "我们对给您带来的不便深表歉意。问题已被记录，如果
 # settings.
 #~ msgid "The project owner could not be found in the project's access rights."
 #~ msgstr "在项目的访问权限中找不到项目所有者。"
-
-# CTX-INTERPRETATION: This string appears in the context of a file copying
-# operation.
-#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
-msgid "Copying files"
-msgstr "正在复制文件"
-
-# CTX-INTERPRETATION: This string appears in the context of creating an
-# export archive.
-#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
-msgid "Creating export archive"
-msgstr "创建导出存档"

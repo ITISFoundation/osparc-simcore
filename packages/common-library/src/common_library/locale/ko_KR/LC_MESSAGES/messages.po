@@ -131,7 +131,7 @@ msgstr "프로그램, 솔버 또는 프로젝트 \"{name}\" 버전 {version}를 
 msgid ""
 "You do not have permission to access the program, solver, or project "
 "'{name}' version {version}."
-msgstr "사용자는 프로그램, 솔버 또는 프로젝트 '{}'의 버전 {}에 액세스할 권한이 없습니다."
+msgstr "사용자는 프로그램, 솔버 또는 프로젝트 '{name}' 버전 {version}에 액세스할 권한이 없습니다."
 
 # CTX-INTERPRETATION: This string is part of an error message indicating that
 # a user lacks the necessary permissions to access a specific job within a
@@ -139,7 +139,7 @@ msgstr "사용자는 프로그램, 솔버 또는 프로젝트 '{}'의 버전 {}�
 #: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:93
 #, python-brace-format
 msgid "You do not have permission to access job {project_id}."
-msgstr "당신은 {프로젝트_ID} 작업을 액세스할 권한이 없습니다."
+msgstr "당신은 {project_id} 작업을 액세스할 권한이 없습니다."
 
 # CTX-INTERPRETATION: This string appears in the `simcore_service_api_server`
 # to inform a user that they lack permission to view or access specific jobs
@@ -147,7 +147,7 @@ msgstr "당신은 {프로젝트_ID} 작업을 액세스할 권한이 없습니�
 #: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:98
 #, python-brace-format
 msgid "You do not have permission to access jobs {project_uuids}."
-msgstr "당신은 해당 프로젝트의 작업에 액세스할 권한이 없습니다."
+msgstr "당신은 {project_uuids} 작업에 액세스할 권한이 없습니다."
 
 # CTX-INTERPRETATION: This string appears in the `JobNotFoundError` exception
 # class, indicating that either the solver or a project job with the specified
@@ -214,7 +214,7 @@ msgstr "이 지갑에 액세스할 권한이 없습니다."
 #: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:146
 #, python-brace-format
 msgid "The ports for job or project {project_id} could not be found."
-msgstr "지정된 작업 또는 프로젝트의 포트를 찾을 수 없습니다."
+msgstr "작업 또는 프로젝트 {project_id}의 포트를 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
 # to inform a user when the metadata for a specified job or project
@@ -222,7 +222,7 @@ msgstr "지정된 작업 또는 프로젝트의 포트를 찾을 수 없습니�
 #: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:151
 #, python-brace-format
 msgid "The metadata for job or project {project_id} could not be found."
-msgstr "지정된 작업 또는 프로젝트의 메타데이터를 찾을 수 없습니다."
+msgstr "작업 또는 프로젝트 {project_id}의 메타데이터를 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is used in the simcore_service_api_server to
 # indicate that a requested pricing unit was not found within the system.
@@ -270,7 +270,7 @@ msgstr ""
 #, python-brace-format
 msgid ""
 "The license item checkout {licensed_item_checkout_id} could not be found."
-msgstr "지정된 ID를 가진 라이선스 항목 체크아웃 기록을 시스템에서 찾을 수 없습니다."
+msgstr "라이선스 항목 체크아웃 {licensed_item_checkout_id}을(를) 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is used in the `simcore_service_api_server`
 # to inform a user that the required assets for a specific job (identified by
@@ -351,7 +351,8 @@ msgid ""
 "The solver_version parameter is set but solver_id is not. Please provide "
 "both parameters or neither."
 msgstr ""
-"solver_버전 매개변수는 설정되었지만 solver_ID는 제공되지 않았습니다. 두 매개변수 중 하나를 제공하거나 둘 다 제공하십시오."
+"solver_version 매개변수는 설정되었지만 solver_id가 제공되지 않았습니다. 두 매개변수를 모두 제공하거나 둘 다 제공하지"
+" 마십시오."
 
 # CTX-INTERPRETATION: This message indicates that the API server could not
 # locate a previously cached function job when attempting to retrieve or
@@ -374,7 +375,7 @@ msgstr "함수 작업을 처리할 수 없습니다."
 msgid ""
 "A stream is already connected to {job_id}. Only one stream can be connected "
 "at a time."
-msgstr "동일한 작업 ID에 여러 스트림이 이미 연결되어 있습니다. 한 번에 하나의 스트림만 연결할 수 있습니다."
+msgstr "{job_id}에 이미 스트림이 연결되어 있습니다. 한 번에 하나의 스트림만 연결할 수 있습니다."
 
 # CTX-INTERPRETATION: This user-friendly error message appears in the
 # `service_errors_utils.py` file, likely within an API server context, to
@@ -401,7 +402,7 @@ msgstr "서비스 {service_name}가 사용할 수 없습니다."
 #: services/api-server/src/simcore_service_api_server/exceptions/service_errors_utils.py:89
 #, python-brace-format
 msgid "Received unexpected response from {service_name}"
-msgstr "특정 서비스에서 예상치 못한 응답을 수신했습니다."
+msgstr "{service_name}에서 예상치 못한 응답을 수신했습니다."
 
 # CTX-INTERPRETATION: This string is part of an error message generated when a
 # service returns an invalid response, indicating a problem with the API
@@ -595,7 +596,7 @@ msgstr "작업 스케줄링 중에 예기치 않은 오류가 발생했습니다
 # retry.
 #: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
 msgid "Variable resolution timed out during task scheduling, will retry."
-msgstr "변수 해상도 설정 중 작업 스케줄링 중에 시간 초과가 발생했으며, 다시 시도합니다."
+msgstr "작업 스케줄링 중 변수 해결 시간이 초과되었습니다. 다시 시도합니다."
 
 # CTX-INTERPRETATION: This message appears in the comp_scheduler module,
 # indicating a timeout while waiting for computational resources, prompting
@@ -636,7 +637,7 @@ msgstr ""
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_html.j2:4
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/body_text.j2:1
 msgid "Dear %(first_name)s,"
-msgstr "친애하는 {{ first_name }}님,"
+msgstr "친애하는 %(first_name)s님,"
 
 # CTX-INTERPRETATION: This string is part of an email notification sent to a
 # user when their account gains access to a specific product.
@@ -644,7 +645,7 @@ msgstr "친애하는 {{ first_name }}님,"
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:3
 msgid ""
 "Your request has been approved and you now have access to %(product_name)s."
-msgstr "요청이 승인되었으며, 이제 {{ product_name }}에 액세스할 수 있습니다."
+msgstr "요청이 승인되었으며, 이제 %(product_name)s에 액세스할 수 있습니다."
 
 # CTX-INTERPRETATION: This email body template is used to inform users who
 # have an existing account on a product about logging in to the same product
@@ -653,7 +654,9 @@ msgstr "요청이 승인되었으며, 이제 {{ product_name }}에 액세스할 
 msgid ""
 "Since you already have an account on\n"
 "  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
-msgstr "이미 계정이 있는 경우, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 계속 진행해 주십시오."
+msgstr ""
+"%(existing_product)s에 이미 계정이 있으므로, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 "
+"계속 진행해 주십시오."
 
 # CTX-INTERPRETATION: This string appears in an email notification sent to a
 # user when they are added to an existing product's account, prompting them to
@@ -670,7 +673,7 @@ msgstr "이미 계정이 있는 경우, 동일한 이메일과 비밀번호를 �
 # product.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
 msgid "You can access %(product_name)s here: %(login_link)s"
-msgstr "제품에 사용자 계정을 추가하면 다음 링크를 통해 액세스할 수 있습니다: [로그인 링크]"
+msgstr "%(product_name)s는 여기에서 액세스할 수 있습니다: %(login_link)s"
 
 # CTX-INTERPRETATION: This string appears in email templates for account
 # addition and new invitations, providing a contact link for support.
@@ -679,7 +682,7 @@ msgstr "제품에 사용자 계정을 추가하면 다음 링크를 통해 액�
 msgid ""
 "If any problem should occur, please feel free to contact us at "
 "%(support_link)s."
-msgstr "문제가 발생할 경우, 저희에게 [support_link]로 언제든지 문의해 주시기 바랍니다."
+msgstr "문제가 발생할 경우, %(support_link)s로 언제든지 문의해 주시기 바랍니다."
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # users when their account is added to a product or approved, and it displays
@@ -691,7 +694,7 @@ msgstr "문제가 발생할 경우, 저희에게 [support_link]로 언제든지 
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_html.j2:19
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/body_text.j2:11
 msgid "Enjoy %(product_name)s!"
-msgstr "\"제품을 즐기세요!\""
+msgstr "%(product_name)s를 즐기세요!"
 
 # CTX-INTERPRETATION: This string appears in email body templates related to
 # account actions (added, approved, rejected) within the Simcore notification
@@ -744,14 +747,16 @@ msgstr "%(product_name)s 팀"
 msgid ""
 "Since you already have an account on %(existing_product)s, please continue "
 "logging in to %(product_name)s with the same email and password."
-msgstr "이미 계정이 있는 경우, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 계속 사용하십시오."
+msgstr ""
+"%(existing_product)s에 이미 계정이 있으므로, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 "
+"계속 사용하십시오."
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # a user that their account has been added to a product, providing a link to
 # access the product's homepage.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
 msgid "You can access %(product_name)s here: %(link)s"
-msgstr "제품에 계정이 추가되었음을 알리는 이메일 템플릿의 일부로, 사용자가 제품의 홈 페이지에 액세스할 수 있는 링크를 제공합니다."
+msgstr "%(product_name)s는 여기에서 액세스할 수 있습니다: %(link)s"
 
 # CTX-INTERPRETATION: This string appears in email templates for account
 # addition and new invitations, providing a contact email address for support.
@@ -795,7 +800,7 @@ msgstr[0] "귀하의 계정에는 %(count)s일 체험 기간이 포함됩니다.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_html.j2:15
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/body_text.j2:10
 msgid "You also receive %(extra_credits)s free credits."
-msgstr "또한, {{ extra_credits }} 개의 무료 크레딧을 받으실 수 있습니다."
+msgstr "또한, %(extra_credits)s 개의 무료 크레딧을 받으실 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template used to
 # notify users when their account has been approved, providing a link to the
@@ -812,7 +817,7 @@ msgid ""
 "Please follow the on-screen information and proceed with your registration. "
 "If any problem should occur, please feel free to contact us at "
 "%(support_link)s."
-msgstr "화면 안내에 따라 등록 절차를 진행하십시오. 문제가 발생하면 [지원 링크]로 문의해 주시기 바랍니다."
+msgstr "화면 안내에 따라 등록 절차를 진행하십시오. 문제가 발생하면 %(support_link)s로 문의해 주시기 바랍니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template used to
 # notify users when their account has been approved, providing a link to the
@@ -835,7 +840,7 @@ msgstr "화면 안내에 따라 등록 절차를 진행하십시오. 문제가 �
 # users that their registration request for a product has been accepted.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_approved/subject.j2:1
 msgid "Your Registration Request for %(product_name)s Has Been Accepted"
-msgstr "회원가입 요청이 확인되었습니다."
+msgstr "%(product_name)s 회원가입 요청이 승인되었습니다"
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # users that their account registration has been rejected from a program,
@@ -846,8 +851,7 @@ msgid ""
 "Thank you for your interest in %(product_name)s. Unfortunately, your "
 "registration is not eligible for participation in this program."
 msgstr ""
-"프로그램에 참여할 자격이 없다는 점을 알리는 이메일 템플릿의 일부로, 사용자의 관심을 감사하며, 등록이 프로그램 참여 자격을 갖지 못함을"
-" 알려줍니다."
+"%(product_name)s에 관심을 가져 주셔서 감사합니다. 죄송하게도, 귀하의 등록은 이 프로그램에 참여할 자격이 없습니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template for
 # account rejection notifications, offering further support and solutions.
@@ -855,7 +859,7 @@ msgstr ""
 msgid ""
 "In case of further interest in this or other solutions we might offer, "
 "please contact us at %(support_link)s."
-msgstr "이것은 계정 거부 이메일 본문에 나타나는 문구로, 추가 지원 및 솔루션을 제공합니다."
+msgstr "이 솔루션이나 기타 당사가 제공하는 솔루션에 추가 관심이 있으시면 %(support_link)s로 문의해 주십시오."
 
 # CTX-INTERPRETATION: This string appears in an email template for account
 # rejection notifications, inviting the user to contact support for further
@@ -864,14 +868,14 @@ msgstr "이것은 계정 거부 이메일 본문에 나타나는 문구로, 추�
 msgid ""
 "In case of further interest in this or other solutions we might offer, "
 "please contact us at %(support_email)s."
-msgstr "이것은 계정 거부 알림 이메일 템플릿에서, 사용자가 추가 지원을 위해 저희에게 연락하도록 초대하는 문자입니다."
+msgstr "이 솔루션이나 기타 당사가 제공하는 솔루션에 추가 관심이 있으시면 %(support_email)s으로 문의해 주십시오."
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # users that their registration request for a specific product has been
 # denied, indicating the product name in the message.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_rejected/subject.j2:1
 msgid "Your Registration Request for %(product_name)s Has Been Denied"
-msgstr "회원 가입 요청이 {{0}}에 대해 거부되었습니다."
+msgstr "%(product_name)s 회원가입 요청이 거부되었습니다."
 
 # CTX-INTERPRETATION: This string is part of an email body template used to
 # address a support team regarding an account request.
@@ -916,7 +920,7 @@ msgstr "팁: 계정 요청에 대한 자세한 정보를 얻으려면 https://ip
 #: services/notifications/src/simcore_service_notifications/templates/email/account_requested/subject.j2:1
 #: services/notifications/src/simcore_service_notifications/templates/email/new_invitation/subject.j2:1
 msgid "Request for an Account in %(product_name)s"
-msgstr "계정 요청에 대한 알림: {{ product_name }}"
+msgstr "%(product_name)s의 계정 요청"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that their request to change the email address associated with their
@@ -927,7 +931,7 @@ msgid ""
 "You have requested to change the email address linked to your "
 "%(product_name)s account. Please follow the on-screen information in the "
 "link below:"
-msgstr "귀하께서 귀하의 계정에 연결된 이메일 주소를 변경하는 요청을 하셨습니다. 다음 링크에 표시되는 정보에 따라 진행해 주세요:"
+msgstr "%(product_name)s 계정에 연결된 이메일 주소를 변경하셨습니다. 아래 링크의 안내에 따라 진행해 주세요:"
 
 # CTX-INTERPRETATION: This string appears within the HTML email body template
 # for changing a user's email address in the Simcore notification system.
@@ -947,9 +951,7 @@ msgstr ""
 msgid ""
 "Please don't hesitate to contact us at %(support_link)s if you need further "
 "help."
-msgstr ""
-"<p>{% trans support_link=support_link %}저희에게 더 필요한 도움이 필요하시면 "
-"%(support_link)s로 언제든지 문의해 주십시오.{% endtrans %}</p>"
+msgstr "추가 도움이 필요하시면 %(support_link)s로 언제든지 문의해 주십시오."
 
 # CTX-INTERPRETATION: This string appears in email templates related to
 # various notifications (e.g., change of email, credit reimbursement, new 2FA
@@ -987,14 +989,14 @@ msgstr "감사합니다,"
 msgid ""
 "Please don't hesitate to contact us at %(support_email)s if you need further"
 " help."
-msgstr "필요한 경우 추가 지원을 위해 [support_email]로 언제든지 문의해 주시기 바랍니다."
+msgstr "추가 도움이 필요하시면 %(support_email)s으로 언제든지 문의해 주시기 바랍니다."
 
 # CTX-INTERPRETATION: This string is part of an email subject indicating a
 # change in the user's sign-in email address within the Simcore notification
 # system.
 #: services/notifications/src/simcore_service_notifications/templates/email/change_email/subject.j2:1
 msgid "Change of Your Sign-In Email Address on %(product_name)s"
-msgstr "로그인 이메일 주소 변경 알림: {{ product_name }}"
+msgstr "%(product_name)s의 로그인 이메일 주소 변경"
 
 # CTX-INTERPRETATION: This string is part of an email body template used to
 # notify users about credit reimbursement.
@@ -1050,7 +1052,7 @@ msgstr "%(reimbursed_credits)s 크레딧이 귀하의 신용 계정에 환불되
 # in the subject line.
 #: services/notifications/src/simcore_service_notifications/templates/email/credit_reimbursement/subject.j2:1
 msgid "Your credits have been reimbursed on %(product_name)s"
-msgstr "신용이 {{ product_name }}에서 환불되었습니다."
+msgstr "크레딧이 %(product_name)s에서 환불되었습니다."
 
 # CTX-INTERPRETATION: This string is part of an email body sent to a user,
 # informing them about their two-factor authentication (2FA) sign-in code for
@@ -1082,7 +1084,7 @@ msgstr "이 코드는 %(ttl)s초 동안 유효합니다."
 msgid ""
 "Please don't hesitate to contact us at %(support_link)s if you need further\n"
 "  help."
-msgstr "필요한 경우 [0]로 언제든지 문의해 주시기 바랍니다."
+msgstr "추가 도움이 필요하시면 %(support_link)s로 언제든지 문의해 주시기 바랍니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template used to
 # display a two-factor authentication (2FA) code to the user.
@@ -1138,14 +1140,14 @@ msgid ""
 "%(price)s for the purchase of %(credits)s. The credits have been added to "
 "your %(product_name)s account, and you are all set to utilize them."
 msgstr ""
-"결제 성공을 확인하여 귀하의 {{ price }}에 대한 구매를 확인합니다. %(credits)s 크레딧이 귀하의 "
-"%(product_name)s 계정에 추가되었으며, 이제 이를 사용할 수 있습니다."
+"결제 %(price)s 처리가 성공적으로 완료되었음을 확인합니다. 구매하신 %(credits)s의 크레딧이 %(product_name)s"
+" 계정에 추가되었으며, 이제 사용할 수 있습니다."
 
 # CTX-INTERPRETATION: 이 문자열은 결제 확인 이메일 본문에 나타나며, 사용자가 영수증을 보거나 다운로드할 수 있는 링크를
 # 제공합니다.
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_html.j2:12
 msgid "For more details you can view or download your %(receipt_link)s."
-msgstr "자세한 내용은 다음 링크를 통해 확인하거나 다운로드하실 수 있습니다: ⟨1⟩."
+msgstr "자세한 내용은 %(receipt_link)s를 통해 확인하거나 다운로드하실 수 있습니다."
 
 # CTX-INTERPRETATION: This email template confirms successful payment
 # processing and credits added to the user's account within the Simcore
@@ -1157,8 +1159,8 @@ msgid ""
 "credits have been added to your %(product_name)s account, and you are all "
 "set to utilize them."
 msgstr ""
-"결제 처리에 성공했음을 확인합니다. {{ price_dollars }} USD에 대한 구매로 {{ osparc_credits }} "
-"크레딧이 추가되었습니다. 크레딧은 귀하의 {{ product_name }} 계정에 적용되었으며, 이제 사용하실 수 있습니다."
+"결제 %(price_dollars)s USD 처리가 성공적으로 완료되었음을 확인합니다. 구매하신 %(osparc_credits)s "
+"크레딧이 %(product_name)s 계정에 추가되었으며, 이제 사용할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template used to
 # inform users about a payment and provide a link to view or download their
@@ -1166,7 +1168,7 @@ msgstr ""
 #: services/notifications/src/simcore_service_notifications/templates/email/paid/body_text.j2:5
 msgid ""
 "For more details you can view or download your receipt: %(invoice_url)s."
-msgstr "자세한 내용은 다음 링크를 통해 확인하거나 다운로드할 수 있습니다: {{ invoice_url }}."
+msgstr "자세한 내용은 다음 링크를 통해 확인하거나 다운로드할 수 있습니다: %(invoice_url)s."
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that their payment for credits has been successfully processed.
@@ -1174,7 +1176,7 @@ msgstr "자세한 내용은 다음 링크를 통해 확인하거나 다운로드
 msgid ""
 "Your Payment %(price_dollars)s USD for %(osparc_credits)s Credits Was "
 "Successful"
-msgstr "결제 내역: {{ price_dollars }} USD, {{ osparc_credits }} 크레딧 결제가 완료되었습니다."
+msgstr "결제 내역: %(price_dollars)s USD, %(osparc_credits)s 크레딧 결제가 완료되었습니다."
 
 # CTX-INTERPRETATION: This string is part of an email body sent to a user
 # after they successfully register for a product, thanking them and providing
@@ -1202,7 +1204,8 @@ msgstr "질문이 있거나 도움이 필요하시면 다음 주소로 문의해
 msgid ""
 "Thank you for registering with %(product_name)s. Your account\n"
 "has been successfully created and you can now sign in to %(host)s."
-msgstr "회원가입에 감사드립니다. 귀하의 계정은 성공적으로 생성되었으며 이제 %(host)s로 로그인할 수 있습니다."
+msgstr ""
+"%(product_name)s에 등록해 주셔서 감사합니다. 계정이 성공적으로 생성되었으며 이제 %(host)s에 로그인할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template used for
 # notifying users when they register for a service, providing contact
@@ -1211,7 +1214,7 @@ msgstr "회원가입에 감사드립니다. 귀하의 계정은 성공적으로 
 msgid ""
 "If you have any questions or need assistance, please don't hesitate to\n"
 "contact us at %(support_email)s."
-msgstr "\"질문이 있거나 도움이 필요하시면 언제든지 {{ support_email }}로 문의해 주시기 바랍니다.\""
+msgstr "\"질문이 있거나 도움이 필요하시면 언제든지 %(support_email)s로 문의해 주시기 바랍니다.\""
 
 # CTX-INTERPRETATION: This string is part of an email subject line used when a
 # user registers for the application, welcoming them to the platform.
@@ -1225,7 +1228,7 @@ msgstr "%(product_name)s에 오신 것을 환영합니다!"
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_html.j2:6
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/body_text.j2:3
 msgid "A request to reset your %(host)s password has been made."
-msgstr "귀하의 {{ host }} 계정 비밀번호를 초기화하는 요청이 접수되었습니다."
+msgstr "귀하의 %(host)s 계정 비밀번호를 초기화하는 요청이 접수되었습니다."
 
 # CTX-INTERPRETATION: This string appears in an email template used to guide
 # the user on how to reset their password after a successful process
@@ -1254,7 +1257,7 @@ msgstr "다음 이유로 완료할 수 없습니다:"
 msgid ""
 "If you did not request this, please contact us immediately at "
 "%(support_link)s for security reasons."
-msgstr "이 요청을 하지 않으셨다면 보안상의 이유로 즉시 [0]에 문의해 주시기 바랍니다."
+msgstr "이 요청을 하지 않으셨다면 보안상의 이유로 즉시 %(support_link)s에 문의해 주시기 바랍니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template used to
 # inform users about a password reset request and provide contact information
@@ -1263,14 +1266,14 @@ msgstr "이 요청을 하지 않으셨다면 보안상의 이유로 즉시 [0]�
 msgid ""
 "If you did not request this, please contact us immediately at "
 "%(support_email)s for security reasons."
-msgstr "이 요청을 하지 않으셨다면, 보안상의 이유로 즉시 [support_email]으로 문의해 주시기 바랍니다."
+msgstr "이 요청을 하지 않으셨다면, 보안상의 이유로 즉시 %(support_email)s으로 문의해 주시기 바랍니다."
 
 # CTX-INTERPRETATION: This string is used in the subject line of an email to
 # notify a user about a password reset request, specifying the host associated
 # with the account.
 #: services/notifications/src/simcore_service_notifications/templates/email/reset_password/subject.j2:1
 msgid "Reset Password on %(host)s"
-msgstr "계정 관련 호스트에 대한 비밀번호 재설정 알림 제목"
+msgstr "%(host)s의 비밀번호 재설정"
 
 # CTX-INTERPRETATION: This string is part of an email template used to notify
 # a user that someone has shared a project with them.
@@ -1279,7 +1282,7 @@ msgstr "계정 관련 호스트에 대한 비밀번호 재설정 알림 제목"
 msgid ""
 "Great news! %(sharer_name)s has shared a project with you on "
 "%(product_name)s."
-msgstr "훌륭한 소식! [공유자 이름]이 [제품 이름]에 대한 프로젝트를 공유했습니다."
+msgstr "기쁜 소식! %(sharer_name)s이(가) %(product_name)s에서 프로젝트를 공유했습니다."
 
 # CTX-INTERPRETATION: This string appears in an email template used to notify
 # users about project sharing and provide instructions on how to view the
@@ -1342,7 +1345,7 @@ msgstr "대화 내용을 보려면: %(conversation_url)s"
 # conversation name.
 #: services/notifications/src/simcore_service_notifications/templates/email/support_reply/subject.j2:1
 msgid "New reply in your Support Center \"%(conversation_name)s\" conversation"
-msgstr "지원 센터의 \"{{ conversation_name }}\" 대화에 대한 새 응답입니다."
+msgstr "지원 센터의 \"%(conversation_name)s\" 대화에 새 응답이 있습니다"
 
 # CTX-INTERPRETATION: This string appears in the subject line of an email
 # notification sent to a user when a new reply is added to their support
@@ -1372,8 +1375,8 @@ msgid ""
 "your account by sending us an email to %(support_link)s. Afterwards it will "
 "be completely deleted from our system."
 msgstr ""
-"귀하의 프로젝트와 데이터는 안전하게 {{ retention_days }}일까지 보관됩니다. 해당 기간 내에 귀하가 다시 가입하려면 "
-"저희에게 이메일을 보내 주시면 계정을 복구할 수 있습니다. 이후에는 완전히 시스템에서 삭제됩니다."
+"프로젝트와 데이터가 %(retention_days)s일 동안 안전하게 보관됩니다. 해당 기간 내에 다시 가입하시려면 "
+"%(support_link)s로 이메일을 보내 주시면 계정을 복구할 수 있습니다. 이후에는 완전히 시스템에서 삭제됩니다."
 
 # CTX-INTERPRETATION: This string appears in an email body template for
 # unregistration, providing users with a link to contact support.
@@ -1382,7 +1385,8 @@ msgid ""
 "Our support team is here to help with anything you need. Please feel free to"
 " contact us to %(support_link)s in case of questions or any required "
 "assistance."
-msgstr "저희 지원팀은 필요한 모든 것을 도와드릴 수 있습니다. 질문이나 도움이 필요하시면 [0]로 문의해 주세요."
+msgstr ""
+"저희 지원팀은 필요한 모든 것을 도와드릴 수 있습니다. 질문이나 도움이 필요하시면 %(support_link)s로 문의해 주세요."
 
 # CTX-INTERPRETATION: This string appears in an email body related to user
 # unregistration within the Simcore service, wishing the user well.
@@ -1413,15 +1417,15 @@ msgid ""
 " contact us at %(support_email)s in case of questions or any required "
 "assistance."
 msgstr ""
-"저희 지원팀은 필요한 모든 것에 도움을 드릴 수 있습니다. 질문이나 도움이 필요하시면 [support_email]으로 언제든지 문의해 "
-"주세요."
+"저희 지원팀은 필요한 모든 것에 도움을 드릴 수 있습니다. 질문이나 도움이 필요하시면 %(support_email)s으로 언제든지 문의해"
+" 주세요."
 
 # CTX-INTERPRETATION: This string is part of an email subject related to
 # account unregistration, indicating the user's account closure within a
 # specific service.
 #: services/notifications/src/simcore_service_notifications/templates/email/unregister/subject.j2:1
 msgid "Closing Your Account in %(host)s"
-msgstr "계정 폐쇄 안내: [서비스 이름]"
+msgstr "%(host)s의 계정 폐쇄"
 
 # CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
 # when a user attempts to create an API key with a display name that already
@@ -1597,7 +1601,9 @@ msgstr "폴더 구성이 유효하지 않습니다: {details}"
 msgid ""
 "You do not have permission to move the project with UUID: {project_uuid}. To"
 " locate this project, copy and paste the UUID into the search bar."
-msgstr "UUID를 가진 프로젝트를 이동할 권한이 없습니다. 이 프로젝트를 찾으려면 UUID를 복사하여 검색창에 붙여넣으십시오."
+msgstr ""
+"UUID가 {project_uuid}인 프로젝트를 이동할 권한이 없습니다. 이 프로젝트를 찾으려면 UUID를 복사하여 검색창에 "
+"붙여넣으십시오."
 
 # CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
 # application when a user attempts to move a folder containing active projects
@@ -1625,7 +1631,7 @@ msgstr "이 프로젝트 폴더 내에서 실행 중인 서비스를 중지하�
 msgid ""
 "Group access rights could not be found for Function '{function_id}' in "
 "product '{product_name}'."
-msgstr "그룹 접근 권한이 제품 '{1}' 내의 함수 '{0}'에 대해 찾을 수 없습니다."
+msgstr "제품 '{product_name}' 내 함수 '{function_id}'에 대한 그룹 접근 권한을 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is used within a user error handler to
 # inform the user that a user with a specific ID or email address could not be
@@ -1633,14 +1639,14 @@ msgstr "그룹 접근 권한이 제품 '{1}' 내의 함수 '{0}'에 대해 찾�
 #: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:27
 #, python-brace-format
 msgid "The user with ID {uid} or email {email} could not be found."
-msgstr "지정된 ID 또는 이메일 주소를 가진 사용자를 찾을 수 없습니다."
+msgstr "ID가 {uid}이거나 이메일이 {email}인 사용자를 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is used within a web service to inform the
 # user when a group with a specified ID cannot be found in the system.
 #: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:31
 #, python-brace-format
 msgid "The group with ID {gid} could not be found."
-msgstr "지정된 ID를 가진 그룹을 찾을 수 없습니다."
+msgstr "ID가 {gid}인 그룹을 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is displayed in a user interface when a user
 # attempts to access a resource associated with a group, but the user is not a
@@ -1648,7 +1654,7 @@ msgstr "지정된 ID를 가진 그룹을 찾을 수 없습니다."
 #: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:35
 #, python-brace-format
 msgid "The user is not a member of group {gid}."
-msgstr "사용자는 해당 그룹의 구성원이 아니므로 리소스에 액세스할 수 없습니다."
+msgstr "사용자는 {gid} 그룹의 구성원이 아닙니다."
 
 # CTX-INTERPRETATION: This string is displayed in the user interface when a
 # user attempts to add themselves to a group, but they are already a member of
@@ -1656,7 +1662,7 @@ msgstr "사용자는 해당 그룹의 구성원이 아니므로 리소스에 액
 #: services/web/server/src/simcore_service_webserver/groups/_common/exceptions_handlers.py:39
 #, python-brace-format
 msgid "The user is already a member of group {gid}."
-msgstr "사용자는 이미 해당 그룹의 구성원입니다."
+msgstr "사용자는 이미 {gid} 그룹의 구성원입니다."
 
 # CTX-INTERPRETATION: This string is used within a web service to inform a
 # user that they lack the necessary permissions to access a specific group,
@@ -1811,7 +1817,7 @@ msgstr "계정을 활성화하려면 저희가 이메일로 보낸 활성화 링
 #, python-brace-format
 msgid ""
 "Welcome! Your account has been created. You can now sign in as {email}."
-msgstr "환영합니다! 계정이 생성되었습니다. 이제 {이메일}로 로그인할 수 있습니다."
+msgstr "환영합니다! 계정이 생성되었습니다. 이제 {email}로 로그인할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears in the login functionality of the
 # Simcore service webserver, informing users when their provided credentials
@@ -1859,7 +1865,7 @@ msgstr "이 이메일 주소는 이미 계정과 연결되어 있습니다. 로�
 #: services/web/server/src/simcore_service_webserver/login/constants.py:35
 #, python-brace-format
 msgid "We've sent an email to {email} with further instructions."
-msgstr "새로운 이메일 주소를 변경한 후, 추가 지침이 해당 이메일로 전송되었음을 알리는 이메일에 사용됩니다."
+msgstr "{email}로 추가 지침이 포함된 이메일을 보내드렸습니다."
 
 # CTX-INTERPRETATION: This string appears in the login section of the web
 # application, confirming a successful user login.
@@ -2125,7 +2131,9 @@ msgstr "알림 채널 '{channel}'는 지원되지 않습니다."
 msgid ""
 "The number of recipients ({num_recipients}) exceeds the maximum of "
 "{max_recipients}. Please reduce the number of recipients and try again."
-msgstr "받는 사람 수 ({num_recipients})가 최대 수보다 많습니다. 받는 사람 수를 줄이고 다시 시도해 주십시오."
+msgstr ""
+"받는 사람 수 ({num_recipients})이(가) 최대치 {max_recipients}을(를) 초과합니다. 받는 사람 수를 줄이고 "
+"다시 시도해 주십시오."
 
 # CTX-INTERPRETATION: This message appears in the onetime_api.py file when a
 # user attempts to make a payment to a wallet but lacks the required
@@ -2135,7 +2143,7 @@ msgstr "받는 사람 수 ({num_recipients})가 최대 수보다 많습니다. �
 msgid ""
 "You do not have the necessary permissions to make payments to wallet "
 "{wallet_id}."
-msgstr "필요한 권한이 없어 지갑에 대한 결제를 할 수 없습니다."
+msgstr "지갑 {wallet_id}에 결제를 수행할 권한이 없습니다."
 
 # CTX-INTERPRETATION: This string appears in a REST API endpoint that handles
 # product not found errors, providing a user-friendly message.
@@ -2222,7 +2230,7 @@ msgstr "요청된 프로젝트 그룹을 찾을 수 없습니다: {details}"
 msgid ""
 "You do not have sufficient access rights to perform this action on project "
 "{project_uuid}."
-msgstr "이 프로젝트에 대한 작업을 수행할 충분한 권한이 없습니다."
+msgstr "프로젝트 {project_uuid}에서 이 작업을 수행할 충분한 권한이 없습니다."
 
 # CTX-INTERPRETATION: This message appears in the REST API controller for
 # project templates, indicating a user lacks the necessary permissions to
@@ -2255,7 +2263,7 @@ msgstr ""
 #: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:132
 #, python-brace-format
 msgid "Project {project_uuid} could not be found."
-msgstr "지정된 UUID를 가진 프로젝트가 시스템 내에서 찾을 수 없는 경우에 표시되는 메시지입니다."
+msgstr "프로젝트 {project_uuid}을(를) 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This message appears in the web server when a user
 # attempts to open more projects than allowed by the system's configuration,
@@ -2265,7 +2273,7 @@ msgstr "지정된 UUID를 가진 프로젝트가 시스템 내에서 찾을 수 
 msgid ""
 "You cannot open more than {max_num_projects} project/s at once. Please close"
 " another project and retry."
-msgstr "한 번에 열 수 있는 프로젝트 수를 초과하면 이 메시지가 표시됩니다. 다른 프로젝트를 닫고 다시 시도하십시오."
+msgstr "한 번에 {max_num_projects}개 이상의 프로젝트를 열 수 없습니다. 다른 프로젝트를 닫고 다시 시도하십시오."
 
 # CTX-INTERPRETATION: This message appears in the `simcore_service_webserver`
 # project when the system reaches its limit for concurrent dynamic services,
@@ -2295,7 +2303,7 @@ msgid ""
 "You cannot open more than {max_num_sessions} session(s) for the same project"
 " at once. Please close another session and retry."
 msgstr ""
-"동일한 프로젝트에 대해 동시에 열 수 있는 세션 수를 초과하려고 할 때 이 메시지가 표시됩니다. 다른 세션을 닫고 다시 시도하십시오."
+"동일한 프로젝트에 대해 한 번에 {max_num_sessions}개 이상의 세션을 열 수 없습니다. 다른 세션을 닫고 다시 시도하십시오."
 
 # CTX-INTERPRETATION: This message appears in the web server's error handling
 # when a user attempts to modify a project's credit account, which is
@@ -2318,7 +2326,8 @@ msgstr ""
 msgid ""
 "Unable to open the project. The project is embargoed because the last "
 "transaction of {debt_amount} resulted in the credit account going negative."
-msgstr "프로젝트를 열 수 없습니다. 마지막 거래로 인해 신용 계좌 잔액이 음수가 되었기 때문에 프로젝트가 잠겨 있습니다."
+msgstr ""
+"프로젝트를 열 수 없습니다. 마지막 거래 {debt_amount}(으)로 인해 크레딧 계정 잔액이 음수가 되어 프로젝트가 잠겼습니다."
 
 # CTX-INTERPRETATION: This message appears in the REST API error handling when
 # the server receives a request containing invalid tag IDs.
@@ -2339,7 +2348,7 @@ msgstr "프로젝트 유형과 템플릿 유형의 조합이 유효하지 않습
 #: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:198
 #, python-brace-format
 msgid "Access to this workspace is forbidden: {details}"
-msgstr "이 워크스페이스에 대한 액세스는 허용되지 않습니다: {상세 정보}"
+msgstr "이 워크스페이스에 대한 액세스는 허용되지 않습니다: {details}"
 
 # CTX-INTERPRETATION: This string appears in the Simcore service web server
 # when a user attempts to access a workspace that does not exist, providing
@@ -2430,7 +2439,7 @@ msgstr "접근 거부: 충분한 권한이 없습니다. {name}."
 #: services/web/server/src/simcore_service_webserver/projects/_controller/_rest_exceptions.py:271
 #, python-brace-format
 msgid "The requested item '{name}' was not found."
-msgstr "요청한 항목 '{}'를 찾을 수 없습니다."
+msgstr "요청한 항목 '{name}'을(를) 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is displayed in a REST API error response
 # when the server cannot find any items matching the specified name (⟨0⟩)
@@ -2669,7 +2678,7 @@ msgstr "태그 '{tag_id}'를 찾을 수 없거나 해당 태그에 대한 액세
 msgid ""
 "Unable to {operation} tag '{tag_id}'. The tag was not found or you don't "
 "have sufficient access."
-msgstr "태그를 {operation}하는 데 실패했습니다. 태그가 존재하지 않거나 충분한 권한이 없습니다."
+msgstr "태그 '{tag_id}'을(를) {operation}할 수 없습니다. 태그를 찾을 수 없거나 충분한 접근 권한이 없습니다."
 
 # CTX-INTERPRETATION: This message appears in the web server when a user
 # attempts to share a tag with all users, which is not permitted based on the
@@ -2711,7 +2720,8 @@ msgstr "지정자 {file_id}를 가진 파일이 찾을 수 없습니다."
 msgid ""
 "Permission denied: You (user {user_id}) don't have the necessary rights to "
 "access file {file_id} in location {location_id}"
-msgstr "권한 거부: 사용자 ({user_id})는 {file_id} 위치에 있는 파일에 액세스할 수 있는 필요한 권한이 없습니다."
+msgstr ""
+"권한 거부: 사용자 {user_id}은(는) 위치 {location_id}의 파일 {file_id}에 액세스할 권한이 없습니다."
 
 # CTX-INTERPRETATION: The string appears in a REST exception handler within a
 # web server component, indicating that a task was prematurely stopped during
@@ -2743,7 +2753,7 @@ msgstr "작업 {job_id}가 아직 실행 중이며 완료되지 않았습니다.
 #: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:53
 #, python-brace-format
 msgid "The requested task with ID {job_id} does not exist"
-msgstr "지정된 ID를 가진 요청된 작업이 존재하지 않습니다."
+msgstr "요청된 작업(ID: {job_id})이 존재하지 않습니다"
 
 # CTX-INTERPRETATION: This message appears in the REST API error handling for
 # a task scheduling system within a web server, informing users of a temporary
@@ -2759,7 +2769,7 @@ msgstr "작업 스케줄링 시스템에서 오류가 발생했습니다. 잠시
 #: services/web/server/src/simcore_service_webserver/tasks/_controller/_rest_exceptions.py:64
 #, python-brace-format
 msgid "Unable to get the current status for task {job_id}"
-msgstr "특정 작업의 현재 상태를 가져오는 데 실패했습니다."
+msgstr "작업 {job_id}의 현재 상태를 가져올 수 없습니다"
 
 # CTX-INTERPRETATION: This message appears in the trash functionality of a web
 # server, informing users that a project cannot be moved to the trash while
@@ -2791,7 +2801,7 @@ msgstr "사용자 설정 생성 또는 수정에 실패했습니다."
 #: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
 #, python-brace-format
 msgid "Provided {frontend_preference_name} not found"
-msgstr "요청된 프런트엔드 사용자 선호도가 백엔드 데이터베이스에 존재하지 않는 경우 표시되는 메시지입니다."
+msgstr "제공된 {frontend_preference_name}을(를) 찾을 수 없습니다"
 
 # CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
 # to inform a user when an API token for a specific service cannot be located,
@@ -2799,7 +2809,7 @@ msgstr "요청된 프런트엔드 사용자 선호도가 백엔드 데이터베�
 #: services/web/server/src/simcore_service_webserver/user_tokens/_controller/rest/_rest_exceptions.py:16
 #, python-brace-format
 msgid "The API token for '{service}' could not be found."
-msgstr "서비스 '<0>'에 대한 API 토큰을 찾을 수 없습니다."
+msgstr "'{service}'에 대한 API 토큰을 찾을 수 없습니다."
 
 # CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
 # to inform a user that there are no pending registration requests associated
@@ -2839,7 +2849,7 @@ msgstr ""
 msgid ""
 "Found {num_found} existing account(s) for '{email}'. Unable to pre-register "
 "an existing user."
-msgstr "다음과 같은 계정이 '{email}'에 대해 이미 존재합니다. 기존 사용자를 사전 등록할 수 없습니다."
+msgstr "'{email}'에 대해 기존 계정 {num_found}개를 발견했습니다. 기존 사용자는 사전 등록할 수 없습니다."
 
 # CTX-INTERPRETATION: This message appears in the REST API error handling for
 # a simulation application, indicating that a product is still being
@@ -2919,7 +2929,7 @@ msgstr "이 이메일 주소는 이미 대상 제품 내의 다른 사용자와 
 msgid ""
 "This user's account is not active ({status}) and cannot be granted access to"
 " a new product."
-msgstr "이 사용자의 계정은 비활성화되어 있으며, 새로운 제품에 대한 액세스를 부여할 수 없습니다."
+msgstr "이 사용자의 계정이 활성화되지 않았습니다 ({status}). 새 제품에 대한 액세스를 부여할 수 없습니다."
 
 # CTX-INTERPRETATION: This string appears in the `simcore_service_webserver`
 # module, specifically within a REST API endpoint related to user approval,
@@ -2927,7 +2937,7 @@ msgstr "이 사용자의 계정은 비활성화되어 있으며, 새로운 제�
 #: services/web/server/src/simcore_service_webserver/users/_controller/rest/_rest_exceptions.py:132
 #, python-brace-format
 msgid "An invitation URL is required to approve {email}."
-msgstr "초대 URL이 필요합니다. 이메일을 승인하려면."
+msgstr "{email}을(를) 승인하려면 초대 URL이 필요합니다."
 
 # CTX-INTERPRETATION: This string appears in the accounts REST API controller,
 # likely during product validation or account creation, indicating an invalid
@@ -3000,7 +3010,7 @@ msgstr "요청 쿼리에 있는 유효하지 않은 매개변수/매개변수 '{
 #: services/web/server/src/simcore_service_webserver/web_requests_validation.py:26
 #, python-brace-format
 msgid "Invalid parameter/s '{failed}' in request headers"
-msgstr "요청 헤더에 있는 유효하지 않은 매개변수/필드를 표시하는 오류 메시지입니다."
+msgstr "요청 헤더에 잘못된 매개변수 '{failed}'이(가) 있습니다"
 
 # CTX-INTERPRETATION: This string is used to display an error message when the
 # request body contains invalid fields during web request validation in a
