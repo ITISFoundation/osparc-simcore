@@ -2,17 +2,15 @@
 # pylint: disable=protected-access
 
 import asyncio
-import multiprocessing
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from multiprocessing.queues import Queue
 from pathlib import Path
-from threading import Event, Thread
+from time import sleep
 from typing import Any, Final
 from unittest.mock import Mock
 
 import pytest
 from pydantic import PositiveFloat
-from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
@@ -30,6 +28,9 @@ from watchdog.events import (
     FileMovedEvent,
     FileSystemEvent,
 )
+
+_CONCURRENT_CALLS: Final[int] = 10
+_SLOW_KILL_DURATION_S: Final[float] = 0.1
 
 
 @pytest.fixture
@@ -67,16 +68,6 @@ async def outputs_manager(
     await outputs_manager.shutdown()
 
 
-@pytest.fixture
-def health_check_queue() -> Queue[int | None]:
-    return multiprocessing.Queue()
-
-
-@pytest.fixture
-def heart_beat_interval_s() -> PositiveFloat:
-    return 0.01
-
-
 async def test_event_handler_process_lifecycle(
     outputs_context: OutputsContext,
     health_check_queue: Queue[int | None],
@@ -95,10 +86,28 @@ async def test_event_handler_process_lifecycle(
     observer_process.shutdown()
 
 
-def test_event_handler_process_concurrent_stop_process_does_not_raise(
+def test_event_handler_process_concurrent_stop_does_not_raise(
     outputs_context: OutputsContext,
     health_check_queue: Queue[int | None],
     heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _EventHandlerProcess(
+        outputs_context=outputs_context,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+    # a slow kill() keeps `_process` set long enough for a concurrent caller to observe it
+    observer_process._process = Mock(kill=lambda: sleep(_SLOW_KILL_DURATION_S))  # noqa: SLF001
+
+    assert not run_concurrently([observer_process.stop_process] * _CONCURRENT_CALLS)
+
+
+def test_event_handler_process_concurrent_start_and_stop_does_not_raise(
+    outputs_context: OutputsContext,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
 ):
     observer_process = _EventHandlerProcess(
         outputs_context=outputs_context,
@@ -106,111 +115,11 @@ def test_event_handler_process_concurrent_stop_process_does_not_raise(
         heart_beat_interval_s=heart_beat_interval_s,
     )
 
-    entered_kill = Event()
-    release_kill = Event()
-    first_caller_paused = False
-
-    def _kill() -> None:
-        nonlocal first_caller_paused
-        # only the first caller pauses: it must observe `self._process` as
-        # non-`None` for longer than it takes a concurrent caller to clear it
-        if not first_caller_paused:
-            first_caller_paused = True
-            entered_kill.set()
-            assert release_kill.wait(timeout=5), "test setup: never released"
-
-    mock_process = Mock()
-    mock_process.kill.side_effect = _kill
-    observer_process._process = mock_process  # noqa: SLF001
-
-    errors: list[BaseException] = []
-
-    def _stop_process() -> None:
-        try:
-            observer_process.stop_process()
-        except BaseException as exc:  # pylint: disable=broad-except
-            errors.append(exc)
-
-    first_thread = Thread(target=_stop_process)
-    first_thread.start()
-    assert entered_kill.wait(timeout=5), "first thread never reached kill()"
-
-    # with the lock this blocks on `_process_lock` and cannot make progress
-    # while the first thread is paused mid-`kill()`; without it, it runs to
-    # completion (clearing `self._process`) before the first thread resumes
-    second_thread = Thread(target=_stop_process)
-    second_thread.start()
-    second_thread.join(timeout=0.5)
-    assert second_thread.is_alive(), "stop_process proceeded before first stop_process released the lock"
-
-    release_kill.set()
-    first_thread.join(timeout=5)
-    second_thread.join(timeout=5)
-
-    assert not first_thread.is_alive(), "first thread never completed (deadlock?)"
-    assert not second_thread.is_alive(), "second thread never completed (deadlock?)"
-    assert not errors
-
-
-def test_event_handler_process_concurrent_start_vs_stop_process_does_not_raise(
-    outputs_context: OutputsContext,
-    health_check_queue: Queue[int | None],
-    heart_beat_interval_s: PositiveFloat,
-    mocker: MockerFixture,
-):
-    observer_process = _EventHandlerProcess(
-        outputs_context=outputs_context,
-        health_check_queue=health_check_queue,
-        heart_beat_interval_s=heart_beat_interval_s,
+    assert not run_concurrently(
+        [observer_process.start_process, observer_process.stop_process] * (_CONCURRENT_CALLS // 2)
     )
 
-    entered_start = Event()
-    release_start = Event()
-    first_caller_paused = False
-
-    def _start() -> None:
-        nonlocal first_caller_paused
-        # pauses while `start_process` still holds `_process_lock`
-        if not first_caller_paused:
-            first_caller_paused = True
-            entered_start.set()
-            assert release_start.wait(timeout=5), "test setup: never released"
-
-    mock_process_cls = Mock()
-    mock_process_cls.return_value.start.side_effect = _start
-    mocker.patch.object(multiprocessing, "Process", mock_process_cls)
-
-    errors: list[BaseException] = []
-
-    def _start_process() -> None:
-        try:
-            observer_process.start_process()
-        except BaseException as exc:  # pylint: disable=broad-except
-            errors.append(exc)
-
-    def _stop_process() -> None:
-        try:
-            observer_process.stop_process()
-        except BaseException as exc:  # pylint: disable=broad-except
-            errors.append(exc)
-
-    start_thread = Thread(target=_start_process)
-    start_thread.start()
-    assert entered_start.wait(timeout=5), "start thread never reached start()"
-
-    # must block on `_process_lock` while `start_process` is still in progress
-    stop_thread = Thread(target=_stop_process)
-    stop_thread.start()
-    stop_thread.join(timeout=0.5)
-    assert stop_thread.is_alive(), "stop_process proceeded before start_process released the lock"
-
-    release_start.set()
-    start_thread.join(timeout=5)
-    stop_thread.join(timeout=5)
-
-    assert not start_thread.is_alive(), "start thread never completed (deadlock?)"
-    assert not stop_thread.is_alive(), "stop thread never completed (deadlock?)"
-    assert not errors
+    observer_process.shutdown()
 
 
 async def test_event_handler_observer_health_ok(

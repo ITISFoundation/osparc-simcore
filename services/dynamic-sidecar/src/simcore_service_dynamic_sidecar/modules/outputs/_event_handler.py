@@ -198,6 +198,10 @@ class _EventHandlerProcess:
             log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"),
             self._process_lock,
         ):
+            if self._stop_queue is not None or self._process is not None:
+                _logger.debug("Process already started, skipping")
+                return
+
             self._stop_queue = multiprocessing.Queue()
             self._process = multiprocessing.Process(
                 target=_process_worker,
