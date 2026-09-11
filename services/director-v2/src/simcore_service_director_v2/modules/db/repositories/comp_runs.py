@@ -23,7 +23,6 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import CursorResult
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_dbapi
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import or_
@@ -491,7 +490,7 @@ class CompRunsRepository(BaseRepository):
                 if iteration is None:
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
-                result: CursorResult = await conn.execute(
+                result = await conn.execute(
                     comp_runs.insert()
                     .values(
                         user_id=user_id,
@@ -503,7 +502,7 @@ class CompRunsRepository(BaseRepository):
                         dag_adjacency_list=dag_adjacency_list,
                         collection_run_id=f"{collection_run_id}",
                     )
-                    .returning(literal_column("*"))
+                    .returning(*comp_runs.c)
                 )
                 row = result.one()
                 return CompRunsAtDB.model_validate(row)
