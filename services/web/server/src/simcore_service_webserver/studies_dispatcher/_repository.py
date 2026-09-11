@@ -67,8 +67,7 @@ class StudiesDispatcherRepository(BaseRepository):
                         if only_default and row.filetype in listed_filetype:
                             continue
                         listed_filetype.add(row.filetype)
-                        consumer = create_viewer_info_from_db(row)
-                        yield consumer
+                        yield create_viewer_info_from_db(row)
 
                     except ValidationError as err:
                         _logger.warning("Review invalid service metadata %s: %s", row, err)

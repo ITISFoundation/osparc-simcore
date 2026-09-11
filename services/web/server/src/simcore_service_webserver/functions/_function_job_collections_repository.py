@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
@@ -30,7 +32,6 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
@@ -43,6 +44,36 @@ from ._functions_permissions_repository import (
 from ._functions_table_cols import (
     _FUNCTION_JOB_COLLECTIONS_TABLE_COLS,
 )
+
+
+async def _list_job_ids_by_collection(
+    conn: AsyncConnection,
+    *,
+    function_job_collection_ids: list[FunctionJobCollectionID],
+) -> dict[FunctionJobCollectionID, list[FunctionJobID]]:
+    if not function_job_collection_ids:
+        return {}
+
+    result = await conn.execute(
+        sqlalchemy.select(
+            function_job_collections_to_function_jobs_table.c.function_job_collection_uuid,
+            function_job_collections_to_function_jobs_table.c.function_job_uuid,
+        )
+        .where(
+            function_job_collections_to_function_jobs_table.c.function_job_collection_uuid.in_(
+                function_job_collection_ids
+            )
+        )
+        .order_by(
+            function_job_collections_to_function_jobs_table.c.order,
+            function_job_collections_to_function_jobs_table.c.function_job_uuid,
+        )
+    )
+
+    job_ids_by_collection: dict[FunctionJobCollectionID, list[FunctionJobID]] = defaultdict(list)
+    for row in result:
+        job_ids_by_collection[row.function_job_collection_uuid].append(row.function_job_uuid)
+    return job_ids_by_collection
 
 
 async def create_function_job_collection(
@@ -96,26 +127,19 @@ async def create_function_job_collection(
         )  # nosec
 
         function_job_collection_db = RegisteredFunctionJobCollectionDB.model_validate(row)
-        job_collection_entries: list[Row] = []
-        for order, job_id in enumerate(job_ids, 1):
-            result = await transaction.execute(
-                function_job_collections_to_function_jobs_table.insert()
-                .values(
-                    function_job_collection_uuid=function_job_collection_db.uuid,
-                    function_job_uuid=job_id,
-                    order=order,
-                )
-                .returning(
-                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid,
-                    function_job_collections_to_function_jobs_table.c.function_job_uuid,
-                )
+
+        if job_ids:
+            await transaction.execute(
+                function_job_collections_to_function_jobs_table.insert(),
+                [
+                    {
+                        "function_job_collection_uuid": function_job_collection_db.uuid,
+                        "function_job_uuid": job_id,
+                        "order": order,
+                    }
+                    for order, job_id in enumerate(job_ids, 1)
+                ],
             )
-            entry = result.one_or_none()
-            assert entry is not None, (
-                f"No row was returned from the database after creating function job collection entry {title}."
-                f" Job ID: {job_id}"
-            )  # nosec
-            job_collection_entries.append(entry)
 
         await _internal_set_group_permissions(
             app,
@@ -129,7 +153,7 @@ async def create_function_job_collection(
             execute=True,
         )
 
-    return function_job_collection_db, [entry.function_job_uuid for entry in job_collection_entries]
+    return function_job_collection_db, job_ids
 
 
 async def list_function_job_collections(
@@ -206,21 +230,14 @@ async def list_function_job_collections(
 
         query = function_job_collections_table.select().where(filter_and_access_condition)
 
-        collections = []
-        async for row in await conn.stream(query.offset(pagination_offset).limit(pagination_limit)):
-            collection = RegisteredFunctionJobCollectionDB.model_validate(row)
-            job_ids = [
-                job_row.function_job_uuid
-                async for job_row in await conn.stream(
-                    function_job_collections_to_function_jobs_table.select()
-                    .where(function_job_collections_to_function_jobs_table.c.function_job_collection_uuid == row.uuid)
-                    .order_by(
-                        function_job_collections_to_function_jobs_table.c.order,
-                        function_job_collections_to_function_jobs_table.c.function_job_uuid,
-                    )
-                )
-            ]
-            collections.append((collection, job_ids))
+        result = await conn.execute(query.offset(pagination_offset).limit(pagination_limit))
+        collections_db = TypeAdapter(list[RegisteredFunctionJobCollectionDB]).validate_python(result.mappings().all())
+
+        job_ids_by_collection = await _list_job_ids_by_collection(
+            conn, function_job_collection_ids=[collection.uuid for collection in collections_db]
+        )
+
+        collections = [(collection, job_ids_by_collection.get(collection.uuid, [])) for collection in collections_db]
         return collections, PageMetaInfoLimitOffset(
             total=total_count_result,
             offset=pagination_offset,
@@ -261,17 +278,7 @@ async def get_function_job_collection(
             raise FunctionJobCollectionIDNotFoundError(function_job_collection_id=function_job_collection_id)
 
         # Retrieve associated job ids from the join table
-        job_ids = [
-            job_row.function_job_uuid
-            async for job_row in await conn.stream(
-                function_job_collections_to_function_jobs_table.select()
-                .where(function_job_collections_to_function_jobs_table.c.function_job_collection_uuid == row.uuid)
-                .order_by(
-                    function_job_collections_to_function_jobs_table.c.order,
-                    function_job_collections_to_function_jobs_table.c.function_job_uuid,
-                )
-            )
-        ]
+        job_ids = (await _list_job_ids_by_collection(conn, function_job_collection_ids=[row.uuid])).get(row.uuid, [])
 
         job_collection = RegisteredFunctionJobCollectionDB.model_validate(row)
 
@@ -299,21 +306,14 @@ async def delete_function_job_collection(
             permissions=["write"],
         )
 
-        # Check if the function job collection exists
         result = await transaction.execute(
-            function_job_collections_table.select().where(
-                function_job_collections_table.c.uuid == function_job_collection_id
-            )
+            function_job_collections_table.delete()
+            .where(function_job_collections_table.c.uuid == function_job_collection_id)
+            .returning(function_job_collections_table.c.uuid)
         )
-        row = result.one_or_none()
-        if row is None:
+        if result.one_or_none() is None:
             raise FunctionJobCollectionIDNotFoundError(function_job_collection_id=function_job_collection_id)
-        # Proceed with deletion
-        await transaction.execute(
-            function_job_collections_table.delete().where(
-                function_job_collections_table.c.uuid == function_job_collection_id
-            )
-        )
+
         await transaction.execute(
             function_job_collections_to_function_jobs_table.delete().where(
                 function_job_collections_to_function_jobs_table.c.function_job_collection_uuid

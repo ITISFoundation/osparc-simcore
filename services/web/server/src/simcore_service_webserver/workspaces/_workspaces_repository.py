@@ -154,10 +154,8 @@ async def list_workspaces_for_user(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        items: list[UserWorkspaceWithAccessRights] = [
-            UserWorkspaceWithAccessRights.model_validate(row) async for row in result
-        ]
+        result = await conn.execute(list_query)
+        items = TypeAdapter(list[UserWorkspaceWithAccessRights]).validate_python(result.mappings().all())
 
         return cast(int, total_count), items
 
