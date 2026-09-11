@@ -224,13 +224,13 @@ async def update_workspace(
     }
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             workspaces.update()
             .values(**_updates)
             .where((workspaces.c.workspace_id == workspace_id) & (workspaces.c.product_name == product_name))
             .returning(*_WORKSPACE_SELECTION_COLS)
         )
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise WorkspaceNotFoundError(details=f"Workspace {workspace_id} not found.")
         return Workspace.model_validate(row)
