@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-PYTHON_VERSION=3.13.9
+PYTHON_VERSION=3.14.4
 IMAGE_NAME="local/datamodel-code-generator:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 

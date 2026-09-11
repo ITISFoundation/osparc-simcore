@@ -80,9 +80,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     transfer_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
 
     @classmethod
-    async def create(
-        cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
-    ) -> "SimcoreS3API":
+    async def create(cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT) -> SimcoreS3API:
         session = aioboto3.Session()
         session_client = None
         exit_stack = contextlib.AsyncExitStack()
@@ -254,7 +252,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             # we have folders here
             list_subfolders = listed_objects["CommonPrefixes"]
             found_objects.extend(
-                S3DirectoryMetaData.model_construct(prefix=S3ObjectPrefix(subfolder["Prefix"], size=None))
+                S3DirectoryMetaData.model_construct(prefix=S3ObjectPrefix(subfolder["Prefix"]))
                 for subfolder in list_subfolders
                 if "Prefix" in subfolder
             )
@@ -326,9 +324,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 for subfolder in page.get("CommonPrefixes", []):
                     if "Prefix" in subfolder:
                         sub_prefix = subfolder["Prefix"]
-                        entries.append(
-                            S3DirectoryMetaData.model_construct(prefix=S3ObjectPrefix(sub_prefix, size=None))
-                        )
+                        entries.append(S3DirectoryMetaData.model_construct(prefix=S3ObjectPrefix(sub_prefix)))
                         queue.append(sub_prefix)  # BFS traversal
 
                 # Add files in the current prefix
