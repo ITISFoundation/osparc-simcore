@@ -316,7 +316,7 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
-
+            result = await conn.execute(list_query)
             items = [
                 ComputationRunRpcGet(
                     project_uuid=row.project_uuid,
@@ -327,7 +327,7 @@ class CompRunsRepository(BaseRepository):
                     started_at=row.started_at,
                     ended_at=row.ended_at,
                 )
-                async for row in await conn.stream(list_query)
+                for row in result
             ]
 
             return cast(int, total_count), items
@@ -369,7 +369,7 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
             total_count = await conn.scalar(count_query)
-
+            result = await conn.execute(list_query)
             items = [
                 ComputationRunRpcGet(
                     project_uuid=row.project_uuid,
@@ -380,7 +380,7 @@ class CompRunsRepository(BaseRepository):
                     started_at=row.started_at,
                     ended_at=row.ended_at,
                 )
-                async for row in await conn.stream(list_query)
+                for row in result
             ]
 
             return cast(int, total_count), items
@@ -391,7 +391,7 @@ class CompRunsRepository(BaseRepository):
         product_name: str,
         user_id: UserID,
     ) -> list[CollectionRunID]:
-        list_query = (
+        stmt = (
             sa.select(
                 comp_runs.c.collection_run_id,
             )
@@ -406,7 +406,8 @@ class CompRunsRepository(BaseRepository):
         )
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
-            return [CollectionRunID(row[0]) async for row in await conn.stream(list_query)]
+            result = await conn.execute(stmt)
+            return [CollectionRunID(collection_run_id) for collection_run_id in result.scalars()]
 
     async def list_group_by_collection_run_id(
         self,
