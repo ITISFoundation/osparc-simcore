@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.90.2"
+    "version": "0.91.0"
   },
   "servers": [
     {
@@ -29552,6 +29552,10 @@
               }
             ],
             "title": "Invitationurl"
+          },
+          "extraCreditsInUsd": {
+            "$ref": "#/components/schemas/WelcomeCreditsAnnotated",
+            "description": "Extra credits (in USD) granted to an already-registered user when approving their request for a new product. For new users the credits travel inside the invitation instead, so this field is ignored when an invitation is used."
           },
           "messageContent": {
             "anyOf": [
