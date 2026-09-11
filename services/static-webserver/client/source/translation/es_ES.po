@@ -81,7 +81,7 @@ msgstr "Back-end"
 #: services/static-webserver/client/source/class/osparc/Application.js:94
 #: services/static-webserver/client/source/class/osparc/Application.js:654
 msgid "You have been logged out"
-msgstr "Ha sido deslogueado"
+msgstr "Ha cerrado la sesión"
 
 # CTX-INTERPRETATION: The string "Your session has expired" is displayed to
 # the user when their session has timed out, likely within a web-based
@@ -99,14 +99,14 @@ msgid ""
 "site easier to navigate. By visiting the site, you agree to the "
 msgstr ""
 "Este sitio web utiliza cookies para personalizar su experiencia y facilitar "
-"la navegación. Al visitar el sitio, usted acepta las "
+"la navegación. Al visitar el sitio, usted acepta "
 
 # CTX-INTERPRETATION: The string appears within a cookie policy page,
 # informing users about the licensing agreement when they access the site.
 #: services/static-webserver/client/source/class/osparc/CookiePolicy.js:171
 #: services/static-webserver/client/source/class/osparc/CookiePolicy.js:184
 msgid "By visiting the site, you agree to the "
-msgstr "Al visitar el sitio, usted acepta los términos de la licencia. "
+msgstr "Al visitar el sitio, usted acepta "
 
 # CTX-INTERPRETATION: The string appears within a cookie policy context,
 # informing users about the use of third-party software and libraries, and
@@ -117,7 +117,7 @@ msgid ""
 "agree to the "
 msgstr ""
 "También utiliza software y bibliotecas de terceros. Al visitar el sitio, "
-"usted acepta los términos de la licencia. "
+"usted acepta "
 
 # CTX-INTERPRETATION: The string "Licensing." is likely used within a user
 # interface element, possibly a label or button, related to licensing
@@ -1912,7 +1912,7 @@ msgstr "Mi espacio de trabajo"
 # management application.
 #: services/static-webserver/client/source/class/osparc/dashboard/MoveResourceTo.js:80
 msgid "- Workspace: "
-msgstr "- Workspace: "
+msgstr "- Espacio de trabajo: "
 
 # CTX-INTERPRETATION: The string is part of a label used in a user interface
 # to display the name of a folder, likely within a resource management or file
@@ -3334,7 +3334,7 @@ msgstr "Estado de solicitud fallido"
 # expiration.
 #: services/static-webserver/client/source/class/osparc/data/Resources.js:1756
 msgid "You have been logged out. Your cookie might have expired."
-msgstr "Ha sido deslogueado. Es posible que su cookie haya caducado."
+msgstr "Ha cerrado la sesión. Es posible que su cookie haya caducado."
 
 # CTX-INTERPRETATION: The string "Restricted Member" appears as a label
 # indicating a user role with limited access, likely within a system managing
@@ -6215,7 +6215,7 @@ msgstr "Algo salió mal al actualizar el estado"
 # related to managing a wallet or financial transaction.
 #: services/static-webserver/client/source/class/osparc/desktop/wallets/WalletListItem.js:210
 msgid "Auto-recharge: ON"
-msgstr "Re carga automática: ACTIVADO"
+msgstr "Recarga automática: ACTIVADO"
 
 # CTX-INTERPRETATION: The string "Auto-recharge: OFF" is used to display the
 # status of an auto-recharge feature, likely within a user interface element
@@ -9271,10 +9271,13 @@ msgid ""
 "For more specific technical information, please refer to the Manuals.      "
 msgstr ""
 "Sim4Life es una plataforma de simulación revolucionaria, que combina "
-"fantomas humanos computables con los solucionadores de física más potentes y"
-" los modelos de tejido más avanzados, para analizar directamente fenómenos "
+"fantomas humanos computables con los simuladores de física más potentes y "
+"los modelos de tejido más avanzados, para analizar directamente fenómenos "
 "biológicos del mundo real y dispositivos técnicos complejos en un entorno "
-"biológico y anatómico validado.      "
+"biológico y anatómico validado.        <br>        <br>        Para facilitar "
+"la introducción a la plataforma, tenemos algunos Tours guiados que puede "
+"encontrar en la sección de Ayuda y soporte.        <br>        <br>        "
+"Para obtener información técnica más específica, consulte los Manuales.      "
 
 # CTX-INTERPRETATION: This string is part of the 'Welcome.js' file, likely
 # displayed as a greeting message when a user starts the Sim4Life Science
@@ -10652,7 +10655,7 @@ msgstr ""
 #: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:120
 #: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:216
 msgid "Exposed"
-msgstr "Exposed"
+msgstr "Expuesto"
 
 # CTX-INTERPRETATION: The string "Default value" appears within a UI
 # component, likely used to display the default value for a numerical input
@@ -13010,7 +13013,7 @@ msgstr ""
 # method to be set up first.
 #: services/static-webserver/client/source/resource/osparc/tours/tis_tours.json:133
 msgid "Auto-Recharge"
-msgstr "Re carga automática"
+msgstr "Recarga automática"
 
 # CTX-INTERPRETATION: This string appears in a tour guide, explaining the
 # automated credit top-up feature and the requirement to add a payment method

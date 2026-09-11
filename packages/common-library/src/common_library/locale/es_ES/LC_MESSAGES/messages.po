@@ -679,8 +679,8 @@ msgstr ""
 #: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr ""
-"La resolución variable excedió el tiempo límite durante la programación de "
-"tareas, se intentará de nuevo."
+"La resolución de variables excedió el tiempo límite durante la programación "
+"de tareas, se intentará de nuevo."
 
 # CTX-INTERPRETATION: This message is displayed to the user when the system
 # cannot allocate the necessary computational resources in time. fails to
@@ -742,8 +742,9 @@ msgid ""
 "Since you already have an account on\n"
 "  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
 msgstr ""
-"Dado que ya tiene una cuenta, por favor continúe iniciando sesión en "
-"%(product_name)s con la misma dirección de correo electrónico y contraseña."
+"Dado que ya tiene una cuenta en %(existing_product)s, por favor continúe "
+"iniciando sesión en %(product_name)s con la misma dirección de correo "
+"electrónico y contraseña."
 
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # users who have an existing account about adding a new product, prompting
@@ -840,7 +841,7 @@ msgid ""
 "Since you already have an account on %(existing_product)s, please continue "
 "logging in to %(product_name)s with the same email and password."
 msgstr ""
-"Dado que ya tiene una cuenta en %(product_name)s, por favor continúe "
+"Dado que ya tiene una cuenta en %(existing_product)s, por favor continúe "
 "iniciando sesión en %(product_name)s con la misma dirección de correo "
 "electrónico y contraseña."
 
@@ -867,7 +868,7 @@ msgstr ""
 # it.
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/subject.j2:1
 msgid "You Now Have Access to %(product_name)s"
-msgstr "Ahora tiene acceso a"
+msgstr "Ahora tiene acceso a %(product_name)s"
 
 # CTX-INTERPRETATION: This string appears in an email or notification message.
 # sent to a user expressing gratitude for their interest in a product and
@@ -3556,6 +3557,18 @@ msgstr ""
 "Lamentamos las molestias. El problema ha sido registrado, por favor "
 "repórtelo si persiste."
 
+# CTX-INTERPRETATION: This string appears in the context of a file copying
+# operation.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
+msgid "Copying files"
+msgstr "Copiando archivos"
+
+# CTX-INTERPRETATION: This string appears in the context of creating an
+# export archive.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
+msgid "Creating export archive"
+msgstr "Creando el archivo de exportación"
+
 # CTX-INTERPRETATION: This string appears as a notification message prompting
 # the user to activate their account using a provided link. the user to
 # activate their account using a provided link. users to activate their
@@ -3590,15 +3603,3 @@ msgstr ""
 #~ msgstr ""
 #~ "No se pudo encontrar al propietario del proyecto en los derechos de acceso "
 #~ "del proyecto."
-
-# CTX-INTERPRETATION: This string appears in the context of a file copying
-# operation.
-#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
-msgid "Copying files"
-msgstr "Copiando archivos"
-
-# CTX-INTERPRETATION: This string appears in the context of creating an
-# export archive.
-#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
-msgid "Creating export archive"
-msgstr "Creando el archivo de exportación"

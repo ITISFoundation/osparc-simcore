@@ -3509,7 +3509,7 @@ msgstr "변경 없이 내용을 검사하고 열 수 있습니다"
 # data management context.
 #: services/static-webserver/client/source/class/osparc/data/Roles.js:227
 msgid "- Can add "
-msgstr "- Can add "
+msgstr "- 추가 가능 "
 
 # CTX-INTERPRETATION: This string appears in the 'Roles' class, likely
 # indicating the permissions a user has to add folders within a study.
@@ -4090,7 +4090,7 @@ msgstr "수동으로 시작해주세요."
 msgid ""
 "Wallet \"%1\", running your service(s) has run out of credits. Stopping "
 "service(s) gracefully."
-msgstr "Wallet \"%1\", 서비스를 실행하는 데에 사용 가능한 크레딧이 소진되었습니다. 서비스(들)를 정상적으로 중단합니다."
+msgstr "\"%1\" 지갑에서 서비스를 실행하는 데에 사용 가능한 크레딧이 소진되었습니다. 서비스(들)를 정상적으로 중단합니다."
 
 # CTX-INTERPRETATION: This string appears in the StudyEditor.js file, likely
 # within a user interface element related to updating service inputs and
@@ -9025,7 +9025,7 @@ msgstr ""
 # onboarding.
 #: services/static-webserver/client/source/class/osparc/product/quickStart/s4lacad/Welcome.js:22
 msgid "Welcome to Sim4Life Science"
-msgstr "Sim4Life 과학에 오신 것을 환영합니다."
+msgstr "Sim4Life Science에 오신 것을 환영합니다"
 
 # CTX-INTERPRETATION: This string appears in the Dashboard component of the
 # QuickStart application, likely displaying a title or heading related to
