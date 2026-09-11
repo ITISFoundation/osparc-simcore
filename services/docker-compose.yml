@@ -109,7 +109,7 @@ services:
   ###########################
 
   postgres:
-    image: "postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc"
+    image: "postgres:14.23@sha256:2f439458ab6a57a925825ae14f9d06910e4fe4a41c8d4a0ae06397e65b707e1b"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -135,7 +135,10 @@ services:
           "--dbname",
           "${POSTGRES_DB}",
         ]
+      start_period: 15s
+      start_interval: 1s
       interval: 5s
+      timeout: 30s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
@@ -173,24 +176,29 @@ services:
       ]
 
   redis:
-    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
+    image: "valkey/valkey:7.2@sha256:1bbb912679bea3ec2c1b21af3860beb4397774e9118eddad4ae50d8e97fabb99"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    command:
-      # redis server will write a backup every 60 seconds if at least 1 key was changed
-      # also aof (append only) is also enabled such that we get full durability at the expense
-      # of backup size. The backup is written into /data.
-      # https://redis.io/topics/persistence
-      [
-        "redis-server",
+    command: [
+        "valkey-server",
+
+        # RDB snapshot if at least one key changed in 60 seconds.
         "--save",
         "60 1",
+
         "--loglevel",
         "verbose",
         "--databases",
         "12",
+
+        # Persist mutations in AOF as well.
         "--appendonly",
         "yes",
+
+        # State the intended durability policy explicitly.
+        "--appendfsync",
+        "everysec",
+
         "--requirepass",
         "${REDIS_PASSWORD}",
       ]
@@ -201,10 +209,24 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test:
+        [
+          "CMD",
+          "valkey-cli",
+          "--no-auth-warning",
+          "--pass",
+          "$${REDIS_PASSWORD}",
+          "ping",
+          "|",
+          "grep",
+          "-qx",
+          "PONG",
+        ]
+      start_period: 15s
+      start_interval: 1s
       interval: 5s
       timeout: 30s
-      retries: 50
+      retries: 5
 
   rabbit:
     image: itisfoundation/rabbitmq:4.1.6-management
