@@ -19,15 +19,8 @@ class ProjectsRepository(BaseRepository):
             return result.scalar_one()
 
     async def get(self, project_id: ProjectID) -> ProjectAtDB:
-        # Select all project columns except 'workbench' (deprecated).
-        # The workbench is no longer reconstructed here for performance reasons;
-        # callers that need the nodes must fetch them via ProjectsNodesRepository.
-        project_cols = [c for c in projects.c if c.name != "workbench"]
-
         async with pass_or_acquire_connection(self.db_engine) as conn:
-            query = sa.select(
-                *project_cols,
-            ).where(projects.c.uuid == str(project_id))
+            query = sa.select(projects).where(projects.c.uuid == f"{project_id}")
             result = await conn.execute(query)
             row = result.one_or_none()
             if row is None:
