@@ -17,7 +17,7 @@ from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    create_service_resources_from_single_service,
 )
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import TypeAdapter
@@ -168,12 +168,12 @@ async def get_service_resources(
 ) -> ServiceResourcesDict:
     image_version = TypeAdapter(DockerGenericTag).validate_python(f"{service_key}:{service_version}")
     if is_function_service(service_key):
-        return ServiceResourcesDictHelpers.create_from_single_service(image_version, default_service_resources)
+        return create_service_resources_from_single_service(image_version, default_service_resources)
 
     service_labels: dict[str, Any] | None = await _get_service_labels(director_client, service_key, service_version)
 
     if not service_labels:
-        return ServiceResourcesDictHelpers.create_from_single_service(image_version, default_service_resources)
+        return create_service_resources_from_single_service(image_version, default_service_resources)
 
     service_spec: ComposeSpecLabelDict | None = TypeAdapter(ComposeSpecLabelDict | None).validate_json(
         service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null")
@@ -200,9 +200,7 @@ async def get_service_resources(
                 service_resources, user_specific_service_specs.service
             )
 
-        return ServiceResourcesDictHelpers.create_from_single_service(
-            image_version, service_resources, service_boot_modes
-        )
+        return create_service_resources_from_single_service(image_version, service_resources, service_boot_modes)
 
     # compose specifications available, potentially multiple services
     stringified_service_spec = replace_env_vars_in_compose_spec(
@@ -212,7 +210,7 @@ async def get_service_resources(
     )
     full_service_spec: ComposeSpecLabelDict = yaml.safe_load(stringified_service_spec)
 
-    service_to_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python({})
+    service_to_resources: ServiceResourcesDict = {}
 
     for spec_key, spec_data in full_service_spec["services"].items():
         # image can be:

@@ -128,8 +128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "title": "Response Get Service Resources V0 Services  Service Key   Service Version  Resources Get"
+                  "$ref": "#/components/schemas/ServiceResourcesDict"
                 }
               }
             }
@@ -3333,6 +3332,10 @@
           "key": "input_1",
           "kind": "input"
         }
+      },
+      "ServiceResourcesDict": {
+        "type": "object",
+        "title": "ServiceResourcesDict"
       },
       "ServiceSpec": {
         "properties": {

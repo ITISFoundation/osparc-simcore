@@ -4756,7 +4756,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__"
+                  "$ref": "#/components/schemas/Envelope_ServiceResourcesDict_"
                 }
               }
             }
@@ -10317,7 +10317,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__"
+                  "$ref": "#/components/schemas/Envelope_ServiceResourcesDict_"
                 }
               }
             }
@@ -10356,8 +10356,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "title": " New"
+                "$ref": "#/components/schemas/ServiceResourcesDict"
               }
             }
           }
@@ -10368,7 +10367,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__"
+                  "$ref": "#/components/schemas/Envelope_ServiceResourcesDict_"
                 }
               }
             }
@@ -18430,6 +18429,31 @@
         "type": "object",
         "title": "Envelope[ServicePricingPlanGet]"
       },
+      "Envelope_ServiceResourcesDict_": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceResourcesDict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[ServiceResourcesDict]"
+      },
       "Envelope_StatusDiagnosticsGet_": {
         "properties": {
           "data": {
@@ -18939,32 +18963,6 @@
         },
         "type": "object",
         "title": "Envelope[_ProjectNodePreview]"
-      },
-      "Envelope_dict_Annotated_str__StringConstraints___ImageResources__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[dict[Annotated[str, StringConstraints], ImageResources]]"
       },
       "Envelope_dict_NewType__FunctionGroupAccessRightsGet__": {
         "properties": {
@@ -28122,6 +28120,10 @@
           "version"
         ],
         "title": "ServiceRelease"
+      },
+      "ServiceResourcesDict": {
+        "type": "object",
+        "title": "ServiceResourcesDict"
       },
       "ServiceRunGet": {
         "properties": {

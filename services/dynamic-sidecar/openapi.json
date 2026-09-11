@@ -1146,8 +1146,7 @@
             "title": "Service Version"
           },
           "service_resources": {
-            "type": "object",
-            "title": "Service Resources"
+            "$ref": "#/components/schemas/ServiceResourcesDict"
           },
           "service_additional_metadata": {
             "additionalProperties": true,
@@ -1451,6 +1450,10 @@
           "type"
         ],
         "title": "ServiceOutput"
+      },
+      "ServiceResourcesDict": {
+        "type": "object",
+        "title": "ServiceResourcesDict"
       },
       "Structure": {
         "properties": {

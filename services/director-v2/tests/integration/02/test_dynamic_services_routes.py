@@ -22,9 +22,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -170,7 +170,9 @@ def start_request_data(
             "outputs_path": "/tmp/outputs",  # noqa: S108
             "inputs_path": "/tmp/inputs",  # noqa: S108
         },
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(service_resources),
+        "service_resources": TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            service_resources, mode="json"
+        ),
     }
 
 

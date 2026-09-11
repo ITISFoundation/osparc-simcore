@@ -6,7 +6,7 @@ from models_library.projects_state import RunningState
 from models_library.services_resources import (
     ResourceValue,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    create_service_resources_from_single_service,
 )
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
@@ -54,7 +54,7 @@ COMPLETED_STATES: set[RunningState] = {
 
 def create_service_resources_from_task(task: CompTaskAtDB) -> ServiceResourcesDict:
     assert task.image.node_requirements  # nosec
-    return ServiceResourcesDictHelpers.create_from_single_service(
+    return create_service_resources_from_single_service(
         DockerGenericTag(f"{task.image.name}:{task.image.tag}"),
         {
             res_name: ResourceValue(limit=res_value, reservation=res_value)

@@ -23,6 +23,9 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     PresignedLink,
@@ -32,8 +35,8 @@ from models_library.generics import Envelope
 from models_library.projects_nodes import Node, NodeShareStatus
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
@@ -90,12 +93,12 @@ async def test_get_node_resources(
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == next(
-                iter(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
-            )  # type: ignore
+            assert TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                node_resources, mode="json"
+            ) == next(iter(SERVICE_RESOURCES_DICT_EXAMPLES))
         else:
             assert not data
             assert error
@@ -155,17 +158,22 @@ async def test_replace_node_resources_is_forbidden_by_default(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                ),
+                mode="json",
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert node_resources == ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            assert node_resources == TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                SERVICE_RESOURCES_DICT_EXAMPLES[0]
+            )
 
 
 @pytest.mark.parametrize(
@@ -188,19 +196,23 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                ),
+                mode="json",
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
+            node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {k: v.model_dump() for k, v in node_resources.items()} == ServiceResourcesDictHelpers.model_config[
-                "json_schema_extra"
-            ]["examples"][0]
+            assert (
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(node_resources, mode="json")
+                == SERVICE_RESOURCES_DICT_EXAMPLES[0]
+            )
 
 
 @pytest.mark.parametrize(
@@ -219,9 +231,12 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
         url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
-            json=ServiceResourcesDictHelpers.create_jsonable(
-                # NOTE: we apply a different resource set
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][1]
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    # NOTE: we apply a different resource set
+                    SERVICE_RESOURCES_DICT_EXAMPLES[1]
+                ),
+                mode="json",
             ),
         )
         await assert_status(response, expected)
@@ -377,8 +392,8 @@ async def test_create_and_delete_many_nodes_in_parallel(
             **kwargs,  # noqa: ARG002
         ) -> list[DynamicServiceGet]:
             return [
-                DynamicServiceGet.model_validate(
-                    DynamicServiceGet.model_json_schema()["examples"][1]
+                RunningDynamicServiceDetails.model_validate(
+                    RunningDynamicServiceDetails.model_json_schema()["examples"][1]
                     | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
                 )
                 for service_uuid in self.running_services_uuids
@@ -674,8 +689,8 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
     # simulate that the dynamic service is running
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.get_dynamic_service"
-    ].return_value = DynamicServiceGet.model_validate(
-        DynamicServiceGet.model_json_schema()["examples"][0]
+    ].return_value = RunningDynamicServiceDetails.model_validate(
+        RunningDynamicServiceDetails.model_json_schema()["examples"][0]
         | {
             "user_id": logged_user["id"],
             "project_id": project["uuid"],

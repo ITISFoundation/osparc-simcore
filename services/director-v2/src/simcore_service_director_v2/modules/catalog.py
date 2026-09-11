@@ -113,8 +113,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(resp.json())
-            return json_response
+            return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
     async def get_service_labels(
