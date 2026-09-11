@@ -8948,7 +8948,7 @@
           "responses"
         ],
         "summary": "Create Response",
-        "description": "Creates a model response (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*",
+        "description": "Creates a model response (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*\n\nAdded in *version 0.16.2*: `stream` field: when true, relays the answer as server-sent events instead of a background job",
         "operationId": "create_response_v0_responses_post",
         "requestBody": {
           "content": {
@@ -8971,8 +8971,8 @@
               }
             }
           },
-          "503": {
-            "description": "Chatbot service is not enabled",
+          "422": {
+            "description": "The request was rejected by the chatbot service",
             "content": {
               "application/json": {
                 "schema": {
@@ -8981,12 +8981,12 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "503": {
+            "description": "Chatbot service is not enabled",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -9514,6 +9514,11 @@
           },
           "model": {
             "title": "Model"
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
           },
           "temperature": {
             "type": "number",
@@ -12892,13 +12897,13 @@
             "title": "Output"
           },
           "status": {
-            "$ref": "#/components/schemas/ResponseStatus",
-            "default": "in_progress"
+            "$ref": "#/components/schemas/ResponseStatus"
           }
         },
         "type": "object",
         "required": [
-          "id"
+          "id",
+          "status"
         ],
         "title": "ResponseObject",
         "description": "Response object returned by both POST and GET endpoints."
