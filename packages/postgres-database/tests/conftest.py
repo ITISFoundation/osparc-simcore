@@ -15,6 +15,7 @@ import sqlalchemy.engine
 import yaml
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools, postgres_users
+from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
@@ -40,6 +41,14 @@ pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
 ]
+
+
+@pytest.fixture(scope="session")
+def docker_compose_file(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Overrides pytest-docker fixture"""
+    compose_path = Path(__file__).parent / "docker-compose.yml"
+    assert compose_path.exists()
+    return filter_compose_file_for_ci(compose_path, ("postgres",), tmp_path_factory.mktemp("compose"))
 
 
 @pytest.fixture(scope="session")
