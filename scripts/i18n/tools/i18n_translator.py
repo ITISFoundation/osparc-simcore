@@ -402,7 +402,7 @@ def _translate_entry(  # noqa: C901
     # the model isn't given dead instructions (no snippet / no placeholders).
     sections = [
         "You are a technical software localizer for a scientific simulation application.",
-        f"Target language: {lang_name}",
+        f"TARGET LANGUAGE: **{lang_name}**",
         _MANDATORY_RULES,
     ]
 
