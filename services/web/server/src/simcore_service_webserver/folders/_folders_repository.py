@@ -62,7 +62,7 @@ async def create(
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             folders_v2.insert()
             .values(
                 name=folder_name,
@@ -76,7 +76,7 @@ async def create(
             )
             .returning(*_FOLDER_DB_MODEL_COLS)
         )
-        row = await result.first()
+        row = result.first()
         return FolderDB.model_validate(row)
 
 
@@ -86,10 +86,10 @@ def _create_private_workspace_query(
     workspace_scope: WorkspaceScope,
 ):
     if workspace_scope is not WorkspaceScope.SHARED:
-        assert workspace_scope in (  # nosec
+        assert workspace_scope in {
             WorkspaceScope.PRIVATE,
             WorkspaceScope.ALL,
-        )
+        }
         return (
             sql.select(
                 *_FOLDER_DB_MODEL_COLS,
@@ -115,10 +115,10 @@ def _create_shared_workspace_query(
     workspace_id: WorkspaceID | None,
 ):
     if workspace_scope is not WorkspaceScope.PRIVATE:
-        assert workspace_scope in (  # nosec
+        assert workspace_scope in {
             WorkspaceScope.SHARED,
             WorkspaceScope.ALL,
-        )
+        }
 
         workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(user_id=user_id)
 
