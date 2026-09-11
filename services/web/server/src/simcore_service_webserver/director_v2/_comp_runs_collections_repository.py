@@ -83,6 +83,6 @@ async def upsert_comp_run_collection(
             "modified": func.now(),
         },
     )
-    result = await conn.stream(on_update_stmt.returning(comp_runs_collections.c.collection_run_id))
-    collection_id_tuple: tuple[UUID] = await result.one()
+    result = await conn.execute(on_update_stmt.returning(comp_runs_collections.c.collection_run_id))
+    collection_id_tuple: tuple[UUID] = result.one()
     return TypeAdapter(CollectionRunID).validate_python(collection_id_tuple[0])
