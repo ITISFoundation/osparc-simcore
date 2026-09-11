@@ -4,6 +4,7 @@ import networkx as nx
 import sqlalchemy as sa
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.dialects.postgresql import insert
 
 from ....core.errors import PipelineNotFoundError
@@ -44,9 +45,9 @@ class CompPipelinesRepository(BaseRepository):
                 exclude_unset=True,
             ),
         )
-        async with self.db_engine.begin() as conn:
+        async with transaction_context(self.db_engine) as conn:
             await conn.execute(on_update_stmt)
 
     async def delete_pipeline(self, project_id: ProjectID) -> None:
-        async with self.db_engine.begin() as conn:
-            await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))
+        async with transaction_context(self.db_engine) as conn:
+            await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == f"{project_id}"))
