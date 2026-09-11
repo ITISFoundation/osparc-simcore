@@ -1,6 +1,5 @@
 # mypy: disable-error-code=truthy-function
 
-from ._grant_product_access_aggregation_service import grant_user_access_to_product
 from ._models import FullNameDict
 from ._users_service import (
     delete_user_without_projects,
@@ -42,7 +41,6 @@ __all__: tuple[str, ...] = (
     "get_user_primary_group_id",
     "get_user_role",
     "get_users_in_group",
-    "grant_user_access_to_product",
     "is_user_in_product",
     "search_public_users",
     "set_user_as_deleted",

@@ -19,7 +19,9 @@ from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.users.users_service import grant_user_access_to_product
+from simcore_service_webserver.users._grant_product_access_aggregation_service import (
+    grant_user_access_to_product,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 _SIGNAL_ON_USER_CONFIRMATION: str = "SIGNAL_ON_USER_CONFIRMATION"
