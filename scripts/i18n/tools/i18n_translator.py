@@ -367,9 +367,16 @@ def _filter_glossary(glossary: TermGlossaryDict, msgid: str, snippet: str) -> Te
 
     Passing the full glossary on every entry adds terms irrelevant to that particular
     string; filtering keeps the prompt minimal and reduces noise.
+
+    Matching is word-boundary based, so a term is not activated by an unrelated word or
+    by a placeholder that merely contains it (e.g. "job" inside ``{job_id}``).
     """
-    haystack = f"{msgid} {snippet}".lower()
-    return {term: translation for term, translation in glossary.items() if term.lower() in haystack}
+    haystack = f"{msgid} {snippet}"
+    return {
+        term: translation
+        for term, translation in glossary.items()
+        if re.search(rf"\b{re.escape(term)}\b", haystack, re.IGNORECASE)
+    }
 
 
 def _translate_entry(  # noqa: C901
