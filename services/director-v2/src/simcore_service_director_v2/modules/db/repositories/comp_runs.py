@@ -516,7 +516,7 @@ class CompRunsRepository(BaseRepository):
         self, user_id: UserID, project_id: ProjectID, iteration: Iteration, **values
     ) -> CompRunsAtDB | None:
         async with transaction_context(self.db_engine) as conn:
-            result: CursorResult = await conn.execute(
+            result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == f"{project_id}")
@@ -524,7 +524,7 @@ class CompRunsRepository(BaseRepository):
                     & (comp_runs.c.iteration == iteration)
                 )
                 .values(**values)
-                .returning(literal_column("*"))
+                .returning(*comp_runs.c)
             )
             row = result.one_or_none()
             return CompRunsAtDB.model_validate(row) if row else None
