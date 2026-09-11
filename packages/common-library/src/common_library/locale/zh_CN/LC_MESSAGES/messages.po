@@ -2896,3 +2896,15 @@ msgstr "我们对给您带来的不便深表歉意。问题已被记录，如果
 # settings.
 #~ msgid "The project owner could not be found in the project's access rights."
 #~ msgstr "在项目的访问权限中找不到项目所有者。"
+
+# CTX-INTERPRETATION: This string appears in the context of a file copying
+# operation.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:36
+msgid "Copying files"
+msgstr "正在复制文件"
+
+# CTX-INTERPRETATION: This string appears in the context of creating an
+# export archive.
+#: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
+msgid "Creating export archive"
+msgstr "创建导出存档"

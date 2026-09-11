@@ -158,7 +158,7 @@ class DaskClient:
                     )
                     _logger.info(
                         "Scheduler info:\n%s",
-                        json_dumps(await get_scheduler_details(backend.client), indent=2),
+                        json_dumps(await get_scheduler_details(backend.client), indent=2, sanitize_keys=True),
                     )
                     return instance
         # this is to satisfy pylance
