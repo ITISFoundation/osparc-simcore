@@ -154,7 +154,7 @@ def test_logging_event_handler_process_concurrent_start_and_stop_does_not_raise(
 
     assert not run_concurrently(
         [observer_process.start_process, observer_process._stop_process]  # noqa: SLF001
-        * (_CONCURRENT_CALLS // 2)
+        * _CONCURRENT_CALLS
     )
 
     observer_process.shutdown()

@@ -115,9 +115,7 @@ def test_event_handler_process_concurrent_start_and_stop_does_not_raise(
         heart_beat_interval_s=heart_beat_interval_s,
     )
 
-    assert not run_concurrently(
-        [observer_process.start_process, observer_process.stop_process] * (_CONCURRENT_CALLS // 2)
-    )
+    assert not run_concurrently([observer_process.start_process, observer_process.stop_process] * _CONCURRENT_CALLS)
 
     observer_process.shutdown()
 
