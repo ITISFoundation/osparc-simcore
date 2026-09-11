@@ -44,6 +44,9 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         {
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_DB_LISTENER": "0",
+            # needed to assert default-wallet creation on approval
+            # (SIGNAL_ON_USER_CONFIRMATION observer in wallets/_events.py)
+            "WEBSERVER_WALLETS": "1",
         },
     )
 
