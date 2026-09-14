@@ -18,7 +18,8 @@ payload did.
 import asyncio
 import contextlib
 import logging
-from typing import Final, NoReturn
+from collections.abc import AsyncGenerator
+from typing import Final
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -280,10 +281,15 @@ async def _claim_and_process_outbox_events(app: web.Application, engine: AsyncEn
                 return
 
 
-async def _listen_and_poll(app: web.Application) -> NoReturn:
-    engine = get_asyncpg_engine(app)
+@contextlib.asynccontextmanager
+async def with_outbox_wakeup_listener(app: web.Application) -> AsyncGenerator[asyncio.Event]:
+    """Holds one pooled connection open to LISTEN on the outbox wake-up channel.
 
-    # Wake-up event: signaled by pg_notify('outbox_wakeup') from trigger
+    Yields the event that pg_notify('outbox_wakeup') sets: pass it as the
+    `early_wake_up_event` of a periodic drain task, so events are picked up as
+    soon as they land instead of waiting for the next poll interval.
+    """
+    engine = get_asyncpg_engine(app)
     wakeup_event: asyncio.Event = asyncio.Event()
 
     def _on_wakeup(
@@ -294,7 +300,7 @@ async def _listen_and_poll(app: web.Application) -> NoReturn:
     ) -> None:
         wakeup_event.set()
 
-    # Borrow a dedicated connection from the app's shared pool to LISTEN on
+    # Borrow a connection from the app's shared pool to LISTEN on
     # (asyncpg's callback-based notifications require holding one connection open)
     async with engine.connect() as listen_conn:
         raw_conn = await listen_conn.get_raw_connection()
@@ -302,20 +308,6 @@ async def _listen_and_poll(app: web.Application) -> NoReturn:
         assert asyncpg_conn is not None  # nosec
         await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_wakeup)
         try:
-            while True:
-                # Wait for wakeup OR poll interval timeout
-                with contextlib.suppress(TimeoutError):
-                    await asyncio.wait_for(
-                        wakeup_event.wait(),
-                        timeout=_OUTBOX_POLL_INTERVAL_S,
-                    )
-                wakeup_event.clear()
-
-                # Drain pending outbox events
-                try:
-                    await _claim_and_process_outbox_events(app, engine)
-                except Exception:  # pylint: disable=broad-exception-caught
-                    _logger.exception("Error draining outbox events")
-                    # Continue looping; reconnect will happen on next timeout if needed
+            yield wakeup_event
         finally:
             await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
