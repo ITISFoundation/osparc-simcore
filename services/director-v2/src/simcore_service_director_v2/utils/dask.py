@@ -387,7 +387,7 @@ async def get_task_log_file(user_id: UserID, project_id: ProjectID, node_id: Nod
 
 
 async def clean_task_output_and_log_files_if_invalid(
-    db_engine: AsyncEngine,
+    engine: AsyncEngine,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -400,7 +400,7 @@ async def clean_task_output_and_log_files_if_invalid(
 
     # check outputs
     if ports is None:
-        ports = await create_node_ports(db_engine, user_id, project_id, node_id)
+        ports = await create_node_ports(engine, user_id, project_id, node_id)
 
     for port in (await ports.outputs).values():
         if not port_utils.is_file_type(port.property_type):

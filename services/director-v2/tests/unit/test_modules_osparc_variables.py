@@ -116,7 +116,7 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
 
 
 @pytest.fixture
-def mock_repo_db_engine(mocker: MockerFixture) -> None:
+def mock_repo_engine(mocker: MockerFixture) -> None:
     @asynccontextmanager
     async def _connect():
         yield
@@ -125,7 +125,7 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     mocked_engine.connect = _connect
 
     def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
-        return repo_type(db_engine=mocked_engine)
+        return repo_type(engine=mocked_engine)
 
     for target in (
         "simcore_service_director_v2.modules.osparc_variables.substitutions.get_repository",
@@ -135,7 +135,7 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
+def mock_user_repo(mocker: MockerFixture, mock_repo_engine: None) -> None:
     base = "simcore_service_director_v2.modules.db.repositories.users"
     mocker.patch(f"{base}.UsersRepo.get_role", return_value=UserRole("USER"))
     mocker.patch(f"{base}.UsersRepo.get_email", return_value="e@ma.il")
@@ -196,7 +196,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
 
 
 @pytest.fixture
-def mock_get_vendor_secrets(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
+def mock_get_vendor_secrets(mocker: MockerFixture, mock_repo_engine: None) -> None:
     base = "simcore_service_director_v2.modules.db.repositories.services_environments"
     mocker.patch(
         f"{base}.get_vendor_secrets",

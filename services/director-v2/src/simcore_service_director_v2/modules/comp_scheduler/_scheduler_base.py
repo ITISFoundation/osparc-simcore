@@ -83,7 +83,7 @@ _PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 def _auto_schedule_callback(
     loop: asyncio.AbstractEventLoop,
-    db_engine: AsyncEngine,
+    engine: AsyncEngine,
     rabbit_mq_client: RabbitMQClient,
     *,
     user_id: UserID,
@@ -98,7 +98,7 @@ def _auto_schedule_callback(
         async def _async_cb() -> None:
             await request_pipeline_scheduling(
                 rabbit_mq_client,
-                db_engine,
+                engine,
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,

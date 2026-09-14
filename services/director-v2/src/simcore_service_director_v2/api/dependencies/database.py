@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 _POOL_UTILIZATION_WARNING_RATIO = 0.9
 
 
-def _get_db_engine(request: Request) -> AsyncEngine:
+def _get_engine(request: Request) -> AsyncEngine:
     return cast(AsyncEngine, request.app.state.engine)
 
 
@@ -55,7 +55,7 @@ def get_repository[RepoType: BaseRepository](
     repo_type: type[RepoType],
 ) -> Callable[..., AsyncGenerator[RepoType]]:
     async def _get_repo(
-        engine: Annotated[AsyncEngine, Depends(_get_db_engine)],
+        engine: Annotated[AsyncEngine, Depends(_get_engine)],
     ) -> AsyncGenerator[RepoType]:
         yield get_base_repository(engine=engine, repo_type=repo_type)
 
