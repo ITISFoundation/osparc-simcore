@@ -1,12 +1,35 @@
-from typing import Literal, TypeAlias
+from typing import Any, Final, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.config import JsonDict
 
-from models_library.utils.json_schema import GenerateResolvedJsonSchema
-
 # NOTE: keep a list of possible unit, and please use correct official unit names
 ProgressUnit: TypeAlias = Literal["Byte"]
+
+PROGRESS_STRUCTURED_MESSAGE_EXAMPLES: Final[list[dict[str, Any]]] = [
+    {
+        "description": "some description",
+        "current": 12.2,
+        "total": 123,
+    },
+    {
+        "description": "some description",
+        "current": 12.2,
+        "total": 123,
+        "unit": "Byte",
+    },
+    {
+        "description": "downloading",
+        "current": 2.0,
+        "total": 5,
+        "sub": {
+            "description": "port 2",
+            "current": 12.2,
+            "total": 123,
+            "unit": "Byte",
+        },
+    },
+]
 
 
 class ProgressStructuredMessage(BaseModel):
@@ -14,36 +37,11 @@ class ProgressStructuredMessage(BaseModel):
     current: float
     total: int
     unit: str | None = None
-    sub: "ProgressStructuredMessage | None" = None
+    sub: ProgressStructuredMessage | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            examples=[
-                {
-                    "description": "some description",
-                    "current": 12.2,
-                    "total": 123,
-                },
-                {
-                    "description": "some description",
-                    "current": 12.2,
-                    "total": 123,
-                    "unit": "Byte",
-                },
-                {
-                    "description": "downloading",
-                    "current": 2.0,
-                    "total": 5,
-                    "sub": {
-                        "description": "port 2",
-                        "current": 12.2,
-                        "total": 123,
-                        "unit": "Byte",
-                    },
-                },
-            ]
-        )
+        schema.update(examples=PROGRESS_STRUCTURED_MESSAGE_EXAMPLES)
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
@@ -101,9 +99,7 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
-                    "message": ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
-                        "examples"
-                    ][2],
+                    "message": PROGRESS_STRUCTURED_MESSAGE_EXAMPLES[2],
                 },
             ]
         },
