@@ -3,8 +3,8 @@ import contextlib
 import datetime
 import functools
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
-from typing import Any, Final, ParamSpec, TypeVar
+from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
+from typing import Any, Final, ParamSpec
 
 from common_library.async_tools import cancel_wait_task, delayed_start
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
@@ -32,7 +32,6 @@ class SleepUsingAsyncioEvent:
 
 
 P = ParamSpec("P")
-R = TypeVar("R")
 
 
 def periodic(
@@ -92,8 +91,8 @@ def create_periodic_task(
     raise_on_error: bool = False,
     wait_before_running: datetime.timedelta = datetime.timedelta(0),
     early_wake_up_event: asyncio.Event | None = None,
-    **kwargs,
-) -> asyncio.Task:
+    **kwargs: Any,
+) -> asyncio.Task[None]:
     """Creates an :class:`asyncio.Task` that runs ``task`` periodically until cancelled.
 
     The caller owns the returned task and is responsible for cancelling it (e.g. via
@@ -134,8 +133,9 @@ async def periodic_task(
     task_name: str | None = None,
     stop_timeout: float = _DEFAULT_STOP_TIMEOUT_S,
     raise_on_error: bool = False,
-    **kwargs,
-) -> AsyncIterator[asyncio.Task]:
+    early_wake_up_event: asyncio.Event | None = None,
+    **kwargs: Any,
+) -> AsyncGenerator[asyncio.Task[None]]:
     """Async context manager that runs ``task`` periodically and cancels it on exit.
 
     Wraps :func:`create_periodic_task` and guarantees the task is stopped when the
@@ -150,15 +150,17 @@ async def periodic_task(
         stop_timeout -- maximum time to wait for the task to stop on exit
         raise_on_error -- if True, an exception raised by ``task`` stops the periodic
             loop; if False (default) the task is retried indefinitely until cancelled
+        early_wake_up_event -- when set, wakes up the task before ``interval`` elapses
         **kwargs -- forwarded to ``task`` on every call
     """
-    asyncio_task: asyncio.Task | None = None
+    asyncio_task: asyncio.Task[None] | None = None
     try:
         asyncio_task = create_periodic_task(
             task,
             interval=interval,
             task_name=task_name,
             raise_on_error=raise_on_error,
+            early_wake_up_event=early_wake_up_event,
             **kwargs,
         )
         yield asyncio_task
