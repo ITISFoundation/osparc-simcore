@@ -287,7 +287,7 @@ async def test_compute_input_data(
         side_effect=return_fake_input_value(),
     )
     node_ports = await create_node_ports(
-        db_engine=sqlalchemy_async_engine,
+        engine=sqlalchemy_async_engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,
@@ -331,7 +331,7 @@ async def test_compute_output_data_schema(
     await set_comp_task_outputs(sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs)
 
     node_ports = await create_node_ports(
-        db_engine=sqlalchemy_async_engine,
+        engine=sqlalchemy_async_engine,
         user_id=user_id,
         project_id=published_project.project.uuid,
         node_id=sleeper_task.node_id,

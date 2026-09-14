@@ -89,7 +89,7 @@ from ..utils.dask_client_utils import (
     UnixTimestamp,
     connect_to_dask_scheduler,
 )
-from .db import get_db_engine
+from .db import get_engine
 
 _logger = logging.getLogger(__name__)
 
@@ -345,7 +345,7 @@ class DaskClient:
             try:
                 # This instance is created only once so it can be reused in calls below
                 node_ports = await dask_utils.create_node_ports(
-                    db_engine=get_db_engine(self.app),
+                    engine=get_engine(self.app),
                     user_id=user_id,
                     project_id=project_id,
                     node_id=node_id,

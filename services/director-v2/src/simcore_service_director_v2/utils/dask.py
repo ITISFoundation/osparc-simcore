@@ -70,12 +70,12 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
     errors = err.errors()
     for error in errors:
         assert error["loc"][-1] != (port_key,)
-        error["loc"] = error["loc"] + (port_key,)
+        error["loc"] += (port_key,)
     return list(errors)
 
 
 async def create_node_ports(
-    db_engine: AsyncEngine,
+    engine: AsyncEngine,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -93,7 +93,7 @@ async def create_node_ports(
     :raises PortsValidationError: if any of the ports assigned values are invalid
     """
     try:
-        db_manager = node_ports_v2.DBManager(db_engine, application_name=APP_NAME)
+        db_manager = node_ports_v2.DBManager(engine, application_name=APP_NAME)
         return await node_ports_v2.ports(
             user_id=user_id,
             project_id=f"{project_id}",
@@ -105,7 +105,7 @@ async def create_node_ports(
 
 
 async def parse_output_data(
-    db_engine: AsyncEngine,
+    engine: AsyncEngine,
     job_id: str,
     data: TaskOutputData,
     ports: node_ports_v2.Nodeports | None = None,
@@ -133,7 +133,7 @@ async def parse_output_data(
 
     if ports is None:
         ports = await create_node_ports(
-            db_engine=db_engine,
+            engine=engine,
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
