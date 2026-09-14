@@ -35,8 +35,10 @@ from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
+    _MAX_ATTEMPTS,
+    _MAX_CONSECUTIVE_FAILURES,
+    _claim_and_process_one_outbox_event,
     _claim_and_process_outbox_events,
-    _claim_next_outbox_event,
     _get_comp_task_row,
     _get_project_owner,
     _process_outbox_event,
@@ -428,6 +430,28 @@ async def _get_outbox_events_for_task(engine: AsyncEngine, task_id: int) -> list
         return [dict(r) for r in result.mappings().all()]
 
 
+@pytest.fixture(autouse=True)
+async def purge_outbox_events(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[[], Awaitable[None]]]:
+    """Empties the outbox queue before and after every test.
+
+    Claims are global (any worker claims the oldest pending event), so events
+    left over from a previous test (e.g. by the retry/dead-letter tests, whose
+    comp_tasks rows get cascade-deleted) would otherwise leak into the next one.
+    The finalizer purges automatically; a test may also call the returned
+    callable to purge in the middle of a test.
+    """
+
+    async def _purge() -> None:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(outbox_events.delete())
+
+    await _purge()
+    yield _purge
+    await _purge()
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_process_outbox_event_logs_warning_on_missing_comp_task(
     sqlalchemy_async_engine: AsyncEngine,
@@ -437,7 +461,8 @@ async def test_process_outbox_event_logs_warning_on_missing_comp_task(
 ):
     assert client.app
     with caplog.at_level(logging.WARNING):
-        await _process_outbox_event(client.app, sqlalchemy_async_engine, 999999)
+        async with sqlalchemy_async_engine.connect() as conn:
+            await _process_outbox_event(client.app, conn, 999999, frozenset({"outputs"}))
     assert "not found" in caplog.text.lower()
 
 
@@ -464,7 +489,8 @@ async def test_process_outbox_event_with_output_change(
         outputs=json.dumps({"out1": "val1"}),
         node_class=task_class,
     )
-    await _process_outbox_event(client.app, sqlalchemy_async_engine, task["task_id"])
+    async with sqlalchemy_async_engine.connect() as conn:
+        await _process_outbox_event(client.app, conn, task["task_id"], frozenset({"outputs"}))
     mock_project_subsystem["update_node_outputs"].assert_called_once()
 
 
@@ -496,21 +522,25 @@ async def test_process_outbox_event_with_state_change(
         await conn.execute(
             comp_tasks.update().values(state=StateType.ABORTED).where(comp_tasks.c.task_id == task["task_id"])
         )
-    await _process_outbox_event(client.app, sqlalchemy_async_engine, task["task_id"])
+    async with sqlalchemy_async_engine.connect() as conn:
+        await _process_outbox_event(client.app, conn, task["task_id"], frozenset({"state"}))
     mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_claim_next_outbox_event_deletes_claimed_row(
+async def test_claim_and_process_one_deletes_event_on_success(
     sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
+    assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
     task = await create_comp_task(
@@ -528,23 +558,105 @@ async def test_claim_next_outbox_event_deletes_claimed_row(
     rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows_before) == 1
 
-    claimed = await _claim_next_outbox_event(sqlalchemy_async_engine)
-    assert claimed is not None
-    assert claimed.aggregate_id == f"{task['task_id']}"
-    assert claimed.kind == "comp_task.sync.v1"
+    # an event was claimed, processed, and deleted
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is True
 
-    # the row must have been removed by the claim itself
+    # the row must have been removed on success
     rows_after = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert rows_after == []
 
     # no more events pending
-    assert await _claim_next_outbox_event(sqlalchemy_async_engine) is None
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is None
 
 
-async def test_claim_next_outbox_event_returns_none_when_empty(
+async def test_claim_and_process_one_returns_none_when_empty(
     sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
 ):
-    assert await _claim_next_outbox_event(sqlalchemy_async_engine) is None
+    assert client.app
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_failed_processing_keeps_event_for_retry(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    """At-least-once delivery: a failure rolls back the claim, keeps the row,
+    and records the attempt (crash-safety: the event is never lost)."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        side_effect=RuntimeError("boom"),
+    )
+
+    # processing fails: the event must remain claimable with the attempt recorded
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is False
+
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1, "failed event must NOT be deleted"
+    assert rows[0]["attempts"] == 1
+    assert "boom" in rows[0]["last_error"]
+
+    # a second attempt bumps attempts again (row updated in place, not re-inserted)
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is False
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
+    assert rows[0]["attempts"] == 2
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_dead_lettered_events_are_skipped_by_claims(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        # simulate an event that exhausted its retries
+        await conn.execute(outbox_events.update().values(attempts=_MAX_ATTEMPTS))
+
+    # claims skip dead-lettered events: nothing is claimable
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is None
+
+    # the dead-lettered row is kept for post-mortem
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
+    assert rows[0]["attempts"] == _MAX_ATTEMPTS
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -589,7 +701,7 @@ async def test_claim_and_process_outbox_events_drains_all_pending_events(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_claim_and_process_outbox_events_requeues_on_failure(
+async def test_claim_and_process_outbox_events_stops_drain_on_persistent_failures(
     sqlalchemy_async_engine: AsyncEngine,
     mocker: MockerFixture,
     client: TestClient,
@@ -599,6 +711,8 @@ async def test_claim_and_process_outbox_events_requeues_on_failure(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
+    """A poison event must not spin the drain loop: draining stops after
+    _MAX_CONSECUTIVE_FAILURES, and the event stays with its attempts recorded."""
     assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
@@ -617,19 +731,21 @@ async def test_claim_and_process_outbox_events_requeues_on_failure(
         "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
         side_effect=RuntimeError("boom"),
     )
-    mocker.patch("asyncio.sleep", return_value=None)  # skip the retry backoff delay
 
     await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
 
+    # the drain stopped after the bounded number of consecutive failures
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
-    assert len(rows) == 1
-    assert rows[0]["attempts"] == 1
+    assert len(rows) == 1, "failed event must NOT be deleted"
+    assert rows[0]["attempts"] == _MAX_CONSECUTIVE_FAILURES
     assert "boom" in rows[0]["last_error"]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_concurrent_claims_do_not_double_process_same_event(
     sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
@@ -637,6 +753,7 @@ async def test_concurrent_claims_do_not_double_process_same_event(
     faker: Faker,
 ):
     """Simulates two replicas racing to claim the same outbox event: only one may win."""
+    assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
     task = await create_comp_task(
@@ -651,11 +768,14 @@ async def test_concurrent_claims_do_not_double_process_same_event(
         )
 
     results = await asyncio.gather(
-        _claim_next_outbox_event(sqlalchemy_async_engine),
-        _claim_next_outbox_event(sqlalchemy_async_engine),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine),
     )
-    claimed_rows = [r for r in results if r is not None]
-    assert len(claimed_rows) == 1, "exactly one concurrent claimant should have won the event"
+    winners = [r for r in results if r is True]
+    assert len(winners) == 1, "exactly one concurrent claimant should have won the event"
+    # the event was processed exactly once and removed
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

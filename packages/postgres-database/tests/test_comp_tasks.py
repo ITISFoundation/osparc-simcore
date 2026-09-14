@@ -77,16 +77,26 @@ async def _assert_wakeup_notifications(notification_queue: asyncio.Queue, num_ex
     assert notification_queue.empty(), f"there are {notification_queue.qsize()} remaining messages in the queue"
 
 
-async def _assert_outbox_events_for_task(conn: AsyncConnection, task_id: int, num_exp_events: int) -> list[dict]:
+async def _assert_outbox_events_for_task(
+    conn: AsyncConnection,
+    task_id: int,
+    num_exp_events: int,
+    expected_changed_columns: list[list[str]] | None = None,
+) -> list[dict]:
     result = await conn.execute(
         outbox_events.select().where(outbox_events.c.aggregate_id == f"{task_id}").order_by(outbox_events.c.id)
     )
     rows = [dict(r) for r in result.mappings().all()]
     assert len(rows) == num_exp_events, f"expected {num_exp_events} outbox events for task {task_id}, got {rows}"
-    for row in rows:
+    for index, row in enumerate(rows):
         assert row["kind"] == "comp_task.sync.v1"
         assert row["aggregate_type"] == "comp_task"
         assert row["aggregate_id"] == f"{task_id}"
+        if expected_changed_columns is not None:
+            assert sorted(row["changed_columns"]) == sorted(expected_changed_columns[index]), (
+                f"event {index}: expected changed_columns {expected_changed_columns[index]}, "
+                f"got {row['changed_columns']}"
+            )
     return rows
 
 
@@ -110,7 +120,7 @@ async def test_listen_query(
     updated_output = {"some new stuff": "it is new"}
     await _update_comp_task_with(db_connection, task, outputs=updated_output, state=StateType.ABORTED)
     await _assert_wakeup_notifications(db_notification_queue, 1)
-    await _assert_outbox_events_for_task(db_connection, task_id, 1)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1, [["modified", "outputs", "state"]])
     await db_connection.execute(outbox_events.delete().where(outbox_events.c.aggregate_id == f"{task_id}"))
 
     # setting the exact same data twice triggers only ONCE
@@ -118,7 +128,7 @@ async def test_listen_query(
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     await _assert_wakeup_notifications(db_notification_queue, 1)
-    await _assert_outbox_events_for_task(db_connection, task_id, 1)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1, [["modified", "outputs"]])
     await db_connection.execute(outbox_events.delete().where(outbox_events.c.aggregate_id == f"{task_id}"))
 
     # updating a number of times with different stuff comes out in FIFO order (one outbox event per update)
