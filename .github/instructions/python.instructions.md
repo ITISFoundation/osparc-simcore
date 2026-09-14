@@ -8,13 +8,14 @@ Follow these rules **strictly** when generating Python code:
 
 ### Python Version
 
-* Use Python 3.13: Ensure all code uses features and syntax compatible with Python 3.13.
+* Use the Python version declared in `.python-version` at the repo root: Ensure all code uses features and syntax compatible with that version.
 * Use PEP 695 `type` statement for type aliases: `type UserAccountSortableField = Literal["name", "email"]`
 * Use PEP 695 generic class syntax where possible: `class EnvelopeE[ErrorT](BaseModel):`
 * Use `X | None` union syntax (not `Optional[X]`)
 
 ### Type Annotations
 
+* Follow PEP 8 code style as enforced by the repo's linters (`ruff check` and `ruff format` via pre-commit).
 * Always use full type annotations for all functions and class attributes.
 * ❗ **Exception**: Do **not** add return type annotations in `test_*` functions.
 
