@@ -1,12 +1,12 @@
-from typing import Any, Final, Literal, TypeAlias
+from typing import Final, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, JsonValue
 from pydantic.config import JsonDict
 
 # NOTE: keep a list of possible unit, and please use correct official unit names
 ProgressUnit: TypeAlias = Literal["Byte"]
 
-PROGRESS_STRUCTURED_MESSAGE_EXAMPLES: Final[list[dict[str, Any]]] = [
+PROGRESS_STRUCTURED_MESSAGE_EXAMPLES: Final[list[JsonValue]] = [
     {
         "description": "some description",
         "current": 12.2,
