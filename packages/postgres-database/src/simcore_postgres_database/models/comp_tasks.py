@@ -137,9 +137,15 @@ AFTER UPDATE OF outputs,state ON comp_tasks
 task_output_changed_procedure = sa.DDL(
     f"""
 CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
+DECLARE
+    changed JSONB;
 BEGIN
-    INSERT INTO outbox_events (kind, aggregate_type, aggregate_id)
-    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text);
+    SELECT coalesce(jsonb_agg(pre.key ORDER BY pre.key), '[]'::jsonb) INTO changed
+    FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
+    WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
+
+    INSERT INTO outbox_events (kind, aggregate_type, aggregate_id, changed_columns)
+    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text, changed);
 
     PERFORM pg_notify('{DB_CHANNEL_NAME}', '');
 

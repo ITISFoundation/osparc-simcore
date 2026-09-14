@@ -8,6 +8,7 @@ Create Date: 2026-09-10 15:44:58.877748+00:00
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "966758d7226c"
@@ -32,6 +33,12 @@ def upgrade():
         sa.Column("kind", sa.String(), nullable=False),
         sa.Column("aggregate_type", sa.String(), nullable=False),
         sa.Column("aggregate_id", sa.String(), nullable=False),
+        sa.Column(
+            "changed_columns",
+            postgresql.JSONB(astext_type=sa.Text()),
+            server_default=sa.text("'[]'::jsonb"),
+            nullable=False,
+        ),
         sa.Column("created", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("modified", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("attempts", sa.Integer(), server_default="0", nullable=False),
@@ -71,9 +78,15 @@ FOR EACH ROW EXECUTE PROCEDURE {_OUTBOX_PROCEDURE_NAME};
         sa.DDL(
             f"""
 CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
+DECLARE
+    changed JSONB;
 BEGIN
-    INSERT INTO outbox_events (kind, aggregate_type, aggregate_id)
-    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text);
+    SELECT coalesce(jsonb_agg(pre.key ORDER BY pre.key), '[]'::jsonb) INTO changed
+    FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
+    WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
+
+    INSERT INTO outbox_events (kind, aggregate_type, aggregate_id, changed_columns)
+    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text, changed);
 
     PERFORM pg_notify('{DB_CHANNEL_NAME}', '');
 

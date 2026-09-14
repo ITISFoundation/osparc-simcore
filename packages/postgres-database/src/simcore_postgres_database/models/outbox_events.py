@@ -6,6 +6,7 @@ distribution to subscribers.
 """
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from ._common import (
     column_created_datetime,
@@ -41,6 +42,13 @@ outbox_events = sa.Table(
         sa.String,
         nullable=False,
         doc="Logical source entity ID encoded as text (e.g., task_id::text)",
+    ),
+    sa.Column(
+        "changed_columns",
+        postgresql.JSONB(astext_type=sa.Text()),
+        nullable=False,
+        server_default=sa.text("'[]'::jsonb"),
+        doc="Source-entity column names that changed and triggered this event (e.g., ['outputs', 'state'])",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
