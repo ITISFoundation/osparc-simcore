@@ -1,10 +1,10 @@
-from typing import Final, Literal, TypeAlias
+from typing import Final, Literal
 
 from pydantic import BaseModel, ConfigDict, JsonValue
 from pydantic.config import JsonDict
 
 # NOTE: keep a list of possible unit, and please use correct official unit names
-ProgressUnit: TypeAlias = Literal["Byte"]
+type ProgressUnit = Literal["Byte"]
 
 PROGRESS_STRUCTURED_MESSAGE_EXAMPLES: Final[list[JsonValue]] = [
     {
