@@ -19,8 +19,8 @@ import contextlib
 import logging
 from typing import Annotated, Any, Final, cast
 
-from annotated_types import doc
 import networkx as nx
+from annotated_types import doc
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.serialization import model_dump_with_secrets
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
@@ -593,7 +593,7 @@ async def stop_computation(
     pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
     pipeline_dag = pipeline_at_db.get_graph()
     # get the project task states
-    tasks = await comp_tasks_repo.list_tasks(project_id)
+    tasks = await comp_tasks_repo.list_tasks(project_id=project_id)
     # create the complete DAG graph
     complete_dag = create_complete_dag_from_tasks(tasks)
     # stop the pipeline if it is running

@@ -29,7 +29,7 @@ async def _get_pipeline_info(
     pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
     # get the project task states
-    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
+    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id=project_id)
 
     # filter the tasks by the effective pipeline
     filtered_tasks = [t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())]
