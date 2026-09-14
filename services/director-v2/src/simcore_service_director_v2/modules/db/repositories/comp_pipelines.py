@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class CompPipelinesRepository(BaseRepository):
     async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:
-        async with self.db_engine.connect() as conn:
+        async with self.engine.connect() as conn:
             result = await conn.execute(sa.select(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))
             row = result.one_or_none()
         if not row:
@@ -44,9 +44,9 @@ class CompPipelinesRepository(BaseRepository):
                 exclude_unset=True,
             ),
         )
-        async with self.db_engine.begin() as conn:
+        async with self.engine.begin() as conn:
             await conn.execute(on_update_stmt)
 
     async def delete_pipeline(self, project_id: ProjectID) -> None:
-        async with self.db_engine.begin() as conn:
+        async with self.engine.begin() as conn:
             await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))

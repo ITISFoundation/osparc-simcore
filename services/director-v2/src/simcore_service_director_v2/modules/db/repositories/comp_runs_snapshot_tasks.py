@@ -26,7 +26,7 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
             logger.warning("No data provided for batch creation of comp run snapshot tasks")
             return
 
-        async with transaction_context(self.db_engine) as conn:
+        async with transaction_context(self.engine) as conn:
             try:
                 await conn.execute(
                     comp_run_snapshot_tasks.insert().returning(*COMP_RUN_SNAPSHOT_TASKS_DB_COLS),
@@ -96,7 +96,7 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.connect() as conn:
+        async with self.engine.connect() as conn:
             total_count = await conn.scalar(count_query)
 
             items = [

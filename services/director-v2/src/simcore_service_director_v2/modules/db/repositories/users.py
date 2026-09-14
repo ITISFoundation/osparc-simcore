@@ -10,7 +10,7 @@ from ._base import BaseRepository
 
 class UsersRepository(BaseRepository):
     def _repo(self):
-        return UsersRepo(self.db_engine)
+        return UsersRepo(self.engine)
 
     async def get_user_email(self, user_id: UserID) -> EmailStr:
         email = await self._repo().get_email(user_id=user_id)

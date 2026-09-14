@@ -119,7 +119,7 @@ class CompRunsRepository(BaseRepository):
         :raises ComputationalRunNotFoundError: no entry found
         """
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
@@ -139,7 +139,7 @@ class CompRunsRepository(BaseRepository):
         self,
         project_id: ProjectID,
     ) -> CompRunsAtDB:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(comp_runs.c.project_uuid == f"{project_id}")
@@ -171,7 +171,7 @@ class CompRunsRepository(BaseRepository):
             )
         )
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             result = await conn.execute(query)
 
             return [
@@ -236,7 +236,7 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with self.db_engine.connect() as conn:
+        async with self.engine.connect() as conn:
             return [
                 CompRunsAtDB.model_validate(row)
                 async for row in await conn.stream(
@@ -318,7 +318,7 @@ class CompRunsRepository(BaseRepository):
             list_query = base_select_query.order_by(desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         list_query = list_query.offset(offset).limit(limit)
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             total_count = await conn.scalar(count_query)
 
             items = [
@@ -371,7 +371,7 @@ class CompRunsRepository(BaseRepository):
             list_query = base_select_query.order_by(desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         list_query = list_query.offset(offset).limit(limit)
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             total_count = await conn.scalar(count_query)
 
             items = [
@@ -409,7 +409,7 @@ class CompRunsRepository(BaseRepository):
             .distinct()
         )
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             return [CollectionRunID(row[0]) async for row in await conn.stream(list_query)]
 
     async def list_group_by_collection_run_id(
@@ -461,7 +461,7 @@ class CompRunsRepository(BaseRepository):
 
         list_query = list_query.offset(offset).limit(limit)
 
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.engine) as conn:
             total_count = await conn.scalar(count_query)
             items = []
             async for row in await conn.stream(list_query):
@@ -492,7 +492,7 @@ class CompRunsRepository(BaseRepository):
         collection_run_id: CollectionRunID,
     ) -> CompRunsAtDB:
         try:
-            async with transaction_context(self.db_engine) as conn:
+            async with transaction_context(self.engine) as conn:
                 if iteration is None:
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
@@ -519,7 +519,7 @@ class CompRunsRepository(BaseRepository):
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: Iteration, **values
     ) -> CompRunsAtDB | None:
-        async with transaction_context(self.db_engine) as conn:
+        async with transaction_context(self.engine) as conn:
             result: CursorResult = await conn.execute(
                 sa.update(comp_runs)
                 .where(

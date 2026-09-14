@@ -12,7 +12,7 @@ class BaseRepository:
     Repositories are pulled at every request
     """
 
-    db_engine: AsyncEngine
+    engine: AsyncEngine
 
     @classmethod
     def instance(cls, db_engine: AsyncEngine) -> Self:
