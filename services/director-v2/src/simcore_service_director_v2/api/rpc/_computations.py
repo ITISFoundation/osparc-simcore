@@ -45,7 +45,7 @@ async def batch_get_computations_latest_states(
     project_ids: ComputationRunStateBatchGetProjectIDs,
 ) -> list[ComputationRunStateRpcGet]:
     comp_runs_repo = CompRunsRepository(engine=app.state.engine)
-    return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids)
+    return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids=project_ids)
 
 
 @router.expose(reraise_if_error_type=())

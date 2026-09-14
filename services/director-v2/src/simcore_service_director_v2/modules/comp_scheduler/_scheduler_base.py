@@ -591,7 +591,9 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = nx.DiGraph()
 
             try:
-                comp_run = await CompRunsRepository(self.engine).get(user_id, project_id, iteration)
+                comp_run = await CompRunsRepository(self.engine).get(
+                    user_id=user_id, project_id=project_id, iteration=iteration
+                )
                 dag = comp_run.get_graph()
 
                 # 1. Update our list of tasks with data from backend (state, results)
