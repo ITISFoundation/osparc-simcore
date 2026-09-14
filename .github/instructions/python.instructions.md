@@ -8,7 +8,7 @@ Follow these rules **strictly** when generating Python code:
 
 ### Python Version
 
-* Use the Python version declared in `.python-version` at the repo root: Ensure all code uses features and syntax compatible with that version.
+* Use Python 3.13 (see `.python-version` at the repo root): Ensure all code uses features and syntax compatible with Python 3.13.
 * Use PEP 695 `type` statement for type aliases: `type UserAccountSortableField = Literal["name", "email"]`
 * Use PEP 695 generic class syntax where possible: `class EnvelopeE[ErrorT](BaseModel):`
 * Use `X | None` union syntax (not `Optional[X]`)
