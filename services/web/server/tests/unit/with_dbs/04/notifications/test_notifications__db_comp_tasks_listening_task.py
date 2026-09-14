@@ -42,8 +42,8 @@ from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import 
     _get_comp_task_row,
     _get_project_owner,
     _process_outbox_event,
-    create_comp_tasks_listening_task,
 )
+from simcore_service_webserver.db_listener.plugin import create_comp_tasks_listening_task
 from simcore_service_webserver.projects import exceptions
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import stop_after_attempt
