@@ -32,9 +32,10 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         {
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_DB_LISTENER": "0",
-            # the wallets plugin subscribes to SIGNAL_ON_USER_CONFIRMATION
-            # (default wallet creation): keep it out of this seam test so the
-            # probe observer registered below is the only subscriber
+            # NOTE: disables WEBSERVER_WALLETS since the wallets plugin subscribes
+            # to SIGNAL_ON_USER_CONFIRMATION (default wallet creation): keep it out
+            # of this seam test so the probe observer registered below is
+            # the only subscriber
             "WEBSERVER_WALLETS": "0",
         },
     )
@@ -163,7 +164,9 @@ async def test_grant_user_access_to_product_is_idempotent(
         result = await conn.execute(
             sa.select(sa.func.count()).select_from(user_to_groups).where(user_to_groups.c.uid == user["id"])
         )
-        total = int(result.scalar())
+        got = result.scalar()
+        assert got is not None
+        total = int(got)
     gids_after = await _fetch_user_group_ids(client.app, user["id"])
     assert total == len(gids_after)
     assert inclusion_rule_group["gid"] in gids_after
