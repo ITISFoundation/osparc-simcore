@@ -9185,7 +9185,7 @@ msgstr ""
 # a user logs in, guiding them to the main functionality.
 #: services/static-webserver/client/source/class/osparc/product/quickStart/s4lacad/Welcome.js:22
 msgid "Welcome to Sim4Life Science"
-msgstr "欢迎使用 Sim4Life 科学"
+msgstr "欢迎使用 Sim4Life Science"
 
 # CTX-INTERPRETATION: The string "Dashboard - Projects & Tutorials" likely
 # represents the title or label of a section within a dashboard, possibly
@@ -10273,7 +10273,7 @@ msgstr "上次收费:"
 # related to study data.
 #: services/static-webserver/client/source/class/osparc/study/BillingSettings.js:115
 msgid "credits"
-msgstr "信用"
+msgstr "积分"
 
 # CTX-INTERPRETATION: The string appears in the BillingSettings component,
 # likely indicating to the user that they lack access to a previously used
