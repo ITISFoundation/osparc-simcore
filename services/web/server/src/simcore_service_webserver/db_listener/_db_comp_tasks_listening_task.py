@@ -17,9 +17,7 @@ payload did.
 
 import asyncio
 import contextlib
-import datetime
 import logging
-from collections.abc import AsyncIterator
 from typing import Final, NoReturn
 
 from aiohttp import web
@@ -28,9 +26,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic.types import PositiveInt
-from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
+from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -178,40 +176,39 @@ async def _claim_and_process_one_outbox_event(
     """
     processing_error: tuple[Row, Exception] | None = None
 
-    async with engine.connect() as conn:
-        try:
-            async with conn.begin():
-                result = await conn.execute(
-                    select(outbox_events)
-                    .where(outbox_events.c.attempts < _MAX_ATTEMPTS)
-                    .order_by(outbox_events.c.modified, outbox_events.c.id)
-                    .with_for_update(skip_locked=True)
-                    .limit(1)
+    try:
+        async with transaction_context(engine) as conn:
+            result = await conn.execute(
+                select(outbox_events)
+                .where(outbox_events.c.attempts < _MAX_ATTEMPTS)
+                .order_by(outbox_events.c.modified, outbox_events.c.id)
+                .with_for_update(skip_locked=True)
+                .limit(1)
+            )
+            row = result.fetchone()
+            if row is None:
+                return None
+
+            _logger.debug("Claimed outbox event %d (aggregate_id=%s)", row.id, row.aggregate_id)
+            try:
+                await _process_outbox_event(
+                    app,
+                    conn,
+                    int(row.aggregate_id),
+                    frozenset(row.changed_columns or []),
                 )
-                row = result.fetchone()
-                if row is None:
-                    return None
-
-                _logger.debug("Claimed outbox event %d (aggregate_id=%s)", row.id, row.aggregate_id)
-                try:
-                    await _process_outbox_event(
-                        app,
-                        conn,
-                        int(row.aggregate_id),
-                        frozenset(row.changed_columns or []),
-                    )
-                except Exception as exc:
-                    # re-raise so the context manager rolls back the claim: this releases
-                    # the row lock and undoes any partial projection, leaving the event
-                    # in place for any replica to re-claim.
-                    processing_error = (row, exc)
-                    raise
-
-                # success: remove the event within the same transaction (releases the lock)
-                await conn.execute(outbox_events.delete().where(outbox_events.c.id == row.id))
-        except Exception:
-            if processing_error is None:
+            except Exception as exc:
+                # re-raise so the context manager rolls back the claim: this releases
+                # the row lock and undoes any partial projection, leaving the event
+                # in place for any replica to re-claim.
+                processing_error = (row, exc)
                 raise
+
+            # success: remove the event within the same transaction (releases the lock)
+            await conn.execute(outbox_events.delete().where(outbox_events.c.id == row.id))
+    except Exception:  # pylint: disable=broad-exception-caught
+        if processing_error is None:
+            raise
 
     if processing_error is not None:
         failed_row, failed_exc = processing_error
@@ -229,7 +226,7 @@ async def _record_failed_attempt(engine: AsyncEngine, row: Row, error: Exception
     Once `attempts` reaches the maximum, the event is dead-lettered: claims skip
     it and it remains in the table for post-mortem inspection.
     """
-    async with engine.begin() as conn:
+    async with transaction_context(engine) as conn:
         await conn.execute(
             outbox_events.update()
             .values(
@@ -317,18 +314,8 @@ async def _listen_and_poll(app: web.Application) -> NoReturn:
                 # Drain pending outbox events
                 try:
                     await _claim_and_process_outbox_events(app, engine)
-                except Exception:
+                except Exception:  # pylint: disable=broad-exception-caught
                     _logger.exception("Error draining outbox events")
                     # Continue looping; reconnect will happen on next timeout if needed
         finally:
             await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
-
-
-async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
-    async with periodic_task(
-        _listen_and_poll,
-        interval=datetime.timedelta(seconds=_OUTBOX_POLL_INTERVAL_S),
-        task_name="outbox projector",
-        app=app,
-    ):
-        yield
