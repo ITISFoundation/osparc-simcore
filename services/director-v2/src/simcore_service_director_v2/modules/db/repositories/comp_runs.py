@@ -246,7 +246,7 @@ class CompRunsRepository(BaseRepository):
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             return [
                 CompRunsAtDB.model_validate(row)
-                async for row in await conn.stream(sa.select(comp_runs).where(sa.and_(*conditions)))
+                async for row in await conn.stream(sa.select(comp_runs).where(*conditions))
             ]
 
     _COMPUTATION_RUNS_RPC_GET_COLUMNS = [  # noqa: RUF012
