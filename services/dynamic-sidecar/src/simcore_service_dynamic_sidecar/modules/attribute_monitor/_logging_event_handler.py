@@ -5,7 +5,9 @@ from asyncio import CancelledError, Task, create_task, get_event_loop, to_thread
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from logging.handlers import QueueHandler, QueueListener
 from multiprocessing.queues import Queue
+from multiprocessing.synchronize import Event as ProcessEvent
 from pathlib import Path
 from queue import Empty
 from threading import Lock
@@ -21,7 +23,18 @@ from ._watchdog_extensions import ExtendedInotifyObserver, SafeFileSystemEventHa
 
 _HEART_BEAT_MARK: Final = 1
 
+# NOTE: with the `forkserver` start method (default since Python 3.14 on Linux)
+# the child re-imports this module, which can take a few seconds
+_PROCESS_STARTUP_TIMEOUT_S: Final[PositiveFloat] = 30
+
 logger = logging.getLogger(__name__)
+
+
+class _ForwardToParentLoggerHandler(logging.Handler):
+    """Re-emits log records produced by the observer process"""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        logging.getLogger(record.name).handle(record)
 
 
 class _LoggingEventHandler(SafeFileSystemEventHandler):
@@ -47,9 +60,17 @@ def _process_worker(
     health_check_queue: Queue[int | None],
     stop_queue: Queue[None],
     heart_beat_interval_s: PositiveFloat,
+    started_event: ProcessEvent,
+    log_level: int,
+    log_queue: Queue[logging.LogRecord | None],
 ) -> None:
     # NOTE: module level and only receives pickleable arguments,
     # so that it is compatible with any multiprocessing start method
+
+    # the parent's logging configuration is not inherited by every start method
+    root_logger = logging.getLogger()
+    root_logger.handlers = [QueueHandler(log_queue)]
+    root_logger.setLevel(log_level)
 
     observer = ExtendedInotifyObserver()
     file_system_event_handler = _LoggingEventHandler()
@@ -62,6 +83,8 @@ def _process_worker(
             recursive=True,
         )
         observer.start()
+        # NOTE: the inotify watch is registered, events are now detected
+        started_event.set()
 
         while stop_queue.qsize() == 0:
             # NOTE: watchdog handles events internally every 1 second.
@@ -96,6 +119,9 @@ class _LoggingEventHandlerProcess:
         # the process itself and is used to stop the process.
         self._stop_queue: Queue[None] | None = None
 
+        self._log_queue: Queue[logging.LogRecord | None] = multiprocessing.Queue()
+        self._log_listener = QueueListener(self._log_queue, _ForwardToParentLoggerHandler())
+
         self._process_lock: Lock = Lock()
         self._process: multiprocessing.Process | None = None
 
@@ -112,7 +138,9 @@ class _LoggingEventHandlerProcess:
                 logger.debug("Process already started, skipping")
                 return
 
+            started_event = multiprocessing.Event()
             self._stop_queue = multiprocessing.Queue()
+            self._log_listener.start()
             self._process = multiprocessing.Process(
                 target=_process_worker,
                 args=(
@@ -120,10 +148,21 @@ class _LoggingEventHandlerProcess:
                     self.health_check_queue,
                     self._stop_queue,
                     self.heart_beat_interval_s,
+                    started_event,
+                    logger.getEffectiveLevel(),
+                    self._log_queue,
                 ),
                 daemon=True,
             )
             self._process.start()
+
+            # avoids missing file system events generated before the watch is in place
+            if not started_event.wait(timeout=_PROCESS_STARTUP_TIMEOUT_S):
+                logger.warning(
+                    "%s did not start observing within %ss",
+                    _LoggingEventHandlerProcess.__name__,
+                    _PROCESS_STARTUP_TIMEOUT_S,
+                )
 
     def _stop_process(self) -> None:
         with (
@@ -143,6 +182,7 @@ class _LoggingEventHandlerProcess:
                 self._process.kill()
                 self._process.join()
                 self._process = None
+                self._log_listener.stop()
 
     def shutdown(self) -> None:
         with log_context(logger, logging.DEBUG, f"{_LoggingEventHandlerProcess.__name__} shutdown"):
@@ -209,9 +249,9 @@ class LoggingEventHandlerObserver:
 
     async def start(self) -> None:
         with log_context(logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} start"):
+            await to_thread(self._start_observer_process)
             self._keep_running = True
             self._task_health_worker = create_task(self._health_worker(), name="observer_monitor_health_worker")
-            self._start_observer_process()
 
     async def stop(self) -> None:
         with log_context(logger, logging.INFO, f"{LoggingEventHandlerObserver.__name__} stop"):
