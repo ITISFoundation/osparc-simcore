@@ -17,6 +17,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import (
     ComputationalTaskJobIdAlreadySetError,
@@ -36,8 +37,14 @@ _logger = logging.getLogger(__name__)
 
 
 class CompTasksRepository(BaseRepository):
-    async def get_task(self, project_id: ProjectID, node_id: NodeID) -> CompTaskAtDB:
-        async with pass_or_acquire_connection(self.engine) as conn:
+    async def get_task(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+        node_id: NodeID,
+    ) -> CompTaskAtDB:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
@@ -50,9 +57,11 @@ class CompTasksRepository(BaseRepository):
 
     async def list_tasks(
         self,
+        connection: AsyncConnection | None = None,
+        *,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        async with pass_or_acquire_connection(self.engine) as conn:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
             return TypeAdapter(list[CompTaskAtDB]).validate_python(result.all())
 
@@ -70,6 +79,7 @@ class CompTasksRepository(BaseRepository):
 
     async def list_computational_tasks_rpc_domain(
         self,
+        connection: AsyncConnection | None = None,
         *,
         project_ids: list[ProjectID],
         # pagination
@@ -110,7 +120,7 @@ class CompTasksRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.engine.connect() as conn:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             total_count = await conn.scalar(count_query)
 
             items = [

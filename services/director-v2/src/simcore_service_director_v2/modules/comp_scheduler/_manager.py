@@ -14,6 +14,7 @@ from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.tracing import traced
 from servicelib.utils import limited_gather
+from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...core.errors import ComputationalRunNotFoundError
@@ -124,12 +125,24 @@ async def stop_pipeline(
         ConfigurationError: if the rabbitmq client is not configured
     """
     engine = get_engine(app)
-    comp_run = await CompRunsRepository(engine).get(user_id, project_id, iteration)
+    comp_runs_repo = CompRunsRepository(engine)
 
-    # mark the scheduled pipeline for stopping
-    updated_comp_run = await CompRunsRepository(engine).mark_for_cancellation(
-        user_id=user_id, project_id=project_id, iteration=comp_run.iteration
-    )
+    async with transaction_context(engine) as conn:
+        comp_run = await comp_runs_repo.get(
+            conn,
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
+        )
+
+        # mark the scheduled pipeline for stopping
+        updated_comp_run = await comp_runs_repo.mark_for_cancellation(
+            conn,
+            user_id=user_id,
+            project_id=project_id,
+            iteration=comp_run.iteration,
+        )
+
     if updated_comp_run:
         # ensure the scheduler starts right away
         rabbitmq_client = get_rabbitmq_client(app)
