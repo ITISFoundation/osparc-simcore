@@ -48,7 +48,7 @@ def get_base_repository[RepoType: BaseRepository](engine: AsyncEngine, repo_type
             engine.pool.status(),
         )
 
-    return repo_type(db_engine=engine)
+    return repo_type(engine=engine)
 
 
 def get_repository[RepoType: BaseRepository](
