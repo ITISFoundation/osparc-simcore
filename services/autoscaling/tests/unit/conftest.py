@@ -18,6 +18,7 @@ from unittest import mock
 import aiodocker
 import arrow
 import distributed
+import httpx2
 import psutil
 import pytest
 import simcore_service_autoscaling
