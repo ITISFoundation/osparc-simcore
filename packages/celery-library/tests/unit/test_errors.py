@@ -134,6 +134,39 @@ def test_unregistered_error_keeps_the_old_behavior():
     assert f"{decoded}" == f"{original_error}"
 
 
+class _UnpicklableError(Exception):
+    # cannot be pickled at all (e.g. broken __reduce__/__getstate__)
+    def __reduce__(self):
+        raise RuntimeError
+
+
+class _BrokenStrUnpicklableError(_UnpicklableError):
+    # neither picklable nor even stringifiable
+    def __str__(self):
+        raise RuntimeError
+
+
+def test_unpicklable_error_transfers_a_text_description():
+    original_error = _UnpicklableError("disk on fire")
+
+    result = encode_celery_transferable_error(original_error)
+    decoded = decode_celery_transferable_error(result)
+
+    # the plain-text fallback keeps type name and message reportable
+    assert type(decoded).__name__ == "_UnpicklableError"
+    assert "disk on fire" in f"{decoded}"
+    assert f"{result}" == f"{decoded}"
+
+
+def test_unpicklable_error_with_broken_str_still_transfers():
+    original_error = _BrokenStrUnpicklableError()
+
+    result = encode_celery_transferable_error(original_error)  # must not raise
+    decoded = decode_celery_transferable_error(result)
+
+    assert type(decoded).__name__ == "_BrokenStrUnpicklableError"
+
+
 @pytest.mark.parametrize(
     "original_error",
     [
