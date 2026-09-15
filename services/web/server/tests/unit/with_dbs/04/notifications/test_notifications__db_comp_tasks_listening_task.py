@@ -591,7 +591,7 @@ async def test_claim_and_process_one_deletes_event_on_success(
         outputs=json.dumps({}),
         node_class=NodeClass.COMPUTATIONAL,
     )
-    # the comp_tasks trigger only fires on outputs/state UPDATE, so we generate one
+    # the comp_tasks trigger only fires on outputs/state/run_hash updates, so we generate one
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
@@ -995,19 +995,15 @@ async def test_concurrent_claims_serialize_same_aggregate_events(
     faker: Faker,
 ):
     """Two concurrent claims on an aggregate with *two* pending events must never
-    process it twice: the per-aggregate advisory lock (plus the row locks taken by
-    the claim) makes the loser return None while the winner's transaction is open.
+    process it twice: the per-aggregate advisory lock makes the loser return None
+    while the winner's transaction is open, and the winner's co-claim (row locks on
+    the whole burst, taken only after the advisory lock was won) drains every event
+    in a single projection.
 
     Processing is slowed down on purpose so both claimants are genuinely
     in-flight at the same time: without that, two fast, non-overlapping
     claims would legitimately both succeed (sequentially), which would make
     this test pass for the wrong reason.
-
-    With coalescing the winner normally drains the whole burst in one
-    projection; only a narrow race (the loser locking a row of the burst
-    *before* the winner's co-claim runs) can leave an event behind, so the test
-    asserts the invariant (never two concurrent processors) and then that any
-    leftover is still drainable once the winner committed.
     """
     assert client.app
     project = await create_project(logged_user)
@@ -1043,16 +1039,10 @@ async def test_concurrent_claims_serialize_same_aggregate_events(
         f"exactly one claimant may process the aggregate, the other must find it locked: got {results}"
     )
     assert None in results
-    # the winner projected the aggregate exactly once while the loser was locked out
+    # the winner co-claimed and projected the whole burst exactly once, while the
+    # loser was locked out of the aggregate -> nothing is left in the queue
     mock_project_subsystem["update_node_outputs"].assert_called_once()
-
-    # the advisory lock is released once the winner's transaction commits: any event
-    # left behind (locked by the loser at co-claim time) can now be drained
-    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
     assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
-    assert mock_project_subsystem["update_node_outputs"].call_count in (1, 2), (
-        "one coalesced projection, plus at most one for a row left behind by the race"
-    )
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
