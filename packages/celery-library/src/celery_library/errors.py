@@ -67,7 +67,10 @@ def _log_degradation(
                 )
             )
         except Exception:  # pylint: disable=broad-except
-            # reporting must not break the transfer either (e.g. a broken __str__)
+            # reporting must not break the transfer either (e.g. a broken __str__).
+            # warning-level on purpose: this should be near-impossible, so hitting
+            # it means the fallback itself is buggy and the consumer loses all
+            # information about the original failure
             _logger.warning("%s: %s", fallback_prefix, exc)
 
 
