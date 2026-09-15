@@ -7,7 +7,7 @@ import types
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Final, NamedTuple
+from typing import Any, Final
 
 from celery.exceptions import (  # type: ignore[import-untyped]
     BackendError,
@@ -20,6 +20,11 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 from servicelib.logging_utils import log_catch
+
+from .errors_adapters import (
+    restore_original_error,
+    to_wire_adapters,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -152,51 +157,11 @@ class TransferableCeleryError(Exception):
         return f"{decode_celery_transferable_error(self)}"
 
 
-# Exceptions that cannot cross a celery task boundary as-is (they pickle but never
-# unpickle, or fail pickling altogether) are adapted to a serializable wire error
-# at encode time and restored on the consumer side at decode time. Adapters are
-# registered per exact exception type, so this library stays free of third-party
-# imports: the service that owns the problematic exception registers its own
-# adapter at startup. Registration is process-local, and both sides need it only
-# for full restoration -- an unregistered consumer simply receives the wire error,
-# which is still serializable and reportable.
-type _ToWireCallable = Callable[[Exception], Exception]
-type _FromWireCallable = Callable[[Exception], Exception]
-
-
-class _ErrorAdapter(NamedTuple):
-    wire_type: type[Exception]
-    to_wire: _ToWireCallable
-    from_wire: _FromWireCallable
-
-
-_to_wire_adapters: dict[type[Exception], _ErrorAdapter] = {}
-_from_wire_adapter: dict[type[Exception], _FromWireCallable] = {}
-
-
-def register_transferable_error_adapter(
-    *,
-    original_type: type[Exception],
-    wire_type: type[Exception],
-    to_wire: _ToWireCallable,
-    from_wire: _FromWireCallable,
-) -> None:
-    """Register a two-way adapter for exceptions of ``original_type``.
-
-    ``to_wire`` runs on the worker at encode time, while the original exception is
-    fully intact, and must return an error that survives pickling (e.g. an
-    OsparcErrorMixin subclass, whose __reduce__ round-trips). ``from_wire`` runs on
-    the consumer at decode time to rebuild the original error from the wire one.
-    """
-    _to_wire_adapters[original_type] = _ErrorAdapter(wire_type=wire_type, to_wire=to_wire, from_wire=from_wire)
-    _from_wire_adapter[wire_type] = from_wire
-
-
 def encode_celery_transferable_error(error: Exception) -> TransferableCeleryError:
     # NOTE: Celery modifies exceptions during serialization, which can cause
     # the original error context to be lost. This mechanism ensures the same
     # error can be recreated on the caller side exactly as it was raised here.
-    if (adapter := _to_wire_adapters.get(type(error))) is not None:
+    if (adapter := to_wire_adapters.get(type(error))) is not None:
         # a broken adapter must not crash the error handler: on failure the
         # original error is kept and transferred as-is
         with log_catch(_logger, reraise=False):
@@ -224,21 +189,6 @@ def encode_celery_transferable_error(error: Exception) -> TransferableCeleryErro
         # the original may not even survive string formatting
         description = type(error).__name__
     return TransferableCeleryError(_PLAIN_TEXT_MARKER + description.encode(errors="replace"))
-
-
-def _restore_original_error(wire_error: Exception) -> Exception:
-    """Rebuild the original error from a wire error, when an adapter is registered.
-
-    The wire error is always returned as-is if no adapter is registered or if the
-    adapter fails, since it is itself serializable and reportable.
-    """
-    if (from_wire := _from_wire_adapter.get(type(wire_error))) is None:
-        return wire_error
-    # decoding must never raise: if the adapter fails, the wire error below is
-    # reported as-is, since it is itself serializable and reportable
-    with log_catch(_logger, reraise=False):
-        return from_wire(wire_error)
-    return wire_error
 
 
 def decode_celery_transferable_error(error: TransferableCeleryError) -> Exception:
@@ -273,7 +223,7 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
             # the original failure instead of raising a TypeError.
             reconstruction_error = exc
         else:
-            return _restore_original_error(result)
+            return restore_original_error(result)
 
     type_name: str | None = None
     message = ""

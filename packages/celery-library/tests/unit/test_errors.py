@@ -4,7 +4,7 @@
 
 from collections.abc import Iterator
 
-import celery_library.errors as errors_module
+import celery_library.errors_adapters as errors_adapters_module
 import httpx
 import pytest
 from celery.exceptions import (  # type: ignore[import-untyped]
@@ -18,8 +18,8 @@ from celery_library.errors import (
     decode_celery_transferable_error,
     encode_celery_transferable_error,
     handle_celery_errors,
-    register_transferable_error_adapter,
 )
+from celery_library.errors_adapters import register_transferable_error_adapter
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -75,8 +75,8 @@ class TransferableHTTPStatusError(OsparcErrorMixin, Exception):
 def registered_http_status_error_adapter() -> Iterator[None]:
     # the registry is process-global (workers and consumers register at startup);
     # snapshot and restore it so tests stay independent of ordering
-    to_wire_snapshot = dict(errors_module._to_wire_adapters)  # noqa: SLF001
-    from_wire_snapshot = dict(errors_module._from_wire_adapter)  # noqa: SLF001
+    to_wire_snapshot = dict(errors_adapters_module.to_wire_adapters)
+    from_wire_snapshot = dict(errors_adapters_module.from_wire_adapters)
     register_transferable_error_adapter(
         original_type=httpx.HTTPStatusError,
         wire_type=TransferableHTTPStatusError,
@@ -84,10 +84,10 @@ def registered_http_status_error_adapter() -> Iterator[None]:
         from_wire=TransferableHTTPStatusError.to_http_status_error,
     )
     yield
-    errors_module._to_wire_adapters.clear()  # noqa: SLF001
-    errors_module._to_wire_adapters.update(to_wire_snapshot)  # noqa: SLF001
-    errors_module._from_wire_adapter.clear()  # noqa: SLF001
-    errors_module._from_wire_adapter.update(from_wire_snapshot)  # noqa: SLF001
+    errors_adapters_module.to_wire_adapters.clear()
+    errors_adapters_module.to_wire_adapters.update(to_wire_snapshot)
+    errors_adapters_module.from_wire_adapters.clear()
+    errors_adapters_module.from_wire_adapters.update(from_wire_snapshot)
 
 
 def test_adapter_round_trips_the_original_error(registered_http_status_error_adapter: None):
@@ -111,12 +111,12 @@ def test_wire_error_survives_without_consumer_adapter(registered_http_status_err
     original_error = _make_http_status_error()
     result = encode_celery_transferable_error(original_error)
 
-    wire_snapshot = dict(errors_module._from_wire_adapter)  # noqa: SLF001
-    errors_module._from_wire_adapter.clear()  # noqa: SLF001
+    wire_snapshot = dict(errors_adapters_module.from_wire_adapters)
+    errors_adapters_module.from_wire_adapters.clear()
     try:
         decoded = decode_celery_transferable_error(result)
     finally:
-        errors_module._from_wire_adapter.update(wire_snapshot)  # noqa: SLF001
+        errors_adapters_module.from_wire_adapters.update(wire_snapshot)
 
     assert isinstance(decoded, TransferableHTTPStatusError)
     assert decoded.status_code == 404
