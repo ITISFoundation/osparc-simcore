@@ -1,3 +1,4 @@
+import httpx
 import pytest
 from celery.exceptions import (  # type: ignore[import-untyped]
     BackendGetMetaError,
@@ -17,11 +18,23 @@ from redis.exceptions import DataError as RedisDataError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
 
+def _make_http_status_error() -> httpx.HTTPStatusError:
+    # NOTE: httpx.HTTPStatusError can be pickled (dumps succeeds) but cannot be
+    # reconstructed by pickle.loads since __init__ requires keyword-only
+    # `request`/`response` -- it used to crash the consumers of failed jobs
+    return httpx.HTTPStatusError(
+        "Client error '404 Not Found'",
+        request=httpx.Request("GET", "http://fake-storage/v0/files"),
+        response=httpx.Response(404),
+    )
+
+
 @pytest.mark.parametrize(
     "original_error",
     [
         RuntimeError("some error"),
         AccessRightError(user_id=1, file_id="a/path/to/a/file.txt", location_id=0),
+        _make_http_status_error(),
     ],
 )
 def test_error(original_error: Exception):
