@@ -497,6 +497,42 @@ async def test_process_outbox_event_with_output_change(
 
 @pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_process_outbox_event_with_run_hash_change(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    task_class: NodeClass,
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    node_id = faker.uuid4()
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=node_id,
+        outputs=json.dumps({"out1": "val1"}),
+        node_class=task_class,
+    )
+    new_run_hash = faker.sha256()
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(run_hash=new_run_hash).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    async with sqlalchemy_async_engine.connect() as conn:
+        await _process_outbox_event(client.app, conn, task["task_id"], frozenset({"run_hash"}))
+    # a run_hash-only change must still project outputs+run_hash onto the node
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    # (app, user_id, project_id, node_id, outputs, run_hash, ...)
+    assert mock_project_subsystem["update_node_outputs"].call_args.args[5] == new_run_hash
+
+
+@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_process_outbox_event_with_state_change(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
