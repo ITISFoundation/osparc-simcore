@@ -133,6 +133,9 @@ def encode_celery_transferable_error(error: Exception) -> TransferableCeleryErro
 
 
 def decode_celery_transferable_error(error: TransferableCeleryError) -> Exception:
+    """
+    NOTE: exception safe
+    """
     assert isinstance(error, TransferableCeleryError)  # nosec
     payload = error.args[0] if error.args else b""
     if isinstance(payload, str):
