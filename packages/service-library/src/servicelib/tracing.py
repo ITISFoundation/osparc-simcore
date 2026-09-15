@@ -9,7 +9,7 @@ from typing import Any, Final, Self, overload
 
 import pyinstrument
 import pyinstrument.renderers
-from httpx import AsyncClient, Client
+from httpx2 import AsyncClient, Client
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
