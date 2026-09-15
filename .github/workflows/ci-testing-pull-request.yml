@@ -35,18 +35,11 @@ jobs:
     steps:
       - name: checkout source branch
         uses: actions/checkout@v7.0.1
-      - name: setup python environment
-        uses: actions/setup-python@v7.0.0
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
-          python-version: "3.13"
-      - name: resolve uv version
-        id: uv-version
-        run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
-      - name: install uv
-        uses: astral-sh/setup-uv@v10.0.1
-        with:
-          version: ${{ steps.uv-version.outputs.version }}
-          enable-cache: false
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
       - name: Generate openapi specs
         run: |
           make devenv
@@ -76,21 +69,12 @@ jobs:
           filters: |
             api-server:
               - 'services/api-server/**'
-      - name: setup python environment
+      - name: Setup environment
         if: steps.changes.outputs.api-server == 'true'
-        uses: actions/setup-python@v7.0.0
+        uses: ./.github/actions/setup-simcore-env
         with:
-          python-version: "3.13"
-      - name: resolve uv version
-        if: steps.changes.outputs.api-server == 'true'
-        id: uv-version
-        run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
-      - name: install uv
-        if: steps.changes.outputs.api-server == 'true'
-        uses: astral-sh/setup-uv@v10.0.1
-        with:
-          version: ${{ steps.uv-version.outputs.version }}
-          enable-cache: false
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
       - name: Generate openapi specs
         if: steps.changes.outputs.api-server == 'true'
         run: |
@@ -105,7 +89,6 @@ jobs:
           source .venv/bin/activate
           cd services/api-server
           make test-openai-api-compatibility
-
 
   api-server-oas-breaking:
     needs: api-specs
