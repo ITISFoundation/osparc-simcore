@@ -13,7 +13,9 @@ from celery.exceptions import (  # type: ignore[import-untyped]
     CeleryError,
     OperationalError,
 )
+from common_library.error_codes import create_error_code
 from common_library.errors_classes import OsparcErrorMixin
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
@@ -104,13 +106,26 @@ def encode_celery_transferable_error(error: Exception) -> TransferableCeleryErro
     # error can be recreated on the caller side exactly as it was raised here.
     try:
         dumped = pickle.dumps(error)
-    except Exception:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         # some exceptions cannot be pickled at all (e.g. broken __reduce__/__getstate__)
         # -- degrade to a plain-text description instead of crashing the error handler
-        _logger.warning(
-            "Cannot pickle %s, transferring a text description instead",
-            type(error).__name__,
-            exc_info=True,
+        # NOTE: the OEC fingerprint deduplicates this log site; grep it in Loki to
+        # find which exception types need first-class transferable-error handling
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Cannot pickle {type(error).__name__}, transferring a text description instead",
+                error=exc,
+                error_code=create_error_code(exc),
+                error_context={
+                    "original_error_type": type(error).__name__,
+                    "failed_picking_at": "encode_celery_transferable_error",
+                },
+                tip=(
+                    "This exception type cannot be pickled, so consumers receive a text "
+                    "description instead. Consider converting it to an OsparcErrorMixin "
+                    "error (which defines __reduce__) before it reaches the task error handler."
+                ),
+            )
         )
         description = f"{type(error).__name__}: {error}"
         return TransferableCeleryError(_PLAIN_TEXT_MARKER + description.encode(errors="replace"))
@@ -134,6 +149,7 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
     except (binascii.Error, ValueError):
         raw = None
 
+    reconstruction_error: Exception | None = None
     if raw is not None:
         try:
             result: Exception = pickle.loads(raw)  # noqa: S301
@@ -144,17 +160,38 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
             # Degrade to a description extracted from the pickle stream so that callers
             # (get_job_result, webserver task APIs, __str__/__repr__) can still report
             # the original failure instead of raising a TypeError.
-            _logger.warning(
-                "Cannot reconstruct transferable celery error (%s): %s",
-                type(exc).__name__,
-                exc,
-            )
+            reconstruction_error = exc
 
     try:
         type_name, message = _describe_pickle_stream(raw if raw is not None else payload)
     except Exception:  # pylint: disable=broad-except
         _logger.debug("Cannot describe transferable celery error", exc_info=True)
         type_name, message = None, ""
+
+    if reconstruction_error is not None:
+        try:
+            # NOTE: the OEC fingerprint deduplicates this log site; grep it in Loki to
+            # find which exception types need first-class transferable-error handling
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Cannot reconstruct transferable celery error, reporting a description instead",
+                    error=reconstruction_error,
+                    error_code=create_error_code(reconstruction_error),
+                    error_context={
+                        "original_error_type": type_name,
+                        "failed_decoding_at": "decode_celery_transferable_error",
+                    },
+                    tip=(
+                        "This exception type pickles but cannot be unpickled, so a stand-in "
+                        "exception is reported instead. Consider converting it to an "
+                        "OsparcErrorMixin error (which defines __reduce__) before it is "
+                        "encoded as a transferable celery error."
+                    ),
+                )
+            )
+        except Exception:  # pylint: disable=broad-except
+            # decoding must never raise, not even while logging about it
+            _logger.warning("Cannot reconstruct transferable celery error (%s)", reconstruction_error)
     return _standin_exception(type_name, message)
 
 
