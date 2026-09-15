@@ -2,11 +2,12 @@
 
 Uses a transactional outbox pattern: comp_tasks trigger inserts into outbox_events
 on every meaningful change. This task claims, processes, and deletes outbox events
-in short transactions, tolerating horizontal scaling via FOR UPDATE SKIP LOCKED
-plus a per-aggregate advisory lock (pg_try_advisory_xact_lock, keyed on kind +
-aggregate_id): no two replicas can ever process events for the same aggregate
-concurrently, which is what makes it safe to run this service with more than one
-replica.
+in short transactions, tolerating horizontal scaling: a per-aggregate advisory lock
+(pg_try_advisory_xact_lock, keyed on kind + aggregate_id) elects the replica that
+works on an aggregate, and event rows are locked (FOR UPDATE SKIP LOCKED) only
+after the aggregate was selected. No two replicas can ever process events for the
+same aggregate concurrently, while different aggregates remain fully parallel --
+which is what makes it safe to run this service with more than one replica.
 
 The event row is deleted only after successful processing (at-least-once delivery):
 the FOR UPDATE lock is held for the whole claim-process-delete transaction, so a
@@ -49,6 +50,7 @@ from simcore_postgres_database.webserver_models import (
     DB_OUTBOX_KIND_COMP_TASK_SYNC,
     projects,
 )
+from sqlalchemy import ColumnElement
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
@@ -62,7 +64,8 @@ _OUTBOX_POLL_INTERVAL_S: Final[int] = 30
 _MAX_ATTEMPTS: Final[int] = 10
 _MAX_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
 
-# size of the FOR UPDATE SKIP LOCKED batch the advisory lock then filters down to one
+# how many oldest claimable events are inspected (without locking) when picking
+# the aggregate to claim
 _CLAIM_CANDIDATE_BATCH: Final[int] = 10
 
 # upper bound on how many pending events of one aggregate are coalesced into a single
@@ -192,6 +195,54 @@ class _ClaimOutcome:
     aggregate_id: str
 
 
+async def _acquire_next_free_aggregate(conn: AsyncConnection, claimable: ColumnElement[bool]) -> tuple[str, str] | None:
+    """Pick and advisory-lock the oldest claimable aggregate no other replica holds.
+
+    The oldest candidates are listed with a read-only query (no locking at all), so
+    candidate selection can never block or strand another replica. Their aggregates
+    are then offered the per-aggregate advisory lock
+    (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) one at a time, so at
+    most one advisory lock is ever held by this transaction: an aggregate already
+    processed by another replica is skipped and stays fully parallel to it. Holding
+    the lock until commit guarantees events of the same aggregate are never processed
+    concurrently, so socketio notifications for one aggregate can't be emitted out of
+    order across replicas. Including kind in the lock key keeps this worker's lock
+    namespace separate from other (future) producers that may reuse the same id space.
+
+    Returns the (kind, aggregate_id) whose lock was acquired, or None when no
+    candidate aggregate is free (or the queue is drained).
+    """
+    candidate_rows = (
+        await conn.execute(
+            select(outbox_events.c.kind, outbox_events.c.aggregate_id)
+            .where(claimable)
+            .order_by(outbox_events.c.modified, outbox_events.c.id)
+            .limit(_CLAIM_CANDIDATE_BATCH)
+        )
+    ).all()
+
+    # oldest-first, de-duplicated down to distinct aggregates
+    seen_aggregates: set[tuple[str, str]] = set()
+    candidate_aggregates: list[tuple[str, str]] = []
+    for candidate in candidate_rows:
+        aggregate = (candidate.kind, candidate.aggregate_id)
+        if aggregate not in seen_aggregates:
+            seen_aggregates.add(aggregate)
+            candidate_aggregates.append(aggregate)
+
+    for kind, aggregate_id in candidate_aggregates:
+        # lock namespace must match the claim namespace (kind + aggregate_id):
+        # another producer reusing the same id space must not collide with ours
+        acquired = (
+            await conn.execute(
+                select(func.pg_try_advisory_xact_lock(func.hashtextextended(f"{kind}:{aggregate_id}", 0)))
+            )
+        ).scalar_one()
+        if acquired:
+            return kind, aggregate_id
+    return None
+
+
 async def _claim_and_process_one_outbox_event(
     app: web.Application,
     engine: AsyncEngine,
@@ -199,26 +250,21 @@ async def _claim_and_process_one_outbox_event(
 ) -> _ClaimOutcome | None:
     """Claim, process, and delete every pending event of one aggregate (at-least-once).
 
-    Claiming is two-staged: FOR UPDATE SKIP LOCKED first grabs a small batch of the
-    oldest claimable rows (competing consumers across replicas), then a per-aggregate
-    advisory lock (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) picks the
-    oldest row in that batch whose aggregate isn't already being processed by another
-    replica. This guarantees events for the same aggregate are never processed
-    concurrently, so socketio notifications for one aggregate can't be emitted out of
-    order across replicas. Including kind in the lock key keeps this worker's lock
-    namespace separate from other (future) producers that may reuse the same id space.
+    Claiming never locks more than the aggregate it is about to process:
+    _acquire_next_free_aggregate elects (via the per-aggregate advisory lock) the
+    oldest claimable aggregate no other replica holds; only then are event rows
+    locked -- all pending events of the winning aggregate are co-claimed
+    (FOR UPDATE SKIP LOCKED) and projected once: the union of their changed_columns
+    describes everything that happened since the last projection, and
+    _process_outbox_event re-reads the current comp_tasks row, so a burst of N events
+    for one aggregate fans out a single socketio notification instead of N.
 
-    Once one event of an aggregate is claimed, all its other pending events are
-    co-claimed in the same transaction (FOR UPDATE SKIP LOCKED) and projected once:
-    the union of their changed_columns describes everything that happened since the
-    last projection, and _process_outbox_event re-reads the current comp_tasks row, so
-    a burst of N events for one aggregate fans out a single socketio notification
-    instead of N. Rows another replica is currently holding are skipped by the
-    co-claim and left for that replica.
-
-    The whole claim-process-delete cycle runs in a single transaction: the row locks
-    and the advisory lock are all held while the events are processed, and released
-    automatically on commit or rollback.
+    The claim-process-delete cycle runs in a single transaction: the advisory lock and
+    the winner's row locks are held while the events are processed, and released
+    automatically on commit or rollback. Rolling back a failed attempt undoes the
+    *claim* (locks + pending delete) only: the projection writes through the app's
+    repositories and socketio, outside this transaction, so retries are at-least-once
+    and converge by re-reading the current row.
 
     ``exclude_aggregates`` is a set of (kind, aggregate_id) pairs the drain wants to
     skip, so an aggregate that already failed in this drain cannot starve the rest of
@@ -243,38 +289,19 @@ async def _claim_and_process_one_outbox_event(
                     list(exclude_aggregates)
                 )
 
-            claim_candidates = (
-                select(outbox_events.c.id)
-                .where(claimable)
-                .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .limit(_CLAIM_CANDIDATE_BATCH)
-                .with_for_update(skip_locked=True)
-                .subquery("claim_candidates")
-            )
-            result = await conn.execute(
-                select(outbox_events)
-                .join(claim_candidates, claim_candidates.c.id == outbox_events.c.id)
-                .where(
-                    # lock namespace must match the claim namespace (kind + aggregate_id):
-                    # another producer reusing the same id space must not collide with ours
-                    func.pg_try_advisory_xact_lock(
-                        func.hashtextextended(outbox_events.c.kind + ":" + outbox_events.c.aggregate_id, 0)
-                    )
-                )
-                .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .limit(1)
-            )
-            row = result.fetchone()
-            if row is None:
+            # elect one free aggregate (advisory lock) before touching any row lock
+            winner = await _acquire_next_free_aggregate(conn, claimable)
+            if winner is None:
+                # drained, or every candidate aggregate is locked by another replica
                 return None
+            kind, aggregate_id = winner
 
-            # co-claim every other pending event of the same aggregate: the seed row's
-            # lock is already ours (same transaction), other replicas' rows are skipped
+            # only now are rows locked, and only those of the winning aggregate
             co_claimed = await conn.execute(
                 select(outbox_events.c.id, outbox_events.c.changed_columns)
                 .where(
-                    outbox_events.c.kind == row.kind,
-                    outbox_events.c.aggregate_id == row.aggregate_id,
+                    outbox_events.c.kind == kind,
+                    outbox_events.c.aggregate_id == aggregate_id,
                     outbox_events.c.attempts < _MAX_ATTEMPTS,
                 )
                 .order_by(outbox_events.c.modified, outbox_events.c.id)
@@ -282,22 +309,29 @@ async def _claim_and_process_one_outbox_event(
                 .with_for_update(skip_locked=True)
             )
             co_claimed_rows = co_claimed.fetchall()
+            if not co_claimed_rows:
+                # the candidates disappeared between the read-only scan and the lock
+                # (claimed or deleted concurrently): retried on the next cycle
+                return None
             claimed_ids = [r.id for r in co_claimed_rows]
             changed_columns = frozenset(col for r in co_claimed_rows for col in (r.changed_columns or []))
 
             _logger.debug(
                 "Claimed %d outbox event(s) (kind=%s aggregate_id=%s)",
                 len(claimed_ids),
-                row.kind,
-                row.aggregate_id,
+                kind,
+                aggregate_id,
             )
-            outcome = _ClaimOutcome(success=True, kind=row.kind, aggregate_id=row.aggregate_id)
+            outcome = _ClaimOutcome(success=True, kind=kind, aggregate_id=aggregate_id)
             try:
-                await _process_outbox_event(app, conn, int(row.aggregate_id), changed_columns)
+                await _process_outbox_event(app, conn, int(aggregate_id), changed_columns)
             except Exception as exc:
-                # re-raise so the context manager rolls back the claim: this releases
-                # the row locks and undoes any partial projection, leaving the events
-                # in place for any replica to re-claim.
+                # re-raise so the context manager rolls back the claim: the advisory
+                # and row locks are released and the events stay in place for any
+                # replica to re-claim. Only the claim is transactional -- a partially
+                # applied projection already committed through the app's repositories
+                # and socket.io and is NOT undone here (at-least-once: the retry
+                # re-reads the current row, so the projection converges).
                 processing_error = (outcome, claimed_ids, exc)
                 raise
 
