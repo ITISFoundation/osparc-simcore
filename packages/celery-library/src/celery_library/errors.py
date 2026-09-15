@@ -187,15 +187,10 @@ def encode_celery_transferable_error(error: Exception) -> TransferableCeleryErro
     # the original error context to be lost. This mechanism ensures the same
     # error can be recreated on the caller side exactly as it was raised here.
     if (adapter := _to_wire_adapters.get(type(error))) is not None:
-        try:
+        # a broken adapter must not crash the error handler: on failure the
+        # original error is kept and transferred as-is
+        with log_catch(_logger, reraise=False):
             error = adapter.to_wire(error)
-        except Exception:  # pylint: disable=broad-except
-            # a broken adapter must not crash the error handler
-            _logger.warning(
-                "Adapter for %s failed, transferring the original error instead",
-                type(error).__name__,
-                exc_info=True,
-            )
     # some exceptions cannot be pickled at all (e.g. broken __reduce__/__getstate__)
     # -- degrade to a plain-text description instead of crashing the error handler
     with _log_degradation(
