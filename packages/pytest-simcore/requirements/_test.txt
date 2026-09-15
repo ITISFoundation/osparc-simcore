@@ -45,7 +45,9 @@ frozenlist==1.8.0
     #   aiohttp
     #   aiosignal
 greenlet==3.3.2
-    # via playwright
+    # via
+    #   playwright
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   uvicorn
