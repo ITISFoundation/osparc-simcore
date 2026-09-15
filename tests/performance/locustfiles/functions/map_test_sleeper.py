@@ -19,7 +19,7 @@ from tempfile import TemporaryDirectory
 
 import matplotlib.pyplot as plt
 import osparc_client
-from httpx import BasicAuth, Client, HTTPStatusError
+from httpx2 import BasicAuth, Client, HTTPStatusError
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
 from tqdm import tqdm
 

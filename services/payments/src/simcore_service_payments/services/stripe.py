@@ -10,10 +10,10 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from typing import ClassVar
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
-from httpx import HTTPStatusError
+from httpx2 import HTTPStatusError
 from models_library.payments import StripeInvoiceID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
@@ -46,7 +46,7 @@ def _handle_status_errors(coro: Callable):
     return _wrapper
 
 
-class _StripeBearerAuth(httpx.Auth):
+class _StripeBearerAuth(httpx2.Auth):
     def __init__(self, token):
         self._token = token
 
@@ -67,7 +67,7 @@ class StripeApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
             response = await self.client.get("/v1/products")
             response.raise_for_status()
             return True
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             return False
 
     @_handle_status_errors

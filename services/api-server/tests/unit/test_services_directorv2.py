@@ -6,7 +6,7 @@
 
 import pytest
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from respx import MockRouter

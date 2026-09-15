@@ -12,7 +12,7 @@ import pytest
 from botocore.exceptions import ClientError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import ValidationError
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from simcore_service_datcore_adapter.errors.handlers import set_exception_handlers

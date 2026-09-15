@@ -10,7 +10,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from httpx import TimeoutException
+from httpx2 import TimeoutException
 from models_library.api_schemas_payments.errors import PaymentUnverifiedError
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,

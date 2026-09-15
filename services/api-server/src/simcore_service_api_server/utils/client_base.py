@@ -6,7 +6,7 @@ from typing import ClassVar, Final
 import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
-from httpx import AsyncClient, Timeout
+from httpx2 import AsyncClient, Timeout
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx2_client_tracing
 from settings_library.tracing import TracingSettings

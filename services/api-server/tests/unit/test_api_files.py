@@ -17,7 +17,7 @@ import yarl
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompletionBody,

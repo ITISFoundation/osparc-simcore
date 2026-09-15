@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from fastapi import Request, status
-from httpx import HTTPError, TimeoutException
+from httpx2 import HTTPError, TimeoutException
 
 from ._utils import create_error_json_response
 

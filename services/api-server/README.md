@@ -14,7 +14,8 @@ Open the following sites and use the test credentials user=key, password=secret 
 When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENABLED` is =1 in the running container) one can profile calls to the API server directly from the client side. This is done by setting the custom header `x-profile-api-server` equal to `true` in the request. In that case the the response will be of media type `application/x-ndjson` and the final line of the response will be a json object whose `profile` key holds the profile. Here's an example of how the "/v0/me" endpoint of the api server can be profiled
 :
 ```python
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
+
 headers: dict[str, str] = {"x-profile-api-server": "true"}
 async with AsyncClient(base_url="<host>", auth=BasicAuth(username="<username>", password="<password>")) as client:
     async with client.stream("GET", f"/v0/me", timeout=20, headers=headers) as response:

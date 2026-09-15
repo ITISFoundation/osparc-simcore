@@ -16,7 +16,7 @@ import pytest
 import respx
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from httpx import Request, Response
+from httpx2 import Request, Response
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,

@@ -10,7 +10,7 @@ from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from httpx import ASGITransport
+from httpx2 import ASGITransport
 from models_library.payments import UserInvoiceAddress
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter

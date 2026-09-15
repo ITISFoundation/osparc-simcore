@@ -2,7 +2,7 @@ from typing import Any
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, status
-from httpx import Response, Timeout
+from httpx2 import Response, Timeout
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl

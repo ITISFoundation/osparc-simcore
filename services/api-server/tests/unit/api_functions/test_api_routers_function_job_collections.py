@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,

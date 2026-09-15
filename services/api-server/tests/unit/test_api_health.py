@@ -8,7 +8,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.app_diagnostics import AppStatusCheck
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG

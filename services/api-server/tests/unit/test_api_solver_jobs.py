@@ -19,7 +19,7 @@ from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.generics import Envelope
 from models_library.projects_nodes import Node
 from models_library.projects_state import RunningState

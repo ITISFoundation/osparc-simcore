@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Final
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient, HTTPError
+from httpx2 import AsyncClient, HTTPError
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying

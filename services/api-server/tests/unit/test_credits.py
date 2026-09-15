@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from models_library.api_schemas_webserver.products import CreditPriceGet
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from simcore_service_api_server._meta import API_VTAG

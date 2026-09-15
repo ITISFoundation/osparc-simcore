@@ -14,7 +14,7 @@ from collections.abc import Callable, Coroutine
 
 import httpx
 from fastapi import HTTPException
-from httpx import Headers
+from httpx2 import Headers
 from starlette import status
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log

@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from fastapi import FastAPI, status
 from fastapi.routing import _IncludedRouter
 from helpers import SCREENSHOT_SUFFIX, SCREENSHOTS_PATH
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
 from playwright.async_api import Page, async_playwright

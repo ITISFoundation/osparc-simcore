@@ -12,7 +12,7 @@ import httpx
 import pytest
 import respx
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from servicelib.fastapi.httpx_utils import to_curl_command, to_httpx_command
 from servicelib.utils_secrets import _PLACEHOLDER
 

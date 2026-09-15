@@ -7,7 +7,7 @@ from enum import Enum
 import typer
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from httpx import AsyncClient, HTTPError
+from httpx2 import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr

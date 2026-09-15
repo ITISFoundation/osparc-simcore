@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 from fastapi import HTTPException
-from httpx import codes
+from httpx2 import codes
 from starlette import status
 
 logger = logging.getLogger(__name__)

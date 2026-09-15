@@ -9,7 +9,7 @@ import httpx
 import pytest
 import respx
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pytest_mock import MockType
 from pytest_simcore.helpers.catalog_rpc import ZeroListingCatalogRpcSideEffects

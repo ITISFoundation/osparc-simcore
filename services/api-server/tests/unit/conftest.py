@@ -22,7 +22,7 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from httpx import ASGITransport, Request, Response
+from httpx2 import ASGITransport, Request, Response
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,

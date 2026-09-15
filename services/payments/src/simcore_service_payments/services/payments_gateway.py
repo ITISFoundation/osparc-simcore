@@ -18,7 +18,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi_lifespan_manager import LifespanManager, State
-from httpx import URL, HTTPStatusError, TimeoutException
+from httpx2 import URL, HTTPStatusError, TimeoutException
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin

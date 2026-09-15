@@ -3,7 +3,7 @@
 import asyncio
 
 import typer
-from httpx import URL, AsyncClient
+from httpx2 import URL, AsyncClient
 from pydantic.networks import EmailStr
 from pydantic.types import SecretStr
 

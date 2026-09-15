@@ -2,7 +2,7 @@ import asyncio
 
 import httpx
 import typer
-from httpx import Response
+from httpx2 import Response
 
 PREFIX_SERVICES_COMPUTATIONAL = "simcore/services/comp"
 PREFIX_SERVICES_DYNAMIC = "simcore/services/dynamic"

@@ -4,7 +4,7 @@
 import pytest
 from celery.contrib.testing.worker import TestWorkController  # type: ignore # pylint: disable=no-name-in-module
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_api_server._meta import API_VTAG

@@ -21,7 +21,7 @@ from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth, HTTPStatusError
+from httpx2 import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata, TaskKey

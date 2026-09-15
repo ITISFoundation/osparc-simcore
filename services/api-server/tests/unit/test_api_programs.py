@@ -10,7 +10,7 @@ import httpx
 import pytest
 from common_library.json_serialization import json_loads
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType

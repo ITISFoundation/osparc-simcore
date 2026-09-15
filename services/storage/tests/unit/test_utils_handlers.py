@@ -13,7 +13,7 @@ from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
 from celery_library.errors import TaskManagerError, TaskOrGroupNotFoundError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import ValidationError
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from simcore_service_storage.exceptions.errors import (

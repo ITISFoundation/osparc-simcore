@@ -71,7 +71,7 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         type=Path,
         default=None,
-        help=f"Path to json file to store capture calls from httpx clients during the tests. Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
+        help=f"Path to json file to store capture calls from httpx2clients during the tests. Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
     )
 
 
@@ -186,11 +186,11 @@ class _CaptureSideEffect:
 def create_respx_mock_from_capture(
     services_mocks_enabled: bool,
 ) -> CreateRespxMockCallback:
-    """Creates a respx.MockRouter from httpx calls captures in capture_path **ONLY**
+    """Creates a respx.MockRouter from httpx2calls captures in capture_path **ONLY**
     if spy_httpx_calls_enabled=False  otherwise it skips this fixture
     """
 
-    # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
+    # NOTE: multiple improvements on this function planned in https://github.com/ITISFoundation/osparc-simcore/issues/5705
     def _(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,

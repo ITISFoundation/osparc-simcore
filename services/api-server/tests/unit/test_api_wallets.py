@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 import pytest
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,

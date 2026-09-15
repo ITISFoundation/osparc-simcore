@@ -13,7 +13,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,

@@ -16,7 +16,7 @@ from celery import Task
 from celery_library import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.celery import TaskKey
 from models_library.functions import (

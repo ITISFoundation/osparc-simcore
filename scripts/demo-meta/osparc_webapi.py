@@ -11,7 +11,7 @@ from typing import Annotated, Any, Generic, TypeVar
 from uuid import UUID
 
 import httpx
-from httpx import HTTPStatusError
+from httpx2 import HTTPStatusError
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,

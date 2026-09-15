@@ -9,7 +9,7 @@ from uuid import UUID
 import httpx
 import pytest
 from fastapi import FastAPI, HTTPException, status
-from httpx import HTTPStatusError, Request, Response
+from httpx2 import HTTPStatusError, Request, Response
 from simcore_service_api_server.exceptions import setup_exception_handlers
 from simcore_service_api_server.exceptions.backend_errors import (
     BaseBackEndError,
