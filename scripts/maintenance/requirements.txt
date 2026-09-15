@@ -6,7 +6,7 @@ httpx
 parse
 paramiko
 psycopg2-binary
-pydantic[email]<2
+pydantic[email]<3
 pylint
 python-dateutil
 python-dotenv
