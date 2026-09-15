@@ -20,6 +20,9 @@ depends_on = None
 DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
 DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
 DB_CHANNEL_NAME: str = "outbox_wakeup"
+# keep in sync with models/comp_tasks.py's DB_OUTBOX_KIND_COMP_TASK_SYNC (migrations are
+# self-contained snapshots, so the value is intentionally duplicated here)
+DB_OUTBOX_KIND_COMP_TASK_SYNC: str = "comp_task.sync.v1"
 
 # outbox_events auto-update "modified" trigger/procedure
 _OUTBOX_TRIGGER_NAME: str = "auto_update_modified_timestamp"
@@ -87,7 +90,7 @@ BEGIN
     WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
 
     INSERT INTO outbox_events (kind, aggregate_type, aggregate_id, changed_columns)
-    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text, changed);
+    VALUES ('{DB_OUTBOX_KIND_COMP_TASK_SYNC}', 'comp_task', NEW.task_id::text, changed);
 
     PERFORM pg_notify('{DB_CHANNEL_NAME}', '');
 
