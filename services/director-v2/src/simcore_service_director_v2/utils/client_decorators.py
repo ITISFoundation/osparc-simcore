@@ -12,6 +12,7 @@ import functools
 import logging
 from collections.abc import Callable, Coroutine
 
+import httpx2
 from fastapi import HTTPException
 from httpx2 import Headers
 from starlette import status
