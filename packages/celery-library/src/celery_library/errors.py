@@ -19,6 +19,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import TimeoutError as RedisTimeoutError
+from servicelib.logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
 
@@ -96,11 +97,9 @@ def _describe_pickle_stream(payload: bytes) -> tuple[str | None, str]:
     qualname: str | None = None
     message = ""
 
-    try:
+    ops: list[tuple[pickletools.OpcodeInfo, Any, Any]] = []
+    with log_catch(_logger, reraise=False):
         ops = list(pickletools.genops(payload))
-    except Exception:  # pylint: disable=broad-except
-        _logger.debug("Cannot parse pickle stream", exc_info=True)
-        ops = []
 
     string_ops: Final[frozenset[str]] = frozenset({"BINUNICODE", "SHORT_BINUNICODE"})
     pending_strings: list[str] = []
