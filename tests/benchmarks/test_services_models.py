@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for service metadata models and the json-schema utilities
 
 Service metadata is validated every time the catalog reads a service from the
@@ -50,7 +52,7 @@ def content_schema() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def content_schema_instances(content_schema: dict[str, Any]) -> list[dict[str, Any]]:
+def content_schema_instances() -> list[dict[str, Any]]:
     return [
         {
             "name": f"run-{i}",

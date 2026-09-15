@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for `common_library.error_codes`
 
 Error codes (OEC) are created for every unexpected exception raised in the
@@ -23,11 +25,13 @@ def _recursive_raise(depth: int) -> None:
 
 @pytest.fixture(scope="module")
 def deep_exception() -> BaseException:
+    error: RuntimeError | None = None
     try:
         _recursive_raise(_NUM_FRAMES)
     except RuntimeError as exc:
-        return exc
-    pytest.fail("expected a RuntimeError")
+        error = exc
+    assert error is not None, "expected a RuntimeError"
+    return error
 
 
 @pytest.fixture(scope="module")

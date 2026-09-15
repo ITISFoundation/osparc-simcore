@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for the validation/serialization of a project (aka study)
 
 `Project` is the largest and most frequently (de)serialized model of the

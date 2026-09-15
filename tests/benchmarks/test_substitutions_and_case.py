@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for the templating/substitution utilities of `models_library.utils`
 
 `SpecsSubstitutionsResolver` is used to resolve osparc variables in service specs

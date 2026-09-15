@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for `common_library.json_serialization`
 
 This module is used everywhere in the platform to serialize/deserialize payloads

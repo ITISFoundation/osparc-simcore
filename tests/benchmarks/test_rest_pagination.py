@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for the paginated REST envelopes and the generic dict/sequence helpers
 
 Every list-like endpoint of the platform wraps its payload in a

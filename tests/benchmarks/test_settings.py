@@ -1,3 +1,5 @@
+# pylint:disable=redefined-outer-name
+
 """Benchmarks for `settings_library`
 
 Every service builds its settings from environment variables at startup, and
