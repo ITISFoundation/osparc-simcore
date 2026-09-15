@@ -47,7 +47,7 @@ def main(njobs: int, log_job: bool = False):
 
     uploaded_files = []
     registered_functions = []
-    job_statuses = dict()
+    job_statuses = {}
 
     with osparc_client.ApiClient(configuration) as api_client:
         try:
