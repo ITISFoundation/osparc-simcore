@@ -15,7 +15,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from ..tracing import TracingConfig, setup_httpx_client_tracing
+from ..tracing import TracingConfig, setup_httpx2_client_tracing
 from .http_client import BaseHTTPApi
 
 _logger = logging.getLogger(__name__)
@@ -218,7 +218,7 @@ class BaseThinClient(BaseHTTPApi):
 
         client = AsyncClient(**client_args)
         if tracing_config.tracing_enabled:
-            setup_httpx_client_tracing(client, tracing_config=tracing_config)
+            setup_httpx2_client_tracing(client, tracing_config=tracing_config)
         super().__init__(client=client)
 
     async def __aenter__(self):

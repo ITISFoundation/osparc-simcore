@@ -6,7 +6,7 @@ from aiohttp import web
 from pydantic import BaseModel, Field, model_validator
 from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.tracing import TracingConfig, setup_httpx_client_tracing
+from servicelib.tracing import TracingConfig, setup_httpx2_client_tracing
 
 from .exceptions import NoResponseFromChatbotError
 from .settings import ChatbotSettings, get_plugin_settings
@@ -45,7 +45,7 @@ class ChatbotRestClient:
     def __init__(self, chatbot_settings: ChatbotSettings, tracing_config: TracingConfig) -> None:
         self._client = httpx.AsyncClient()
         if tracing_config.tracing_enabled:
-            setup_httpx_client_tracing(client=self._client, tracing_config=tracing_config)
+            setup_httpx2_client_tracing(client=self._client, tracing_config=tracing_config)
         self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:

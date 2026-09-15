@@ -17,7 +17,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.tracing import TracingSettings
 
@@ -44,7 +44,7 @@ def configure_director_v0(
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         if tracing_settings:
-            setup_httpx_client_tracing(
+            setup_httpx2_client_tracing(
                 client=client,
                 tracing_config=get_tracing_config(app),
             )

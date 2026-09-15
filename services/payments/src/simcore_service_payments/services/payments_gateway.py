@@ -25,7 +25,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.httpx_utils import to_curl_command
 from servicelib.fastapi.tracing import get_tracing_config
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -230,7 +230,7 @@ def configure_payments_gateway(app: FastAPI, app_lifespan: LifespanManager[FastA
         auth=_GatewayApiAuth(secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(
+        setup_httpx2_client_tracing(
             api.client,
             tracing_config=get_tracing_config(app),
         )

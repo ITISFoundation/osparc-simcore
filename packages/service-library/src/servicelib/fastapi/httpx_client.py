@@ -9,7 +9,7 @@ from fastapi_lifespan_manager import LifespanManager, State
 
 from servicelib.tracing import TracingConfig
 
-from ..tracing import setup_httpx_client_tracing
+from ..tracing import setup_httpx2_client_tracing
 from .lifespan_utils import PublisherLifespan, create_publisher_lifespan, lifespan_context
 
 _logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def _create_httpx_client_lifespan(
                     timeout=default_timeout.total_seconds(),
                 )
                 if tracing_config:
-                    setup_httpx_client_tracing(client, tracing_config=tracing_config)
+                    setup_httpx2_client_tracing(client, tracing_config=tracing_config)
 
                 yield {
                     HttpxLifespanState.HTTPX_CLIENT: client,

@@ -105,7 +105,7 @@ class TracingConfig(BaseModel):
         )
 
 
-def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
+def setup_httpx2_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
     HTTPX2ClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 

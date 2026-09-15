@@ -8,7 +8,7 @@ import datetime
 from collections.abc import AsyncGenerator, Callable
 from decimal import Decimal
 
-import httpx
+import httpx2
 import respx
 from faker import Faker
 from fastapi import status
@@ -26,7 +26,7 @@ from simcore_service_api_server.models.schemas.model_adapter import (
 
 
 async def test_product_webserver(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
     faker: Faker,
@@ -39,12 +39,12 @@ async def test_product_webserver(
         _wallet_id += faker.pyint(min_value=1)
         wallet_to_api_keys_map[_wallet_id] = api_key
 
-    def _check_key_product_compatibility(request: httpx.Request, **kwargs):
+    def _check_key_product_compatibility(request: httpx2.Request, **kwargs):
         assert (received_product_name := request.headers.get(X_PRODUCT_NAME_HEADER)) is not None
         assert (wallet_id := kwargs.get("wallet_id")) is not None  # noqa: RUF018
         assert (api_key := wallet_to_api_keys_map[int(wallet_id)]) is not None  # noqa: RUF018
         assert api_key.product_name == received_product_name
-        return httpx.Response(
+        return httpx2.Response(
             status.HTTP_200_OK,
             json=jsonable_encoder(
                 Envelope[WalletGetWithAvailableCreditsLegacy](
@@ -70,14 +70,14 @@ async def test_product_webserver(
     for wallet_id, api_key in wallet_to_api_keys_map.items():
         response = await client.get(
             f"{API_VTAG}/wallets/{wallet_id}",
-            auth=httpx.BasicAuth(api_key.api_key, api_key.api_secret),
+            auth=httpx2.BasicAuth(api_key.api_key, api_key.api_secret),
         )
         assert response.status_code == status.HTTP_200_OK
     assert wallet_get_mock.call_count == len(wallet_to_api_keys_map)
 
 
 async def test_product_catalog(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
 ):
@@ -89,7 +89,7 @@ async def test_product_catalog(
     for api_auth in valid_api_auths:
         await client.get(
             f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
-            auth=httpx.BasicAuth(api_auth.api_key, api_auth.api_secret),
+            auth=httpx2.BasicAuth(api_auth.api_key, api_auth.api_secret),
         )
 
     assert mocked_catalog_rpc_api["get_service"].called

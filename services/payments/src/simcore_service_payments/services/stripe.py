@@ -18,7 +18,7 @@ from models_library.payments import StripeInvoiceID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.tracing import get_tracing_config
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 
 from ..core.errors import StripeRuntimeError
 from ..core.settings import ApplicationSettings
@@ -89,7 +89,7 @@ def configure_stripe(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> No
         auth=_StripeBearerAuth(settings.PAYMENTS_STRIPE_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(
+        setup_httpx2_client_tracing(
             api.client,
             tracing_config=get_tracing_config(app),
         )

@@ -10,7 +10,7 @@ from fastapi_lifespan_manager import LifespanManager
 from models_library.users import UserID
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 from settings_library.s3 import S3Settings
 from settings_library.storage import StorageSettings
 from settings_library.tracing import TracingSettings
@@ -41,7 +41,7 @@ def configure_storage(
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         if tracing_settings:
-            setup_httpx_client_tracing(
+            setup_httpx2_client_tracing(
                 client=client,
                 tracing_config=get_tracing_config(app),
             )
