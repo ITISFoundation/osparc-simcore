@@ -1,4 +1,4 @@
-# Steps to upgrade python
+# Steps to upgrade Python
 
 This is a guideline for repo-wide upgrade of python. Here we assume we are moving from an *current* version ``py3.X`` to a newer version ``py3.Y``
 
