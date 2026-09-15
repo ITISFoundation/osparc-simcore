@@ -622,17 +622,21 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 .PHONY: devenv devenv-all node-env
 
+# Single source of truth for the uv version (see requirements/UV_VERSION for the pinning note).
+# tests/environment-setup/test_used_uv.py verifies all other references stay in sync.
+UV_VERSION := $(shell cat requirements/UV_VERSION)
+
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				curl -LsSf https://astral.sh/uv/install.sh | sh; \
+				curl -LsSf https://astral.sh/uv/$(UV_VERSION)/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		# upgrading uv
+		# upgrading uv (pinned, see note above)
 		@if [ "${CI}" != "true" ]; then \
-			uv self --quiet update; \
+			uv self --quiet update $(UV_VERSION) || true; \
 		else \
 			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi
