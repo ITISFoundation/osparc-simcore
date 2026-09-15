@@ -35,6 +35,7 @@ from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
+    _KIND_COMP_TASK_SYNC,
     _MAX_ATTEMPTS,
     _MAX_CONSECUTIVE_FAILURES,
     _claim_and_process_one_outbox_event,
@@ -776,6 +777,158 @@ async def test_concurrent_claims_do_not_double_process_same_event(
     # the event was processed exactly once and removed
     mock_project_subsystem["update_node_outputs"].assert_called_once()
     assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_concurrent_claims_serialize_same_aggregate_events(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Two events for the *same* aggregate must never be claimed concurrently:
+    the per-aggregate advisory lock makes the loser return None (not False)
+    while the first claimant's transaction (and lock) is still open.
+
+    Processing is slowed down on purpose so both claimants are genuinely
+    in-flight at the same time: without that, two fast, non-overlapping
+    claims would legitimately both succeed (sequentially), which would make
+    this test pass for the wrong reason.
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"first": "update"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        await conn.execute(
+            comp_tasks.update().values(outputs={"second": "update"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 2, "expected one event per update on the same aggregate"
+
+    async def _slow_update_node_outputs(*args, **kwargs) -> str:
+        await asyncio.sleep(0.3)
+        return ""
+
+    mock_project_subsystem["update_node_outputs"].side_effect = _slow_update_node_outputs
+
+    results = await asyncio.gather(
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine),
+    )
+    assert sorted(results, key=str) == sorted([True, None], key=str), (
+        f"exactly one claimant processes the aggregate's oldest event, the other finds it locked: got {results}"
+    )
+    assert len(await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])) == 1
+
+    # the advisory lock is released once the winner's transaction commits: the
+    # remaining event for the same aggregate can now be claimed
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is True
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+    assert mock_project_subsystem["update_node_outputs"].call_count == 2
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_concurrent_claims_process_different_aggregates_in_parallel(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Events for *different* aggregates must still be claimable concurrently:
+    the advisory lock must not serialize unrelated aggregates."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(2)
+    ]
+    async with sqlalchemy_async_engine.begin() as conn:
+        for task in tasks:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    results = await asyncio.gather(
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine),
+    )
+    assert results == [True, True], "unrelated aggregates must be claimable at the same time"
+    assert mock_project_subsystem["update_node_outputs"].call_count == 2
+    for task in tasks:
+        assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_claim_ignores_events_of_a_foreign_kind(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """outbox_events is a shared table: claims must only pick up this worker's own
+    `kind`, leaving events from other (hypothetical) producers untouched."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        await conn.execute(
+            outbox_events.insert().values(
+                kind="some_other.kind.v1",
+                aggregate_type="some_other",
+                aggregate_id="999999",
+                changed_columns=[],
+            )
+        )
+
+    assert _KIND_COMP_TASK_SYNC != "some_other.kind.v1"
+
+    # only the comp_task.sync.v1 event is claimed and processed
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is True
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+
+    # the foreign-kind event is left untouched: nothing left to claim for us
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is None
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().where(outbox_events.c.aggregate_id == "999999"))
+        remaining = result.mappings().all()
+    assert len(remaining) == 1
+    assert remaining[0]["attempts"] == 0
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
