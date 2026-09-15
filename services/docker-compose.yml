@@ -1368,6 +1368,11 @@ services:
       RESOURCE_MANAGER_RESOURCE_TTL_S: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 
     deploy:
+      # safe to scale: outbox_events are claimed with FOR UPDATE SKIP LOCKED plus a
+      # per-aggregate advisory lock (pg_try_advisory_xact_lock), so no two replicas ever
+      # project the same comp_tasks row concurrently. Replaces the old replicas:1
+      # constraint (see https://github.com/ITISFoundation/osparc-simcore/pull/4286), which
+      # existed because plain LISTEN/NOTIFY was broadcast to every replica.
       replicas: 2
     networks:
       - default
