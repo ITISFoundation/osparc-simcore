@@ -23,8 +23,9 @@ shared table that other producers/consumers may use in the future.
 
 import asyncio
 import contextlib
+import datetime
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from typing import Final
 
 from aiohttp import web
@@ -33,6 +34,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic.types import PositiveInt
+from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.utils_repos import transaction_context
@@ -344,3 +346,20 @@ async def with_outbox_wakeup_listener(app: web.Application) -> AsyncGenerator[as
             yield wakeup_event
         finally:
             await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
+
+
+async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
+    # the LISTEN connection stays open for the task's lifetime and a pg_notify
+    # wake-up drains the outbox immediately, instead of waiting for the poll interval
+    async with (
+        with_outbox_wakeup_listener(app) as wakeup_event,
+        periodic_task(
+            _claim_and_process_outbox_events,
+            interval=datetime.timedelta(seconds=_OUTBOX_POLL_INTERVAL_S),
+            task_name="outbox projector",
+            early_wake_up_event=wakeup_event,
+            app=app,
+            engine=get_asyncpg_engine(app),
+        ),
+    ):
+        yield
