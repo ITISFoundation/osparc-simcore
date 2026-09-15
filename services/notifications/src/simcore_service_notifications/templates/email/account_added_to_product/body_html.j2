@@ -19,7 +19,8 @@
   {% endif %}
 </p>
 
-{% set login_link %}<a href="{{ product.homepage_url }}">{{ product.homepage_url.rstrip('/') }}</a>{% endset %}
+{% set homepage_url = product.homepage_url.rstrip('/') %}
+{% set login_link %}<a href="{{ homepage_url }}">{{ homepage_url }}</a>{% endset %}
 <p>
   {% trans login_link=login_link, product_name=product.display_name %}You can access {{ product_name }} here: {{ login_link }}.{% endtrans %}
 </p>
