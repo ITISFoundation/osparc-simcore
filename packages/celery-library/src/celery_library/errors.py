@@ -249,8 +249,8 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
 
     if payload.startswith(_PLAIN_TEXT_MARKER):
         text = payload.removeprefix(_PLAIN_TEXT_MARKER).decode(errors="replace")
-        type_name, _, message = text.partition(": ")
-        return _standin_exception(type_name or None, message or text)
+        text_type_name, _, text_message = text.partition(": ")
+        return _standin_exception(text_type_name or None, text_message or text)
 
     raw: bytes | None
     try:
@@ -272,11 +272,10 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
         else:
             return _restore_original_error(result)
 
-    try:
+    type_name: str | None = None
+    message = ""
+    with log_catch(_logger, reraise=False):
         type_name, message = _describe_pickle_stream(raw if raw is not None else payload)
-    except Exception:  # pylint: disable=broad-except
-        _logger.debug("Cannot describe transferable celery error", exc_info=True)
-        type_name, message = None, ""
 
     if reconstruction_error is not None:
         with _log_degradation(
