@@ -224,16 +224,11 @@ def _restore_original_error(wire_error: Exception) -> Exception:
     """
     if (from_wire := _from_wire_adapter.get(type(wire_error))) is None:
         return wire_error
-    try:
+    # decoding must never raise: if the adapter fails, the wire error below is
+    # reported as-is, since it is itself serializable and reportable
+    with log_catch(_logger, reraise=False):
         return from_wire(wire_error)
-    except Exception:  # pylint: disable=broad-except
-        # decoding must never raise -- fall back to the wire error
-        _logger.warning(
-            "Adapter to restore %s failed, reporting the wire error instead",
-            type(wire_error).__name__,
-            exc_info=True,
-        )
-        return wire_error
+    return wire_error
 
 
 def decode_celery_transferable_error(error: TransferableCeleryError) -> Exception:
