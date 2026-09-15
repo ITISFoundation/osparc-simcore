@@ -7,7 +7,7 @@ import types
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Final, NamedTuple, cast
+from typing import Any, Final, NamedTuple
 
 from celery.exceptions import (  # type: ignore[import-untyped]
     BackendError,
@@ -81,9 +81,9 @@ class _UnreconstructablePickleError(Exception):
 
 def _standin_exception(type_name: str | None, message: str) -> Exception:
     class_name = (type_name or "Exception").rsplit(".", maxsplit=1)[-1] or "Exception"
-    cls = types.new_class(class_name, (_UnreconstructablePickleError,), {})
+    cls: type[Exception] = types.new_class(class_name, (_UnreconstructablePickleError,), {})
     cls.__module__ = __name__
-    return cast(Exception, cls(message))
+    return cls(message)
 
 
 def _describe_pickle_stream(payload: bytes) -> tuple[str | None, str]:
