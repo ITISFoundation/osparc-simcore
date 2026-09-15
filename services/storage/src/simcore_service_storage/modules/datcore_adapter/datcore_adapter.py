@@ -1,7 +1,7 @@
 import logging
 from typing import Any, cast
 
-import httpx
+import httpx2
 from fastapi import FastAPI, status
 from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_datcore_adapter.datasets import (
@@ -53,7 +53,7 @@ async def check_service_health(app: FastAPI) -> bool:
     try:
         response = await client.get(url)
         response.raise_for_status()
-    except (TimeoutError, httpx.HTTPStatusError):
+    except (TimeoutError, httpx2.HTTPStatusError):
         return False
     return True
 
