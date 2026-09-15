@@ -5,7 +5,7 @@
 
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import status
@@ -31,7 +31,7 @@ async def test_get_solver_pricing_plan(
     client: AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     capture: str,
     expected_status_code: int,
@@ -63,7 +63,7 @@ async def test_get_solver_pricing_plan(
 async def test_get_latest_solver_release(
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     solver_key: str,
     expected_status_code: int,
 ):
@@ -91,7 +91,7 @@ async def test_get_latest_solver_release(
 async def test_get_latest_solver_release_zero_releases(
     client: AsyncClient,
     mocked_catalog_rpc_api,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     solver_key: str,
     expected_status_code: int,
 ):

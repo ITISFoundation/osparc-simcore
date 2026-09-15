@@ -8,7 +8,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import respx
 from faker import Faker
@@ -352,13 +352,13 @@ async def test_get_service_resources_raises_errors(
 ) -> None:
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     # simulate a communication error
-    mocked_director_service_labels.side_effect = httpx.HTTPError
+    mocked_director_service_labels.side_effect = httpx2.HTTPError
     response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
-    assert response.status_code == httpx.codes.SERVICE_UNAVAILABLE, f"{response.text}"
+    assert response.status_code == httpx2.codes.SERVICE_UNAVAILABLE, f"{response.text}"
     # simulate a missing service
-    mocked_director_service_labels.respond(httpx.codes.NOT_FOUND, json={"error": "service not found"})
+    mocked_director_service_labels.respond(httpx2.codes.NOT_FOUND, json={"error": "service not found"})
     response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
-    assert response.status_code == httpx.codes.NOT_FOUND, f"{response.text}"
+    assert response.status_code == httpx2.codes.NOT_FOUND, f"{response.text}"
 
     response = client.get(f"{url}")
-    assert response.status_code == httpx.codes.UNPROCESSABLE_ENTITY, f"{response.text}"
+    assert response.status_code == httpx2.codes.UNPROCESSABLE_ENTITY, f"{response.text}"

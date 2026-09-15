@@ -18,7 +18,6 @@ from unittest import mock
 import aiodocker
 import arrow
 import distributed
-import httpx
 import psutil
 import pytest
 import simcore_service_autoscaling
@@ -444,9 +443,9 @@ def service_monitored_labels(
 
 
 @pytest.fixture
-async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

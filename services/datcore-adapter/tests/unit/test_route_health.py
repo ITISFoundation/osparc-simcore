@@ -5,13 +5,13 @@
 
 from datetime import datetime
 
-import httpx
+import httpx2
 import respx
 from models_library.app_diagnostics import AppStatusCheck
 from starlette import status
 
 
-async def test_live_entrypoint(async_client: httpx.AsyncClient):
+async def test_live_entrypoint(async_client: httpx2.AsyncClient):
     response = await async_client.get("v0/live")
     assert response.status_code == status.HTTP_200_OK
     assert response.text
@@ -19,7 +19,7 @@ async def test_live_entrypoint(async_client: httpx.AsyncClient):
     assert response.text.split("@")[0] == "simcore_service_datcore_adapter.api.rest.health"
 
 
-async def test_check_subsystem_health(async_client: httpx.AsyncClient):
+async def test_check_subsystem_health(async_client: httpx2.AsyncClient):
     async with respx.mock:
         pennsieve_health_route = respx.get("https://api.pennsieve.io/health/").respond(status.HTTP_200_OK)
         response = await async_client.get("v0/ready")
@@ -33,7 +33,7 @@ async def test_check_subsystem_health(async_client: httpx.AsyncClient):
 
     async with respx.mock:
         pennsieve_health_route = respx.get("https://api.pennsieve.io/health/")
-        pennsieve_health_route.side_effect = [httpx.ConnectError]
+        pennsieve_health_route.side_effect = [httpx2.ConnectError]
         response = await async_client.get("v0/ready")
 
         assert pennsieve_health_route.called

@@ -7,7 +7,7 @@
 
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 import pytest
 from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
 from celery_library.errors import TaskManagerError, TaskOrGroupNotFoundError
@@ -41,7 +41,7 @@ def initialized_app() -> FastAPI:
 @pytest.fixture
 async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url="http://test",
         headers={"Content-Type": "application/json"},
     ) as client:

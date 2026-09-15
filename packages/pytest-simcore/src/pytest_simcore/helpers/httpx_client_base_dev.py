@@ -2,9 +2,9 @@ import json
 import logging
 from pathlib import Path
 
-import httpx
+import httpx2
 from fastapi.encoders import jsonable_encoder
-from httpx._types import URLTypes
+from httpx2._types import URLTypes
 from jsonschema import ValidationError
 from pydantic import TypeAdapter
 
@@ -19,7 +19,7 @@ _HTTP_API_CALL_CAPTURE_MODEL_ADAPTER: TypeAdapter[list[HttpApiCallCaptureModel]]
 )
 
 
-class AsyncClientCaptureWrapper(httpx.AsyncClient):
+class AsyncClientCaptureWrapper(httpx2.AsyncClient):
     """
     Adds captures mechanism
     """
@@ -33,7 +33,7 @@ class AsyncClientCaptureWrapper(httpx.AsyncClient):
         self._capture_file: Path = capture_file
 
     async def request(self, method: str, url: URLTypes, **kwargs):
-        response: httpx.Response = await super().request(method, url, **kwargs)
+        response: httpx2.Response = await super().request(method, url, **kwargs)
 
         capture_name = f"{method} {url}"
         _logger.info("Capturing %s ... [might be slow]", capture_name)
@@ -57,7 +57,7 @@ class AsyncClientCaptureWrapper(httpx.AsyncClient):
                     indent=1,
                 )
             )
-        except (CaptureProcessingError, ValidationError, httpx.RequestError):
+        except (CaptureProcessingError, ValidationError, httpx2.RequestError):
             _logger.exception(
                 "Unexpected failure with %s",
                 capture_name,

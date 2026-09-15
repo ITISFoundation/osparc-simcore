@@ -5,7 +5,7 @@
 from pathlib import Path
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import pytest
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -57,8 +57,8 @@ def mocked_backend(
 
 @pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/issues/4110")
 async def test_list_solver_jobs(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend: MockBackendRouters,
@@ -86,8 +86,8 @@ async def test_list_solver_jobs(
 
 
 async def test_list_all_solvers_jobs(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mocked_backend: MockBackendRouters,
     mock_dependency_get_celery_task_manager: MockType,
 ):
@@ -128,8 +128,8 @@ async def test_list_all_solvers_jobs(
 
 
 async def test_list_all_solvers_jobs_with_metadata_filter(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mocked_backend: MockBackendRouters,
     user_id: UserID,
     mock_dependency_get_celery_task_manager: MockType,
@@ -190,8 +190,8 @@ async def test_list_all_solvers_jobs_with_metadata_filter(
 
 
 async def test_list_all_solvers_jobs_with_all_metadata_filter(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mocked_backend: MockBackendRouters,
     user_id: UserID,
     mock_dependency_get_celery_task_manager: MockType,
@@ -234,8 +234,8 @@ async def test_list_all_solvers_jobs_with_all_metadata_filter(
 
 
 async def test_list_all_solvers_jobs_with_all_metadata_filter_pagination(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mocked_backend: MockBackendRouters,
     user_id: UserID,
     mock_dependency_get_celery_task_manager: MockType,
@@ -273,8 +273,8 @@ async def test_list_all_solvers_jobs_with_all_metadata_filter_pagination(
 
 
 async def test_list_all_solvers_jobs_metadata_any_and_all_mutually_exclusive(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mocked_backend: MockBackendRouters,
     mock_dependency_get_celery_task_manager: MockType,
 ):

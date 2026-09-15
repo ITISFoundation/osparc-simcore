@@ -15,7 +15,7 @@ from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
 import aiodocker
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
@@ -256,7 +256,7 @@ async def current_study(
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
@@ -633,7 +633,7 @@ async def _fetch_data_via_data_manager(
 
 
 async def _start_and_wait_for_dynamic_services_ready(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     product_name: str,
     product_api_base_url: str,
     user_id: UserID,
@@ -681,7 +681,7 @@ async def _start_and_wait_for_dynamic_services_ready(
 
 
 async def _wait_for_dy_services_to_fully_stop(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
 ) -> None:
     # pylint: disable=protected-access
     app: FastAPI = director_v2_client._transport.app  # type: ignore # noqa: SLF001
@@ -731,10 +731,10 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = "TEST: test_nodeports_i
 
 
 async def _assert_push_non_file_outputs(
-    initialized_app: FastAPI, director_v2_client: httpx.AsyncClient, service_uuid: str
+    initialized_app: FastAPI, director_v2_client: httpx2.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.post(f"/v2/dynamic_scheduler/services/{service_uuid}/outputs:push")
-    assert result.status_code == httpx.codes.ACCEPTED
+    assert result.status_code == httpx2.codes.ACCEPTED
     task_id: TaskId = result.json()
 
     logger.debug("Going to poll task %s", task_id)
@@ -760,7 +760,7 @@ async def _assert_push_non_file_outputs(
 
 
 async def _assert_retrieve_completed(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     service_uuid: str,
     dynamic_services_urls: dict[str, str],
 ) -> None:
@@ -814,7 +814,7 @@ async def test_nodeports_integration(
     mock_osparc_variables_api_auth_rpc: None,
     initialized_app: FastAPI,
     update_project_workbench_with_comp_tasks: Callable,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     db_manager: DBManager,
     current_user: dict[str, Any],
     current_study: ProjectAtDB,

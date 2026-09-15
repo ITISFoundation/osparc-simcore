@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-import httpx
+import httpx2
 from fastapi import status
 from pydantic import TypeAdapter
 from pytest_mock import MockType
@@ -16,8 +16,8 @@ from simcore_service_api_server.models.schemas.solvers import Solver, SolverPort
 
 async def test_list_all_solvers(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     response = await client.get(f"/{API_VTAG}/solvers", auth=auth)
     assert response.status_code == status.HTTP_200_OK
@@ -25,8 +25,8 @@ async def test_list_all_solvers(
 
 async def test_list_all_solvers_paginated(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)
     assert response.status_code == status.HTTP_200_OK
@@ -35,8 +35,8 @@ async def test_list_all_solvers_paginated(
 
 async def test_list_all_solvers_paginated_with_filters(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     # Test filter by solver_id
     response = await client.get(
@@ -73,8 +73,8 @@ async def test_list_all_solvers_paginated_with_filters(
 
 async def test_list_all_solvers_releases(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     response = await client.get(f"/{API_VTAG}/solvers/releases", auth=auth)
     assert response.status_code == status.HTTP_200_OK
@@ -82,8 +82,8 @@ async def test_list_all_solvers_releases(
 
 async def test_list_all_solvers_releases_paginated(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
     response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases/page", auth=auth)
@@ -93,8 +93,8 @@ async def test_list_all_solvers_releases_paginated(
 
 async def test_list_solver_releases(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
     response = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases", auth=auth)
@@ -103,8 +103,8 @@ async def test_list_solver_releases(
 
 async def test_get_solver_release(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.2.1"
@@ -117,8 +117,8 @@ async def test_get_solver_release(
 
 async def test_list_solver_ports(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     resp = await client.get(
         f"/{API_VTAG}/solvers/simcore/services/comp/itis/sleeper/releases/2.1.4/ports",
@@ -155,8 +155,8 @@ async def test_list_solver_ports(
 
 async def test_list_solver_ports_again(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "3.2.1"
@@ -167,8 +167,8 @@ async def test_list_solver_ports_again(
 
 async def test_solvers_page_pagination_links(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     # Use a small limit to ensure pagination is needed
     limit = 2
@@ -192,8 +192,8 @@ async def test_solvers_page_pagination_links(
 
 async def test_solvers_page_pagination_last_page(
     mocked_catalog_rpc_api: dict[str, MockType],
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
 ):
     # Get total count first
     response = await client.get(f"/{API_VTAG}/solvers/page", auth=auth)

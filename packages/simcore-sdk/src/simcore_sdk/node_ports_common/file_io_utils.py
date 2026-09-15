@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import IO, Any, Final, Protocol, runtime_checkable
 
 import aiofiles
-import httpx
+import httpx2
 from aiohttp import (
     ClientConnectionError,
     ClientError,
@@ -138,7 +138,7 @@ class LogRedirectCB(Protocol):
 
 async def _file_chunk_writer(
     file: Path,
-    response: httpx.Response,
+    response: httpx2.Response,
     pbar: tqdm,
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
@@ -174,14 +174,16 @@ async def download_link_to_file(
         reraise=True,
         wait=wait_exponential(min=1, max=10),
         stop=stop_after_attempt(num_retries),
-        retry=retry_if_exception_type(httpx.TransportError),
+        retry=retry_if_exception_type(httpx2.TransportError),
         before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
         after=after_log(_logger, log_level=logging.ERROR),
     ):
         with attempt:
             async with AsyncExitStack() as stack:
                 client = await stack.enter_async_context(
-                    httpx.AsyncClient(timeout=httpx.Timeout(client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT))
+                    httpx2.AsyncClient(
+                        timeout=httpx2.Timeout(client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT)
+                    )
                 )
                 response = await stack.enter_async_context(client.stream("GET", f"{url}"))
                 if response.status_code == status.HTTP_404_NOT_FOUND:
@@ -217,7 +219,7 @@ async def download_link_to_file(
                         sub_progress,
                     )
                     _logger.debug("Download complete")
-                except httpx.HTTPError as exc:
+                except httpx2.HTTPError as exc:
                     raise exceptions.TransferError(url) from exc
 
 

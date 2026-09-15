@@ -13,7 +13,7 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import suppress
 from typing import ClassVar
 
-import httpx
+import httpx2
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -112,7 +112,7 @@ def _handle_status_errors(coro: Callable):
     return _wrapper
 
 
-class _GatewayApiAuth(httpx.Auth):
+class _GatewayApiAuth(httpx2.Auth):
     def __init__(self, secret):
         self.token = secret
 
@@ -205,7 +205,7 @@ class PaymentsGatewayApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin
                 json=jsonable_encoder(payment.model_dump(exclude_none=True, by_alias=True)),
                 # NOTE: more flexible in the communication with the payment gateway upon payment
                 # SEE https://git.speag.com/oSparc/osparc-infra/-/issues/86
-                timeout=httpx.Timeout(60.0),
+                timeout=httpx2.Timeout(60.0),
             )
 
         except TimeoutException as err:

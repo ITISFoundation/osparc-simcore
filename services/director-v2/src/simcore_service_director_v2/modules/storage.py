@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-import httpx
+import httpx2
 from fastapi import FastAPI, HTTPException
 from fastapi_lifespan_manager import LifespanManager
 from models_library.users import UserID
@@ -36,7 +36,7 @@ def configure_storage(
         storage_settings = StorageSettings()
 
     async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             base_url=f"{storage_settings.api_base_url}",
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
@@ -60,7 +60,7 @@ def configure_storage(
 
 @dataclass
 class StorageClient:
-    client: httpx.AsyncClient
+    client: httpx2.AsyncClient
 
     @classmethod
     def create(cls, app: FastAPI, **kwargs):
@@ -74,7 +74,7 @@ class StorageClient:
 
     @handle_errors("Storage", logger)
     @handle_retry(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
+    async def request(self, method: str, tail_path: str, **kwargs) -> httpx2.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
     @log_decorator(logger=logger)

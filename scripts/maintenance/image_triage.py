@@ -1,6 +1,6 @@
 import asyncio
 
-import httpx
+import httpx2
 import typer
 from httpx2 import Response
 
@@ -14,7 +14,7 @@ async def _httpx_request(registry: str, user: str, password: str, path: str) -> 
         params["auth"] = (user, password)
 
     url = f"{registry}/v2/{path}"
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         response = await client.get(url, **params)
         response.raise_for_status()
         return response

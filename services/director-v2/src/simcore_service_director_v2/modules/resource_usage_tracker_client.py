@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import cast
 
-import httpx
+import httpx2
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
@@ -31,12 +31,12 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class ResourceUsageTrackerClient:
-    client: httpx.AsyncClient
+    client: httpx2.AsyncClient
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
     def create(cls, app: FastAPI, settings: AppSettings) -> "ResourceUsageTrackerClient":
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             base_url=settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         )
         if settings.DIRECTOR_V2_TRACING:
@@ -62,7 +62,7 @@ class ResourceUsageTrackerClient:
         try:
             await self.client.get("/")
             return True
-        except httpx.RequestError:
+        except httpx2.RequestError:
             return False
 
     async def is_healhy(self) -> bool:
@@ -71,7 +71,7 @@ class ResourceUsageTrackerClient:
             response = await self.client.get("/")
             response.raise_for_status()
             return True
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             return False
 
     #

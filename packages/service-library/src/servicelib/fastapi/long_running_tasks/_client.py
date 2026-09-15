@@ -83,7 +83,7 @@ def retry_on_http_errors(
     request_func: Callable[..., Awaitable[Any]],
 ) -> Callable[..., Awaitable[Any]]:
     """
-    Will retry the request on `httpx.HTTPError`.
+    Will retry the request on `httpx2.HTTPError`.
     """
     assert asyncio.iscoroutinefunction(request_func)
 

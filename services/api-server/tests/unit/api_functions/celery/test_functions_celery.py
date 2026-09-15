@@ -12,7 +12,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import respx
 from celery import Celery, Task  # type: ignore # pylint: disable=no-name-in-module
@@ -378,7 +378,7 @@ async def test_run_project_function_parent_info(
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
@@ -394,7 +394,7 @@ async def test_run_project_function_parent_info(
 
     # Mock the HTTP calls
     def _default_side_effect(
-        request: httpx.Request,
+        request: httpx2.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
@@ -506,7 +506,7 @@ async def test_map_function_parent_info(
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
@@ -523,7 +523,7 @@ async def test_map_function_parent_info(
 
     def _default_side_effect(
         side_effect_checks: dict,
-        request: httpx.Request,
+        request: httpx2.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
@@ -634,7 +634,7 @@ async def test_map_function(
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
@@ -646,7 +646,7 @@ async def test_map_function(
     _capture = "run_study_function_parent_info.json"
 
     def _default_side_effect(
-        request: httpx.Request,
+        request: httpx2.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:

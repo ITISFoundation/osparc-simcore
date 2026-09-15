@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
+import httpx2
 from fastapi import FastAPI, HTTPException, status
 from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.services import ServiceExtras
@@ -34,7 +34,7 @@ def configure_catalog(
         catalog_settings = CatalogSettings()
 
     async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             base_url=f"{catalog_settings.api_base_url}",
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
@@ -62,7 +62,7 @@ def configure_catalog(
 
 @dataclass
 class CatalogClient:
-    client: httpx.AsyncClient
+    client: httpx2.AsyncClient
 
     @classmethod
     def create(cls, app: FastAPI, **kwargs):
@@ -76,7 +76,7 @@ class CatalogClient:
 
     @handle_errors("Catalog", logger)
     @handle_retry(logger)
-    async def request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
+    async def request(self, method: str, tail_path: str, **kwargs) -> httpx2.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
     async def get_service(
@@ -164,5 +164,5 @@ class CatalogClient:
             result = await self.client.get(health_check_path)  # , timeout=1.0)
             result.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
+        except (httpx2.HTTPStatusError, httpx2.RequestError, httpx2.TimeoutException):
             return False

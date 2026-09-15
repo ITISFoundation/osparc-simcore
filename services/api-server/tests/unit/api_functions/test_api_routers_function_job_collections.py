@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
-import httpx
+import httpx2
 import pytest
 from httpx2 import AsyncClient
 from models_library.api_schemas_webserver.functions import (
@@ -20,7 +20,7 @@ from simcore_service_api_server._meta import API_VTAG
 async def test_get_function_job_collection(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_registered_function_job_collection = RegisteredFunctionJobCollection.model_validate(
         {
@@ -45,7 +45,7 @@ async def test_get_function_job_collection(
 async def test_list_function_job_collections(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_registered_function_job_collection = RegisteredFunctionJobCollection.model_validate(
         {
@@ -76,7 +76,7 @@ async def test_delete_function_job_collection(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_function_job_collection: RegisteredFunctionJobCollection,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("delete_function_job_collection", None)
 
@@ -98,7 +98,7 @@ async def test_get_function_job_collection_jobs(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_function_job_collection: RegisteredFunctionJobCollection,
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     response_type: str | None,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
@@ -133,7 +133,7 @@ async def test_list_function_job_collections_with_function_filter(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_function_job_collection: RegisteredFunctionJobCollection,
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "list_function_job_collections",

@@ -6,7 +6,7 @@
 # pylint: disable=unused-variable
 
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -336,7 +336,7 @@ async def test_webserver_pay_with_payment_method_timeout_workflow(
         )
 
         # Mock the payment endpoint to raise a timeout
-        def _timeout_payment(request: httpx.Request, pm_id: PaymentMethodID):
+        def _timeout_payment(request: httpx2.Request, pm_id: PaymentMethodID):
             # Simulate timeout by raising TimeoutException
             msg = f"Request timed out for {pm_id}"
             raise TimeoutException(msg, request=request)

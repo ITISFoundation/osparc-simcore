@@ -4,7 +4,7 @@
 
 import logging
 
-import httpx
+import httpx2
 import pytest
 import simcore_service_payments.api.rest._health as health_module
 from fastapi import status
@@ -36,7 +36,7 @@ def _mock_rabbitmq_clients(
 async def test_healthcheck_returns_200_when_healthy(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocker: MockerFixture,
 ):
     _mock_rabbitmq_clients(mocker, client_healthy=True, rpc_client_healthy=True)
@@ -53,7 +53,7 @@ async def test_healthcheck_returns_200_when_healthy(
 async def test_healthcheck_returns_503_when_rabbitmq_unhealthy(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocker: MockerFixture,
     client_healthy: bool,
     rpc_client_healthy: bool,
@@ -75,7 +75,7 @@ async def test_healthcheck_returns_503_when_rabbitmq_unhealthy(
 async def test_healthcheck_does_not_log_error_when_rabbitmq_unhealthy(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocker: MockerFixture,
     is_client_healthy: bool,
     is_rpc_client_healthy: bool,

@@ -18,7 +18,7 @@ _logger = logging.getLogger(__file__)
 async def handle_httpx_client_exceptions(request: Request, exc: Exception):
     """
     Default httpx exception handler.
-    See https://www.python-httpx.org/exceptions/
+    See https://www.python-httpx2.org/exceptions/
     With this in place only HTTPStatusErrors need to be customized closer to the httpx client itself.
     """
     assert request  # nosec

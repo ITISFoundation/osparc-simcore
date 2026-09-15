@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 from uuid import UUID
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import status
@@ -77,8 +77,8 @@ def mocked_backend(
 
 @pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177")
 async def test_studies_read_workflow(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_backend: MockedBackendApiDict,
 ):
     study_id = StudyID("25531b1a-2565-11ee-ab43-02420a000031")
@@ -123,8 +123,8 @@ async def test_studies_read_workflow(
 
 
 async def test_list_study_ports(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api_base: MockRouter,
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
@@ -151,8 +151,8 @@ async def test_list_study_ports(
     [(_faker.uuid4(), _faker.uuid4()), (None, None)],
 )
 async def test_clone_study(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     study_id: StudyID,
     mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
@@ -165,7 +165,7 @@ async def test_clone_study(
     callback = mocked_webserver_rest_api_base["create_projects"].side_effect
     assert callback is not None
 
-    def clone_project_side_effect(request: httpx.Request):
+    def clone_project_side_effect(request: httpx2.Request):
         if parent_project_id is not None:
             _parent_project_id = dict(request.headers).get(X_SIMCORE_PARENT_PROJECT_UUID.lower())
             assert _parent_project_id == f"{parent_project_id}"
@@ -209,8 +209,8 @@ async def test_clone_study(
     ],
 )
 async def test_clone_study_with_title(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     study_id: StudyID,
     mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
@@ -233,13 +233,13 @@ async def test_clone_study_with_title(
     get_callback = mocked_webserver_rest_api_base["project_get"].side_effect
     assert get_callback is not None
 
-    def clone_project_side_effect(request: httpx.Request):
+    def clone_project_side_effect(request: httpx2.Request):
         if hidden is not None:
             _hidden = request.url.params.get("hidden")
             assert _hidden == str(hidden).lower()
         return create_callback(request)
 
-    def patch_project_side_effect(request: httpx.Request, *args, **kwargs):
+    def patch_project_side_effect(request: httpx2.Request, *args, **kwargs):
         body = json.loads(request.content.decode("utf-8"))
         if title is not None:
             _name = body.get("name")
@@ -249,7 +249,7 @@ async def test_clone_study_with_title(
             assert _description is not None and _description in description
         return patch_callback(request, *args, **kwargs)
 
-    def get_project_side_effect(request: httpx.Request, *args, **kwargs):
+    def get_project_side_effect(request: httpx2.Request, *args, **kwargs):
         # this is needed to return the patched project
         _project_id = kwargs.get("project_id")
         assert _project_id is not None
@@ -260,7 +260,7 @@ async def test_clone_study_with_title(
         if description is not None:
             result.data.description = description
         result.data.uuid = UUID(_project_id)
-        return httpx.Response(status.HTTP_200_OK, content=result.model_dump_json())
+        return httpx2.Response(status.HTTP_200_OK, content=result.model_dump_json())
 
     mocked_webserver_rest_api_base["create_projects"].side_effect = clone_project_side_effect
     mocked_webserver_rest_api_base["project_patch"].side_effect = patch_project_side_effect
@@ -294,8 +294,8 @@ async def test_clone_study_with_title(
 
 
 async def test_clone_study_not_found(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     faker: Faker,
     mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],

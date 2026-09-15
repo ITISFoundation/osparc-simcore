@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp.test_utils
-import httpx
+import httpx2
 import pytest
 import respx
 from asgi_lifespan import LifespanManager
@@ -159,7 +159,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx.AsyncClient]:
+async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx2.AsyncClient]:
     #
     # Prefer this client instead of fastapi.testclient.TestClient
     #
@@ -171,13 +171,13 @@ async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx.Asyn
             startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
             shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
         ),
-        httpx.AsyncClient(
+        httpx2.AsyncClient(
             base_url="http://api.testserver.io",
             headers={"Content-Type": "application/json"},
             transport=ASGITransport(app=app),
         ) as httpx_async_client,
     ):
-        assert isinstance(httpx_async_client, httpx.AsyncClient)
+        assert isinstance(httpx_async_client, httpx2.AsyncClient)
         yield httpx_async_client
 
 
@@ -792,13 +792,13 @@ def patch_lrt_response_urls(mocker: MockerFixture):
     """
 
     def _() -> MagicMock:
-        def _get_lrt_urls(lrt_response: httpx.Response):
+        def _get_lrt_urls(lrt_response: httpx2.Response):
             # NOTE: this function is needed to mock
             data = Envelope[TaskGet].model_validate_json(lrt_response.text).data
             assert data is not None  # nosec
 
             def _patch(href):
-                return lrt_response.request.url.copy_with(raw_path=httpx.URL(href).raw_path)
+                return lrt_response.request.url.copy_with(raw_path=httpx2.URL(href).raw_path)
 
             data.status_href = _patch(data.status_href)
             data.result_href = _patch(data.result_href)
@@ -832,7 +832,7 @@ def patch_webserver_long_running_project_tasks(
             task_id = faker.uuid4()
             self._results[task_id] = jsonable_encoder(result, by_alias=True)
 
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_202_ACCEPTED,
                 json={
                     "data": TaskGet(
@@ -847,7 +847,7 @@ def patch_webserver_long_running_project_tasks(
 
         # SIDE EFFECT functions ---
 
-        def create_project_task(self, request: httpx.Request):
+        def create_project_task(self, request: httpx2.Request):
             # create result: use the request-body
             query = dict(elm.split("=") for elm in request.url.query.decode().split("&"))
             if from_study := query.get("from_study"):
@@ -869,7 +869,7 @@ def patch_webserver_long_running_project_tasks(
 
             return self._set_result_and_get_response(project_get)
 
-        def clone_project_task(self, request: httpx.Request, *, project_id: str):  # noqa: ARG002
+        def clone_project_task(self, request: httpx2.Request, *, project_id: str):  # noqa: ARG002
             assert GET_PROJECT.response_body
 
             project_get = ProjectGet.model_validate(
@@ -884,9 +884,9 @@ def patch_webserver_long_running_project_tasks(
 
             return self._set_result_and_get_response(project_get)
 
-        def get_result(self, request: httpx.Request, *, task_id: str):
+        def get_result(self, request: httpx2.Request, *, task_id: str):
             assert request
-            return httpx.Response(status.HTTP_200_OK, json={"data": self._results[task_id]})
+            return httpx2.Response(status.HTTP_200_OK, json={"data": self._results[task_id]})
 
         # NOTE: Due to lack of time, i will leave it here but I believe
         # it is possible to have a generic long-running task workflow
@@ -941,8 +941,8 @@ def mock_webserver_patch_project(app: FastAPI, services_mocks_enabled: bool) -> 
     assert settings.API_SERVER_WEBSERVER is not None
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
-        def _patch_project(request: httpx.Request, *args, **kwargs):
-            return httpx.Response(status.HTTP_200_OK)
+        def _patch_project(request: httpx2.Request, *args, **kwargs):
+            return httpx2.Response(status.HTTP_200_OK)
 
         if services_mocks_enabled:
             webserver_mock_router.patch(
@@ -960,9 +960,9 @@ def mock_webserver_get_project(app: FastAPI, services_mocks_enabled: bool) -> Ca
     assert settings.API_SERVER_WEBSERVER is not None
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
-        def _get_project(request: httpx.Request, *args, **kwargs):
+        def _get_project(request: httpx2.Request, *args, **kwargs):
             result = Envelope[ProjectGet].model_validate({"data": ProjectGet.model_json_schema()["examples"][0]})
-            return httpx.Response(status.HTTP_200_OK, json=result.model_dump())
+            return httpx2.Response(status.HTTP_200_OK, json=result.model_dump())
 
         if services_mocks_enabled:
             webserver_mock_router.get(

@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import httpx
+import httpx2
 import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from faker import Faker
@@ -124,7 +124,7 @@ async def test_one_time_payment_workflow(
     submission_link = payment_gateway_api.get_form_payment_url(payment_initiated.payment_id)
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(submission_link, httpx.URL)
+    assert isinstance(submission_link, httpx2.URL)
     assert URL(f"{submission_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # cancel
@@ -160,7 +160,7 @@ async def test_payment_methods_workflow(
     form_link = payments_gateway_api.get_form_payment_method_url(initiated.payment_method_id)
 
     app_settings: ApplicationSettings = app.state.settings
-    assert isinstance(form_link, httpx.URL)
+    assert isinstance(form_link, httpx2.URL)
     assert URL(f"{form_link}").host == URL(f"{app_settings.PAYMENTS_GATEWAY_URL}").host
 
     # CRUD
@@ -216,7 +216,7 @@ async def test_payment_methods_workflow(
 async def test_payments_gateway_error_exception():
     async def _go():
         with _raise_as_payments_gateway_error(operation_id="foo"):
-            async with httpx.AsyncClient(
+            async with httpx2.AsyncClient(
                 transport=ASGITransport(app=FastAPI()),
                 base_url="http://payments.testserver.io",
             ) as client:

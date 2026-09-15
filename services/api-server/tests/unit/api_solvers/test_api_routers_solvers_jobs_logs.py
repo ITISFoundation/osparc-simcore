@@ -11,7 +11,7 @@ from collections.abc import Iterable
 from pprint import pprint
 from typing import Final
 
-import httpx
+import httpx2
 import pytest
 from attr import dataclass
 from faker import Faker
@@ -87,8 +87,8 @@ def fake_project_for_streaming(app: FastAPI, mocker: MockFixture, faker: Faker) 
 @pytest.mark.parametrize("disconnect", [True, False])
 async def test_log_streaming(
     app: FastAPI,
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     fake_log_distributor,
@@ -120,8 +120,8 @@ async def test_log_streaming(
 async def mock_job_not_found(
     mocked_directorv2_rest_api_base: MockRouter,
 ) -> MockRouter:
-    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
-        return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
+    def _get_computation(request: httpx2.Request, **kwargs) -> httpx2.Response:
+        return httpx2.Response(status_code=status.HTTP_404_NOT_FOUND)
 
     mocked_directorv2_rest_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
@@ -131,8 +131,8 @@ async def mock_job_not_found(
 
 async def test_logstreaming_job_not_found_exception(
     app: FastAPI,
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     fake_log_distributor,

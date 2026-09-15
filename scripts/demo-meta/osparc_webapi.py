@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Annotated, Any, Generic, TypeVar
 from uuid import UUID
 
-import httpx
 from httpx2 import HTTPStatusError
 from pydantic import (
     AnyHttpUrl,
@@ -110,12 +109,12 @@ class ProjectIterationResultItem(ProjectIteration):
 # API ----------------------------------------------
 
 
-def ping(client: httpx.Client):
+def ping(client: httpx2.Client):
     r = client.get("/")
     return r
 
 
-def login(client: httpx.Client, user: str, password: str):
+def login(client: httpx2.Client, user: str, password: str):
     r = client.post(
         "/auth/login",
         json={
@@ -132,13 +131,13 @@ def login(client: httpx.Client, user: str, password: str):
     return r.json()
 
 
-def get_profile(client: httpx.Client):
+def get_profile(client: httpx2.Client):
     r = client.get("/me")
-    assert r.status_code == httpx.codes.OK
+    assert r.status_code == httpx2.codes.OK
     return r.json()["data"]
 
 
-def iter_items(client: httpx.Client, url_path: str, item_cls: type[ItemT]) -> Iterator[ItemT]:
+def iter_items(client: httpx2.Client, url_path: str, item_cls: type[ItemT]) -> Iterator[ItemT]:
     """iterates items returned by a List std-method
 
     SEE https://google.aip.dev/132
@@ -163,11 +162,11 @@ def iter_items(client: httpx.Client, url_path: str, item_cls: type[ItemT]) -> It
         last_url = _relative_url_path(page.links.last)
 
 
-def iter_repos(client: httpx.Client) -> Iterator[ProjectRepo]:
+def iter_repos(client: httpx2.Client) -> Iterator[ProjectRepo]:
     return iter_items(client, "/repos/projects", ProjectRepo)
 
 
-def iter_checkpoints(client: httpx.Client, project_id: UUID) -> Iterator[CheckPoint]:
+def iter_checkpoints(client: httpx2.Client, project_id: UUID) -> Iterator[CheckPoint]:
     return iter_items(
         client,
         f"/repos/projects/{project_id}/checkpoints",
@@ -175,7 +174,7 @@ def iter_checkpoints(client: httpx.Client, project_id: UUID) -> Iterator[CheckPo
     )
 
 
-def iter_project_iteration(client: httpx.Client, project_id: UUID, checkpoint_id: NonNegativeInt):
+def iter_project_iteration(client: httpx2.Client, project_id: UUID, checkpoint_id: NonNegativeInt):
     return iter_items(
         client,
         f"/projects/{project_id}/checkpoint/{checkpoint_id}/iterations",
@@ -215,10 +214,10 @@ def query_if_invalid_config():
 
 
 @contextmanager
-def setup_client() -> Iterator[httpx.Client]:
+def setup_client() -> Iterator[httpx2.Client]:
     settings = ClientSettings()
 
-    client = httpx.Client(base_url=f"{settings.OSPARC_API_URL}")
+    client = httpx2.Client(base_url=f"{settings.OSPARC_API_URL}")
     try:
         # check if online and login
         print(ping(client))

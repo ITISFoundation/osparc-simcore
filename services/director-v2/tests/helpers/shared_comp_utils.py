@@ -2,7 +2,7 @@ import json
 import time
 from uuid import UUID
 
-import httpx
+import httpx2
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import PipelineDetails
@@ -46,7 +46,7 @@ async def assert_computation_task_out_obj(
 
 
 async def assert_and_wait_for_pipeline_status(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     url: AnyHttpUrl,
     user_id: UserID,
     project_uuid: UUID,
