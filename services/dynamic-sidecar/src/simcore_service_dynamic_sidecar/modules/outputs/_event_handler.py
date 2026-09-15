@@ -1,16 +1,17 @@
 import logging
 import multiprocessing
-from asyncio import CancelledError, Task, create_task, get_event_loop
+from asyncio import CancelledError, Task, create_task, get_event_loop, to_thread
 from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from multiprocessing.queues import Queue
 from pathlib import Path
 from queue import Empty
-from threading import Thread
+from threading import Lock, Thread
 from time import sleep as blocking_sleep
 from typing import Any, Final
 
+from common_library.async_tools import cancel_wait_task
 from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
@@ -185,14 +186,23 @@ class _EventHandlerProcess:
 
         # This is accessible from the creating process and from
         # the process itself and is used to stop the process.
-        self._stop_queue: Queue[None] = multiprocessing.Queue()
+        self._stop_queue: Queue[None] | None = None
 
+        self._process_lock: Lock = Lock()
         self._process: multiprocessing.Process | None = None
 
     def start_process(self) -> None:
         # NOTE: runs in asyncio thread
 
-        with log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"):
+        with (
+            log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} start_process"),
+            self._process_lock,
+        ):
+            if self._stop_queue is not None or self._process is not None:
+                _logger.debug("Process already started, skipping")
+                return
+
+            self._stop_queue = multiprocessing.Queue()
             self._process = multiprocessing.Process(
                 target=_process_worker,
                 args=(
@@ -210,8 +220,13 @@ class _EventHandlerProcess:
     def stop_process(self) -> None:
         # NOTE: runs in asyncio thread
 
-        with log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} stop_process"):
-            self._stop_queue.put(None)
+        with (
+            log_context(_logger, logging.DEBUG, f"{_EventHandlerProcess.__name__} stop_process"),
+            self._process_lock,
+        ):
+            if self._stop_queue is not None:
+                self._stop_queue.put(None)
+                self._stop_queue = None
 
             if self._process:
                 # force stop the process
@@ -304,9 +319,10 @@ class EventHandlerObserver:
 
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, f"{EventHandlerObserver.__name__} stop"):
-            self._stop_observer_process()
             self._keep_running = False
-            if self._task_health_worker is not None:
-                self._task_health_worker.cancel("stopping health worker")
-                with suppress(CancelledError):
-                    await self._task_health_worker
+            try:
+                if self._task_health_worker is not None:
+                    with suppress(CancelledError):
+                        await cancel_wait_task(self._task_health_worker)
+            finally:
+                await to_thread(self._stop_observer_process)

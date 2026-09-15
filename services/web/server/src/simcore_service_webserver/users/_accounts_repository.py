@@ -231,7 +231,7 @@ async def review_user_pre_registration(
     pre_registration_id: int,
     reviewed_by: UserID,
     new_status: AccountRequestStatus,
-    invitation_extras: dict[str, Any] | None = None,
+    extras: dict[str, Any] | None = None,
 ) -> None:
     """Updates the account request status of a pre-registered user.
 
@@ -241,7 +241,8 @@ async def review_user_pre_registration(
         pre_registration_id: ID of the pre-registration record
         reviewed_by: ID of the user who reviewed the request
         new_status: New status (APPROVED or REJECTED)
-        invitation_extras: Optional invitation data to store in extras field
+        extras: Optional top-level extras keys (e.g. ``{"invitation": ...}`` or
+            ``{"approval": ...}``) merged into the record's existing extras
     """
     if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
         msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
@@ -255,10 +256,8 @@ async def review_user_pre_registration(
             "account_request_reviewed_at": sa.func.now(),
         }
 
-        # Add invitation extras to the existing extras if provided
-        if invitation_extras is not None:
-            assert list(invitation_extras.keys()) == ["invitation"]  # nosec
-
+        # Merge the provided extras into the existing extras if provided
+        if extras is not None:
             # Get the current extras first
             current_extras_result = await conn.execute(
                 sa.select(users_pre_registration_details.c.extras).where(
@@ -268,8 +267,7 @@ async def review_user_pre_registration(
             current_extras_row = current_extras_result.one_or_none()
             current_extras = current_extras_row.extras if current_extras_row and current_extras_row.extras else {}
 
-            # Merge with invitation extras
-            merged_extras = {**current_extras, **invitation_extras}
+            merged_extras = {**current_extras, **extras}
             update_values["extras"] = merged_extras
 
         await conn.execute(
