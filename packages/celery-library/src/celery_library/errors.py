@@ -46,8 +46,9 @@ def _log_degradation(
     troubleshooting OEC kwargs (never re-raised) and the remainder of the block is
     skipped, so the caller builds its fallback value instead.
 
-    NOTE: the OEC fingerprint deduplicates this log site; grep it in Loki to find
-    which exception types need first-class transferable-error handling.
+    NOTE: the OEC fingerprint deduplicates this log site; grep it in the log
+    aggregator to find which exception types need first-class transferable-error
+    handling.
     """
     try:
         yield
