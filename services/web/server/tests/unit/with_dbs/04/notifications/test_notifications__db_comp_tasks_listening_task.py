@@ -20,6 +20,7 @@ import pytest
 import simcore_service_webserver
 import simcore_service_webserver.db_listener
 import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
@@ -47,6 +48,7 @@ from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import 
 from simcore_service_webserver.db_listener.plugin import create_comp_tasks_listening_task
 from simcore_service_webserver.projects import exceptions
 from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.sql import func
 from tenacity import stop_after_attempt
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -915,6 +917,67 @@ async def test_concurrent_claims_process_different_aggregates_in_parallel(
     assert mock_project_subsystem["update_node_outputs"].call_count == 2
     for task in tasks:
         assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_advisory_lock_is_scoped_by_kind(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """The per-aggregate advisory lock key must include the event kind.
+
+    Phase 1: a lock on this worker's own key (kind:aggregate_id) must still block the
+    claim -> the per-aggregate serialization itself must not be weakened.
+    Phase 2: a lock on the RAW aggregate_id (the pre-fix key, i.e. the namespace of any
+    consumer that ignores kind) must NOT block the claim -> this worker's lock namespace
+    is kind-prefixed and independent, which is the point of the fix.
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    aggregate_id = f"{task['task_id']}"
+
+    # a session-level lock held open on a dedicated connection (different backend than
+    # the claim) conflicts with any pg_try_advisory_xact_lock on the same key
+
+    # Phase 1: our namespaced key must serialize claims
+    our_key = f"{_KIND_COMP_TASK_SYNC}:{aggregate_id}"
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(our_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on our namespaced key"
+        assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is None
+        assert len(await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])) == 1
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(our_key, 0))))
+
+    # Phase 2: the raw aggregate_id key (no kind) must NOT serialize our claims
+    raw_key = aggregate_id
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(raw_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on the raw aggregate-id key"
+        assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine) is True
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(raw_key, 0))))
+    assert mock_project_subsystem["update_node_outputs"].call_count == 1
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
