@@ -28,7 +28,7 @@ jobs:
       - name: install uv
         uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: "0.12.x"
+          version: "0.12.13" # NOTE: pinned exactly due to https://github.com/astral-sh/uv/issues/21692 (blosc/symlink wheel install regression in 0.12.14)
           enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v7.0.1
