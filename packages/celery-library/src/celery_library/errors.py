@@ -70,8 +70,12 @@ class _UnreconstructablePickleError(Exception):
     """Stand-in for a pickled exception that could not be reconstructed.
 
     Preserves the original type name (as the dynamic class name) and message (as the
-    sole arg), so that error reporting (e.g. ``JobError.exc_type``/``exc_msg``) and
-    string formatting stay useful instead of raising.
+    sole arg), so consumers can still report the failure's type and message and
+    format it as a string without raising.
+
+    Derived from ``Exception`` on purpose: it stands in for an *arbitrary* foreign
+    exception, so a more specific base (e.g. ``RuntimeError``) would mislabel the
+    error being reported.
     """
 
 
