@@ -1,5 +1,4 @@
 import base64
-import binascii
 import logging
 import pickle
 import pickletools
@@ -208,7 +207,7 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
     raw: bytes | None
     try:
         raw = base64.b64decode(payload)
-    except (binascii.Error, ValueError):
+    except ValueError:  # includes binascii.Error: not a base64 payload
         raw = None
 
     reconstruction_error: Exception | None = None
