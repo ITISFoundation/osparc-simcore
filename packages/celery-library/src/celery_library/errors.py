@@ -31,6 +31,9 @@ _PLAIN_TEXT_MARKER: Final[bytes] = b"t1:"
 # a pickled global is built from two consecutive strings (module, qualname)
 _PICKLE_GLOBAL_ARITY: Final[int] = 2
 
+# pickle opcodes that carry a string operand
+_STRING_OPS: Final[frozenset[str]] = frozenset({"BINUNICODE", "SHORT_BINUNICODE"})
+
 
 @contextmanager
 def _log_degradation(
@@ -102,7 +105,6 @@ def _describe_pickle_stream(payload: bytes) -> tuple[str | None, str]:
     with log_catch(_logger, reraise=False):
         ops = list(pickletools.genops(payload))
 
-    string_ops: Final[frozenset[str]] = frozenset({"BINUNICODE", "SHORT_BINUNICODE"})
     pending_strings: list[str] = []
     after_global = False
 
@@ -113,7 +115,7 @@ def _describe_pickle_stream(payload: bytes) -> tuple[str | None, str]:
                 message = arg
                 break
             continue
-        if op.name in string_ops and isinstance(arg, str):
+        if op.name in _STRING_OPS and isinstance(arg, str):
             pending_strings.append(arg)
             if len(pending_strings) > _PICKLE_GLOBAL_ARITY:
                 pending_strings.pop(0)
