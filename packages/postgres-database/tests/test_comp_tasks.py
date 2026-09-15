@@ -11,6 +11,7 @@ import pytest
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import (
     DB_CHANNEL_NAME,
+    DB_OUTBOX_KIND_COMP_TASK_SYNC,
     NodeClass,
     comp_tasks,
 )
@@ -89,7 +90,7 @@ async def _assert_outbox_events_for_task(
     rows = [dict(r) for r in result.mappings().all()]
     assert len(rows) == num_exp_events, f"expected {num_exp_events} outbox events for task {task_id}, got {rows}"
     for index, row in enumerate(rows):
-        assert row["kind"] == "comp_task.sync.v1"
+        assert row["kind"] == DB_OUTBOX_KIND_COMP_TASK_SYNC
         assert row["aggregate_type"] == "comp_task"
         assert row["aggregate_id"] == f"{task_id}"
         if expected_changed_columns is not None:
