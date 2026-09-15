@@ -5,7 +5,7 @@ from uuid import UUID
 
 import httpx
 from celery_library.async_jobs import submit_job
-from fastapi import APIRouter, Depends, FastAPI, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
@@ -32,9 +32,10 @@ from ...models.schemas.responses import (
 )
 from ...services_http.chatbot import ChatbotApi, ChatbotSession
 from ...services_rpc.async_jobs import AsyncJobClient
-from ..dependencies.application import get_app, get_settings
+from ..dependencies.application import get_settings
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.celery import get_task_manager
+from ..dependencies.services import get_api_client
 from ..dependencies.tasks import get_async_jobs_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -106,14 +107,12 @@ async def create_response(
     product_name: Annotated[ProductName, Depends(get_product_name)],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     task_manager: Annotated[TaskManager, Depends(get_task_manager)],
-    app: Annotated[FastAPI, Depends(get_app)],
+    chatbot_api: Annotated[ChatbotApi, Depends(get_api_client(ChatbotApi))],
 ) -> ResponseObject | SseStreamingResponse | JSONResponse:
     if settings.API_SERVER_CHATBOT is None:
         raise ChatbotNotAvailableError
 
     if body.stream:
-        chatbot_api = ChatbotApi.get_instance(app)
-        assert isinstance(chatbot_api, ChatbotApi)  # nosec
         chatbot_session = ChatbotSession(
             _chatbot_settings=settings.API_SERVER_CHATBOT,
             _api=chatbot_api,
