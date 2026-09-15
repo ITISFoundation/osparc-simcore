@@ -1,8 +1,8 @@
-"""Transactional Outbox Events Table
+"""Transactional outbox events table.
 
-Outbox pattern for event sourcing. Events written here are guaranteed to be captured
-within the same transaction as the domain entity update, enabling reliable event
-distribution to subscribers.
+Stores events atomically with the domain-entity update that produced them, so a
+separate worker can reliably pick them up afterwards. This is a work queue, not
+an event log: a successfully processed row is deleted, not retained.
 """
 
 import sqlalchemy as sa
@@ -65,8 +65,8 @@ outbox_events = sa.Table(
         nullable=True,
         doc="Last error message if processing failed",
     ),
-    # Indexes for worker queries
-    sa.Index("ix_outbox_events_kind", "kind"),
+    # matches the claim query: WHERE kind=... AND attempts<N ORDER BY modified, id
+    sa.Index("ix_outbox_events_claim", "kind", "attempts", "modified", "id"),
 )
 
 register_modified_datetime_auto_update_trigger(outbox_events)
