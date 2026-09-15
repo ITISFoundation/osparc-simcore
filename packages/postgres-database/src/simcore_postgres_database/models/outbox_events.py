@@ -29,7 +29,7 @@ outbox_events = sa.Table(
         "kind",
         sa.String,
         nullable=False,
-        doc="Event type/handler key (e.g., 'comp_task.sync.v1')",
+        doc="Event type/handler key (e.g., comp_tasks.DB_OUTBOX_KIND_COMP_TASK_SYNC)",
     ),
     sa.Column(
         "aggregate_type",
