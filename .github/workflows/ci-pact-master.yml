@@ -21,17 +21,20 @@ jobs:
       PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
       PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
     steps:
+      - name: checkout source branch
+        uses: actions/checkout@v7.0.1
       - name: setup python environment
         uses: actions/setup-python@v7.0.0
         with:
           python-version: "3.13"
+      - name: resolve uv version
+        id: uv-version
+        run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
       - name: install uv
         uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: "0.12.13" # NOTE: pinned exactly due to https://github.com/astral-sh/uv/issues/21692 (blosc/symlink wheel install regression in 0.12.14)
+          version: ${{ steps.uv-version.outputs.version }}
           enable-cache: false
-      - name: checkout source branch
-        uses: actions/checkout@v7.0.1
       - name: Run pact tests
         run: |
           make devenv

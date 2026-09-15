@@ -616,9 +616,9 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 .PHONY: devenv devenv-all node-env
 
-# NOTE: uv version pinned exactly due to https://github.com/astral-sh/uv/issues/21692
-# (blosc/symlink wheel install regression in 0.12.14). Unpin once fixed upstream.
-UV_VERSION := 0.12.13
+# Single source of truth for the uv version (see requirements/UV_VERSION for the pinning note).
+# tests/environment-setup/test_used_uv.py verifies all other references stay in sync.
+UV_VERSION := $(shell cat requirements/UV_VERSION)
 
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."

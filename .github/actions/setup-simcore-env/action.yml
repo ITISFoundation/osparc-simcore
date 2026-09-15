@@ -8,11 +8,9 @@ inputs:
     default: '3.13'
 
   uv-version:
-    description: 'UV version to use'
+    description: 'UV version to use (defaults to requirements/UV_VERSION)'
     required: false
-    # NOTE: pinned exactly due to https://github.com/astral-sh/uv/issues/21692
-    # (blosc/symlink wheel install regression in 0.12.14). Unpin once fixed upstream.
-    default: '0.12.13'
+    default: ''
 
   cache-dependency-glob:
     description: 'Glob pattern for cache dependency files'
@@ -53,10 +51,18 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    # Single source of truth for the uv version (see requirements/UV_VERSION for the
+    # pinning note). tests/environment-setup/test_used_uv.py keeps other
+    # references (Dockerfiles, workflows, Makefile) in sync.
+    - name: Resolve UV version
+      id: uv-version
+      shell: bash
+      run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
+
     - name: Install UV
       uses: astral-sh/setup-uv@v10.0.1
       with:
-        version: ${{ inputs.uv-version }}
+        version: ${{ inputs.uv-version || steps.uv-version.outputs.version }}
         enable-cache: false
         cache-dependency-glob: ${{ inputs.cache-dependency-glob }}
 
