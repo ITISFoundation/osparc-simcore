@@ -29,10 +29,6 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.14.2
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
@@ -65,8 +61,6 @@ certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   httpcore
-    #   httpx
     #   requests
 cffi==2.0.0
     # via cryptography
@@ -106,24 +100,9 @@ frozenlist==1.5.0
     #   aiosignal
 graphql-core==3.2.8
     # via moto
-h11==0.16.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
-httpcore==1.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
-httpx==0.28.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
 idna==3.19
     # via
     #   -c requirements/_base.txt
-    #   anyio
-    #   httpx
     #   requests
     #   yarl
 iniconfig==2.3.0

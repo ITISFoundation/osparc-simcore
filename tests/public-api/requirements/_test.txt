@@ -11,8 +11,6 @@ aiohttp==3.14.3
     #   aiodocker
 aiosignal==1.4.0
     # via aiohttp
-anyio==4.12.1
-    # via httpx
 attrs==26.1.0
     # via
     #   aiohttp
@@ -21,8 +19,6 @@ attrs==26.1.0
 certifi==2026.2.25
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   httpcore
-    #   httpx
     #   requests
 charset-normalizer==3.4.6
     # via requests
@@ -34,18 +30,8 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-h11==0.16.0
-    # via httpcore
-httpcore==1.0.9
-    # via httpx
-httpx==0.28.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
 idna==3.11
     # via
-    #   anyio
-    #   httpx
     #   requests
     #   yarl
 iniconfig==2.3.0

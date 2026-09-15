@@ -12,7 +12,6 @@
 coverage
 faker
 fakeredis[lua]
-httpx
 pint
 pytest
 pytest-asyncio
