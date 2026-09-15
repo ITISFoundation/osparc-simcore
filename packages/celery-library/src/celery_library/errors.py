@@ -94,46 +94,53 @@ def _standin_exception(type_name: str | None, message: str) -> Exception:
     return cls(message)
 
 
+type _PickleOp = tuple[pickletools.OpcodeInfo, Any, Any]
+
+
+def _find_exception_global(ops: list[_PickleOp]) -> tuple[int, str, str] | None:
+    """Locate the ``STACK_GLOBAL`` that rebuilds the pickled exception itself.
+
+    Returns ``(index, module name, qualname)`` of the first ``STACK_GLOBAL`` fed by
+    two consecutive string operands; later globals belong to objects nested in the
+    exception's ``__dict__`` and are ignored. ``None`` if the stream has no global.
+    """
+    pending_strings: list[str] = []
+    for index, (op, arg, _pos) in enumerate(ops):
+        if op.name in _STRING_OPS and isinstance(arg, str):
+            pending_strings.append(arg)
+            if len(pending_strings) > _PICKLE_GLOBAL_ARITY:
+                pending_strings.pop(0)
+        elif op.name == "STACK_GLOBAL" and len(pending_strings) >= _PICKLE_GLOBAL_ARITY:
+            return index, pending_strings[-2], pending_strings[-1]
+        elif op.name != "MEMOIZE":
+            pending_strings.clear()
+    return None
+
+
+def _find_exception_message(ops: list[_PickleOp], after_index: int) -> str:
+    """Return the first string operand after ``after_index`` (the exception's message)."""
+    for _op, arg, _pos in ops[after_index + 1 :]:
+        if isinstance(arg, str):
+            return arg
+    return ""
+
+
 def _describe_pickle_stream(payload: bytes) -> tuple[str | None, str]:
     """Best-effort recovery of ``(type name, message)`` from a pickle payload.
 
     Inspects the pickle opcodes without *executing* them, so it stays safe even for
     payloads that ``pickle.loads`` refuses to reconstruct.
     """
-    module_name: str | None = None
-    qualname: str | None = None
-    message = ""
-
-    ops: list[tuple[pickletools.OpcodeInfo, Any, Any]] = []
+    ops: list[_PickleOp] = []
     with log_catch(_logger, reraise=False):
         ops = list(pickletools.genops(payload))
 
-    pending_strings: list[str] = []
-    after_global = False
+    if (found := _find_exception_global(ops)) is None:
+        return None, ""
 
-    for op, arg, _pos in ops:
-        if after_global:
-            # first string operand after the exception's global is its message
-            if isinstance(arg, str):
-                message = arg
-                break
-            continue
-        if op.name in _STRING_OPS and isinstance(arg, str):
-            pending_strings.append(arg)
-            if len(pending_strings) > _PICKLE_GLOBAL_ARITY:
-                pending_strings.pop(0)
-        elif op.name == "STACK_GLOBAL" and len(pending_strings) >= _PICKLE_GLOBAL_ARITY:
-            # first STACK_GLOBAL constructs the pickled object itself (the exception);
-            # later ones belong to objects nested in its __dict__
-            module_name, qualname = pending_strings[-2], pending_strings[-1]
-            after_global = True
-            pending_strings.clear()
-        elif op.name != "MEMOIZE":
-            pending_strings.clear()
-
-    if module_name and qualname:
-        return f"{module_name}.{qualname}", message
-    return qualname or module_name, message
+    global_index, module_name, qualname = found
+    message = _find_exception_message(ops, global_index)
+    return f"{module_name}.{qualname}", message
 
 
 class TransferableCeleryError(Exception):
