@@ -6,8 +6,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from common_library.errors_classes import OsparcErrorMixin
-from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
 from httpx._types import TimeoutTypes, URLTypes
+from httpx2 import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -126,7 +126,7 @@ def retry_on_errors(
     def decorator(
         request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
-        assert asyncio.iscoroutinefunction(request_func)
+        assert inspect.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
