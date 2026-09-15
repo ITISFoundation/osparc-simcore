@@ -8,7 +8,8 @@
   }}.{% endtrans %}
 </p>
 
-{% set login_link %}<a href="{{ product.homepage_url }}">{{ product.homepage_url }}</a>{% endset %}
+{% set homepage_url = (product.homepage_url).rstrip('/') %}
+{% set login_link %}<a href="{{ homepage_url }}">{{ homepage_url }}</a>{% endset %}
 <p>
   {% if existing_product %}
   {% trans existing_product=existing_product, product_name=product.display_name %}Since you already have an account on
