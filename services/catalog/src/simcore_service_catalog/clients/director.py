@@ -7,6 +7,7 @@ from contextlib import suppress
 from pprint import pformat
 from typing import Any, Final
 
+import httpx2
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, HTTPException
 from fastapi_lifespan_manager import LifespanManager, State
