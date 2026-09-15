@@ -21,7 +21,7 @@ projection only pushes what actually changed, like the previous LISTEN/NOTIFY
 payload did. All pending events of the same aggregate are coalesced into a single
 projection (union of their changed_columns), so a burst of changes to one task
 produces one socketio notification instead of one per event. Claims are scoped to
-`_KIND_COMP_TASK_SYNC` since outbox_events is a shared table that other
+`DB_OUTBOX_KIND_COMP_TASK_SYNC` since outbox_events is a shared table that other
 producers/consumers may use in the future.
 """
 
@@ -44,7 +44,11 @@ from servicelib.background_task import periodic_task
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.utils_repos import transaction_context
-from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
+from simcore_postgres_database.webserver_models import (
+    DB_CHANNEL_NAME,
+    DB_OUTBOX_KIND_COMP_TASK_SYNC,
+    projects,
+)
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
@@ -57,9 +61,6 @@ from ._utils import convert_state_from_db
 _OUTBOX_POLL_INTERVAL_S: Final[int] = 30
 _MAX_ATTEMPTS: Final[int] = 10
 _MAX_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
-
-# must match the literal used in comp_tasks.py's notify_comp_tasks_changed() trigger
-_KIND_COMP_TASK_SYNC: Final[str] = "comp_task.sync.v1"
 
 # size of the FOR UPDATE SKIP LOCKED batch the advisory lock then filters down to one
 _CLAIM_CANDIDATE_BATCH: Final[int] = 10
@@ -234,7 +235,9 @@ async def _claim_and_process_one_outbox_event(
 
     try:
         async with transaction_context(engine) as conn:
-            claimable = (outbox_events.c.kind == _KIND_COMP_TASK_SYNC) & (outbox_events.c.attempts < _MAX_ATTEMPTS)
+            claimable = (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC) & (
+                outbox_events.c.attempts < _MAX_ATTEMPTS
+            )
             if exclude_aggregates:
                 claimable = claimable & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
                     list(exclude_aggregates)

@@ -119,6 +119,11 @@ DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
 DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
 DB_CHANNEL_NAME: str = "outbox_wakeup"
 
+# outbox event kind produced by the trigger below: the producer (this trigger) and the
+# consumer (webserver db_listener claims) must agree on it, so it is defined once here
+# and exported through the model facades
+DB_OUTBOX_KIND_COMP_TASK_SYNC: str = "comp_task.sync.v1"
+
 # ------------------------ TRIGGERS
 
 task_output_changed_trigger = sa.DDL(
@@ -147,7 +152,7 @@ BEGIN
     WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
 
     INSERT INTO outbox_events (kind, aggregate_type, aggregate_id, changed_columns)
-    VALUES ('comp_task.sync.v1', 'comp_task', NEW.task_id::text, changed);
+    VALUES ('{DB_OUTBOX_KIND_COMP_TASK_SYNC}', 'comp_task', NEW.task_id::text, changed);
 
     PERFORM pg_notify('{DB_CHANNEL_NAME}', '');
 

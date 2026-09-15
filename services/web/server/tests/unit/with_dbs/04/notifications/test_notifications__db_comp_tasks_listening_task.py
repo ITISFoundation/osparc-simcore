@@ -34,9 +34,11 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
+from simcore_postgres_database.webserver_models import (
+    DB_CHANNEL_NAME,
+    DB_OUTBOX_KIND_COMP_TASK_SYNC,
+)
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
-    _KIND_COMP_TASK_SYNC,
     _MAX_ATTEMPTS,
     _MAX_FAILED_AGGREGATES_PER_DRAIN,
     _claim_and_process_one_outbox_event,
@@ -603,7 +605,7 @@ async def test_claim_and_process_one_deletes_event_on_success(
     assert outcome is not None
     assert isinstance(outcome, _ClaimOutcome)
     assert outcome.success is True
-    assert outcome.kind == _KIND_COMP_TASK_SYNC
+    assert outcome.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC
     assert outcome.aggregate_id == f"{task['task_id']}"
 
     # the row must have been removed on success
@@ -1134,7 +1136,7 @@ async def test_advisory_lock_is_scoped_by_kind(
     # the claim) conflicts with any pg_try_advisory_xact_lock on the same key
 
     # Phase 1: our namespaced key must serialize claims
-    our_key = f"{_KIND_COMP_TASK_SYNC}:{aggregate_id}"
+    our_key = f"{DB_OUTBOX_KIND_COMP_TASK_SYNC}:{aggregate_id}"
     async with sqlalchemy_async_engine.connect() as blocker:
         got = (
             await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(our_key, 0))))
@@ -1194,7 +1196,7 @@ async def test_claim_ignores_events_of_a_foreign_kind(
             )
         )
 
-    assert _KIND_COMP_TASK_SYNC != "some_other.kind.v1"
+    assert DB_OUTBOX_KIND_COMP_TASK_SYNC != "some_other.kind.v1"
 
     # only the comp_task.sync.v1 event is claimed and processed
     outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
