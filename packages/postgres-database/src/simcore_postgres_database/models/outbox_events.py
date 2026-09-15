@@ -65,8 +65,11 @@ outbox_events = sa.Table(
         nullable=True,
         doc="Last error message if processing failed",
     ),
-    # matches the claim query: WHERE kind=... AND attempts<N ORDER BY modified, id
-    sa.Index("ix_outbox_events_claim", "kind", "attempts", "modified", "id"),
+    # serves the claim query's "WHERE kind=... ORDER BY modified, id" (oldest-first):
+    # kind is the only equality column, so it must come first for the index to provide
+    # the ordering. The "attempts < N" filter is applied on top (dead-lettered rows are
+    # rare here since successful events are deleted, so filtering them costs nothing)
+    sa.Index("ix_outbox_events_claim", "kind", "modified", "id"),
 )
 
 register_modified_datetime_auto_update_trigger(outbox_events)
