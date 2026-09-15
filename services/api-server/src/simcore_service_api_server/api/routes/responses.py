@@ -17,7 +17,7 @@ from starlette.responses import JSONResponse
 from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
 
 from ...core.settings import ApplicationSettings
-from ...exceptions.backend_errors import BaseBackEndError, ChatbotNotAvailableError
+from ...exceptions.backend_errors import ChatbotNotAvailableError, ChatbotRequestError
 from ...exceptions.handlers._utils import create_error_json_response
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.basic_types import SseStreamingResponse
@@ -128,9 +128,9 @@ async def create_response(
         except httpx.HTTPStatusError as exc:
             if is_4xx_client_error(exc.response.status_code):
                 return _relay_downstream_client_error(exc.response)
-            raise BaseBackEndError from exc
+            raise ChatbotRequestError from exc
         except httpx.HTTPError as exc:
-            raise BaseBackEndError from exc
+            raise ChatbotRequestError from exc
         return SseStreamingResponse(_relay_sse_response(upstream_response, request))
 
     job = await submit_job(
