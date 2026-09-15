@@ -21,8 +21,7 @@
 </p>
 
 <p>
-  {% trans login_link=login_link, product_name=product.display_name %}You can access {{ product_name }} here: {{
-  login_link }}{% endtrans %}
+  {% trans login_link=login_link, product_name=product.display_name %}You can access {{ product_name }} here: {{ login_link }}.{% endtrans %}
 </p>
 
 {% set support_link %}<a href="mailto:{{ product.support_email }}">{{ product.support_email }}</a>{% endset %}
