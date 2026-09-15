@@ -616,17 +616,21 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 .PHONY: devenv devenv-all node-env
 
+# NOTE: uv version pinned exactly due to https://github.com/astral-sh/uv/issues/21692
+# (blosc/symlink wheel install regression in 0.12.14). Unpin once fixed upstream.
+UV_VERSION := 0.12.13
+
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				curl -LsSf https://astral.sh/uv/install.sh | sh; \
+				curl -LsSf https://astral.sh/uv/$(UV_VERSION)/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		# upgrading uv
+		# upgrading uv (pinned, see note above)
 		@if [ "${CI}" != "true" ]; then \
-			uv self --quiet update; \
+			uv self --quiet update $(UV_VERSION) || true; \
 		else \
 			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi

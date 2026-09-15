@@ -57,7 +57,7 @@ i18n-info: ## Show versions of required i18n tools (gettext suite, uv, git)
 	@if command -v uv > /dev/null 2>&1; then \
 	  printf '  %-14s [ok]     %s\n' "uv" "$$(uv --version 2>&1 | head -1)"; \
 	else \
-	  printf '  %-14s [MISSING] curl -LsSf https://astral.sh/uv/install.sh | sh\n' "uv"; \
+	  printf '  %-14s [MISSING] curl -LsSf https://astral.sh/uv/0.12.13/install.sh | sh\n' "uv"; \
 	fi
 	@if command -v git > /dev/null 2>&1; then \
 	  printf '  %-14s [ok]     %s\n' "git" "$$(git --version 2>&1 | head -1)"; \
