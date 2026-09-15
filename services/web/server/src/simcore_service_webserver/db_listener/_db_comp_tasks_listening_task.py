@@ -3,9 +3,10 @@
 Uses a transactional outbox pattern: comp_tasks trigger inserts into outbox_events
 on every meaningful change. This task claims, processes, and deletes outbox events
 in short transactions, tolerating horizontal scaling via FOR UPDATE SKIP LOCKED
-plus a per-aggregate advisory lock (pg_try_advisory_xact_lock): no two replicas
-can ever process events for the same aggregate_id concurrently, which is what
-makes it safe to run this service with more than one replica.
+plus a per-aggregate advisory lock (pg_try_advisory_xact_lock, keyed on kind +
+aggregate_id): no two replicas can ever process events for the same aggregate
+concurrently, which is what makes it safe to run this service with more than one
+replica.
 
 The event row is deleted only after successful processing (at-least-once delivery):
 the FOR UPDATE lock is held for the whole claim-process-delete transaction, so a
@@ -180,10 +181,12 @@ async def _claim_and_process_one_outbox_event(
 
     Claiming is two-staged: FOR UPDATE SKIP LOCKED first grabs a small batch of the
     oldest claimable rows (competing consumers across replicas), then a per-aggregate
-    advisory lock (pg_try_advisory_xact_lock) picks the oldest row in that batch whose
-    aggregate_id isn't already being processed by another replica. This guarantees
-    events for the same aggregate are never processed concurrently, so socketio
-    notifications for one aggregate can't be emitted out of order across replicas.
+    advisory lock (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) picks the
+    oldest row in that batch whose aggregate isn't already being processed by another
+    replica. This guarantees events for the same aggregate are never processed
+    concurrently, so socketio notifications for one aggregate can't be emitted out of
+    order across replicas. Including kind in the lock key keeps this worker's lock
+    namespace separate from other (future) producers that may reuse the same id space.
 
     The whole claim-process-delete cycle runs in a single transaction: the row lock
     and the advisory lock are both held while the event is processed, and both are
@@ -215,7 +218,13 @@ async def _claim_and_process_one_outbox_event(
             result = await conn.execute(
                 select(outbox_events)
                 .join(claim_candidates, claim_candidates.c.id == outbox_events.c.id)
-                .where(func.pg_try_advisory_xact_lock(func.hashtextextended(outbox_events.c.aggregate_id, 0)))
+                .where(
+                    # lock namespace must match the claim namespace (kind + aggregate_id):
+                    # another producer reusing the same id space must not collide with ours
+                    func.pg_try_advisory_xact_lock(
+                        func.hashtextextended(outbox_events.c.kind + ":" + outbox_events.c.aggregate_id, 0)
+                    )
+                )
                 .order_by(outbox_events.c.modified, outbox_events.c.id)
                 .limit(1)
             )
