@@ -6,7 +6,7 @@ import pickletools
 import types
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Final, cast
+from typing import Any, Final, NamedTuple, cast
 
 from celery.exceptions import (  # type: ignore[import-untyped]
     BackendError,
@@ -100,10 +100,60 @@ class TransferableCeleryError(Exception):
         return f"{decode_celery_transferable_error(self)}"
 
 
+# Exceptions that cannot cross a celery task boundary as-is (they pickle but never
+# unpickle, or fail pickling altogether) are adapted to a serializable wire error
+# at encode time and restored on the consumer side at decode time. Adapters are
+# registered per exact exception type, so this library stays free of third-party
+# imports: the service that owns the problematic exception registers its own
+# adapter at startup. Registration is process-local, and both sides need it only
+# for full restoration -- an unregistered consumer simply receives the wire error,
+# which is still serializable and reportable.
+type _ToWireCallable = Callable[[Exception], Exception]
+type _FromWireCallable = Callable[[Exception], Exception]
+
+
+class _ErrorAdapter(NamedTuple):
+    wire_type: type[Exception]
+    to_wire: _ToWireCallable
+    from_wire: _FromWireCallable
+
+
+_to_wire_adapters: dict[type[Exception], _ErrorAdapter] = {}
+_from_wire_adapter: dict[type[Exception], _FromWireCallable] = {}
+
+
+def register_transferable_error_adapter(
+    *,
+    original_type: type[Exception],
+    wire_type: type[Exception],
+    to_wire: _ToWireCallable,
+    from_wire: _FromWireCallable,
+) -> None:
+    """Register a two-way adapter for exceptions of ``original_type``.
+
+    ``to_wire`` runs on the worker at encode time, while the original exception is
+    fully intact, and must return an error that survives pickling (e.g. an
+    OsparcErrorMixin subclass, whose __reduce__ round-trips). ``from_wire`` runs on
+    the consumer at decode time to rebuild the original error from the wire one.
+    """
+    _to_wire_adapters[original_type] = _ErrorAdapter(wire_type=wire_type, to_wire=to_wire, from_wire=from_wire)
+    _from_wire_adapter[wire_type] = from_wire
+
+
 def encode_celery_transferable_error(error: Exception) -> TransferableCeleryError:
     # NOTE: Celery modifies exceptions during serialization, which can cause
     # the original error context to be lost. This mechanism ensures the same
     # error can be recreated on the caller side exactly as it was raised here.
+    if (adapter := _to_wire_adapters.get(type(error))) is not None:
+        try:
+            error = adapter.to_wire(error)
+        except Exception:  # pylint: disable=broad-except
+            # a broken adapter must not crash the error handler
+            _logger.warning(
+                "Adapter for %s failed, transferring the original error instead",
+                type(error).__name__,
+                exc_info=True,
+            )
     try:
         dumped = pickle.dumps(error)
     except Exception as exc:  # pylint: disable=broad-except
@@ -132,6 +182,26 @@ def encode_celery_transferable_error(error: Exception) -> TransferableCeleryErro
     return TransferableCeleryError(base64.b64encode(dumped))
 
 
+def _restore_original_error(wire_error: Exception) -> Exception:
+    """Rebuild the original error from a wire error, when an adapter is registered.
+
+    The wire error is always returned as-is if no adapter is registered or if the
+    adapter fails, since it is itself serializable and reportable.
+    """
+    if (from_wire := _from_wire_adapter.get(type(wire_error))) is None:
+        return wire_error
+    try:
+        return from_wire(wire_error)
+    except Exception:  # pylint: disable=broad-except
+        # decoding must never raise -- fall back to the wire error
+        _logger.warning(
+            "Adapter to restore %s failed, reporting the wire error instead",
+            type(wire_error).__name__,
+            exc_info=True,
+        )
+        return wire_error
+
+
 def decode_celery_transferable_error(error: TransferableCeleryError) -> Exception:
     """
     NOTE: exception safe
@@ -156,7 +226,6 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
     if raw is not None:
         try:
             result: Exception = pickle.loads(raw)  # noqa: S301
-            return result
         except Exception as exc:  # pylint: disable=broad-except
             # The payload pickled fine on the worker but cannot be reconstructed here
             # (e.g. httpx.HTTPStatusError.__init__ requires keyword-only request/response).
@@ -164,6 +233,8 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
             # (get_job_result, webserver task APIs, __str__/__repr__) can still report
             # the original failure instead of raising a TypeError.
             reconstruction_error = exc
+        else:
+            return _restore_original_error(result)
 
     try:
         type_name, message = _describe_pickle_stream(raw if raw is not None else payload)
