@@ -2,17 +2,23 @@
 
 Uses a transactional outbox pattern: comp_tasks trigger inserts into outbox_events
 on every meaningful change. This task claims, processes, and deletes outbox events
-in short transactions, tolerating horizontal scaling via FOR UPDATE SKIP LOCKED.
+in short transactions, tolerating horizontal scaling via FOR UPDATE SKIP LOCKED
+plus a per-aggregate advisory lock (pg_try_advisory_xact_lock): no two replicas
+can ever process events for the same aggregate_id concurrently, which is what
+makes it safe to run this service with more than one replica.
 
 The event row is deleted only after successful processing (at-least-once delivery):
 the FOR UPDATE lock is held for the whole claim-process-delete transaction, so a
-crash or failure rolls the claim back and any replica can re-claim the event.
+crash or failure rolls the claim back and any replica can re-claim the event. Both
+the row lock and the advisory lock are released automatically on commit/rollback,
+so a crash cannot wedge an aggregate forever.
 Failed attempts are counted on the row itself; events that exceed the maximum
 number of attempts are dead-lettered (skipped by claims, kept for post-mortem).
 
 Each event records the comp_tasks columns that changed (`changed_columns`), so the
 projection only pushes what actually changed, like the previous LISTEN/NOTIFY
-payload did.
+payload did. Claims are scoped to `_KIND_COMP_TASK_SYNC` since outbox_events is a
+shared table that other producers/consumers may use in the future.
 """
 
 import asyncio
@@ -33,7 +39,7 @@ from simcore_postgres_database.utils_repos import transaction_context
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
-from sqlalchemy.sql import select
+from sqlalchemy.sql import func, select
 
 from ..db.plugin import get_asyncpg_engine
 from ..projects import _projects_service, exceptions
@@ -43,6 +49,12 @@ from ._utils import convert_state_from_db
 _OUTBOX_POLL_INTERVAL_S: Final[int] = 30
 _MAX_ATTEMPTS: Final[int] = 10
 _MAX_CONSECUTIVE_FAILURES: Final[int] = 3
+
+# must match the literal used in comp_tasks.py's notify_comp_tasks_changed() trigger
+_KIND_COMP_TASK_SYNC: Final[str] = "comp_task.sync.v1"
+
+# size of the FOR UPDATE SKIP LOCKED batch the advisory lock then filters down to one
+_CLAIM_CANDIDATE_BATCH: Final[int] = 10
 
 # a change to any of these columns must refresh the node's outputs projection
 _OUTPUTS_CHANGED_COLUMNS: Final[frozenset[str]] = frozenset({"outputs", "run_hash"})
@@ -99,8 +111,9 @@ async def _process_outbox_event(
     Only the columns reported by the event's `changed_columns` are projected
     (mirroring the previous LISTEN/NOTIFY payload semantics): pushing state
     or outputs the UI already has would produce needless socketio notifications.
-    The projection itself reads the *current* row, so it stays idempotent when
-    several events coalesce into one processed state.
+    The DB projection re-reads the *current* row, so retries converge to the same
+    state; the socketio notifications themselves are not transactional and may be
+    re-sent on a retried attempt (at-least-once, not exactly-once).
     """
     comp_task_row = await _get_comp_task_row(conn, task_id)
 
@@ -163,27 +176,45 @@ async def _claim_and_process_one_outbox_event(
 ) -> bool | None:
     """Claim, process, and delete one pending outbox event (at-least-once delivery).
 
-    The whole claim-process-delete cycle runs in a single transaction, so the
-    `FOR UPDATE SKIP LOCKED` lock is held while the event is processed: exactly one
-    replica can work on a given event, and a crash or failure rolls the claim back,
-    leaving the event in place for any replica to re-claim.
+    Claiming is two-staged: FOR UPDATE SKIP LOCKED first grabs a small batch of the
+    oldest claimable rows (competing consumers across replicas), then a per-aggregate
+    advisory lock (pg_try_advisory_xact_lock) picks the oldest row in that batch whose
+    aggregate_id isn't already being processed by another replica. This guarantees
+    events for the same aggregate are never processed concurrently, so socketio
+    notifications for one aggregate can't be emitted out of order across replicas.
+
+    The whole claim-process-delete cycle runs in a single transaction: the row lock
+    and the advisory lock are both held while the event is processed, and both are
+    released automatically on commit or rollback.
 
     Returns True when an event was processed and deleted, False when processing an
-    event failed (attempt recorded on the row), and None when no claimable event
-    is pending.
+    event failed (attempt recorded on the row), and None when no event could be
+    claimed -- either the queue is drained, or every candidate's aggregate is
+    currently locked by another replica (retried on the next cycle).
 
-    NOTE: processing runs while the transaction (and row lock) is open, so it must
+    NOTE: processing runs while the transaction (and both locks) is open, so it must
     remain short-lived (DB updates + socketio notifications only).
     """
     processing_error: tuple[Row, Exception] | None = None
 
     try:
         async with transaction_context(engine) as conn:
+            claim_candidates = (
+                select(outbox_events.c.id)
+                .where(
+                    outbox_events.c.kind == _KIND_COMP_TASK_SYNC,
+                    outbox_events.c.attempts < _MAX_ATTEMPTS,
+                )
+                .order_by(outbox_events.c.modified, outbox_events.c.id)
+                .limit(_CLAIM_CANDIDATE_BATCH)
+                .with_for_update(skip_locked=True)
+                .subquery("claim_candidates")
+            )
             result = await conn.execute(
                 select(outbox_events)
-                .where(outbox_events.c.attempts < _MAX_ATTEMPTS)
+                .join(claim_candidates, claim_candidates.c.id == outbox_events.c.id)
+                .where(func.pg_try_advisory_xact_lock(func.hashtextextended(outbox_events.c.aggregate_id, 0)))
                 .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .with_for_update(skip_locked=True)
                 .limit(1)
             )
             row = result.fetchone()
@@ -262,13 +293,15 @@ async def _claim_and_process_outbox_events(app: web.Application, engine: AsyncEn
 
     The drain stops early after too many consecutive failures so that a poison
     event cannot spin the loop and starve the wake-up/poll cycle; the remaining
-    events are retried on the next cycle.
+    events are retried on the next cycle. It also stops when every claimable
+    event's aggregate is currently locked by another replica: the next wake-up
+    or poll cycle will retry, by which time that replica is likely done.
     """
     consecutive_failures = 0
     while True:
         outcome = await _claim_and_process_one_outbox_event(app, engine)
         if outcome is None:
-            return  # queue drained
+            return  # queue drained, or all remaining aggregates are locked elsewhere
         if outcome:
             consecutive_failures = 0
         else:
