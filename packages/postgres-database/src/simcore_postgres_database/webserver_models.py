@@ -11,6 +11,7 @@ from .models.comp_pipeline import StateType
 from .models.comp_tasks import DB_CHANNEL_NAME, NodeClass, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
 from .models.groups import GroupType, groups, user_to_groups
+from .models.outbox_events import outbox_events
 from .models.products import products
 from .models.projects import ProjectTemplateType, ProjectType, projects
 from .models.projects_nodes import projects_nodes
@@ -36,6 +37,7 @@ __all__ = (
     "confirmations",
     "group_classifiers",
     "groups",
+    "outbox_events",
     "products",
     "projects",
     "projects_nodes",

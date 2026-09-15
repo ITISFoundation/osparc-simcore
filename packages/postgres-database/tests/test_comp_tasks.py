@@ -139,3 +139,23 @@ async def test_listen_query(
 
     await _assert_wakeup_notifications(db_notification_queue, NUM_CALLS)
     await _assert_outbox_events_for_task(db_connection, task_id, NUM_CALLS)
+
+
+@pytest.mark.parametrize("task_class", [(NodeClass.COMPUTATIONAL)])
+async def test_run_hash_only_update_emits_event(
+    db_notification_queue: asyncio.Queue,
+    db_connection: AsyncConnection,
+    task: dict,
+):
+    """the trigger must also fire when ONLY run_hash changes: the projector consumes
+    run_hash (it feeds update_node_outputs), so a run_hash-only update must not go unseen"""
+    task_id = task["task_id"]
+
+    await _update_comp_task_with(db_connection, task, run_hash="some-fresh-hash")
+    await _assert_wakeup_notifications(db_notification_queue, 1)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1, [["modified", "run_hash"]])
+
+    # updating it again to the same value must not trigger again
+    await _update_comp_task_with(db_connection, task, run_hash="some-fresh-hash")
+    await _assert_wakeup_notifications(db_notification_queue, 0)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1)

@@ -18,6 +18,7 @@ depends_on = None
 
 # comp_tasks trigger/procedure (unchanged names, new body: outbox insert instead of raw NOTIFY payload)
 DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
+DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
 DB_CHANNEL_NAME: str = "outbox_wakeup"
 
 # outbox_events auto-update "modified" trigger/procedure
@@ -45,7 +46,7 @@ def upgrade():
         sa.Column("last_error", sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_outbox_events_claim", "outbox_events", ["kind", "attempts", "modified", "id"], unique=False)
+    op.create_index("ix_outbox_events_claim", "outbox_events", ["kind", "modified", "id"], unique=False)
     # ### end Alembic commands ###
 
     # custom: auto-update "modified" timestamp on outbox_events
@@ -97,6 +98,23 @@ $$ LANGUAGE plpgsql;
         )
     )
 
+    # the trigger's column list / WHEN predicate must also include run_hash, otherwise a
+    # run_hash-only update never fires the procedure and projects_nodes.run_hash goes stale
+    op.execute(
+        sa.DDL(
+            f"""
+DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
+CREATE TRIGGER {DB_TRIGGER_NAME}
+AFTER UPDATE OF outputs,state,run_hash ON comp_tasks
+    FOR EACH ROW
+    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb
+        OR OLD.state IS DISTINCT FROM NEW.state
+        OR OLD.run_hash IS DISTINCT FROM NEW.run_hash))
+    EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
+"""
+        )
+    )
+
 
 def downgrade():
     # custom: restore previous comp_tasks trigger procedure (raw NOTIFY with JSON payload)
@@ -134,6 +152,20 @@ CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
     END;
 $$ LANGUAGE plpgsql;
     """  # noqa: S608
+        )
+    )
+
+    # restore the trigger as it was before this revision (no run_hash in column list/predicate)
+    op.execute(
+        sa.DDL(
+            f"""
+DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
+CREATE TRIGGER {DB_TRIGGER_NAME}
+AFTER UPDATE OF outputs,state ON comp_tasks
+    FOR EACH ROW
+    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state))
+    EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
+"""
         )
     )
 
