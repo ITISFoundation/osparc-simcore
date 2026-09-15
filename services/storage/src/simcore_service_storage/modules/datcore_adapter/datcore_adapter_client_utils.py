@@ -9,7 +9,7 @@ from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
 )
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 
 from ...core.settings import get_application_settings
 from .datcore_adapter_exceptions import (
@@ -34,7 +34,7 @@ async def request(
 ) -> dict[str, Any] | list[dict[str, Any]]:
     datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
-    client = get_httpx_client(app)
+    client = get_httpx2_client(app)
 
     try:
         if request_kwargs is None:

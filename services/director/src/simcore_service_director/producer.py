@@ -17,7 +17,7 @@ from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
@@ -758,7 +758,7 @@ async def _start_docker_service(  # noqa: PLR0913
         if isinstance(service_boot_parameters_labels, list):
             service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
             if published_port:
-                httpx_client = get_httpx_client(app)
+                httpx_client = get_httpx2_client(app)
                 await _pass_port_to_service(
                     service_name,
                     published_port,
@@ -1090,7 +1090,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
         if save_state:
             _logger.debug("saving state of service %s...", service_host_name)
             try:
-                await _save_service_state(service_host_name, client=get_httpx_client(app))
+                await _save_service_state(service_host_name, client=get_httpx2_client(app))
             except httpx.HTTPStatusError as err:
                 raise ServiceStateSaveError(
                     service_uuid=node_uuid,

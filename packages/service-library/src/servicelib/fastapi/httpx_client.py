@@ -3,7 +3,7 @@ import logging
 from collections.abc import AsyncIterator
 from enum import StrEnum
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 
@@ -28,11 +28,11 @@ def _create_httpx_client_lifespan(
         _lifespan_name = f"{__name__}.{_lifespan.__name__}"
 
         with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-            client: httpx.AsyncClient | None = None
+            client: httpx2.AsyncClient | None = None
             try:
-                client = httpx.AsyncClient(
-                    transport=httpx.AsyncHTTPTransport(http2=True),
-                    limits=httpx.Limits(max_keepalive_connections=max_keepalive_connections),
+                client = httpx2.AsyncClient(
+                    transport=httpx2.AsyncHTTPTransport(http2=True),
+                    limits=httpx2.Limits(max_keepalive_connections=max_keepalive_connections),
                     timeout=default_timeout.total_seconds(),
                 )
                 if tracing_config:
@@ -87,7 +87,7 @@ def configure_httpx_client(
     )
 
 
-def get_httpx_client(app: FastAPI) -> httpx.AsyncClient:
+def get_httpx2_client(app: FastAPI) -> httpx2.AsyncClient:
     client = app.state.httpx_client
-    assert isinstance(client, httpx.AsyncClient)  # nosec
+    assert isinstance(client, httpx2.AsyncClient)  # nosec
     return client

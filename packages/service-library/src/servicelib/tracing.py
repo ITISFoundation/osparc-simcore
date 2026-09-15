@@ -19,7 +19,7 @@ from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPX2ClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource
@@ -106,7 +106,7 @@ class TracingConfig(BaseModel):
 
 
 def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
-    HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
+    HTTPX2ClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
 def get_current_tracing_config() -> TracingConfig | None:

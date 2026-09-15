@@ -13,7 +13,7 @@ from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from models_library.basic_regex import SIMPLE_VERSION_RE
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -72,7 +72,7 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **r
     # Restricting to /blobs/ paths limits SSRF surface from a misconfigured registry.
     follow_redirects = "/blobs/" in path
 
-    client = get_httpx_client(app)
+    client = get_httpx2_client(app)
     response = await client.request(
         method.lower(),
         f"{request_url}",
