@@ -7,9 +7,8 @@ Therefore,
 """
 
 import logging
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
@@ -19,14 +18,14 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.utils import logged_gather
+from simcore_service_dynamic_sidecar.modules.outputs import FastAPI
 from starlette import status
 
 from ...core.errors import PipelineTaskMissingError
-from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 from ...utils.computations_tasks import validate_pipeline
-from ..dependencies.database import get_repository
+from ...utils.db import get_repository
 
 log = logging.getLogger(__name__)
 
@@ -45,17 +44,17 @@ router = APIRouter(prefix="/computations", tags=["computations"])
     response_model=list[TaskLogFileGet],
 )
 async def get_all_tasks_log_files(
+    app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
-    comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ) -> list[TaskLogFileGet]:
     """Returns download links to log-files of each task in a computation.
     Each log is only available when the corresponding task is done
     """
     # gets computation task ids
+
     try:
-        info = await validate_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
+        info = await validate_pipeline(app, project_id)
     except PipelineTaskMissingError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -77,15 +76,15 @@ async def get_all_tasks_log_files(
     response_model=TaskLogFileGet,
 )
 async def get_task_log_file(
+    app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ) -> TaskLogFileGet:
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
     """
-
+    comp_tasks_repo = get_repository(app, CompTasksRepository)
     if not await comp_tasks_repo.task_exists(project_id, node_uuid):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
@@ -102,10 +101,11 @@ async def get_task_log_file(
     responses={status.HTTP_404_NOT_FOUND: {"description": "Cannot find computation or the tasks in it"}},
 )
 async def get_batch_tasks_outputs(
+    app: FastAPI,
     project_id: ProjectID,
     selection: TasksSelection,
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ):
+    comp_tasks_repo = get_repository(app, CompTasksRepository)
     nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
         project_id=project_id,
         node_ids=set(selection.nodes_ids),
