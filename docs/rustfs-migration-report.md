@@ -195,7 +195,7 @@ Compatibility gate (RustFS): **all PASS**, and notably `multipart_listing` repor
 
 ## Summary of changes
 
-Branch `enhancement/s3-rustfs-replacement` (9 commits on top of master `040e002fa`):
+Branch `enhancement/s3-rustfs-replacement` (8 commits on top of master `040e002fa`):
 
 | commit | content |
 |---|---|
