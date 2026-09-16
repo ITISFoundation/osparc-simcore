@@ -336,7 +336,7 @@ async def _approve_existing_user(
         extra_credits_in_usd=extra_credits_in_usd,
     )
 
-    # Persist the PO's credits decision in the pre-registration extras for audit
+    # Persist some approval decisions in the pre-registration extras (AUDIT TRAIL)
     approval_extras: dict[str, Any] | None = (
         {"approval": {"extra_credits_in_usd": extra_credits_in_usd}} if extra_credits_in_usd is not None else None
     )
