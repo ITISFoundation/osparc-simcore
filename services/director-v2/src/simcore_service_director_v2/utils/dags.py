@@ -26,7 +26,7 @@ def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
 
-    nodes = []
+    nodes: list[tuple[str, Any]] = []
     edges: list[tuple[str, str]] = []
 
     for node_id, node in project_nodes.items():
@@ -69,7 +69,7 @@ def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
 def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
 
-    nodes = []
+    nodes: list[tuple[str, Any]] = []
     edges: list[tuple[str, str]] = []
 
     for task in tasks:
