@@ -106,7 +106,10 @@ async def get_batch_tasks_outputs(
     selection: TasksSelection,
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ):
-    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(project_id, set(selection.nodes_ids))
+    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
+        project_id=project_id,
+        node_ids=set(selection.nodes_ids),
+    )
 
     if not nodes_outputs:
         raise HTTPException(status.HTTP_404_NOT_FOUND)

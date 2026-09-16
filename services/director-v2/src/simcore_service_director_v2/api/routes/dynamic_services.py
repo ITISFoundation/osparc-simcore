@@ -327,7 +327,7 @@ async def get_project_inactivity(
     # A `service` which does not support the inactivity callback is considered
     # inactive.
 
-    if not await projects_repository.exists(project_id):
+    if not await projects_repository.exists(project_id=project_id):
         raise ProjectNotFoundError(project_id=project_id)
 
     inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(

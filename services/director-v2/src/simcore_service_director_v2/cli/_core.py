@@ -91,7 +91,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
         projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
-        project_at_db = await projects_repository.get(project_id)
+        project_at_db = await projects_repository.get(project_id=project_id)
         workbench = await projects_nodes_repository.get_all(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
@@ -223,7 +223,7 @@ async def _get_nodes_render_data(
     projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
     projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
 
-    await projects_repository.get(project_id)
+    await projects_repository.get(project_id=project_id)
     workbench = await projects_nodes_repository.get_all(project_id)
 
     render_data: list[RenderData] = []
