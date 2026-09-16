@@ -8,7 +8,7 @@ Therefore,
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
@@ -18,7 +18,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.utils import logged_gather
-from simcore_service_dynamic_sidecar.modules.outputs import FastAPI
 from starlette import status
 
 from ...core.errors import PipelineTaskMissingError
