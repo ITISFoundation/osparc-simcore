@@ -24,7 +24,7 @@ _NODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
 
 def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
-    dag_graph = nx.DiGraph()
+    dag_graph: nx.DiGraph = nx.DiGraph()
 
     nodes: list[tuple[str, Any]] = []
     edges: list[tuple[str, str]] = []
@@ -67,7 +67,7 @@ def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
 
 
 def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
-    dag_graph = nx.DiGraph()
+    dag_graph: nx.DiGraph = nx.DiGraph()
 
     nodes: list[tuple[str, Any]] = []
     edges: list[tuple[str, str]] = []
