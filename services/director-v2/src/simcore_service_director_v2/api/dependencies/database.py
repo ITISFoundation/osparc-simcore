@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import Depends
 from fastapi.requests import Request
-from servicelib.fastapi.db_asyncpg_engine import get_engine
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...modules.db.repositories import BaseRepository
@@ -16,7 +15,9 @@ _POOL_UTILIZATION_WARNING_RATIO = 0.9
 
 
 def get_db_engine(request: Request) -> AsyncEngine:
-    return get_engine(request.app)
+    assert request.app.state.engine  # nosec
+    engine: AsyncEngine = request.app.state.engine
+    return engine
 
 
 def _pool_capacity_metrics(engine: AsyncEngine) -> tuple[int, int, int, float]:
