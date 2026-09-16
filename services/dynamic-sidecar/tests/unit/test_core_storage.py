@@ -104,7 +104,6 @@ async def mock_storage_server(
     yield None
 
     process.kill()
-    process.join()
 
 
 @pytest.fixture
