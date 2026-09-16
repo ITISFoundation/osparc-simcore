@@ -25,19 +25,17 @@ async def grant_user_access_to_product(
 ) -> None:
     """Grants `user_id` access to `product_name` and notifies observers
 
-    This sequence is idempotent: group memberships are inserted
-    with ON CONFLICT DO NOTHING and observers are expected to be
-    idempotent as well.
+    The emitted SIGNAL_ON_USER_CONFIRMATION marks that `user_id` was confirmed
+    in `product_name` for the first time. The sequence is idempotent: group
+    memberships are inserted with ON CONFLICT DO NOTHING and observers (e.g.
+    default-wallet creation) are expected to be idempotent as well.
 
     NOTE: Follow up in https://github.com/ITISFoundation/osparc-simcore/issues/4822
     """
-    # add the user to any group matching their inclusion rules
     await groups_service.auto_add_user_to_groups(app, user_id)
 
-    # add the user to the product's group
     await groups_service.auto_add_user_to_product_group(app, user_id=user_id, product_name=product_name)
 
-    # broadcast that user with 'user_id' has login for the first time in 'product_name'
     await observer.emit(
         app,
         _SIGNAL_ON_USER_CONFIRMATION,
