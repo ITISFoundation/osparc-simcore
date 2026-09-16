@@ -12,6 +12,7 @@
 
 # installs this repo's packages
 --editable ../common-library/
+--editable ../postgres-database/
 --editable ../service-library/
 --editable ../settings-library/
 

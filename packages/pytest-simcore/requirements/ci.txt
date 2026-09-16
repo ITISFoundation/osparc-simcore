@@ -12,6 +12,7 @@
 
 # installs this repo's packages
 simcore-common-library @ ../common-library
+simcore-postgres-database @ ../postgres-database/
 simcore-service-library @ ../service-library/
 simcore-settings-library @ ../settings-library/
 
