@@ -6,6 +6,7 @@ from models_library.basic_types import IDStr
 from models_library.computations import CollectionRunID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
     COMP_RUN_SNAPSHOT_TASKS_DB_COLS,
 )
@@ -98,9 +99,7 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
 
         async with self.engine.connect() as conn:
             total_count = await conn.scalar(count_query)
+            result = await conn.execute(list_query)
 
-            items = [
-                CompRunSnapshotTaskDBGet.model_validate(row, from_attributes=True)
-                async for row in await conn.stream(list_query)
-            ]
+            items = TypeAdapter(list[CompRunSnapshotTaskDBGet]).validate_python(result.all())
             return cast(int, total_count), items

@@ -122,11 +122,9 @@ class CompTasksRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             total_count = await conn.scalar(count_query)
+            result = await conn.execute(list_query)
 
-            items = [
-                ComputationTaskForRpcDBGet.model_validate(row, from_attributes=True)
-                async for row in await conn.stream(list_query)
-            ]
+            items = TypeAdapter(list[ComputationTaskForRpcDBGet]).validate_python(result.all())
             return cast(int, total_count), items
 
     async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
