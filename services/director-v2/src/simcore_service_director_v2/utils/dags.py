@@ -27,7 +27,7 @@ def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
 
     nodes = []
-    edges = []
+    edges: list[tuple[str, str]] = []
 
     for node_id, node in project_nodes.items():
         assert node.state  # nosec
@@ -70,7 +70,7 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
 
     nodes = []
-    edges = []
+    edges: list[tuple[str, str]] = []
 
     for task in tasks:
         node_id = f"{task.node_id}"
