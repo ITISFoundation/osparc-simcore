@@ -12,6 +12,7 @@ from collections.abc import Callable
 from pathlib import Path
 from uuid import uuid4
 
+import aiofiles.os
 import pytest
 from faker import Faker
 from models_library.projects import ProjectID
@@ -214,7 +215,7 @@ async def test_valid_upload_download_saved_to(
 
         _empty_path(content_path)
 
-        new_destination = random_tmp_dir_generator(is_file=content_path.is_file())  # noqa: ASYNC240
+        new_destination = random_tmp_dir_generator(is_file=await aiofiles.os.path.isfile(content_path))
 
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,

@@ -6,6 +6,7 @@ import json
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
+import aiofiles
 from simcore_sdk.node_ports_common.dbmanager import DBManager
 
 pytest_simcore_core_services_selection = [
@@ -41,7 +42,8 @@ async def test_db_manager_write_config(
     # create an empty config
     await create_special_configuration()
     # read the default config
-    json_configuration = default_configuration_file.read_text()  # noqa: ASYNC240
+    async with aiofiles.open(default_configuration_file) as file:
+        json_configuration = await file.read()
     # write the default config to the database
     db_manager = DBManager(application_name=mock_app_name)
     await db_manager.write_ports_configuration(json_configuration, project_id, node_uuid)

@@ -118,8 +118,8 @@ async def _create_file_of_size(tmp_path: Path, *, name: str, file_size: ByteSize
         file.parent.mkdir(parents=True, exist_ok=True)
 
     await _create_random_binary_file(file, file_size)
-    assert file.exists()  # noqa: ASYNC240
-    assert file.stat().st_size == file_size  # noqa: ASYNC240
+    assert await aiofiles.os.path.exists(file)
+    assert (await aiofiles.os.stat(file)).st_size == file_size
     return file
 
 
