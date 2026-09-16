@@ -23,8 +23,8 @@ async def get_computation_task_log_file_ids(
     app: FastAPI,
     project_id: ProjectID,
 ) -> list[TaskLogFileIdGet]:
-    comp_pipelines_repo = CompPipelinesRepository(engine=app.state.engine)
-    comp_tasks_repo = CompTasksRepository(engine=app.state.engine)
+    comp_pipelines_repo = CompPipelinesRepository(db_engine=app.state.engine)
+    comp_tasks_repo = CompTasksRepository(db_engine=app.state.engine)
 
     try:
         info = await validate_pipeline(

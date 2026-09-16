@@ -60,7 +60,7 @@ def disable_postgres(mocker) -> None:
         "simcore_service_director_v2.modules.db",
         "simcore_service_director_v2.modules.dask_client",
     ]:
-        mocker.patch(f"{module}.get_engine", return_value=fake_engine)
+        mocker.patch(f"{module}.get_db_engine", return_value=fake_engine)
 
 
 @pytest.fixture

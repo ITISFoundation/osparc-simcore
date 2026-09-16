@@ -122,7 +122,7 @@ class CompRunsRepository(BaseRepository):
         :raises ComputationalRunNotFoundError: no entry found
         """
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
@@ -144,7 +144,7 @@ class CompRunsRepository(BaseRepository):
         *,
         project_id: ProjectID,
     ) -> CompRunsAtDB:
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(comp_runs.c.project_uuid == f"{project_id}")
@@ -178,7 +178,7 @@ class CompRunsRepository(BaseRepository):
             )
         )
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(query)
 
             return [
@@ -244,7 +244,7 @@ class CompRunsRepository(BaseRepository):
         if scheduling_or_conditions:
             conditions.append(sa.or_(*scheduling_or_conditions))
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(sa.select(comp_runs).where(*conditions))
             return TypeAdapter(list[CompRunsAtDB]).validate_python(result.all())
 
@@ -321,7 +321,7 @@ class CompRunsRepository(BaseRepository):
             list_query = base_select_query.order_by(desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         list_query = list_query.offset(offset).limit(limit)
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
             result = await conn.execute(list_query)
 
@@ -376,7 +376,7 @@ class CompRunsRepository(BaseRepository):
             list_query = base_select_query.order_by(desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         list_query = list_query.offset(offset).limit(limit)
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
             result = await conn.execute(list_query)
 
@@ -416,7 +416,7 @@ class CompRunsRepository(BaseRepository):
             .distinct()
         )
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(list_query)
             return [CollectionRunID(row[0]) for row in result]
 
@@ -470,7 +470,7 @@ class CompRunsRepository(BaseRepository):
 
         list_query = list_query.offset(offset).limit(limit)
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
             result = await conn.execute(list_query)
 
@@ -504,7 +504,7 @@ class CompRunsRepository(BaseRepository):
         collection_run_id: CollectionRunID,
     ) -> CompRunsAtDB:
         try:
-            async with transaction_context(self.engine, connection) as conn:
+            async with transaction_context(self.db_engine, connection) as conn:
                 if iteration is None:
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
@@ -537,7 +537,7 @@ class CompRunsRepository(BaseRepository):
         iteration: Iteration,
         **values,
     ) -> CompRunsAtDB | None:
-        async with transaction_context(self.engine, connection) as conn:
+        async with transaction_context(self.db_engine, connection) as conn:
             result: CursorResult = await conn.execute(
                 sa.update(comp_runs)
                 .where(

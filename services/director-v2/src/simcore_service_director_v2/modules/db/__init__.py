@@ -3,14 +3,14 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.db_asyncpg_pool_metrics import setup_pool_metrics_instrumentation
-from servicelib.fastapi.db_asyncpg_engine import get_engine
+from servicelib.fastapi.db_asyncpg_engine import get_engine as get_db_engine
 from servicelib.fastapi.postgres_lifespan import configure_postgres_database
 from servicelib.tracing import TracingConfig
 from settings_library.postgres import PostgresSettings
 
 
 async def _pool_metrics_lifespan(app: FastAPI) -> AsyncIterator[None]:
-    setup_pool_metrics_instrumentation(get_engine(app), app.state.instrumentation.db_pool_metrics)
+    setup_pool_metrics_instrumentation(get_db_engine(app), app.state.instrumentation.db_pool_metrics)
     yield
 
 
@@ -28,5 +28,5 @@ def configure_db(
 
 __all__: tuple[str, ...] = (
     "configure_db",
-    "get_engine",
+    "get_db_engine",
 )

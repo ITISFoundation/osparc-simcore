@@ -22,7 +22,7 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.rabbitmq import publish_pipeline_scheduling_state, publish_project_log
-from ..db import get_engine
+from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_runs_snapshot_tasks import (
@@ -52,8 +52,8 @@ async def run_new_pipeline(
 ) -> None:
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
-    engine = get_engine(app)
-    comp_pipeline_at_db = await _get_pipeline_at_db(project_id, engine)
+    db_engine = get_db_engine(app)
+    comp_pipeline_at_db = await _get_pipeline_at_db(project_id, db_engine)
     dag = comp_pipeline_at_db.get_graph()
 
     if not dag:
@@ -65,7 +65,7 @@ async def run_new_pipeline(
 
     with contextlib.suppress(ComputationalRunNotFoundError):
         # if the run already exists and is scheduled, do not schedule again.
-        last_run = await CompRunsRepository(engine).get(user_id=user_id, project_id=project_id)
+        last_run = await CompRunsRepository(db_engine).get(user_id=user_id, project_id=project_id)
         if last_run.result.is_running():
             _logger.warning(
                 "run for project %s is already running. not scheduling it again.",
@@ -73,7 +73,7 @@ async def run_new_pipeline(
             )
             return
 
-    new_run = await CompRunsRepository(engine).create(
+    new_run = await CompRunsRepository(db_engine).create(
         user_id=user_id,
         project_id=project_id,
         metadata=run_metadata,
@@ -82,7 +82,7 @@ async def run_new_pipeline(
         collection_run_id=collection_run_id,
     )
 
-    tasks_to_run = await _get_pipeline_tasks_at_db(engine, project_id, dag)
+    tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)
     db_create_snapshot_tasks = [
         {
             **task.to_db_model(exclude={"created", "modified"}),
@@ -90,12 +90,12 @@ async def run_new_pipeline(
         }
         for task in tasks_to_run
     ]
-    await CompRunsSnapshotTasksRepository(engine).batch_create(data=db_create_snapshot_tasks)
+    await CompRunsSnapshotTasksRepository(db_engine).batch_create(data=db_create_snapshot_tasks)
 
     rabbitmq_client = get_rabbitmq_client(app)
     await request_pipeline_scheduling(
         rabbitmq_client,
-        engine,
+        db_engine,
         user_id=new_run.user_id,
         project_id=new_run.project_uuid,
         iteration=new_run.iteration,
@@ -124,10 +124,10 @@ async def stop_pipeline(
         ComputationalRunNotFoundError: if the run does not exist
         ConfigurationError: if the rabbitmq client is not configured
     """
-    engine = get_engine(app)
-    comp_runs_repo = CompRunsRepository(engine)
+    db_engine = get_db_engine(app)
+    comp_runs_repo = CompRunsRepository(db_engine)
 
-    async with transaction_context(engine) as conn:
+    async with transaction_context(db_engine) as conn:
         comp_run = await comp_runs_repo.get(
             conn,
             user_id=user_id,
@@ -148,22 +148,22 @@ async def stop_pipeline(
         rabbitmq_client = get_rabbitmq_client(app)
         await request_pipeline_scheduling(
             rabbitmq_client,
-            engine,
+            db_engine,
             user_id=updated_comp_run.user_id,
             project_id=updated_comp_run.project_uuid,
             iteration=updated_comp_run.iteration,
         )
 
 
-async def _get_pipeline_at_db(project_id: ProjectID, engine: AsyncEngine) -> CompPipelineAtDB:
-    comp_pipeline_repo = CompPipelinesRepository(engine)
+async def _get_pipeline_at_db(project_id: ProjectID, db_engine: AsyncEngine) -> CompPipelineAtDB:
+    comp_pipeline_repo = CompPipelinesRepository(db_engine)
     return await comp_pipeline_repo.get_pipeline(project_id)
 
 
 async def _get_pipeline_tasks_at_db(
-    engine: AsyncEngine, project_id: ProjectID, pipeline_dag: nx.DiGraph
+    db_engine: AsyncEngine, project_id: ProjectID, pipeline_dag: nx.DiGraph
 ) -> list[CompTaskAtDB]:
-    comp_tasks_repo = CompTasksRepository(engine)
+    comp_tasks_repo = CompTasksRepository(db_engine)
     return [
         t
         for t in await comp_tasks_repo.list_computational_tasks(project_id)
@@ -181,13 +181,13 @@ _LOST_TASKS_FACTOR: Final[int] = 10
 )
 async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
-        engine = get_engine(app)
-        runs_to_schedule = await CompRunsRepository(engine).list_(
+        db_engine = get_db_engine(app)
+        runs_to_schedule = await CompRunsRepository(db_engine).list_(
             filter_by_state=SCHEDULED_STATES,
             never_scheduled=True,
             processed_since=SCHEDULER_INTERVAL,
         )
-        possibly_lost_scheduled_pipelines = await CompRunsRepository(engine).list_(
+        possibly_lost_scheduled_pipelines = await CompRunsRepository(db_engine).list_(
             filter_by_state=SCHEDULED_STATES,
             scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
         )
@@ -204,7 +204,7 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
                 *(
                     request_pipeline_scheduling(
                         rabbitmq_client,
-                        engine,
+                        db_engine,
                         user_id=run.user_id,
                         project_id=run.project_uuid,
                         iteration=run.iteration,

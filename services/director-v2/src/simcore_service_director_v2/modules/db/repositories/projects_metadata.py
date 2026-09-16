@@ -23,7 +23,7 @@ class ProjectsMetadataRepository(BaseRepository):
         Raises:
             DBProjectNotFoundError: project not found
         """
-        async with self.engine.connect() as conn:
+        async with self.db_engine.connect() as conn:
             project_metadata = await projects_metadata_get(conn, project_id)
         return ProjectAncestors(
             parent_project_uuid=project_metadata.parent_project_uuid,

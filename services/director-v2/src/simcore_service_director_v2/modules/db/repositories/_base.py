@@ -5,4 +5,4 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @dataclass
 class BaseRepository:
-    engine: AsyncEngine
+    db_engine: AsyncEngine

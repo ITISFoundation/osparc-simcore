@@ -164,7 +164,7 @@ class DaskScheduler(BaseCompScheduler):
             run_id=comp_run.run_id,
             run_metadata=comp_run.metadata,
         ) as client:
-            comp_tasks_repo = CompTasksRepository(self.engine)
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
             for node_id, task in scheduled_tasks.items():
                 published_tasks = await client.send_computation_tasks(
                     user_id=user_id,
@@ -255,7 +255,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
             )
 
-        comp_tasks_repo = CompTasksRepository(self.engine)
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
         for task in task_progress_events:
             await comp_tasks_repo.update_project_task_progress(
                 task.task_owner.project_id,
@@ -421,7 +421,7 @@ class DaskScheduler(BaseCompScheduler):
         assert task.job_id  # nosec
         try:
             await parse_output_data(
-                self.engine,
+                self.db_engine,
                 task.job_id,
                 result,
             )
@@ -575,7 +575,7 @@ class DaskScheduler(BaseCompScheduler):
                 "The task is automatically resubmitted.",
             )
         )
-        await CompTasksRepository(self.engine).reset_task_for_resubmission(
+        await CompTasksRepository(self.db_engine).reset_task_for_resubmission(
             task.project_id,
             task.node_id,
             comp_run.run_id,
@@ -692,7 +692,7 @@ class DaskScheduler(BaseCompScheduler):
                 if task_completed:
                     # resubmissions exhausted: clean up any invalid output files, as for other failures
                     await clean_task_output_and_log_files_if_invalid(
-                        self.engine,
+                        self.db_engine,
                         comp_run.user_id,
                         comp_run.project_uuid,
                         task.current.node_id,
@@ -707,7 +707,7 @@ class DaskScheduler(BaseCompScheduler):
 
                 # we need to remove any invalid files in the storage
                 await clean_task_output_and_log_files_if_invalid(
-                    self.engine,
+                    self.db_engine,
                     comp_run.user_id,
                     comp_run.project_uuid,
                     task.current.node_id,
@@ -736,7 +736,7 @@ class DaskScheduler(BaseCompScheduler):
                     task_final_state=task_final_state,
                 )
 
-            await CompTasksRepository(self.engine).update_project_tasks_state(
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
                 task.current.project_id,
                 comp_run.run_id,
                 [task.current.node_id],
@@ -755,9 +755,9 @@ class DaskScheduler(BaseCompScheduler):
             user_id = task_progress_event.task_owner.user_id
             project_id = task_progress_event.task_owner.project_id
             node_id = task_progress_event.task_owner.node_id
-            comp_tasks_repo = CompTasksRepository(self.engine)
-            comp_runs_repo = CompRunsRepository(self.engine)
-            async with pass_or_acquire_connection(self.engine) as conn:
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            comp_runs_repo = CompRunsRepository(self.db_engine)
+            async with pass_or_acquire_connection(self.db_engine) as conn:
                 task = await comp_tasks_repo.get_task(conn, project_id=project_id, node_id=node_id)
                 run = await comp_runs_repo.get(conn, user_id=user_id, project_id=project_id)
 

@@ -18,7 +18,7 @@ class UserPreferencesFrontendRepository(BaseRepository):
         product_name: ProductName,
         preference_class: type[FrontendUserPreference],
     ) -> FrontendUserPreference | None:
-        async with self.engine.connect() as conn:
+        async with self.db_engine.connect() as conn:
             preference_payload: dict | None = await FrontendUserPreferencesRepo.load(
                 conn,
                 user_id=user_id,

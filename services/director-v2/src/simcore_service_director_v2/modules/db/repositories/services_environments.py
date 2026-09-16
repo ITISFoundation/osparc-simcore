@@ -23,7 +23,7 @@ class ServicesEnvironmentsRepository(BaseRepository):
         product_name: ProductName,
     ) -> dict[str, VendorSecret]:
         """Fetches vendor secrets for a service using normalized names"""
-        async with self.engine.connect() as conn:
+        async with self.db_engine.connect() as conn:
             vendor_secrets = await get_vendor_secrets(
                 conn,
                 product_name=product_name,

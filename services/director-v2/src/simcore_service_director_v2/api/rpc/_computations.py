@@ -44,7 +44,7 @@ async def batch_get_computations_latest_states(
     *,
     project_ids: ComputationRunStateBatchGetProjectIDs,
 ) -> list[ComputationRunStateRpcGet]:
-    comp_runs_repo = CompRunsRepository(engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
     return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids=project_ids)
 
 
@@ -62,7 +62,7 @@ async def list_computations_latest_iteration_page(
     # ordering
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
-    comp_runs_repo = CompRunsRepository(engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
     total, comp_runs_output = await comp_runs_repo.list_for_user__only_latest_iterations(
         product_name=product_name,
         user_id=user_id,
@@ -90,7 +90,7 @@ async def list_computations_iterations_page(
     # ordering
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
-    comp_runs_repo = CompRunsRepository(engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
     total, comp_runs_output = await comp_runs_repo.list_for_user_and_project_all_iterations(
         product_name=product_name,
         user_id=user_id,
@@ -117,7 +117,7 @@ async def list_computation_collection_runs_page(
     offset: int = 0,
     limit: int = 20,
 ) -> ComputationCollectionRunRpcGetPage:
-    comp_runs_repo = CompRunsRepository(engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
 
     collection_run_ids: list[CollectionRunID] | None = None
     if filter_only_running is True:
@@ -180,8 +180,8 @@ async def list_computations_latest_iteration_tasks_page(
     assert product_name  # nosec  NOTE: Whether project_id belong to the product_name was checked in the webserver
     assert user_id  # nosec  NOTE: Whether user_id has access to the project was checked in the webserver
 
-    comp_tasks_repo = CompTasksRepository(engine=app.state.engine)
-    comp_runs_repo = CompRunsRepository(engine=app.state.engine)
+    comp_tasks_repo = CompTasksRepository(db_engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
 
     total, comp_tasks = await comp_tasks_repo.list_computational_tasks_rpc_domain(
         project_ids=project_ids,
@@ -246,7 +246,7 @@ async def list_computation_collection_run_tasks_page(
     # ordering
     order_by: OrderBy | None = None,
 ) -> ComputationCollectionRunTaskRpcGetPage:
-    comp_runs_snapshot_tasks_repo = CompRunsSnapshotTasksRepository(engine=app.state.engine)
+    comp_runs_snapshot_tasks_repo = CompRunsSnapshotTasksRepository(db_engine=app.state.engine)
 
     total, comp_tasks = await comp_runs_snapshot_tasks_repo.list_computation_collection_run_tasks(
         product_name=product_name,

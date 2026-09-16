@@ -11,14 +11,14 @@ from ._models import ReleaseTaskResultRabbitMessage, SchedulePipelineRabbitMessa
 
 async def request_pipeline_scheduling(
     rabbitmq_client: RabbitMQClient,
-    engine: AsyncEngine,
+    db_engine: AsyncEngine,
     *,
     user_id: UserID,
     project_id: ProjectID,
     iteration: Iteration,
 ) -> None:
     # NOTE: it is important that the DB is set up first before scheduling, in case the worker already schedules before we change the DB
-    await CompRunsRepository(engine).mark_for_scheduling(user_id=user_id, project_id=project_id, iteration=iteration)
+    await CompRunsRepository(db_engine).mark_for_scheduling(user_id=user_id, project_id=project_id, iteration=iteration)
     await rabbitmq_client.publish(
         SchedulePipelineRabbitMessage.get_channel_name(),
         SchedulePipelineRabbitMessage(
