@@ -419,7 +419,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         f"{computation.project_id=}",
     )
     try:
-        project = await projects_repo.get(computation.project_id)
+        project = await projects_repo.get(project_id=computation.project_id)
 
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
@@ -590,7 +590,7 @@ async def stop_computation(
         project_id,
     )
     # get the project pipeline
-    pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
+    pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id=project_id)
     pipeline_dag = pipeline_at_db.get_graph()
     # get the project task states
     tasks = await comp_tasks_repo.list_tasks(project_id=project_id)
