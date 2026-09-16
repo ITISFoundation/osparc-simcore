@@ -53,7 +53,7 @@ def minimal_configuration(
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())

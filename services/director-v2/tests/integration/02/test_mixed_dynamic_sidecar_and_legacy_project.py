@@ -95,7 +95,7 @@ def mock_env(
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
             "DIRECTOR_HOST": director_host,
             "DIRECTOR_PORT": f"{director_port}",

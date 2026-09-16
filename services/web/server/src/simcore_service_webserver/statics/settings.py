@@ -50,12 +50,6 @@ _THIRD_PARTY_REFERENCES = [
         thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png",
     ),
     ThirdPartyInfoDict(
-        name="minio",
-        version="-",
-        url="https://min.io/",
-        thumbnail="https://min.io/resources/img/logo.svg",
-    ),
-    ThirdPartyInfoDict(
         name="portainer",
         version="-",
         url="https://www.portainer.io/",
@@ -72,6 +66,12 @@ _THIRD_PARTY_REFERENCES = [
         version="-",
         url="https://redis.io/",
         thumbnail="https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Redis_Logo.svg/200px-Redis_Logo.svg.png",
+    ),
+    ThirdPartyInfoDict(
+        name="rustfs",
+        version="-",
+        url="https://rustfs.com/",
+        thumbnail="https://github.com/rustfs.png",
     ),
 ]
 

@@ -98,7 +98,7 @@ async def default_configuration(
     node_uuid: str,
 ) -> dict[str, Any]:
     # prepare database with default configuration
-    json_configuration = default_configuration_file.read_text()
+    json_configuration = default_configuration_file.read_text()  # noqa: ASYNC240
     await create_pipeline(project_id=project_id)
     return _set_configuration(create_task, project_id, node_uuid, json_configuration)
 
@@ -166,7 +166,7 @@ async def create_special_configuration(
         project_id: str = project_id,
         node_id: str = node_uuid,
     ) -> tuple[dict, str, str]:
-        config_dict = json.loads(empty_configuration_file.read_text())
+        config_dict = json.loads(empty_configuration_file.read_text())  # noqa: ASYNC240
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
         await create_pipeline(project_id=project_id)
@@ -195,7 +195,7 @@ async def create_2nodes_configuration(
         await create_pipeline(project_id=project_id)
 
         # create previous node
-        previous_config_dict = json.loads(empty_configuration_file.read_text())
+        previous_config_dict = json.loads(empty_configuration_file.read_text())  # noqa: ASYNC240
         _assign_config(previous_config_dict, "inputs", prev_node_inputs if prev_node_inputs else [])
         _assign_config(
             previous_config_dict,
@@ -210,7 +210,7 @@ async def create_2nodes_configuration(
         )
 
         # create current node
-        config_dict = json.loads(empty_configuration_file.read_text())
+        config_dict = json.loads(empty_configuration_file.read_text())  # noqa: ASYNC240
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
         # configure links if necessary
@@ -290,7 +290,7 @@ async def r_clone_settings_factory(
     minio_s3_settings: S3Settings, storage_service: URL
 ) -> Callable[[], Awaitable[RCloneSettings]]:
     async def _factory() -> RCloneSettings:
-        settings = RCloneSettings(R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.MINIO)
+        settings = RCloneSettings(R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.RUSTFS)
         if not await is_r_clone_available(settings):
             pytest.skip("rclone not installed")
 
