@@ -46,3 +46,5 @@ Tuning flags: `--small-ops`, `--small-size-kb`, `--concurrency`, `--big-size-mb`
 
 - `results-minio-baseline.json` — MinIO `RELEASE.2025-04-22T22-12-26Z` baseline
 - `results-rustfs.json` — RustFS `1.0.0` candidate (pinned in `services/docker-compose-ops*.yml`)
+- `results-seaweedfs.json` — SeaweedFS `4.22` alternative evaluated during due diligence
+  (all compat gates pass; fastest listing/multipart but ~3x slower server-side copy)
