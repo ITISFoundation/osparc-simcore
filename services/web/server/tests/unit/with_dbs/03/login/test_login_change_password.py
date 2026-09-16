@@ -51,9 +51,9 @@ async def test_wrong_current_password(client: TestClient, login_options: LoginOp
             },
         )
         assert response.url.path == url.path
-        assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status == status.HTTP_422_UNPROCESSABLE_CONTENT
         assert MSG_WRONG_PASSWORD in await response.text()
-        await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY, MSG_WRONG_PASSWORD)
+        await assert_status(response, status.HTTP_422_UNPROCESSABLE_CONTENT, MSG_WRONG_PASSWORD)
 
 
 async def test_wrong_confirm_pass(client: TestClient, new_password: str):
@@ -70,7 +70,7 @@ async def test_wrong_confirm_pass(client: TestClient, new_password: str):
             },
         )
         assert response.url.path == url.path
-        assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status == status.HTTP_422_UNPROCESSABLE_CONTENT
 
         data, error = unwrap_envelope(await response.json())
 

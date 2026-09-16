@@ -88,7 +88,7 @@ async def test_get_service_bad_request(
     assert len(created_services) > 0
 
     resp = await client.get(f"/{api_version_prefix}/services?service_type=blahblah")
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, f"Got f{resp.text}"
 
     # NOTE: only successful errors are enveloped
 
@@ -126,7 +126,7 @@ async def test_get_services_by_key_and_version_with_empty_registry(
     api_version_prefix: str,
 ):
     resp = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, f"Got f{resp.text}"
 
     resp = await client.get(f"/{api_version_prefix}/simcore/services/dynamic/something/someversion")
     assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"

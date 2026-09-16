@@ -217,13 +217,13 @@ async def test_parse_request_with_invalid_path_params(
         json=body.model_dump(),
         headers=headers_params.model_dump(by_alias=True),
     )
-    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_CONTENT, f"{await r.text()}"
 
     response_body = await r.json()
 
     error_model = EnvelopedError.model_validate(response_body).error
     assert error_model.message == "Invalid parameter/s 'project_uuid' in request path"
-    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error_model.errors[0].field == "project_uuid"
     assert error_model.errors[0].code == "uuid_parsing"
 
@@ -240,12 +240,12 @@ async def test_parse_request_with_invalid_query_params(
         json=body.model_dump(),
         headers=headers_params.model_dump(by_alias=True),
     )
-    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_CONTENT, f"{await r.text()}"
 
     response_body = await r.json()
     error_model = EnvelopedError.model_validate(response_body).error
     assert error_model.message == "Invalid parameter/s 'label' in request query"
-    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error_model.errors[0].field == "label"
     assert error_model.errors[0].code == "missing"
 
@@ -262,13 +262,13 @@ async def test_parse_request_with_invalid_body(
         json={"invalid": "body"},
         headers=headers_params.model_dump(by_alias=True),
     )
-    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_CONTENT, f"{await r.text()}"
 
     response_body = await r.json()
 
     error_model = EnvelopedError.model_validate(response_body).error
     assert error_model.message == "Invalid field/s 'x, z' in request body"
-    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error_model.errors[0].field == "x"
     assert error_model.errors[0].code == "missing"
 
@@ -303,13 +303,13 @@ async def test_parse_request_with_invalid_headers_params(
         json=body.model_dump(),
         headers=headers_params.model_dump(),  # we pass the wrong names
     )
-    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_CONTENT, f"{await r.text()}"
 
     response_body = await r.json()
 
     error_model = EnvelopedError.model_validate(response_body).error
     assert error_model.message == "Invalid parameter/s 'X-Simcore-User-Agent' in request headers"
-    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error_model.errors[0].field == "X-Simcore-User-Agent"
     assert error_model.errors[0].code == "missing"
 
