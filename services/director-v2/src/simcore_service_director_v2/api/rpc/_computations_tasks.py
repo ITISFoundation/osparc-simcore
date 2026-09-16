@@ -11,8 +11,6 @@ from simcore_sdk.node_ports_common import data_items_utils
 
 from ...constants import LOGS_FILE_NAME
 from ...core.errors import PipelineNotFoundError, PipelineTaskMissingError
-from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
-from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils.computations_tasks import validate_pipeline
 
 router = RPCRouter()
@@ -23,14 +21,10 @@ async def get_computation_task_log_file_ids(
     app: FastAPI,
     project_id: ProjectID,
 ) -> list[TaskLogFileIdGet]:
-    comp_pipelines_repo = CompPipelinesRepository(db_engine=app.state.engine)
-    comp_tasks_repo = CompTasksRepository(db_engine=app.state.engine)
-
     try:
         info = await validate_pipeline(
+            app,
             project_id=project_id,
-            comp_pipelines_repo=comp_pipelines_repo,
-            comp_tasks_repo=comp_tasks_repo,
         )
     except (PipelineNotFoundError, PipelineTaskMissingError) as exc:
         raise ComputationalTaskMissingError(project_id=project_id) from exc
