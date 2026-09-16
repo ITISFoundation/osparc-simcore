@@ -4,7 +4,7 @@
 
 import json
 from collections.abc import AsyncIterator, Iterator
-from typing import Final
+from typing import Any, Final
 from urllib.parse import quote_plus
 
 import docker
@@ -23,6 +23,10 @@ from .helpers.postgres_tools import (
     _create_database_from_template,
     _drop_database,
     _maintenance_engine,
+    build_migrated_pg_template,
+    cloned_pg_database_context,
+    database_exists,
+    drop_pg_template,
     execute_queries,
     migrated_pg_tables_context,
 )
@@ -158,6 +162,59 @@ def postgres_db(
 
     with migrated_pg_tables_context(postgres_dsn.copy()):
         yield postgres_engine
+
+
+@pytest.fixture(scope="session")
+def _postgres_migrated_template_state() -> Iterator[dict[str, Any]]:
+    # NOTE: the template database itself is built lazily by postgres_db_from_template
+    # because resolving the DSN can require module-scoped fixtures (e.g. docker_stack
+    # published ports). This holder only tracks state and drops the template at session end.
+    state: dict[str, Any] = {"built": False, "dsn": None}
+    yield state
+    if (dsn := state["dsn"]) is not None:
+        drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+
+
+@pytest.fixture(scope="module")
+def postgres_db_from_template(
+    postgres_dsn: PostgresTestConfig,
+    _postgres_migrated_template_state: dict[str, Any],
+) -> Iterator[sa.engine.Engine]:
+    """Fast replacement for postgres_db: instead of running alembic migrations to
+    head before every test module, a template database is migrated ONCE per test
+    session and the test database is recreated as an isolated clone of it before
+    every module.
+
+    Semantics match postgres_db: each test module starts on a fresh, fully migrated
+    and empty schema. Suites opt-in with an alias override in their conftest::
+
+        @pytest.fixture(scope="module")
+        def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
+            return postgres_db_from_template
+    """
+    dsn = postgres_dsn.copy()
+    state = _postgres_migrated_template_state
+
+    maintenance = _maintenance_engine(dsn)
+    try:
+        # wait until the server accepts connections (the stack may have just been deployed)
+        for attempt in tenacity.Retrying(wait=wait_fixed(1), stop=stop_after_delay(_MINUTE), reraise=True):
+            with attempt, maintenance.connect():
+                pass
+
+        if not state["built"] or not database_exists(maintenance, _TEMPLATE_DB_TO_RESTORE):
+            # NOTE: the template may be missing if the postgres instance was recycled
+            # between modules (e.g. stack redeploy without --keep-docker-up)
+            maintenance.dispose()
+            build_migrated_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+            state["built"] = True
+            maintenance = _maintenance_engine(dsn)
+        state["dsn"] = dsn
+    finally:
+        maintenance.dispose()
+
+    with cloned_pg_database_context(dsn, _TEMPLATE_DB_TO_RESTORE) as engine:
+        yield engine
 
 
 @pytest.fixture
