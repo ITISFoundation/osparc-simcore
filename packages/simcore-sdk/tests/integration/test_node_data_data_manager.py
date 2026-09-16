@@ -35,7 +35,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
 ]
 
@@ -214,7 +214,7 @@ async def test_valid_upload_download_saved_to(
 
         _empty_path(content_path)
 
-        new_destination = random_tmp_dir_generator(is_file=content_path.is_file())
+        new_destination = random_tmp_dir_generator(is_file=content_path.is_file())  # noqa: ASYNC240
 
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,

@@ -13,7 +13,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
 ]
 
-pytest_simcore_ops_services_selection = ["minio"]
+pytest_simcore_ops_services_selection = ["s3-storage"]
 
 
 async def test_db_manager_read_config(
@@ -41,7 +41,7 @@ async def test_db_manager_write_config(
     # create an empty config
     await create_special_configuration()
     # read the default config
-    json_configuration = default_configuration_file.read_text()
+    json_configuration = default_configuration_file.read_text()  # noqa: ASYNC240
     # write the default config to the database
     db_manager = DBManager(application_name=mock_app_name)
     await db_manager.write_ports_configuration(json_configuration, project_id, node_uuid)

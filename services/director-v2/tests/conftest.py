@@ -48,7 +48,7 @@ pytest_plugins = [
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
-    "pytest_simcore.minio_service",
+    "pytest_simcore.s3_storage_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",

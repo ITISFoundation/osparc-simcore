@@ -287,10 +287,10 @@ def _assign_config(config_dict: dict, port_type: str, entries: list[tuple[str, s
 
 @pytest.fixture
 async def r_clone_settings_factory(
-    minio_s3_settings: S3Settings, storage_service: URL
+    s3_storage_s3_settings: S3Settings, storage_service: URL
 ) -> Callable[[], Awaitable[RCloneSettings]]:
     async def _factory() -> RCloneSettings:
-        settings = RCloneSettings(R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.RUSTFS)
+        settings = RCloneSettings(R_CLONE_S3=s3_storage_s3_settings, R_CLONE_PROVIDER=S3Provider.RUSTFS)
         if not await is_r_clone_available(settings):
             pytest.skip("rclone not installed")
 

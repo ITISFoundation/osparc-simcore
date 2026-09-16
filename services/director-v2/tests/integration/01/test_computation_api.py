@@ -49,7 +49,7 @@ pytest_simcore_core_services_selection = [
     "storage",
     "redis",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["s3-storage", "adminer"]
 
 
 @pytest.fixture

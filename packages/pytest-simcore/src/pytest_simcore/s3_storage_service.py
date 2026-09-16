@@ -15,14 +15,14 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture
-def minio_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker) -> S3Settings:
-    assert "pytest-ops_minio" in docker_stack["services"]
+def s3_storage_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker) -> S3Settings:
+    assert "pytest-ops_s3-storage" in docker_stack["services"]
 
     return S3Settings(
         S3_ACCESS_KEY=SecretStr(env_vars_for_docker_compose["S3_ACCESS_KEY"]),
         S3_SECRET_KEY=SecretStr(env_vars_for_docker_compose["S3_SECRET_KEY"]),
         S3_ENDPOINT=TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{get_localhost_ip()}:{get_service_published_port('minio')}"
+            f"http://{get_localhost_ip()}:{get_service_published_port('s3-storage')}"
         ),
         S3_BUCKET_NAME=env_vars_for_docker_compose["S3_BUCKET_NAME"],
         S3_REGION="us-east-1",
@@ -30,12 +30,12 @@ def minio_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDi
 
 
 @pytest.fixture
-def minio_s3_settings_envs(
-    minio_s3_settings: S3Settings,
+def s3_storage_s3_settings_envs(
+    s3_storage_s3_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = model_dump_with_secrets(
-        minio_s3_settings,
+        s3_storage_s3_settings,
         show_secrets=True,
     )
 

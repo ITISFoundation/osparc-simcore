@@ -30,7 +30,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.file_extra",
     "pytest_simcore.logging",
-    "pytest_simcore.minio_service",
+    "pytest_simcore.s3_storage_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.r_clone",
@@ -68,7 +68,7 @@ def empty_configuration_file() -> Path:
 
 
 @pytest.fixture
-def node_ports_config(postgres_host_config: PostgresTestConfig, minio_s3_settings_envs: EnvVarsDict) -> None: ...
+def node_ports_config(postgres_host_config: PostgresTestConfig, s3_storage_s3_settings_envs: EnvVarsDict) -> None: ...
 
 
 @pytest.fixture

@@ -52,7 +52,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
 ]
 
@@ -137,7 +137,7 @@ def symlink_path(tmp_path: Path) -> Iterable[Path]:
 
     if not symlink_path.exists():
         # using a relative symlink, only these are supported
-        os.symlink(os.path.relpath(file_path, "."), symlink_path)
+        os.symlink(os.path.relpath(file_path, "."), symlink_path)  # noqa: PTH211
         assert symlink_path.exists()
 
     yield symlink_path
@@ -449,7 +449,7 @@ async def test_removing_ports(
         ("boolean", True, bool),
         ("string", "test-string", str),
         ("string", "", str),
-        # TODO: add here schema-like port
+        # TODO: add here schema-like port  # noqa: FIX002
     ],
 )
 async def test_get_value_from_previous_node(

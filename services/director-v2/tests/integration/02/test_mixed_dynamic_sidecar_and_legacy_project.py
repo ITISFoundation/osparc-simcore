@@ -51,7 +51,7 @@ pytest_simcore_core_services_selection = [
     "storage",
 ]
 
-pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
+pytest_simcore_ops_services_selection = ["adminer", "s3-storage", "portainer"]
 
 
 @pytest.fixture()
@@ -62,7 +62,7 @@ def mock_env(
     rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_s3_settings_envs: EnvVarsDict,
     storage_service: URL,
     network_name: str,
     services_endpoint: dict[str, URL],
