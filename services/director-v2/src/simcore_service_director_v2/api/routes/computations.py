@@ -507,10 +507,9 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
     status_code=status.HTTP_200_OK,
 )
 async def get_computation(
-    app: FastAPI,
+    request: Request,
     user_id: UserID,
     project_id: ProjectID,
-    request: Request,
     project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
 ) -> ComputationGet:
@@ -524,7 +523,7 @@ async def get_computation(
 
     try:
         pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
-            app,
+            request.app,
             project_id=project_id,
         )
     except PipelineTaskMissingError as exc:
@@ -577,9 +576,9 @@ async def get_computation(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def stop_computation(
+    request: Request,
     computation_stop: ComputationStop,
     project_id: ProjectID,
-    request: Request,
     comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
     comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
     comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],

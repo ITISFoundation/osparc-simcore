@@ -8,7 +8,7 @@ Therefore,
 
 import logging
 
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
@@ -43,7 +43,7 @@ router = APIRouter(prefix="/computations", tags=["computations"])
     response_model=list[TaskLogFileGet],
 )
 async def get_all_tasks_log_files(
-    app: FastAPI,
+    request: Request,
     user_id: UserID,
     project_id: ProjectID,
 ) -> list[TaskLogFileGet]:
@@ -53,7 +53,7 @@ async def get_all_tasks_log_files(
     # gets computation task ids
 
     try:
-        info = await validate_pipeline(app, project_id)
+        info = await validate_pipeline(request.app, project_id)
     except PipelineTaskMissingError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -75,7 +75,7 @@ async def get_all_tasks_log_files(
     response_model=TaskLogFileGet,
 )
 async def get_task_log_file(
-    app: FastAPI,
+    request: Request,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -83,7 +83,7 @@ async def get_task_log_file(
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
     """
-    comp_tasks_repo = get_repository(app, CompTasksRepository)
+    comp_tasks_repo = get_repository(request.app, CompTasksRepository)
     if not await comp_tasks_repo.task_exists(project_id, node_uuid):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
@@ -100,11 +100,11 @@ async def get_task_log_file(
     responses={status.HTTP_404_NOT_FOUND: {"description": "Cannot find computation or the tasks in it"}},
 )
 async def get_batch_tasks_outputs(
-    app: FastAPI,
+    request: Request,
     project_id: ProjectID,
     selection: TasksSelection,
 ):
-    comp_tasks_repo = get_repository(app, CompTasksRepository)
+    comp_tasks_repo = get_repository(request.app, CompTasksRepository)
     nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
         project_id=project_id,
         node_ids=set(selection.nodes_ids),
