@@ -36,7 +36,7 @@ async def test_list_computation_collection_run_tasks(
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
-    repo = CompRunsSnapshotTasksRepository(engine=sqlalchemy_async_engine)
+    repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
 
     # 1. create a project
     published_project = await publish_project()
@@ -76,7 +76,7 @@ async def test_list_computation_collection_run_tasks_empty(
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
-    repo = CompRunsSnapshotTasksRepository(engine=sqlalchemy_async_engine)
+    repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     # Use a random user_id unlikely to have tasks
     user_id = 999999
     total_count, tasks = await repo.list_computation_collection_run_tasks(
@@ -97,7 +97,7 @@ async def test_list_computation_collection_run_tasks_pagination(
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
-    repo = CompRunsSnapshotTasksRepository(engine=sqlalchemy_async_engine)
+    repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     published_project = await publish_project()
     user_id = published_project.user["id"]
     run = await create_comp_run(
@@ -141,7 +141,7 @@ async def test_list_computation_collection_run_tasks_wrong_user(
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
-    repo = CompRunsSnapshotTasksRepository(engine=sqlalchemy_async_engine)
+    repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     published_project = await publish_project()
     run = await create_comp_run(
         published_project.user,
@@ -174,7 +174,7 @@ async def test_list_computation_collection_run_tasks_multiple_comp_runs_same_col
     fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
-    repo = CompRunsSnapshotTasksRepository(engine=sqlalchemy_async_engine)
+    repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     published_project1 = await publish_project()
     published_project2 = await publish_project()
     published_project3 = await publish_project()
