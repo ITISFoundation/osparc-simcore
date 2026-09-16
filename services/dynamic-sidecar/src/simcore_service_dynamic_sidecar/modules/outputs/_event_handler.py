@@ -5,7 +5,6 @@ from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from multiprocessing.queues import Queue
-from multiprocessing.synchronize import Event as ProcessEvent
 from pathlib import Path
 from queue import Empty
 from threading import Lock, Thread
@@ -22,10 +21,6 @@ from ._manager import OutputsManager
 from ._watchdog_extensions import ExtendedInotifyObserver, SafeFileSystemEventHandler
 
 _HEART_BEAT_MARK: Final = 1
-
-# NOTE: with the `forkserver` start method (default since Python 3.14 on Linux)
-# the child re-imports this module, which can take a few seconds
-_PROCESS_STARTUP_TIMEOUT_S: Final[PositiveFloat] = 30
 
 _logger = logging.getLogger(__name__)
 
@@ -123,7 +118,6 @@ def _process_worker(
     health_check_queue: Queue[int | None],
     stop_queue: Queue[None],
     heart_beat_interval_s: PositiveFloat,
-    started_event: ProcessEvent,
 ) -> None:
     # NOTE: module level and only receives pickleable arguments,
     # so that it is compatible with any multiprocessing start method
@@ -149,9 +143,6 @@ def _process_worker(
             recursive=True,
         )
         observer.start()
-
-        # NOTE: the inotify watch is registered, events are now detected
-        started_event.set()
 
         while stop_queue.qsize() == 0:
             # watchdog internally uses 1 sec interval to detect events
@@ -211,7 +202,6 @@ class _EventHandlerProcess:
                 _logger.debug("Process already started, skipping")
                 return
 
-            started_event = multiprocessing.Event()
             self._stop_queue = multiprocessing.Queue()
             self._process = multiprocessing.Process(
                 target=_process_worker,
@@ -222,19 +212,10 @@ class _EventHandlerProcess:
                     self.health_check_queue,
                     self._stop_queue,
                     self.heart_beat_interval_s,
-                    started_event,
                 ),
                 daemon=True,
             )
             self._process.start()
-
-            # avoids missing file system events generated before the watch is in place
-            if not started_event.wait(timeout=_PROCESS_STARTUP_TIMEOUT_S):
-                _logger.warning(
-                    "%s did not start observing within %ss",
-                    _EventHandlerProcess.__name__,
-                    _PROCESS_STARTUP_TIMEOUT_S,
-                )
 
     def stop_process(self) -> None:
         # NOTE: runs in asyncio thread
