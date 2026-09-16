@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG UV_VERSION="0.12"
+# NOTE: pinned exactly due to https://github.com/astral-sh/uv/issues/21692 (fixed in uv > 0.12.14)
+ARG UV_VERSION="0.12.13"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:3.14.4-slim-bookworm

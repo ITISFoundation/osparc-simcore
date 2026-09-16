@@ -33,17 +33,13 @@ jobs:
     name: "check OAS' are up to date"
     runs-on: ubuntu-latest
     steps:
-      - name: setup python environment
-        uses: actions/setup-python@v7.0.0
-        with:
-          python-version: "3.14"
-      - name: install uv
-        uses: astral-sh/setup-uv@v10.0.1
-        with:
-          version: "0.12.x"
-          enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v7.0.1
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
       - name: Generate openapi specs
         run: |
           make devenv
@@ -73,17 +69,12 @@ jobs:
           filters: |
             api-server:
               - 'services/api-server/**'
-      - name: setup python environment
+      - name: Setup environment
         if: steps.changes.outputs.api-server == 'true'
-        uses: actions/setup-python@v7.0.0
+        uses: ./.github/actions/setup-simcore-env
         with:
-          python-version: "3.14"
-      - name: install uv
-        if: steps.changes.outputs.api-server == 'true'
-        uses: astral-sh/setup-uv@v10.0.1
-        with:
-          version: "0.12.x"
-          enable-cache: false
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
       - name: Generate openapi specs
         if: steps.changes.outputs.api-server == 'true'
         run: |
@@ -98,7 +89,6 @@ jobs:
           source .venv/bin/activate
           cd services/api-server
           make test-openai-api-compatibility
-
 
   api-server-oas-breaking:
     needs: api-specs

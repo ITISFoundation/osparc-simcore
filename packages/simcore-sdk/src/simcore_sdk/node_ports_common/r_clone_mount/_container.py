@@ -76,7 +76,7 @@ class _RCloneContainerLabels(BaseModel):
             raise InvalidContainerLabelsError(container_name=container_name, errors=errors) from exc
 
 
-_MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
+_MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=60)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
 
