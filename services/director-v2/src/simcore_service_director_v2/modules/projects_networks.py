@@ -128,15 +128,13 @@ async def _send_network_configuration_to_dynamic_sidecar(  # noqa: C901
                         )
                     )
 
-    await logged_gather(
-        *[
-            scheduler.detach_project_network(
-                node_id=UUID(to_remove.node_id),
-                project_network=to_remove.network_name,
-            )
-            for to_remove in to_remove_items
-        ]
-    )
+    await logged_gather(*[
+        scheduler.detach_project_network(
+            node_id=UUID(to_remove.node_id),
+            project_network=to_remove.network_name,
+        )
+        for to_remove in to_remove_items
+    ])
 
     # ADDING
     to_add_items: set[_ToAdd] = set()
@@ -158,16 +156,14 @@ async def _send_network_configuration_to_dynamic_sidecar(  # noqa: C901
                     )
                 )
 
-    await logged_gather(
-        *[
-            scheduler.attach_project_network(
-                node_id=UUID(to_add.node_id),
-                project_network=to_add.network_name,
-                network_alias=to_add.network_alias,
-            )
-            for to_add in to_add_items
-        ]
-    )
+    await logged_gather(*[
+        scheduler.attach_project_network(
+            node_id=UUID(to_add.node_id),
+            project_network=to_add.network_name,
+            network_alias=to_add.network_alias,
+        )
+        for to_add in to_add_items
+    ])
 
 
 async def _get_networks_with_aliases_for_default_network(
@@ -241,15 +237,16 @@ async def update_from_workbench(
     try:
         existing_projects_networks = await projects_networks_repository.get_projects_networks(project_id=project_id)
     except ProjectNetworkNotFoundError:
-        existing_projects_networks = ProjectsNetworks.model_validate(
-            {"project_uuid": project_id, "networks_with_aliases": {}}
-        )
+        existing_projects_networks = ProjectsNetworks.model_validate({
+            "project_uuid": project_id,
+            "networks_with_aliases": {},
+        })
 
     existing_networks_with_aliases = existing_projects_networks.networks_with_aliases
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
-    project: ProjectAtDB = await projects_repository.get(project_id)
+    project: ProjectAtDB = await projects_repository.get(project_id=project_id)
     assert project.prj_owner  # nosec
     new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
         project_id=project_id,
