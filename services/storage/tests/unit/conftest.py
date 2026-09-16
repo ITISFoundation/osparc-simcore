@@ -2,7 +2,15 @@
 # pylint:disable=unused-argument
 
 import pytest
+import sqlalchemy as sa
 from pytest_mock import MockerFixture
+
+
+@pytest.fixture(scope="module")
+def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
+    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
+    # running alembic 'upgrade head'/'downgrade base' for every test module
+    return postgres_db_from_template
 
 
 @pytest.fixture
