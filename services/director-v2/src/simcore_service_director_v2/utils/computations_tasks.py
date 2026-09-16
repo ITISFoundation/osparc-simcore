@@ -2,12 +2,16 @@ from typing import NamedTuple
 
 import networkx as nx
 from models_library.projects import ProjectID
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from simcore_service_dynamic_sidecar.modules.outputs import FastAPI
 
 from ..core.errors import PipelineTaskMissingError
 from ..models.comp_pipelines import CompPipelineAtDB
 from ..models.comp_tasks import CompTaskAtDB
+from ..modules.db import get_db_engine
 from ..modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ..modules.db.repositories.comp_tasks import CompTasksRepository
+from ..utils.db import get_repository
 
 
 class PipelineInfo(NamedTuple):
@@ -17,18 +21,21 @@ class PipelineInfo(NamedTuple):
 
 
 async def _get_pipeline_info(
+    app: FastAPI,
     *,
     project_id: ProjectID,
-    comp_pipelines_repo: CompPipelinesRepository,
-    comp_tasks_repo: CompTasksRepository,
 ) -> PipelineInfo:
     # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
-    # get the project pipeline
-    pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(project_id=project_id)
-    pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
-    # get the project task states
-    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id=project_id)
+    db_engine = get_db_engine(app)
+    comp_pipelines_repo = get_repository(app, CompPipelinesRepository)
+    comp_tasks_repo = get_repository(app, CompTasksRepository)
+
+    async with pass_or_acquire_connection(db_engine) as conn:
+        pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
+        all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id=project_id)
+
+    pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
     # filter the tasks by the effective pipeline
     filtered_tasks = [t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())]
@@ -37,9 +44,8 @@ async def _get_pipeline_info(
 
 
 async def validate_pipeline(
+    app: FastAPI,
     project_id: ProjectID,
-    comp_pipelines_repo: CompPipelinesRepository,
-    comp_tasks_repo: CompTasksRepository,
 ) -> PipelineInfo:
     """
     Loads and validates data from pipelines and tasks tables and
@@ -48,11 +54,7 @@ async def validate_pipeline(
     raises PipelineTaskMissingError
     """
 
-    pipeline_info = await _get_pipeline_info(
-        project_id=project_id,
-        comp_pipelines_repo=comp_pipelines_repo,
-        comp_tasks_repo=comp_tasks_repo,
-    )
+    pipeline_info = await _get_pipeline_info(app, project_id=project_id)
 
     # check that we have the expected tasks
     if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):
