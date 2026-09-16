@@ -45,4 +45,4 @@ Tuning flags: `--small-ops`, `--small-size-kb`, `--concurrency`, `--big-size-mb`
 ## Results
 
 - `results-minio-baseline.json` — MinIO `RELEASE.2025-04-22T22-12-26Z` baseline
-- `results-rustfs.json` — RustFS candidate (see `docs/rustfs-migration-report.md` for comparison)
+- `results-rustfs.json` — RustFS `1.0.0` candidate (pinned in `services/docker-compose-ops*.yml`)

@@ -23,7 +23,7 @@ services:
     # S3-compatible object storage (https://rustfs.com). The image runs as
     # non-root UID/GID 10001; the named volume inherits /data's ownership
     # from the image at creation time.
-    image: rustfs/rustfs:1.0.0-rc.6@sha256:8d8bfa61f3a20cdcf644562bb8c3a314ca03c66a9827f6056f741e787bf0c804
+    image: rustfs/rustfs:1.0.0@sha256:ba0a1b53e36f321c0d46f3867104abef169f7bc59c467c664ddac87e7ddc9a8b
     init: true
     environment:
       RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?access_key_required}
