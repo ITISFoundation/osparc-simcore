@@ -329,9 +329,6 @@ async def _approve_existing_user(
     if user["status"] != UserStatus.ACTIVE:
         raise UserAccountNotActiveError(user_id=existing_user_id, status=f"{user['status']}")
 
-    # Same grant sequence as registration (login/_controller/rest/registration.py):
-    # membership in rule-based and product groups + SIGNAL_ON_USER_CONFIRMATION
-    # (observers such as wallets/_events.py::_auto_add_default_wallet)
     await grant_user_access_to_product(
         app,
         user_id=existing_user_id,
