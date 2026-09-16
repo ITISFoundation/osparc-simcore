@@ -59,8 +59,6 @@ attrs==25.4.0
     #   aiohttp
     #   jsonschema
     #   referencing
-blosc==1.11.4
-    # via -r requirements/_base.in
 bokeh==3.10.0
     # via dask
 boto3==1.40.61
