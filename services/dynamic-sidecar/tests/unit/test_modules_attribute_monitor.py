@@ -55,8 +55,6 @@ def patch_logging(mocker: MockerFixture) -> None:
     datagram_handler = DatagramHandler("127.0.0.1", DATAGRAM_PORT)
     datagram_handler.setLevel(logging.NOTSET)
     logger.addHandler(datagram_handler)
-    # the observer process filters records using this level before forwarding them
-    logger.setLevel(logging.DEBUG)
     logger.isEnabledFor = lambda _level: True
 
     mocker.patch.object(_logging_event_handler, "logger", logger)
