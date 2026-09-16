@@ -166,7 +166,18 @@ Compatibility gate (RustFS): **all PASS**, and notably `multipart_listing` repor
   left untouched — renaming them touches many unrelated imports (out of scope).
 - **[lint debt]** Commits that touched test files surfaced pre-existing ruff violations in
   those files (E501/SLF001/ASYNC240/PT011 — ruff only lints staged files); fixed minimally
-  (line splits, targeted `noqa`) in the same commits.
+  (line splits, targeted `noqa`) in the same commits. The `ASYNC240` suppressions were later
+  properly resolved by switching to `aiofiles`/`aiofiles.os` (already a simcore-sdk dependency).
+- **[pytest harness] `storage` vs `s3-storage` name collision.**
+  `get_service_published_port` matches docker services by `name.endswith(service_name)`, so
+  looking up `'storage'` could resolve to the new ops `s3-storage` (RustFS) container and fail
+  with "Cannot find published port for 8080". Fixed by passing the full `{stack}_storage`
+  service name in `simcore_storage_service.py` (also fixed a pre-existing flake where fixture
+  teardown reassigned `os.environ` instead of clearing/updating it, flagged by ruff B003).
+- **[dev env] stale kept volumes.** Reusing a `--keep-docker-up` postgres volume stamped by a
+  different branch fails with `Can't locate revision identified by '<sha>'`; remove
+  `pytest-simcore_postgres_data` (and rebuild `local/{migration,storage}:production` from the
+  branch) before running integration tests after branch switches.
 
 ## Validation performed
 
@@ -180,6 +191,10 @@ Compatibility gate (RustFS): **all PASS**, and notably `multipart_listing` repor
 - Live RustFS container (`rustfs/rustfs:1.0.0-rc.6@sha256:8d8bfa61…`, host port 9001): full
   benchmark + compat gate **all green**, including the versioning/undelete flow, presigned
   part uploads, and `ChecksumMode=ENABLED`.
+- `packages/simcore-sdk` integration (against the RustFS ops stack + rebuilt images):
+  `test_node_data_data_manager.py` **6 passed**, `test_node_ports_common_dbmanager.py`
+  **2 passed**, `test_node_ports_common_r_clone.py` **15 passed** (incl. 1 GiB and 500 MiB
+  rclone syncs); unit `test_node_data_data_manager.py` **5 passed**.
 
 ## Migration notes for deployers
 
@@ -195,7 +210,7 @@ Compatibility gate (RustFS): **all PASS**, and notably `multipart_listing` repor
 
 ## Summary of changes
 
-Branch `enhancement/s3-rustfs-replacement` (8 commits on top of master `040e002fa`):
+Branch `enhancement/s3-rustfs-replacement` (11 commits on top of master `040e002fa`):
 
 | commit | content |
 |---|---|
@@ -206,7 +221,9 @@ Branch `enhancement/s3-rustfs-replacement` (8 commits on top of master `040e002f
 | `76d4a91b1` | ~25 files: provider refs `MINIO` -> `RUSTFS` (director-v2, dynamic-sidecar, agent, simcore-sdk, migrate_project docs, webserver third-party list) |
 | `dde327bd6` | compose swap: service `minio` -> `s3-storage` = `rustfs/rustfs:1.0.0-rc.6` (digest-pinned), `/health` healthcheck, volume `ops_s3_storage_data`, Makefile banner |
 | `fb68ff9a9` | pytest harness rename `minio_service.py` -> `s3_storage_service.py`, fixtures, selections, plugin strings |
-| (final) | RustFS benchmark results (`scripts/s3-benchmark/results-rustfs.json`) + this report finalized |
+| `b0f765824` | RustFS benchmark results (`scripts/s3-benchmark/results-rustfs.json`) + this report finalized |
+| `c01738714` | simcore-sdk tests: `ASYNC240` noqa -> `aiofiles`/`aiofiles.os` (no new deps) |
+| `baa4b1220` | pytest-simcore: `storage_endpoint` uses full service name (collision with `s3-storage`) |
 
 Application S3 code (`aws_library.s3`) is **untouched** — the swap is transparent through
 the aioboto3/SigV4 abstraction, exactly as designed.
