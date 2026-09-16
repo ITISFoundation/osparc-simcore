@@ -52,24 +52,40 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
 
 
 def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
-    dag_graph: nx.DiGraph = nx.DiGraph()
+    dag_graph = nx.DiGraph()
+
+    nodes = []
+    edges = []
+
     for task in tasks:
-        dag_graph.add_node(
-            f"{task.node_id}",
-            name=task.job_id,
-            key=task.image.name,
-            version=task.image.tag,
-            inputs=task.inputs,
-            run_hash=task.run_hash,
-            outputs=task.outputs,
-            state=task.state,
-            node_class=task.node_class,
-            progress=task.progress,
+        node_id = f"{task.node_id}"
+        nodes.append(
+            (
+                node_id,
+                {
+                    "name": task.job_id,
+                    "key": task.image.name,
+                    "version": task.image.tag,
+                    "inputs": task.inputs,
+                    "run_hash": task.run_hash,
+                    "outputs": task.outputs,
+                    "state": task.state,
+                    "node_class": task.node_class,
+                    "progress": task.progress,
+                },
+            )
         )
+
         if task.inputs:
-            for input_data in task.inputs.values():
-                if isinstance(input_data, PortLink):
-                    dag_graph.add_edge(f"{input_data.node_uuid}", f"{task.node_id}")
+            edges.extend(
+                (f"{input_data.node_uuid}", node_id)
+                for input_data in task.inputs.values()
+                if isinstance(input_data, PortLink)
+            )
+
+    dag_graph.add_nodes_from(nodes)
+    dag_graph.add_edges_from(edges)
+
     return dag_graph
 
 
