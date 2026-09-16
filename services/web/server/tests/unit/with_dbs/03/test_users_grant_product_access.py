@@ -174,3 +174,39 @@ async def test_grant_user_access_to_product_is_idempotent(
     # the signal is still emitted on every call (observers are idempotent)
     assert len(signal_calls) == 2
     assert all(call["extra_credits_in_usd"] is None for call in signal_calls)
+
+
+async def test_grant_user_access_to_product_skips_rule_on_null_column(
+    client: TestClient,
+    user: UserInfoDict,
+    second_product_name: ProductName,
+    asyncpg_engine: AsyncEngine,
+):
+    # A STANDARD group with an inclusion rule on a nullable user column (phone) that
+    # this user has not set (NULL). Matching must skip the NULL value instead of
+    # raising TypeError from re.search, so granting access still succeeds.
+    # See https://github.com/ITISFoundation/osparc-simcore/pull/9700
+    assert client.app
+    assert user.get("phone") is None
+
+    async with insert_and_get_row_lifespan(
+        asyncpg_engine,
+        table=groups,
+        values={
+            "name": "Phone Rule Test Group",
+            "description": "inclusion rule on a nullable column",
+            "type": "STANDARD",
+            "inclusion_rules": {"phone": ".*"},
+        },
+        pk_col=groups.c.gid,
+    ) as group_row:
+        # must not raise despite user["phone"] being None
+        await users_product_access_service.grant_user_access_to_product(
+            client.app,
+            user_id=user["id"],
+            product_name=second_product_name,
+        )
+
+        # the NULL column cannot match, so the user is not a member of this group
+        gids = await _fetch_user_group_ids(client.app, user["id"])
+        assert group_row["gid"] not in gids
