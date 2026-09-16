@@ -22,31 +22,46 @@ _NODE_MODIFIED_STATE = "modified_state"
 _NODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
 
 
-def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
+def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
-    dag_graph: nx.DiGraph = nx.DiGraph()
-    for node_id, node in workbench.items():
+    dag_graph = nx.DiGraph()
+
+    nodes = []
+    edges = []
+
+    for node_id, node in project_nodes.items():
         assert node.state  # nosec
 
-        dag_graph.add_node(
-            node_id,
-            name=node.label,
-            key=node.key,
-            version=node.version,
-            inputs=node.inputs,
-            run_hash=node.run_hash,
-            outputs=node.outputs,
-            state=node.state.current_status,
-            node_class=to_node_class(node.key),
+        str_node_id = f"{node_id}"
+
+        nodes.append(
+            (
+                str_node_id,
+                {
+                    "name": node.label,
+                    "key": node.key,
+                    "version": node.version,
+                    "inputs": node.inputs,
+                    "run_hash": node.run_hash,
+                    "outputs": node.outputs,
+                    "state": node.state.current_status,
+                    "node_class": to_node_class(node.key),
+                },
+            )
         )
+
         if node.input_nodes:
             for input_node_id in node.input_nodes:
-                predecessor_node = workbench.get(f"{input_node_id}")
-                assert (  # nosec
-                    predecessor_node
-                ), f"Node {input_node_id} not found in workbench"
-                if predecessor_node:
-                    dag_graph.add_edge(str(input_node_id), node_id)
+                str_input_id = f"{input_node_id}"
+                predecessor_node = project_nodes.get(str_input_id)
+
+                assert predecessor_node, f"Node {input_node_id} not found in workbench"  # nosec
+
+                edges.append((str_input_id, str_node_id))
+
+    # Bulk add for improved performance
+    dag_graph.add_nodes_from(nodes)
+    dag_graph.add_edges_from(edges)
 
     return dag_graph
 
