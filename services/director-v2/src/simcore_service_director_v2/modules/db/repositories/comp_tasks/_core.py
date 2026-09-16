@@ -382,18 +382,27 @@ class CompTasksRepository(BaseRepository):
     ) -> None:
         await self._update_task(project_id, node_id, run_id, last_heartbeat=heartbeat_time)
 
-    async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
-        async with transaction_context(self.db_engine) as conn:
+    async def delete_tasks_from_project(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> None:
+        async with transaction_context(self.db_engine, connection) as conn:
             await conn.execute(sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
 
     async def get_outputs_from_tasks(
-        self, project_id: ProjectID, node_ids: set[NodeID]
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+        node_ids: set[NodeID],
     ) -> dict[NodeID, dict[IDStr, Any]]:
         selection = list(map(str, node_ids))
         query = sa.select(comp_tasks.c.node_id, comp_tasks.c.outputs).where(
             (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(selection))
         )
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(query)
             rows = result.all()
             if rows:

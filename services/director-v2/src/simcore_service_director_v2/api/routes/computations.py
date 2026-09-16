@@ -151,7 +151,7 @@ async def _get_project_metadata(
         assert project_ancestors.root_node_id is not None  # nosec
 
         async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-            project = await project_repo.get(project_uuid)
+            project = await project_repo.get(project_id=project_uuid)
 
             try:
                 node = await projects_nodes_repo.get(project_uuid, node_id)
@@ -439,8 +439,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
             await _check_pipeline_startable(minimal_computational_dag, computation, catalog_client)
 
         await comp_pipelines_repo.upsert_pipeline(
-            project.uuid,
-            minimal_computational_dag,
+            project_id=project.uuid,
+            dag_graph=minimal_computational_dag,
             publish=computation.start_pipeline or False,
         )
         assert computation.product_name  # nosec
@@ -520,7 +520,7 @@ async def get_computation(
         f"{user_id=}",
         f"{project_id=}",
     )
-    if not await project_repo.exists(project_id):
+    if not await project_repo.exists(project_id=project_id):
         raise ProjectNotFoundError(project_id=project_id)
 
     try:
@@ -681,5 +681,5 @@ async def delete_computation(
             )
 
     # delete the pipeline now
-    await comp_tasks_repo.delete_tasks_from_project(project_id)
-    await comp_pipelines_repo.delete_pipeline(project_id)
+    await comp_tasks_repo.delete_tasks_from_project(project_id=project_id)
+    await comp_pipelines_repo.delete_pipeline(project_id=project_id)

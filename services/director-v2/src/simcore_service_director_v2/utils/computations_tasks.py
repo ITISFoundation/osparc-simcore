@@ -3,8 +3,7 @@ from typing import NamedTuple
 import networkx as nx
 from models_library.projects import ProjectID
 
-from simcore_service_director_v2.core.errors import PipelineTaskMissingError
-
+from ..core.errors import PipelineTaskMissingError
 from ..models.comp_pipelines import CompPipelineAtDB
 from ..models.comp_tasks import CompTaskAtDB
 from ..modules.db.repositories.comp_pipelines import CompPipelinesRepository
