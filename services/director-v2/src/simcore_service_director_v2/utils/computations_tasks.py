@@ -1,9 +1,9 @@
 from typing import NamedTuple
 
 import networkx as nx
+from fastapi import FastAPI
 from models_library.projects import ProjectID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
-from simcore_service_dynamic_sidecar.modules.outputs import FastAPI
 
 from ..core.errors import PipelineTaskMissingError
 from ..models.comp_pipelines import CompPipelineAtDB
