@@ -1,7 +1,8 @@
 # Replacing MinIO with RustFS (`s3-storage`)
 
-> Status: **in progress**. Baseline captured; RustFS validation pending (see
-> [Benchmark results](#benchmark-results) and [Issues log](#issues--quirks-log)).
+> Status: **complete**. MinIO baseline and RustFS results captured; all compatibility
+> checks green on both. See [Benchmark results](#benchmark-results),
+> [Issues log](#issues--quirks-log) and [Summary of changes](#summary-of-changes).
 
 ## Context & goals
 
@@ -114,7 +115,23 @@ Compatibility gate (MinIO): **all PASS**.
 
 ### Result — RustFS `1.0.0-rc.6`
 
-_Pending — captured at the validation step._
+<sub>Same machine/flags as the baseline; numbers from `--label rustfs-1.0.0-rc.6`
+(a second run reproduced them within run-to-run noise).</sub>
+
+| workload | MinIO ops/s | RustFS ops/s | Δ | MinIO MB/s | RustFS MB/s |
+|---|---|---|---|---|---|
+| small_put | 992.1 | 938.3 | -5% | 48.4 | 45.8 |
+| small_get | 1076.1 | 1116.7 | +4% | — | — |
+| multipart | 2.6 | 2.3 | -12% | 167.5 | 146.6 |
+| download | 16.7 | 17.1 | +2% | 1071.8 | 1097.0 |
+| listing | 9217.8 | 1252.1 | **-86%** | — | — |
+| copy | 15.2 | 7.6 | **-50%** | 973.1 | 488.4 |
+| presigned | 48.5 | 35.4 | -27%* | 48.5 | 35.4 |
+
+<sub>\* presigned = 2 ops total; high noise.</sub>
+
+Compatibility gate (RustFS): **all PASS**, and notably `multipart_listing` reports
+`dir_prefix_match=True` — RustFS fixes the MinIO #7632 directory-prefix limitation.
 
 ## Issues & quirks log
 
@@ -125,13 +142,44 @@ _Pending — captured at the validation step._
   (`list_ongoing_multipart_uploads`) calls it **without** a prefix (works), so this is
   informational — but it confirms the harness correctly detects vendor divergences. The
   compat check treats no-prefix listing as the hard requirement and reports prefix semantics
-  informationally. RustFS claims to fix prefix listing (rustfs#5195); validated at the
-  RustFS step.
+  informationally. RustFS matches both (verified `dir_prefix_match=True`), i.e. strictly
+  more AWS-correct than MinIO here.
 - **[harness] aioboto3 streaming.** `get_object()["Body"]` must be read directly
   (`await body.read(n)`), not wrapped in `async with` (which yields an aiohttp `ClientResponse`
   whose `read()` takes no size argument). Now matches `aws_library`.
-- _RustFS healthcheck path, exact env-var names, and volume permissions (UID 10001) to be
-  verified during the compose swap._
+- **[RustFS] `list_objects_v2` pagination is ~7x slower than MinIO** (1252 vs 9218 keys/s
+  over 2000 flat keys; reproduced in a second run). Likely pagination implementation cost
+  on the rc release. Relevant for large folder listings in the file picker; re-measure at
+  1.0 GA.
+- **[RustFS] server-side copy is ~2x slower** (488 vs 973 MB/s for a 64 MiB multipart copy).
+- **[verified] RustFS runtime facts** (upstream README/Dockerfile/compose at `1.0.0-rc.6`):
+  env `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY`; health `GET :9000/health` returns
+  `{"status":"ok"}` (verified live); console on container port 9001 gated by
+  `RUSTFS_CONSOLE_ENABLE`; image runs as UID/GID 10001 and bakes `/data` ownership, so a
+  **named** volume inherits correct permissions (bind mounts need `chown 10001:10001`).
+- **[repo] `.env` files are gitignored** — only `.env-devel` variants are tracked; local
+  copies updated separately.
+- **[pydantic] `R_CLONE_PROVIDER=MINIO` now fails fast** with a validation error — intended
+  migration signal; external `.env` copies (`osparc-ops`) must be updated by their owners.
+- **[left-behind naming]** `servicelib.minio_utils` (a generic retry-policy helper, nothing
+  MinIO-specific) and historical comments about MinIO error-body quirks were intentionally
+  left untouched — renaming them touches many unrelated imports (out of scope).
+- **[lint debt]** Commits that touched test files surfaced pre-existing ruff violations in
+  those files (E501/SLF001/ASYNC240/PT011 — ruff only lints staged files); fixed minimally
+  (line splits, targeted `noqa`) in the same commits.
+
+## Validation performed
+
+- `packages/settings-library` `test_utils_r_clone.py`: **7 passed** (provider enum/mapping).
+- `services/director-v2` `tests/unit/test_core_settings.py`: **43 passed**.
+- Both ops compose files render via `docker compose config` (exit 0).
+- `tests/environment-setup`: 167 passed; the only 2 real failures
+  (`test_there_are_no_docker_compose_v1_anywhere`,
+  `test_all_images_have_the_same_python_version`) reproduce identically on the pristine base
+  commit — pre-existing and unrelated.
+- Live RustFS container (`rustfs/rustfs:1.0.0-rc.6@sha256:8d8bfa61…`, host port 9001): full
+  benchmark + compat gate **all green**, including the versioning/undelete flow, presigned
+  part uploads, and `ChecksumMode=ENABLED`.
 
 ## Migration notes for deployers
 
@@ -140,7 +188,33 @@ _Pending — captured at the validation step._
 - The external `osparc-ops` deployment `.env` must be updated accordingly (out of scope here;
   ops team to be notified).
 - Bucket versioning remains provisioned by the deployment; unchanged.
+- The old dev volume `ops_minio_data` is orphaned by the rename (new: `ops_s3_storage_data`).
+  Remove it once its contents are confirmed disposable, or migrate data via S3 (rclone) first.
+- Web console port changed: MinIO console was `9090:9090`; RustFS console is `9090:9001`
+  (ops stack; disabled in the CI stack). S3 API host port `9001` unchanged.
 
 ## Summary of changes
 
-_Populated at the final step: commit list + files touched._
+Branch `enhancement/s3-rustfs-replacement` (9 commits on top of master `040e002fa`):
+
+| commit | content |
+|---|---|
+| `388f32df5` | S3 benchmark/compatibility harness + MinIO baseline (`scripts/s3-benchmark/`) |
+| `3b3b49fc4` | This report seeded with discovery findings + MinIO baseline |
+| `8f5e4e740` | `S3Provider.RUSTFS` (rclone `Other`), `MINIO` removed (`settings-library` + test) |
+| `c8ffe535a` | `.env-devel` provider values `MINIO` -> `RUSTFS` |
+| `76d4a91b1` | ~25 files: provider refs `MINIO` -> `RUSTFS` (director-v2, dynamic-sidecar, agent, simcore-sdk, migrate_project docs, webserver third-party list) |
+| `dde327bd6` | compose swap: service `minio` -> `s3-storage` = `rustfs/rustfs:1.0.0-rc.6` (digest-pinned), `/health` healthcheck, volume `ops_s3_storage_data`, Makefile banner |
+| `fb68ff9a9` | pytest harness rename `minio_service.py` -> `s3_storage_service.py`, fixtures, selections, plugin strings |
+| (final) | RustFS benchmark results (`scripts/s3-benchmark/results-rustfs.json`) + this report finalized |
+
+Application S3 code (`aws_library.s3`) is **untouched** — the swap is transparent through
+the aioboto3/SigV4 abstraction, exactly as designed.
+
+**Verdict:** RustFS `1.0.0-rc.6` passes every compatibility requirement (versioning
+undelete, multipart listing incl. dir prefixes, error bodies, checksums, presigned parts)
+at parity for the platform-dominant patterns (small-object put/get, streaming download,
+multipart). Two perf regressions surfaced — `ListObjectsV2` pagination (~7x slower) and
+server-side copy (~2x slower) — neither blocks the dev/CI swap, but both should be
+re-checked at 1.0 GA. SeaweedFS remains the designated fallback if they matter in
+production.
