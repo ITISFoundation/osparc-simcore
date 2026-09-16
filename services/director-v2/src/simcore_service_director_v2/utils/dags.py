@@ -76,11 +76,11 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
     # if the node state is in the modified state already
-    if node["state"] in [
+    if node["state"] in {
         None,
         RunningState.ABORTED,
         RunningState.FAILED,
-    ]:
+    }:
         return True
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
