@@ -6,7 +6,11 @@ from urllib.parse import quote_plus
 import simcore_postgres_database.cli
 import sqlalchemy as sa
 import sqlalchemy.exc
+import tenacity
+from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from tenacity import retry_if_exception, stop_after_attempt
+from tenacity.wait import wait_fixed
 
 
 class PostgresTestConfig(TypedDict):
@@ -15,6 +19,202 @@ class PostgresTestConfig(TypedDict):
     database: str
     host: str
     port: str
+
+
+def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
+    return "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
+        user=quote_plus(postgres_config["user"]),
+        password=quote_plus(postgres_config["password"]),
+        host=postgres_config["host"],
+        port=postgres_config["port"],
+        database=database if database is not None else postgres_config["database"],
+    )
+
+
+def _is_server_connection_drop(error: sa_exc.OperationalError) -> bool:
+    error_msg = str(error).lower()
+    return "server closed the connection unexpectedly" in error_msg
+
+
+def is_retryable_operational_error(error: BaseException) -> bool:
+    return isinstance(error, sa_exc.OperationalError) and _is_server_connection_drop(error)
+
+
+def _is_database_accessed_error(error: BaseException) -> bool:
+    # e.g. 'database "test" is being accessed by other users'
+    return isinstance(error, sa_exc.OperationalError) and "being accessed by other users" in str(error).lower()
+
+
+def execute_queries(
+    engine: sa.engine.Engine,
+    sql_statements: list[str],
+    *,
+    ignore_errors: bool = False,
+) -> None:
+    """runs the queries in the list in order"""
+    for statement in sql_statements:
+        try:
+            for attempt in tenacity.Retrying(
+                retry=retry_if_exception(is_retryable_operational_error),
+                stop=stop_after_attempt(2),
+                reraise=True,
+            ):
+                with attempt:
+                    try:
+                        with engine.connect() as connection, connection.begin():
+                            connection.execute(sa.text(statement))
+                    except sa_exc.OperationalError as e:
+                        if _is_server_connection_drop(e):
+                            # Recreate stale pooled connections before the retry.
+                            engine.dispose()
+                        raise
+        except Exception as e:  # pylint: disable=broad-except
+            if ignore_errors:
+                # when running tests initially a database to be dropped may not exist
+                # which can safely be ignored. The debug message is here to catch future
+                # errors and avoid time wasting
+                print(f"SQL error which can be ignored: {e}")
+                continue
+            raise
+
+
+def _maintenance_engine(postgres_config: PostgresTestConfig) -> sa.engine.Engine:
+    """engine connected to the 'postgres' maintenance database (for CREATE/DROP DATABASE)"""
+    config = postgres_config.copy()
+    config["database"] = "postgres"
+    return sa.create_engine(_build_sync_dsn(config), isolation_level="AUTOCOMMIT")
+
+
+def _terminate_backends(maintenance_engine: sa.engine.Engine, database: str) -> None:
+    execute_queries(
+        maintenance_engine,
+        [
+            f"""
+            SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+            WHERE datname = '{database}' AND pid <> pg_backend_pid();
+            """,  # noqa: S608
+        ],
+        ignore_errors=True,
+    )
+
+
+def _drop_database(maintenance_engine: sa.engine.Engine, database: str, *, ignore_errors: bool = False) -> None:
+    # NOTE: DROP DATABASE fails when backends re-connect between terminating them and
+    # running DROP (e.g. pooled connections of a service under test), hence it is retried
+    for attempt in tenacity.Retrying(
+        wait=wait_fixed(0.5),
+        stop=stop_after_attempt(5),
+        retry=retry_if_exception(_is_database_accessed_error),
+        reraise=True,
+    ):
+        with attempt:
+            _terminate_backends(maintenance_engine, database)
+            execute_queries(maintenance_engine, [f"DROP DATABASE {database};"], ignore_errors=ignore_errors)
+
+
+def _create_database_from_template(maintenance_engine: sa.engine.Engine, database: str, template_db_name: str) -> None:
+    execute_queries(
+        maintenance_engine,
+        [f"CREATE DATABASE {database} TEMPLATE {template_db_name};"],
+    )
+
+
+def database_exists(engine: sa.engine.Engine, database: str) -> bool:
+    with engine.connect() as conn:
+        result = conn.execute(sa.text("SELECT 1 FROM pg_database WHERE datname = :db"), {"db": database})
+        return result.scalar() is not None
+
+
+def build_migrated_pg_template(postgres_config: PostgresTestConfig, template_db_name: str) -> None:
+    """(re-)creates `template_db_name` and migrates it to head.
+
+    A pre-existing template is always rebuilt so that a template left over from an
+    interrupted session cannot be reused in a stale/unmigrated state.
+    """
+    maintenance = _maintenance_engine(postgres_config)
+    try:
+        # a stale template (e.g. from an interrupted session) is dropped and rebuilt
+        _drop_database(maintenance, template_db_name, ignore_errors=True)
+        execute_queries(maintenance, [f"CREATE DATABASE {template_db_name};"])
+
+        template_config = postgres_config.copy()
+        template_config["database"] = template_db_name
+
+        assert simcore_postgres_database.cli.discover.callback
+        assert simcore_postgres_database.cli.upgrade.callback
+        simcore_postgres_database.cli.discover.callback(**template_config)
+        simcore_postgres_database.cli.upgrade.callback("head")
+        assert simcore_postgres_database.cli.clean.callback
+        simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
+    finally:
+        maintenance.dispose()
+
+
+def drop_pg_template(postgres_config: PostgresTestConfig, template_db_name: str) -> None:
+    maintenance = _maintenance_engine(postgres_config)
+    try:
+        _drop_database(maintenance, template_db_name, ignore_errors=True)
+    finally:
+        maintenance.dispose()
+
+
+@contextmanager
+def migrated_pg_template_context(postgres_config: PostgresTestConfig, template_db_name: str) -> Iterator[str]:
+    """Within the context, `template_db_name` exists and is migrated to head.
+
+    On exit the template database is dropped.
+    """
+    build_migrated_pg_template(postgres_config, template_db_name)
+    try:
+        yield template_db_name
+    finally:
+        drop_pg_template(postgres_config, template_db_name)
+
+
+@contextmanager
+def cloned_pg_database_context(
+    postgres_config: PostgresTestConfig, template_db_name: str
+) -> Iterator[sa.engine.Engine]:
+    """Within the context, the target database is a fresh clone of `template_db_name`.
+
+    Any pre-existing content of the target database is dropped (backends terminated
+    first) and recreated `TEMPLATE template_db_name`, i.e. an isolated database with
+    the exact migrated schema of the template but no data.
+
+    Yields an AUTOCOMMIT engine connected to the cloned database. On exit the engine is
+    disposed and the target database is recreated empty from the template, so that the
+    server always keeps a valid target database available for fixtures connecting
+    afterwards.
+    """
+    database = postgres_config["database"]
+    maintenance = _maintenance_engine(postgres_config)
+    try:
+        # NOTE: a database cannot be dropped while backends are attached, therefore
+        # they are terminated right before the drop (race-free enough for tests)
+        _drop_database(maintenance, database)
+        _create_database_from_template(maintenance, database, template_db_name)
+    finally:
+        maintenance.dispose()
+
+    engine = sa.create_engine(_build_sync_dsn(postgres_config), isolation_level="AUTOCOMMIT")
+    try:
+        for attempt in tenacity.Retrying(
+            wait=wait_fixed(1),
+            retry=retry_if_exception(is_retryable_operational_error),
+            reraise=True,
+            stop=stop_after_attempt(3),
+        ):
+            with attempt, engine.connect():
+                break
+        yield engine
+    finally:
+        engine.dispose()
+        maintenance = _maintenance_engine(postgres_config)
+        try:
+            _drop_database(maintenance, database)
+            _create_database_from_template(maintenance, database, template_db_name)
+        finally:
+            maintenance.dispose()
 
 
 def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
