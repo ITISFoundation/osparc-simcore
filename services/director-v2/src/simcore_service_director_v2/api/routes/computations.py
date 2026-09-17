@@ -41,6 +41,7 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -87,7 +88,7 @@ from ...utils.dags import (
     find_computational_node_cycles,
 )
 from ..dependencies.catalog import get_catalog_client
-from ..dependencies.database import get_repository
+from ..dependencies.database import get_db_engine, get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 
@@ -141,7 +142,7 @@ async def _get_project_metadata(
     projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
     try:
-        project_ancestors = await projects_metadata_repo.get_project_ancestors(project_id)
+        project_ancestors = await projects_metadata_repo.get_project_ancestors(project_id=project_id)
         if project_ancestors.parent_project_uuid is None:
             _logger.debug("no parent found for project %s", project_id)
             return {}
@@ -154,7 +155,7 @@ async def _get_project_metadata(
             project = await project_repo.get(project_id=project_uuid)
 
             try:
-                node = await projects_nodes_repo.get(project_uuid, node_id)
+                node = await projects_nodes_repo.get(project_id=project_uuid, node_id=node_id)
             except ProjectNodeNotFoundError as exc:
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
@@ -398,17 +399,11 @@ async def _create_computation_get(
     target_args=["computation.project_id"]
     # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 )
-async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
+async def create_or_update_or_start_computation(
     computation: ComputationCreate,
     request: Request,
     response: Response,
-    projects_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
-    projects_nodes_repo: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
-    comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
-    comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
-    users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
-    projects_metadata_repo: Annotated[ProjectsMetadataRepository, Depends(get_repository(ProjectsMetadataRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
     rpc_client: Annotated[RabbitMQRPCClient, Depends(rabbitmq_rpc_client)],
@@ -418,12 +413,21 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         f"{computation.user_id=}",
         f"{computation.project_id=}",
     )
+
+    projects_nodes_repo = ProjectsNodesRepository(db_engine)
+    projects_repo = ProjectsRepository(db_engine)
+    comp_pipelines_repo = CompPipelinesRepository(db_engine)
+    comp_tasks_repo = CompTasksRepository(db_engine)
+    comp_runs_repo = CompRunsRepository(db_engine)
+    users_repo = UsersRepository(db_engine)
+    projects_metadata_repo = ProjectsMetadataRepository(db_engine)
+
     try:
         project = await projects_repo.get(project_id=computation.project_id)
 
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
-        project_nodes = await projects_nodes_repo.get_all(computation.project_id)
+        project_nodes = await projects_nodes_repo.get_all(project_id=computation.project_id)
         complete_dag = create_complete_dag(project_nodes)
 
         # reject cycles involving computational nodes early (before catalog checks)
