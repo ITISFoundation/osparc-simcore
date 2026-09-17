@@ -23,11 +23,13 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 from starlette.datastructures import URL
 
 from ...api.dependencies.catalog import get_catalog_client
-from ...api.dependencies.database import get_repository
+from ...api.dependencies.database import get_db_engine, get_repository
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
@@ -318,22 +320,25 @@ def is_service_inactive_since(activity_info: ActivityInfoOrNone, threshold: floa
 async def get_project_inactivity(
     project_id: ProjectID,
     max_inactivity_seconds: NonNegativeFloat,
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
-    projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
-    projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
 ) -> GetProjectInactivityResponse:
     # A project is considered inactive when all it's services are inactive for
     # more than `max_inactivity_seconds`.
     # A `service` which does not support the inactivity callback is considered
     # inactive.
+    projects_repo = ProjectsRepository(db_engine)
+    projects_nodes_repo = ProjectsNodesRepository(db_engine)
 
-    if not await projects_repository.exists(project_id=project_id):
-        raise ProjectNotFoundError(project_id=project_id)
+    async with pass_or_acquire_connection(db_engine) as conn:
+        if not await projects_repo.exists(conn, project_id=project_id):
+            raise ProjectNotFoundError(project_id=project_id)
+        node_ids = await projects_nodes_repo.list_nodes_ids(conn, project_id=project_id)
 
     inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(
         *[
             scheduler.get_service_activity(node_id)
-            for node_id in await projects_nodes_repository.list_nodes_ids(project_id)
+            for node_id in node_ids
             # NOTE: only new style services expose service inactivity information
             # director-v2 only tracks internally new style services
             if scheduler.is_service_tracked(node_id)
