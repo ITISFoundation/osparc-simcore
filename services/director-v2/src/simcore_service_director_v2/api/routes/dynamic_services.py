@@ -29,7 +29,7 @@ from starlette import status
 from starlette.datastructures import URL
 
 from ...api.dependencies.catalog import get_catalog_client
-from ...api.dependencies.database import get_db_engine, get_repository
+from ...api.dependencies.database import get_db_engine
 from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
 from ...core.dynamic_services_settings import DynamicServicesSettings
 from ...core.dynamic_services_settings.scheduler import DynamicServicesSchedulerSettings
@@ -37,7 +37,6 @@ from ...core.errors import ProjectNotFoundError
 from ...modules import projects_networks
 from ...modules.catalog import CatalogClient
 from ...modules.db.repositories.projects import ProjectsRepository
-from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ...modules.db.repositories.projects_nodes import ProjectsNodesRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.dynamic_services import ServicesClient
@@ -285,20 +284,14 @@ async def service_restart_containers(
 @log_decorator(logger=logger)
 async def update_projects_networks(
     project_id: ProjectID,
-    projects_networks_repository: Annotated[
-        ProjectsNetworksRepository, Depends(get_repository(ProjectsNetworksRepository))
-    ],
-    projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
-    projects_nodes_repository: Annotated[ProjectsNodesRepository, Depends(get_repository(ProjectsNodesRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
 ) -> None:
     # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
     await projects_networks.update_from_workbench(
-        projects_networks_repository=projects_networks_repository,
-        projects_repository=projects_repository,
-        projects_nodes_repository=projects_nodes_repository,
+        db_engine,
         scheduler=scheduler,
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
