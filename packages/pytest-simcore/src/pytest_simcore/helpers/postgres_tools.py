@@ -142,6 +142,26 @@ def database_exists(engine: sa.engine.Engine, database: str) -> bool:
         return result.scalar() is not None
 
 
+def reset_database_from_template(postgres_config: PostgresTestConfig, template_db_name: str) -> None:
+    """Replaces the target database with a fresh clone of `template_db_name`.
+
+    Unlike the drops done by the fixtures (where only test clients are attached), this is
+    safe to run while long-lived services (e.g. a test's swarm stack) keep pooled
+    connections to the target database: the database is closed to new connections
+    ('ALLOW_CONNECTIONS off') *before* terminating its backends, so the services cannot
+    reconnect and race the DROP. The clone is recreated open afterwards.
+    """
+    database = postgres_config["database"]
+    maintenance = _maintenance_engine(postgres_config)
+    try:
+        execute_queries(maintenance, [f"ALTER DATABASE {database} WITH ALLOW_CONNECTIONS off;"])
+        _drop_database(maintenance, database)
+        _create_database_from_template_with_retry(maintenance, database, template_db_name)
+        execute_queries(maintenance, [f"ALTER DATABASE {database} WITH ALLOW_CONNECTIONS on;"])
+    finally:
+        maintenance.dispose()
+
+
 def build_migrated_pg_template(postgres_config: PostgresTestConfig, template_db_name: str) -> None:
     """(re-)creates `template_db_name` and migrates it to head.
 
