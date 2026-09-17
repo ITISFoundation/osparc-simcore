@@ -27,7 +27,7 @@ class ThirdPartyInfoDict(TypedDict):
 _THIRD_PARTY_REFERENCES = [
     ThirdPartyInfoDict(
         name="adminer",
-        version="5.4.1",
+        version="-",
         url="https://www.adminer.org/",
         thumbnail="https://www.adminer.org/static/images/logo.png",
     ),
@@ -57,7 +57,7 @@ _THIRD_PARTY_REFERENCES = [
     ),
     ThirdPartyInfoDict(
         name="postgres",
-        version="10.11",
+        version="-",
         url="https://www.postgresql.org/",
         thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/120px-Postgresql_elephant.svg.png",
     ),
