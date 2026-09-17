@@ -4,16 +4,24 @@
 
 import asyncio
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any, Final
 
+import docker
 import httpx
 import pytest
+import simcore_postgres_database.cli
 import sqlalchemy as sa
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.postgres_tools import (
+    PostgresTestConfig,
+    build_migrated_pg_template,
+    drop_pg_template,
+    reset_database_from_template,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -24,6 +32,59 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
+
+# name the reset template so it cannot collide with the one used by
+# 'pytest_simcore.postgres_service' ("template_simcore_db") in the same session
+_PG_RESET_TEMPLATE_DB: Final[str] = "integration_pg_reset_template"
+
+
+@pytest.fixture(scope="session")
+def _integration_pg_reset_template_state() -> Iterator[dict[str, Any]]:
+    # NOTE: the template is built lazily (resolving the DSN requires the module-scoped
+    # docker stack), this holder only tracks state and drops the template at session end
+    state: dict[str, Any] = {"built": False, "dsn": None}
+    yield state
+    if (dsn := state["dsn"]) is not None:
+        drop_pg_template(dsn, _PG_RESET_TEMPLATE_DB)
+
+
+@pytest.fixture(scope="module")
+def postgres_db(
+    postgres_dsn: PostgresTestConfig,
+    postgres_engine: sa.engine.Engine,
+    docker_client: docker.DockerClient,
+    _integration_pg_reset_template_state: dict[str, Any],
+) -> Iterator[sa.engine.Engine]:
+    """In-place migrated postgres database (instead of the template-clone `postgres_db`
+    provided by `pytest_simcore.postgres_service`).
+
+    NOTE: same as in services/web/server/tests/integration/conftest.py: the deployed swarm
+    stack (incl. `catalog`, which seeds `services`/`services_access_rights` rows) shares this
+    database and is deployed *before* this fixture resolves (and may stay up across modules,
+    '--keep-docker-up'), so the database must NOT be dropped/recreated at setup: that races
+    the services' inserts (e.g. ForeignKeyViolation on `services_access_rights`).
+    The reset therefore happens at module teardown, from a session-built migrated template.
+    """
+    dsn = postgres_dsn.copy()
+
+    assert simcore_postgres_database.cli.discover.callback
+    assert simcore_postgres_database.cli.upgrade.callback
+    simcore_postgres_database.cli.discover.callback(**dsn)
+    simcore_postgres_database.cli.upgrade.callback("head")
+    assert simcore_postgres_database.cli.clean.callback
+    simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
+
+    if not _integration_pg_reset_template_state["built"]:
+        build_migrated_pg_template(dsn, _PG_RESET_TEMPLATE_DB)
+        _integration_pg_reset_template_state["built"] = True
+
+    _integration_pg_reset_template_state["dsn"] = dsn
+
+    yield postgres_engine
+
+    # LAST teardown step of the module: hand the next module a fresh, migrated and empty
+    # database without disturbing the data the currently-running stack depends on
+    reset_database_from_template(dsn, _PG_RESET_TEMPLATE_DB)
 
 
 @pytest.fixture
