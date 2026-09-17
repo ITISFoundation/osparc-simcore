@@ -1,0 +1,1414 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=no-value-for-parameter
+# pylint:disable=too-many-arguments
+# pylint:disable=protected-access
+
+import asyncio
+import datetime as dt
+import json
+import logging
+import secrets
+from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass
+from datetime import timedelta
+from pathlib import Path
+from typing import Any
+from unittest import mock
+
+import pytest
+import simcore_service_webserver
+import simcore_service_webserver.db_listener
+import simcore_service_webserver.db_listener._service
+import sqlalchemy as sa
+from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
+from common_library.async_tools import delayed_start
+from faker import Faker
+from models_library.projects import ProjectAtDB
+from pytest_mock import MockType
+from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
+from pytest_simcore.helpers.webserver_users import UserInfoDict
+from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.outbox_events import outbox_events
+from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
+from simcore_service_webserver.db_listener._repository import (
+    CLAIM_CANDIDATE_BATCH as _CLAIM_CANDIDATE_BATCH,
+)
+from simcore_service_webserver.db_listener._repository import (
+    MAX_ATTEMPTS as _MAX_ATTEMPTS,
+)
+from simcore_service_webserver.db_listener._repository import (
+    get_comp_task_row as _get_comp_task_row,
+)
+from simcore_service_webserver.db_listener._repository import (
+    get_project_owner as _get_project_owner,
+)
+from simcore_service_webserver.db_listener._service import (
+    _MAX_FAILED_AGGREGATES_PER_DRAIN,
+)
+from simcore_service_webserver.db_listener._service import (
+    claim_and_process_one_outbox_event as _claim_and_process_one_outbox_event,
+)
+from simcore_service_webserver.db_listener._service import (
+    claim_and_process_outbox_events as _claim_and_process_outbox_events,
+)
+from simcore_service_webserver.db_listener._service import (
+    process_outbox_event as _process_outbox_event,
+)
+from simcore_service_webserver.db_listener._task import (
+    OUTBOX_LISTENER_APPLICATION_NAME,
+    with_outbox_wakeup_listener,
+)
+from simcore_service_webserver.db_listener.models import ClaimOutcome as _ClaimOutcome
+from simcore_service_webserver.db_listener.plugin import (
+    create_comp_tasks_listening_task,
+)
+from simcore_service_webserver.projects import exceptions
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.sql import func
+from tenacity import stop_after_attempt
+from tenacity.asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+
+logger = logging.getLogger(__name__)
+
+_COUNT_LISTENER_CONNECTIONS_SQL = (
+    "select count(*) from pg_stat_activity where application_name like :pattern and pid != pg_backend_pid()"
+)
+
+
+@pytest.fixture
+async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
+    mocked_project_calls = {}
+
+    mocked_project_calls["update_node_outputs"] = mocker.patch(
+        "simcore_service_webserver.db_listener._service.update_node_outputs",
+        return_value="",
+    )
+
+    mocked_project_calls["_update_project_state.update_project_node_state"] = mocker.patch(
+        "simcore_service_webserver.db_listener._service.update_project_node_state",
+        autospec=True,
+    )
+
+    mocked_project_calls["_update_project_state.notify_project_node_update"] = mocker.patch(
+        "simcore_service_webserver.db_listener._service.notify_project_node_update",
+        autospec=True,
+    )
+
+    mocked_project_calls["_update_project_state.notify_project_state_update"] = mocker.patch(
+        "simcore_service_webserver.db_listener._service.notify_project_state_update",
+        autospec=True,
+    )
+
+    return mocked_project_calls
+
+
+@pytest.fixture
+async def with_started_listening_task(client: TestClient) -> AsyncIterator:
+    assert client.app
+    async for _comp_task in create_comp_tasks_listening_task(client.app):
+        # first call creates the task, second call cleans it
+        yield
+
+
+@pytest.fixture
+async def spied_get_comp_task_row(
+    mocker: MockerFixture,
+) -> MockType:
+    return mocker.spy(
+        simcore_service_webserver.db_listener._service,  # noqa: SLF001
+        "get_comp_task_row",
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class _CompTaskChangeParams:
+    update_values: dict[str, Any]
+    expected_calls: list[str]
+
+
+async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]) -> None:
+    for call_name, mocked_call in mock_project_subsystem.items():
+        if call_name in expected_calls:
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(1),
+                stop=stop_after_delay(10),
+                retry=retry_if_exception_type(AssertionError),
+                before_sleep=before_sleep_log(logger, logging.INFO),
+                reraise=True,
+            ):
+                with attempt:
+                    mocked_call.assert_called_once()
+
+        else:
+            mocked_call.assert_not_called()
+
+
+@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND])
+@pytest.mark.parametrize(
+    "params",
+    [
+        pytest.param(
+            _CompTaskChangeParams(
+                {
+                    "outputs": {"some new stuff": "it is new"},
+                },
+                ["update_node_outputs"],
+            ),
+            id="new output shall trigger",
+        ),
+        pytest.param(
+            _CompTaskChangeParams(
+                {"state": StateType.ABORTED},
+                [
+                    "_update_project_state.update_project_node_state",
+                    "_update_project_state.notify_project_node_update",
+                    "_update_project_state.notify_project_state_update",
+                ],
+            ),
+            id="new state shall trigger",
+        ),
+        pytest.param(
+            _CompTaskChangeParams(
+                {
+                    "outputs": {"some new stuff": "it is new"},
+                    "state": StateType.ABORTED,
+                },
+                [
+                    "update_node_outputs",
+                    "_update_project_state.update_project_node_state",
+                    "_update_project_state.notify_project_node_update",
+                    "_update_project_state.notify_project_state_update",
+                ],
+            ),
+            id="new output and state shall double trigger",
+        ),
+        pytest.param(
+            _CompTaskChangeParams({"inputs": {"should not trigger": "right?"}}, []),
+            id="no new output or state shall not trigger",
+        ),
+    ],
+)
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_db_listener_triggers_on_event_with_multiple_tasks(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    spied_get_comp_task_row: MockType,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    with_started_listening_task: None,
+    params: _CompTaskChangeParams,
+    task_class: NodeClass,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    some_project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{some_project.uuid}")
+    # Create 3 tasks with different node_ids
+    tasks = [
+        await create_comp_task(
+            project_id=f"{some_project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=task_class,
+        )
+        for _ in range(3)
+    ]
+    random_task_to_update = tasks[secrets.randbelow(len(tasks))]
+    updated_task_id = random_task_to_update["task_id"]
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(**params.update_values).where(comp_tasks.c.task_id == updated_task_id)
+        )
+    await _assert_listener_triggers(mock_project_subsystem, params.expected_calls)
+
+    # Assert the spy was called with the correct task_id
+    if params.expected_calls:
+        assert any(call.args[1] == updated_task_id for call in spied_get_comp_task_row.call_args_list), (
+            f"_get_comp_task_row was not called with task_id={updated_task_id}."
+            f" Calls: {spied_get_comp_task_row.call_args_list}"
+        )
+    else:
+        spied_get_comp_task_row.assert_not_called()
+
+
+@pytest.fixture
+def fake_2connected_jupyterlabs_workbench(tests_data_dir: Path) -> dict[str, Any]:
+    fpath = tests_data_dir / "workbench_2connected_jupyterlabs.json"
+    assert fpath.exists()
+    return json.loads(fpath.read_text())
+
+
+@pytest.fixture
+async def mock_dynamic_service_rpc(
+    mocker: MockerFixture,
+) -> mock.AsyncMock:
+    """
+    Mocks the dynamic service RPC calls to avoid actual service calls during tests.
+    """
+    import servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services  # noqa: PLC0415
+
+    return mocker.patch.object(
+        servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services,
+        "retrieve_inputs",
+        autospec=True,
+    )
+
+
+async def _check_for_stability(function: Callable[..., Awaitable[None]], *args, **kwargs) -> None:
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(),
+        reraise=True,
+    ):
+        with attempt:  # noqa: SIM117
+            with log_context(
+                logging.INFO,
+                msg=f"check stability of {function.__name__} {attempt.retry_state.retry_object.statistics}",
+            ) as log_ctx:
+                await function(*args, **kwargs)
+                log_ctx.logger.info("stable for %s...", attempt.retry_state.seconds_since_start)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_db_listener_upgrades_projects_row_correctly(
+    with_started_listening_task: None,
+    director_v2_service_mock: AioResponsesMock,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_dynamic_service_rpc: mock.AsyncMock,
+    sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    fake_2connected_jupyterlabs_workbench: dict[str, Any],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    spied_get_comp_task_row: MockType,
+    faker: Faker,
+):
+    some_project = await create_project(logged_user, workbench=fake_2connected_jupyterlabs_workbench)
+
+    # create the corresponding comp_task entries for the project workbench
+    await create_pipeline(project_id=f"{some_project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{some_project.uuid}",
+            node_id=node_id,
+            outputs=node_data.get("outputs", {}),
+            node_class=(NodeClass.INTERACTIVE if "dynamic" in node_data["key"] else NodeClass.COMPUTATIONAL),
+            inputs=node_data.get("inputs", {}),
+        )
+        for node_id, node_data in fake_2connected_jupyterlabs_workbench.items()
+    ]
+    assert len(tasks) == 2, "Expected two tasks for the two JupyterLab nodes"
+    first_jupyter_task = tasks[0]
+    second_jupyter_task = tasks[1]
+    assert len(second_jupyter_task["inputs"]) > 0, "Expected inputs for the second JupyterLab task"
+    number_of_inputs_linked = len(second_jupyter_task["inputs"])
+
+    # simulate a concurrent change in all the outputs of first jupyterlab
+    async def _update_first_jupyter_task_output(port_index: int, data: dict[str, Any]) -> None:
+        with log_context(logging.INFO, msg=f"Updating output {port_index + 1}"):
+            async with sqlalchemy_async_engine.begin() as conn:
+                result = await conn.execute(
+                    comp_tasks.select()
+                    .with_only_columns(comp_tasks.c.outputs)
+                    .where(comp_tasks.c.task_id == first_jupyter_task["task_id"])
+                    .with_for_update()
+                )
+                row = result.first()
+                current_outputs = row[0] if row and row[0] else {}
+
+                # Update/add the new key while preserving existing keys
+                current_outputs[f"output_{port_index + 1}"] = data
+
+                # Write back the updated outputs
+                await conn.execute(
+                    comp_tasks.update()
+                    .values(outputs=current_outputs)
+                    .where(comp_tasks.c.task_id == first_jupyter_task["task_id"])
+                )
+
+    @delayed_start(timedelta(seconds=2))
+    async def _change_outputs_sequentially(sleep: float) -> None:
+        """
+        Sequentially updates the outputs of the second JupyterLab task to trigger the dynamic service RPC.
+        """
+        for i in range(number_of_inputs_linked):
+            await _update_first_jupyter_task_output(i, {"data": i})
+            await asyncio.sleep(sleep)
+
+    # this runs in a task
+    sequential_task = asyncio.create_task(_change_outputs_sequentially(5))
+    assert sequential_task is not None, "Failed to create the sequential task"
+
+    async def _check_retrieve_rpc_called(expected_ports_retrieved: int) -> None:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(60),
+            wait=wait_fixed(1),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        ):
+            with attempt:  # noqa: SIM117
+                with log_context(
+                    logging.INFO,
+                    msg=f"Checking if dynamic service retrieve RPC was called and "
+                    f"all expected ports were retrieved {expected_ports_retrieved} "
+                    f"times,  {attempt.retry_state.retry_object.statistics}",
+                ) as log_ctx:
+                    if mock_dynamic_service_rpc.call_count > 0:
+                        log_ctx.logger.info(
+                            "call arguments: %s",
+                            mock_dynamic_service_rpc.call_args_list,
+                        )
+                    # Assert that the dynamic service RPC was called
+                    assert mock_dynamic_service_rpc.call_count > 0, "Dynamic service retrieve RPC was not called"
+                    # now get we check which ports were retrieved, we expect all of them
+                    all_ports = set()
+                    for call in mock_dynamic_service_rpc.call_args_list:
+                        retrieved_ports = call[1]["port_keys"]
+                        all_ports.update(retrieved_ports)
+                    assert len(all_ports) == expected_ports_retrieved, (
+                        f"Expected {expected_ports_retrieved} ports to be retrieved, "
+                        f"but got {len(all_ports)}: {all_ports}"
+                    )
+                    log_ctx.logger.info("Dynamic service retrieve RPC was called with all expected ports!")
+
+    await _check_for_stability(_check_retrieve_rpc_called, number_of_inputs_linked)
+    await asyncio.wait_for(sequential_task, timeout=60)
+    assert sequential_task.done(), "Sequential task did not complete"
+    assert not sequential_task.cancelled(), "Sequential task was cancelled unexpectedly"
+
+
+# --------- Unit tests for db_listener internal functions ---------
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_project_owner_returns_valid_owner(
+    sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+):
+    project = await create_project(logged_user)
+    async with sqlalchemy_async_engine.connect() as conn:
+        owner = await _get_project_owner(conn, project.uuid)
+    assert owner == logged_user["id"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_project_owner_raises_when_project_missing(
+    sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    faker: Faker,
+):
+    missing_uuid = faker.uuid4()
+    async with sqlalchemy_async_engine.connect() as conn:
+        with pytest.raises(exceptions.ProjectOwnerNotFoundError):
+            await _get_project_owner(conn, missing_uuid)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_comp_task_row_returns_task(
+    sqlalchemy_async_engine: AsyncEngine,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.connect() as conn:
+        row = await _get_comp_task_row(conn, task["task_id"])
+    assert row is not None
+    assert row.task_id == task["task_id"]
+
+
+async def test_get_comp_task_row_returns_none_for_missing_task(
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    async with sqlalchemy_async_engine.connect() as conn:
+        row = await _get_comp_task_row(conn, 999999)
+    assert row is None
+
+
+# --------- Unit tests for outbox claim/process functions ---------
+
+
+async def _get_outbox_events_for_task(engine: AsyncEngine, task_id: int) -> list[dict]:
+    async with engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().where(outbox_events.c.aggregate_id == f"{task_id}"))
+        return [dict(r) for r in result.mappings().all()]
+
+
+@pytest.fixture(autouse=True)
+async def purge_outbox_events(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[[], Awaitable[None]]]:
+    """Empties the outbox queue before and after every test.
+
+    Claims are global (any worker claims the oldest pending event), so events
+    left over from a previous test (e.g. by the retry/dead-letter tests, whose
+    comp_tasks rows get cascade-deleted) would otherwise leak into the next one.
+    The finalizer purges automatically; a test may also call the returned
+    callable to purge in the middle of a test.
+    """
+
+    async def _purge() -> None:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(outbox_events.delete())
+
+    await _purge()
+    yield _purge
+    await _purge()
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_process_outbox_event_logs_warning_on_missing_comp_task(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    caplog: pytest.LogCaptureFixture,
+):
+    assert client.app
+    with caplog.at_level(logging.WARNING):
+        async with sqlalchemy_async_engine.connect() as conn:
+            await _process_outbox_event(client.app, conn, 999999, frozenset({"outputs"}))
+    assert "not found" in caplog.text.lower()
+
+
+@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_process_outbox_event_with_output_change(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    task_class: NodeClass,
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    node_id = faker.uuid4()
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=node_id,
+        outputs=json.dumps({"out1": "val1"}),
+        node_class=task_class,
+    )
+    async with sqlalchemy_async_engine.connect() as conn:
+        await _process_outbox_event(client.app, conn, task["task_id"], frozenset({"outputs"}))
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+
+
+@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_process_outbox_event_with_run_hash_change(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    task_class: NodeClass,
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    node_id = faker.uuid4()
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=node_id,
+        outputs=json.dumps({"out1": "val1"}),
+        node_class=task_class,
+    )
+    new_run_hash = faker.sha256()
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(run_hash=new_run_hash).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    async with sqlalchemy_async_engine.connect() as conn:
+        await _process_outbox_event(client.app, conn, task["task_id"], frozenset({"run_hash"}))
+    # a run_hash-only change must still project outputs+run_hash onto the node
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    # (app, user_id, project_id, node_id, outputs, run_hash, ...)
+    assert mock_project_subsystem["update_node_outputs"].call_args.args[5] == new_run_hash
+
+
+@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_process_outbox_event_with_state_change(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    task_class: NodeClass,
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    node_id = faker.uuid4()
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=node_id,
+        outputs=json.dumps({}),
+        node_class=task_class,
+    )
+    # Update the task state in DB
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(state=StateType.ABORTED).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    async with sqlalchemy_async_engine.connect() as conn:
+        await _process_outbox_event(client.app, conn, task["task_id"], frozenset({"state"}))
+    mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
+    mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
+    mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_claim_and_process_one_deletes_event_on_success(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    # the comp_tasks trigger only fires on outputs/state/run_hash updates, so we generate one
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 1
+
+    # an event was claimed, processed, and deleted
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None
+    assert isinstance(outcome, _ClaimOutcome)
+    assert outcome.success is True
+    assert outcome.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC
+    assert outcome.aggregate_id == f"{task['task_id']}"
+
+    # the row must have been removed on success
+    rows_after = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert rows_after == []
+
+    # no more events pending
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+
+
+async def test_claim_and_process_one_returns_none_when_empty(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+):
+    assert client.app
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_failed_processing_keeps_event_for_retry(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    """At-least-once delivery: a failure rolls back the claim, keeps the row,
+    and records the attempt (crash-safety: the event is never lost)."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        side_effect=RuntimeError("boom"),
+    )
+
+    # processing fails: the event must remain claimable with the attempt recorded
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None
+    assert outcome.success is False
+
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1, "failed event must NOT be deleted"
+    assert rows[0]["attempts"] == 1
+    assert "boom" in rows[0]["last_error"]
+
+    # a second attempt bumps attempts again (row updated in place, not re-inserted)
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None
+    assert outcome.success is False
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
+    assert rows[0]["attempts"] == 2
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_dead_lettered_events_are_skipped_by_claims(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        # simulate an event that exhausted its retries
+        await conn.execute(outbox_events.update().values(attempts=_MAX_ATTEMPTS))
+
+    # claims skip dead-lettered events: nothing is claimable
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+
+    # the dead-lettered row is kept for post-mortem
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
+    assert rows[0]["attempts"] == _MAX_ATTEMPTS
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_claim_and_process_outbox_events_drains_all_pending_events(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(3)
+    ]
+    async with sqlalchemy_async_engine.begin() as conn:
+        for task in tasks:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select())
+        assert len(result.fetchall()) == 3
+
+    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+
+    assert mock_project_subsystem["update_node_outputs"].call_count == 3
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select())
+        assert result.fetchall() == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_drain_coalesces_all_events_of_the_same_aggregate(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """A burst of events for one aggregate must fan out a *single* notification:
+    all pending events of the claimed aggregate are coalesced into one projection
+    (union of their changed_columns) and deleted together."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    # 10 distinct outputs updates -> 10 outbox events for the same aggregate
+    for i in range(10):
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                comp_tasks.update().values(outputs={f"update-{i}": i}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 10
+
+    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+
+    # one projection for all coalesced events, not one per event
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    # ... and the whole burst was drained
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_drain_coalesces_mixed_changed_columns_of_the_same_aggregate(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Coalescing must preserve *all* projection branches: an outputs event and a
+    state event for the same aggregate become one projection that refreshes both."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(state=StateType.ABORTED).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 2
+
+    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+
+    # both branches ran exactly once for the coalesced pair
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
+    mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
+    mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_drain_skips_failed_aggregate_and_processes_the_rest(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    mocker: MockerFixture,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Skip-and-continue: a poisoned aggregate must not stall the healthy events
+    behind it. Its (kind, aggregate_id) is excluded from the rest of the drain,
+    the failure is marked on the row, and the other aggregates still get projected."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    poison_task, *healthy_tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(4)
+    ]
+    for task in [poison_task, *healthy_tasks]:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    async def _fails_only_for_poison(_app, _conn, task_id: int, _changed_columns: frozenset[str]) -> None:
+        if task_id == poison_task["task_id"]:
+            msg = "poisoned aggregate"
+            raise RuntimeError(msg)
+
+    mock_process = mocker.patch(
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        autospec=True,
+        side_effect=_fails_only_for_poison,
+    )
+
+    # the drain must return (no hang / no infinite loop)
+    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+
+    # every healthy aggregate was projected within this same drain
+    claimed_task_ids = [call.args[2] for call in mock_process.await_args_list]
+    for task in healthy_tasks:
+        assert task["task_id"] in claimed_task_ids, "healthy aggregate must be projected in the same drain"
+
+    # the healthy events are gone; the poisoned one is kept and marked for backoff
+    for task in healthy_tasks:
+        assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+    poison_rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, poison_task["task_id"])
+    assert len(poison_rows) == 1
+    assert "poisoned aggregate" in poison_rows[0]["last_error"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_drain_aborts_after_too_many_failing_aggregates(
+    sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """When *every* aggregate fails with an infrastructure-like error (broken
+    DB/socketio, not one bad event), the drain must stop after
+    _MAX_FAILED_AGGREGATES_PER_DRAIN distinct aggregates and leave the rest of the
+    queue untouched for the next cycle."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(_MAX_FAILED_AGGREGATES_PER_DRAIN + 1)
+    ]
+    for task in tasks:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        autospec=True,
+        side_effect=TimeoutError("infrastructure is down"),
+    )
+
+    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+
+    # exactly one event per aggregate was marked, oldest-first, and the drain stopped:
+    # the remaining event(s) keep attempts == 0
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().order_by(outbox_events.c.id))
+        rows = result.mappings().all()
+    assert len(rows) == len(tasks)
+    attempts = [row["attempts"] for row in rows]
+    assert attempts == [1] * _MAX_FAILED_AGGREGATES_PER_DRAIN + [0]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_drain_does_not_abort_on_application_level_failures(
+    sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Application-level failures (e.g. a bug tied to specific rows) must never
+    trigger the infra-outage heuristic: even with more distinct failing aggregates
+    than _MAX_FAILED_AGGREGATES_PER_DRAIN, the drain must attempt every one of them
+    instead of giving up early on the healthy backlog."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(_MAX_FAILED_AGGREGATES_PER_DRAIN + 2)
+    ]
+    for task in tasks:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        autospec=True,
+        side_effect=RuntimeError("bug in projection code"),
+    )
+
+    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+
+    # every aggregate was attempted exactly once, none left untouched
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().order_by(outbox_events.c.id))
+        rows = result.mappings().all()
+    assert len(rows) == len(tasks)
+    assert [row["attempts"] for row in rows] == [1] * len(tasks)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_concurrent_claims_do_not_double_process_same_event(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Simulates two replicas racing to claim the same outbox event: only one may win."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    results = await asyncio.gather(
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
+    )
+    winners = [r for r in results if r is not None and r.success]
+    assert len(winners) == 1, "exactly one concurrent claimant should have won the event"
+    # the event was processed exactly once and removed
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_concurrent_claims_serialize_same_aggregate_events(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Two concurrent claims on an aggregate with *two* pending events must never
+    process it twice: the per-aggregate advisory lock makes the loser return None
+    while the winner's transaction is open, and the winner's co-claim (row locks on
+    the whole burst, taken only after the advisory lock was won) drains every event
+    in a single projection.
+
+    Processing is slowed down on purpose so both claimants are genuinely
+    in-flight at the same time: without that, two fast, non-overlapping
+    claims would legitimately both succeed (sequentially), which would make
+    this test pass for the wrong reason.
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"first": "update"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        await conn.execute(
+            comp_tasks.update().values(outputs={"second": "update"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 2, "expected one event per update on the same aggregate"
+
+    async def _slow_update_node_outputs(*args, **kwargs) -> str:
+        await asyncio.sleep(0.3)
+        return ""
+
+    mock_project_subsystem["update_node_outputs"].side_effect = _slow_update_node_outputs
+
+    results = await asyncio.gather(
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
+    )
+    successes = [r for r in results if r is not None and r.success]
+    assert len(successes) == 1, (
+        f"exactly one claimant may process the aggregate, the other must find it locked: got {results}"
+    )
+    assert None in results
+    # the winner co-claimed and projected the whole burst exactly once, while the
+    # loser was locked out of the aggregate -> nothing is left in the queue
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_concurrent_claims_process_different_aggregates_in_parallel(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Events for *different* aggregates must still be claimable concurrently:
+    the advisory lock must not serialize unrelated aggregates."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(2)
+    ]
+    async with sqlalchemy_async_engine.begin() as conn:
+        for task in tasks:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    results = await asyncio.gather(
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
+    )
+    successes = [r for r in results if r is not None and r.success]
+    assert len(successes) == 2, f"unrelated aggregates must be claimable at the same time: got {results}"
+    assert {r.aggregate_id for r in successes} == {f"{t['task_id']}" for t in tasks}
+    assert mock_project_subsystem["update_node_outputs"].call_count == 2
+    for task in tasks:
+        assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_advisory_lock_is_scoped_by_kind(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """The per-aggregate advisory lock key must include the event kind.
+
+    Phase 1: a lock on this worker's own key (kind:aggregate_id) must still block the
+    claim -> the per-aggregate serialization itself must not be weakened.
+    Phase 2: a lock on the RAW aggregate_id (the pre-fix key, i.e. the namespace of any
+    consumer that ignores kind) must NOT block the claim -> this worker's lock namespace
+    is kind-prefixed and independent, which is the point of the fix.
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    aggregate_id = f"{task['task_id']}"
+
+    # a session-level lock held open on a dedicated connection (different backend than
+    # the claim) conflicts with any pg_try_advisory_xact_lock on the same key
+
+    # Phase 1: our namespaced key must serialize claims
+    our_key = f"{DB_OUTBOX_KIND_COMP_TASK_SYNC}:{aggregate_id}"
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(our_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on our namespaced key"
+        assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+        assert len(await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])) == 1
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(our_key, 0))))
+
+    # Phase 2: the raw aggregate_id key (no kind) must NOT serialize our claims
+    raw_key = aggregate_id
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(raw_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on the raw aggregate-id key"
+        outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+        assert outcome is not None
+        assert outcome.success is True
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(raw_key, 0))))
+    assert mock_project_subsystem["update_node_outputs"].call_count == 1
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_claim_ignores_events_of_a_foreign_kind(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """outbox_events is a shared table: claims must only pick up this worker's own
+    `kind`, leaving events from other (hypothetical) producers untouched."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        await conn.execute(
+            outbox_events.insert().values(
+                kind="some_other.kind.v1",
+                aggregate_type="some_other",
+                aggregate_id="999999",
+                changed_columns=[],
+            )
+        )
+
+    assert DB_OUTBOX_KIND_COMP_TASK_SYNC != "some_other.kind.v1"
+
+    # only the comp_task.sync.v1 event is claimed and processed
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None
+    assert outcome.success is True
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+
+    # the foreign-kind event is left untouched: nothing left to claim for us
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().where(outbox_events.c.aggregate_id == "999999"))
+        remaining = result.mappings().all()
+    assert len(remaining) == 1
+    assert remaining[0]["attempts"] == 0
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_listen_notify_uses_dedicated_named_connection_and_wakes_up(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """The wake-up LISTEN connection must be a *dedicated* asyncpg connection (not a
+    permanent check-out of the app's shared pool), named via
+    OUTBOX_LISTENER_APPLICATION_NAME so it is identifiable in pg_stat_activity,
+    and it must receive the outbox_wakeup notification when comp_tasks is updated."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs=json.dumps({}),
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+
+    async with with_outbox_wakeup_listener(client.app) as wakeup_event:
+        assert not wakeup_event.is_set()
+
+        # the dedicated connection is visible in pg_stat_activity under its own
+        # application_name (this is what makes it identifiable in e.g. Adminer)
+        async with sqlalchemy_async_engine.connect() as conn:
+            found = (
+                await conn.execute(
+                    sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{OUTBOX_LISTENER_APPLICATION_NAME}%")
+                )
+            ).scalar_one()
+        assert found >= 1, f"no pg_stat_activity entry for {OUTBOX_LISTENER_APPLICATION_NAME!r}"
+
+        # a comp_tasks change must wake the listener through the dedicated connection
+        async with sqlalchemy_async_engine.begin() as write_conn:
+            await write_conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+        await asyncio.wait_for(wakeup_event.wait(), timeout=5.0)
+        assert wakeup_event.is_set()
+
+    # after the context manager exits, the dedicated connection is closed again
+    async with sqlalchemy_async_engine.connect() as conn:
+        found = (
+            await conn.execute(
+                sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{OUTBOX_LISTENER_APPLICATION_NAME}%")
+            )
+        ).scalar_one()
+    assert found == 0, "the dedicated LISTEN connection must be closed on exit"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Candidate selection must de-duplicate aggregates *in SQL* before applying the
+    batch limit: a burst of events on one aggregate locked by another replica must
+    not crowd a younger, healthy aggregate out of the batch (head-of-line blocking).
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    hot_task, healthy_task = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(2)
+    ]
+
+    # the hot aggregate has more pending events than the candidate batch size, so
+    # pre-fix (LIMIT over raw event rows) every candidate would belong to it
+    num_hot_events = _CLAIM_CANDIDATE_BATCH + 2
+    backdated = dt.datetime.now(dt.UTC) - dt.timedelta(minutes=5)
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            outbox_events.insert(),
+            [
+                {
+                    "kind": DB_OUTBOX_KIND_COMP_TASK_SYNC,
+                    "aggregate_type": "comp_task",
+                    "aggregate_id": f"{hot_task['task_id']}",
+                    "changed_columns": ["outputs"],
+                    "modified": backdated,
+                }
+                for _ in range(num_hot_events)
+            ],
+        )
+        # one younger event on a different (healthy) aggregate, queued behind the burst
+        await conn.execute(
+            outbox_events.insert().values(
+                kind=DB_OUTBOX_KIND_COMP_TASK_SYNC,
+                aggregate_type="comp_task",
+                aggregate_id=f"{healthy_task['task_id']}",
+                changed_columns=["outputs"],
+            )
+        )
+
+    hot_aggregate_id = f"{hot_task['task_id']}"
+    healthy_aggregate_id = f"{healthy_task['task_id']}"
+
+    # hold the hot aggregate's advisory lock (as another replica would)
+    our_key = f"{DB_OUTBOX_KIND_COMP_TASK_SYNC}:{hot_aggregate_id}"
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(our_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on the hot aggregate's key"
+
+        # the claim must skip the locked hot aggregate and pick the healthy one, even
+        # though its single event is older-than-nothing... i.e. strictly younger
+        outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+        assert outcome is not None, "a locked hot aggregate must not block a younger healthy aggregate"
+        assert outcome.success is True
+        assert outcome.aggregate_id == healthy_aggregate_id
+
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(our_key, 0))))
+
+    # only the healthy aggregate was projected; the hot aggregate's events stay queued
+    assert mock_project_subsystem["update_node_outputs"].call_count == 1
+    assert len(await _get_outbox_events_for_task(sqlalchemy_async_engine, hot_task["task_id"])) == num_hot_events
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, healthy_task["task_id"]) == []
