@@ -4,7 +4,7 @@
 
 import json
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Final
+from typing import Any, Final, cast
 from urllib.parse import quote_plus
 
 import docker
@@ -33,6 +33,14 @@ from .helpers.postgres_tools import (
 from .helpers.typing_env import EnvVarsDict
 
 _TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
+
+_PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
+
+
+def _as_pg_config(postgres_dsn: dict[str, Any]) -> PostgresTestConfig:
+    # suites may pass richer dicts (e.g. with a prebuilt "dsn"), keep only the keys
+    # understood by simcore_postgres_database.cli
+    return cast(PostgresTestConfig, {k: postgres_dsn[k] for k in _PG_CONFIG_KEYS})
 
 
 def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine) -> None:
@@ -192,7 +200,7 @@ def postgres_db_from_template(
         def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
             return postgres_db_from_template
     """
-    dsn = postgres_dsn.copy()
+    dsn = _as_pg_config(postgres_dsn)
     state = _postgres_migrated_template_state
 
     maintenance = _maintenance_engine(dsn)
@@ -210,6 +218,35 @@ def postgres_db_from_template(
             state["built"] = True
             maintenance = _maintenance_engine(dsn)
         state["dsn"] = dsn
+    finally:
+        maintenance.dispose()
+
+    with cloned_pg_database_context(dsn, _TEMPLATE_DB_TO_RESTORE) as engine:
+        yield engine
+
+
+@pytest.fixture
+def postgres_db_per_test_from_template(
+    postgres_dsn: PostgresTestConfig,
+    _postgres_migrated_template_state: dict[str, Any],
+) -> Iterator[sa.engine.Engine]:
+    """Same as postgres_db_from_template but the test database is re-cloned from the
+    migrated template before EVERY test (function scope), for suites whose DB fixture
+    is function-scoped.
+    """
+    dsn = _as_pg_config(postgres_dsn)
+    state = _postgres_migrated_template_state
+
+    maintenance = _maintenance_engine(dsn)
+    try:
+        for attempt in tenacity.Retrying(wait=wait_fixed(1), stop=stop_after_delay(_MINUTE), reraise=True):
+            with attempt, maintenance.connect():
+                pass
+
+        if not state["built"] or not database_exists(maintenance, _TEMPLATE_DB_TO_RESTORE):
+            maintenance.dispose()
+            build_migrated_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+            state["built"] = True
     finally:
         maintenance.dispose()
 
