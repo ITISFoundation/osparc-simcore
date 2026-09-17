@@ -36,6 +36,7 @@ class ChatResponseFormat(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    # NOTE None is used as a sentinel for optional fields, not as an actual value (it will never be sent)
     messages: Annotated[
         list[ChatCompletionRequestMessage],
         Field(

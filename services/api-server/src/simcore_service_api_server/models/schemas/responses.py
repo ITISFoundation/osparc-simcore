@@ -5,7 +5,7 @@ as needed — the breaking-change check ensures we stay compatible.
 """
 
 from enum import StrEnum
-from typing import Annotated, Any, Final, Literal, get_args
+from typing import Annotated, Final, Literal
 
 import jsonschema
 from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator
@@ -119,19 +119,10 @@ class CreateResponseRequest(ApiServerInputSchema):
     background: Literal[True]
     input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
     metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
-    model: Any  # validation is done in validator because of OpenAI's tricky OAS
+    model: ChatModel
     stream: bool = False
     temperature: Temperature
     text: TextParam = TextParam()
-
-    @field_validator("model")
-    @classmethod
-    def _check_supported_model(cls, v: Any) -> str:
-        supported = get_args(ChatModel)
-        if not isinstance(v, str) or v not in supported:
-            msg = f"Model '{v}' is not supported. Supported models: {sorted(supported)}"
-            raise ValueError(msg)
-        return v
 
     def to_chat_response_format(self) -> ChatResponseFormat | None:
         fmt = self.text.format
