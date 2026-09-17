@@ -29,16 +29,6 @@ from pytest_simcore.helpers.faker_factories import (
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-
-# NOTE: importing a fixture into a module's namespace is what registers it for the tests of
-# that module. This suite does NOT load 'pytest_simcore' as a pytest plugin, so the fixtures
-# below must be imported here for 'migrated_db' (and the tests) to request them. Neither ruff
-# nor pylint detects this, hence the suppressions.
-# pylint: disable=unused-import
-from pytest_simcore.postgres_service import (  # noqa: F401
-    _postgres_migrated_template_state,
-    postgres_db_per_test_from_template,
-)
 from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
@@ -48,6 +38,10 @@ from simcore_service_api_server.core.settings import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 ## POSTGRES -----
+
+# NOTE: 'pytest_simcore.postgres_service' is loaded as a plugin by the top-level conftest,
+# providing 'postgres_db_per_test_from_template' (the test database is re-cloned from a
+# session-scoped template migrated once with alembic) which 'migrated_db' below builds on
 
 
 _CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -153,7 +147,7 @@ def postgres_dsn(postgres_service: PostgreServiceInfoDict) -> dict[str, str]:
 
 @pytest.fixture
 def migrated_db(
-    postgres_db_per_test_from_template: sqlalchemy.engine.Engine,  # noqa: F811
+    postgres_db_per_test_from_template: sqlalchemy.engine.Engine,
 ) -> None:
     # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
     # (fresh migrated schema before every test), but instead of running alembic
