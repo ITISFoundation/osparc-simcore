@@ -54,6 +54,7 @@ from simcore_postgres_database.webserver_models import (
 )
 from sqlalchemy import ColumnElement
 from sqlalchemy.engine import Row
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
 
@@ -67,6 +68,11 @@ from ._utils import convert_state_from_db
 _OUTBOX_POLL_INTERVAL_S: Final[int] = 30
 _MAX_ATTEMPTS: Final[int] = 10
 _MAX_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
+
+# only these count towards _MAX_FAILED_AGGREGATES_PER_DRAIN: a broken DB/socket
+# connection affects every aggregate alike, unlike an application-level bug tied to
+# specific rows, which must not halt the rest of an otherwise healthy drain
+_INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (DBAPIError, OSError, TimeoutError)
 
 # how many oldest claimable events are inspected (without locking) when picking
 # the aggregate to claim
@@ -197,24 +203,34 @@ class _ClaimOutcome:
     success: bool
     kind: str
     aggregate_id: str
+    # only meaningful when not success; see _INFRA_EXCEPTION_TYPES
+    is_infra_error: bool = False
 
 
-async def _acquire_next_free_aggregate(conn: AsyncConnection, claimable: ColumnElement[bool]) -> tuple[str, str] | None:
-    """Pick and advisory-lock the oldest claimable aggregate no other replica holds.
+async def _acquire_next_claimable_aggregate(
+    conn: AsyncConnection, claimable: ColumnElement[bool]
+) -> tuple[str, str, list[Row]] | None:
+    """Pick, advisory-lock, and row-lock the oldest claimable aggregate no other replica holds.
 
     The oldest distinct aggregates are listed with a read-only query (no locking at
     all), so candidate selection can never block or strand another replica. Their aggregates
     are then offered the per-aggregate advisory lock
-    (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) one at a time, so at
-    most one advisory lock is ever held by this transaction: an aggregate already
-    processed by another replica is skipped and stays fully parallel to it. Holding
-    the lock until commit guarantees events of the same aggregate are never processed
-    concurrently, so socketio notifications for one aggregate can't be emitted out of
-    order across replicas. Including kind in the lock key keeps this worker's lock
+    (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) one at a time: an
+    aggregate already processed by another replica is skipped and stays fully
+    parallel to it. Including kind in the lock key keeps this worker's lock
     namespace separate from other (future) producers that may reuse the same id space.
 
-    Returns the (kind, aggregate_id) whose lock was acquired, or None when no
-    candidate aggregate is free (or the queue is drained).
+    Once a lock is won, its rows are re-checked with FOR UPDATE SKIP LOCKED: if they
+    were claimed and deleted by another replica between the read-only scan above and
+    the lock being granted, that candidate is skipped (the harmless advisory lock is
+    kept until commit) and the next one is tried -- so a single raced-away candidate
+    can never end candidate selection early while others in the same batch are still
+    free. Holding the row lock until commit guarantees events of the same aggregate
+    are never processed concurrently, so socketio notifications for one aggregate
+    can't be emitted out of order across replicas.
+
+    Returns the (kind, aggregate_id, rows) of the aggregate whose lock and rows were
+    acquired, or None when no candidate aggregate is both free and still pending.
     """
     # one row per aggregate (GROUP BY), oldest aggregate first: the batch limit then
     # covers _CLAIM_CANDIDATE_BATCH *distinct* aggregates, so a burst of events on one
@@ -237,8 +253,26 @@ async def _acquire_next_free_aggregate(conn: AsyncConnection, claimable: ColumnE
                 select(func.pg_try_advisory_xact_lock(func.hashtextextended(f"{kind}:{aggregate_id}", 0)))
             )
         ).scalar_one()
-        if acquired:
-            return kind, aggregate_id
+        if not acquired:
+            continue
+
+        co_claimed_rows = (
+            await conn.execute(
+                select(outbox_events.c.id, outbox_events.c.changed_columns)
+                .where(
+                    outbox_events.c.kind == kind,
+                    outbox_events.c.aggregate_id == aggregate_id,
+                    outbox_events.c.attempts < _MAX_ATTEMPTS,
+                )
+                .order_by(outbox_events.c.modified, outbox_events.c.id)
+                .limit(_MAX_COALESCE_BATCH)
+                .with_for_update(skip_locked=True)
+            )
+        ).fetchall()
+        if co_claimed_rows:
+            return kind, aggregate_id, co_claimed_rows
+        # raced away since the read-only scan above: try the next candidate instead
+        # of giving up on the whole batch
     return None
 
 
@@ -250,7 +284,7 @@ async def _claim_and_process_one_outbox_event(
     """Claim, process, and delete every pending event of one aggregate (at-least-once).
 
     Claiming never locks more than the aggregate it is about to process:
-    _acquire_next_free_aggregate elects (via the per-aggregate advisory lock) the
+    _acquire_next_claimable_aggregate elects (via the per-aggregate advisory lock) the
     oldest claimable aggregate no other replica holds; only then are event rows
     locked -- all pending events of the winning aggregate are co-claimed
     (FOR UPDATE SKIP LOCKED) and projected once: the union of their changed_columns
@@ -288,30 +322,12 @@ async def _claim_and_process_one_outbox_event(
                     list(exclude_aggregates)
                 )
 
-            # elect one free aggregate (advisory lock) before touching any row lock
-            winner = await _acquire_next_free_aggregate(conn, claimable)
+            # elect one free aggregate (advisory lock + row lock) before processing
+            winner = await _acquire_next_claimable_aggregate(conn, claimable)
             if winner is None:
                 # drained, or every candidate aggregate is locked by another replica
                 return None
-            kind, aggregate_id = winner
-
-            # only now are rows locked, and only those of the winning aggregate
-            co_claimed = await conn.execute(
-                select(outbox_events.c.id, outbox_events.c.changed_columns)
-                .where(
-                    outbox_events.c.kind == kind,
-                    outbox_events.c.aggregate_id == aggregate_id,
-                    outbox_events.c.attempts < _MAX_ATTEMPTS,
-                )
-                .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .limit(_MAX_COALESCE_BATCH)
-                .with_for_update(skip_locked=True)
-            )
-            co_claimed_rows = co_claimed.fetchall()
-            if not co_claimed_rows:
-                # the candidates disappeared between the read-only scan and the lock
-                # (claimed or deleted concurrently): retried on the next cycle
-                return None
+            kind, aggregate_id, co_claimed_rows = winner
             claimed_ids = [r.id for r in co_claimed_rows]
             changed_columns = frozenset(col for r in co_claimed_rows for col in (r.changed_columns or []))
 
@@ -343,7 +359,11 @@ async def _claim_and_process_one_outbox_event(
     if processing_error is not None:
         failed_outcome, claimed_ids, failed_exc = processing_error
         await _record_failed_attempts(engine, claimed_ids, failed_exc)
-        return dataclasses.replace(failed_outcome, success=False)
+        return dataclasses.replace(
+            failed_outcome,
+            success=False,
+            is_infra_error=isinstance(failed_exc, _INFRA_EXCEPTION_TYPES),
+        )
     return outcome
 
 
@@ -401,12 +421,16 @@ async def _claim_and_process_outbox_events(app: web.Application, engine: AsyncEn
     the rest of this drain so one poisoned aggregate cannot starve the healthy events
     behind it: the failure is marked on the row (attempt + backoff) and the drain
     moves on to the next aggregate. The drain aborts only after too many aggregates
-    have failed *without any success in between* -- that pattern points at broken
-    infrastructure (e.g. DB, socketio) rather than one bad event, and continuing
-    would just spin. Since excluded aggregates cannot be re-claimed within the drain,
-    every counted failure concerns a distinct aggregate; a success resets the count.
-    Everything left over is retried on the next wake-up or poll cycle, where the
-    failed aggregates become claimable again (with their backoff applied).
+    have failed with an infrastructure-like error (_INFRA_EXCEPTION_TYPES) and no
+    success in between -- that pattern points at a broken DB/socketio connection
+    rather than a handful of unrelated bad rows, and continuing would just spin.
+    An application-level failure never counts towards this abort: the aggregate is
+    still excluded from the rest of the drain, but healthy aggregates behind it keep
+    draining no matter how many unrelated rows fail. Since excluded aggregates cannot
+    be re-claimed within the drain, every counted failure concerns a distinct
+    aggregate; a success resets the count. Everything left over is retried on the
+    next wake-up or poll cycle, where the failed aggregates become claimable again
+    (with their backoff applied).
 
     The drain also stops when every claimable event's aggregate is currently locked
     by another replica: the next cycle will retry, by which time that replica is likely done.
@@ -419,16 +443,18 @@ async def _claim_and_process_outbox_events(app: web.Application, engine: AsyncEn
             return  # queue drained, or all remaining aggregates are locked elsewhere
         if outcome.success:
             consecutive_failed_aggregates = 0
-        else:
-            failed_aggregates.add((outcome.kind, outcome.aggregate_id))
-            consecutive_failed_aggregates += 1
-            if consecutive_failed_aggregates >= _MAX_FAILED_AGGREGATES_PER_DRAIN:
-                _logger.warning(
-                    "Stopping outbox drain after %d aggregates failed without a success"
-                    " in-between; will retry on next cycle",
-                    consecutive_failed_aggregates,
-                )
-                return
+            continue
+        failed_aggregates.add((outcome.kind, outcome.aggregate_id))
+        if not outcome.is_infra_error:
+            continue  # application-level failure: does not threaten the rest of the drain
+        consecutive_failed_aggregates += 1
+        if consecutive_failed_aggregates >= _MAX_FAILED_AGGREGATES_PER_DRAIN:
+            _logger.warning(
+                "Stopping outbox drain after %d aggregates failed with an infrastructure-like"
+                " error and no success in-between; will retry on next cycle",
+                consecutive_failed_aggregates,
+            )
+            return
 
 
 # shown as pg_stat_activity.application_name for the dedicated LISTEN connection,
