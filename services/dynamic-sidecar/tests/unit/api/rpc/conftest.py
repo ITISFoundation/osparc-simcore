@@ -34,9 +34,10 @@ def mock_environment(
 
 
 @pytest.fixture
-async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
+async def app(mock_environment: EnvVarsDict, mock_input_permissions_toggle: AsyncMock) -> AsyncIterable[FastAPI]:
     app = create_app()
     async with LifespanManager(app):
+        mock_input_permissions_toggle.reset_mock()
         yield app
 
 
