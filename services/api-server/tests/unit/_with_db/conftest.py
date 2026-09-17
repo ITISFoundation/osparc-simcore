@@ -15,7 +15,6 @@ from urllib.parse import quote_plus
 
 import httpx
 import pytest
-import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
 import sqlalchemy.engine
 import yaml
@@ -23,7 +22,6 @@ from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import (
     random_api_auth,
     random_product,
@@ -62,7 +60,7 @@ def docker_compose_file(default_app_env_vars: dict[str, str], tmpdir_factory: Ca
     assert dst_path.exists()
 
     # configs
-    subprocess.run(
+    subprocess.run(  # noqa: S602
         f'docker compose --file "{src_path}" config > "{dst_path}"',
         shell=True,
         check=True,
@@ -138,29 +136,28 @@ def sync_engine(
     _engine.dispose()
 
 
+@pytest.fixture(scope="session")
+def postgres_dsn(postgres_service: PostgreServiceInfoDict) -> dict[str, str]:
+    return {key: postgres_service[key] for key in ("user", "password", "database", "host", "port")}
+
+
+# provides `postgres_db_per_test_from_template`: a session-scoped template database migrated
+# once with alembic and re-cloned (CREATE DATABASE ... TEMPLATE) before every test
+from pytest_simcore.postgres_service import (  # noqa: E402, F401
+    _postgres_migrated_template_state,
+    postgres_db_per_test_from_template,
+)
+
+
 @pytest.fixture
-def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engine):
+def migrated_db(
+    postgres_db_per_test_from_template: sqlalchemy.engine.Engine,  # noqa: F811
+) -> None:
     # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
-    # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
-    # fixture to have local scope
-    #
-    kwargs = postgres_service.copy()
-    kwargs.pop("dsn")
-    assert pg_cli.discover.callback is not None
-    pg_cli.discover.callback(**kwargs)
-
-    assert pg_cli.upgrade.callback is not None
-    pg_cli.upgrade.callback("head")
-
-    yield
-
-    assert pg_cli.downgrade.callback is not None
-    pg_cli.downgrade.callback("base")
-
-    assert pg_cli.clean.callback is not None
-    pg_cli.clean.callback()
-
-    postgres_tools.force_drop_all_tables(sync_engine)
+    # (fresh migrated schema before every test), but instead of running alembic
+    # 'upgrade head'/'downgrade base' for every test, the database is re-cloned from a
+    # session-scoped migrated template
+    assert postgres_db_per_test_from_template is not None
 
 
 @pytest.fixture
