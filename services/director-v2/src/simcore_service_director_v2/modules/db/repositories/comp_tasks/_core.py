@@ -326,19 +326,19 @@ class CompTasksRepository(BaseRepository):
             errors=errors,
         )
 
-    async def update_project_tasks_state(
+    async def update_project_tasks_state(  # pylint: disable=too-many-arguments
         self,
         project_id: ProjectID,
         run_id: RunID,
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
+        connection: AsyncConnection | None = None,
         *,
         clear_errors: bool = True,
         optional_progress: float | None = None,
         optional_started: datetime | None = None,
         optional_stopped: datetime | None = None,
-        connection: AsyncConnection | None = None,
     ) -> None:
         """update the task state values in the database
         passing None for the optional arguments will not update the respective values in the database
