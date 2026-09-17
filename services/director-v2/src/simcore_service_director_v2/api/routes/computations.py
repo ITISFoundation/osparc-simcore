@@ -601,21 +601,26 @@ async def stop_computation(
         computation_stop.user_id,
         project_id,
     )
-    # get the project pipeline
-    pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id=project_id)
+    db_engine = get_engine(request.app)
+    # all DB reads below share a single connection (no external I/O in this block)
+    async with pass_or_acquire_connection(db_engine) as conn:
+        # get the project pipeline
+        pipeline_at_db = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
+        # get the project task states
+        tasks = await comp_tasks_repo.list_tasks(conn, project_id=project_id)
+        # get the last run details if any
+        last_run: CompRunsAtDB | None = None
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            last_run = await comp_runs_repo.get_latest_run_by_project(conn, project_id=project_id)
+
     pipeline_dag = pipeline_at_db.get_graph()
-    # get the project task states
-    tasks = await comp_tasks_repo.list_tasks(project_id=project_id)
     # create the complete DAG graph
     complete_dag = create_complete_dag_from_tasks(tasks)
-    # stop the pipeline if it is running
-    last_run: CompRunsAtDB | None = None
-    pipeline_state = RunningState.NOT_STARTED  # default state if no run exists
-    with contextlib.suppress(ComputationalRunNotFoundError):
-        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-        pipeline_state = last_run.result
-        if utils.is_pipeline_running(last_run.result):
-            await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+
+    pipeline_state = last_run.result if last_run else RunningState.NOT_STARTED
+    # stop the pipeline if it is running (external I/O, outside the DB connection)
+    if last_run and utils.is_pipeline_running(last_run.result):
+        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
 
     return ComputationGet(
         id=project_id,
