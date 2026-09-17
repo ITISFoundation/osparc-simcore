@@ -228,8 +228,12 @@ def cloned_pg_database_context(
         engine.dispose()
         maintenance = _maintenance_engine(postgres_config)
         try:
-            _drop_database(maintenance, database)
-            _create_database_from_template_with_retry(maintenance, database, template_db_name)
+            if database_exists(maintenance, template_db_name):
+                _drop_database(maintenance, database)
+                _create_database_from_template_with_retry(maintenance, database, template_db_name)
+            # NOTE: the template may already have been dropped by another fixture
+            # finalizing first (e.g. postgres_with_template_db), in which case there is
+            # nothing left to clone from and the target database is simply left as-is
         finally:
             maintenance.dispose()
 

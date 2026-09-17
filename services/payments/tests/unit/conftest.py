@@ -120,13 +120,6 @@ def disable_postgres_setup(mocker: MockerFixture) -> Callable:
     return _
 
 
-@pytest.fixture(scope="module")
-def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
-    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
-    # running alembic 'upgrade head'/'downgrade base' for every test module
-    return postgres_db_from_template
-
-
 @pytest.fixture
 def with_disabled_postgres(disable_postgres_setup: Callable) -> None:
     disable_postgres_setup()
