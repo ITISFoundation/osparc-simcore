@@ -60,7 +60,7 @@ async def release_licensed_item(
     )
     if _licensed_item_checkout.licensed_item_id != licensed_item_id:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"{licensed_item_id} is not the license_item_id associated "
             f"with the checked out item {licensed_item_checkout_id}",
         )

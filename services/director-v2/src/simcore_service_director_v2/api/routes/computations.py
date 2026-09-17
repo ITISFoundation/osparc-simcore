@@ -19,8 +19,8 @@ import contextlib
 import logging
 from typing import Annotated, Any, Final, cast
 
-from annotated_types import doc
 import networkx as nx
+from annotated_types import doc
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.serialization import model_dump_with_secrets
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Response
@@ -241,7 +241,7 @@ async def _try_start_pipeline(
 
     if computation.collection_run_id is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Project {computation.project_id} has no collection run ID",
         )
     run_metadata = RunMetadataDict(
@@ -388,7 +388,7 @@ async def _create_computation_get(
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
         status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Invalid computation request (e.g. missing collection_run_id)",
         },
     },

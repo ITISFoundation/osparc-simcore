@@ -38,7 +38,7 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
 
         async def _value_error_as_422_func(request: web.Request, exception: BaseException) -> web.Response:
             # custom exception handler
-            return web.json_response(reason=f"{build_method=}", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return web.json_response(reason=f"{build_method=}", status=status.HTTP_422_UNPROCESSABLE_CONTENT)
 
         exception_handlers_map = {
             ValueError: _value_error_as_422_func,
@@ -46,7 +46,7 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
 
     elif build_method == "http_map":
         exception_handlers_map = to_exceptions_handlers_map(
-            {ValueError: HttpErrorInfo(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{build_method=}")}
+            {ValueError: HttpErrorInfo(status.HTTP_422_UNPROCESSABLE_CONTENT, f"{build_method=}")}
         )
     else:
         pytest.fail(f"Undefined {build_method=}")
@@ -97,7 +97,7 @@ async def test_handling_exceptions_decorating_a_route(
 
     # handled non-HTTPException exception
     resp = await client.post("/ValueError")
-    assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     if build_method == "http_map":
         body = await resp.json()
         error = ErrorGet.model_validate(body["error"])
@@ -147,7 +147,7 @@ async def test_handling_exceptions_with_middleware(
 
     # handled non-HTTPException exception
     resp = await client.post("/ValueError")
-    assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     if build_method == "http_map":
         body = await resp.json()
         error = ErrorGet.model_validate(body["error"])
