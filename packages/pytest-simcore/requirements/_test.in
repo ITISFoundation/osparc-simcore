@@ -5,6 +5,10 @@
 
 
 aiodocker
+# 'alembic' is normally pulled ONLY via simcore-postgres-database's [migration] extra, but
+# 'uv pip sync' (used by make install-ci) does not resolve extras from requirements files
+# -> listed explicitly here for the postgres template-DB fixtures
+alembic
 arrow
 coverage
 docker
