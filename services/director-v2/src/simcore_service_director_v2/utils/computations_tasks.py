@@ -33,7 +33,7 @@ async def _get_pipeline_info(
 
     async with pass_or_acquire_connection(db_engine) as conn:
         pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
-        all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id=project_id)
+        all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(conn, project_id=project_id)
 
     pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
