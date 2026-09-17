@@ -698,7 +698,6 @@ async def delete_computation(
             )
 
     # delete the pipeline now
-
     async with transaction_context(get_engine(request.app)) as conn:
         await comp_tasks_repo.delete_tasks_from_project(conn, project_id=project_id)
         await comp_pipelines_repo.delete_pipeline(conn, project_id=project_id)
