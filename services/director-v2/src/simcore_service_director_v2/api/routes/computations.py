@@ -42,7 +42,7 @@ from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
-from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from starlette import status
 from starlette.requests import Request
@@ -698,5 +698,7 @@ async def delete_computation(
             )
 
     # delete the pipeline now
-    await comp_tasks_repo.delete_tasks_from_project(project_id=project_id)
-    await comp_pipelines_repo.delete_pipeline(project_id=project_id)
+
+    async with transaction_context(get_engine(request.app)) as conn:
+        await comp_tasks_repo.delete_tasks_from_project(conn, project_id=project_id)
+        await comp_pipelines_repo.delete_pipeline(conn, project_id=project_id)
