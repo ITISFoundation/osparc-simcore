@@ -21,7 +21,7 @@ def user_message(
 ) -> Annotated[str, doc("The original message string, usable inline at the call site")]:
     """Marks a message as user-facing.
 
-    Implements the *prose-as-key* pattern: the English prose itself is the
+    Implements the *prose-as-key* pattern: the English (en_US) prose itself is the
     gettext msgid, so no separate key registry is needed.  The string returned
     by this function is the canonical msgid used by the i18n pipeline
     (``common_library.gettext_support``).  Extraction tools scan call

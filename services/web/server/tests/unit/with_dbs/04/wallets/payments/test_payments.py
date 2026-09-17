@@ -36,6 +36,8 @@ from simcore_service_webserver.payments.settings import (
 )
 from simcore_service_webserver.wallets._constants import (
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
+    MSG_WALLET_ACCESS_FORBIDDEN_ERROR,
+    MSG_WALLET_OR_PAYMENT_NOT_FOUND_ERROR,
 )
 
 type OpenApiDict = dict[str, Any]
@@ -343,8 +345,7 @@ async def test_payment_not_found(
     data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert data is None
     error_msg = error["message"]
-    assert payment_id in error_msg
-    assert ":cancel" not in error_msg
+    assert error_msg == MSG_WALLET_OR_PAYMENT_NOT_FOUND_ERROR
 
 
 def test_payment_transaction_state_and_literals_are_in_sync():
@@ -373,7 +374,7 @@ async def test_payment_on_wallet_without_access(
         assert error
 
         error_msg = error["message"]
-        assert f"{wallet.wallet_id}" in error_msg
+        assert error_msg == MSG_WALLET_ACCESS_FORBIDDEN_ERROR
 
 
 @pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/pull/4897")
