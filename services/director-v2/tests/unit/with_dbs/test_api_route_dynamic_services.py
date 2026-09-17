@@ -645,6 +645,13 @@ def mock_internals_inactivity(
         f"{database_module.__name__}.get_base_repository",
         side_effect=_get_base_repository,
     )
+    # the route constructs the repositories directly: patch them where used
+    routes_module = "simcore_service_director_v2.api.routes.dynamic_services"
+    mocker.patch(f"{routes_module}.ProjectsRepository", return_value=MockProjectsRepo())
+    mocker.patch(
+        f"{routes_module}.ProjectsNodesRepository",
+        return_value=MockProjectsNodesRepo(),
+    )
 
     async def get_service_activity(node_uuid: NodeID) -> ActivityInfoOrNone:
         return service_inactivity_map[f"{node_uuid}"]
