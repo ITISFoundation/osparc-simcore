@@ -912,9 +912,10 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
-    """When *every* aggregate fails (broken DB/socketio, not one bad event), the
-    drain must stop after _MAX_FAILED_AGGREGATES_PER_DRAIN distinct aggregates and
-    leave the rest of the queue untouched for the next cycle."""
+    """When *every* aggregate fails with an infrastructure-like error (broken
+    DB/socketio, not one bad event), the drain must stop after
+    _MAX_FAILED_AGGREGATES_PER_DRAIN distinct aggregates and leave the rest of the
+    queue untouched for the next cycle."""
     assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
@@ -936,7 +937,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
     mocker.patch(
         "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
         autospec=True,
-        side_effect=RuntimeError("infrastructure is down"),
+        side_effect=TimeoutError("infrastructure is down"),
     )
 
     await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
@@ -949,6 +950,55 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
     assert len(rows) == len(tasks)
     attempts = [row["attempts"] for row in rows]
     assert attempts == [1] * _MAX_FAILED_AGGREGATES_PER_DRAIN + [0]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_drain_does_not_abort_on_application_level_failures(
+    sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Application-level failures (e.g. a bug tied to specific rows) must never
+    trigger the infra-outage heuristic: even with more distinct failing aggregates
+    than _MAX_FAILED_AGGREGATES_PER_DRAIN, the drain must attempt every one of them
+    instead of giving up early on the healthy backlog."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    tasks = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(_MAX_FAILED_AGGREGATES_PER_DRAIN + 2)
+    ]
+    for task in tasks:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        autospec=True,
+        side_effect=RuntimeError("bug in projection code"),
+    )
+
+    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+
+    # every aggregate was attempted exactly once, none left untouched
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(outbox_events.select().order_by(outbox_events.c.id))
+        rows = result.mappings().all()
+    assert len(rows) == len(tasks)
+    assert [row["attempts"] for row in rows] == [1] * len(tasks)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
