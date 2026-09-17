@@ -449,7 +449,6 @@ async def test_removing_ports(
         ("boolean", True, bool),
         ("string", "test-string", str),
         ("string", "", str),
-        # TODO: add here schema-like port  # noqa: FIX002
     ],
 )
 async def test_get_value_from_previous_node(

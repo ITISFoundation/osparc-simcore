@@ -68,7 +68,7 @@ def empty_configuration_file() -> Path:
 
 
 @pytest.fixture
-def node_ports_config(postgres_host_config: PostgresTestConfig, s3_storage_s3_settings_envs: EnvVarsDict) -> None: ...
+def node_ports_config(postgres_host_config: PostgresTestConfig, s3_storage_settings_envs: EnvVarsDict) -> None: ...
 
 
 @pytest.fixture

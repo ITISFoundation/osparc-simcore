@@ -92,7 +92,7 @@ def mock_environment(
     rabbit_service: RabbitSettings,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
-    s3_storage_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,

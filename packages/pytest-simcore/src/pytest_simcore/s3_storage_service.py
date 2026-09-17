@@ -15,7 +15,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture
-def s3_storage_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker) -> S3Settings:
+def s3_storage_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker) -> S3Settings:
     assert "pytest-ops_s3-storage" in docker_stack["services"]
 
     return S3Settings(
@@ -30,12 +30,12 @@ def s3_storage_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvV
 
 
 @pytest.fixture
-def s3_storage_s3_settings_envs(
-    s3_storage_s3_settings: S3Settings,
+def s3_storage_settings_envs(
+    s3_storage_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     changed_envs: EnvVarsDict = model_dump_with_secrets(
-        s3_storage_s3_settings,
+        s3_storage_settings,
         show_secrets=True,
     )
 

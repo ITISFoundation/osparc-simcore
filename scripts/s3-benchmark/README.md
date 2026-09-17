@@ -48,3 +48,11 @@ Tuning flags: `--small-ops`, `--small-size-kb`, `--concurrency`, `--big-size-mb`
 - `results-rustfs.json` — RustFS `1.0.0` candidate (pinned in `services/docker-compose-ops*.yml`)
 - `results-seaweedfs.json` — SeaweedFS `4.22` alternative evaluated during due diligence
   (all compat gates pass; fastest listing/multipart but ~3x slower server-side copy)
+
+## Known regressions accepted with RustFS (vs MinIO)
+
+- `listing`: `list_objects_v2` pagination is ~8x slower (~9700 -> ~1200 keys/s). Affects
+  file-picker folder listings and agent volume-cleanup archive listing in dev/CI only
+  (production uses AWS/CEPH). Reproducible across repeats and unchanged since 1.0.0-rc.6.
+- `copy`: server-side multipart copy ~30-50% slower. Less critical since the platform's
+  sync paths use rclone client-side copies.

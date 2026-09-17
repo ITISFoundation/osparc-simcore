@@ -3,12 +3,13 @@ import logging
 import os
 import re
 import subprocess
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 import docker
 import yaml
+from docker.models.services import Service
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
@@ -17,7 +18,7 @@ from tenacity.wait import wait_fixed
 
 # NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status1 because some of the
 # packages tests installations do not include this library!!
-class ContainerStatus(str, Enum):  # noqa: UP042
+class ContainerStatus(StrEnum):
     """
     String representation of the container state. Can be one of "created",
     "running", "paused", "restarting", "removing", "exited", or "dead".
@@ -44,7 +45,7 @@ _NORMPATH_COUNT = 0
 log = logging.getLogger(__name__)
 
 
-def _pick_service(candidates: list, service_name: str, target_ports: list[int] | int | None) -> Any:
+def _pick_service(candidates: list[Service], service_name: str, target_ports: list[int] | int | None) -> Service:
     # docker service names are '{stack}_{service}': prefer matches at the stack-separator
     # boundary so e.g. 'storage' does not also hit another stack's 's3-storage' service
     if len(candidates) > 1:
