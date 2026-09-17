@@ -41,6 +41,7 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 from starlette.requests import Request
@@ -423,11 +424,12 @@ async def create_or_update_or_start_computation(
     projects_metadata_repo = ProjectsMetadataRepository(db_engine)
 
     try:
-        project = await projects_repo.get(project_id=computation.project_id)
+        async with pass_or_acquire_connection(db_engine) as conn:
+            project = await projects_repo.get(conn, project_id=computation.project_id)
+            project_nodes = await projects_nodes_repo.get_all(conn, project_id=computation.project_id)
 
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
-        project_nodes = await projects_nodes_repo.get_all(project_id=computation.project_id)
         complete_dag = create_complete_dag(project_nodes)
 
         # reject cycles involving computational nodes early (before catalog checks)
