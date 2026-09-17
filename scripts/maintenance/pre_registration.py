@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from httpx import AsyncClient, HTTPStatusError
+from httpx2 import AsyncClient, HTTPStatusError
 from pydantic import (
     BaseModel,
     BeforeValidator,

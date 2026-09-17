@@ -1,5 +1,5 @@
 from fastapi import status
-from httpx import Response, Timeout
+from httpx2 import Response, Timeout
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     expect_status,

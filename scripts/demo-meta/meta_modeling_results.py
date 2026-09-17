@@ -3,7 +3,7 @@
 from collections import defaultdict
 from uuid import UUID
 
-import httpx
+import httpx2
 import pandas as pd
 from osparc_webapi import (
     CheckPoint,
@@ -19,7 +19,7 @@ from osparc_webapi import (
 )
 
 
-def print_checkpoints(client: httpx.Client):
+def print_checkpoints(client: httpx2.Client):
     repos: list[ProjectRepo] = list(iter_repos(client))
     project_id = repos[0].project_uuid
 
@@ -27,14 +27,14 @@ def print_checkpoints(client: httpx.Client):
         print(checkpoint.model_dump_json(exclude_unset=True, indent=1))
 
 
-def print_iterations(client: httpx.Client, project_id: UUID, checkpoint: CheckPoint):
+def print_iterations(client: httpx2.Client, project_id: UUID, checkpoint: CheckPoint):
     # print-iterations
     print("Metaproject at", f"{project_id=}", f"{checkpoint=}")
     for project_iteration in iter_project_iteration(client, project_id, checkpoint.id):
         print(project_iteration.model_dump_json(exclude_unset=True, indent=1))
 
 
-def select_project_head(client: httpx.Client, project_id: UUID):
+def select_project_head(client: httpx2.Client, project_id: UUID):
     # get head
     r = client.get(f"/repos/projects/{project_id}/checkpoints/HEAD")
     head = Envelope[CheckPoint].model_validate(r.json()).data
@@ -43,7 +43,7 @@ def select_project_head(client: httpx.Client, project_id: UUID):
     return project_id, head
 
 
-def fetch_data(client: httpx.Client, project_id: UUID, checkpoint: CheckPoint):
+def fetch_data(client: httpx2.Client, project_id: UUID, checkpoint: CheckPoint):
     #  results
     data = defaultdict(list)
     index = []

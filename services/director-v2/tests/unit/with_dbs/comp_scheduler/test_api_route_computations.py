@@ -18,7 +18,7 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import httpx
+import httpx2
 import pytest
 import respx
 from faker import Faker
@@ -141,10 +141,10 @@ def mocked_catalog_service_fcts(
     fake_service_labels: dict[str, Any],
     fake_service_extras: ServiceExtras,
 ) -> Iterator[respx.MockRouter]:
-    def _mocked_service_resources(request) -> httpx.Response:
-        return httpx.Response(httpx.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True))
+    def _mocked_service_resources(request) -> httpx2.Response:
+        return httpx2.Response(httpx2.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True))
 
-    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx.Response:
+    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx2.Response:
         data_published = fake_service_details.model_copy(
             update={
                 "key": urllib.parse.unquote(service_key),
@@ -156,7 +156,7 @@ def mocked_catalog_service_fcts(
             **data_published,
         }
         payload = ServiceGet.model_validate(data)
-        return httpx.Response(
+        return httpx2.Response(
             200,
             json=jsonable_encoder(
                 payload,
@@ -200,7 +200,7 @@ def mocked_catalog_service_fcts_deprecated(
     fake_service_details: ServiceMetaDataPublished,
     fake_service_extras: ServiceExtras,
 ) -> Iterator[respx.MockRouter]:
-    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx.Response:
+    def _mocked_services_details(request, service_key: str, service_version: str) -> httpx2.Response:
         data_published = fake_service_details.model_copy(
             update={
                 "key": urllib.parse.unquote(service_key),
@@ -219,8 +219,8 @@ def mocked_catalog_service_fcts_deprecated(
 
         payload = ServiceGet.model_validate(data)
 
-        return httpx.Response(
-            httpx.codes.OK,
+        return httpx2.Response(
+            httpx2.codes.OK,
             json=jsonable_encoder(
                 payload,
                 by_alias=True,
@@ -278,19 +278,19 @@ def default_pricing_plan_aws_ec2_type(
 def mocked_resource_usage_tracker_service_fcts(
     minimal_app: FastAPI, default_pricing_plan: RutPricingPlanGet
 ) -> Iterator[respx.MockRouter]:
-    def _mocked_service_default_pricing_plan(request, service_key: str, service_version: str) -> httpx.Response:
+    def _mocked_service_default_pricing_plan(request, service_key: str, service_version: str) -> httpx2.Response:
         # RUT only returns values if they are in the table resource_tracker_pricing_plan_to_service
         # otherwise it returns 404s
         if "frontend" in service_key:
             # NOTE: there are typically no frontend services that have pricing plans
-            return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
-        return httpx.Response(200, json=jsonable_encoder(default_pricing_plan, by_alias=True))
+            return httpx2.Response(status_code=status.HTTP_404_NOT_FOUND)
+        return httpx2.Response(200, json=jsonable_encoder(default_pricing_plan, by_alias=True))
 
-    def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx.Response:
+    def _mocked_get_pricing_unit(request, pricing_plan_id: int) -> httpx2.Response:
         assert "json_schema_extra" in RutPricingUnitGet.model_config
         assert isinstance(RutPricingUnitGet.model_json_schema(), dict)
         assert isinstance(RutPricingUnitGet.model_json_schema()["examples"], list)
-        return httpx.Response(
+        return httpx2.Response(
             200,
             json=jsonable_encoder(
                 (
@@ -364,12 +364,12 @@ async def test_create_computation(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -462,7 +462,7 @@ async def test_create_computation_with_wallet(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     wallet_info: WalletInfo,
     project_nodes_overrides: dict[str, Any],
     default_pricing_plan_aws_ec2_type: str | None,
@@ -481,7 +481,7 @@ async def test_create_computation_with_wallet(
         project_nodes_overrides={"required_resources": project_nodes_overrides},
         workbench=fake_workbench_without_outputs,
     )
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -555,7 +555,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     wallet_info: WalletInfo,
     fake_collection_run_id: CollectionRunID,
 ):
@@ -564,7 +564,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
         user,
         workbench=fake_workbench_without_outputs,
     )
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -599,13 +599,13 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     wallet_info: WalletInfo,
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -629,12 +629,12 @@ async def test_start_computation_without_product_fails(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json={
@@ -655,11 +655,11 @@ async def test_start_computation_without_collection_run_id_fails(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json={
@@ -681,12 +681,12 @@ async def test_start_computation(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -715,7 +715,7 @@ async def test_start_computation_with_encryption_propagates_context_to_pipeline(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     fake_collection_run_id: CollectionRunID,
     mocker: MockerFixture,
 ):
@@ -731,7 +731,7 @@ async def test_start_computation_with_encryption_propagates_context_to_pipeline(
     encrypted_node_id = next(iter(proj.workbench))
     node_input_port_to_file_id = {"input_1": "input_1"}
 
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     body = jsonable_encoder(
         ComputationCreate(
             user_id=user["id"],
@@ -768,7 +768,7 @@ async def test_start_computation_with_project_node_resources_defined(
     fake_workbench_without_outputs: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
@@ -782,7 +782,7 @@ async def test_start_computation_with_project_node_resources_defined(
         },
         workbench=fake_workbench_without_outputs,
     )
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -812,12 +812,12 @@ async def test_start_computation_with_deprecated_services_raises_409(
     fake_workbench_adjacency: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    create_computation_url = httpx.URL("/v2/computations")
+    create_computation_url = httpx2.URL("/v2/computations")
     response = await async_client.post(
         create_computation_url,
         json=jsonable_encoder(
@@ -842,16 +842,16 @@ async def test_get_computation_from_empty_project(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     faker: Faker,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     user = create_registered_user()
-    get_computation_url = httpx.URL(f"/v2/computations/{faker.uuid4()}?user_id={user['id']}")
+    get_computation_url = httpx2.URL(f"/v2/computations/{faker.uuid4()}?user_id={user['id']}")
     # the project exists but there is no pipeline yet
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create the project
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    get_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
     # create an empty pipeline
@@ -885,11 +885,11 @@ async def test_get_computation_from_not_started_computation_task(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
-    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    get_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     await create_pipeline(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
@@ -945,7 +945,7 @@ async def test_get_computation_from_published_computation_task(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -961,7 +961,7 @@ async def test_get_computation_from_published_computation_task(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     assert comp_runs
-    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    get_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
@@ -1014,7 +1014,7 @@ async def test_delete_computation_success(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     """Test successful pipeline deletion when pipeline is not running."""
     user = create_registered_user()
@@ -1027,7 +1027,7 @@ async def test_delete_computation_success(
         dag_adjacency_list=fake_workbench_adjacency,
     )
 
-    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    delete_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.request(
         "DELETE",
         delete_computation_url,
@@ -1052,7 +1052,7 @@ async def test_delete_computation_fails_when_pipeline_does_not_stop_in_time(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     mocker: MockerFixture,
 ):
     """Test that deletion raises 409 when pipeline doesn't stop within timeout."""
@@ -1078,7 +1078,7 @@ async def test_delete_computation_fails_when_pipeline_does_not_stop_in_time(
     # Instead, use a short wait_for so the real retry loop times out quickly: since the
     # comp_run stays PUBLISHED (no scheduler advances it in this test), the pipeline
     # never reports as stopped.
-    delete_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    delete_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.request(
         "DELETE",
         delete_computation_url,
@@ -1098,7 +1098,7 @@ async def test_stop_computation_can_be_called_again_once_pipeline_stopped(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     sqlalchemy_async_engine: AsyncEngine,
 ):
     """Stopping a computation must be safe to call again once the pipeline has
@@ -1114,7 +1114,7 @@ async def test_stop_computation_can_be_called_again_once_pipeline_stopped(
         dag_adjacency_list=fake_workbench_adjacency,
     )
 
-    stop_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}:stop")
+    stop_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}:stop")
 
     # first call: the pipeline is running, so it gets marked for cancellation
     response = await async_client.post(
@@ -1146,7 +1146,7 @@ async def test_stop_computation_that_was_never_run_does_not_fail(
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     """Stopping a computation that has a pipeline but was never run (i.e. no
     comp_run entry exists yet) must not fail (e.g. it must not raise/propagate
@@ -1157,7 +1157,7 @@ async def test_stop_computation_that_was_never_run_does_not_fail(
 
     # NOTE: no comp_run is created here, simulating a pipeline that was never started
 
-    stop_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}:stop")
+    stop_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}:stop")
     response = await async_client.post(
         stop_computation_url,
         json=ComputationStop(user_id=user["id"]).model_dump(mode="json"),

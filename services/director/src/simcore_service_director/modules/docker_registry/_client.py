@@ -7,13 +7,13 @@ from collections.abc import AsyncGenerator, Mapping
 from contextlib import aclosing
 from typing import Any, Final, cast
 
-import httpx
+import httpx2
 from aiocache.base import BaseCache  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from models_library.basic_regex import SIMPLE_VERSION_RE
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 from tenacity import retry
@@ -57,7 +57,7 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **r
     resp_data: dict = {}
     resp_headers: Mapping = {}
     auth = (
-        httpx.BasicAuth(
+        httpx2.BasicAuth(
             username=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
             password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
         )
@@ -72,7 +72,7 @@ async def _basic_auth_registry_request(app: FastAPI, path: str, method: str, **r
     # Restricting to /blobs/ paths limits SSRF surface from a misconfigured registry.
     follow_redirects = "/blobs/" in path
 
-    client = get_httpx_client(app)
+    client = get_httpx2_client(app)
     response = await client.request(
         method.lower(),
         f"{request_url}",
@@ -113,7 +113,7 @@ async def _auth_registry_request(  # noqa: C901
     url: URL,
     method: str,
     auth_headers: Mapping,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     *,
     follow_redirects: bool = False,
     **kwargs,
@@ -130,7 +130,7 @@ async def _auth_registry_request(  # noqa: C901
     if not auth_type:
         msg = "Unknown registry type: cannot deduce authentication method!"
         raise RegistryConnectionError(msg=msg)
-    auth = httpx.BasicAuth(
+    auth = httpx2.BasicAuth(
         username=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
         password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
     )
@@ -153,7 +153,7 @@ async def _auth_registry_request(  # noqa: C901
         resp_wtoken = await getattr(client, method.lower())(
             f"{url}", headers=headers, follow_redirects=follow_redirects, **kwargs
         )
-        assert isinstance(resp_wtoken, httpx.Response)  # nosec
+        assert isinstance(resp_wtoken, httpx2.Response)  # nosec
         if resp_wtoken.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wtoken.status_code >= status.HTTP_400_BAD_REQUEST:
@@ -167,7 +167,7 @@ async def _auth_registry_request(  # noqa: C901
         resp_wbasic = await getattr(client, method.lower())(
             f"{url}", auth=auth, follow_redirects=follow_redirects, **kwargs
         )
-        assert isinstance(resp_wbasic, httpx.Response)  # nosec
+        assert isinstance(resp_wbasic, httpx2.Response)  # nosec
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
@@ -181,7 +181,7 @@ async def _auth_registry_request(  # noqa: C901
 
 
 @retry(
-    retry=retry_if_exception_type((httpx.RequestError, TimeoutError)),
+    retry=retry_if_exception_type((httpx2.RequestError, TimeoutError)),
     wait=wait_random_exponential(min=1, max=10),
     stop=stop_after_delay(120),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
@@ -226,7 +226,7 @@ async def registry_request(
     app_settings = get_application_settings(app)
     try:
         response, response_headers = await _retried_request(app, path, method.upper(), **request_kwargs)
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         msg = f"Unknown error while accessing registry: {exc!s} via {exc.request}"
         raise DirectorRuntimeError(msg=msg) from exc
 
@@ -248,7 +248,7 @@ async def setup_registry_connection(app: FastAPI) -> None:
     @retry(
         wait=wait_fixed(1),
         before_sleep=before_sleep_log(_logger, logging.WARNING),
-        retry=retry_if_exception_type((httpx.RequestError, DirectorRuntimeError)),
+        retry=retry_if_exception_type((httpx2.RequestError, DirectorRuntimeError)),
         reraise=True,
     )
     async def _wait_until_registry_responsive(app: FastAPI) -> None:

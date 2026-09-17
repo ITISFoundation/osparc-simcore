@@ -5,7 +5,7 @@
 
 from unittest.mock import Mock
 
-import httpx
+import httpx2
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -46,7 +46,7 @@ async def test_async_client(
     rabbitmq_and_rpc_setup_disabled: None,
     background_task_lifespan_disabled: None,
     director_lifespan_disabled: None,
-    aclient: httpx.AsyncClient,
+    aclient: httpx2.AsyncClient,
     is_healthy: bool,
 ):
     response = await aclient.get("/v0/")

@@ -9,7 +9,7 @@ from functools import partial
 from typing import Any, Final, Self
 from uuid import UUID
 
-import httpx
+import httpx2
 from common_library.gettext_support import SupportedLocale
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
@@ -115,7 +115,7 @@ _WALLET_STATUS_MAP = {
 }
 
 
-def _get_lrt_urls(lrt_response: httpx.Response):
+def _get_lrt_urls(lrt_response: httpx2.Response):
     # WARNING: this function is patched in patch_lrt_response_urls fixture
     data = Envelope[TaskGet].model_validate_json(lrt_response.text).data
     assert data is not None  # nosec
@@ -254,7 +254,7 @@ class AuthSession:
 
             return Page[ProjectGet].model_validate_json(resp.text)
 
-    async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
+    async def _wait_for_long_running_task_results(self, lrt_response: httpx2.Response):
         status_url, result_url = _get_lrt_urls(lrt_response)
 
         # GET task status now until done

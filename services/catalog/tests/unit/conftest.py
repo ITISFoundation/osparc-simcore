@@ -13,7 +13,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import respx
 import simcore_service_catalog
@@ -168,16 +168,16 @@ def client(app_settings: ApplicationSettings, capfd: pytest.CaptureFixture[str])
 
 
 @pytest.fixture
-async def aclient(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+async def aclient(app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
     # NOTE: Avoids TestClient since `app` fixture already runs LifespanManager
     # Otherwise `with TestClient` will call twice start/shutdown events
 
-    async with httpx.AsyncClient(
+    async with httpx2.AsyncClient(
         base_url="http://catalog.testserver.io",
         headers={"Content-Type": "application/json"},
-        transport=httpx.ASGITransport(app=app),
+        transport=httpx2.ASGITransport(app=app),
     ) as acli:
-        assert isinstance(acli._transport, httpx.ASGITransport)  # noqa: SLF001
+        assert isinstance(acli._transport, httpx2.ASGITransport)  # noqa: SLF001
 
         yield acli
 
@@ -457,12 +457,12 @@ def mocked_director_rest_api(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
         name="get_service",
     )
-    def _get_service(request: httpx.Request, service_key, service_version):
+    def _get_service(request: httpx2.Request, service_key, service_version):
         if found := _search(service_key, service_version):
             # NOTE: this is a defect in director's API
             single_service_list = [found]
-            return httpx.Response(status.HTTP_200_OK, json={"data": single_service_list})
-        return httpx.Response(
+            return httpx2.Response(status.HTTP_200_OK, json={"data": single_service_list})
+        return httpx2.Response(
             status.HTTP_404_NOT_FOUND,
             json={
                 "data": {
@@ -481,11 +481,11 @@ def mocked_director_rest_api(
     )
     def _get_service_labels(request, service_key, service_version):
         if found := _search(service_key, service_version):
-            return httpx.Response(
+            return httpx2.Response(
                 status_code=status.HTTP_200_OK,
                 json={"data": get_mocked_service_labels(found["key"], found["version"])},
             )
-        return httpx.Response(
+        return httpx2.Response(
             status.HTTP_404_NOT_FOUND,
             json={
                 "data": {

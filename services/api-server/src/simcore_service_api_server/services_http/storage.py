@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi_lifespan_manager import LifespanManager
-from httpx import QueryParams
+from httpx2 import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataArray,
@@ -240,7 +240,7 @@ class StorageApi(BaseServiceClientApi):
 
         # define api-prefixed object-path for link
         file_id: str = f"{as_file_id}"
-        file_name = target_s3_path.split("/")[-1]
+        file_name = target_s3_path.rsplit("/", maxsplit=1)[-1]
         link_path = f"api/{file_id}/{file_name}"
 
         file_id = urllib.parse.quote_plus(target_s3_path)

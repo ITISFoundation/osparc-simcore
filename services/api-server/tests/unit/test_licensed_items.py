@@ -12,7 +12,7 @@ from uuid import UUID
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from models_library.api_schemas_resource_usage_tracker.licensed_items_checkouts import (
     LicensedItemCheckoutGet,
 )

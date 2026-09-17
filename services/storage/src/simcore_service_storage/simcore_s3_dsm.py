@@ -40,7 +40,7 @@ from models_library.projects_nodes_io import (
 from models_library.rabbitmq_messages import FileNotificationEventType
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, ValidationError
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import ensure_ends_with, limited_gather
@@ -1353,7 +1353,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         file_storage_link: dict[str, Any],
         bytes_transferred_cb: UploadedBytesTransferredCallback,
     ) -> FileMetaData:
-        client = get_httpx_client(self.app)
+        client = get_httpx2_client(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
         api_token, api_secret = await TokenRepository.instance(get_db_engine(self.app)).get_api_token_and_secret(
             user_id=user_id

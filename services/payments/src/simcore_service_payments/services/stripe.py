@@ -10,15 +10,15 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from typing import ClassVar
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
-from httpx import HTTPStatusError
+from httpx2 import HTTPStatusError
 from models_library.payments import StripeInvoiceID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.tracing import get_tracing_config
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 
 from ..core.errors import StripeRuntimeError
 from ..core.settings import ApplicationSettings
@@ -46,7 +46,7 @@ def _handle_status_errors(coro: Callable):
     return _wrapper
 
 
-class _StripeBearerAuth(httpx.Auth):
+class _StripeBearerAuth(httpx2.Auth):
     def __init__(self, token):
         self._token = token
 
@@ -67,7 +67,7 @@ class StripeApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin):
             response = await self.client.get("/v1/products")
             response.raise_for_status()
             return True
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             return False
 
     @_handle_status_errors
@@ -89,7 +89,7 @@ def configure_stripe(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> No
         auth=_StripeBearerAuth(settings.PAYMENTS_STRIPE_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(
+        setup_httpx2_client_tracing(
             api.client,
             tracing_config=get_tracing_config(app),
         )

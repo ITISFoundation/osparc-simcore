@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-import httpx
+import httpx2
 from pydantic import BaseModel, Field, HttpUrl, ValidationError
 from tenacity import (
     retry,
@@ -23,13 +23,13 @@ class _ItisVipApiResponse(BaseModel):
 @retry(
     wait=wait_exponential(multiplier=1, min=4, max=10),
     stop=stop_after_attempt(5),
-    retry=retry_if_exception_cause_type(httpx.RequestError),
+    retry=retry_if_exception_cause_type(httpx2.RequestError),
 )
-async def get_category_items(client: httpx.AsyncClient, url: HttpUrl) -> list[ItisVipData]:
+async def get_category_items(client: httpx2.AsyncClient, url: HttpUrl) -> list[ItisVipData]:
     """
 
     Raises:
-        httpx.HTTPStatusError
+        httpx2.HTTPStatusError
         pydantic.ValidationError
     """
     response = await client.post(f"{url}")

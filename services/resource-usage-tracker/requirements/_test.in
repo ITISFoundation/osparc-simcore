@@ -15,7 +15,6 @@ asgi-lifespan
 coverage
 docker
 faker
-httpx
 fakeredis[lua]
 moto[server]
 pytest

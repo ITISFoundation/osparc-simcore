@@ -7,7 +7,7 @@ from collections.abc import AsyncIterable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
@@ -57,12 +57,12 @@ async def mocked_directorv2_rest_api(
 ) -> AsyncIterable[MockRouter]:
     stop_time: Final[datetime] = datetime.now(tz=UTC) + timedelta(seconds=5)
 
-    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+    def _get_computation(request: httpx2.Request, **kwargs) -> httpx2.Response:
         task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
         if datetime.now(tz=UTC) > stop_time:
             task.state = RunningState.SUCCESS
             task.stopped = datetime.now(tz=UTC)
-        return httpx.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
+        return httpx2.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
 
     mocked_directorv2_rest_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"

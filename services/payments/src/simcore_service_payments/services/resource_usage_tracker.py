@@ -24,7 +24,7 @@ from models_library.wallets import WalletID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.tracing import get_tracing_config
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 
 from ..core.settings import ApplicationSettings
 
@@ -72,7 +72,7 @@ def configure_resource_usage_tracker(app: FastAPI, app_lifespan: LifespanManager
         base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(
+        setup_httpx2_client_tracing(
             api.client,
             tracing_config=get_tracing_config(app),
         )

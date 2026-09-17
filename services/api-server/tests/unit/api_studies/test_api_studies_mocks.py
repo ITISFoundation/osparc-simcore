@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, status
 from respx import MockRouter
@@ -26,11 +26,11 @@ def test_mocked_webserver_service_api(
     assert settings.API_SERVER_WEBSERVER
     webserver_api_baseurl = settings.API_SERVER_WEBSERVER.api_base_url
 
-    resp = httpx.get(f"{webserver_api_baseurl}/")
+    resp = httpx2.get(f"{webserver_api_baseurl}/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()
 
-    resp = httpx.get(f"{webserver_api_baseurl}/health")
+    resp = httpx2.get(f"{webserver_api_baseurl}/health")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()
 

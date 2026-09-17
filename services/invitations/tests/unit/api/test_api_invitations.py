@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import httpx
+import httpx2
 from fastapi import status
 from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given, settings
@@ -27,7 +27,7 @@ from simcore_service_invitations.services.invitations import (
 def test_create_invitation(
     invitation_input: InvitationInputs,
     client: TestClient,
-    basic_auth: httpx.BasicAuth,
+    basic_auth: httpx2.BasicAuth,
 ):
     response = client.post(
         f"/{API_VTAG}/invitations",
@@ -53,7 +53,7 @@ def test_create_invitation(
 
 def test_check_invitation(
     client: TestClient,
-    basic_auth: httpx.BasicAuth,
+    basic_auth: httpx2.BasicAuth,
     invitation_data: InvitationInputs,
 ):
     response = client.post(
@@ -90,7 +90,7 @@ def test_check_invitation(
 
 def test_check_valid_invitation(
     client: TestClient,
-    basic_auth: httpx.BasicAuth,
+    basic_auth: httpx2.BasicAuth,
     invitation_data: InvitationInputs,
     secret_key: str,
     default_product: ProductName,
@@ -120,7 +120,7 @@ def test_check_valid_invitation(
 
 def test_check_invalid_invitation_with_different_secret(
     client: TestClient,
-    basic_auth: httpx.BasicAuth,
+    basic_auth: httpx2.BasicAuth,
     invitation_data: InvitationInputs,
     another_secret_key: str,
     default_product: ProductName,
@@ -145,7 +145,7 @@ def test_check_invalid_invitation_with_different_secret(
 
 def test_check_invalid_invitation_with_wrong_fragment(
     client: TestClient,
-    basic_auth: httpx.BasicAuth,
+    basic_auth: httpx2.BasicAuth,
 ):
     # check invitation_url
     response = client.post(
@@ -160,7 +160,7 @@ def test_check_invalid_invitation_with_wrong_fragment(
 
 def test_check_invalid_invitation_with_wrong_code(
     client: TestClient,
-    basic_auth: httpx.BasicAuth,
+    basic_auth: httpx2.BasicAuth,
     invitation_data: InvitationInputs,
     another_secret_key: str,
     default_product: ProductName,

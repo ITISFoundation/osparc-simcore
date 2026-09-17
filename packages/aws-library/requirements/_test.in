@@ -13,7 +13,6 @@ coverage
 faker
 fastapi-lifespan-manager
 fastapi
-httpx
 asgi-lifespan
 moto[server]
 pint

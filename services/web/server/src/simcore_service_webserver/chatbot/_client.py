@@ -1,12 +1,12 @@
 import logging
 from typing import Annotated, Any, Final, Literal
 
-import httpx
+import httpx2
 from aiohttp import web
 from pydantic import BaseModel, Field, model_validator
 from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.tracing import TracingConfig, setup_httpx_client_tracing
+from servicelib.tracing import TracingConfig, setup_httpx2_client_tracing
 
 from .exceptions import NoResponseFromChatbotError
 from .settings import ChatbotSettings, get_plugin_settings
@@ -43,16 +43,16 @@ class Message(BaseModel):
 
 class ChatbotRestClient:
     def __init__(self, chatbot_settings: ChatbotSettings, tracing_config: TracingConfig) -> None:
-        self._client = httpx.AsyncClient()
+        self._client = httpx2.AsyncClient()
         if tracing_config.tracing_enabled:
-            setup_httpx_client_tracing(client=self._client, tracing_config=tracing_config)
+            setup_httpx2_client_tracing(client=self._client, tracing_config=tracing_config)
         self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:
         """Fetches chatbot settings"""
-        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/settings")
+        url = httpx2.URL(self._chatbot_settings.base_url).join("/v1/chat/settings")
 
-        async def _request() -> httpx.Response:
+        async def _request() -> httpx2.Response:
             return await self._client.get(url)
 
         try:
@@ -68,9 +68,9 @@ class ChatbotRestClient:
 
     async def send(self, messages: list[Message]) -> ResponseMessage:
         """Send a list of messages to the chatbot and returns the chatbot's response message."""
-        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/completions")
+        url = httpx2.URL(self._chatbot_settings.base_url).join("/v1/chat/completions")
 
-        async def _request() -> httpx.Response:
+        async def _request() -> httpx2.Response:
             return await self._client.post(
                 url,
                 json={
@@ -84,7 +84,7 @@ class ChatbotRestClient:
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
                     "Accept": MIMETYPE_APPLICATION_JSON,
                 },
-                timeout=httpx.Timeout(60.0),
+                timeout=httpx2.Timeout(60.0),
             )
 
         try:

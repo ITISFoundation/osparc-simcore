@@ -10,7 +10,7 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from unittest.mock import MagicMock
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
@@ -201,7 +201,7 @@ async def test_gateway_server_timesout_during_payment(
     mock_payments_gateway_service_api_base.post(
         path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
         name="pay_with_payment_method",
-    ).mock(side_effect=httpx.ReadTimeout("Read timeout simulated for testing"))
+    ).mock(side_effect=httpx2.ReadTimeout("Read timeout simulated for testing"))
 
     with pytest.raises(UnverifiedPaymentError) as exc_info:
         await payments.pay_with_payment_method(

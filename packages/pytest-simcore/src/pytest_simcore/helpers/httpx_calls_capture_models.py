@@ -3,7 +3,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
-import httpx
+import httpx2
 import respx
 from fastapi import status
 from pydantic import BaseModel, Field
@@ -30,7 +30,7 @@ class HttpApiCallCaptureModel(BaseModel):
     @classmethod
     def create_from_response(
         cls,
-        response: httpx.Response,
+        response: httpx2.Response,
         *,
         name: str,
         description: str = "",
@@ -63,18 +63,18 @@ class HttpApiCallCaptureModel(BaseModel):
     def request_desc(self) -> str:
         return f"{self.method} {self.path}"
 
-    def as_response(self) -> httpx.Response:
-        return httpx.Response(status_code=self.status_code, json=self.response_body)
+    def as_response(self) -> httpx2.Response:
+        return httpx2.Response(status_code=self.status_code, json=self.response_body)
 
 
-def get_captured_model(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
+def get_captured_model(name: str, response: httpx2.Response) -> HttpApiCallCaptureModel:
     return HttpApiCallCaptureModel.create_from_response(response, name=name)
 
 
 class SideEffectCallback(Protocol):
     def __call__(
         self,
-        request: httpx.Request,
+        request: httpx2.Request,
         kwargs: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any: ...

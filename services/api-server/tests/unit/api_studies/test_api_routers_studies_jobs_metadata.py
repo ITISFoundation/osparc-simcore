@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 from typing import TypedDict
 
-import httpx
+import httpx2
 import pytest
 from fastapi.encoders import jsonable_encoder
 from pydantic import TypeAdapter
@@ -107,8 +107,8 @@ def study_id() -> StudyID:
 
 
 async def test_get_and_update_study_job_metadata(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     study_id: StudyID,
     mocked_backend: MockedBackendApiDict,
     mock_dependency_get_celery_task_manager: MockType,

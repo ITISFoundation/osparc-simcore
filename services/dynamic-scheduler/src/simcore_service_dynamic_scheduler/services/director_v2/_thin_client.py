@@ -4,7 +4,7 @@ from typing import cast
 from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from httpx import Response, Timeout
+from httpx2 import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )

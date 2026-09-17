@@ -4,8 +4,8 @@ from collections.abc import AsyncIterator
 
 import pytest
 from fastapi import FastAPI
-from httpx import AsyncClient
-from httpx._transports.asgi import ASGITransport
+from httpx2 import AsyncClient
+from httpx2._transports.asgi import ASGITransport
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 

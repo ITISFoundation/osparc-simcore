@@ -5,7 +5,6 @@ aiodocker
 aiohttp
 docker
 faker
-httpx
 jsonschema
 pytest
 pytest-asyncio

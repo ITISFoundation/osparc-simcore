@@ -12,7 +12,7 @@ from typing import Any, cast
 from unittest import mock
 
 import aiodocker
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from faker import Faker
@@ -253,7 +253,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
     user_dict: dict[str, Any],
     services_endpoint: dict[str, URL],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     ensure_services_stopped: None,

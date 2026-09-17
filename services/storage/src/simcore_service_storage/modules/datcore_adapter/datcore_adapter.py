@@ -1,7 +1,7 @@
 import logging
 from typing import Any, cast
 
-import httpx
+import httpx2
 from fastapi import FastAPI, status
 from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_datcore_adapter.datasets import (
@@ -20,7 +20,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.users import UserID
 from pydantic import AnyUrl, BaseModel, ByteSize, NonNegativeInt, TypeAdapter
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 from servicelib.utils import logged_gather
 
 from ...constants import DATCORE_ID, DATCORE_STR, MAX_CONCURRENT_REST_CALLS
@@ -49,11 +49,11 @@ _logger = logging.getLogger(__file__)
 async def check_service_health(app: FastAPI) -> bool:
     datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + "/ready"
-    client = get_httpx_client(app)
+    client = get_httpx2_client(app)
     try:
         response = await client.get(url)
         response.raise_for_status()
-    except (TimeoutError, httpx.HTTPStatusError):
+    except (TimeoutError, httpx2.HTTPStatusError):
         return False
     return True
 

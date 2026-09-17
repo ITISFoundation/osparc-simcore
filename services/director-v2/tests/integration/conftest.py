@@ -7,7 +7,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from models_library.api_schemas_directorv2.computations import ComputationGet
@@ -36,7 +36,7 @@ def mock_env(mock_env: EnvVarsDict, minio_s3_settings_envs: EnvVarsDict) -> EnvV
 def update_project_workbench_with_comp_tasks(
     postgres_db: sa.engine.Engine,
 ) -> Callable:
-    def _updator(project_uuid: str):
+    def _updater(project_uuid: str):
         with postgres_db.connect() as con, con.begin():
             # select all projects_nodes for this project
             result = con.execute(projects_nodes.select().where(projects_nodes.c.project_uuid == project_uuid))
@@ -57,7 +57,7 @@ def update_project_workbench_with_comp_tasks(
                     .where((projects_nodes.c.node_id == node_id) & (projects_nodes.c.project_uuid == project_uuid))
                 )
 
-    return _updator
+    return _updater
 
 
 @pytest.fixture(scope="session")
@@ -76,12 +76,12 @@ COMPUTATION_URL: str = "v2/computations"
 
 @pytest.fixture
 async def create_pipeline(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ) -> AsyncIterator[Callable[..., Awaitable[ComputationGet]]]:
     created_comp_tasks: list[tuple[UserID, ComputationGet]] = []
 
     async def _creator(
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         *,
         project_uuid: ProjectID,
         user_id: UserID,
@@ -112,13 +112,13 @@ async def create_pipeline(
     yield _creator
 
     # cleanup the pipelines
-    responses: list[httpx.Response] = await asyncio.gather(
+    responses: list[httpx2.Response] = await asyncio.gather(
         *(
             async_client.request("DELETE", f"{task.url}", json={"user_id": user_id, "force": True})
             for user_id, task in created_comp_tasks
         )
     )
-    assert all(isinstance(r.raise_for_status(), httpx.Response) for r in responses)
+    assert all(isinstance(r.raise_for_status(), httpx2.Response) for r in responses)
 
 
 @pytest.fixture
@@ -144,12 +144,12 @@ async def wait_for_catalog_service(
         assert len(catalog_endpoint) == 1, f"no catalog service found! {services_endpoint=}"
         catalog_endpoint = catalog_endpoint[0][1]
         print(f"--> found catalog endpoint at {catalog_endpoint=}")
-        client = httpx.AsyncClient()
+        client = httpx2.AsyncClient()
 
         @retry(
             wait=wait_fixed(1),
             stop=stop_after_delay(60),
-            retry=retry_if_exception_type(AssertionError) | retry_if_exception_type(httpx.HTTPError),
+            retry=retry_if_exception_type(AssertionError) | retry_if_exception_type(httpx2.HTTPError),
         )
         async def _ensure_catalog_services_answers() -> None:
             print("--> checking catalog is up and ready...")

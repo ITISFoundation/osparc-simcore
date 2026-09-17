@@ -5,19 +5,19 @@
 
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI
 from fixtures.fake_services import PushServicesCallable, ServiceInRegistryInfoDict
-from httpx._transports.asgi import ASGITransport
+from httpx2._transports.asgi import ASGITransport
 
 
 @pytest.fixture
-async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+async def client(app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
     # - Needed for app to trigger start/stop event handlers
     # - Prefer this client instead of fastapi.testclient.TestClient
-    async with httpx.AsyncClient(
+    async with httpx2.AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://director.testserver.io",
         headers={"Content-Type": "application/json"},

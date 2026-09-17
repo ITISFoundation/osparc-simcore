@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 
 
 @dataclass
@@ -42,23 +42,21 @@ class Registry:
     def api_version_check(self):
         # https://docs.docker.com/registry/spec/api/#api-version-check
 
-        r = httpx.get(f"{self.data.url}/v2/", auth=self.data.auth)
+        r = httpx2.get(f"{self.data.url}/v2/", auth=self.data.auth)
         r.raise_for_status()
 
     def iter_repositories(self, limit: int = 100) -> Iterator[RepoName]:
         def _req(**kwargs):
-            r = httpx.get(auth=self.data.auth, **kwargs)
+            r = httpx2.get(auth=self.data.auth, **kwargs)
             r.raise_for_status()
 
             yield from r.json()["repositories"]
 
-            if link := r.headers.get("Link"):
-                #  until the Link header is no longer set in the response
-                # SEE https://docs.docker.com/registry/spec/api/#pagination-1
-                # ex=.g. '</v2/_catalog?last=simcore%2Fservices%2Fcomp%2Fcontrolcore-mmpc&n=5>; rel="next"'
-                if m := re.match(r'<([^><]+)>;\s+rel=([\w"]+)', link):
-                    next_page = m.group(1)
-                    yield from _req(url=next_page)
+            #  until the Link header is no longer set in the response
+            # SEE https://docs.docker.com/registry/spec/api/#pagination-1
+            # ex=.g. '</v2/_catalog?last=simcore%2Fservices%2Fcomp%2Fcontrolcore-mmpc&n=5>; rel="next"'
+            if m := re.match(r'<([^><]+)>;\s+rel=([\w"]+)', r.headers.get("Link", "")):
+                yield from _req(url=m.group(1))
 
         assert limit > 0
         query = {"n": limit}
@@ -66,7 +64,7 @@ class Registry:
         yield from _req(url=f"{self.data.url}/v2/_catalog", params=query)
 
     def get_digest(self, repo_name: str, repo_reference: str) -> str:
-        r = httpx.head(
+        r = httpx2.head(
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
@@ -75,7 +73,7 @@ class Registry:
         return r.headers["Docker-Content-Digest"]
 
     def check_manifest(self, repo_name: RepoName, repo_reference: str) -> bool:
-        r = httpx.head(
+        r = httpx2.head(
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
@@ -86,7 +84,7 @@ class Registry:
         return True
 
     def list_tags(self, repo_name: RepoName) -> list[RepoTag]:
-        r = httpx.get(
+        r = httpx2.get(
             f"{self.data.url}/v2/{repo_name}/tags/list",
             auth=self.data.auth,
         )
@@ -96,7 +94,7 @@ class Registry:
         return data["tags"]
 
     def get_manifest(self, repo_name: str, repo_reference: str):
-        r = httpx.get(
+        r = httpx2.get(
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
@@ -119,10 +117,10 @@ def extract_metadata(labels: dict[str, Any]) -> dict[str, Any]:
         "version": "1.2.3"
     }
     """
-    meta = {}
-    for key in labels:
+    meta: dict[str, Any] = {}
+    for key, label_value in labels.items():
         if key.startswith("io.simcore."):
-            meta.update(**json.loads(labels[key]))
+            meta |= json.loads(label_value)
     return meta
 
 
@@ -133,15 +131,16 @@ def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
         "service.value": 42
     }
     """
-    meta = {}
-    for key in labels:
+    meta: dict[str, Any] = {}
+    for key, label_value in labels.items():
         if key.startswith("simcore.service."):
-            value = labels[key].strip()
+            stripped = label_value.strip()
+            parsed_value: Any = stripped
             with suppress(json.decoder.JSONDecodeError):
                 # ignore  e.g. key=value where value is a raw name
-                value = json.loads(value)
+                parsed_value = json.loads(stripped)
 
-            meta.update(**{key.removeprefix("simcore."): value})
+            meta[key.removeprefix("simcore.")] = parsed_value
     return meta
 
 
@@ -158,7 +157,7 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
         # list tags
         try:
             tags = registry.list_tags(repo_name=repo)
-        except httpx.HTTPStatusError as err:
+        except httpx2.HTTPStatusError as err:
             print(f"Failed to get tags from {repo=}", err, FAILED)
             continue
 

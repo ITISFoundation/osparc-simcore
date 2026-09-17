@@ -5,7 +5,7 @@
 import re
 from collections.abc import Iterator
 
-import httpx
+import httpx2
 import pytest
 import respx
 from faker import Faker
@@ -47,7 +47,7 @@ def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
         )
 
         def _create_download_link(request, file_id):
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_404_NOT_FOUND,
                 json={"error": f"{file_id} not found!"},
             )

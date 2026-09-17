@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by instances of httpx.AsyncClient
+The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by instances of httpx2.AsyncClient
 when interacting with a real backend. These captures can then be used to create a respx.MockRouter, which emulates the backend while running
 your tests.
 
@@ -12,7 +12,7 @@ This module ensures a reliable reproduction and maintenance of mock responses th
 
 ## Setting Up the Module and Spy in Your Test Suite (once)
 - Include 'pytest_simcore.httpx_calls_capture' in your `pytest_plugins`.
-- Implement `create_httpx_async_client_spy_if_enabled("module.name.httpx.AsyncClient")` within your codebase.
+- Implement `create_httpx_async_client_spy_if_enabled("module.name.httpx2.AsyncClient")` within your codebase.
 
 ## Creating Mock Captures (every time you want to create/update the mock)
 - Initialize the real backend.
@@ -34,7 +34,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, get_args
 
-import httpx
+import httpx2
 import pytest
 import respx
 import yaml
@@ -71,7 +71,7 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         type=Path,
         default=None,
-        help=f"Path to json file to store capture calls from httpx clients during the tests. Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
+        help=f"Path to json file to store capture calls from httpx2clients during the tests. Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
     )
 
 
@@ -155,7 +155,7 @@ def backend_env_vars_overrides(
             prefix = name.replace("-", "_").upper()
             for ports in content["services"][name]["ports"]:
                 target = ports["target"]
-                if target in (8000, 8080):
+                if target in {8000, 8080}:
                     published = get_service_published_port(f"simcore_{name}", target)
                     overrides[f"{prefix}_HOST"] = get_localhost_ip()
                     overrides[f"{prefix}_PORT"] = str(published)
@@ -171,7 +171,7 @@ class _CaptureSideEffect:
         self._capture = capture
         self._side_effect_callback = side_effect
 
-    def __call__(self, request: httpx.Request, **kwargs) -> httpx.Response:
+    def __call__(self, request: httpx2.Request, **kwargs) -> httpx2.Response:
         capture = self._capture
         assert isinstance(capture.path, PathDescription)
         status_code: int = capture.status_code
@@ -179,18 +179,18 @@ class _CaptureSideEffect:
         assert {param.name for param in capture.path.path_parameters} == set(kwargs.keys())
         if self._side_effect_callback:
             response_body = self._side_effect_callback(request, kwargs, capture)
-        return httpx.Response(status_code=status_code, json=response_body)
+        return httpx2.Response(status_code=status_code, json=response_body)
 
 
 @pytest.fixture
 def create_respx_mock_from_capture(
     services_mocks_enabled: bool,
 ) -> CreateRespxMockCallback:
-    """Creates a respx.MockRouter from httpx calls captures in capture_path **ONLY**
+    """Creates a respx.MockRouter from httpx2calls captures in capture_path **ONLY**
     if spy_httpx_calls_enabled=False  otherwise it skips this fixture
     """
 
-    # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
+    # NOTE: multiple improvements on this function planned in https://github.com/ITISFoundation/osparc-simcore/issues/5705
     def _(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,

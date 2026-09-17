@@ -76,6 +76,10 @@ fsspec==2026.7.0
     # via
     #   -c requirements/_base.txt
     #   dask
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt

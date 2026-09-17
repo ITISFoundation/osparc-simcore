@@ -4,7 +4,7 @@ from pathlib import PurePosixPath
 from typing import Any, Final
 from urllib.parse import urlparse
 
-import httpx
+import httpx2
 from common_library.gettext_support import DEFAULT_LOCALE
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import status
@@ -40,9 +40,9 @@ _DEFAULT_INVOICE_FILENAME: Final[str] = "invoice.pdf"
 
 
 def _retry_if_invoice_pdf_error(exception: BaseException) -> bool:
-    if isinstance(exception, (httpx.ConnectError, httpx.ReadTimeout)):
+    if isinstance(exception, (httpx2.ConnectError, httpx2.ReadTimeout)):
         return True
-    if isinstance(exception, httpx.HTTPStatusError):
+    if isinstance(exception, httpx2.HTTPStatusError):
         return exception.response.status_code in (
             status.HTTP_429_TOO_MANY_REQUESTS,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -60,7 +60,7 @@ _INVOICE_PDF_RETRY_WAIT_MAX_SECONDS: Final[int] = 10
 
 # Worst case for repeated read timeouts is about 70 seconds total:
 # 5 attempts * 10 seconds timeout + waits of 4 + 4 + 4 + 8 seconds.
-_INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
+_INVOICE_PDF_TIMEOUT: Final = httpx2.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
 
 
 @retry(
@@ -73,8 +73,8 @@ _INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
     stop=stop_after_attempt(_INVOICE_PDF_RETRY_ATTEMPTS),
     reraise=True,
 )
-async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx2.Response:
+    async with httpx2.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
     return _response
@@ -83,7 +83,7 @@ async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
 _INVOICE_FILE_NAME_PATTERN: Final = re.compile(r'filename="(?P<filename>[^"]+)"')
 
 
-def _extract_file_name(response: httpx.Response, url: str) -> str:
+def _extract_file_name(response: httpx2.Response, url: str) -> str:
     content_disposition = response.headers.get("content-disposition", "")
     match = _INVOICE_FILE_NAME_PATTERN.search(content_disposition)
     if match:
@@ -110,7 +110,7 @@ async def _download_invoice_pdf(
     }
     try:
         response = await _get_invoice_pdf(url)
-    except httpx.ReadTimeout as exc:
+    except httpx2.ReadTimeout as exc:
         timeout_info = exc.request.extensions.get("timeout", "unknown")
         _logger.warning(
             **create_troubleshooting_log_kwargs(

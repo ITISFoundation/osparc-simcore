@@ -14,7 +14,7 @@
 
 aiocache
 aiodocker
-httpx[http2]
+httpx2
 prometheus-client
 pydantic
 tenacity

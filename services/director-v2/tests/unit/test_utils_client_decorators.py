@@ -5,7 +5,7 @@ import logging
 import pytest
 import respx
 from fastapi import HTTPException, status
-from httpx import AsyncClient, Response
+from httpx2 import AsyncClient, Response
 from simcore_service_director_v2.utils.client_decorators import handle_errors
 
 logger = logging.getLogger(__name__)

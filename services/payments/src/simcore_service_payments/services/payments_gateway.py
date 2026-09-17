@@ -13,19 +13,19 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import suppress
 from typing import ClassVar
 
-import httpx
+import httpx2
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi_lifespan_manager import LifespanManager, State
-from httpx import URL, HTTPStatusError, TimeoutException
+from httpx2 import URL, HTTPStatusError, TimeoutException
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import BaseHTTPApi, HealthMixinMixin
 from servicelib.fastapi.httpx_utils import to_curl_command
 from servicelib.fastapi.tracing import get_tracing_config
-from servicelib.tracing import setup_httpx_client_tracing
+from servicelib.tracing import setup_httpx2_client_tracing
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -112,7 +112,7 @@ def _handle_status_errors(coro: Callable):
     return _wrapper
 
 
-class _GatewayApiAuth(httpx.Auth):
+class _GatewayApiAuth(httpx2.Auth):
     def __init__(self, secret):
         self.token = secret
 
@@ -205,7 +205,7 @@ class PaymentsGatewayApi(BaseHTTPApi, HealthMixinMixin, SingletonInAppStateMixin
                 json=jsonable_encoder(payment.model_dump(exclude_none=True, by_alias=True)),
                 # NOTE: more flexible in the communication with the payment gateway upon payment
                 # SEE https://git.speag.com/oSparc/osparc-infra/-/issues/86
-                timeout=httpx.Timeout(60.0),
+                timeout=httpx2.Timeout(60.0),
             )
 
         except TimeoutException as err:
@@ -230,7 +230,7 @@ def configure_payments_gateway(app: FastAPI, app_lifespan: LifespanManager[FastA
         auth=_GatewayApiAuth(secret=settings.PAYMENTS_GATEWAY_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(
+        setup_httpx2_client_tracing(
             api.client,
             tracing_config=get_tracing_config(app),
         )

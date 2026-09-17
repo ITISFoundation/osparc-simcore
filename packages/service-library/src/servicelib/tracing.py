@@ -9,7 +9,7 @@ from typing import Any, Final, Self, overload
 
 import pyinstrument
 import pyinstrument.renderers
-from httpx import AsyncClient, Client
+from httpx2 import AsyncClient, Client
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -19,7 +19,7 @@ from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPX2ClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource
@@ -105,8 +105,11 @@ class TracingConfig(BaseModel):
         )
 
 
-def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
-    HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
+def setup_httpx2_client_tracing(client: Client | AsyncClient, tracing_config: TracingConfig) -> None:
+    HTTPX2ClientInstrumentor.instrument_client(
+        client,  # type: ignore[arg-type]
+        tracer_provider=tracing_config.tracer_provider,
+    )
 
 
 def get_current_tracing_config() -> TracingConfig | None:

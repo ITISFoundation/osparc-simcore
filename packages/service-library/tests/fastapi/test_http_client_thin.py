@@ -6,7 +6,7 @@ from typing import Final
 
 import arrow
 import pytest
-from httpx import (
+from httpx2 import (
     HTTPError,
     PoolTimeout,
     Request,

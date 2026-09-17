@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -17,7 +17,7 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
     bearer_token = faker.word()
     headers = {"Authorization": f"Bearer {bearer_token}"}
 
-    async with httpx.AsyncClient(base_url=f"{httpbin_base_url}", headers=headers) as client:
+    async with httpx2.AsyncClient(base_url=f"{httpbin_base_url}", headers=headers) as client:
         response = await client.get("/bearer")
         assert response.json() == {"authenticated": True, "token": bearer_token}
 
@@ -26,7 +26,7 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
 async def test_login_to_create_access_token(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     app: FastAPI,
     faker: Faker,
     valid_credentials: bool,
@@ -34,9 +34,9 @@ async def test_login_to_create_access_token(
     # SEE fixture in conftest.py:auth_headers
     #
     # At some point might want to use httpx plugins as:
-    # - https://docs.authlib.org/en/latest/client/httpx.html
+    # - https://docs.authlib.org/en/latest/client/httpx2.html
     # OR implement an auth_flow interface
-    # - https://www.python-httpx.org/advanced/#customizing-authentication
+    # - https://www.python-httpx2.org/advanced/#customizing-authentication
     #
     #
     settings: ApplicationSettings = app.state.settings

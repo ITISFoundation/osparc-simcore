@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 
@@ -21,7 +21,7 @@ class BaseServiceClientApi(AppDataMixin):
     - helpers to create a unique client instance per application and service
     """
 
-    client: httpx.AsyncClient
+    client: httpx2.AsyncClient
     service_name: str
     health_check_path: str = "/"
     health_check_timeout: float = 1.0
@@ -31,7 +31,7 @@ class BaseServiceClientApi(AppDataMixin):
             resp = await self.client.get(self.health_check_path, timeout=self.health_check_timeout)
             resp.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError):
+        except (httpx2.HTTPStatusError, httpx2.RequestError):
             _logger.exception("%s not responsive", self.service_name)
             return False
 
@@ -56,7 +56,7 @@ def configure_client_instance(
         # NOTE: http2 is explicitly disabled due to the issue https://github.com/encode/httpx/discussions/2112
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(http2=False, base_url=api_baseurl, timeout=api_general_timeout),
+            client=httpx2.AsyncClient(http2=False, base_url=api_baseurl, timeout=api_general_timeout),
             service_name=service_name,
             **extra_fields,
         )
