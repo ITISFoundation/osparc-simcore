@@ -23,7 +23,7 @@ class PipelineInfo(NamedTuple):
 
 async def _get_pipeline_info(
     app: FastAPI,
-    connection: AsyncConnection,
+    connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
 ) -> PipelineInfo:
@@ -58,7 +58,7 @@ async def validate_pipeline(
     raises PipelineTaskMissingError
     """
 
-    pipeline_info = await _get_pipeline_info(app, project_id=project_id, connection=connection)
+    pipeline_info = await _get_pipeline_info(app, connection, project_id=project_id)
 
     # check that we have the expected tasks
     if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):
