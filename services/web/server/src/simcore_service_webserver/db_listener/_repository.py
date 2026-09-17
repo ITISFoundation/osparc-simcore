@@ -124,7 +124,7 @@ async def acquire_next_claimable_aggregate(
             )
         ).fetchall()
         if co_claimed_rows:
-            return kind, aggregate_id, co_claimed_rows
+            return kind, aggregate_id, list(co_claimed_rows)
         # raced away since the read-only scan above: try the next candidate instead
         # of giving up on the whole batch
     return None
@@ -158,7 +158,7 @@ async def record_failed_attempts(engine: AsyncEngine, event_ids: list[int], erro
                 outbox_events.c.attempts,
             )
         )
-        return result.fetchall()
+        return list(result.fetchall())
 
 
 async def get_comp_task_row(conn: AsyncConnection, task_id: PositiveInt) -> Row | None:
