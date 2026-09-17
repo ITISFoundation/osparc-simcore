@@ -43,6 +43,16 @@ def mocked_chatbot_backend():
         yield mock
 
 
+def _make_stream_request_body(content: str = "Hello") -> dict:
+    return {
+        "background": True,
+        "stream": True,
+        "input": [{"role": "user", "content": content}],
+        "model": _CHAT_MODEL,
+        "temperature": 0.7,
+    }
+
+
 async def test_create_response_stream_relays_sse_bytes(
     app: FastAPI,
     client: AsyncClient,
@@ -57,13 +67,7 @@ async def test_create_response_stream_relays_sse_bytes(
         headers={"content-type": "text/event-stream"},
     )
 
-    body = {
-        "background": True,
-        "stream": True,
-        "input": [{"role": "user", "content": "Hello, how are you?"}],
-        "model": _CHAT_MODEL,
-        "temperature": 0.7,
-    }
+    body = _make_stream_request_body("Hello, how are you?")
 
     # ACT
     response = await client.post(
@@ -93,13 +97,7 @@ async def test_create_response_stream_relays_downstream_client_error(
         json={"detail": [{"loc": ["body", "model"], "msg": "unsupported model", "type": "value_error"}]},
     )
 
-    body = {
-        "background": True,
-        "stream": True,
-        "input": [{"role": "user", "content": "Hello"}],
-        "model": _CHAT_MODEL,
-        "temperature": 0.7,
-    }
+    body = _make_stream_request_body()
 
     # ACT
     response = await client.post(
@@ -123,13 +121,7 @@ async def test_create_response_stream_downstream_server_error_returns_bad_gatewa
     # ARRANGE - the chatbot service itself fails
     mocked_chatbot_backend.post("/v1/chat/completions").respond(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    body = {
-        "background": True,
-        "stream": True,
-        "input": [{"role": "user", "content": "Hello"}],
-        "model": _CHAT_MODEL,
-        "temperature": 0.7,
-    }
+    body = _make_stream_request_body()
 
     # ACT
     response = await client.post(

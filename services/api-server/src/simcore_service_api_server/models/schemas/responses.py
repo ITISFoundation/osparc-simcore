@@ -114,7 +114,12 @@ class InputMessage(ApiServerInputSchema):
 
 
 class CreateResponseRequest(ApiServerInputSchema):
-    """Request body for POST /responses."""
+    """Request body for POST /responses.
+
+    `background` is always `True` (OpenAI Responses API compatibility placeholder);
+    `stream` is the actual mode switch and takes precedence: when `True` the request
+    is relayed synchronously as server-sent events instead of a background job.
+    """
 
     background: Literal[True]
     input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]

@@ -1,26 +1,21 @@
 import logging
-from collections.abc import AsyncIterator
 from typing import Annotated
 from uuid import UUID
 
-import httpx
 from celery_library.async_jobs import submit_job
 from fastapi import APIRouter, Depends, Request, status
 from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import ValidationError
 from servicelib.celery.task_manager import TaskManager
-from servicelib.status_codes_utils import is_4xx_client_error
 from starlette.responses import JSONResponse
 
 from simcore_service_api_server.models.domain.chatbot import CreateChatCompletionResponse
 
+from ..._service_responses import create_streaming_chat_response
 from ...core.settings import ApplicationSettings
-from ...exceptions.backend_errors import ChatbotNotAvailableError, ChatbotRequestError
-from ...exceptions.handlers._utils import create_error_json_response
-from ...exceptions.handlers._validation_errors import http422_error_handler
+from ...exceptions.backend_errors import ChatbotNotAvailableError
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.basic_types import SseStreamingResponse
 from ...models.domain.celery_models import ApiServerOwnerMetadata
@@ -32,7 +27,7 @@ from ...models.schemas.responses import (
     ResponseObject,
     ResponseStatus,
 )
-from ...services_http.chatbot import ChatbotApi, ChatbotSession
+from ...services_http.chatbot import ChatbotApi
 from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.application import get_settings
 from ..dependencies.authentication import get_current_user_id, get_product_name
@@ -51,29 +46,6 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _TASK_NAME = "run_chat_completion"
-
-
-async def _relay_sse_response(response: httpx.Response, request: Request) -> AsyncIterator[bytes]:
-    try:
-        async for chunk in response.aiter_bytes():
-            if await request.is_disconnected():
-                break
-            yield chunk
-    finally:
-        await response.aclose()
-
-
-def _relay_downstream_client_error(response: httpx.Response) -> JSONResponse:
-    """The chatbot service already validated the request and returned a client-facing
-    error body (e.g. FastAPI's `{"detail": [...]}`) -- relay it as-is, with the same
-    status code, instead of masking it behind a generic backend error."""
-    try:
-        errors = response.json().get("detail", response.text)
-    except ValueError:
-        errors = response.text
-    if not isinstance(errors, list):
-        errors = [errors]
-    return create_error_json_response(*errors, status_code=response.status_code)
 
 
 @router.post(
@@ -115,28 +87,12 @@ async def create_response(
         raise ChatbotNotAvailableError
 
     if body.stream:
-        chatbot_session = ChatbotSession(
-            _chatbot_settings=settings.API_SERVER_CHATBOT,
-            _api=chatbot_api,
+        return await create_streaming_chat_response(
+            chatbot_settings=settings.API_SERVER_CHATBOT,
+            chatbot_api=chatbot_api,
+            body=body,
+            request=request,
         )
-        try:
-            upstream_response = await chatbot_session.stream_chat_completion(
-                messages=[msg.to_domain_model() for msg in body.input],
-                model=body.model,
-                metadata=body.metadata or {},
-                temperature=body.temperature,
-                response_format=body.to_chat_response_format(),
-            )
-        except ValidationError as exc:
-            # relay validation errors to caller to provide hints in the UI
-            return await http422_error_handler(request, exc)
-        except httpx.HTTPStatusError as exc:
-            if is_4xx_client_error(exc.response.status_code):
-                return _relay_downstream_client_error(exc.response)
-            raise ChatbotRequestError from exc
-        except httpx.HTTPError as exc:
-            raise ChatbotRequestError from exc
-        return SseStreamingResponse(_relay_sse_response(upstream_response, request))
 
     job = await submit_job(
         task_manager,
