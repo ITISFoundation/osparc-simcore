@@ -67,7 +67,7 @@ def handle_validation_as_http_error(*, error_msg_template: str, resource_name: s
             {
                 "error": {
                     "message": error_msg_template.format(failed=", ".join(e["field"] for e in errors_details)),
-                    "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "status": status.HTTP_422_UNPROCESSABLE_CONTENT,
                     "errors": errors_details,
                 }
             }

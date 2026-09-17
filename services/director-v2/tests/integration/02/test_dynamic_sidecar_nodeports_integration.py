@@ -116,7 +116,7 @@ pytest_simcore_core_services_selection = [
 
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "s3-storage",
     "portainer",
 ]
 
@@ -162,7 +162,7 @@ async def minimal_configuration(
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
     with_product: dict[str, Any],
     osparc_product_name: str,
@@ -380,7 +380,7 @@ def mock_env(
             # this address to reach the rabbit service
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
