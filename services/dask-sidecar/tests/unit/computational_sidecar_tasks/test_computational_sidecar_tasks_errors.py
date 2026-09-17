@@ -83,8 +83,16 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     # depending on the host's overcommit settings). The bound also guarantees the
     # container terminates even if the OOM kill never happens, so the test fails with
     # service logs instead of hanging.
-    # NOTE: the limit leaves headroom above the interpreter baseline so that the kernel
-    # OOM kill (exit 137 / OOMKilled) dominates over Python raising MemoryError.
+    # NOTE: the limit (128MiB) is chosen well above the python:3.11-slim interpreter
+    # baseline (~20-30MiB RSS at startup, close to 50MiB once imports/heap are added).
+    # With a tight limit such as 50MiB the OOM boundary falls inside the interpreter's
+    # own footprint, so the death mode becomes a race: the kernel cgroup OOM kill
+    # (exit 137 / OOMKilled -> ServiceOutOfMemoryError) may instead lose against
+    # malloc returning NULL -> Python MemoryError (exit 1) or a kill during startup,
+    # which surfaces as a plain ServiceRuntimeError and fails this test. With 128MiB
+    # the loop comfortably survives startup and clearly overshoots the limit with
+    # committed pages, making the kernel OOM kill the dominant death mode. It also
+    # stays well within the 1GiB RAM the local test cluster worker advertises.
     memory_limit = TypeAdapter(ByteSize).validate_python("128MiB")
     memory_limit_mib = 128
     memory_exceeding_task = sidecar_task(
