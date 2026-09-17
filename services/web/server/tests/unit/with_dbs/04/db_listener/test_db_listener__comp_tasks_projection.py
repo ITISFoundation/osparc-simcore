@@ -20,7 +20,7 @@ from unittest import mock
 import pytest
 import simcore_service_webserver
 import simcore_service_webserver.db_listener
-import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
+import simcore_service_webserver.db_listener._service
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
@@ -36,20 +36,38 @@ from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
-from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
-    _CLAIM_CANDIDATE_BATCH,
-    _MAX_ATTEMPTS,
+from simcore_service_webserver.db_listener._repository import (
+    CLAIM_CANDIDATE_BATCH as _CLAIM_CANDIDATE_BATCH,
+)
+from simcore_service_webserver.db_listener._repository import (
+    MAX_ATTEMPTS as _MAX_ATTEMPTS,
+)
+from simcore_service_webserver.db_listener._repository import (
+    get_comp_task_row as _get_comp_task_row,
+)
+from simcore_service_webserver.db_listener._repository import (
+    get_project_owner as _get_project_owner,
+)
+from simcore_service_webserver.db_listener._service import (
     _MAX_FAILED_AGGREGATES_PER_DRAIN,
+)
+from simcore_service_webserver.db_listener._service import (
+    claim_and_process_one_outbox_event as _claim_and_process_one_outbox_event,
+)
+from simcore_service_webserver.db_listener._service import (
+    claim_and_process_outbox_events as _claim_and_process_outbox_events,
+)
+from simcore_service_webserver.db_listener._service import (
+    process_outbox_event as _process_outbox_event,
+)
+from simcore_service_webserver.db_listener._task import (
     OUTBOX_LISTENER_APPLICATION_NAME,
-    _claim_and_process_one_outbox_event,
-    _claim_and_process_outbox_events,
-    _ClaimOutcome,
-    _get_comp_task_row,
-    _get_project_owner,
-    _process_outbox_event,
     with_outbox_wakeup_listener,
 )
-from simcore_service_webserver.db_listener.plugin import create_comp_tasks_listening_task
+from simcore_service_webserver.db_listener.models import ClaimOutcome as _ClaimOutcome
+from simcore_service_webserver.db_listener.plugin import (
+    create_comp_tasks_listening_task,
+)
 from simcore_service_webserver.projects import exceptions
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import func
@@ -72,22 +90,22 @@ async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
     mocked_project_calls = {}
 
     mocked_project_calls["update_node_outputs"] = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task.update_node_outputs",
+        "simcore_service_webserver.db_listener._service.update_node_outputs",
         return_value="",
     )
 
     mocked_project_calls["_update_project_state.update_project_node_state"] = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.update_project_node_state",
+        "simcore_service_webserver.db_listener._service.update_project_node_state",
         autospec=True,
     )
 
     mocked_project_calls["_update_project_state.notify_project_node_update"] = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.notify_project_node_update",
+        "simcore_service_webserver.db_listener._service.notify_project_node_update",
         autospec=True,
     )
 
     mocked_project_calls["_update_project_state.notify_project_state_update"] = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.notify_project_state_update",
+        "simcore_service_webserver.db_listener._service.notify_project_state_update",
         autospec=True,
     )
 
@@ -107,8 +125,8 @@ async def spied_get_comp_task_row(
     mocker: MockerFixture,
 ) -> MockType:
     return mocker.spy(
-        simcore_service_webserver.db_listener._db_comp_tasks_listening_task,  # noqa: SLF001
-        "_get_comp_task_row",
+        simcore_service_webserver.db_listener._service,  # noqa: SLF001
+        "get_comp_task_row",
     )
 
 
@@ -657,7 +675,7 @@ async def test_failed_processing_keeps_event_for_retry(
         )
 
     mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
         side_effect=RuntimeError("boom"),
     )
 
@@ -880,7 +898,7 @@ async def test_drain_skips_failed_aggregate_and_processes_the_rest(
             raise RuntimeError(msg)
 
     mock_process = mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
         autospec=True,
         side_effect=_fails_only_for_poison,
     )
@@ -935,7 +953,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
             )
 
     mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
         autospec=True,
         side_effect=TimeoutError("infrastructure is down"),
     )
@@ -986,7 +1004,7 @@ async def test_drain_does_not_abort_on_application_level_failures(
             )
 
     mocker.patch(
-        "simcore_service_webserver.db_listener._db_comp_tasks_listening_task._process_outbox_event",
+        "simcore_service_webserver.db_listener._service.process_outbox_event",
         autospec=True,
         side_effect=RuntimeError("bug in projection code"),
     )
