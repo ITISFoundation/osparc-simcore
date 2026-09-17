@@ -31,7 +31,7 @@ from servicelib.redis._semaphore_decorator import (
     with_limited_concurrency_cm,
 )
 from servicelib.utils import limited_as_completed, limited_gather
-from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 
 from ..._meta import APP_NAME
@@ -256,13 +256,15 @@ class DaskScheduler(BaseCompScheduler):
             )
 
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        for task in task_progress_events:
-            await comp_tasks_repo.update_project_task_progress(
-                task.task_owner.project_id,
-                task.task_owner.node_id,
-                comp_run.run_id,
-                task.progress,
-            )
+        async with transaction_context(self.db_engine) as conn:
+            for task in task_progress_events:
+                await comp_tasks_repo.update_project_task_progress(
+                    task.task_owner.project_id,
+                    task.task_owner.node_id,
+                    comp_run.run_id,
+                    task.progress,
+                    connection=conn,
+                )
         await limited_gather(
             *(
                 publish_service_progress(

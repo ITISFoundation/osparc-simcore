@@ -67,9 +67,11 @@ class CompTasksRepository(BaseRepository):
 
     async def list_computational_tasks(
         self,
+        connection: AsyncConnection | None = None,
+        *,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
@@ -127,8 +129,10 @@ class CompTasksRepository(BaseRepository):
             items = TypeAdapter(list[ComputationTaskForRpcDBGet]).validate_python(result.all())
             return cast(int, total_count), items
 
-    async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+    async def task_exists(
+        self, project_id: ProjectID, node_id: NodeID, *, connection: AsyncConnection | None = None
+    ) -> bool:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             nid: str | None = await conn.scalar(
                 sa.select(comp_tasks.c.node_id).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
@@ -218,13 +222,20 @@ class CompTasksRepository(BaseRepository):
                 )
             return inserted_comp_tasks_db, insufficient_credits
 
-    async def _update_task(self, project_id: ProjectID, task: NodeID, run_id: RunID, **task_kwargs) -> CompTaskAtDB:
+    async def _update_task(
+        self,
+        project_id: ProjectID,
+        task: NodeID,
+        run_id: RunID,
+        connection: AsyncConnection | None = None,
+        **task_kwargs,
+    ) -> CompTaskAtDB:
         with log_context(
             _logger,
             logging.DEBUG,
             msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
         ):
-            async with self.db_engine.begin() as conn:
+            async with transaction_context(self.db_engine, connection) as conn:
                 result: CursorResult = await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}"))
@@ -245,7 +256,15 @@ class CompTasksRepository(BaseRepository):
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
-    async def set_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
+    async def set_task_job_id(
+        self,
+        project_id: ProjectID,
+        task: NodeID,
+        run_id: RunID,
+        job_id: str,
+        *,
+        connection: AsyncConnection | None = None,
+    ) -> None:
         """sets the task's job_id and atomically moves it to PENDING.
 
         Raises:
@@ -253,7 +272,7 @@ class CompTasksRepository(BaseRepository):
             ComputationalTaskJobIdAlreadySetError: if the task already has a job_id
         """
         task_kwargs = {"job_id": job_id, "state": RUNNING_STATE_TO_DB[RunningState.PENDING]}
-        async with transaction_context(self.db_engine) as conn:
+        async with transaction_context(self.db_engine, connection) as conn:
             result: CursorResult = await conn.execute(
                 sa.update(comp_tasks)
                 .where(
@@ -290,12 +309,15 @@ class CompTasksRepository(BaseRepository):
         task: NodeID,
         run_id: RunID,
         errors: list[ErrorDict] | None = None,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> None:
         """clears the backend job reference so the scheduler picks the task up again"""
         await self._update_task(
             project_id,
             task,
             run_id,
+            connection,
             state=RUNNING_STATE_TO_DB[RunningState.WAITING_FOR_CLUSTER],
             job_id=None,
             progress=None,
@@ -316,6 +338,7 @@ class CompTasksRepository(BaseRepository):
         optional_progress: float | None = None,
         optional_started: datetime | None = None,
         optional_stopped: datetime | None = None,
+        connection: AsyncConnection | None = None,
     ) -> None:
         """update the task state values in the database
         passing None for the optional arguments will not update the respective values in the database
@@ -347,7 +370,7 @@ class CompTasksRepository(BaseRepository):
             logging.DEBUG,
             msg=f"update tasks state {project_id=}:{node_ids=} with '{update_values}'",
         ):
-            async with transaction_context(self.db_engine) as conn:
+            async with transaction_context(self.db_engine, connection) as conn:
                 await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(node_ids)))
@@ -370,8 +393,10 @@ class CompTasksRepository(BaseRepository):
         node_id: NodeID,
         run_id: RunID,
         progress: float,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> None:
-        await self._update_task(project_id, node_id, run_id, progress=progress)
+        await self._update_task(project_id, node_id, run_id, connection, progress=progress)
 
     async def update_project_task_last_heartbeat(
         self,
@@ -379,8 +404,10 @@ class CompTasksRepository(BaseRepository):
         node_id: NodeID,
         run_id: RunID,
         heartbeat_time: datetime,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> None:
-        await self._update_task(project_id, node_id, run_id, last_heartbeat=heartbeat_time)
+        await self._update_task(project_id, node_id, run_id, connection, last_heartbeat=heartbeat_time)
 
     async def delete_tasks_from_project(
         self,

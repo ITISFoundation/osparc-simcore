@@ -20,6 +20,7 @@ from models_library.users import UserID
 from pydantic import ValidationError, validate_call
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_run_snapshot_tasks import (
@@ -120,21 +121,26 @@ async def list_computation_collection_runs_page(
     comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
 
     collection_run_ids: list[CollectionRunID] | None = None
-    if filter_only_running is True:
-        collection_run_ids = await comp_runs_repo.list_all_collection_run_ids_for_user_currently_running_computations(
-            product_name=product_name, user_id=user_id
-        )
-        if collection_run_ids == []:
-            return ComputationCollectionRunRpcGetPage(items=[], total=0)
+    # both reads below share a single connection
+    async with pass_or_acquire_connection(app.state.engine) as conn:
+        if filter_only_running is True:
+            collection_run_ids = (
+                await comp_runs_repo.list_all_collection_run_ids_for_user_currently_running_computations(
+                    conn, product_name=product_name, user_id=user_id
+                )
+            )
+            if collection_run_ids == []:
+                return ComputationCollectionRunRpcGetPage(items=[], total=0)
 
-    total, comp_runs_output = await comp_runs_repo.list_group_by_collection_run_id(
-        product_name=product_name,
-        user_id=user_id,
-        project_ids_or_none=project_ids,
-        collection_run_ids_or_none=collection_run_ids,
-        offset=offset,
-        limit=limit,
-    )
+        total, comp_runs_output = await comp_runs_repo.list_group_by_collection_run_id(
+            conn,
+            product_name=product_name,
+            user_id=user_id,
+            project_ids_or_none=project_ids,
+            collection_run_ids_or_none=collection_run_ids,
+            offset=offset,
+            limit=limit,
+        )
     return ComputationCollectionRunRpcGetPage(
         items=comp_runs_output,
         total=total,

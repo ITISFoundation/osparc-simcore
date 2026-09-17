@@ -17,6 +17,7 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -32,6 +33,7 @@ from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
+from ....db import get_db_engine
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_nodes import ProjectsNodesRepository
@@ -159,15 +161,17 @@ class CreateSidecars(DynamicSchedulerEvent):
         # also other encodes the env vars to target the proper container
 
         # fetching project form DB and fetching user settings
-        projects_repository = get_repository(app, ProjectsRepository)
+        # the adjacent project/node reads below share a single connection
+        async with pass_or_acquire_connection(get_db_engine(app)) as conn:
+            projects_repository = get_repository(app, ProjectsRepository)
 
-        if not await projects_repository.exists(project_id=scheduler_data.project_id):
-            raise ProjectNotFoundError(project_id=scheduler_data.project_id)
+            if not await projects_repository.exists(conn, project_id=scheduler_data.project_id):
+                raise ProjectNotFoundError(project_id=scheduler_data.project_id)
 
-        projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
-        node = await projects_nodes_repository.get(
-            project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
-        )
+            projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
+            node = await projects_nodes_repository.get(
+                conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
+            )
         boot_options = node.boot_options if node is not None and node.boot_options is not None else {}
         _logger.info("%s", f"{boot_options=}")
 
