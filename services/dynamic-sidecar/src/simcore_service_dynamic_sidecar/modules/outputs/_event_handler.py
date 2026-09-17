@@ -313,9 +313,9 @@ class EventHandlerObserver:
 
     async def start(self) -> None:
         with log_context(_logger, logging.INFO, f"{EventHandlerObserver.__name__} start"):
+            await to_thread(self._start_observer_process)
             self._keep_running = True
             self._task_health_worker = create_task(self._health_worker(), name="observer_monitor_health_worker")
-            self._start_observer_process()
 
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, f"{EventHandlerObserver.__name__} stop"):
