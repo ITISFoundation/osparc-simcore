@@ -12,6 +12,7 @@ import pytest
 import sqlalchemy as sa
 import tenacity
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from tenacity.retry import retry_if_exception
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -22,7 +23,9 @@ from .helpers.postgres_tools import (
     PostgresTestConfig,
     _create_database_from_template,
     _drop_database,
+    _is_database_accessed_error,
     _maintenance_engine,
+    _terminate_backends,
     build_migrated_pg_template,
     cloned_pg_database_context,
     database_exists,
@@ -52,15 +55,26 @@ def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.en
         # the CREATE itself must never be ignored: tests would silently run against
         # a missing or unmigrated template
         _drop_database(maintenance, _TEMPLATE_DB_TO_RESTORE, ignore_errors=True)
-        execute_queries(
-            maintenance,
-            [
-                f"""
-                CREATE DATABASE {_TEMPLATE_DB_TO_RESTORE} WITH TEMPLATE
-                    {postgres_dsn["database"]} OWNER {postgres_dsn["user"]};
-                """
-            ],
-        )
+        for attempt in tenacity.Retrying(
+            wait=wait_fixed(0.5),
+            stop=tenacity.stop_after_attempt(5),
+            retry=retry_if_exception(_is_database_accessed_error),
+            reraise=True,
+        ):
+            with attempt:
+                # 'CREATE DATABASE ... WITH TEMPLATE' refuses any session attached to the
+                # source database, which is still in use by the engines of the tests,
+                # hence its backends are terminated right before every attempt
+                _terminate_backends(maintenance, postgres_dsn["database"])
+                execute_queries(
+                    maintenance,
+                    [
+                        f"""
+                        CREATE DATABASE {_TEMPLATE_DB_TO_RESTORE} WITH TEMPLATE
+                            {postgres_dsn["database"]} OWNER {postgres_dsn["user"]};
+                        """
+                    ],
+                )
     finally:
         maintenance.dispose()
 

@@ -119,6 +119,23 @@ def _create_database_from_template(maintenance_engine: sa.engine.Engine, databas
     )
 
 
+def _create_database_from_template_with_retry(
+    maintenance_engine: sa.engine.Engine, database: str, template_db_name: str
+) -> None:
+    # 'CREATE DATABASE ... TEMPLATE' (and 'WITH TEMPLATE') refuse any session attached to the
+    # source, so its backends are terminated right before every attempt (they may reconnect
+    # in between, e.g. pooled connections of a service under test)
+    for attempt in tenacity.Retrying(
+        wait=wait_fixed(0.5),
+        stop=stop_after_attempt(5),
+        retry=retry_if_exception(_is_database_accessed_error),
+        reraise=True,
+    ):
+        with attempt:
+            _terminate_backends(maintenance_engine, template_db_name)
+            _create_database_from_template(maintenance_engine, database, template_db_name)
+
+
 def database_exists(engine: sa.engine.Engine, database: str) -> bool:
     with engine.connect() as conn:
         result = conn.execute(sa.text("SELECT 1 FROM pg_database WHERE datname = :db"), {"db": database})
@@ -192,7 +209,7 @@ def cloned_pg_database_context(
         # NOTE: a database cannot be dropped while backends are attached, therefore
         # they are terminated right before the drop (race-free enough for tests)
         _drop_database(maintenance, database)
-        _create_database_from_template(maintenance, database, template_db_name)
+        _create_database_from_template_with_retry(maintenance, database, template_db_name)
     finally:
         maintenance.dispose()
 
@@ -212,7 +229,7 @@ def cloned_pg_database_context(
         maintenance = _maintenance_engine(postgres_config)
         try:
             _drop_database(maintenance, database)
-            _create_database_from_template(maintenance, database, template_db_name)
+            _create_database_from_template_with_retry(maintenance, database, template_db_name)
         finally:
             maintenance.dispose()
 

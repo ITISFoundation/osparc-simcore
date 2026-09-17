@@ -109,6 +109,33 @@ def test_template_is_built_once_and_clones_are_isolated(postgres_container: Post
         maintenance.dispose()
 
 
+def test_clone_from_template_with_attached_sessions_on_source(
+    postgres_container: PostgresTestConfig,
+):
+    """cloning must tolerate backends attached to the template source (regression for
+    'CREATE DATABASE ... TEMPLATE': ObjectInUse 'source database is being accessed by
+    other users', seen in CI when service engines keep pooled connections open)"""
+    template_name = f"tpl_{uuid.uuid4().hex}"
+    with migrated_pg_template_context(postgres_container, template_name):
+        # keep sessions attached to the template source while cloning
+        attached1 = _engine_to(postgres_container, template_name)
+        attached2 = _engine_to(postgres_container, template_name)
+        conn1 = attached1.connect()
+        conn2 = attached2.connect()
+        try:
+            with (
+                cloned_pg_database_context(postgres_container, template_name) as engine,
+                engine.begin() as conn,
+            ):
+                conn.execute(sa.text("CREATE TABLE attached_probe (id int)"))
+            # exit re-clone also runs with the source still attached
+        finally:
+            conn1.close()
+            conn2.close()
+            attached1.dispose()
+            attached2.dispose()
+
+
 def test_stale_template_is_rebuilt(postgres_container: PostgresTestConfig):
     """a template left over from an interrupted session is rebuilt, not reused"""
     template_name = f"tpl_{uuid.uuid4().hex}"
