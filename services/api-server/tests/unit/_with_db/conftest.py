@@ -29,6 +29,16 @@ from pytest_simcore.helpers.faker_factories import (
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+
+# NOTE: importing a fixture into a module's namespace is what registers it for the tests of
+# that module. This suite does NOT load 'pytest_simcore' as a pytest plugin, so the fixtures
+# below must be imported here for 'migrated_db' (and the tests) to request them. Neither ruff
+# nor pylint detects this, hence the suppressions.
+# pylint: disable=unused-import
+from pytest_simcore.postgres_service import (  # noqa: F401
+    _postgres_migrated_template_state,
+    postgres_db_per_test_from_template,
+)
 from servicelib.fastapi.db_asyncpg_engine import get_engine
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
@@ -139,14 +149,6 @@ def sync_engine(
 @pytest.fixture(scope="session")
 def postgres_dsn(postgres_service: PostgreServiceInfoDict) -> dict[str, str]:
     return {key: postgres_service[key] for key in ("user", "password", "database", "host", "port")}
-
-
-# provides `postgres_db_per_test_from_template`: a session-scoped template database migrated
-# once with alembic and re-cloned (CREATE DATABASE ... TEMPLATE) before every test
-from pytest_simcore.postgres_service import (  # noqa: E402, F401
-    _postgres_migrated_template_state,
-    postgres_db_per_test_from_template,
-)
 
 
 @pytest.fixture
