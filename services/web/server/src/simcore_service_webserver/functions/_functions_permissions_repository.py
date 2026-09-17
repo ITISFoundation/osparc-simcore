@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Literal
 from uuid import UUID
 
@@ -91,27 +92,26 @@ async def _internal_get_group_permissions(
     assert access_rights_table is not None  # nosec
     assert field_name is not None  # nosec
 
-    access_rights_list: list[tuple[UUID, list[FunctionGroupAccessRights]]] = []
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        for object_id in object_ids:
-            rows = [
-                row
-                async for row in await conn.stream(
-                    sa.select(
-                        access_rights_table.c.group_id,
-                        access_rights_table.c.read,
-                        access_rights_table.c.write,
-                        access_rights_table.c.execute,
-                    ).where(
-                        getattr(access_rights_table.c, field_name) == object_id,
-                        access_rights_table.c.product_name == product_name,
-                    )
-                )
-            ]
-            group_permissions = [FunctionGroupAccessRights.model_validate(row) for row in rows]
-            access_rights_list.append((object_id, group_permissions))
+        result = await conn.execute(
+            sa.select(
+                getattr(access_rights_table.c, field_name).label("object_id"),
+                access_rights_table.c.group_id,
+                access_rights_table.c.read,
+                access_rights_table.c.write,
+                access_rights_table.c.execute,
+            ).where(
+                getattr(access_rights_table.c, field_name).in_(object_ids),
+                access_rights_table.c.product_name == product_name,
+            )
+        )
+        rows = result.mappings().all()
 
-        return access_rights_list
+        grouped: dict[UUID, list[FunctionGroupAccessRights]] = defaultdict(list)
+        for row in rows:
+            grouped[row["object_id"]].append(FunctionGroupAccessRights.model_validate(row))
+
+        return [(object_id, grouped.get(object_id, [])) for object_id in object_ids]
 
 
 async def check_user_permissions(

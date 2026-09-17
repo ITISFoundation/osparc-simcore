@@ -15,7 +15,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from simcore_postgres_database.models.conversations import (
     conversations,
 )
@@ -117,8 +117,8 @@ async def list_project_conversations(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        items: list[ConversationGetDB] = [ConversationGetDB.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        items = TypeAdapter(list[ConversationGetDB]).validate_python(result.mappings().all())
 
         return cast(int, total_count), items
 
@@ -178,8 +178,8 @@ async def list_support_conversations_for_user(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        items: list[ConversationGetDB] = [ConversationGetDB.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        items = TypeAdapter(list[ConversationGetDB]).validate_python(result.mappings().all())
 
         return cast(int, total_count), items
 
@@ -235,8 +235,8 @@ async def list_all_support_conversations_for_support_user(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        items: list[ConversationGetDB] = [ConversationGetDB.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        items = TypeAdapter(list[ConversationGetDB]).validate_python(result.mappings().all())
 
         return cast(int, total_count), items
 

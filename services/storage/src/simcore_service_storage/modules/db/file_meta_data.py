@@ -183,7 +183,7 @@ class FileMetaDataRepository(BaseRepository):
             offset=offset,
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return [FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)]
+            return [FileMetaDataAtDB.model_validate(row) for row in (await conn.execute(stmt)).all()]
 
     async def try_get_directory(
         self, *, connection: AsyncConnection | None = None, file_filter: Path
@@ -279,7 +279,7 @@ class FileMetaDataRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = 0
             items = []
-            async for row in await conn.stream(files_query):
+            for row in (await conn.execute(files_query)).all():
                 total_count = row.total_count
                 items.append(
                     PathMetaData(
