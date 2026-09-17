@@ -53,7 +53,7 @@ async def get_all_tasks_log_files(
     # gets computation task ids
 
     try:
-        info = await validate_pipeline(request.app, project_id)
+        info = await validate_pipeline(request.app, project_id=project_id)
     except PipelineTaskMissingError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
