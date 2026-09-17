@@ -45,6 +45,13 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 
+@pytest.fixture(scope="module")
+def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
+    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
+    # running alembic 'upgrade head'/'downgrade base' for every test module
+    return postgres_db_from_template
+
+
 @pytest.fixture()
 def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
@@ -143,7 +150,9 @@ def random_resource_tracker_credit_transactions(
             "user_id": faker.pyint(),
             "user_email": faker.email(),
             "osparc_credits": -abs(faker.pyfloat()),
-            "transaction_status": choice([member.value for member in CreditTransactionStatus]),
+            "transaction_status": choice(  # noqa: S311
+                [member.value for member in CreditTransactionStatus]
+            ),
             "transaction_classification": CreditTransactionClassification.DEDUCT_SERVICE_RUN.value,
             "service_run_id": faker.uuid4(),
             "payment_transaction_id": faker.uuid4(),
