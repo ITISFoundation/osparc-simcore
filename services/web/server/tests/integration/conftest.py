@@ -18,23 +18,48 @@ NOTE: services/web/server/tests/conftest.py is pre-loaded
 import json
 import logging
 import sys
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from string import Template
 from unittest import mock
 
+import docker
 import pytest
+import sqlalchemy as sa
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.docker import get_service_published_port
+from pytest_simcore.helpers.postgres_tools import PostgresTestConfig, migrated_pg_tables_context
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 _logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def postgres_db(
+    postgres_dsn: PostgresTestConfig,
+    postgres_engine: sa.engine.Engine,
+    docker_client: docker.DockerClient,
+) -> Iterator[sa.engine.Engine]:
+    """In-place migrated postgres database (instead of the template-clone `postgres_db`
+    provided by `pytest_simcore.postgres_service`).
+
+    NOTE: integration tests deploy a live swarm stack (incl. the one-shot `migration`
+    service and `catalog`, which seeds service access-rights rows) into the SAME shared
+    database that this fixture manages. That stack is deployed *before* this fixture
+    resolves and stays up for the whole module, therefore the database must NOT be
+    dropped/recreated here: it would destroy the data the running services already seeded
+    (e.g. catalog's access rights -> HTTP 403 on `POST /v0/computations/{project_id}:start`).
+    The in-place `alembic upgrade head`/`downgrade base` cycle keeps the seeded data
+    untouched while the stack is up and only resets between stack lifetimes.
+    """
+    with migrated_pg_tables_context(postgres_dsn.copy()):
+        yield postgres_engine
 
 
 @pytest.fixture(scope="module")
@@ -133,7 +158,7 @@ def _default_app_config_for_integration_tests(
     # NOTE: previously in .env but removed from that file env since the webserver
     # can be configured as GC service as well. In integration tests, we are
     # for the moment using web-server as an all-in-one service.
-    # TODO: create integration tests using different configs
+    # NOTE: create integration tests using different configs
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
     test_environ["WEBSERVER_GARBAGE_COLLECTOR"] = (
         "{}"  # by default it is disabled. This enables it with default or env variables
