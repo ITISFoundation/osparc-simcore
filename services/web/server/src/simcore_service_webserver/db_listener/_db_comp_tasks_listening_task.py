@@ -35,6 +35,8 @@ from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass
 from typing import Final
 
+import asyncpg
+import asyncpg.pool
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -55,7 +57,9 @@ from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
 
+from .._meta import APP_NAME
 from ..db.plugin import get_asyncpg_engine
+from ..db.settings import get_plugin_settings
 from ..projects import _projects_service, exceptions
 from ..projects.nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
@@ -198,8 +202,8 @@ class _ClaimOutcome:
 async def _acquire_next_free_aggregate(conn: AsyncConnection, claimable: ColumnElement[bool]) -> tuple[str, str] | None:
     """Pick and advisory-lock the oldest claimable aggregate no other replica holds.
 
-    The oldest candidates are listed with a read-only query (no locking at all), so
-    candidate selection can never block or strand another replica. Their aggregates
+    The oldest distinct aggregates are listed with a read-only query (no locking at
+    all), so candidate selection can never block or strand another replica. Their aggregates
     are then offered the per-aggregate advisory lock
     (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) one at a time, so at
     most one advisory lock is ever held by this transaction: an aggregate already
@@ -212,25 +216,20 @@ async def _acquire_next_free_aggregate(conn: AsyncConnection, claimable: ColumnE
     Returns the (kind, aggregate_id) whose lock was acquired, or None when no
     candidate aggregate is free (or the queue is drained).
     """
+    # one row per aggregate (GROUP BY), oldest aggregate first: the batch limit then
+    # covers _CLAIM_CANDIDATE_BATCH *distinct* aggregates, so a burst of events on one
+    # aggregate locked elsewhere cannot crowd healthy aggregates out of the batch
     candidate_rows = (
         await conn.execute(
             select(outbox_events.c.kind, outbox_events.c.aggregate_id)
             .where(claimable)
-            .order_by(outbox_events.c.modified, outbox_events.c.id)
+            .group_by(outbox_events.c.kind, outbox_events.c.aggregate_id)
+            .order_by(func.min(outbox_events.c.modified), func.min(outbox_events.c.id))
             .limit(_CLAIM_CANDIDATE_BATCH)
         )
     ).all()
 
-    # oldest-first, de-duplicated down to distinct aggregates
-    seen_aggregates: set[tuple[str, str]] = set()
-    candidate_aggregates: list[tuple[str, str]] = []
-    for candidate in candidate_rows:
-        aggregate = (candidate.kind, candidate.aggregate_id)
-        if aggregate not in seen_aggregates:
-            seen_aggregates.add(aggregate)
-            candidate_aggregates.append(aggregate)
-
-    for kind, aggregate_id in candidate_aggregates:
+    for kind, aggregate_id in candidate_rows:
         # lock namespace must match the claim namespace (kind + aggregate_id):
         # another producer reusing the same id space must not collide with ours
         acquired = (
@@ -432,41 +431,61 @@ async def _claim_and_process_outbox_events(app: web.Application, engine: AsyncEn
                 return
 
 
+# shown as pg_stat_activity.application_name for the dedicated LISTEN connection,
+# so it can be told apart from the app's pooled connections in e.g. Adminer
+OUTBOX_LISTENER_APPLICATION_NAME: Final[str] = f"{APP_NAME}-db-listener-outbox"
+
+
 @contextlib.asynccontextmanager
 async def with_outbox_wakeup_listener(app: web.Application) -> AsyncGenerator[asyncio.Event]:
-    """Holds one pooled connection open to LISTEN on the outbox wake-up channel.
+    """Holds one dedicated connection open to LISTEN on the outbox wake-up channel.
+
+    The connection is opened directly with asyncpg, *outside* the app's shared
+    SQLAlchemy pool: asyncpg's callback-based notifications require holding one
+    connection open for the listener's lifetime, and a permanent check-out from
+    the shared pool would steal capacity from request-handling code (projections
+    also need pool connections while the LISTEN one is held).
+    It is therefore named via `OUTBOX_LISTENER_APPLICATION_NAME` so it is easy to
+    identify in pg_stat_activity (e.g. in the Adminer dashboard).
 
     Yields the event that pg_notify('outbox_wakeup') sets: pass it as the
     `early_wake_up_event` of a periodic drain task, so events are picked up as
-    soon as they land instead of waiting for the next poll interval.
+    soon as they land instead of waiting for the next poll interval. Losing this
+    connection only loses wake-ups — the table remains the source of truth and the
+    periodic poll picks up anything missed.
     """
-    engine = get_asyncpg_engine(app)
+    settings = get_plugin_settings(app)
     wakeup_event: asyncio.Event = asyncio.Event()
 
     def _on_wakeup(
-        _conn: object,
+        _conn: asyncpg.Connection | asyncpg.pool.PoolConnectionProxy,
         _pid: int,
         _channel: str,
-        _payload: str,
+        _payload: object,
     ) -> None:
         wakeup_event.set()
 
-    # Borrow a connection from the app's shared pool to LISTEN on
-    # (asyncpg's callback-based notifications require holding one connection open)
-    async with engine.connect() as listen_conn:
-        raw_conn = await listen_conn.get_raw_connection()
-        asyncpg_conn = raw_conn.driver_connection
-        assert asyncpg_conn is not None  # nosec
-        await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_wakeup)
+    listen_conn = await asyncpg.connect(
+        dsn=settings.dsn,
+        server_settings={
+            "jit": "off",  # same as the app's pooled engine connections
+            "application_name": settings.client_name(OUTBOX_LISTENER_APPLICATION_NAME, suffix="asyncpg"),
+        },
+    )
+    try:
+        await listen_conn.add_listener(DB_CHANNEL_NAME, _on_wakeup)
         try:
             yield wakeup_event
         finally:
-            await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
+            await listen_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
+    finally:
+        await listen_conn.close()
 
 
 async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
-    # the LISTEN connection stays open for the task's lifetime and a pg_notify
-    # wake-up drains the outbox immediately, instead of waiting for the poll interval
+    # the dedicated LISTEN connection stays open for the task's lifetime (outside
+    # the shared pool) and a pg_notify wake-up drains the outbox immediately,
+    # instead of waiting for the poll interval
     async with (
         with_outbox_wakeup_listener(app) as wakeup_event,
         periodic_task(
