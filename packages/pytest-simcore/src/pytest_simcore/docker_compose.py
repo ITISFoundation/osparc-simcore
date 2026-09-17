@@ -280,7 +280,7 @@ def ops_docker_compose_file(ops_services_selection: list[str], temp_folder: Path
 
     # these services are useless when running in the CI
     if "CI" in os.environ:
-        allowed_services = ["minio"]
+        allowed_services = ["s3-storage"]
         _logger.info(
             "Note that services such as '%s' are removed from the stack when running in the CI", allowed_services
         )
@@ -327,7 +327,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -
         _save_docker_logs_to_folder(failed_test_directory)
 
 
-def _minio_fix(service_environs: dict) -> dict:
+def _fix_s3_endpoint_to_host(service_environs: dict[str, str]) -> dict[str, str]:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
         service_environs["S3_ENDPOINT"] = f"http://{get_localhost_ip()}:9001"
@@ -360,7 +360,7 @@ def _filter_services_and_dump(include: list, services_compose: dict, docker_comp
         if "build" in service:
             service.pop("build", None)
         if "environment" in service:
-            service["environment"] = _minio_fix(service["environment"])
+            service["environment"] = _fix_s3_endpoint_to_host(service["environment"])
 
         if name == "postgres":
             # NOTE: # -c fsync=off is not recommended for production as this disable writing to disk https://pythonspeed.com/articles/faster-db-tests/
