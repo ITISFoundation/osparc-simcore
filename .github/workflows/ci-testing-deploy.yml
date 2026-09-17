@@ -54,6 +54,7 @@ jobs:
       aws-library: ${{ steps.filter.outputs.aws-library }}
       celery-library: ${{ steps.filter.outputs.celery-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
+      i18n-tools: ${{ steps.filter.outputs.i18n-tools }}
       models-library: ${{ steps.filter.outputs.models-library }}
       pytest-simcore: ${{ steps.filter.outputs.pytest-simcore }}
       common-library: ${{ steps.filter.outputs.common-library }}
@@ -111,6 +112,8 @@ jobs:
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
+            i18n-tools:
+              - 'scripts/i18n/tools/**'
             models-library:
               - 'packages/models-library/**'
               - 'packages/postgres-database/**'
@@ -1098,6 +1101,33 @@ jobs:
           flags: unittests #optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  unit-test-i18n-tools:
+    needs: changes
+    if: ${{ needs.changes.outputs.i18n-tools == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
+    name: "[unit] i18n-tools"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Setup node (for the TypeScript AST extractor tests)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: install
+        run: ./ci/github/unit-testing/i18n-tools.bash install
+      - name: test
+        run: ./ci/github/unit-testing/i18n-tools.bash test
+
   unit-test-dask-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1683,6 +1713,7 @@ jobs:
         unit-test-director-v2,
         unit-test-director,
         unit-test-dynamic-sidecar,
+        unit-test-i18n-tools,
         unit-test-models-library,
         unit-test-pytest-simcore,
         unit-test-common-library,
