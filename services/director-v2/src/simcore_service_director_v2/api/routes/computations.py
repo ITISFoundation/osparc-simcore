@@ -43,7 +43,7 @@ from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -139,6 +139,7 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 @log_decorator(_logger)
 async def _get_project_metadata(
     db_engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
 ) -> ProjectMetadataDict:
@@ -148,7 +149,7 @@ async def _get_project_metadata(
         projects_metadata_repo = ProjectsMetadataRepository(db_engine)
 
         # all reads below share a single connection (no external I/O in this block)
-        async with pass_or_acquire_connection(db_engine) as conn:
+        async with pass_or_acquire_connection(db_engine, connection) as conn:
             project_ancestors = await projects_metadata_repo.get_project_ancestors(conn, project_id=project_id)
             if project_ancestors.parent_project_uuid is None:
                 _logger.debug("no parent found for project %s", project_id)
@@ -251,13 +252,20 @@ async def _try_start_pipeline(
         )
 
     db_engine = get_engine(app)
-    projects_metadata = await _get_project_metadata(db_engine, project_id=computation.project_id)
+    async with pass_or_acquire_connection(db_engine) as conn:
+        projects_metadata = await _get_project_metadata(
+            db_engine,
+            conn,
+            project_id=computation.project_id,
+        )
+        user_email = await users_repo.get_user_email(computation.user_id, connection=conn)
+
     run_metadata = RunMetadataDict(
         node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
         product_name=computation.product_name,
         project_name=project.name,
         simcore_user_agent=computation.simcore_user_agent,
-        user_email=await users_repo.get_user_email(computation.user_id),
+        user_email=user_email,
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         project_metadata=projects_metadata,
