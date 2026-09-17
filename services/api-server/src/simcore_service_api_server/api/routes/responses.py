@@ -10,6 +10,7 @@ from models_library.api_server.celery import API_SERVER_CELERY_QUEUE_DEFAULT
 from models_library.celery import TaskExecutionMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import ValidationError
 from servicelib.celery.task_manager import TaskManager
 from servicelib.status_codes_utils import is_4xx_client_error
 from starlette.responses import JSONResponse
@@ -19,6 +20,7 @@ from simcore_service_api_server.models.domain.chatbot import CreateChatCompletio
 from ...core.settings import ApplicationSettings
 from ...exceptions.backend_errors import ChatbotNotAvailableError, ChatbotRequestError
 from ...exceptions.handlers._utils import create_error_json_response
+from ...exceptions.handlers._validation_errors import http422_error_handler
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.basic_types import SseStreamingResponse
 from ...models.domain.celery_models import ApiServerOwnerMetadata
@@ -125,6 +127,9 @@ async def create_response(
                 temperature=body.temperature,
                 response_format=body.to_chat_response_format(),
             )
+        except ValidationError as exc:
+            # relay validation errors to caller to provide hints in the UI
+            return await http422_error_handler(request, exc)
         except httpx.HTTPStatusError as exc:
             if is_4xx_client_error(exc.response.status_code):
                 return _relay_downstream_client_error(exc.response)
