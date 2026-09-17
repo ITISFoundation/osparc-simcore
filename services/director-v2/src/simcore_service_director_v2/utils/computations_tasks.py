@@ -4,6 +4,7 @@ import networkx as nx
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..core.errors import PipelineTaskMissingError
 from ..models.comp_pipelines import CompPipelineAtDB
@@ -22,6 +23,7 @@ class PipelineInfo(NamedTuple):
 
 async def _get_pipeline_info(
     app: FastAPI,
+    connection: AsyncConnection,
     *,
     project_id: ProjectID,
 ) -> PipelineInfo:
@@ -31,7 +33,7 @@ async def _get_pipeline_info(
     comp_pipelines_repo = get_repository(app, CompPipelinesRepository)
     comp_tasks_repo = get_repository(app, CompTasksRepository)
 
-    async with pass_or_acquire_connection(db_engine) as conn:
+    async with pass_or_acquire_connection(db_engine, connection) as conn:
         pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
         all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(conn, project_id=project_id)
 
@@ -45,6 +47,8 @@ async def _get_pipeline_info(
 
 async def validate_pipeline(
     app: FastAPI,
+    connection: AsyncConnection | None = None,
+    *,
     project_id: ProjectID,
 ) -> PipelineInfo:
     """
@@ -54,7 +58,7 @@ async def validate_pipeline(
     raises PipelineTaskMissingError
     """
 
-    pipeline_info = await _get_pipeline_info(app, project_id=project_id)
+    pipeline_info = await _get_pipeline_info(app, project_id=project_id, connection=connection)
 
     # check that we have the expected tasks
     if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):

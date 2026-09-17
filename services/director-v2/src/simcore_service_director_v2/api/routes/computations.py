@@ -527,30 +527,34 @@ async def get_computation(
         f"{user_id=}",
         f"{project_id=}",
     )
-    if not await project_repo.exists(project_id=project_id):
-        raise ProjectNotFoundError(project_id=project_id)
+    db_engine = get_engine(request.app)
+    # all DB reads below share a single connection (no external I/O in this block)
+    async with pass_or_acquire_connection(db_engine) as conn:
+        if not await project_repo.exists(conn, project_id=project_id):
+            raise ProjectNotFoundError(project_id=project_id)
 
-    try:
-        pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
-            request.app,
-            project_id=project_id,
-        )
-    except PipelineTaskMissingError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="The tasks referenced by the pipeline are missing",
-        ) from exc
+        try:
+            pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
+                request.app,
+                conn,
+                project_id=project_id,
+            )
+        except PipelineTaskMissingError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The tasks referenced by the pipeline are missing",
+            ) from exc
+
+        # get run details if any
+        last_run: CompRunsAtDB | None = None
+        pipeline_state = RunningState.NOT_STARTED
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            last_run = await comp_runs_repo.get_latest_run_by_project(conn, project_id=project_id)
+            pipeline_state = last_run.result
 
     # create the complete DAG graph
     complete_dag = create_complete_dag_from_tasks(all_tasks)
     pipeline_details = await compute_pipeline_details(complete_dag, pipeline_dag, all_tasks)
-
-    # get run details if any
-    last_run: CompRunsAtDB | None = None
-    pipeline_state = RunningState.NOT_STARTED
-    with contextlib.suppress(ComputationalRunNotFoundError):
-        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
-        pipeline_state = last_run.result
 
     _logger.debug(
         "Computational task status by %s for %s has %s",
