@@ -6,6 +6,7 @@
 # pylint:disable=protected-access
 
 import asyncio
+import datetime as dt
 import json
 import logging
 import secrets
@@ -34,19 +35,19 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.webserver_models import (
-    DB_CHANNEL_NAME,
-    DB_OUTBOX_KIND_COMP_TASK_SYNC,
-)
+from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
 from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import (
+    _CLAIM_CANDIDATE_BATCH,
     _MAX_ATTEMPTS,
     _MAX_FAILED_AGGREGATES_PER_DRAIN,
+    OUTBOX_LISTENER_APPLICATION_NAME,
     _claim_and_process_one_outbox_event,
     _claim_and_process_outbox_events,
     _ClaimOutcome,
     _get_comp_task_row,
     _get_project_owner,
     _process_outbox_event,
+    with_outbox_wakeup_listener,
 )
 from simcore_service_webserver.db_listener.plugin import create_comp_tasks_listening_task
 from simcore_service_webserver.projects import exceptions
@@ -60,6 +61,10 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
+
+_COUNT_LISTENER_CONNECTIONS_SQL = (
+    "select count(*) from pg_stat_activity where application_name like :pattern and pid != pg_backend_pid()"
+)
 
 
 @pytest.fixture
@@ -1204,16 +1209,20 @@ async def test_claim_ignores_events_of_a_foreign_kind(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_listen_notify_uses_pooled_connection_and_wakes_up(
+async def test_listen_notify_uses_dedicated_named_connection_and_wakes_up(
     sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
-    """Tests that a connection borrowed from the shared engine pool (not a standalone
-    connection) receives the outbox_wakeup notification when comp_tasks is updated."""
+    """The wake-up LISTEN connection must be a *dedicated* asyncpg connection (not a
+    permanent check-out of the app's shared pool), named via
+    OUTBOX_LISTENER_APPLICATION_NAME so it is identifiable in pg_stat_activity,
+    and it must receive the outbox_wakeup notification when comp_tasks is updated."""
+    assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
     task = await create_comp_task(
@@ -1223,25 +1232,115 @@ async def test_listen_notify_uses_pooled_connection_and_wakes_up(
         node_class=NodeClass.COMPUTATIONAL,
     )
 
-    received: asyncio.Queue[str] = asyncio.Queue()
+    async with with_outbox_wakeup_listener(client.app) as wakeup_event:
+        assert not wakeup_event.is_set()
 
-    def _on_notification(conn: object, pid: int, channel: str, payload: str) -> None:
-        received.put_nowait(payload)
-
-    # Borrow a connection from the engine's pool, exactly like the worker does
-    async with sqlalchemy_async_engine.connect() as conn:
-        raw_conn = await conn.get_raw_connection()
-        asyncpg_conn = raw_conn.driver_connection
-        assert asyncpg_conn is not None
-        await asyncpg_conn.add_listener(DB_CHANNEL_NAME, _on_notification)
-
-        try:
-            async with sqlalchemy_async_engine.begin() as write_conn:
-                await write_conn.execute(
-                    comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        # the dedicated connection is visible in pg_stat_activity under its own
+        # application_name (this is what makes it identifiable in e.g. Adminer)
+        async with sqlalchemy_async_engine.connect() as conn:
+            found = (
+                await conn.execute(
+                    sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{OUTBOX_LISTENER_APPLICATION_NAME}%")
                 )
+            ).scalar_one()
+        assert found >= 1, f"no pg_stat_activity entry for {OUTBOX_LISTENER_APPLICATION_NAME!r}"
 
-            raw_payload = await asyncio.wait_for(received.get(), timeout=5.0)
-            assert raw_payload == ""
-        finally:
-            await asyncpg_conn.remove_listener(DB_CHANNEL_NAME, _on_notification)
+        # a comp_tasks change must wake the listener through the dedicated connection
+        async with sqlalchemy_async_engine.begin() as write_conn:
+            await write_conn.execute(
+                comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+            )
+
+        await asyncio.wait_for(wakeup_event.wait(), timeout=5.0)
+        assert wakeup_event.is_set()
+
+    # after the context manager exits, the dedicated connection is closed again
+    async with sqlalchemy_async_engine.connect() as conn:
+        found = (
+            await conn.execute(
+                sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{OUTBOX_LISTENER_APPLICATION_NAME}%")
+            )
+        ).scalar_one()
+    assert found == 0, "the dedicated LISTEN connection must be closed on exit"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Candidate selection must de-duplicate aggregates *in SQL* before applying the
+    batch limit: a burst of events on one aggregate locked by another replica must
+    not crowd a younger, healthy aggregate out of the batch (head-of-line blocking).
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    hot_task, healthy_task = [
+        await create_comp_task(
+            project_id=f"{project.uuid}",
+            node_id=faker.uuid4(),
+            outputs=json.dumps({}),
+            node_class=NodeClass.COMPUTATIONAL,
+        )
+        for _ in range(2)
+    ]
+
+    # the hot aggregate has more pending events than the candidate batch size, so
+    # pre-fix (LIMIT over raw event rows) every candidate would belong to it
+    num_hot_events = _CLAIM_CANDIDATE_BATCH + 2
+    backdated = dt.datetime.now(dt.UTC) - dt.timedelta(minutes=5)
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            outbox_events.insert(),
+            [
+                {
+                    "kind": DB_OUTBOX_KIND_COMP_TASK_SYNC,
+                    "aggregate_type": "comp_task",
+                    "aggregate_id": f"{hot_task['task_id']}",
+                    "changed_columns": ["outputs"],
+                    "modified": backdated,
+                }
+                for _ in range(num_hot_events)
+            ],
+        )
+        # one younger event on a different (healthy) aggregate, queued behind the burst
+        await conn.execute(
+            outbox_events.insert().values(
+                kind=DB_OUTBOX_KIND_COMP_TASK_SYNC,
+                aggregate_type="comp_task",
+                aggregate_id=f"{healthy_task['task_id']}",
+                changed_columns=["outputs"],
+            )
+        )
+
+    hot_aggregate_id = f"{hot_task['task_id']}"
+    healthy_aggregate_id = f"{healthy_task['task_id']}"
+
+    # hold the hot aggregate's advisory lock (as another replica would)
+    our_key = f"{DB_OUTBOX_KIND_COMP_TASK_SYNC}:{hot_aggregate_id}"
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(our_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on the hot aggregate's key"
+
+        # the claim must skip the locked hot aggregate and pick the healthy one, even
+        # though its single event is older-than-nothing... i.e. strictly younger
+        outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+        assert outcome is not None, "a locked hot aggregate must not block a younger healthy aggregate"
+        assert outcome.success is True
+        assert outcome.aggregate_id == healthy_aggregate_id
+
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(our_key, 0))))
+
+    # only the healthy aggregate was projected; the hot aggregate's events stay queued
+    assert mock_project_subsystem["update_node_outputs"].call_count == 1
+    assert len(await _get_outbox_events_for_task(sqlalchemy_async_engine, hot_task["task_id"])) == num_hot_events
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, healthy_task["task_id"]) == []
