@@ -550,14 +550,6 @@ def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
     return url
 
 
-@pytest.fixture(scope="module")
-def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
-    # Overrides packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db to
-    # reuse the session-scoped migrated template (alembic 'upgrade head' runs once per pytest
-    # session) instead of migrating for every test module
-    return postgres_db_from_template
-
-
 @pytest.fixture
 async def asyncpg_engine(postgres_db: sa.engine.Engine, is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
     # NOTE: call to postgres BEFORE app starts

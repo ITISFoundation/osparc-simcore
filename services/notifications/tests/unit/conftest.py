@@ -79,13 +79,6 @@ def mock_jinja_env() -> Environment:
     )
 
 
-@pytest.fixture(scope="module")
-def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
-    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
-    # running alembic 'upgrade head'/'downgrade base' for every test module
-    return postgres_db_from_template
-
-
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,

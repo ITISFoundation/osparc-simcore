@@ -2,20 +2,12 @@ from collections.abc import Callable
 from copy import deepcopy
 
 import pytest
-import sqlalchemy as sa
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
-
-
-@pytest.fixture(scope="module")
-def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
-    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
-    # running alembic 'upgrade head'/'downgrade base' for every test module
-    return postgres_db_from_template
 
 
 @pytest.fixture

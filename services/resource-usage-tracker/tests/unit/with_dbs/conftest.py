@@ -45,13 +45,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 
-@pytest.fixture(scope="module")
-def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
-    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
-    # running alembic 'upgrade head'/'downgrade base' for every test module
-    return postgres_db_from_template
-
-
 @pytest.fixture()
 def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
