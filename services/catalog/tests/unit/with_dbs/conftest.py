@@ -44,6 +44,13 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
+@pytest.fixture(scope="module")
+def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
+    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
+    # running alembic 'upgrade head'/'downgrade base' for every test module
+    return postgres_db_from_template
+
+
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
