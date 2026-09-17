@@ -5,6 +5,7 @@
 # pylint:disable=no-value-for-parameter
 
 
+import asyncio
 import datetime
 from dataclasses import dataclass
 from typing import Any, Final
@@ -17,6 +18,7 @@ from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from pytest_mock import MockerFixture
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.comp_tasks import (
     CompTaskAtDB,
@@ -651,6 +653,71 @@ async def test_compute_pipeline_details(
         pipeline_test_params.comp_tasks,
     )
     assert received_details.model_dump() == pipeline_test_params.expected_pipeline_details.model_dump()
+
+
+def _make_computational_dag(num_nodes: int) -> tuple[nx.DiGraph, list[CompTaskAtDB]]:
+    """Builds a DAG of `num_nodes` independent COMPUTATIONAL nodes (no edges needed
+    since we only care about how many times _set_computational_nodes_states()
+    iterates, not the ordering)."""
+    dag = nx.DiGraph()
+    comp_tasks = []
+    for _ in range(num_nodes):
+        node_id = f"{uuid4()}"
+        dag.add_node(
+            node_id,
+            key="simcore/services/comp/fake",
+            node_class=NodeClass.COMPUTATIONAL,
+            state=RunningState.NOT_STARTED,
+            outputs=None,
+        )
+        comp_tasks.append(
+            CompTaskAtDB.model_construct(
+                project_id=uuid4(),
+                node_id=node_id,
+                schema=NodeSchema(inputs={}, outputs={}),
+                inputs=None,
+                image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
+                state=RunningState.NOT_STARTED,
+                internal_id=3,
+                node_class=NodeClass.COMPUTATIONAL,
+                created=datetime.datetime.now(tz=datetime.UTC),
+                modified=datetime.datetime.now(tz=datetime.UTC),
+                last_heartbeat=None,
+            )
+        )
+    return dag, comp_tasks
+
+
+@pytest.mark.parametrize(
+    "num_nodes",
+    [
+        pytest.param(0, id="empty dag does not yield"),
+        pytest.param(1, id="single node yields once"),
+        pytest.param(10, id="typical dag size (production median=1, p99=3, max=25)"),
+        pytest.param(100, id="large synthetic dag still yields every node"),
+    ],
+)
+async def test_compute_pipeline_details_yields_to_event_loop(mocker: MockerFixture, num_nodes: int):
+    """Regression test for the event-loop-starvation fix (PR #9469).
+
+    compute_pipeline_details() -> _set_computational_nodes_states() iterates over
+    every computational node performing CPU-bound work (node hashing) with no real
+    suspension point. If the `await asyncio.sleep(0)` cooperative yield is ever
+    removed, this test fails because the event loop would never be released,
+    starving any other concurrently-running task (see the original 300ms latency
+    incident this fix resolves).
+    """
+    dag, comp_tasks = _make_computational_dag(num_nodes)
+    sleep_spy = mocker.patch(
+        "simcore_service_director_v2.utils.dags.asyncio.sleep",
+        wraps=asyncio.sleep,
+    )
+
+    await compute_pipeline_details(dag, dag, comp_tasks)
+
+    assert sleep_spy.call_count == num_nodes
+    for call in sleep_spy.call_args_list:
+        assert call.args == (0,), "must yield with sleep(0), not a real delay"
 
 
 @pytest.mark.parametrize(
