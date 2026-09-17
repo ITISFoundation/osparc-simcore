@@ -68,7 +68,7 @@ async def get_containers_activity(request: Request) -> ActivityInfoOrNone:
     "/containers/name",
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found or spec is not yet present"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Filters could not be parsed"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Filters could not be parsed"},
     },
 )
 @cancel_on_disconnect
@@ -94,7 +94,7 @@ async def get_containers_name(
     try:
         return await containers.get_containers_name(app=request.app, filters=filters)
     except InvalidFilterFormatError as e:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"{e}") from e
     except (MissingDockerComposeDownSpecError, ContainerNotFoundError) as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
