@@ -22,11 +22,9 @@ from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
-from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_run_snapshot_tasks import (
     CompRunSnapshotTaskDBGet,
 )
-from ...models.comp_runs import CompRunsAtDB
 from ...models.comp_tasks import ComputationTaskForRpcDBGet
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_runs_snapshot_tasks import (
@@ -159,17 +157,6 @@ async def _fetch_task_log(
     return None
 
 
-async def _get_latest_run_or_none(
-    comp_runs_repo: CompRunsRepository,
-    user_id: UserID,
-    project_uuid: ProjectID,
-) -> CompRunsAtDB | None:
-    try:
-        return await comp_runs_repo.get(user_id=user_id, project_id=project_uuid, iteration=None)
-    except ComputationalRunNotFoundError:
-        return None
-
-
 @router.expose(reraise_if_error_type=())
 async def list_computations_latest_iteration_tasks_page(
     app: FastAPI,
@@ -199,13 +186,10 @@ async def list_computations_latest_iteration_tasks_page(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in comp_tasks}
 
-    # Fetch latest run for each project concurrently
-    latest_runs = await limited_gather(
-        *[_get_latest_run_or_none(comp_runs_repo, user_id, project_uuid) for project_uuid in unique_project_uuids],
-        limit=20,
+    project_uuid_to_iteration = await comp_runs_repo.batch_get_latest_run_iteration_by_projects(
+        user_id=user_id,
+        project_ids=list(unique_project_uuids),
     )
-    # Build a dict: project_uuid -> iteration
-    project_uuid_to_iteration = {run.project_uuid: run.iteration for run in latest_runs if run is not None}
 
     # Run all log fetches concurrently
     log_files = await limited_gather(

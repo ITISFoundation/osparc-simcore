@@ -189,6 +189,36 @@ class CompRunsRepository(BaseRepository):
                 for row in result
             ]
 
+    async def batch_get_latest_run_iteration_by_projects(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: UserID,
+        project_ids: list[ProjectID],
+    ) -> dict[ProjectID, Iteration]:
+        if not project_ids:
+            return {}
+
+        query = (
+            sa.select(
+                comp_runs.c.project_uuid,
+                comp_runs.c.iteration,
+            )
+            .where(
+                (comp_runs.c.user_id == user_id)
+                & (comp_runs.c.project_uuid.in_([f"{project_id}" for project_id in project_ids]))
+            )
+            .distinct(comp_runs.c.project_uuid)
+            .order_by(
+                comp_runs.c.project_uuid,
+                desc(comp_runs.c.iteration),
+            )
+        )
+
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
+            result = await conn.execute(query)
+            return {ProjectID(row.project_uuid): row.iteration for row in result}
+
     async def list_(
         self,
         connection: AsyncConnection | None = None,
