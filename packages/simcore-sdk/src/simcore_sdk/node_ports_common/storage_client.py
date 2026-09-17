@@ -53,7 +53,7 @@ def handle_client_exception[**P, R](
             if err.status == status.HTTP_404_NOT_FOUND:
                 msg = kwargs.get("file_id", "unknown file id")
                 raise exceptions.S3InvalidPathError(msg) from err
-            if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+            if err.status == status.HTTP_422_UNPROCESSABLE_CONTENT:
                 msg = f"Invalid call to storage: {err.message}"
                 raise exceptions.StorageInvalidCallError(msg) from err
             if status.HTTP_500_INTERNAL_SERVER_ERROR > err.status >= status.HTTP_400_BAD_REQUEST:

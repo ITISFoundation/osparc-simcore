@@ -29,7 +29,7 @@ def handle_invalid_invitation_code_error(request: Request, exception: Exception)
     )
 
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"detail": user_msg},
     )
 

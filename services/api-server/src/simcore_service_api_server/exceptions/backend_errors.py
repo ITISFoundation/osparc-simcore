@@ -26,14 +26,14 @@ class BackendTimeoutError(BaseBackEndError):
 
 class InvalidInputError(BaseBackEndError):
     msg_template = user_message("The provided input is not valid.", _version=1)
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class InvalidEncryptionInputsError(BaseBackEndError):
     msg_template = user_message(
         "The provided encryption inputs {inputs} are not valid. Available node inputs '{node_inputs}'", _version=1
     )
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class EncryptionNotConfiguredError(BaseBackEndError):
@@ -178,7 +178,7 @@ class CanNotCheckoutServiceIsNotRunningError(BaseBackEndError):
         "Current service ID: {service_run_id}.",
         _version=1,
     )
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class LicensedItemCheckoutNotFoundError(BaseBackEndError):

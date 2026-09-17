@@ -206,7 +206,7 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (UserRole.TESTER, status.HTTP_422_UNPROCESSABLE_CONTENT),
     ],
 )
 async def test_replace_node_resources_raises_422_if_resource_does_not_validate(

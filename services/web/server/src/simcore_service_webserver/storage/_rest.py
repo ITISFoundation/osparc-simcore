@@ -145,7 +145,7 @@ async def _forward_request_to_storage(
     async with session.request(method.upper(), url, ssl=False, json=body, **kwargs) as resp:
         _logger.debug("Forwarded request to storage %s %s: %s", method, url, resp)
         match resp.status:
-            case status.HTTP_422_UNPROCESSABLE_ENTITY:
+            case status.HTTP_422_UNPROCESSABLE_CONTENT:
                 raise web.HTTPUnprocessableEntity(text=await resp.text(), content_type=resp.content_type)
             case status.HTTP_404_NOT_FOUND:
                 raise web.HTTPNotFound(text=await resp.text())
