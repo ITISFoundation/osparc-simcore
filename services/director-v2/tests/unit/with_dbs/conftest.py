@@ -39,6 +39,13 @@ from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
+@pytest.fixture(scope="module")
+def postgres_db(postgres_db_from_template: sa.engine.Engine) -> sa.engine.Engine:
+    # NOTE: opt-in to the session-scoped migrated template + per-module clone instead of
+    # running alembic 'upgrade head'/'downgrade base' for every test module
+    return postgres_db_from_template
+
+
 @pytest.fixture
 async def create_pipeline(
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
