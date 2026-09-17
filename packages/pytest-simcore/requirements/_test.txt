@@ -99,6 +99,8 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
+psycopg2-binary==2.9.13
+    # via sqlalchemy
 pydantic==2.13.4
     # via
     #   -r requirements/_test.in
