@@ -38,6 +38,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, TypeAdapter
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
@@ -137,64 +138,69 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 
 @log_decorator(_logger)
 async def _get_project_metadata(
+    db_engine: AsyncEngine,
+    *,
     project_id: ProjectID,
-    project_repo: ProjectsRepository,
-    projects_nodes_repo: ProjectsNodesRepository,
-    projects_metadata_repo: ProjectsMetadataRepository,
 ) -> ProjectMetadataDict:
     try:
-        project_ancestors = await projects_metadata_repo.get_project_ancestors(project_id=project_id)
-        if project_ancestors.parent_project_uuid is None:
-            _logger.debug("no parent found for project %s", project_id)
-            return {}
+        projects_repo = ProjectsRepository(db_engine)
+        projects_nodes_repo = ProjectsNodesRepository(db_engine)
+        projects_metadata_repo = ProjectsMetadataRepository(db_engine)
 
-        assert project_ancestors.parent_node_id is not None  # nosec
-        assert project_ancestors.root_project_uuid is not None  # nosec
-        assert project_ancestors.root_node_id is not None  # nosec
+        # all reads below share a single connection (no external I/O in this block)
+        async with pass_or_acquire_connection(db_engine) as conn:
+            project_ancestors = await projects_metadata_repo.get_project_ancestors(conn, project_id=project_id)
+            if project_ancestors.parent_project_uuid is None:
+                _logger.debug("no parent found for project %s", project_id)
+                return {}
 
-        async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-            project = await project_repo.get(project_id=project_uuid)
+            assert project_ancestors.parent_node_id is not None  # nosec
+            assert project_ancestors.root_project_uuid is not None  # nosec
+            assert project_ancestors.root_node_id is not None  # nosec
 
-            try:
-                node = await projects_nodes_repo.get(project_id=project_uuid, node_id=node_id)
-            except ProjectNodeNotFoundError as exc:
-                _logger.exception(
-                    **create_troubleshooting_log_kwargs(
-                        f"Node {node_id} not found in project {project.uuid}",
-                        error=exc,
-                        error_context={
-                            "node_id": node_id,
-                            "project_uuid": project.uuid,
-                            "ancestor_of_project_id": project_id,
-                        },
-                        tip=(
-                            "This node is registered as an ancestor of the project "
-                            "but is missing from its project's nodes. This likely "
-                            "indicates a data inconsistency, e.g. the node was removed "
-                            "from the project while still being referenced as a "
-                            "parent/root node."
-                        ),
+            async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
+                project = await projects_repo.get(conn, project_id=project_uuid)
+
+                try:
+                    node = await projects_nodes_repo.get(conn, project_id=project_uuid, node_id=node_id)
+                except ProjectNodeNotFoundError as exc:
+                    _logger.exception(
+                        **create_troubleshooting_log_kwargs(
+                            f"Node {node_id} not found in project {project.uuid}",
+                            error=exc,
+                            error_context={
+                                "node_id": node_id,
+                                "project_uuid": project.uuid,
+                                "ancestor_of_project_id": project_id,
+                            },
+                            tip=(
+                                "This node is registered as an ancestor of the project "
+                                "but is missing from its project's nodes. This likely "
+                                "indicates a data inconsistency, e.g. the node was removed "
+                                "from the project while still being referenced as a "
+                                "parent/root node."
+                            ),
+                        )
                     )
-                )
-                return project.name, _UNKNOWN_NODE
-            return project.name, node.label
+                    return project.name, _UNKNOWN_NODE
+                return project.name, node.label
 
-        parent_project_name, parent_node_name = await _get_project_node_names(
-            project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
-        )
-        root_parent_project_name, root_parent_node_name = await _get_project_node_names(
-            project_ancestors.root_project_uuid, project_ancestors.root_node_id
-        )
-        return ProjectMetadataDict(
-            parent_node_id=project_ancestors.parent_node_id,
-            parent_node_name=parent_node_name,
-            parent_project_id=project_ancestors.parent_project_uuid,
-            parent_project_name=parent_project_name,
-            root_parent_node_id=project_ancestors.root_node_id,
-            root_parent_node_name=root_parent_node_name,
-            root_parent_project_id=project_ancestors.root_project_uuid,
-            root_parent_project_name=root_parent_project_name,
-        )
+            parent_project_name, parent_node_name = await _get_project_node_names(
+                project_ancestors.parent_project_uuid, project_ancestors.parent_node_id
+            )
+            root_parent_project_name, root_parent_node_name = await _get_project_node_names(
+                project_ancestors.root_project_uuid, project_ancestors.root_node_id
+            )
+            return ProjectMetadataDict(
+                parent_node_id=project_ancestors.parent_node_id,
+                parent_node_name=parent_node_name,
+                parent_project_id=project_ancestors.parent_project_uuid,
+                parent_project_name=parent_project_name,
+                root_parent_node_id=project_ancestors.root_node_id,
+                root_parent_node_name=root_parent_node_name,
+                root_parent_project_id=project_ancestors.root_project_uuid,
+                root_parent_project_name=root_parent_project_name,
+            )
 
     except DBProjectNotFoundError:
         _logger.exception("Could not find project: %s", f"{project_id=}")
@@ -218,14 +224,11 @@ def _raise_insufficient_credits_error(computation: ComputationCreate) -> None:
 async def _try_start_pipeline(
     app: FastAPI,
     *,
-    projects_repo: ProjectsRepository,
-    projects_nodes_repo: ProjectsNodesRepository,
     computation: ComputationCreate,
     minimal_dag: nx.DiGraph,
     project: ProjectAtDB,
     project_nodes: NodesDict,
     users_repo: UsersRepository,
-    projects_metadata_repo: ProjectsMetadataRepository,
 ) -> Annotated[
     bool,
     doc("True if the pipeline was submitted to run; False if there was nothing to run"),
@@ -246,6 +249,9 @@ async def _try_start_pipeline(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Project {computation.project_id} has no collection run ID",
         )
+
+    db_engine = get_engine(app)
+    projects_metadata = await _get_project_metadata(db_engine, project_id=computation.project_id)
     run_metadata = RunMetadataDict(
         node_id_names_map={NodeID(node_idstr): node_data.label for node_idstr, node_data in project_nodes.items()},
         product_name=computation.product_name,
@@ -254,9 +260,7 @@ async def _try_start_pipeline(
         user_email=await users_repo.get_user_email(computation.user_id),
         wallet_id=wallet_id,
         wallet_name=wallet_name,
-        project_metadata=await _get_project_metadata(
-            computation.project_id, projects_repo, projects_nodes_repo, projects_metadata_repo
-        ),
+        project_metadata=projects_metadata,
     )
     if computation.encryption:
         # PoC: the base64 root_key is persisted in plaintext in the run metadata so the scheduler can
@@ -301,7 +305,7 @@ async def _get_latest_run_state(
     return last_run, pipeline_state
 
 
-async def _start_pipeline_if_requested(  # noqa: PLR0913
+async def _start_pipeline_if_requested(
     request: Request,
     response: Response,
     *,
@@ -310,10 +314,7 @@ async def _start_pipeline_if_requested(  # noqa: PLR0913
     minimal_computational_dag: nx.DiGraph,
     project: ProjectAtDB,
     project_nodes: NodesDict,
-    projects_repo: ProjectsRepository,
-    projects_nodes_repo: ProjectsNodesRepository,
     users_repo: UsersRepository,
-    projects_metadata_repo: ProjectsMetadataRepository,
 ) -> Annotated[
     bool,
     doc("True if the pipeline was actually started; False if start was not requested or nothing to run"),
@@ -326,14 +327,11 @@ async def _start_pipeline_if_requested(  # noqa: PLR0913
 
     pipeline_started = await _try_start_pipeline(
         request.app,
-        projects_repo=projects_repo,
-        projects_nodes_repo=projects_nodes_repo,
         computation=computation,
         minimal_dag=minimal_computational_dag,
         project=project,
         project_nodes=project_nodes,
         users_repo=users_repo,
-        projects_metadata_repo=projects_metadata_repo,
     )
     if not pipeline_started:
         response.status_code = status.HTTP_200_OK
@@ -415,13 +413,13 @@ async def create_or_update_or_start_computation(
         f"{computation.project_id=}",
     )
 
+    # NOTE: this is not the place where these should live
     projects_nodes_repo = ProjectsNodesRepository(db_engine)
     projects_repo = ProjectsRepository(db_engine)
     comp_pipelines_repo = CompPipelinesRepository(db_engine)
     comp_tasks_repo = CompTasksRepository(db_engine)
     comp_runs_repo = CompRunsRepository(db_engine)
     users_repo = UsersRepository(db_engine)
-    projects_metadata_repo = ProjectsMetadataRepository(db_engine)
 
     try:
         async with pass_or_acquire_connection(db_engine) as conn:
@@ -471,10 +469,7 @@ async def create_or_update_or_start_computation(
             minimal_computational_dag=minimal_computational_dag,
             project=project,
             project_nodes=project_nodes,
-            projects_repo=projects_repo,
-            projects_nodes_repo=projects_nodes_repo,
             users_repo=users_repo,
-            projects_metadata_repo=projects_metadata_repo,
         )
 
         last_run, pipeline_state = await _get_latest_run_state(comp_runs_repo, computation.project_id)
