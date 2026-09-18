@@ -10,6 +10,8 @@ aiohttp==3.14.3
     #   aiodocker
 aiosignal==1.4.0
     # via aiohttp
+alembic==1.20.0
+    # via -r requirements/_test.in
 annotated-doc==0.0.4
     # via fastapi
 annotated-types==0.7.0
@@ -45,7 +47,9 @@ frozenlist==1.8.0
     #   aiohttp
     #   aiosignal
 greenlet==3.3.2
-    # via playwright
+    # via
+    #   playwright
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   uvicorn
@@ -61,6 +65,12 @@ iniconfig==2.3.0
     # via pytest
 librt==0.8.1
     # via mypy
+mako==1.4.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
+markupsafe==3.0.3
+    # via mako
 multidict==6.7.1
     # via
     #   aiohttp
@@ -89,6 +99,8 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
+psycopg2-binary==2.9.13
+    # via sqlalchemy
 pydantic==2.13.4
     # via
     #   -r requirements/_test.in
@@ -147,6 +159,7 @@ sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+    #   alembic
 starlette==1.6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -159,6 +172,7 @@ types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via
+    #   alembic
     #   fastapi
     #   mypy
     #   pydantic
