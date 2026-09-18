@@ -1,9 +1,6 @@
 import logging
 import math
-from collections.abc import AsyncGenerator, Callable
-from typing import Annotated
 
-from fastapi import Depends
 from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -51,14 +48,3 @@ def get_base_repository[RepoType: BaseRepository](engine: AsyncEngine, repo_type
         )
 
     return repo_type(db_engine=engine)
-
-
-def get_repository[RepoType: BaseRepository](
-    repo_type: type[RepoType],
-) -> Callable[..., AsyncGenerator[RepoType]]:
-    async def _get_repo(
-        engine: Annotated[AsyncEngine, Depends(get_db_engine)],
-    ) -> AsyncGenerator[RepoType]:
-        yield get_base_repository(engine=engine, repo_type=repo_type)
-
-    return _get_repo
