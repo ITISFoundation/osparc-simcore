@@ -36,6 +36,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import limited_gather
+from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...constants import UNDEFINED_STR_METADATA
@@ -169,10 +170,10 @@ class BaseCompScheduler(ABC):
     async def _get_pipeline_tasks(
         self, project_id: ProjectID, pipeline_dag: nx.DiGraph
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
         pipeline_comp_tasks: dict[NodeIDStr, CompTaskAtDB] = {
             f"{t.node_id}": t
-            for t in await comp_tasks_repo.list_computational_tasks(project_id)
+            for t in await comp_tasks_repo.list_computational_tasks(project_id=project_id)
             if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
         if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
@@ -211,7 +212,7 @@ class BaseCompScheduler(ABC):
         iteration: Iteration,
         run_result: RunningState,
     ) -> None:
-        comp_runs_repo = CompRunsRepository.instance(self.db_engine)
+        comp_runs_repo = CompRunsRepository(self.db_engine)
         await comp_runs_repo.set_run_result(
             user_id=user_id,
             project_id=project_id,
@@ -245,7 +246,7 @@ class BaseCompScheduler(ABC):
             logging.DEBUG,
             msg=f"mark pipeline run for {iteration=} for {user_id=} and {project_id=} as processed",
         ):
-            await CompRunsRepository.instance(self.db_engine).mark_as_processed(
+            await CompRunsRepository(self.db_engine).mark_as_processed(
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,
@@ -271,7 +272,7 @@ class BaseCompScheduler(ABC):
             tasks[f"{node_id}"].state = RunningState.ABORTED
         if node_ids_to_set_as_aborted:
             # update the current states back in DB
-            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
             await comp_tasks_repo.update_project_tasks_state(
                 project_id,
                 run_id,
@@ -317,9 +318,12 @@ class BaseCompScheduler(ABC):
                 log=_logger,
                 limit=_PUBLICATION_CONCURRENCY_LIMIT,
             )
-            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-            for task in running_tasks:
-                await comp_tasks_repo.update_project_task_last_heartbeat(project_id, task.node_id, run_id, utc_now)
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
+            async with transaction_context(self.db_engine) as conn:
+                for task in running_tasks:
+                    await comp_tasks_repo.update_project_task_last_heartbeat(
+                        project_id, task.node_id, run_id, utc_now, connection=conn
+                    )
 
     async def _fix_tasks_stuck_pending_without_job_id(
         self,
@@ -342,7 +346,7 @@ class BaseCompScheduler(ABC):
             len(stuck_node_ids),
             stuck_node_ids,
         )
-        await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+        await CompTasksRepository(self.db_engine).update_project_tasks_state(
             project_id,
             run_id,
             stuck_node_ids,
@@ -444,33 +448,39 @@ class BaseCompScheduler(ABC):
             limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
-        # update DB
+        # update DB — all writes share a single transaction/connection
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        for task in tasks:
-            await comp_tasks_repo.update_project_tasks_state(
-                project_id,
-                run_id,
-                [task.node_id],
-                task.state,
-                optional_started=utc_now,
-                optional_progress=task.progress,
+        comp_runs_repo = CompRunsRepository(self.db_engine)
+        async with transaction_context(self.db_engine) as conn:
+            for task in tasks:
+                await comp_tasks_repo.update_project_tasks_state(
+                    project_id,
+                    run_id,
+                    [task.node_id],
+                    task.state,
+                    optional_started=utc_now,
+                    optional_progress=task.progress,
+                    connection=conn,
+                )
+            await comp_runs_repo.mark_as_started(
+                conn,
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                started_time=utc_now,
             )
-        await CompRunsRepository.instance(self.db_engine).mark_as_started(
-            user_id=user_id,
-            project_id=project_id,
-            iteration=iteration,
-            started_time=utc_now,
-        )
 
     async def _process_waiting_tasks(self, tasks: list[TaskStateTracker], run_id: RunID) -> None:
-        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        for task in tasks:
-            await comp_tasks_repo.update_project_tasks_state(
-                task.current.project_id,
-                run_id,
-                [task.current.node_id],
-                task.current.state,
-            )
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        async with transaction_context(self.db_engine) as conn:
+            for task in tasks:
+                await comp_tasks_repo.update_project_tasks_state(
+                    task.current.project_id,
+                    run_id,
+                    [task.current.node_id],
+                    task.current.state,
+                    connection=conn,
+                )
 
     async def _update_states_from_comp_backend(
         self,
@@ -591,7 +601,9 @@ class BaseCompScheduler(ABC):
             dag: nx.DiGraph = nx.DiGraph()
 
             try:
-                comp_run = await CompRunsRepository.instance(self.db_engine).get(user_id, project_id, iteration)
+                comp_run = await CompRunsRepository(self.db_engine).get(
+                    user_id=user_id, project_id=project_id, iteration=iteration
+                )
                 dag = comp_run.get_graph()
 
                 # 1. Update our list of tasks with data from backend (state, results)
@@ -754,7 +766,7 @@ class BaseCompScheduler(ABC):
         tasks_instantly_stopeable = [
             t for t in comp_tasks.values() if t.state in TASK_TO_START_STATES and t.job_id is None
         ]
-        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+        comp_tasks_repo = CompTasksRepository(self.db_engine)
         stopped_time = arrow.utcnow().datetime
         await comp_tasks_repo.update_project_tasks_state(
             project_id,
@@ -836,7 +848,7 @@ class BaseCompScheduler(ABC):
                 log=f"{exc}",
                 log_level=logging.INFO,
             )
-            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -868,7 +880,7 @@ class BaseCompScheduler(ABC):
                 ),
                 log_level=logging.ERROR,
             )
-            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -898,7 +910,7 @@ class BaseCompScheduler(ABC):
                 ),
                 log_level=logging.WARNING,
             )
-            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -926,7 +938,7 @@ class BaseCompScheduler(ABC):
                     error_context=log_error_context,
                 )
             )
-            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 list(tasks_ready_to_start.keys()),
@@ -960,7 +972,7 @@ class BaseCompScheduler(ABC):
         if (
             arrow.utcnow().datetime - comp_run.last_result_changed
         ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
-            await CompTasksRepository.instance(self.db_engine).update_project_tasks_state(
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
                 project_id,
                 comp_run.run_id,
                 [task.node_id for task in tasks_waiting_for_cluster],

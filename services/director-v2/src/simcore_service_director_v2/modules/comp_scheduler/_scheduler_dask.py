@@ -31,6 +31,7 @@ from servicelib.redis._semaphore_decorator import (
     with_limited_concurrency_cm,
 )
 from servicelib.utils import limited_as_completed, limited_gather
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 
 from ..._meta import APP_NAME
@@ -163,7 +164,7 @@ class DaskScheduler(BaseCompScheduler):
             run_id=comp_run.run_id,
             run_metadata=comp_run.metadata,
         ) as client:
-            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+            comp_tasks_repo = CompTasksRepository(self.db_engine)
             for node_id, task in scheduled_tasks.items():
                 published_tasks = await client.send_computation_tasks(
                     user_id=user_id,
@@ -255,13 +256,15 @@ class DaskScheduler(BaseCompScheduler):
             )
 
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        for task in task_progress_events:
-            await comp_tasks_repo.update_project_task_progress(
-                task.task_owner.project_id,
-                task.task_owner.node_id,
-                comp_run.run_id,
-                task.progress,
-            )
+        async with transaction_context(self.db_engine) as conn:
+            for task in task_progress_events:
+                await comp_tasks_repo.update_project_task_progress(
+                    task.task_owner.project_id,
+                    task.task_owner.node_id,
+                    comp_run.run_id,
+                    task.progress,
+                    connection=conn,
+                )
         await limited_gather(
             *(
                 publish_service_progress(
@@ -755,8 +758,11 @@ class DaskScheduler(BaseCompScheduler):
             project_id = task_progress_event.task_owner.project_id
             node_id = task_progress_event.task_owner.node_id
             comp_tasks_repo = CompTasksRepository(self.db_engine)
-            task = await comp_tasks_repo.get_task(project_id, node_id)
-            run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
+            comp_runs_repo = CompRunsRepository(self.db_engine)
+            async with pass_or_acquire_connection(self.db_engine) as conn:
+                task = await comp_tasks_repo.get_task(conn, project_id=project_id, node_id=node_id)
+                run = await comp_runs_repo.get(conn, user_id=user_id, project_id=project_id)
+
             if task.state in WAITING_FOR_START_STATES:
                 task.state = RunningState.STARTED
                 task.progress = task_progress_event.progress

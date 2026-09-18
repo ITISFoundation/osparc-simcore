@@ -14,7 +14,11 @@ from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.tracing import traced
 from servicelib.utils import limited_gather
-from sqlalchemy.ext.asyncio import AsyncEngine
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_pipelines import CompPipelineAtDB
@@ -52,44 +56,61 @@ async def run_new_pipeline(
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
     db_engine = get_db_engine(app)
-    comp_pipeline_at_db = await _get_pipeline_at_db(project_id, db_engine)
-    dag = comp_pipeline_at_db.get_graph()
 
-    if not dag:
-        _logger.warning(
-            "project %s has no computational dag defined. not scheduled for a run.",
-            f"{project_id=}",
+    comp_runs_repo = CompRunsRepository(db_engine)
+    comp_runs_snapshot_tasks_repo = CompRunsSnapshotTasksRepository(db_engine)
+
+    # all reads and writes below run in a single transaction: the run is either
+    # created together with its snapshot tasks, or not at all
+    async with transaction_context(db_engine) as conn:
+        comp_pipeline_at_db = await _get_pipeline_at_db(
+            project_id,
+            db_engine,
+            connection=conn,
         )
-        return
+        dag = comp_pipeline_at_db.get_graph()
 
-    with contextlib.suppress(ComputationalRunNotFoundError):
-        # if the run already exists and is scheduled, do not schedule again.
-        last_run = await CompRunsRepository.instance(db_engine).get(user_id=user_id, project_id=project_id)
-        if last_run.result.is_running():
+        if not dag:
             _logger.warning(
-                "run for project %s is already running. not scheduling it again.",
+                "project %s has no computational dag defined. not scheduled for a run.",
                 f"{project_id=}",
             )
             return
 
-    new_run = await CompRunsRepository.instance(db_engine).create(
-        user_id=user_id,
-        project_id=project_id,
-        metadata=run_metadata,
-        use_on_demand_clusters=use_on_demand_clusters,
-        dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
-        collection_run_id=collection_run_id,
-    )
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            # if the run already exists and is scheduled, do not schedule again.
+            last_run = await comp_runs_repo.get(conn, user_id=user_id, project_id=project_id)
+            if last_run.result.is_running():
+                _logger.warning(
+                    "run for project %s is already running. not scheduling it again.",
+                    f"{project_id=}",
+                )
+                return
 
-    tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)
-    db_create_snapshot_tasks = [
-        {
-            **task.to_db_model(exclude={"created", "modified"}),
-            "run_id": new_run.run_id,
-        }
-        for task in tasks_to_run
-    ]
-    await CompRunsSnapshotTasksRepository.instance(db_engine).batch_create(data=db_create_snapshot_tasks)
+        new_run = await comp_runs_repo.create(
+            conn,
+            user_id=user_id,
+            project_id=project_id,
+            metadata=run_metadata,
+            use_on_demand_clusters=use_on_demand_clusters,
+            dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
+            collection_run_id=collection_run_id,
+        )
+
+        tasks_to_run = await _get_pipeline_tasks_at_db(
+            db_engine,
+            project_id,
+            dag,
+            connection=conn,
+        )
+        db_create_snapshot_tasks = [
+            {
+                **task.to_db_model(exclude={"created", "modified"}),
+                "run_id": new_run.run_id,
+            }
+            for task in tasks_to_run
+        ]
+        await comp_runs_snapshot_tasks_repo.batch_create(conn, data=db_create_snapshot_tasks)
 
     rabbitmq_client = get_rabbitmq_client(app)
     await request_pipeline_scheduling(
@@ -124,12 +145,24 @@ async def stop_pipeline(
         ConfigurationError: if the rabbitmq client is not configured
     """
     db_engine = get_db_engine(app)
-    comp_run = await CompRunsRepository.instance(db_engine).get(user_id, project_id, iteration)
+    comp_runs_repo = CompRunsRepository(db_engine)
 
-    # mark the scheduled pipeline for stopping
-    updated_comp_run = await CompRunsRepository.instance(db_engine).mark_for_cancellation(
-        user_id=user_id, project_id=project_id, iteration=comp_run.iteration
-    )
+    async with transaction_context(db_engine) as conn:
+        comp_run = await comp_runs_repo.get(
+            conn,
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
+        )
+
+        # mark the scheduled pipeline for stopping
+        updated_comp_run = await comp_runs_repo.mark_for_cancellation(
+            conn,
+            user_id=user_id,
+            project_id=project_id,
+            iteration=comp_run.iteration,
+        )
+
     if updated_comp_run:
         # ensure the scheduler starts right away
         rabbitmq_client = get_rabbitmq_client(app)
@@ -142,18 +175,27 @@ async def stop_pipeline(
         )
 
 
-async def _get_pipeline_at_db(project_id: ProjectID, db_engine: AsyncEngine) -> CompPipelineAtDB:
-    comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
-    return await comp_pipeline_repo.get_pipeline(project_id)
+async def _get_pipeline_at_db(
+    project_id: ProjectID,
+    db_engine: AsyncEngine,
+    *,
+    connection: AsyncConnection | None = None,
+) -> CompPipelineAtDB:
+    comp_pipeline_repo = CompPipelinesRepository(db_engine)
+    return await comp_pipeline_repo.get_pipeline(connection, project_id=project_id)
 
 
 async def _get_pipeline_tasks_at_db(
-    db_engine: AsyncEngine, project_id: ProjectID, pipeline_dag: nx.DiGraph
+    db_engine: AsyncEngine,
+    project_id: ProjectID,
+    pipeline_dag: nx.DiGraph,
+    *,
+    connection: AsyncConnection | None = None,
 ) -> list[CompTaskAtDB]:
-    comp_tasks_repo = CompTasksRepository.instance(db_engine)
+    comp_tasks_repo = CompTasksRepository(db_engine)
     return [
         t
-        for t in await comp_tasks_repo.list_computational_tasks(project_id)
+        for t in await comp_tasks_repo.list_computational_tasks(connection, project_id=project_id)
         if (f"{t.node_id}" in list(pipeline_dag.nodes()))
     ]
 
@@ -169,15 +211,20 @@ _LOST_TASKS_FACTOR: Final[int] = 10
 async def schedule_all_pipelines(app: FastAPI) -> None:
     with log_context(_logger, logging.DEBUG, msg="scheduling pipelines"):
         db_engine = get_db_engine(app)
-        runs_to_schedule = await CompRunsRepository.instance(db_engine).list_(
-            filter_by_state=SCHEDULED_STATES,
-            never_scheduled=True,
-            processed_since=SCHEDULER_INTERVAL,
-        )
-        possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(db_engine).list_(
-            filter_by_state=SCHEDULED_STATES,
-            scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
-        )
+        comp_runs_repo = CompRunsRepository(db_engine)
+        # both reads below share a single connection
+        async with pass_or_acquire_connection(db_engine) as conn:
+            runs_to_schedule = await comp_runs_repo.list_(
+                conn,
+                filter_by_state=SCHEDULED_STATES,
+                never_scheduled=True,
+                processed_since=SCHEDULER_INTERVAL,
+            )
+            possibly_lost_scheduled_pipelines = await comp_runs_repo.list_(
+                conn,
+                filter_by_state=SCHEDULED_STATES,
+                scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
+            )
         if possibly_lost_scheduled_pipelines:
             _logger.error(
                 "found %d lost pipelines, they will be re-scheduled now. '%s'",

@@ -20,12 +20,11 @@ from models_library.users import UserID
 from pydantic import ValidationError, validate_call
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
-from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_run_snapshot_tasks import (
     CompRunSnapshotTaskDBGet,
 )
-from ...models.comp_runs import CompRunsAtDB
 from ...models.comp_tasks import ComputationTaskForRpcDBGet
 from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...modules.db.repositories.comp_runs_snapshot_tasks import (
@@ -44,8 +43,8 @@ async def batch_get_computations_latest_states(
     *,
     project_ids: ComputationRunStateBatchGetProjectIDs,
 ) -> list[ComputationRunStateRpcGet]:
-    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
-    return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
+    return await comp_runs_repo.batch_get_latest_run_states_by_projects(project_ids=project_ids)
 
 
 @router.expose(reraise_if_error_type=())
@@ -62,7 +61,7 @@ async def list_computations_latest_iteration_page(
     # ordering
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
-    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
     total, comp_runs_output = await comp_runs_repo.list_for_user__only_latest_iterations(
         product_name=product_name,
         user_id=user_id,
@@ -90,7 +89,7 @@ async def list_computations_iterations_page(
     # ordering
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
-    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
     total, comp_runs_output = await comp_runs_repo.list_for_user_and_project_all_iterations(
         product_name=product_name,
         user_id=user_id,
@@ -117,24 +116,29 @@ async def list_computation_collection_runs_page(
     offset: int = 0,
     limit: int = 20,
 ) -> ComputationCollectionRunRpcGetPage:
-    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
 
     collection_run_ids: list[CollectionRunID] | None = None
-    if filter_only_running is True:
-        collection_run_ids = await comp_runs_repo.list_all_collection_run_ids_for_user_currently_running_computations(
-            product_name=product_name, user_id=user_id
-        )
-        if collection_run_ids == []:
-            return ComputationCollectionRunRpcGetPage(items=[], total=0)
+    # both reads below share a single connection
+    async with pass_or_acquire_connection(app.state.engine) as conn:
+        if filter_only_running is True:
+            collection_run_ids = (
+                await comp_runs_repo.list_all_collection_run_ids_for_user_currently_running_computations(
+                    conn, product_name=product_name, user_id=user_id
+                )
+            )
+            if collection_run_ids == []:
+                return ComputationCollectionRunRpcGetPage(items=[], total=0)
 
-    total, comp_runs_output = await comp_runs_repo.list_group_by_collection_run_id(
-        product_name=product_name,
-        user_id=user_id,
-        project_ids_or_none=project_ids,
-        collection_run_ids_or_none=collection_run_ids,
-        offset=offset,
-        limit=limit,
-    )
+        total, comp_runs_output = await comp_runs_repo.list_group_by_collection_run_id(
+            conn,
+            product_name=product_name,
+            user_id=user_id,
+            project_ids_or_none=project_ids,
+            collection_run_ids_or_none=collection_run_ids,
+            offset=offset,
+            limit=limit,
+        )
     return ComputationCollectionRunRpcGetPage(
         items=comp_runs_output,
         total=total,
@@ -153,17 +157,6 @@ async def _fetch_task_log(
     return None
 
 
-async def _get_latest_run_or_none(
-    comp_runs_repo: CompRunsRepository,
-    user_id: UserID,
-    project_uuid: ProjectID,
-) -> CompRunsAtDB | None:
-    try:
-        return await comp_runs_repo.get(user_id=user_id, project_id=project_uuid, iteration=None)
-    except ComputationalRunNotFoundError:
-        return None
-
-
 @router.expose(reraise_if_error_type=())
 async def list_computations_latest_iteration_tasks_page(
     app: FastAPI,
@@ -180,8 +173,8 @@ async def list_computations_latest_iteration_tasks_page(
     assert product_name  # nosec  NOTE: Whether project_id belong to the product_name was checked in the webserver
     assert user_id  # nosec  NOTE: Whether user_id has access to the project was checked in the webserver
 
-    comp_tasks_repo = CompTasksRepository.instance(db_engine=app.state.engine)
-    comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
+    comp_tasks_repo = CompTasksRepository(db_engine=app.state.engine)
+    comp_runs_repo = CompRunsRepository(db_engine=app.state.engine)
 
     total, comp_tasks = await comp_tasks_repo.list_computational_tasks_rpc_domain(
         project_ids=project_ids,
@@ -193,13 +186,10 @@ async def list_computations_latest_iteration_tasks_page(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in comp_tasks}
 
-    # Fetch latest run for each project concurrently
-    latest_runs = await limited_gather(
-        *[_get_latest_run_or_none(comp_runs_repo, user_id, project_uuid) for project_uuid in unique_project_uuids],
-        limit=20,
+    project_uuid_to_iteration = await comp_runs_repo.batch_get_latest_run_iteration_by_projects(
+        user_id=user_id,
+        project_ids=list(unique_project_uuids),
     )
-    # Build a dict: project_uuid -> iteration
-    project_uuid_to_iteration = {run.project_uuid: run.iteration for run in latest_runs if run is not None}
 
     # Run all log fetches concurrently
     log_files = await limited_gather(
@@ -246,7 +236,7 @@ async def list_computation_collection_run_tasks_page(
     # ordering
     order_by: OrderBy | None = None,
 ) -> ComputationCollectionRunTaskRpcGetPage:
-    comp_runs_snapshot_tasks_repo = CompRunsSnapshotTasksRepository.instance(db_engine=app.state.engine)
+    comp_runs_snapshot_tasks_repo = CompRunsSnapshotTasksRepository(db_engine=app.state.engine)
 
     total, comp_tasks = await comp_runs_snapshot_tasks_repo.list_computation_collection_run_tasks(
         product_name=product_name,

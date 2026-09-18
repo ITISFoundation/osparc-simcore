@@ -4,7 +4,9 @@ import networkx as nx
 import sqlalchemy as sa
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ....core.errors import PipelineNotFoundError
 from ....models.comp_pipelines import CompPipelineAtDB
@@ -15,8 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class CompPipelinesRepository(BaseRepository):
-    async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:
-        async with self.db_engine.connect() as conn:
+    async def get_pipeline(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> CompPipelineAtDB:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(sa.select(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))
             row = result.one_or_none()
         if not row:
@@ -25,9 +32,10 @@ class CompPipelinesRepository(BaseRepository):
 
     async def upsert_pipeline(
         self,
+        connection: AsyncConnection | None = None,
+        *,
         project_id: ProjectID,
         dag_graph: nx.DiGraph,
-        *,
         publish: bool,
     ) -> None:
         pipeline_at_db = CompPipelineAtDB(
@@ -44,9 +52,14 @@ class CompPipelinesRepository(BaseRepository):
                 exclude_unset=True,
             ),
         )
-        async with self.db_engine.begin() as conn:
+        async with transaction_context(self.db_engine, connection) as conn:
             await conn.execute(on_update_stmt)
 
-    async def delete_pipeline(self, project_id: ProjectID) -> None:
-        async with self.db_engine.begin() as conn:
+    async def delete_pipeline(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> None:
+        async with transaction_context(self.db_engine, connection) as conn:
             await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))

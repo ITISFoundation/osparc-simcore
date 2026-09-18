@@ -30,7 +30,6 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
 )
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
@@ -626,11 +625,11 @@ def mock_internals_inactivity(
     service_inactivity_map: dict[str, ActivityInfoOrNone] = {faker.uuid4(): s for s in services_activity}
 
     class MockProjectsRepo:
-        async def exists(self, _: ProjectID) -> bool:
+        async def exists(self, *args, **kwargs) -> bool:
             return True
 
     class MockProjectsNodesRepo:
-        async def list_nodes_ids(self, _: ProjectID) -> list[NodeID]:
+        async def list_nodes_ids(self, *args, **kwargs) -> list[NodeID]:
             return [NodeID(node_id) for node_id in service_inactivity_map]
 
     def _get_base_repository(engine, repo_type):
@@ -645,6 +644,13 @@ def mock_internals_inactivity(
     mocker.patch(
         f"{database_module.__name__}.get_base_repository",
         side_effect=_get_base_repository,
+    )
+    # the route constructs the repositories directly: patch them where used
+    routes_module = "simcore_service_director_v2.api.routes.dynamic_services"
+    mocker.patch(f"{routes_module}.ProjectsRepository", return_value=MockProjectsRepo())
+    mocker.patch(
+        f"{routes_module}.ProjectsNodesRepository",
+        return_value=MockProjectsNodesRepo(),
     )
 
     async def get_service_activity(node_uuid: NodeID) -> ActivityInfoOrNone:

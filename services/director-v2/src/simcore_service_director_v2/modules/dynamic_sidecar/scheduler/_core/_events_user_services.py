@@ -7,6 +7,7 @@ from models_library.services import ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks.models import TaskId
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -24,6 +25,7 @@ from .....modules.instrumentation import (
     has_instrumentation,
 )
 from .....utils.db import get_repository
+from ....db import get_db_engine
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_nodes import ProjectsNodesRepository
@@ -132,17 +134,21 @@ async def create_user_services(  # pylint: disable=too-many-statements
         _logger.debug("%s: %.2f %s", task_id, percent, message)
 
     # data from project
-    projects_repository = get_repository(app, ProjectsRepository)
-    project = await projects_repository.get(project_id=scheduler_data.project_id)
-    project_name = project.name
+    # the adjacent project/node/user reads below share a single connection
+    async with pass_or_acquire_connection(get_db_engine(app)) as conn:
+        projects_repository = get_repository(app, ProjectsRepository)
+        project = await projects_repository.get(conn, project_id=scheduler_data.project_id)
+        project_name = project.name
 
-    projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
-    node = await projects_nodes_repository.get(project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid)
-    node_name = node.label
+        projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
+        node = await projects_nodes_repository.get(
+            conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
+        )
+        node_name = node.label
 
-    # data from user
-    users_repository = get_repository(app, UsersRepository)
-    user_email = await users_repository.get_user_email(scheduler_data.user_id)
+        # data from user
+        users_repository = get_repository(app, UsersRepository)
+        user_email = await users_repository.get_user_email(scheduler_data.user_id, connection=conn)
 
     # Billing info
     wallet_id = None

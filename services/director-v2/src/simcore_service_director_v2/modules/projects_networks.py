@@ -3,7 +3,7 @@ import urllib.parse
 from typing import NamedTuple
 from uuid import UUID
 
-from models_library.projects import NodesDict, ProjectAtDB, ProjectID
+from models_library.projects import NodesDict, ProjectID
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -20,6 +20,8 @@ from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..core.errors import ProjectNetworkNotFoundError
 from ..modules.catalog import CatalogClient
@@ -226,9 +228,7 @@ async def _get_networks_with_aliases_for_default_network(
 
 
 async def update_from_workbench(
-    projects_networks_repository: ProjectsNetworksRepository,
-    projects_repository: ProjectsRepository,
-    projects_nodes_repository: ProjectsNodesRepository,
+    db_engine: AsyncEngine,
     scheduler: DynamicSidecarsScheduler,
     catalog_client: CatalogClient,
     rabbitmq_client: RabbitMQClient,
@@ -237,29 +237,38 @@ async def update_from_workbench(
     """
     Automatically updates the project networks based on the incoming new workbench.
     """
+    projects_networks_repo = ProjectsNetworksRepository(db_engine)
+    projects_repo = ProjectsRepository(db_engine)
+    projects_nodes_repo = ProjectsNodesRepository(db_engine)
 
-    try:
-        existing_projects_networks = await projects_networks_repository.get_projects_networks(project_id=project_id)
-    except ProjectNetworkNotFoundError:
-        existing_projects_networks = ProjectsNetworks.model_validate(
-            {"project_uuid": project_id, "networks_with_aliases": {}}
-        )
+    async with pass_or_acquire_connection(db_engine) as conn:
+        try:
+            existing_projects_networks = await projects_networks_repo.get_projects_networks(conn, project_id=project_id)
+        except ProjectNetworkNotFoundError:
+            existing_projects_networks = ProjectsNetworks.model_validate(
+                {
+                    "project_uuid": project_id,
+                    "networks_with_aliases": {},
+                }
+            )
+
+        # NOTE: when UI is in place this is no longer required
+        # for now all services are placed on the same default network
+        project = await projects_repo.get(conn, project_id=project_id)
+        assert project.prj_owner  # nosec
+        new_workbench = await projects_nodes_repo.get_all(conn, project_id=project_id)
 
     existing_networks_with_aliases = existing_projects_networks.networks_with_aliases
 
-    # NOTE: when UI is in place this is no longer required
-    # for now all services are placed on the same default network
-    project: ProjectAtDB = await projects_repository.get(project_id)
-    assert project.prj_owner  # nosec
     new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
         project_id=project_id,
         user_id=UserID(project.prj_owner),
-        new_workbench=await projects_nodes_repository.get_all(project_id),
+        new_workbench=new_workbench,
         catalog_client=catalog_client,
         rabbitmq_client=rabbitmq_client,
     )
     logger.debug("%s", f"{existing_networks_with_aliases=}")
-    await projects_networks_repository.upsert_projects_networks(
+    await projects_networks_repo.upsert_projects_networks(
         project_id=project_id, networks_with_aliases=new_networks_with_aliases
     )
 
