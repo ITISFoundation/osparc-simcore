@@ -1,5 +1,4 @@
 import logging
-from typing import cast
 
 from aiohttp import web
 from models_library.conversations import (
@@ -111,7 +110,7 @@ async def list_(
             total_count = row_dict.pop("_total_count")
             items.append(ConversationMessageGetDB.model_validate(row_dict))
 
-        return cast(int, total_count), items
+        return total_count, items
 
 
 async def get(
