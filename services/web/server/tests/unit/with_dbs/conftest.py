@@ -471,6 +471,11 @@ async def mocked_dynamic_services_interface(
         autospec=True,
         return_value=False,
     )
+    mock["director_v2.api.get_computation_task"] = mocker.patch(
+        f"{director_v2_service.__name__}.get_computation_task",
+        autospec=True,
+        return_value=None,
+    )
     mock["director_v2.api.stop_pipeline"] = mocker.patch(
         f"{director_v2_service.__name__}.stop_pipeline",
         autospec=True,
@@ -558,7 +563,7 @@ def postgres_db(postgres_dsn: dict, postgres_service: str) -> Iterator[sa.engine
     pg_cli.discover.callback(**kwargs)
     assert pg_cli.upgrade.callback
     pg_cli.upgrade.callback("head")
-    # Uses syncrounous engine for that
+    # Uses synchronous engine for that
     sync_engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
 
     yield sync_engine

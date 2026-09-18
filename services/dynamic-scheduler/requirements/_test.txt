@@ -35,7 +35,6 @@ greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   playwright
-    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt

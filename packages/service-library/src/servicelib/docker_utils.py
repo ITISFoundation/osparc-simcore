@@ -260,9 +260,8 @@ async def _parse_pull_information(  # noqa: C901
                 ).downloaded = parsed_progress.progress_detail.current
         case "verifying checksum" | "download complete":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).size
+            pulled_status = layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0))
+            pulled_status.downloaded = pulled_status.size
         case "extracting":
             _handle_extracting_progress(
                 parsed_progress,
@@ -272,17 +271,13 @@ async def _parse_pull_information(  # noqa: C901
             )
         case "pull complete":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
-                parsed_progress.id
-            ].size
+            pulled_status = layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0))
+            pulled_status.extracted = pulled_status.size
         case "already exists":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
-                parsed_progress.id
-            ].size
-            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size[
-                parsed_progress.id
-            ].size
+            pulled_status = layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0))
+            pulled_status.extracted = pulled_status.size
+            pulled_status.downloaded = pulled_status.size
         case progress_status if any(
             msg in progress_status
             for msg in [

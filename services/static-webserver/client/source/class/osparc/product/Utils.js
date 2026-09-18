@@ -453,8 +453,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     isLocaleEnabled: function() {
-      const platformName = osparc.store.StaticInfo.getPlatformName();
-      return (["dev", "master", "staging"].includes(platformName));
+      return osparc.store.StaticInfo.isLocalizedMessagesEnabled();
     },
 
     getOsparcOImageSource: function() {

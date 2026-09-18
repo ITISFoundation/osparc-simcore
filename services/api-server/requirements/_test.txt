@@ -145,10 +145,6 @@ frozenlist==1.5.0
     #   aiosignal
 graphql-core==3.2.11
     # via moto
-greenlet==3.2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt

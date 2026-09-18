@@ -132,7 +132,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             confirmAction: "warning",
           });
           if (osparc.product.Utils.getProductName().includes("s4l")) {
-            let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
+            let msg = this.tr("Do you want to close <b>%1</b>?", studyName);
             msg += "<br><br>";
             msg += this.tr("Make sure you saved your changes to:");
             msg += "<br>";
@@ -146,7 +146,7 @@ qx.Class.define("osparc.desktop.MainPage", {
               confirmText: this.tr("Yes")
             });
           } else {
-            const msg = this.tr("Do you want to save and close ") + "<b>" + studyName + "</b>?";
+            const msg = this.tr("Do you want to save and close <b>%1</b>?", studyName);
             win.set({
               caption: this.tr("Save & Close"),
               message: msg,

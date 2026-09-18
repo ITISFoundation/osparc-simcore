@@ -35,7 +35,7 @@ aiohttp==3.14.3
     #   s3fs
 aioitertools==0.13.0
     # via aiobotocore
-aiormq==6.9.2
+aiormq==6.9.4
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
@@ -59,8 +59,6 @@ attrs==25.4.0
     #   aiohttp
     #   jsonschema
     #   referencing
-blosc==1.11.4
-    # via -r requirements/_base.in
 bokeh==3.10.0
     # via dask
 boto3==1.40.61

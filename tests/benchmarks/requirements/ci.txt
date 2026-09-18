@@ -1,0 +1,15 @@
+# Shortcut to install all packages for the contiguous integration (CI)
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+--requirement requirements.txt
+
+# installs this repo's packages
+simcore-common-library @ ../../packages/common-library/
+simcore-models-library @ ../../packages/models-library/
+simcore-settings-library @ ../../packages/settings-library/

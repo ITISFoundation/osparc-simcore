@@ -357,9 +357,9 @@ async def test_celery_error_propagation(
 @pytest.mark.parametrize(
     "parent_project_uuid, parent_node_uuid, expected_status_code",
     [
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_CONTENT),
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
         ("null", "null", status.HTTP_200_OK),
     ],
@@ -490,9 +490,9 @@ async def test_run_project_function_parent_info(
 @pytest.mark.parametrize(
     "parent_project_uuid, parent_node_uuid, expected_status_code",
     [
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_CONTENT),
+        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_CONTENT),
         (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
         ("null", "null", status.HTTP_200_OK),
     ],
