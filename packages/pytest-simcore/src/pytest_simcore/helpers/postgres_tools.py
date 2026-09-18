@@ -207,32 +207,6 @@ def drop_pg_template(postgres_config: PostgresTestConfig, template_db_name: str)
         _drop_database(maintenance, template_db_name, ignore_errors=True)
 
 
-def create_template_from_running_database(postgres_dsn: PostgresTestConfig, template_db_name: str) -> None:
-    """creates `template_db_name` as a copy of the currently running `postgres_dsn['database']`.
-
-    Unlike `build_migrated_pg_template` (which builds the template from scratch via alembic),
-    this clones whatever state the already-running main database is currently in.
-    """
-    with maintenance_engine_context(postgres_dsn) as maintenance:
-        # NOTE: only the removal may fail (no template exists yet on first run),
-        # the CREATE itself must never be ignored: tests would silently run against
-        # a missing or unmigrated template
-        _drop_database(maintenance, template_db_name, ignore_errors=True)
-        create_statement = (
-            f"CREATE DATABASE {template_db_name} WITH TEMPLATE {postgres_dsn['database']} OWNER {postgres_dsn['user']};"
-        )
-        execute_queries(
-            maintenance,
-            [create_statement],
-            before_attempt=lambda: _terminate_backends(maintenance, postgres_dsn["database"]),
-        )
-
-
-def drop_template_from_running_database(postgres_dsn: PostgresTestConfig, template_db_name: str) -> None:
-    with maintenance_engine_context(postgres_dsn) as maintenance:
-        _drop_database(maintenance, template_db_name)
-
-
 @contextmanager
 def migrated_pg_template_context(postgres_config: PostgresTestConfig, template_db_name: str) -> Iterator[str]:
     """Within the context, `template_db_name` exists and is migrated to head.
