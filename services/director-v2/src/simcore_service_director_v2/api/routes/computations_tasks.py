@@ -7,8 +7,9 @@ Therefore,
 """
 
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
@@ -18,13 +19,14 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.utils import logged_gather
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 
 from ...core.errors import PipelineTaskMissingError
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 from ...utils.computations_tasks import validate_pipeline
-from ...utils.db import get_repository
+from ..dependencies.database import get_db_engine
 
 log = logging.getLogger(__name__)
 
@@ -75,15 +77,15 @@ async def get_all_tasks_log_files(
     response_model=TaskLogFileGet,
 )
 async def get_task_log_file(
-    request: Request,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> TaskLogFileGet:
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
     """
-    comp_tasks_repo = get_repository(request.app, CompTasksRepository)
+    comp_tasks_repo = CompTasksRepository(db_engine)
     if not await comp_tasks_repo.task_exists(project_id, node_uuid):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
@@ -100,11 +102,11 @@ async def get_task_log_file(
     responses={status.HTTP_404_NOT_FOUND: {"description": "Cannot find computation or the tasks in it"}},
 )
 async def get_batch_tasks_outputs(
-    request: Request,
     project_id: ProjectID,
     selection: TasksSelection,
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ):
-    comp_tasks_repo = get_repository(request.app, CompTasksRepository)
+    comp_tasks_repo = CompTasksRepository(db_engine)
     nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
         project_id=project_id,
         node_ids=set(selection.nodes_ids),
