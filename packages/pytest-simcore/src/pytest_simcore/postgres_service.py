@@ -22,12 +22,9 @@ from .helpers.postgres_tools import (
     PostgresTestConfig,
     build_migrated_pg_template,
     cloned_pg_database_context,
-    create_template_from_running_database,
     database_exists,
     drop_pg_template,
-    drop_template_from_running_database,
     maintenance_engine_context,
-    reset_database_from_template,
 )
 from .helpers.typing_env import EnvVarsDict
 
@@ -42,37 +39,6 @@ def _as_pg_config(postgres_dsn: dict[str, Any]) -> PostgresTestConfig:
     # suites may pass richer dicts (e.g. with a prebuilt "dsn"), keep only the keys
     # understood by simcore_postgres_database.cli
     return cast(PostgresTestConfig, {k: postgres_dsn[k] for k in _PG_CONFIG_KEYS})
-
-
-@pytest.fixture(scope="module")
-def postgres_with_template_db(
-    postgres_db: sa.engine.Engine,
-    postgres_dsn: PostgresTestConfig,
-    postgres_engine: sa.engine.Engine,
-) -> Iterator[sa.engine.Engine]:
-    create_template_from_running_database(postgres_dsn, _TEMPLATE_DB_TO_RESTORE)
-    yield postgres_engine
-    postgres_engine.dispose()
-    drop_template_from_running_database(postgres_dsn, _TEMPLATE_DB_TO_RESTORE)
-
-
-@pytest.fixture
-def database_from_template_before_each_function(postgres_dsn: PostgresTestConfig, postgres_db) -> None:
-    """
-    Will recreate the db before running each test.
-
-    **Note: must be implemented in the module where the
-    `postgres_with_template_db` is used and mark autouse=True**
-
-    It is possible to drop the application database by using another one like
-    the postgres database. The db will be recreated from the previously created template
-
-    The postgres_db fixture is required for the template database to be created.
-
-    NOTE: uses the connection-safe `reset_database_from_template` (not a plain drop/recreate)
-    since suites relying on this fixture may run against a live stack with pooled connections.
-    """
-    reset_database_from_template(postgres_dsn, _TEMPLATE_DB_TO_RESTORE)
 
 
 @pytest.fixture(scope="module")
