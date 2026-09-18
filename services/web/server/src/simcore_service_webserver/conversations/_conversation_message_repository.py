@@ -75,15 +75,19 @@ async def list_(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationMessageGetDB]]:
+    # NOTE: the total count is computed with a window function in the SAME statement as the
+    # page, so both share a single snapshot. Using a separate count query would take a second
+    # snapshot (READ COMMITTED), which can make the page show rows the count did not see
+    # (i.e. count > total) when another transaction commits in between.
+    selection_args = (
+        *_SELECTION_ARGS,
+        func.count().over().label("_total_count"),
+    )
     base_query = (
-        select(*_SELECTION_ARGS)
+        select(*selection_args)
         .select_from(conversation_messages)
         .where(conversation_messages.c.conversation_id == conversation_id)
     )
-
-    # Select total count from base_query
-    subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
@@ -99,10 +103,13 @@ async def list_(
     list_query = list_query.offset(offset).limit(limit)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        total_count = await conn.scalar(count_query)
-
         result = await conn.stream(list_query)
-        items: list[ConversationMessageGetDB] = [ConversationMessageGetDB.model_validate(row) async for row in result]
+        items: list[ConversationMessageGetDB] = []
+        total_count: int = 0
+        async for row_mapping in result.mappings():
+            row_dict = dict(row_mapping)
+            total_count = row_dict.pop("_total_count")
+            items.append(ConversationMessageGetDB.model_validate(row_dict))
 
         return cast(int, total_count), items
 
