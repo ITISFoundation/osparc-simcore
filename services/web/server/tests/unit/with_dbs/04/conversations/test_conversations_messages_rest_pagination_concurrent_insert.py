@@ -17,39 +17,43 @@ message from a *second* connection just before the page query runs. In the buggy
 count already snapshotted the older state, so the page then shows a row the count did not.
 """
 
+from uuid import UUID
+
 import pytest
-import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from models_library.conversations import ConversationMessageType
+from models_library.conversations import ConversationID, ConversationMessageType
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.conversation_messages import conversation_messages
-from simcore_postgres_database.models.users import users
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
+def user_role() -> UserRole:
+    return UserRole.USER
+
+
+@pytest.fixture
 async def conversation_id(
     client: TestClient,
     logged_user: UserInfoDict,
-) -> str:
+) -> ConversationID:
     """Create a test support conversation and return its ID"""
     assert client.app
     base_url = client.app.router["list_conversations"].url_for()
     resp = await client.post(f"{base_url}", json={"name": "Race Test", "type": "SUPPORT"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    return data["conversationId"]
+    return UUID(data["conversationId"])
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_messages_concurrent_insert_between_count_and_page(
     client: TestClient,
     logged_user: UserInfoDict,
-    conversation_id: str,
+    conversation_id: ConversationID,
     mocker: MockerFixture,
 ):
     """A message committed while listing must never yield count > total (HTTP 500)
@@ -60,9 +64,7 @@ async def test_list_messages_concurrent_insert_between_count_and_page(
     """
     assert client.app
     engine = get_asyncpg_engine(client.app)
-    async with engine.connect() as conn:
-        user_primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == logged_user["id"]))
-    assert user_primary_gid
+    user_primary_gid = int(logged_user["primary_gid"])
 
     original_stream = AsyncConnection.stream
     original_execute = AsyncConnection.execute
@@ -76,8 +78,6 @@ async def test_list_messages_concurrent_insert_between_count_and_page(
                     user_group_id=user_primary_gid,
                     content="message committed mid-request",
                     type=ConversationMessageType.MESSAGE,
-                    created=sa.func.now(),
-                    modified=sa.func.now(),
                 )
             )
 
@@ -113,7 +113,7 @@ async def test_list_messages_concurrent_insert_between_count_and_page(
         ),
     )
 
-    list_url = client.app.router["list_conversation_messages"].url_for(conversation_id=conversation_id)
+    list_url = client.app.router["list_conversation_messages"].url_for(conversation_id=f"{conversation_id}")
     resp = await client.get(f"{list_url}")
     data, _, meta, _links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
 
