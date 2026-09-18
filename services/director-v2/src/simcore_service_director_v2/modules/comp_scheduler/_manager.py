@@ -63,7 +63,11 @@ async def run_new_pipeline(
     # all reads and writes below run in a single transaction: the run is either
     # created together with its snapshot tasks, or not at all
     async with transaction_context(db_engine) as conn:
-        comp_pipeline_at_db = await _get_pipeline_at_db(project_id, db_engine, conn)
+        comp_pipeline_at_db = await _get_pipeline_at_db(
+            project_id,
+            db_engine,
+            connection=conn,
+        )
         dag = comp_pipeline_at_db.get_graph()
 
         if not dag:
@@ -93,7 +97,12 @@ async def run_new_pipeline(
             collection_run_id=collection_run_id,
         )
 
-        tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag, conn)
+        tasks_to_run = await _get_pipeline_tasks_at_db(
+            db_engine,
+            project_id,
+            dag,
+            connection=conn,
+        )
         db_create_snapshot_tasks = [
             {
                 **task.to_db_model(exclude={"created", "modified"}),
@@ -167,7 +176,10 @@ async def stop_pipeline(
 
 
 async def _get_pipeline_at_db(
-    project_id: ProjectID, db_engine: AsyncEngine, connection: AsyncConnection | None = None
+    project_id: ProjectID,
+    db_engine: AsyncEngine,
+    *,
+    connection: AsyncConnection | None = None,
 ) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository(db_engine)
     return await comp_pipeline_repo.get_pipeline(connection, project_id=project_id)
@@ -177,6 +189,7 @@ async def _get_pipeline_tasks_at_db(
     db_engine: AsyncEngine,
     project_id: ProjectID,
     pipeline_dag: nx.DiGraph,
+    *,
     connection: AsyncConnection | None = None,
 ) -> list[CompTaskAtDB]:
     comp_tasks_repo = CompTasksRepository(db_engine)
