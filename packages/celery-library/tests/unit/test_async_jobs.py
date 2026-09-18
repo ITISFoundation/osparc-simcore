@@ -5,8 +5,9 @@ import asyncio
 import pickle
 from collections.abc import Callable
 from datetime import timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from celery import Celery, Task
@@ -45,7 +46,7 @@ def owner_metadata(faker: Faker) -> OwnerMetadata:
     )
 
 
-class Action(str, Enum):
+class Action(StrEnum):
     ECHO = "ECHO"
     RAISE = "RAISE"
     SLEEP = "SLEEP"
@@ -62,19 +63,33 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
+# records every task execution attempt (incl. retries) so tests can assert on retry counts
+_task_execution_spy = MagicMock()
+
+
 def sync_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
-    _ = task
     _ = task_key
+    _task_execution_spy()
     return asyncio.run(_process_action(action, payload))
 
 
 async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
-    _ = task
     _ = task_key
+    _task_execution_spy()
     return await _process_action(action, payload)
 
 
+NO_RETRY_SYNC_JOB_NAME = f"{sync_job.__name__}_no_retry"
+NO_RETRY_ASYNC_JOB_NAME = f"{async_job.__name__}_no_retry"
+
+
 #################################
+
+
+@pytest.fixture
+def task_execution_spy() -> MagicMock:
+    _task_execution_spy.reset_mock()
+    return _task_execution_spy
 
 
 @pytest.fixture
@@ -93,6 +108,21 @@ def register_celery_tasks() -> Callable[[Celery], None]:
             max_retries=1,
             delay_between_retries=timedelta(seconds=1),
             dont_autoretry_for=(AccessRightError,),
+        )
+        # long delay so a leaked retry would be caught by the short polling window used in tests
+        register_task(
+            celery_app,
+            sync_job,
+            task_name=NO_RETRY_SYNC_JOB_NAME,
+            max_retries=0,
+            delay_between_retries=timedelta(seconds=5),
+        )
+        register_task(
+            celery_app,
+            async_job,
+            task_name=NO_RETRY_ASYNC_JOB_NAME,
+            max_retries=0,
+            delay_between_retries=timedelta(seconds=5),
         )
 
     return _
@@ -267,3 +297,48 @@ async def test_async_jobs_raises(
         )
     assert exc.value.exc_type == type(error).__name__
     assert exc.value.exc_msg == f"{error}"
+
+
+@pytest.mark.parametrize(
+    "execution_metadata",
+    [
+        TaskExecutionMetadata(name=NO_RETRY_SYNC_JOB_NAME),
+        TaskExecutionMetadata(name=NO_RETRY_ASYNC_JOB_NAME),
+    ],
+)
+async def test_async_jobs_max_retries_zero_never_retries(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+    execution_metadata: TaskExecutionMetadata,
+    owner_metadata: OwnerMetadata,
+    task_execution_spy: MagicMock,
+):
+    error = Exception("generic error")
+    async_job = await submit_job(
+        task_manager,
+        execution_metadata=execution_metadata,
+        owner_metadata=owner_metadata,
+        action=Action.RAISE,
+        payload=pickle.dumps(error),
+    )
+
+    # registered with a 5s delay_between_retries: completing well before that
+    # proves no retry was ever scheduled
+    await _wait_for_job(
+        task_manager,
+        owner_metadata=owner_metadata,
+        job_id=async_job.job_id,
+        stop_after=timedelta(seconds=2),
+    )
+
+    with pytest.raises(JobError) as exc:
+        await get_job_result(
+            task_manager,
+            owner_metadata=owner_metadata,
+            job_id=async_job.job_id,
+        )
+    assert exc.value.exc_type == type(error).__name__
+    assert exc.value.exc_msg == f"{error}"
+
+    # should only ever be called once when retry is disabled
+    assert task_execution_spy.call_count == 1
