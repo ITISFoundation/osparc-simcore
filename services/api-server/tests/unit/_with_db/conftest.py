@@ -142,7 +142,7 @@ def sync_engine(
 
 @pytest.fixture(scope="session")
 def postgres_dsn(postgres_service: PostgreServiceInfoDict) -> dict[str, str]:
-    return {key: postgres_service[key] for key in ("user", "password", "database", "host", "port")}
+    return {key: f"{postgres_service[key]}" for key in ("user", "password", "database", "host", "port")}
 
 
 @pytest.fixture

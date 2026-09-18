@@ -28,6 +28,7 @@ Usage:
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import logging
 from collections.abc import Iterator
 from typing import Any, Final
 
@@ -38,10 +39,14 @@ import sqlalchemy as sa
 
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
+    _maintenance_engine,
     build_migrated_pg_template,
+    database_exists,
     drop_pg_template,
     reset_database_from_template,
 )
+
+_logger = logging.getLogger(__name__)
 
 # name the reset template so it cannot collide with the one used by
 # 'pytest_simcore.postgres_service' ("template_simcore_db") in the same session
@@ -55,7 +60,20 @@ def _pg_reset_template_state() -> Iterator[dict[str, Any]]:
     state: dict[str, Any] = {"built": False, "dsn": None}
     yield state
     if (dsn := state["dsn"]) is not None:
-        drop_pg_template(dsn, _PG_RESET_TEMPLATE_DB)
+        try:
+            drop_pg_template(dsn, _PG_RESET_TEMPLATE_DB)
+        except Exception:  # pylint: disable=broad-except
+            # best-effort: the module-scoped docker stack may already have removed the
+            # postgres service/volume this template lived on by the time the session ends
+            _logger.warning("Could not drop template %s at session end", _PG_RESET_TEMPLATE_DB, exc_info=True)
+
+
+def _template_exists(dsn: PostgresTestConfig) -> bool:
+    maintenance = _maintenance_engine(dsn)
+    try:
+        return database_exists(maintenance, _PG_RESET_TEMPLATE_DB)
+    finally:
+        maintenance.dispose()
 
 
 @pytest.fixture(scope="module")
@@ -77,9 +95,10 @@ def postgres_live_stack_db(
     assert simcore_postgres_database.cli.clean.callback
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
 
-    if not _pg_reset_template_state["built"]:
+    if not _pg_reset_template_state["built"] or not _template_exists(dsn):
         # NOTE: always rebuilt by 'build_migrated_pg_template', so a template left over
-        # from an interrupted session cannot be reused in a stale/unmigrated state
+        # from an interrupted session (or missing because the stack was recycled between
+        # modules) cannot be reused in a stale/unmigrated/absent state
         build_migrated_pg_template(dsn, _PG_RESET_TEMPLATE_DB)
         _pg_reset_template_state["built"] = True
 

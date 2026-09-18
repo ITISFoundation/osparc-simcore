@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
+import logging
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Final, cast
 from urllib.parse import quote_plus
@@ -20,7 +21,6 @@ from .helpers.host import get_localhost_ip
 from .helpers.monkeypatch_envs import setenvs_from_dict
 from .helpers.postgres_tools import (
     PostgresTestConfig,
-    _create_database_from_template,
     _drop_database,
     _is_database_accessed_error,
     _maintenance_engine,
@@ -30,10 +30,13 @@ from .helpers.postgres_tools import (
     database_exists,
     drop_pg_template,
     execute_queries,
+    reset_database_from_template,
 )
 from .helpers.typing_env import EnvVarsDict
 
-_TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
+_logger = logging.getLogger(__name__)
+
+_TEMPLATE_DB_TO_RESTORE: Final[str] = "template_simcore_db"
 
 _PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
 
@@ -99,14 +102,7 @@ def postgres_with_template_db(
 
 
 @pytest.fixture
-def drop_db_engine(postgres_dsn: PostgresTestConfig) -> sa.engine.Engine:
-    return _maintenance_engine(postgres_dsn)
-
-
-@pytest.fixture
-def database_from_template_before_each_function(
-    postgres_dsn: PostgresTestConfig, drop_db_engine: sa.engine.Engine, postgres_db
-) -> None:
+def database_from_template_before_each_function(postgres_dsn: PostgresTestConfig, postgres_db) -> None:
     """
     Will recreate the db before running each test.
 
@@ -117,9 +113,11 @@ def database_from_template_before_each_function(
     the postgres database. The db will be recreated from the previously created template
 
     The postgres_db fixture is required for the template database to be created.
+
+    NOTE: uses the connection-safe `reset_database_from_template` (not a plain drop/recreate)
+    since suites relying on this fixture may run against a live stack with pooled connections.
     """
-    _drop_database(drop_db_engine, postgres_dsn["database"])
-    _create_database_from_template(drop_db_engine, postgres_dsn["database"], _TEMPLATE_DB_TO_RESTORE)
+    reset_database_from_template(postgres_dsn, _TEMPLATE_DB_TO_RESTORE)
 
 
 @pytest.fixture(scope="module")
@@ -177,7 +175,12 @@ def _postgres_migrated_template_state() -> Iterator[dict[str, Any]]:
     state: dict[str, Any] = {"built": False, "dsn": None}
     yield state
     if (dsn := state["dsn"]) is not None:
-        drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+        try:
+            drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+        except Exception:  # pylint: disable=broad-except
+            # best-effort: the module-scoped docker stack may already have removed the
+            # postgres service/volume this template lived on by the time the session ends
+            _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
 
 
 def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: dict[str, Any]) -> None:

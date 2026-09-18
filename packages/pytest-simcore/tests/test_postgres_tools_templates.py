@@ -13,6 +13,7 @@ from pytest_simcore.helpers.postgres_tools import (
     database_exists,
     drop_pg_template,
     migrated_pg_template_context,
+    reset_database_from_template,
 )
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -153,3 +154,64 @@ def test_stale_template_is_rebuilt(postgres_container: PostgresTestConfig):
     drop_pg_template(postgres_container, template_name)  # no-op, must not raise
     assert not database_exists(maintenance, template_name)
     maintenance.dispose()
+
+
+def test_reset_database_from_template_with_attached_target_sessions(
+    postgres_container: PostgresTestConfig,
+):
+    """resetting must tolerate live sessions attached to the *target* database (regression
+    for races with a live stack's pooled connections, the exact hazard
+    'reset_database_from_template' guards against by closing the target to new
+    connections before terminating its backends)"""
+    template_name = f"tpl_{uuid.uuid4().hex}"
+    target_name = f"tgt_{uuid.uuid4().hex}"
+    probe = sa.Table(
+        "reset_probe",
+        sa.MetaData(),
+        sa.Column("id", sa.Integer, primary_key=True),
+    )
+
+    maintenance = _maintenance_engine(postgres_container)
+    try:
+        with maintenance.connect() as conn:  # AUTOCOMMIT
+            conn.execute(sa.text(f"CREATE DATABASE {target_name}"))
+    finally:
+        maintenance.dispose()
+
+    try:
+        with migrated_pg_template_context(postgres_container, template_name):
+            # seed the target with data that the reset must wipe
+            target_engine = _engine_to(postgres_container, target_name)
+            probe.metadata.create_all(target_engine, tables=[probe])
+            with target_engine.begin() as conn:
+                conn.execute(probe.insert().values(id=1))
+            assert _count_rows(target_engine, probe) == 1
+
+            # keep a session attached to the target while it is reset
+            attached = _engine_to(postgres_container, target_name)
+            attached_conn = attached.connect()
+            target_config: PostgresTestConfig = {**postgres_container, "database": target_name}
+            try:
+                reset_database_from_template(target_config, template_name)
+            finally:
+                attached_conn.close()
+                attached.dispose()
+            target_engine.dispose()
+
+            # target is a fresh, empty clone: the seeded table is gone ...
+            fresh_engine = _engine_to(postgres_container, target_name)
+            try:
+                with fresh_engine.connect() as conn:
+                    assert not conn.execute(
+                        sa.text("SELECT 1 FROM information_schema.tables WHERE table_name = 'reset_probe'")
+                    ).scalar()
+            finally:
+                fresh_engine.dispose()
+
+            # ... and ALLOW_CONNECTIONS was restored: a brand-new connection succeeds
+            new_engine = _engine_to(postgres_container, target_name)
+            with new_engine.connect():
+                pass
+            new_engine.dispose()
+    finally:
+        drop_pg_template(postgres_container, target_name)
