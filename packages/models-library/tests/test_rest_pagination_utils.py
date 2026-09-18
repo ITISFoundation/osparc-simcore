@@ -1,7 +1,58 @@
 import pytest
 from models_library.rest_pagination import Page, PageLinks, PageMetaInfoLimitOffset
 from models_library.rest_pagination_utils import PageDict, paginate_data
+from pydantic import AnyHttpUrl, TypeAdapter
 from yarl import URL
+
+
+def _url(base_url: str, **query) -> str:
+    return f"{TypeAdapter(AnyHttpUrl).validate_python(str(URL(base_url).with_query(query)))}"
+
+
+@pytest.mark.parametrize(
+    "total, offset",
+    [
+        pytest.param(0, 0, id="empty collection"),
+        pytest.param(0, 100, id="empty collection past the end"),
+        pytest.param(29, 100, id="offset past total"),
+    ],
+)
+def test_paginating_past_the_end_yields_empty_page_with_valid_links(total: int, offset: int):
+    """A page that does not exist is served as an empty page with self-consistent links"""
+    base_url = "http://test.com/"
+    limit = 9
+    request_url = URL(f"{base_url}?some=1")
+
+    data_obj: PageDict = paginate_data(
+        [],
+        request_url=request_url,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+    model_instance = Page[int].model_validate(data_obj)
+    assert model_instance
+
+    assert model_instance.meta == PageMetaInfoLimitOffset(total=total, count=0, limit=limit, offset=offset)
+    assert model_instance.data == []
+
+    links = model_instance.links
+    assert links.next is None
+    # no link may carry a negative offset
+    for link in (links.self, links.first, links.prev, links.last):
+        if link is not None:
+            assert int(URL(link).query["offset"]) >= 0
+
+    last_offset = int(URL(links.last).query["offset"])
+    if total == 0:
+        assert last_offset == 0
+    else:
+        # `last` must point at a page containing real data
+        assert last_offset < total
+
+    assert links.self == _url(base_url, some=1, offset=offset, limit=limit)
+    assert links.first == _url(base_url, some=1, offset=0, limit=limit)
+    assert links.prev == (_url(base_url, some=1, offset=max(offset - limit, 0), limit=limit) if offset > 0 else None)
 
 
 @pytest.mark.parametrize(
