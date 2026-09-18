@@ -65,6 +65,7 @@ async def test_list_messages_concurrent_insert_between_count_and_page(
     assert user_primary_gid
 
     original_stream = AsyncConnection.stream
+    original_execute = AsyncConnection.execute
     race_armed = True
 
     async def _insert_committed_message() -> None:
@@ -80,18 +81,37 @@ async def test_list_messages_concurrent_insert_between_count_and_page(
                 )
             )
 
-    async def _stream_with_race(self: AsyncConnection, statement, *args, **kwargs):
+    async def _commit_message_before_paged_query(original, self: AsyncConnection, statement, *args, **kwargs):
         nonlocal race_armed
         statement_str = str(statement)
-        is_messages_page_query = race_armed and "conversation_messages" in statement_str and "LIMIT" in statement_str
-        if is_messages_page_query:
+        is_messages_paged_query = race_armed and "conversation_messages" in statement_str and "LIMIT" in statement_str
+        if is_messages_paged_query:
             race_armed = False
-            # commit right BEFORE the page query runs (i.e. AFTER the separate
-            # total-count query of the buggy implementation already snapshotted)
+            # commit right BEFORE the paged query runs: in the buggy two-statement
+            # implementation the separate total-count had already snapshotted the older
+            # state, making the page show a row the count did not see (count > total).
+            # In the single-statement implementation the count shares the page's snapshot,
+            # so the raced row is consistently reflected in both.
             await _insert_committed_message()
-        return await original_stream(self, statement, *args, **kwargs)
+        return await original(self, statement, *args, **kwargs)
 
-    mocker.patch.object(AsyncConnection, "stream", new=_stream_with_race)
+    # hook both entry points: the buggy implementation streamed the page via
+    # ``stream`` after counting via ``scalar``; the fixed one runs a single statement
+    # via ``execute``. Either way the committed insert lands mid-request.
+    mocker.patch.object(
+        AsyncConnection,
+        "stream",
+        new=lambda self, statement, *a, **kw: _commit_message_before_paged_query(
+            original_stream, self, statement, *a, **kw
+        ),
+    )
+    mocker.patch.object(
+        AsyncConnection,
+        "execute",
+        new=lambda self, statement, *a, **kw: _commit_message_before_paged_query(
+            original_execute, self, statement, *a, **kw
+        ),
+    )
 
     list_url = client.app.router["list_conversation_messages"].url_for(conversation_id=conversation_id)
     resp = await client.get(f"{list_url}")
