@@ -3,13 +3,22 @@ from typing import cast
 from unittest.mock import Mock
 
 import pytest
-from simcore_service_director_v2.api.dependencies.database import get_base_repository
+from fastapi import FastAPI
 from simcore_service_director_v2.modules.db.repositories import BaseRepository
+from simcore_service_director_v2.utils.db import get_repository
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+_POOL_WARNING_LOGGER = "simcore_service_director_v2.modules.db.repositories._base"
 
 
 class DummyRepository(BaseRepository):
     pass
+
+
+def _create_mocked_app(engine: AsyncEngine) -> FastAPI:
+    app = FastAPI()
+    app.state.engine = engine
+    return app
 
 
 def _create_mocked_engine(*, checked_out: int, pool_size: int, max_overflow: int) -> AsyncEngine:
@@ -30,9 +39,10 @@ def test_get_base_repository_does_not_warn_on_transient_spikes_with_available_ov
     caplog: pytest.LogCaptureFixture,
 ):
     engine = _create_mocked_engine(checked_out=15, pool_size=10, max_overflow=20)
+    app = _create_mocked_app(engine)
 
-    with caplog.at_level(logging.WARNING, logger="simcore_service_director_v2.api.dependencies.database"):
-        repository = get_base_repository(engine=engine, repo_type=DummyRepository)
+    with caplog.at_level(logging.WARNING, logger=_POOL_WARNING_LOGGER):
+        repository = get_repository(app=app, repo_type=DummyRepository)
 
     assert isinstance(repository, DummyRepository)
     assert "Database connection pool near limits" not in caplog.text
@@ -42,9 +52,10 @@ def test_get_base_repository_warns_when_nearing_total_capacity(
     caplog: pytest.LogCaptureFixture,
 ):
     engine = _create_mocked_engine(checked_out=27, pool_size=10, max_overflow=20)
+    app = _create_mocked_app(engine)
 
-    with caplog.at_level(logging.WARNING, logger="simcore_service_director_v2.api.dependencies.database"):
-        repository = get_base_repository(engine=engine, repo_type=DummyRepository)
+    with caplog.at_level(logging.WARNING, logger=_POOL_WARNING_LOGGER):
+        repository = get_repository(app=app, repo_type=DummyRepository)
 
     assert isinstance(repository, DummyRepository)
     assert "Database connection pool near limits" in caplog.text
