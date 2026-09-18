@@ -536,7 +536,7 @@ async def get_computation(
 
         try:
             pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
-                request.app,
+                db_engine,
                 conn,
                 project_id=project_id,
             )

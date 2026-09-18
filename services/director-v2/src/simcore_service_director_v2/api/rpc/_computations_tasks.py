@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileIdGet
 from models_library.projects import ProjectID
+from servicelib.fastapi.db_asyncpg_engine import get_engine
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ComputationalTaskMissingError,
@@ -23,7 +24,7 @@ async def get_computation_task_log_file_ids(
 ) -> list[TaskLogFileIdGet]:
     try:
         info = await validate_pipeline(
-            app,
+            get_engine(app),
             project_id=project_id,
         )
     except (PipelineNotFoundError, PipelineTaskMissingError) as exc:

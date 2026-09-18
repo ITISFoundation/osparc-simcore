@@ -1,15 +1,13 @@
 from typing import NamedTuple
 
 import networkx as nx
-from fastapi import FastAPI
 from models_library.projects import ProjectID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..core.errors import PipelineTaskMissingError
 from ..models.comp_pipelines import CompPipelineAtDB
 from ..models.comp_tasks import CompTaskAtDB
-from ..modules.db import get_db_engine
 from ..modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ..modules.db.repositories.comp_tasks import CompTasksRepository
 from ..utils.db import get_repository
@@ -22,16 +20,14 @@ class PipelineInfo(NamedTuple):
 
 
 async def _get_pipeline_info(
-    app: FastAPI,
+    db_engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
 ) -> PipelineInfo:
     # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
-
-    db_engine = get_db_engine(app)
-    comp_pipelines_repo = get_repository(app, CompPipelinesRepository)
-    comp_tasks_repo = get_repository(app, CompTasksRepository)
+    comp_pipelines_repo = get_repository(db_engine, CompPipelinesRepository)
+    comp_tasks_repo = get_repository(db_engine, CompTasksRepository)
 
     async with pass_or_acquire_connection(db_engine, connection) as conn:
         pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
@@ -46,7 +42,7 @@ async def _get_pipeline_info(
 
 
 async def validate_pipeline(
-    app: FastAPI,
+    db_engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
     project_id: ProjectID,
@@ -58,7 +54,7 @@ async def validate_pipeline(
     raises PipelineTaskMissingError
     """
 
-    pipeline_info = await _get_pipeline_info(app, connection, project_id=project_id)
+    pipeline_info = await _get_pipeline_info(db_engine, connection, project_id=project_id)
 
     # check that we have the expected tasks
     if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):

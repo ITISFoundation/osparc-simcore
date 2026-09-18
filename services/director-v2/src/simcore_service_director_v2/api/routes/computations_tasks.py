@@ -9,7 +9,7 @@ Therefore,
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
     TasksOutputs,
@@ -45,9 +45,9 @@ router = APIRouter(prefix="/computations", tags=["computations"])
     response_model=list[TaskLogFileGet],
 )
 async def get_all_tasks_log_files(
-    request: Request,
     user_id: UserID,
     project_id: ProjectID,
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> list[TaskLogFileGet]:
     """Returns download links to log-files of each task in a computation.
     Each log is only available when the corresponding task is done
@@ -55,7 +55,7 @@ async def get_all_tasks_log_files(
     # gets computation task ids
 
     try:
-        info = await validate_pipeline(request.app, project_id=project_id)
+        info = await validate_pipeline(db_engine, project_id=project_id)
     except PipelineTaskMissingError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
