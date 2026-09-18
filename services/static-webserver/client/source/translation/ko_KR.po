@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-09-09T09:06:36Z\n"
+"X-Translation-Date: 2026-09-18T14:20:27Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This string is used within the 'About Product' menu item
@@ -963,7 +963,7 @@ msgstr "애플리케이션"
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:176
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:296
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:317
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:470
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:469
 msgid "Other"
 msgstr "기타"
 
@@ -985,7 +985,7 @@ msgstr "데이터 분석"
 # within the application's user interface, likely related to personalized
 # medicine features or options.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:185
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:500
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:499
 msgid "Personalized Medicine"
 msgstr "개인 맞춤 의학"
 
@@ -993,7 +993,7 @@ msgstr "개인 맞춤 의학"
 # neurostimulation feature or service within the Osparc application's user
 # interface, possibly related to account management or product selection.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:188
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:497
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:496
 msgid "Neurostimulation"
 msgstr "뇌 자극"
 
@@ -1001,7 +1001,7 @@ msgstr "뇌 자극"
 # 'Safety_And_Efficacy_Assessment' section of a user interface, likely related
 # to evaluating the safety and effectiveness of a product or service.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:191
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:479
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:478
 msgid "Safety & Efficacy Assessment"
 msgstr "안전성 및 효능 평가"
 
@@ -1015,7 +1015,7 @@ msgstr "장치 설계 및 최적화"
 # CTX-INTERPRETATION: This string appears in the UI for requesting an account,
 # likely related to specifying imaging techniques.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:197
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:494
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:493
 msgid "Magnetic Resonance Imaging"
 msgstr "자기 공명 영상"
 
@@ -3240,7 +3240,7 @@ msgstr "이 기능을 사용하려면 먼저 등록해 주세요."
 # CTX-INTERPRETATION: The string "Unsuccessful polling status" appears in the
 # PollTask.js file when a data request fails, indicating an error during the
 # polling process.
-#: services/static-webserver/client/source/class/osparc/data/PollTask.js:142
+#: services/static-webserver/client/source/class/osparc/data/PollTask.js:146
 msgid "Unsuccessful polling status"
 msgstr "폴링 실패 상태"
 
@@ -8918,63 +8918,63 @@ msgstr "연구 그룹/기관"
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface for an application related to antenna design and wireless
 # communication, possibly in a web-based environment.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:473
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:472
 msgid "Antenna Design for Wireless Communication"
 msgstr "무선 통신용 안테나 설계"
 
 # CTX-INTERPRETATION: This string is used as a label for a category related to
 # bioelectronics, electroceuticals, and neuroprosthetics within the osparc
 # product catalog.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:476
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:475
 msgid "Bioelectronics, Electroceuticals & Neuroprosthetics"
 msgstr "생체전기, 전기치료 및 신경보형물"
 
 # CTX-INTERPRETATION: This string likely represents the title or label of a
 # section or feature related to exposure and compliance within the
 # application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:482
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:481
 msgid "Exposure & Compliance"
 msgstr "노출 및 준수"
 
 # CTX-INTERPRETATION: This string is likely used as a label or title for a
 # feature related to focused ultrasound within the application's user
 # interface, possibly in a settings or configuration section.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:485
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:484
 msgid "Focused Ultrasound"
 msgstr "집중 초음파"
 
 # CTX-INTERPRETATION: This string appears in the 'Utils.js' file, likely as a
 # label for a section or button related to 'In Silico Trials', which are
 # simulated experiments.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:488
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:487
 msgid "In <i>Silico</i> Trials"
 msgstr "In <i lang=\"en\">실리코</i> 실험"
 
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface for managing implant designs in the Osparc product, possibly
 # related to a web-based application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:491
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:490
 msgid "Implant Design"
 msgstr "임플란트 디자인"
 
 # CTX-INTERPRETATION: This string is likely used as a label or title for a
 # section or feature related to thermal therapies within the application,
 # possibly in a user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:503
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:502
 msgid "Thermal Therapies"
 msgstr "열 치료"
 
 # CTX-INTERPRETATION: This string is likely used as a label or title for a
 # section or feature related to wireless power transfer systems within the
 # application, possibly in a user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:506
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:505
 msgid "Wireless Power Transfer Systems"
 msgstr "무선 전력 전송 시스템"
 
 # CTX-INTERPRETATION: This string appears in the 'Utils.js' file, likely as a
 # label or title for a section related to vascular flow and perfusion analysis
 # within the Osparc product.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:509
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:508
 msgid "Vascular Flow & Perfusion"
 msgstr "혈관 흐름 및 혈액 순환"
 
@@ -10548,30 +10548,30 @@ msgstr "미팅을 보다 생산적으로 진행하는 데 도움이 될 수 있�
 # CTX-INTERPRETATION: The string "thinking" appears as the label text for a UI
 # element indicating that the chatbot is processing user input, likely during
 # a conversation.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:58
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:66
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:62
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:70
 msgid "thinking"
 msgstr "생각 중..."
 
 # CTX-INTERPRETATION: The string "thinking..." appears as a placeholder
 # message within the Conversation.js file, likely indicating that the
 # application is processing or performing an action.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:68
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:72
 msgid "thinking..."
 msgstr "생각 중..."
 
 # CTX-INTERPRETATION: The string "Share Project with Support" appears as a
 # label for a checkbox within the Conversation.js file, likely related to
 # sharing project details or permissions with support personnel.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:91
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:95
 msgid "Share Project with Support"
 msgstr "지원과 프로젝트 공유"
 
 # CTX-INTERPRETATION: This string is used to label a button or link that
 # initiates a call within the application, likely related to scheduling or
 # starting a conference.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:130
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:139
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:143
 #: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:155
 #: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:73
 #: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:82
@@ -10580,50 +10580,45 @@ msgstr "지원과 프로젝트 공유"
 msgid "Book a Call"
 msgstr "콜 예약"
 
-# CTX-INTERPRETATION: This string is used within the Conversation.js file to
-# display a topic related to a call or conversation, likely in a user
-# interface.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:132
-msgid ""
-"\n"
-"- Topic: %1"
-msgstr ""
-"\n"
-"- 주제: %1"
+# CTX-INTERPRETATION: The string translates the 'Topic' field from a
+# configuration object used to display conversation details, specifically
+# within the oSparc support system.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:136
+msgid "- Topic: %1"
+msgstr "- 주제: %1"
 
-# CTX-INTERPRETATION: This string is used to display additional information
-# related to a call within the Conversation object, likely for providing more
-# details to the user.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
-msgid ""
-"\n"
-"- Extra Info: %1"
-msgstr ""
-"\n"
-"- 추가 정보: %1"
+# CTX-INTERPRETATION: The string is part of a message displaying extra
+# information related to a call, specifically the 'extraInfo' field from the
+# bookACallInfo object.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:138
+msgid "- Extra Info: %1"
+msgstr "- 추가 정보: %1"
 
-# CTX-INTERPRETATION: This string is part of a greeting message used in a
-# customer support conversation flow within the osparc application,
-# dynamically inserting the user's name.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:328
-msgid "Hi %1,\n"
-msgstr "안녕하세요 %1,\n"
+# CTX-INTERPRETATION: This string is part of a greeting message within the
+# oSparc application, specifically used to initiate a conversation with the
+# user and offer assistance.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:330
+msgid "Hi %1,"
+msgstr "안녕하세요 %1,"
 
-# CTX-INTERPRETATION: This string appears within the Conversation class,
-# likely as a greeting or prompt to users regarding questions or feedback,
-# indicating assistance is available.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
-msgid ""
-"Have a question or feedback?\n"
-"We are happy to assist!"
-msgstr ""
-"질문이나 피드백이 있으신가요?\n"
-"도움을 드릴 수 있습니다!"
+# CTX-INTERPRETATION: This string appears in the CONVERSATION class of
+# osparc.support, specifically within a function that greets the user and asks
+# if they have a question or feedback.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:333
+msgid "Have a question or feedback?"
+msgstr "질문이나 피드백이 있으신가요?"
+
+# CTX-INTERPRETATION: This string appears in the CONVERSATION class of
+# osparc.support, specifically within a function that greets the user and
+# offers assistance.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:333
+msgid "We are happy to assist!"
+msgstr "저희는 기꺼이 도와드리겠습니다!"
 
 # CTX-INTERPRETATION: This string appears within the
 # 'osparc.support.Conversation' class, likely used to prompt the user for
 # their availability when scheduling a call.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:334
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:335
 msgid ""
 "Let us know what your availability is and we will get back to you shortly to"
 " schedule a meeting."
@@ -10638,14 +10633,19 @@ msgid ""
 "question below to get started."
 msgstr "저희 지원팀이 이 문제를 처리할 것입니다. 시작하려면 아래 질문을 확인하거나 수정해 주시기 바랍니다."
 
-# CTX-INTERPRETATION: This message appears in the 'osparc' support
-# application, informing the user that a support ticket has been created and
-# their request is being reviewed.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
-msgid ""
-"A support ticket has been created.\n"
-"Our team will review your request and contact you soon."
-msgstr "지원 티켓이 생성되었습니다. 저희 팀은 귀하의 요청을 검토하고 곧 연락드리겠습니다."
+# CTX-INTERPRETATION: This string appears in the oSparc application,
+# specifically within a Conversation class, indicating that a support ticket
+# has been successfully created and the user will be contacted soon.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:339
+msgid "A support ticket has been created."
+msgstr "지원 티켓이 생성되었습니다."
+
+# CTX-INTERPRETATION: This string appears in the oSparc support application,
+# specifically within a conversation flow where a support ticket has been
+# created.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:339
+msgid "Our team will review your request and contact you soon."
+msgstr "저희 팀은 귀하의 요청을 검토하고 곧 연락드리겠습니다."
 
 # CTX-INTERPRETATION: The string "Unread" is used to label a badge indicating
 # unread messages within a conversation list, likely for visual notification.
@@ -11298,7 +11298,7 @@ msgstr "기관"
 # CTX-INTERPRETATION: This string appears in the LanguageManager.js file when
 # an attempt to update the language fails, indicating a problem with the
 # localization process.
-#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:140
+#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:143
 msgid "Unsuccessful language update"
 msgstr "언어 업데이트 실패"
 

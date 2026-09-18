@@ -24,6 +24,9 @@ qx.Class.define("osparc.support.Conversation", {
     */
   construct: function(conversation) {
     this.base(arguments, conversation);
+
+    this.__systemMessages = [];
+    qx.event.message.Bus.getInstance().subscribe("localeSwitch", this.__updateSystemMessages, this);
   },
 
   statics: {
@@ -50,6 +53,7 @@ qx.Class.define("osparc.support.Conversation", {
   members: {
     __bookACallInfo: null,
     __triggerChatbotTimer: null,
+    __systemMessages: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -129,9 +133,9 @@ qx.Class.define("osparc.support.Conversation", {
                 // add a first message
                 let msg = this.tr("Book a Call");
                 if (bookACallInfo) {
-                  msg += this.tr("\n- Topic: %1", bookACallInfo["topic"]);
+                  msg += "\n" + this.tr("- Topic: %1", bookACallInfo["topic"]);
                   if ("extraInfo" in bookACallInfo) {
-                    msg += this.tr("\n- Extra Info: %1", bookACallInfo["extraInfo"]);
+                    msg += "\n" + this.tr("- Extra Info: %1", bookACallInfo["extraInfo"]);
                   }
                 }
                 prePostMessagePromise = this.__postMessage(msg);
@@ -179,6 +183,7 @@ qx.Class.define("osparc.support.Conversation", {
       this.base(arguments);
 
       this.__bookACallInfo = null;
+      this.__systemMessages = [];
     },
 
     _applyConversation: function(conversation) {
@@ -321,25 +326,35 @@ qx.Class.define("osparc.support.Conversation", {
         });
     },
 
+    __getSystemMessageText: function(type) {
+      const greet = this.tr("Hi %1,", osparc.auth.Data.getInstance().getFriendlyUserName()) + "\n";
+      switch (type) {
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
+          return greet + this.tr("Have a question or feedback?") + "\n" + this.tr("We are happy to assist!");
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
+          return greet + this.tr("Let us know what your availability is and we will get back to you shortly to schedule a meeting.");
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
+          return greet + this.tr("Our support team will take it from here — please confirm or edit your question below to get started.");
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
+          return this.tr("A support ticket has been created.") + "\n" + this.tr("Our team will review your request and contact you soon.");
+      }
+      return null;
+    },
+
+    __updateSystemMessages: function() {
+      // content is built by concatenation, so it is a dead string: re-resolve it on locale switch
+      this.__systemMessages.forEach(entry => {
+        const newContent = this.__getSystemMessageText(entry.type);
+        if (newContent) {
+          entry.message.setContent(newContent);
+        }
+      });
+    },
+
     addSystemMessage: function(type) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
-      let msg = null;
-      const greet = this.tr("Hi %1,\n", osparc.auth.Data.getInstance().getFriendlyUserName());
-      switch (type) {
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
-          msg = greet + this.tr("Have a question or feedback?\nWe are happy to assist!");
-          break;
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
-          msg = greet + this.tr("Let us know what your availability is and we will get back to you shortly to schedule a meeting.");
-          break;
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
-          msg = greet + this.tr("Our support team will take it from here — please confirm or edit your question below to get started.");
-          break;
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
-          msg = this.tr("A support ticket has been created.\nOur team will review your request and contact you soon.");
-          break;
-      }
+      const msg = this.__getSystemMessageText(type);
       if (msg) {
         const now = new Date();
         const systemMessageData = {
@@ -352,6 +367,7 @@ qx.Class.define("osparc.support.Conversation", {
           "userGroupId": osparc.data.model.Message.SYSTEM_MESSAGE_ID,
         };
         const systemMessage = new osparc.data.model.Message(systemMessageData);
+        this.__systemMessages.push({ message: systemMessage, type });
         const messageUI = new osparc.conversation.MessageUI(systemMessage);
         this.getChildControl("messages-container").add(messageUI);
       }
