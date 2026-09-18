@@ -12,13 +12,8 @@ from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator
 from pydantic_core import PydanticCustomError
 from referencing.jsonschema import ObjectSchema
 
-from ..domain.chatbot import ChatCompletionRequestMessage, ChatResponseFormat
+from ..domain.chatbot import ChatCompletionRequestMessage, ChatResponseFormat, Temperature
 from .base import ApiServerInputSchema, ApiServerOutputSchema
-
-Temperature = Annotated[float, Field(ge=0, le=2)]
-
-type MetadataKey = Annotated[str, Field(max_length=64)]
-type MetadataValue = Annotated[str, Field(max_length=512)]
 
 _ChatCompletionRequestMessageAdapter: Final[TypeAdapter[ChatCompletionRequestMessage]] = TypeAdapter(
     ChatCompletionRequestMessage
@@ -106,8 +101,8 @@ class TextParam(ApiServerInputSchema):
 
 class InputMessage(ApiServerInputSchema):
     role: Literal["user", "assistant", "developer"]
-    content: Annotated[str, Field(min_length=1, max_length=100_000)]
-    name: Annotated[str, Field(max_length=200)] = ""
+    content: str
+    name: str = ""
 
     def to_domain_model(self) -> ChatCompletionRequestMessage:
         return _ChatCompletionRequestMessageAdapter.validate_python(self.model_dump())
@@ -122,8 +117,8 @@ class CreateResponseRequest(ApiServerInputSchema):
     """
 
     background: Literal[True]
-    input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
-    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
+    input: list[InputMessage]
+    metadata: dict[str, str] | None = None
     model: ChatModel
     stream: bool = False
     temperature: Temperature

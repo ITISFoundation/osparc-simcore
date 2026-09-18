@@ -14,6 +14,8 @@ from ..models.domain.chatbot import (
     ChatRequest,
     ChatResponseFormat,
     CreateChatCompletionResponse,
+    Temperature,
+    TopP,
 )
 from ..utils.client_base import BaseServiceClientApi, configure_client_instance
 
@@ -41,10 +43,10 @@ class ChatbotSession:
         messages: list[ChatCompletionRequestMessage],
         model: str,
         metadata: dict[str, Any],
-        temperature: float,
-        top_p: float,
+        temperature: Temperature,
+        top_p: TopP,
         response_format: ChatResponseFormat | None,
-        stream: bool = False,
+        stream: bool,
     ) -> ChatRequest:
         # ensure the graph specified in settings are used
         _metadata = deepcopy(metadata)
@@ -71,8 +73,8 @@ class ChatbotSession:
         messages: list[ChatCompletionRequestMessage],
         model: str,
         metadata: dict[str, Any],
-        temperature: float = 1.0,
-        top_p: float = 1.0,
+        temperature: Temperature,
+        top_p: TopP,
         response_format: ChatResponseFormat | None = None,
     ) -> CreateChatCompletionResponse:
         request = self._build_request(
@@ -82,6 +84,7 @@ class ChatbotSession:
             temperature=temperature,
             top_p=top_p,
             response_format=response_format,
+            stream=False,
         )
         response = await self._api.client.post(
             "/v1/chat/completions",
@@ -97,8 +100,8 @@ class ChatbotSession:
         messages: list[ChatCompletionRequestMessage],
         model: str,
         metadata: dict[str, Any],
-        temperature: float = 1.0,
-        top_p: float = 1.0,
+        temperature: Temperature,
+        top_p: TopP,
         response_format: ChatResponseFormat | None = None,
     ) -> httpx.Response:
         """Opens a streamed chat completion. Headers/status are already available on return,

@@ -4,7 +4,7 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 from celery_library.worker.app_server import get_app_server
 from models_library.celery import TaskKey
 
-from ....models.domain.chatbot import CreateChatCompletionResponse
+from ....models.domain.chatbot import DEFAULT_TOP_P, CreateChatCompletionResponse
 from ....models.schemas.responses import CreateResponseRequest
 from ....services_http.chatbot import ChatbotApi, ChatbotSession
 
@@ -31,5 +31,6 @@ async def run_chat_completion(
         model=request.model,
         metadata=request.metadata or {},
         temperature=request.temperature,
+        top_p=DEFAULT_TOP_P,
         response_format=request.to_chat_response_format(),
     )

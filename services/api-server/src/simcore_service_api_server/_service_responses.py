@@ -13,6 +13,7 @@ from .exceptions.backend_errors import ChatbotRequestError
 from .exceptions.handlers._utils import create_error_json_response
 from .exceptions.handlers._validation_errors import http422_error_handler
 from .models.basic_types import SseStreamingResponse
+from .models.domain.chatbot import DEFAULT_TOP_P
 from .models.schemas.responses import CreateResponseRequest
 from .services_http.chatbot import ChatbotApi, ChatbotSession
 
@@ -58,6 +59,7 @@ async def create_streaming_chat_response(
             model=body.model,
             metadata=body.metadata or {},
             temperature=body.temperature,
+            top_p=DEFAULT_TOP_P,
             response_format=body.to_chat_response_format(),
         )
     except ValidationError as exc:

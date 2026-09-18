@@ -14,6 +14,8 @@ from httpx import AsyncClient
 from pydantic import TypeAdapter
 from simcore_service_api_server.core.settings import ChatbotSettings
 from simcore_service_api_server.models.domain.chatbot import (
+    DEFAULT_TEMPERATURE,
+    DEFAULT_TOP_P,
     ChatCompletionRequestMessage,
     CreateChatCompletionResponse,
 )
@@ -79,6 +81,8 @@ async def test_create_chat_completion(
         ],
         model="gpt-4o-mini",
         metadata={},
+        temperature=DEFAULT_TEMPERATURE,
+        top_p=DEFAULT_TOP_P,
     )
 
     assert isinstance(result, CreateChatCompletionResponse)
@@ -120,6 +124,7 @@ async def test_create_chat_completion_with_multiple_messages(
         model="gpt-4o-mini",
         metadata={"session": faker.word()},
         temperature=0.5,
+        top_p=DEFAULT_TOP_P,
     )
 
     assert result.id == expected_id
@@ -144,6 +149,8 @@ async def test_create_chat_completion_raises_on_error(
             ],
             model="gpt-4o-mini",
             metadata={},
+            temperature=DEFAULT_TEMPERATURE,
+            top_p=DEFAULT_TOP_P,
         )
 
 
@@ -161,6 +168,8 @@ async def test_stream_chat_completion(
         ],
         model="gpt-4o-mini",
         metadata={},
+        temperature=DEFAULT_TEMPERATURE,
+        top_p=DEFAULT_TOP_P,
     )
 
     assert response.status_code == 200
@@ -188,6 +197,8 @@ async def test_stream_chat_completion_sends_graph_name_in_metadata(
         ],
         model="gpt-4o-mini",
         metadata=metadata,
+        temperature=DEFAULT_TEMPERATURE,
+        top_p=DEFAULT_TOP_P,
     )
     await response.aread()
     await response.aclose()
@@ -214,6 +225,8 @@ async def test_stream_chat_completion_raises_on_error(
             ],
             model="gpt-4o-mini",
             metadata={},
+            temperature=DEFAULT_TEMPERATURE,
+            top_p=DEFAULT_TOP_P,
         )
 
     # body must already be readable even though stream_chat_completion closed the response
