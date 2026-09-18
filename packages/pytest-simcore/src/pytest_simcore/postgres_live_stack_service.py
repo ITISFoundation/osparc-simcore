@@ -39,10 +39,10 @@ import sqlalchemy as sa
 
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
-    _maintenance_engine,
     build_migrated_pg_template,
     database_exists,
     drop_pg_template,
+    maintenance_engine_context,
     reset_database_from_template,
 )
 
@@ -69,11 +69,8 @@ def _pg_reset_template_state() -> Iterator[dict[str, Any]]:
 
 
 def _template_exists(dsn: PostgresTestConfig) -> bool:
-    maintenance = _maintenance_engine(dsn)
-    try:
+    with maintenance_engine_context(dsn) as maintenance:
         return database_exists(maintenance, _PG_RESET_TEMPLATE_DB)
-    finally:
-        maintenance.dispose()
 
 
 @pytest.fixture(scope="module")

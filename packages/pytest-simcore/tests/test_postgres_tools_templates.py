@@ -7,11 +7,13 @@ import docker
 import pytest
 import sqlalchemy as sa
 import tenacity
+from pydantic import PostgresDsn
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
     cloned_pg_database_context,
     database_exists,
     drop_pg_template,
+    maintenance_engine_context,
     migrated_pg_template_context,
     reset_database_from_template,
 )
@@ -57,19 +59,18 @@ def postgres_container() -> Iterator[PostgresTestConfig]:
         client.close()
 
 
-def _maintenance_engine(config: PostgresTestConfig) -> sa.engine.Engine:
-    cfg = {**config, "database": "postgres"}
-    return sa.create_engine(
-        f"postgresql+psycopg2://{cfg['user']}:{cfg['password']}@{cfg['host']}:{cfg['port']}/{cfg['database']}",
-        isolation_level="AUTOCOMMIT",
-    )
-
-
 def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
-    cfg = {**config, "database": database}
-    return sa.create_engine(
-        f"postgresql+psycopg2://{cfg['user']}:{cfg['password']}@{cfg['host']}:{cfg['port']}/{cfg['database']}"
+    dsn = str(
+        PostgresDsn.build(
+            scheme="postgresql+psycopg2",
+            username=config["user"],
+            password=config["password"],
+            host=config["host"],
+            port=int(config["port"]),
+            path=database,
+        )
     )
+    return sa.create_engine(dsn)
 
 
 def _count_rows(engine: sa.engine.Engine, table: sa.Table) -> int:
@@ -103,11 +104,8 @@ def test_template_is_built_once_and_clones_are_isolated(postgres_container: Post
             assert _count_rows(engine2, probe) == 0
 
     # template is dropped on context exit
-    maintenance = _maintenance_engine(postgres_container)
-    try:
+    with maintenance_engine_context(postgres_container) as maintenance:
         assert not database_exists(maintenance, template_name)
-    finally:
-        maintenance.dispose()
 
 
 def test_clone_from_template_with_attached_sessions_on_source(
@@ -140,20 +138,19 @@ def test_clone_from_template_with_attached_sessions_on_source(
 def test_stale_template_is_rebuilt(postgres_container: PostgresTestConfig):
     """a template left over from an interrupted session is rebuilt, not reused"""
     template_name = f"tpl_{uuid.uuid4().hex}"
-    maintenance = _maintenance_engine(postgres_container)
-    with maintenance.connect() as conn:  # AUTOCOMMIT
-        conn.execute(sa.text(f"CREATE DATABASE {template_name}"))
-    assert database_exists(maintenance, template_name)
-
-    with migrated_pg_template_context(postgres_container, template_name):
-        # stale DB was dropped and rebuilt (no error raised), visible inside the context
+    with maintenance_engine_context(postgres_container) as maintenance:
+        with maintenance.connect() as conn:  # AUTOCOMMIT
+            conn.execute(sa.text(f"CREATE DATABASE {template_name}"))
         assert database_exists(maintenance, template_name)
 
-    # context exit drops the template
-    assert not database_exists(maintenance, template_name)
-    drop_pg_template(postgres_container, template_name)  # no-op, must not raise
-    assert not database_exists(maintenance, template_name)
-    maintenance.dispose()
+        with migrated_pg_template_context(postgres_container, template_name):
+            # stale DB was dropped and rebuilt (no error raised), visible inside the context
+            assert database_exists(maintenance, template_name)
+
+        # context exit drops the template
+        assert not database_exists(maintenance, template_name)
+        drop_pg_template(postgres_container, template_name)  # no-op, must not raise
+        assert not database_exists(maintenance, template_name)
 
 
 def test_reset_database_from_template_with_attached_target_sessions(
@@ -171,12 +168,8 @@ def test_reset_database_from_template_with_attached_target_sessions(
         sa.Column("id", sa.Integer, primary_key=True),
     )
 
-    maintenance = _maintenance_engine(postgres_container)
-    try:
-        with maintenance.connect() as conn:  # AUTOCOMMIT
-            conn.execute(sa.text(f"CREATE DATABASE {target_name}"))
-    finally:
-        maintenance.dispose()
+    with maintenance_engine_context(postgres_container) as maintenance, maintenance.connect() as conn:  # AUTOCOMMIT
+        conn.execute(sa.text(f"CREATE DATABASE {target_name}"))
 
     try:
         with migrated_pg_template_context(postgres_container, template_name):
@@ -215,3 +208,19 @@ def test_reset_database_from_template_with_attached_target_sessions(
             new_engine.dispose()
     finally:
         drop_pg_template(postgres_container, target_name)
+
+
+def test_cloned_database_is_dropped_not_recreated_on_exit(postgres_container: PostgresTestConfig):
+    """the target is left dropped once the context exits; the next entry re-clones it (no
+    eager recreate on exit, since the caller may not re-enter until much later, if at all)"""
+    template_name = f"tpl_{uuid.uuid4().hex}"
+    with migrated_pg_template_context(postgres_container, template_name):
+        with cloned_pg_database_context(postgres_container, template_name):
+            pass
+
+        with maintenance_engine_context(postgres_container) as maintenance:
+            assert not database_exists(maintenance, postgres_container["database"])
+
+        # next entry re-clones it from the template without error
+        with cloned_pg_database_context(postgres_container, template_name) as engine, engine.connect():
+            pass
