@@ -519,18 +519,19 @@ async def get_computation(
     request: Request,
     user_id: UserID,
     project_id: ProjectID,
-    project_repo: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
-    comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> ComputationGet:
     _logger.debug(
         "User %s getting computation status for project %s",
         f"{user_id=}",
         f"{project_id=}",
     )
-    db_engine = get_engine(request.app)
-    # all DB reads below share a single connection (no external I/O in this block)
+
+    projects_repo = ProjectsRepository(db_engine)
+    comp_runs_repo = CompRunsRepository(db_engine)
+
     async with pass_or_acquire_connection(db_engine) as conn:
-        if not await project_repo.exists(conn, project_id=project_id):
+        if not await projects_repo.exists(conn, project_id=project_id):
             raise ProjectNotFoundError(project_id=project_id)
 
         try:
