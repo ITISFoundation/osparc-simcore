@@ -408,7 +408,6 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
-            result = await conn.execute(list_query)
 
             items = [
                 ComputationRunRpcGet(
@@ -420,7 +419,7 @@ class CompRunsRepository(BaseRepository):
                     started_at=row.started_at,
                     ended_at=row.ended_at,
                 )
-                for row in result
+                for row in await conn.execute(list_query)
             ]
 
             return cast(int, total_count), items
