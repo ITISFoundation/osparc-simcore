@@ -43,5 +43,5 @@ class BaseRepository:
                 warning_threshold,
                 total_capacity,
                 utilization * 100,
-                self.db_engine.pool.status(),  # type: ignore
+                self.db_engine.pool.status(),
             )
