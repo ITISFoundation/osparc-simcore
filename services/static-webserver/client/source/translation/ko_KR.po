@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-09-18T14:20:27Z\n"
+"X-Translation-Date: 2026-09-18T15:20:22Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This string is used within the 'About Product' menu item
@@ -4753,22 +4753,35 @@ msgstr "계정 삭제를 요청하십시오."
 msgid "Update Phone Number"
 msgstr "휴대폰 번호 업데이트"
 
-# CTX-INTERPRETATION: This string appears in the 'TransferProjects' component,
-# guiding a user through the process of transferring their projects to another
-# user with options for shared or exclusive ownership.
-#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:48
+# CTX-INTERPRETATION: This string appears in the 'TransferProjects' class
+# within the oSparc desktop application, informing the user about transferring
+# their projects to another user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:49
+msgid "You are about to transfer all your projects to another user."
+msgstr "다른 사용자에게 모든 프로젝트를 이전하는 작업을 시작합니다."
+
+# CTX-INTERPRETATION: This string appears in the 'TransferProjects' class,
+# explaining two methods for transferring projects to another user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:50
+msgid "There are two ways to do so:"
+msgstr "다음 두 가지 방법이 있습니다:"
+
+# CTX-INTERPRETATION: This string appears in the context of transferring
+# projects to another user, explaining two options for sharing projects while
+# maintaining or removing co-ownership.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:51
 msgid ""
-"            You are about to transfer all your projects to another user.<br>\n"
-"            There are two ways to do so:<br>\n"
-"            - Share all your projects with the target user and keep the co-ownership. <br>\n"
-"            - Share all your projects with the target user and remove yourself as co-owner. <br>\n"
-"          "
-msgstr ""
-"당신은 모든 프로젝트를 다른 사용자에게 이전할 예정입니다.<br>\n"
-"다음 두 가지 방법이 있습니다:<br>\n"
-"- 대상 사용자와 함께 프로젝트를 공유하고 공동 소유 관계를 유지합니다. <br>\n"
-"- 대상 사용자에게 프로젝트를 공유하고 공동 소유자로서의 권한을 제거합니다.\n"
-"          "
+"- Share all your projects with the target user and keep the co-ownership."
+msgstr "- 대상 사용자에게 모든 프로젝트를 공유하고 공동 소유 관계를 유지하십시오."
+
+# CTX-INTERPRETATION: This string appears in the context of transferring
+# projects to another user, specifically removing the current user's co-
+# ownership.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:52
+msgid ""
+"- Share all your projects with the target user and remove yourself as co-"
+"owner."
+msgstr "- 대상 사용자에게 모든 프로젝트를 공유하고 공동 소유 관계를 해제하십시오."
 
 # CTX-INTERPRETATION: The string "Target user:" is used as a label within a
 # user interface element to indicate the target user for a project transfer
@@ -8810,6 +8823,65 @@ msgstr "Sim4Life.lite에 대한 자세한 내용은 %1을(를) 방문하십시�
 msgid "For more information about TIP, please visit %1."
 msgstr "TIP에 대한 자세한 내용은 %1을(를) 방문하십시오."
 
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to unlock the full potential of TI Research and
+# potentially join the EAP program.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:58
+msgid "Unlock the Full Potential of TI Research!"
+msgstr "TI 연구의 완전한 잠재력을 활용하십시오!"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, prompting
+# users to determine if they are part of the TI Solutions Early Adopter
+# Program (EAP) and offering access to advanced features.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:60
+msgid "Are you part of the TI Solutions Early Adopter Program (EAP)?"
+msgstr "TI 솔루션의 조기 채택 프로그램(EAP)에 참여하고 계신가요?"
+
+# CTX-INTERPRETATION: This string appears in a UI element that encourages
+# users to join the EAP program and access the TIP platform for TI planning
+# and simulations.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:62
+msgid ""
+"If yes, you have free access to our complete TIP platform with advanced "
+"features for TI planning and simulations. Click here to request access."
+msgstr ""
+"예, 그렇다면 저희의 완전한 TIP 플랫폼에 대한 무료 액세스를 이용하실 수 있습니다. 이 플랫폼에는 TI 계획 및 시뮬레이션을 위한 "
+"고급 기능이 포함되어 있습니다. 액세스 요청하려면 여기를 클릭하세요."
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, inviting
+# users who are not EAP members to join a research community and use
+# investigational TIBS-R devices.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:64
+msgid "Not an EAP member yet? Join our cutting-edge research community:"
+msgstr "아직 EAP 멤버가 아니신가요? 저희의 최첨단 연구 커뮤니티에 참여하세요:"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to join the TI research community and use investigational
+# TIBS-R devices for their projects.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:66
+msgid "• Use our investigational TIBS-R devices in your projects"
+msgstr "• 저희의 시험용 TIBS-R 장치를 프로젝트에 사용해 보세요."
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to contribute to advancing TI knowledge within the
+# research community.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:68
+msgid "• Contribute to advancing TI knowledge"
+msgstr "• TI 지식 발전에 기여하십시오"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to join the EAP program and contribute to advancing TI
+# knowledge.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:70
+msgid "• Shape the future of neurostimulation technology"
+msgstr "• 신경 자극 기술의 미래를 만들어가세요"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to learn more about EAP and apply for access.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:72
+msgid "Click here to learn more about EAP and apply today!"
+msgstr "자세히 알아보고 오늘 바로 신청하세요!"
+
 # CTX-INTERPRETATION: This string likely represents the alias or name of a
 # project within the application, used in a user interface element.
 #: services/static-webserver/client/source/class/osparc/product/Utils.js:52
@@ -10271,22 +10343,31 @@ msgid "Add new conversation"
 msgstr "새 대화 추가"
 
 # CTX-INTERPRETATION: This string appears in the CreateFunction.js file,
-# explaining the requirements for creating a function within a pipeline.
-#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:36
-msgid ""
-"\n"
-"      In order to Create a Function, the pipeline needs:\n"
-"      - at least one parameter and one probe (numbers)\n"
-"      - at least one computational app\n"
-"      - no dynamic apps\n"
-"    "
-msgstr ""
-"\n"
-"함수를 생성하려면 파이프라인은 다음을 필요로 합니다:\n"
-"- 최소 하나의 매개변수와 하나의 프로브 (숫자)\n"
-"- 최소 하나의 컴퓨트 앱\n"
-"- 동적 앱 없음\n"
-"    "
+# likely within a user interface or help text explaining the requirements for
+# creating a function pipeline.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:37
+msgid "In order to Create a Function, the pipeline needs:"
+msgstr "함수를 생성하려면 파이프라인은 다음을 필요로 합니다:"
+
+# CTX-INTERPRETATION: This string appears in the CreateFunction.js file,
+# specifically within a section describing the requirements for creating a
+# function pipeline.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:38
+msgid "- at least one parameter and one probe (numbers)"
+msgstr "- 최소 하나의 파라미터와 프로브 (숫자)가 필요합니다."
+
+# CTX-INTERPRETATION: This string appears within the CreateFunction.js file,
+# specifically in a section describing the requirements for creating a
+# function pipeline.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:39
+msgid "- at least one computational app"
+msgstr "- 적어도 하나의 컴퓨테이셔널 앱"
+
+# CTX-INTERPRETATION: This string appears in the CreateFunction.js file,
+# specifying that a function pipeline requires no dynamic applications.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:40
+msgid "- no dynamic apps"
+msgstr "- 동적 앱 없음"
 
 # CTX-INTERPRETATION: The 'Exposed' label is used in a UI to indicate whether
 # a specific parameter or field is exposed for user interaction and
@@ -10548,30 +10629,30 @@ msgstr "미팅을 보다 생산적으로 진행하는 데 도움이 될 수 있�
 # CTX-INTERPRETATION: The string "thinking" appears as the label text for a UI
 # element indicating that the chatbot is processing user input, likely during
 # a conversation.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:62
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:70
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:58
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:66
 msgid "thinking"
 msgstr "생각 중..."
 
 # CTX-INTERPRETATION: The string "thinking..." appears as a placeholder
 # message within the Conversation.js file, likely indicating that the
 # application is processing or performing an action.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:72
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:68
 msgid "thinking..."
 msgstr "생각 중..."
 
 # CTX-INTERPRETATION: The string "Share Project with Support" appears as a
 # label for a checkbox within the Conversation.js file, likely related to
 # sharing project details or permissions with support personnel.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:95
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:91
 msgid "Share Project with Support"
 msgstr "지원과 프로젝트 공유"
 
 # CTX-INTERPRETATION: This string is used to label a button or link that
 # initiates a call within the application, likely related to scheduling or
 # starting a conference.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:143
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:130
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:139
 #: services/static-webserver/client/source/class/osparc/support/ConversationPage.js:155
 #: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:73
 #: services/static-webserver/client/source/class/osparc/support/ConversationsPage.js:82
@@ -10583,42 +10664,42 @@ msgstr "콜 예약"
 # CTX-INTERPRETATION: The string translates the 'Topic' field from a
 # configuration object used to display conversation details, specifically
 # within the oSparc support system.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:136
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:132
 msgid "- Topic: %1"
 msgstr "- 주제: %1"
 
 # CTX-INTERPRETATION: The string is part of a message displaying extra
 # information related to a call, specifically the 'extraInfo' field from the
 # bookACallInfo object.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:138
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
 msgid "- Extra Info: %1"
 msgstr "- 추가 정보: %1"
 
 # CTX-INTERPRETATION: This string is part of a greeting message within the
 # oSparc application, specifically used to initiate a conversation with the
 # user and offer assistance.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:330
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:328
 msgid "Hi %1,"
 msgstr "안녕하세요 %1,"
 
 # CTX-INTERPRETATION: This string appears in the CONVERSATION class of
 # osparc.support, specifically within a function that greets the user and asks
 # if they have a question or feedback.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:333
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
 msgid "Have a question or feedback?"
 msgstr "질문이나 피드백이 있으신가요?"
 
 # CTX-INTERPRETATION: This string appears in the CONVERSATION class of
 # osparc.support, specifically within a function that greets the user and
 # offers assistance.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:333
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
 msgid "We are happy to assist!"
 msgstr "저희는 기꺼이 도와드리겠습니다!"
 
 # CTX-INTERPRETATION: This string appears within the
 # 'osparc.support.Conversation' class, likely used to prompt the user for
 # their availability when scheduling a call.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:335
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:334
 msgid ""
 "Let us know what your availability is and we will get back to you shortly to"
 " schedule a meeting."
@@ -10636,14 +10717,14 @@ msgstr "저희 지원팀이 이 문제를 처리할 것입니다. 시작하려�
 # CTX-INTERPRETATION: This string appears in the oSparc application,
 # specifically within a Conversation class, indicating that a support ticket
 # has been successfully created and the user will be contacted soon.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:339
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
 msgid "A support ticket has been created."
 msgstr "지원 티켓이 생성되었습니다."
 
 # CTX-INTERPRETATION: This string appears in the oSparc support application,
 # specifically within a conversation flow where a support ticket has been
 # created.
-#: services/static-webserver/client/source/class/osparc/support/Conversation.js:339
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
 msgid "Our team will review your request and contact you soon."
 msgstr "저희 팀은 귀하의 요청을 검토하고 곧 연락드리겠습니다."
 
@@ -12565,6 +12646,39 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "결제가 확인되면 신용은 귀하의 신용 계정에 추가되어 사용할 준비가 됩니다."
+
+# CTX-INTERPRETATION: This string appears in the 'TransferProjects' component,
+# guiding a user through the process of transferring their projects to another
+# user with options for shared or exclusive ownership.
+#~ msgid ""
+#~ "            You are about to transfer all your projects to another user.<br>\n"
+#~ "            There are two ways to do so:<br>\n"
+#~ "            - Share all your projects with the target user and keep the co-ownership. <br>\n"
+#~ "            - Share all your projects with the target user and remove yourself as co-owner. <br>\n"
+#~ "          "
+#~ msgstr ""
+#~ "당신은 모든 프로젝트를 다른 사용자에게 이전할 예정입니다.<br>\n"
+#~ "다음 두 가지 방법이 있습니다:<br>\n"
+#~ "- 대상 사용자와 함께 프로젝트를 공유하고 공동 소유 관계를 유지합니다. <br>\n"
+#~ "- 대상 사용자에게 프로젝트를 공유하고 공동 소유자로서의 권한을 제거합니다.\n"
+#~ "          "
+
+# CTX-INTERPRETATION: This string appears in the CreateFunction.js file,
+# explaining the requirements for creating a function within a pipeline.
+#~ msgid ""
+#~ "\n"
+#~ "      In order to Create a Function, the pipeline needs:\n"
+#~ "      - at least one parameter and one probe (numbers)\n"
+#~ "      - at least one computational app\n"
+#~ "      - no dynamic apps\n"
+#~ "    "
+#~ msgstr ""
+#~ "\n"
+#~ "함수를 생성하려면 파이프라인은 다음을 필요로 합니다:\n"
+#~ "- 최소 하나의 매개변수와 하나의 프로브 (숫자)\n"
+#~ "- 최소 하나의 컴퓨트 앱\n"
+#~ "- 동적 앱 없음\n"
+#~ "    "
 
 # CTX-INTERPRETATION: This string appears in the Collaborators.js file, likely
 # within a UI element that describes who can access a specific resource
