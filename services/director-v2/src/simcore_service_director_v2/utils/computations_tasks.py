@@ -10,7 +10,6 @@ from ..models.comp_pipelines import CompPipelineAtDB
 from ..models.comp_tasks import CompTaskAtDB
 from ..modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ..modules.db.repositories.comp_tasks import CompTasksRepository
-from ..utils.db import get_repository
 
 
 class PipelineInfo(NamedTuple):
@@ -26,8 +25,8 @@ async def _get_pipeline_info(
     project_id: ProjectID,
 ) -> PipelineInfo:
     # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
-    comp_pipelines_repo = get_repository(db_engine, CompPipelinesRepository)
-    comp_tasks_repo = get_repository(db_engine, CompTasksRepository)
+    comp_pipelines_repo = CompPipelinesRepository(db_engine)
+    comp_tasks_repo = CompTasksRepository(db_engine)
 
     async with pass_or_acquire_connection(db_engine, connection) as conn:
         pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
