@@ -593,17 +593,18 @@ async def stop_computation(
     request: Request,
     computation_stop: ComputationStop,
     project_id: ProjectID,
-    comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
-    comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> ComputationGet:
     _logger.debug(
         "User %s stopping computation for project %s",
         computation_stop.user_id,
         project_id,
     )
-    db_engine = get_engine(request.app)
-    # all DB reads below share a single connection (no external I/O in this block)
+
+    comp_pipelines_repo = CompPipelinesRepository(db_engine)
+    comp_tasks_repo = CompTasksRepository(db_engine)
+    comp_runs_repo = CompRunsRepository(db_engine)
+
     async with pass_or_acquire_connection(db_engine) as conn:
         # get the project pipeline
         pipeline_at_db = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
