@@ -84,7 +84,7 @@ async def list_(
     # so the total is also emitted when the page is empty (e.g. offset >= total), keeping
     # `total` a property of the match set and independent of pagination.
     total_cte = (
-        select(func.count().label("_total_count"))
+        select(func.count().label("total_count"))
         .where(conversation_messages.c.conversation_id == conversation_id)
         .cte("total_count")
     )
@@ -105,7 +105,7 @@ async def list_(
 
     list_query = (
         select(
-            total_cte.c._total_count,  # noqa: SLF001
+            total_cte.c.total_count,
             *(page_subquery.c[column.name] for column in _SELECTION_ARGS),
         )
         .select_from(total_cte)
@@ -119,7 +119,7 @@ async def list_(
         total_count: int = 0
         for row_mapping in result.mappings():
             row_dict = dict(row_mapping)
-            total_count = row_dict.pop("_total_count")
+            total_count = row_dict.pop("total_count")
             if row_dict["message_id"] is not None:  # empty page: page columns are NULL
                 items.append(ConversationMessageGetDB.model_validate(row_dict))
 
