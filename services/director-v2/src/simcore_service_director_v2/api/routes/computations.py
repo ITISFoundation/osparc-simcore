@@ -90,7 +90,7 @@ from ...utils.dags import (
     find_computational_node_cycles,
 )
 from ..dependencies.catalog import get_catalog_client
-from ..dependencies.database import get_db_engine, get_repository
+from ..dependencies.database import get_db_engine
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
 
@@ -646,12 +646,10 @@ async def stop_computation(
     responses={status.HTTP_409_CONFLICT: {"description": "Pipeline could not be stopped in time"}},
 )
 async def delete_computation(
+    request: Request,
     computation_stop: ComputationDelete,
     project_id: ProjectID,
-    request: Request,
-    comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
-    comp_runs_repo: Annotated[CompRunsRepository, Depends(get_repository(CompRunsRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> None:
     """Deletes a computation pipeline if it is not running, otherwise stops it first
         and waits for it to stop before deleting it.
@@ -659,6 +657,11 @@ async def delete_computation(
         if the pipeline is already stopped or deleted.
     Raises:
         HTTPException: if the pipeline could not be stopped in time"""
+
+    comp_pipelines_repo = CompPipelinesRepository(db_engine)
+    comp_tasks_repo = CompTasksRepository(db_engine)
+    comp_runs_repo = CompRunsRepository(db_engine)
+
     # check if current state allow to stop the computation
     pipeline_state = RunningState.UNKNOWN
     with contextlib.suppress(ComputationalRunNotFoundError):
