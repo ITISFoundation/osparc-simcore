@@ -4,7 +4,6 @@
 
 
 import logging
-import os
 import re
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable, Iterator
 from contextlib import asynccontextmanager, contextmanager
@@ -56,6 +55,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._schedu
 # running scheduler at a height rate to stress out the system
 # and ensure faster tests
 _TEST_SCHEDULER_INTERVAL_SECONDS: Final[NonNegativeFloat] = 0.1
+# N>1 so a leak failure shows growth is per-service rather than a fixed one-off
+_BOOKKEEPING_CYCLE_COUNT: Final[int] = 50
 _MODULE_BASE: Final[str] = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
 
 _logger = logging.getLogger(__name__)
@@ -541,20 +542,14 @@ def _bookkeeping_sizes(scheduler: DynamicSidecarsScheduler) -> dict[str, int]:
     }
 
 
-@pytest.fixture
-def leak_cycles() -> int:
-    return int(os.getenv("DV2_SCHEDULER_LEAK_CYCLES", "50"))
-
-
 async def test_scheduler_start_stop_cycles_release_all_bookkeeping(
     disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     faker: Faker,
-    leak_cycles: int,
 ) -> None:
     """add -> remove cycles must not leave stale entries behind in any bookkeeping dict"""
-    for _ in range(leak_cycles):
+    for _ in range(_BOOKKEEPING_CYCLE_COUNT):
         new_scheduler_data = scheduler_data.model_copy(deep=True)
         new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
         new_scheduler_data.service_name = f"fake_{new_scheduler_data.node_uuid}"
@@ -574,11 +569,10 @@ async def test_scheduler_start_stop_cycles_with_disabled_observation_release_all
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     faker: Faker,
-    leak_cycles: int,
 ) -> None:
     """a `_DISABLED_MARK` entry must not survive service removal: it has no done-callback
     to self-clean, so remove_service_from_observation must drop it explicitly"""
-    for _ in range(leak_cycles):
+    for _ in range(_BOOKKEEPING_CYCLE_COUNT):
         new_scheduler_data = scheduler_data.model_copy(deep=True)
         new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
         new_scheduler_data.service_name = f"fake_{new_scheduler_data.node_uuid}"
