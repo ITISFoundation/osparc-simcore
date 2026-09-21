@@ -16,7 +16,7 @@ aiosignal==1.4.0
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.12.1
+anyio==4.14.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
@@ -69,6 +69,8 @@ frozenlist==1.8.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.5.6
+    # via sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt

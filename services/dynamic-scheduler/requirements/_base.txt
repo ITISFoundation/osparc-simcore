@@ -30,7 +30,7 @@ annotated-doc==0.0.5
     # via fastapi
 annotated-types==0.7.0
     # via pydantic
-anyio==4.8.0
+anyio==4.14.2
     # via
     #   fast-depends
     #   faststream
@@ -381,9 +381,7 @@ simple-websocket==1.1.0
 six==1.17.0
     # via python-dateutil
 sniffio==1.3.1
-    # via
-    #   anyio
-    #   asgi-lifespan
+    # via asgi-lifespan
 sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
