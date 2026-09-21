@@ -40,25 +40,21 @@ from simcore_service_webserver.db_listener._repository import (
     CLAIM_CANDIDATE_BATCH as _CLAIM_CANDIDATE_BATCH,
 )
 from simcore_service_webserver.db_listener._repository import (
-    MAX_ATTEMPTS as _MAX_ATTEMPTS,
+    DEAD_LETTER_AFTER_ATTEMPTS as _DEAD_LETTER_AFTER_ATTEMPTS,
 )
 from simcore_service_webserver.db_listener._repository import (
-    get_comp_task_row as _get_comp_task_row,
+    get_comp_task as _get_comp_task,
 )
 from simcore_service_webserver.db_listener._repository import (
     get_project_owner as _get_project_owner,
 )
 from simcore_service_webserver.db_listener._service import (
-    _MAX_FAILED_AGGREGATES_PER_DRAIN,
-)
-from simcore_service_webserver.db_listener._service import (
-    claim_and_process_one_outbox_event as _claim_and_process_one_outbox_event,
+    _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN,
+    _claim_and_process_one_outbox_event,
+    _process_outbox_event,
 )
 from simcore_service_webserver.db_listener._service import (
     claim_and_process_outbox_events as _claim_and_process_outbox_events,
-)
-from simcore_service_webserver.db_listener._service import (
-    process_outbox_event as _process_outbox_event,
 )
 from simcore_service_webserver.db_listener._task import (
     OUTBOX_LISTENER_APPLICATION_NAME,
@@ -121,12 +117,12 @@ async def with_started_listening_task(client: TestClient) -> AsyncIterator:
 
 
 @pytest.fixture
-async def spied_get_comp_task_row(
+async def spied_get_comp_task(
     mocker: MockerFixture,
 ) -> MockType:
     return mocker.spy(
         simcore_service_webserver.db_listener._service,  # noqa: SLF001
-        "get_comp_task_row",
+        "get_comp_task",
     )
 
 
@@ -202,7 +198,7 @@ async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock]
 async def test_db_listener_triggers_on_event_with_multiple_tasks(
     sqlalchemy_async_engine: AsyncEngine,
     mock_project_subsystem: dict[str, mock.Mock],
-    spied_get_comp_task_row: MockType,
+    spied_get_comp_task: MockType,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
@@ -220,7 +216,7 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
         await create_comp_task(
             project_id=f"{some_project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=task_class,
         )
         for _ in range(3)
@@ -236,12 +232,11 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
 
     # Assert the spy was called with the correct task_id
     if params.expected_calls:
-        assert any(call.args[1] == updated_task_id for call in spied_get_comp_task_row.call_args_list), (
-            f"_get_comp_task_row was not called with task_id={updated_task_id}."
-            f" Calls: {spied_get_comp_task_row.call_args_list}"
+        assert any(call.args[1] == updated_task_id for call in spied_get_comp_task.call_args_list), (
+            f"_get_comp_task was not called with task_id={updated_task_id}. Calls: {spied_get_comp_task.call_args_list}"
         )
     else:
-        spied_get_comp_task_row.assert_not_called()
+        spied_get_comp_task.assert_not_called()
 
 
 @pytest.fixture
@@ -295,7 +290,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
     fake_2connected_jupyterlabs_workbench: dict[str, Any],
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
-    spied_get_comp_task_row: MockType,
+    spied_get_comp_task: MockType,
     faker: Faker,
 ):
     some_project = await create_project(logged_user, workbench=fake_2connected_jupyterlabs_workbench)
@@ -420,7 +415,7 @@ async def test_get_project_owner_raises_when_project_missing(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_comp_task_row_returns_task(
+async def test_get_comp_task_returns_task(
     sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -433,20 +428,20 @@ async def test_get_comp_task_row_returns_task(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_comp_task_row(conn, task["task_id"])
+        row = await _get_comp_task(conn, task["task_id"])
     assert row is not None
     assert row.task_id == task["task_id"]
 
 
-async def test_get_comp_task_row_returns_none_for_missing_task(
+async def test_get_comp_task_returns_none_for_missing_task(
     sqlalchemy_async_engine: AsyncEngine,
 ):
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_comp_task_row(conn, 999999)
+        row = await _get_comp_task(conn, 999999)
     assert row is None
 
 
@@ -515,7 +510,7 @@ async def test_process_outbox_event_with_output_change(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=node_id,
-        outputs=json.dumps({"out1": "val1"}),
+        outputs={"out1": "val1"},
         node_class=task_class,
     )
     async with sqlalchemy_async_engine.connect() as conn:
@@ -543,7 +538,7 @@ async def test_process_outbox_event_with_run_hash_change(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=node_id,
-        outputs=json.dumps({"out1": "val1"}),
+        outputs={"out1": "val1"},
         node_class=task_class,
     )
     new_run_hash = faker.sha256()
@@ -579,7 +574,7 @@ async def test_process_outbox_event_with_state_change(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=node_id,
-        outputs=json.dumps({}),
+        outputs={},
         node_class=task_class,
     )
     # Update the task state in DB
@@ -611,7 +606,7 @@ async def test_claim_and_process_one_deletes_event_on_success(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     # the comp_tasks trigger only fires on outputs/state/run_hash updates, so we generate one
@@ -666,7 +661,7 @@ async def test_failed_processing_keeps_event_for_retry(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -675,7 +670,7 @@ async def test_failed_processing_keeps_event_for_retry(
         )
 
     mocker.patch(
-        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        "simcore_service_webserver.db_listener._service._process_outbox_event",
         side_effect=RuntimeError("boom"),
     )
 
@@ -714,7 +709,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -722,7 +717,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
             comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
         )
         # simulate an event that exhausted its retries
-        await conn.execute(outbox_events.update().values(attempts=_MAX_ATTEMPTS))
+        await conn.execute(outbox_events.update().values(attempts=_DEAD_LETTER_AFTER_ATTEMPTS))
 
     # claims skip dead-lettered events: nothing is claimable
     assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
@@ -730,7 +725,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
     # the dead-lettered row is kept for post-mortem
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows) == 1
-    assert rows[0]["attempts"] == _MAX_ATTEMPTS
+    assert rows[0]["attempts"] == _DEAD_LETTER_AFTER_ATTEMPTS
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -751,7 +746,7 @@ async def test_claim_and_process_outbox_events_drains_all_pending_events(
         await create_comp_task(
             project_id=f"{project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=NodeClass.COMPUTATIONAL,
         )
         for _ in range(3)
@@ -794,7 +789,7 @@ async def test_drain_coalesces_all_events_of_the_same_aggregate(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     # 10 distinct outputs updates -> 10 outbox events for the same aggregate
@@ -834,7 +829,7 @@ async def test_drain_coalesces_mixed_changed_columns_of_the_same_aggregate(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -881,7 +876,7 @@ async def test_drain_skips_failed_aggregate_and_processes_the_rest(
         await create_comp_task(
             project_id=f"{project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=NodeClass.COMPUTATIONAL,
         )
         for _ in range(4)
@@ -898,7 +893,7 @@ async def test_drain_skips_failed_aggregate_and_processes_the_rest(
             raise RuntimeError(msg)
 
     mock_process = mocker.patch(
-        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        "simcore_service_webserver.db_listener._service._process_outbox_event",
         autospec=True,
         side_effect=_fails_only_for_poison,
     )
@@ -932,7 +927,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
 ):
     """When *every* aggregate fails with an infrastructure-like error (broken
     DB/socketio, not one bad event), the drain must stop after
-    _MAX_FAILED_AGGREGATES_PER_DRAIN distinct aggregates and leave the rest of the
+    _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN distinct aggregates and leave the rest of the
     queue untouched for the next cycle."""
     assert client.app
     project = await create_project(logged_user)
@@ -941,10 +936,10 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
         await create_comp_task(
             project_id=f"{project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=NodeClass.COMPUTATIONAL,
         )
-        for _ in range(_MAX_FAILED_AGGREGATES_PER_DRAIN + 1)
+        for _ in range(_MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN + 1)
     ]
     for task in tasks:
         async with sqlalchemy_async_engine.begin() as conn:
@@ -953,7 +948,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
             )
 
     mocker.patch(
-        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        "simcore_service_webserver.db_listener._service._process_outbox_event",
         autospec=True,
         side_effect=TimeoutError("infrastructure is down"),
     )
@@ -967,7 +962,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
         rows = result.mappings().all()
     assert len(rows) == len(tasks)
     attempts = [row["attempts"] for row in rows]
-    assert attempts == [1] * _MAX_FAILED_AGGREGATES_PER_DRAIN + [0]
+    assert attempts == [1] * _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN + [0]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -983,7 +978,7 @@ async def test_drain_does_not_abort_on_application_level_failures(
 ):
     """Application-level failures (e.g. a bug tied to specific rows) must never
     trigger the infra-outage heuristic: even with more distinct failing aggregates
-    than _MAX_FAILED_AGGREGATES_PER_DRAIN, the drain must attempt every one of them
+    than _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN, the drain must attempt every one of them
     instead of giving up early on the healthy backlog."""
     assert client.app
     project = await create_project(logged_user)
@@ -992,10 +987,10 @@ async def test_drain_does_not_abort_on_application_level_failures(
         await create_comp_task(
             project_id=f"{project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=NodeClass.COMPUTATIONAL,
         )
-        for _ in range(_MAX_FAILED_AGGREGATES_PER_DRAIN + 2)
+        for _ in range(_MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN + 2)
     ]
     for task in tasks:
         async with sqlalchemy_async_engine.begin() as conn:
@@ -1004,7 +999,7 @@ async def test_drain_does_not_abort_on_application_level_failures(
             )
 
     mocker.patch(
-        "simcore_service_webserver.db_listener._service.process_outbox_event",
+        "simcore_service_webserver.db_listener._service._process_outbox_event",
         autospec=True,
         side_effect=RuntimeError("bug in projection code"),
     )
@@ -1037,7 +1032,7 @@ async def test_concurrent_claims_do_not_double_process_same_event(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -1084,7 +1079,7 @@ async def test_concurrent_claims_serialize_same_aggregate_events(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -1138,7 +1133,7 @@ async def test_concurrent_claims_process_different_aggregates_in_parallel(
         await create_comp_task(
             project_id=f"{project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=NodeClass.COMPUTATIONAL,
         )
         for _ in range(2)
@@ -1186,7 +1181,7 @@ async def test_advisory_lock_is_scoped_by_kind(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -1243,7 +1238,7 @@ async def test_claim_ignores_events_of_a_foreign_kind(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.begin() as conn:
@@ -1296,7 +1291,7 @@ async def test_listen_notify_uses_dedicated_named_connection_and_wakes_up(
     task = await create_comp_task(
         project_id=f"{project.uuid}",
         node_id=faker.uuid4(),
-        outputs=json.dumps({}),
+        outputs={},
         node_class=NodeClass.COMPUTATIONAL,
     )
 
@@ -1354,7 +1349,7 @@ async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
         await create_comp_task(
             project_id=f"{project.uuid}",
             node_id=faker.uuid4(),
-            outputs=json.dumps({}),
+            outputs={},
             node_class=NodeClass.COMPUTATIONAL,
         )
         for _ in range(2)

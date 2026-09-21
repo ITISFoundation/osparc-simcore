@@ -48,6 +48,12 @@ async def with_outbox_wakeup_listener(
     It is therefore named via `OUTBOX_LISTENER_APPLICATION_NAME` so it is easy to
     identify in pg_stat_activity (e.g. in the Adminer dashboard).
 
+    With several web-server replicas, each holds its own LISTEN connection and
+    pg_notify is broadcast, so every replica wakes up on every event. That is
+    harmless: the claims in _repository deduplicate the work (per-aggregate
+    advisory lock + FOR UPDATE SKIP LOCKED), so each event is processed by
+    exactly one replica while the others simply find nothing to claim.
+
     Yields the event that pg_notify('outbox_wakeup') sets: pass it as the
     `early_wake_up_event` of a periodic drain task, so events are picked up as
     soon as they land instead of waiting for the next poll interval.
