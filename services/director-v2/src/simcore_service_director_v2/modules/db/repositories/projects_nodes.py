@@ -5,6 +5,7 @@ from models_library.projects import NodesDict, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ....core.errors import ProjectNodeNotFoundError
 from ...db.repositories import BaseRepository
@@ -28,8 +29,14 @@ _NODE_COLUMNS: Final = (
 
 
 class ProjectsNodesRepository(BaseRepository):
-    async def exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+    async def exists(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+        node_id: NodeID,
+    ) -> bool:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             stmt = sa.select(
                 sa.exists().where(
                     projects_nodes.c.project_uuid == f"{project_id}",
@@ -39,8 +46,14 @@ class ProjectsNodesRepository(BaseRepository):
             result = await conn.execute(stmt)
             return result.scalar_one()
 
-    async def get(self, project_id: ProjectID, node_id: NodeID) -> Node:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+    async def get(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+        node_id: NodeID,
+    ) -> Node:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             stmt = sa.select(*_NODE_COLUMNS).where(
                 projects_nodes.c.project_uuid == f"{project_id}",
                 projects_nodes.c.node_id == f"{node_id}",
@@ -51,8 +64,13 @@ class ProjectsNodesRepository(BaseRepository):
                 raise ProjectNodeNotFoundError(project_id=project_id, node_id=node_id)
             return Node.model_validate({k: v for k, v in row.items() if v is not None})
 
-    async def get_all(self, project_id: ProjectID) -> NodesDict:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+    async def get_all(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> NodesDict:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             stmt = sa.select(projects_nodes.c.node_id, *_NODE_COLUMNS).where(
                 projects_nodes.c.project_uuid == f"{project_id}"
             )
@@ -65,8 +83,13 @@ class ProjectsNodesRepository(BaseRepository):
                 for row in result.mappings()
             }
 
-    async def list_nodes_ids(self, project_id: ProjectID) -> list[NodeID]:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+    async def list_nodes_ids(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> list[NodeID]:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             stmt = sa.select(projects_nodes.c.node_id).where(projects_nodes.c.project_uuid == f"{project_id}")
             result = await conn.execute(stmt)
             return [NodeID(node_id) for node_id in result.scalars()]

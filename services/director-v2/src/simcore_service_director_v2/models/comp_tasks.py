@@ -265,6 +265,10 @@ class ComputationTaskForRpcDBGet(BaseModel):
     started_at: dt.datetime | None
     ended_at: dt.datetime | None
 
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
     @field_validator("state", mode="before")
     @classmethod
     def _convert_from_state_type_enum_if_needed(cls, v):

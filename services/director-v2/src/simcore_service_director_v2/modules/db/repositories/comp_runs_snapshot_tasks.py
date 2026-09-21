@@ -6,12 +6,15 @@ from models_library.basic_types import IDStr
 from models_library.computations import CollectionRunID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
     COMP_RUN_SNAPSHOT_TASKS_DB_COLS,
 )
 from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ....models.comp_run_snapshot_tasks import CompRunSnapshotTaskDBGet
 from ..tables import comp_run_snapshot_tasks, comp_runs
@@ -21,12 +24,17 @@ logger = logging.getLogger(__name__)
 
 
 class CompRunsSnapshotTasksRepository(BaseRepository):
-    async def batch_create(self, *, data: list[dict]) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
+    async def batch_create(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        data: list[dict],
+    ) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
         if not data:
             logger.warning("No data provided for batch creation of comp run snapshot tasks")
             return
 
-        async with transaction_context(self.db_engine) as conn:
+        async with transaction_context(self.db_engine, connection) as conn:
             try:
                 await conn.execute(
                     comp_run_snapshot_tasks.insert().returning(*COMP_RUN_SNAPSHOT_TASKS_DB_COLS),
@@ -38,6 +46,7 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
 
     async def list_computation_collection_run_tasks(
         self,
+        connection: AsyncConnection | None = None,
         *,
         product_name: ProductName,
         user_id: int,
@@ -96,11 +105,9 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
+            result = await conn.execute(list_query)
 
-            items = [
-                CompRunSnapshotTaskDBGet.model_validate(row, from_attributes=True)
-                async for row in await conn.stream(list_query)
-            ]
+            items = TypeAdapter(list[CompRunSnapshotTaskDBGet]).validate_python(result.all())
             return cast(int, total_count), items

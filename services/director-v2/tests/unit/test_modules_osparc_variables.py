@@ -8,7 +8,6 @@
 import asyncio
 import json
 from collections.abc import AsyncIterable
-from contextlib import asynccontextmanager
 from copy import deepcopy
 from typing import Final
 from unittest.mock import AsyncMock, Mock
@@ -117,12 +116,12 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
 
 @pytest.fixture
 def mock_repo_db_engine(mocker: MockerFixture) -> None:
-    @asynccontextmanager
-    async def _connect():
-        yield
+    mocked_conn = AsyncMock()
+    mocked_conn.closed = False
 
     mocked_engine = AsyncMock()
-    mocked_engine.connect = _connect
+    # NOTE: AsyncEngine.connect() is awaitable (not an async context manager factory)
+    mocked_engine.connect = AsyncMock(return_value=mocked_conn)
 
     def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)

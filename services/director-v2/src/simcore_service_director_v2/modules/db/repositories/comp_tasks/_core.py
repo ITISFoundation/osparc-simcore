@@ -14,8 +14,10 @@ from models_library.wallets import WalletInfo
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import (
     ComputationalTaskJobIdAlreadySetError,
@@ -35,8 +37,14 @@ _logger = logging.getLogger(__name__)
 
 
 class CompTasksRepository(BaseRepository):
-    async def get_task(self, project_id: ProjectID, node_id: NodeID) -> CompTaskAtDB:
-        async with self.db_engine.connect() as conn:
+    async def get_task(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+        node_id: NodeID,
+    ) -> CompTaskAtDB:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
@@ -49,17 +57,21 @@ class CompTasksRepository(BaseRepository):
 
     async def list_tasks(
         self,
+        connection: AsyncConnection | None = None,
+        *,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
             return TypeAdapter(list[CompTaskAtDB]).validate_python(result.all())
 
     async def list_computational_tasks(
         self,
+        connection: AsyncConnection | None = None,
+        *,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(
                 sa.select(comp_tasks).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
@@ -69,6 +81,7 @@ class CompTasksRepository(BaseRepository):
 
     async def list_computational_tasks_rpc_domain(
         self,
+        connection: AsyncConnection | None = None,
         *,
         project_ids: list[ProjectID],
         # pagination
@@ -109,17 +122,17 @@ class CompTasksRepository(BaseRepository):
             )
         list_query = list_query.offset(offset).limit(limit)
 
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
+            result = await conn.execute(list_query)
 
-            items = [
-                ComputationTaskForRpcDBGet.model_validate(row, from_attributes=True)
-                async for row in await conn.stream(list_query)
-            ]
+            items = TypeAdapter(list[ComputationTaskForRpcDBGet]).validate_python(result.all())
             return cast(int, total_count), items
 
-    async def task_exists(self, project_id: ProjectID, node_id: NodeID) -> bool:
-        async with self.db_engine.connect() as conn:
+    async def task_exists(
+        self, project_id: ProjectID, node_id: NodeID, *, connection: AsyncConnection | None = None
+    ) -> bool:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             nid: str | None = await conn.scalar(
                 sa.select(comp_tasks.c.node_id).where(
                     (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
@@ -145,7 +158,7 @@ class CompTasksRepository(BaseRepository):
         If insufficient_credits is True, affected published nodes were set to ABORTED.
         """
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
-        async with self.db_engine.begin() as conn:
+        async with transaction_context(self.db_engine) as conn:
             list_of_comp_tasks_in_project, insufficient_credits = (
                 # WARNING: this is NOT a real repository method, it is a utility function
                 # that calls backend services to generate the tasks list!! Refactoring needed!!
@@ -209,13 +222,20 @@ class CompTasksRepository(BaseRepository):
                 )
             return inserted_comp_tasks_db, insufficient_credits
 
-    async def _update_task(self, project_id: ProjectID, task: NodeID, run_id: RunID, **task_kwargs) -> CompTaskAtDB:
+    async def _update_task(
+        self,
+        project_id: ProjectID,
+        task: NodeID,
+        run_id: RunID,
+        connection: AsyncConnection | None = None,
+        **task_kwargs,
+    ) -> CompTaskAtDB:
         with log_context(
             _logger,
             logging.DEBUG,
             msg=f"update task {project_id=}:{task=} with '{task_kwargs}'",
         ):
-            async with self.db_engine.begin() as conn:
+            async with transaction_context(self.db_engine, connection) as conn:
                 result: CursorResult = await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}"))
@@ -236,7 +256,15 @@ class CompTasksRepository(BaseRepository):
                 row = result.one()
                 return CompTaskAtDB.model_validate(row)
 
-    async def set_task_job_id(self, project_id: ProjectID, task: NodeID, run_id: RunID, job_id: str) -> None:
+    async def set_task_job_id(
+        self,
+        project_id: ProjectID,
+        task: NodeID,
+        run_id: RunID,
+        job_id: str,
+        *,
+        connection: AsyncConnection | None = None,
+    ) -> None:
         """sets the task's job_id and atomically moves it to PENDING.
 
         Raises:
@@ -244,7 +272,7 @@ class CompTasksRepository(BaseRepository):
             ComputationalTaskJobIdAlreadySetError: if the task already has a job_id
         """
         task_kwargs = {"job_id": job_id, "state": RUNNING_STATE_TO_DB[RunningState.PENDING]}
-        async with self.db_engine.begin() as conn:
+        async with transaction_context(self.db_engine, connection) as conn:
             result: CursorResult = await conn.execute(
                 sa.update(comp_tasks)
                 .where(
@@ -281,12 +309,15 @@ class CompTasksRepository(BaseRepository):
         task: NodeID,
         run_id: RunID,
         errors: list[ErrorDict] | None = None,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> None:
         """clears the backend job reference so the scheduler picks the task up again"""
         await self._update_task(
             project_id,
             task,
             run_id,
+            connection,
             state=RUNNING_STATE_TO_DB[RunningState.WAITING_FOR_CLUSTER],
             job_id=None,
             progress=None,
@@ -295,13 +326,14 @@ class CompTasksRepository(BaseRepository):
             errors=errors,
         )
 
-    async def update_project_tasks_state(
+    async def update_project_tasks_state(  # pylint: disable=too-many-arguments
         self,
         project_id: ProjectID,
         run_id: RunID,
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
+        connection: AsyncConnection | None = None,
         *,
         clear_errors: bool = True,
         optional_progress: float | None = None,
@@ -338,7 +370,7 @@ class CompTasksRepository(BaseRepository):
             logging.DEBUG,
             msg=f"update tasks state {project_id=}:{node_ids=} with '{update_values}'",
         ):
-            async with self.db_engine.begin() as conn:
+            async with transaction_context(self.db_engine, connection) as conn:
                 await conn.execute(
                     sa.update(comp_tasks)
                     .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(node_ids)))
@@ -361,8 +393,10 @@ class CompTasksRepository(BaseRepository):
         node_id: NodeID,
         run_id: RunID,
         progress: float,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> None:
-        await self._update_task(project_id, node_id, run_id, progress=progress)
+        await self._update_task(project_id, node_id, run_id, connection, progress=progress)
 
     async def update_project_task_last_heartbeat(
         self,
@@ -370,21 +404,32 @@ class CompTasksRepository(BaseRepository):
         node_id: NodeID,
         run_id: RunID,
         heartbeat_time: datetime,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> None:
-        await self._update_task(project_id, node_id, run_id, last_heartbeat=heartbeat_time)
+        await self._update_task(project_id, node_id, run_id, connection, last_heartbeat=heartbeat_time)
 
-    async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
-        async with self.db_engine.begin() as conn:
+    async def delete_tasks_from_project(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> None:
+        async with transaction_context(self.db_engine, connection) as conn:
             await conn.execute(sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
 
     async def get_outputs_from_tasks(
-        self, project_id: ProjectID, node_ids: set[NodeID]
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+        node_ids: set[NodeID],
     ) -> dict[NodeID, dict[IDStr, Any]]:
         selection = list(map(str, node_ids))
         query = sa.select(comp_tasks.c.node_id, comp_tasks.c.outputs).where(
             (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(selection))
         )
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(query)
             rows = result.all()
             if rows:

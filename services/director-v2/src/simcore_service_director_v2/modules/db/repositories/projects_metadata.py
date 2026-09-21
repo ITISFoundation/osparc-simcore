@@ -5,6 +5,8 @@ from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_projects_metadata import (
     get as projects_metadata_get,
 )
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ._base import BaseRepository
 
@@ -18,12 +20,17 @@ class ProjectAncestors:
 
 
 class ProjectsMetadataRepository(BaseRepository):
-    async def get_project_ancestors(self, project_id: ProjectID) -> ProjectAncestors:
+    async def get_project_ancestors(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_id: ProjectID,
+    ) -> ProjectAncestors:
         """
         Raises:
             DBProjectNotFoundError: project not found
         """
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             project_metadata = await projects_metadata_get(conn, project_id)
         return ProjectAncestors(
             parent_project_uuid=project_metadata.parent_project_uuid,
