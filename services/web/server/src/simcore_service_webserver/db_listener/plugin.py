@@ -25,6 +25,5 @@ _logger = logging.getLogger(__name__)
 def setup_db_listener(app: web.Application):
     setup_socketio(app)
     setup_projects_db(app)
-    # Creates a task to listen to comp_task pg-db's table events
     setup_db(app)
     app.cleanup_ctx.append(create_comp_tasks_listening_task)
