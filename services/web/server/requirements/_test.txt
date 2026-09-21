@@ -25,7 +25,7 @@ annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-anyio==4.14.2
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -381,6 +381,7 @@ types-pyyaml==6.0.12.20250915
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   asyncpg-stubs
     #   fastapi
     #   fastapi-pagination
