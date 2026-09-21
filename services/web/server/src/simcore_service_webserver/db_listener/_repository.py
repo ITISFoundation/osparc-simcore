@@ -13,6 +13,7 @@ No two replicas can ever process events for the same aggregate concurrently,
 while different aggregates remain fully parallel.
 """
 
+from collections.abc import Sequence
 from typing import Final
 
 from models_library.projects import ProjectID
@@ -26,34 +27,41 @@ from simcore_postgres_database.webserver_models import (
     projects,
 )
 from sqlalchemy import ColumnElement
-from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
 
 from ..projects import exceptions
+from .models import (
+    AggregateID,
+    AggregateType,
+    ClaimedAggregate,
+    CompTask,
+    FailedAttempt,
+    OutboxEventID,
+)
 
-# maximum number of processing attempts before an event is dead-lettered
-# (claims skip it, the row is kept for post-mortem)
-MAX_ATTEMPTS: Final[int] = 10
+# claims skip an event once its attempts reach this (dead-lettered, kept for
+# post-mortem)
+DEAD_LETTER_AFTER_ATTEMPTS: Final[int] = 10
 
 # how many oldest distinct claimable aggregates are inspected (without locking)
 # when picking the aggregate to claim
 CLAIM_CANDIDATE_BATCH: Final[int] = 10
 
-# upper bound on how many pending events of one aggregate are coalesced into a
-# single projection per claim; leftovers stay queued and are claimed next round
-MAX_COALESCE_BATCH: Final[int] = 100
+# upper bound on how many pending events of one aggregate are co-claimed per
+# claim; leftovers stay queued and are claimed next round
+MAX_EVENTS_PER_AGGREGATE_CLAIM: Final[int] = 100
 
 # last_error is a Text column, but keep the stored message bounded anyway
 LAST_ERROR_MAX_LEN: Final[int] = 500
 
 
-def build_claimable_predicate(
-    exclude_aggregates: set[tuple[str, str]],
-) -> ColumnElement[bool]:
+def _claimable_events_predicate(exclude_aggregates: set[tuple[AggregateType, AggregateID]]) -> ColumnElement[bool]:
     """Predicate selecting events this worker may claim: own kind, not exhausted,
     and not an aggregate the current drain already failed on."""
-    claimable = (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC) & (outbox_events.c.attempts < MAX_ATTEMPTS)
+    claimable = (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC) & (
+        outbox_events.c.attempts < DEAD_LETTER_AFTER_ATTEMPTS
+    )
     if exclude_aggregates:
         claimable = claimable & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
             list(exclude_aggregates)
@@ -62,8 +70,8 @@ def build_claimable_predicate(
 
 
 async def acquire_next_claimable_aggregate(
-    conn: AsyncConnection, claimable: ColumnElement[bool]
-) -> tuple[str, str, list[Row]] | None:
+    conn: AsyncConnection, exclude_aggregates: set[tuple[AggregateType, AggregateID]]
+) -> ClaimedAggregate | None:
     """Pick, advisory-lock, and row-lock the oldest claimable aggregate no other replica holds.
 
     The oldest distinct aggregates are listed with a read-only query (no locking at
@@ -83,9 +91,12 @@ async def acquire_next_claimable_aggregate(
     are never processed concurrently, so socketio notifications for one aggregate
     can't be emitted out of order across replicas.
 
-    Returns the (kind, aggregate_id, rows) of the aggregate whose lock and rows were
-    acquired, or None when no candidate aggregate is both free and still pending.
+    Returns the ClaimedAggregate (the locked event ids plus the union of their
+    changed_columns), or None when no candidate aggregate is both free and still
+    pending.
     """
+    claimable = _claimable_events_predicate(exclude_aggregates)
+
     # one row per aggregate (GROUP BY), oldest aggregate first: the batch limit then
     # covers CLAIM_CANDIDATE_BATCH *distinct* aggregates, so a burst of events on one
     # aggregate locked elsewhere cannot crowd healthy aggregates out of the batch
@@ -116,32 +127,38 @@ async def acquire_next_claimable_aggregate(
                 .where(
                     outbox_events.c.kind == kind,
                     outbox_events.c.aggregate_id == aggregate_id,
-                    outbox_events.c.attempts < MAX_ATTEMPTS,
+                    outbox_events.c.attempts < DEAD_LETTER_AFTER_ATTEMPTS,
                 )
                 .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .limit(MAX_COALESCE_BATCH)
+                .limit(MAX_EVENTS_PER_AGGREGATE_CLAIM)
                 .with_for_update(skip_locked=True)
             )
         ).fetchall()
         if co_claimed_rows:
-            return kind, aggregate_id, list(co_claimed_rows)
+            return ClaimedAggregate(
+                kind=AggregateType(kind),
+                aggregate_id=AggregateID(aggregate_id),
+                event_ids=[OutboxEventID(r.id) for r in co_claimed_rows],
+                changed_columns=frozenset(col for r in co_claimed_rows for col in (r.changed_columns or [])),
+            )
         # raced away since the read-only scan above: try the next candidate instead
         # of giving up on the whole batch
     return None
 
 
-async def delete_events(conn: AsyncConnection, event_ids: list[int]) -> None:
+async def remove_claimed_events(conn: AsyncConnection, event_ids: Sequence[OutboxEventID]) -> None:
     await conn.execute(outbox_events.delete().where(outbox_events.c.id.in_(event_ids)))
 
 
-async def record_failed_attempts(engine: AsyncEngine, event_ids: list[int], error: Exception) -> list[Row]:
+async def record_failed_attempts(
+    engine: AsyncEngine, event_ids: Sequence[OutboxEventID], error: Exception
+) -> list[FailedAttempt]:
     """Record a failed processing attempt on every co-claimed event (separate transaction).
 
     The UPDATE bumps `attempts`/`last_error` and (via the auto-update trigger)
     refreshes `modified`, which pushes the events to the back of the oldest-first
     queue and thereby spaces out retries.
-    Returns the updated rows (id, kind, aggregate_id, attempts) so the caller can
-    report retries vs. dead-lettering.
+    Returns the updated events so the caller can report retries vs. dead-lettering.
     """
     async with transaction_context(engine) as conn:
         result = await conn.execute(
@@ -158,12 +175,39 @@ async def record_failed_attempts(engine: AsyncEngine, event_ids: list[int], erro
                 outbox_events.c.attempts,
             )
         )
-        return list(result.fetchall())
+        return [
+            FailedAttempt(
+                event_id=OutboxEventID(r.id),
+                kind=AggregateType(r.kind),
+                aggregate_id=AggregateID(r.aggregate_id),
+                attempts=r.attempts,
+            )
+            for r in result.fetchall()
+        ]
 
 
-async def get_comp_task_row(conn: AsyncConnection, task_id: PositiveInt) -> Row | None:
-    result = await conn.execute(select(comp_tasks).where(comp_tasks.c.task_id == task_id))
-    return result.fetchone()
+async def get_comp_task(conn: AsyncConnection, task_id: int) -> CompTask | None:
+    result = await conn.execute(
+        select(
+            comp_tasks.c.task_id,
+            comp_tasks.c.project_id,
+            comp_tasks.c.node_id,
+            comp_tasks.c.outputs,
+            comp_tasks.c.run_hash,
+            comp_tasks.c.state,
+        ).where(comp_tasks.c.task_id == task_id)
+    )
+    row = result.fetchone()
+    if row is None:
+        return None
+    return CompTask(
+        task_id=row.task_id,
+        project_id=row.project_id,
+        node_id=row.node_id,
+        outputs=row.outputs,
+        run_hash=row.run_hash,
+        state=row.state,
+    )
 
 
 async def get_project_owner(conn: AsyncConnection, project_uuid: ProjectID) -> UserID:

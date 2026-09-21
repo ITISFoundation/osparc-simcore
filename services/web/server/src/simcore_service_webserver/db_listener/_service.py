@@ -21,7 +21,6 @@ Failed attempts are counted on the row itself; events that exceed the maximum
 number of attempts are dead-lettered (skipped by claims, kept for post-mortem).
 """
 
-import dataclasses
 import logging
 from typing import Final
 
@@ -31,7 +30,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_postgres_database.utils_repos import transaction_context
-from sqlalchemy.engine import Row
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -43,20 +41,27 @@ from ..projects.api import (
     update_project_node_state,
 )
 from ._repository import (
-    MAX_ATTEMPTS,
+    DEAD_LETTER_AFTER_ATTEMPTS,
     acquire_next_claimable_aggregate,
-    build_claimable_predicate,
-    delete_events,
-    get_comp_task_row,
+    get_comp_task,
     get_project_owner,
     record_failed_attempts,
+    remove_claimed_events,
 )
 from ._utils import convert_state_from_db
-from .models import ClaimOutcome
+from .errors import OutboxProcessingError
+from .models import (
+    DB_OUTBOX_CHANGED_COLUMN_STATE,
+    DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS,
+    AggregateID,
+    AggregateType,
+    ClaimOutcome,
+    FailedAttempt,
+)
 
-_MAX_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
+_MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
 
-# only these count towards _MAX_FAILED_AGGREGATES_PER_DRAIN: a broken DB/socket
+# only these count towards _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: a broken DB/socket
 # connection affects every aggregate alike, unlike an application-level bug tied to
 # specific rows, which must not halt the rest of an otherwise healthy drain
 _INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (
@@ -64,9 +69,6 @@ _INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (
     OSError,
     TimeoutError,
 )
-
-# a change to any of these columns must refresh the node's outputs projection
-_OUTPUTS_CHANGED_COLUMNS: Final[frozenset[str]] = frozenset({"outputs", "run_hash"})
 
 _logger = logging.getLogger(__name__)
 
@@ -92,7 +94,7 @@ async def _update_project_state(
     await notify_project_state_update(app, project)
 
 
-async def process_outbox_event(
+async def _process_outbox_event(
     app: web.Application,
     conn: AsyncConnection,
     task_id: int,
@@ -107,65 +109,62 @@ async def process_outbox_event(
     state; the socketio notifications themselves are not transactional and may be
     re-sent on a retried attempt (at-least-once, not exactly-once).
     """
-    comp_task_row = await get_comp_task_row(conn, task_id)
+    comp_task = await get_comp_task(conn, task_id)
 
-    if not comp_task_row:
+    if not comp_task:
         _logger.warning(
             "comp_tasks row (task_id=%d) not found; skipping stale outbox event",
             task_id,
         )
         return
 
-    project_id = ProjectID(comp_task_row.project_id)
-    node_id = NodeID(comp_task_row.node_id)
-
     try:
-        project_owner = await get_project_owner(conn, project_id)
+        project_owner = await get_project_owner(conn, comp_task.project_id)
     except exceptions.ProjectOwnerNotFoundError:
         _logger.warning(
             "project owner not found for project_id=%s; skipping stale outbox event",
-            project_id,
+            comp_task.project_id,
         )
         return
 
     try:
-        if changed_columns & _OUTPUTS_CHANGED_COLUMNS:
+        if changed_columns & DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS:
             await update_node_outputs(
                 app,
                 project_owner,
-                project_id,
-                node_id,
-                comp_task_row.outputs or {},
-                comp_task_row.run_hash,
+                comp_task.project_id,
+                comp_task.node_id,
+                comp_task.outputs or {},
+                comp_task.run_hash,
                 ui_changed_keys=None,
                 client_session_id=None,
             )
 
-        if "state" in changed_columns and (comp_task_row.state is not None):
+        if DB_OUTBOX_CHANGED_COLUMN_STATE in changed_columns and (comp_task.state is not None):
             await _update_project_state(
                 app,
                 project_owner,
-                project_id,
-                node_id,
-                convert_state_from_db(comp_task_row.state),
+                comp_task.project_id,
+                comp_task.node_id,
+                convert_state_from_db(comp_task.state),
             )
     except exceptions.ProjectNotFoundError:
         _logger.warning(
             "project %s not found; skipping stale outbox event",
-            project_id,
+            comp_task.project_id,
         )
     except exceptions.NodeNotFoundError:
         _logger.warning(
             "node %s in project %s not found; skipping stale outbox event",
-            node_id,
-            project_id,
+            comp_task.node_id,
+            comp_task.project_id,
         )
 
 
-async def claim_and_process_one_outbox_event(
+async def _claim_and_process_one_outbox_event(
     app: web.Application,
     engine: AsyncEngine,
-    exclude_aggregates: set[tuple[str, str]],
+    exclude_aggregates: set[tuple[AggregateType, AggregateID]],
 ) -> ClaimOutcome | None:
     """Claim, process, and delete every pending event of one aggregate (at-least-once).
 
@@ -175,15 +174,16 @@ async def claim_and_process_one_outbox_event(
     rows locked -- all pending events of the winning aggregate are co-claimed
     (FOR UPDATE SKIP LOCKED) and projected once: the union of their changed_columns
     describes everything that happened since the last projection, and
-    process_outbox_event re-reads the current comp_tasks row, so a burst of N events
+    _process_outbox_event re-reads the current comp_tasks row, so a burst of N events
     for one aggregate fans out a single socketio notification instead of N.
 
     The claim-process-delete cycle runs in a single transaction: the advisory lock and
     the winner's row locks are held while the events are processed, and released
-    automatically on commit or rollback. Rolling back a failed attempt undoes the
-    *claim* (locks + pending delete) only: the projection writes through the app's
-    repositories and socketio, outside this transaction, so retries are at-least-once
-    and converge by re-reading the current row.
+    automatically on commit or rollback. A failed projection rolls back only the
+    *claim* (locks + pending delete): the projection itself writes through the app's
+    repositories and socket.io -- outside this transaction -- so those writes are not
+    undone and the retried attempt converges by re-reading the current row
+    (at-least-once delivery).
 
     ``exclude_aggregates`` is a set of (kind, aggregate_id) pairs the drain wants to
     skip, so an aggregate that already failed in this drain cannot starve the rest of
@@ -196,76 +196,62 @@ async def claim_and_process_one_outbox_event(
     NOTE: processing runs while the transaction (and both locks) is open, so it must
     remain short-lived (DB updates + socketio notifications only).
     """
-    processing_error: tuple[ClaimOutcome, list[int], Exception] | None = None
-
     try:
         async with transaction_context(engine) as conn:
-            claimable = build_claimable_predicate(exclude_aggregates)
-
             # elect one free aggregate (advisory lock + row lock) before processing
-            winner = await acquire_next_claimable_aggregate(conn, claimable)
-            if winner is None:
+            claimed = await acquire_next_claimable_aggregate(conn, exclude_aggregates)
+            if claimed is None:
                 # drained, or every candidate aggregate is locked by another replica
                 return None
-            kind, aggregate_id, co_claimed_rows = winner
-            claimed_ids = [r.id for r in co_claimed_rows]
-            changed_columns = frozenset(col for r in co_claimed_rows for col in (r.changed_columns or []))
 
             _logger.debug(
                 "Claimed %d outbox event(s) (kind=%s aggregate_id=%s)",
-                len(claimed_ids),
-                kind,
-                aggregate_id,
+                len(claimed.event_ids),
+                claimed.kind,
+                claimed.aggregate_id,
             )
-            outcome = ClaimOutcome(success=True, kind=kind, aggregate_id=aggregate_id)
             try:
-                await process_outbox_event(app, conn, int(aggregate_id), changed_columns)
+                await _process_outbox_event(app, conn, int(claimed.aggregate_id), claimed.changed_columns)
             except Exception as exc:
-                # re-raise so the context manager rolls back the claim: the advisory
-                # and row locks are released and the events stay in place for any
-                # replica to re-claim. Only the claim is transactional -- a partially
-                # applied projection already committed through the app's repositories
-                # and socket.io and is NOT undone here (at-least-once: the retry
-                # re-reads the current row, so the projection converges).
-                processing_error = (outcome, claimed_ids, exc)
-                raise
+                raise OutboxProcessingError(
+                    kind=claimed.kind,
+                    aggregate_id=claimed.aggregate_id,
+                    event_ids=claimed.event_ids,
+                    cause=exc,
+                ) from exc
 
-            # success: remove all co-claimed events within the same transaction
-            await delete_events(conn, claimed_ids)
-    except Exception:  # pylint: disable=broad-exception-caught
-        if processing_error is None:
-            raise
-
-    if processing_error is not None:
-        failed_outcome, claimed_ids, failed_exc = processing_error
-        updated = await record_failed_attempts(engine, claimed_ids, failed_exc)
-        _log_failed_attempts(updated, failed_exc)
-        return dataclasses.replace(
-            failed_outcome,
+            await remove_claimed_events(conn, claimed.event_ids)
+    except OutboxProcessingError as failed:
+        updated = await record_failed_attempts(engine, failed.event_ids, failed.cause)
+        _log_failed_attempts(updated, failed.cause)
+        return ClaimOutcome(
             success=False,
-            is_infra_error=isinstance(failed_exc, _INFRA_EXCEPTION_TYPES),
+            kind=failed.kind,
+            aggregate_id=failed.aggregate_id,
+            is_infra_error=isinstance(failed.cause, _INFRA_EXCEPTION_TYPES),
         )
-    return outcome
+
+    return ClaimOutcome(success=True, kind=claimed.kind, aggregate_id=claimed.aggregate_id)
 
 
-def _log_failed_attempts(updated_rows: list[Row], error: Exception) -> None:
-    for row in updated_rows:
-        if row.attempts >= MAX_ATTEMPTS:
+def _log_failed_attempts(failed_attempts: list[FailedAttempt], error: Exception) -> None:
+    for attempt in failed_attempts:
+        if attempt.attempts >= DEAD_LETTER_AFTER_ATTEMPTS:
             _logger.error(
                 "Outbox event %d (kind=%s, aggregate_id=%s) dead-lettered after %d attempts; last error: %s",
-                row.id,
-                row.kind,
-                row.aggregate_id,
-                MAX_ATTEMPTS,
+                attempt.event_id,
+                attempt.kind,
+                attempt.aggregate_id,
+                DEAD_LETTER_AFTER_ATTEMPTS,
                 error,
             )
         else:
             _logger.warning(
                 "Outbox event %d (aggregate_id=%s) failed attempt %d/%d, will retry: %s",
-                row.id,
-                row.aggregate_id,
-                row.attempts,
-                MAX_ATTEMPTS,
+                attempt.event_id,
+                attempt.aggregate_id,
+                attempt.attempts,
+                DEAD_LETTER_AFTER_ATTEMPTS,
                 error,
             )
 
@@ -291,23 +277,23 @@ async def claim_and_process_outbox_events(app: web.Application, engine: AsyncEng
     The drain also stops when every claimable event's aggregate is currently locked
     by another replica: the next cycle will retry, by which time that replica is likely done.
     """
-    failed_aggregates: set[tuple[str, str]] = set()
-    consecutive_failed_aggregates = 0
+    failed_aggregates: set[tuple[AggregateType, AggregateID]] = set()
+    consecutive_infra_failed_aggregates = 0
     while True:
-        outcome = await claim_and_process_one_outbox_event(app, engine, failed_aggregates)
+        outcome = await _claim_and_process_one_outbox_event(app, engine, failed_aggregates)
         if outcome is None:
             return  # queue drained, or all remaining aggregates are locked elsewhere
         if outcome.success:
-            consecutive_failed_aggregates = 0
+            consecutive_infra_failed_aggregates = 0
             continue
         failed_aggregates.add((outcome.kind, outcome.aggregate_id))
         if not outcome.is_infra_error:
             continue  # application-level failure: does not threaten the rest of the drain
-        consecutive_failed_aggregates += 1
-        if consecutive_failed_aggregates >= _MAX_FAILED_AGGREGATES_PER_DRAIN:
+        consecutive_infra_failed_aggregates += 1
+        if consecutive_infra_failed_aggregates >= _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN:
             _logger.warning(
                 "Stopping outbox drain after %d aggregates failed with an infrastructure-like"
                 " error and no success in-between; will retry on next cycle",
-                consecutive_failed_aggregates,
+                consecutive_infra_failed_aggregates,
             )
             return
