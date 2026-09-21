@@ -404,10 +404,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             del self._inverse_search_mapping[node_uuid]
             self._to_observe.pop(service_name, None)
-            # NOTE: a running observation task self-cleans via its done-callback, but a
-            # `_DISABLED_MARK` entry (set via `toggle_observation(disable=True)`) has no
-            # callback and would stay in the dict forever, leaking one entry per service.
-            self._service_observation_task.pop(service_name, None)
+            # NOTE: a live task self-cleans via its done-callback and must stay visible
+            # to `shutdown()` (this runs from inside it). Only `_DISABLED_MARK` has no
+            # callback and would otherwise linger forever.
+            if self._service_observation_task.get(service_name) is _DISABLED_MARK:
+                self._service_observation_task.pop(service_name, None)
 
         _logger.debug("Removed service '%s' from scheduler", service_name)
 
