@@ -17,7 +17,7 @@ alembic==1.15.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==4.8.0
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -58,6 +58,10 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -173,7 +177,6 @@ rpds-py==0.28.0
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asgi-lifespan
 sqlalchemy==2.0.51
     # via
@@ -185,10 +188,11 @@ types-psycopg2==2.9.21.20260223
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic
+    #   anyio
     #   mypy
     #   sqlalchemy
 urllib3==2.7.0

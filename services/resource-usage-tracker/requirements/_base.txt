@@ -38,7 +38,7 @@ annotated-doc==0.0.5
     # via fastapi
 annotated-types==0.7.0
     # via pydantic
-anyio==4.3.0
+anyio==4.15.1
     # via
     #   fast-depends
     #   faststream
@@ -434,9 +434,7 @@ shortuuid==1.0.13
 six==1.16.0
     # via python-dateutil
 sniffio==1.3.1
-    # via
-    #   anyio
-    #   asgi-lifespan
+    # via asgi-lifespan
 sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -474,11 +472,12 @@ types-awscrt==0.20.5
     # via botocore-stubs
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   aiodebug
     #   aiodocker
     #   alembic
+    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream

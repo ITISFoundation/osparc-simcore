@@ -6,7 +6,7 @@ annotated-doc==0.0.4
     #   typer
 annotated-types==0.7.0
     # via pydantic
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   httpx
     #   starlette
@@ -149,8 +149,9 @@ typer==0.24.1
     # via
     #   fastapi-cli
     #   fastapi-cloud-cli
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
+    #   anyio
     #   fastapi
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
