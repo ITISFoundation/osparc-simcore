@@ -18,6 +18,6 @@ This is a guideline for repo-wide upgrade of python. Here we assume we are movin
   - SEE for example [PR4047](https://github.com/ITISFoundation/osparc-simcore/pull/4047)
 - Remove ``pylint`` `py3.X` github action and add new step to pylint against next version of `py3.Y` (if any)
 - Update ``pyupgrade`` config in ``pre-commit-config.yaml``:  e.g. ``--py3Y-plus``
-- Update the Python version literals in the AI instruction files: ``.github/instructions/general.instructions.md`` and ``.github/instructions/python.instructions.md``
+- Update the Python version literals in the AI instruction files: ``.github/instructions/python.instructions.md``
 - Is there something we can automate better? Do it now or open an issue
 - Is there something we can document better? Do it!
