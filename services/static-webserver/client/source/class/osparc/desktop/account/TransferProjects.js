@@ -45,12 +45,12 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
       let control = null;
       switch (id) {
         case "intro-text": {
-          const text = this.tr(`\
-            You are about to transfer all your projects to another user.<br>
-            There are two ways to do so:<br>
-            - Share all your projects with the target user and keep the co-ownership. <br>
-            - Share all your projects with the target user and remove yourself as co-owner. <br>
-          `);
+          const text = [
+            this.tr("You are about to transfer all your projects to another user."),
+            this.tr("There are two ways to do so:"),
+            this.tr("- Share all your projects with the target user and keep the co-ownership."),
+            this.tr("- Share all your projects with the target user and remove yourself as co-owner."),
+          ].join("<br>");
           control = new qx.ui.basic.Label().set({
             value: text,
             font: "text-14",
