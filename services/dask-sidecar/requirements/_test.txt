@@ -328,7 +328,7 @@ types-awscrt==0.34.1
     #   botocore-stubs
 types-s3transfer==0.16.0
     # via types-aioboto3
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator

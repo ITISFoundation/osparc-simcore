@@ -322,7 +322,7 @@ tqdm==4.67.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.24.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   aiodebug
     #   fast-depends

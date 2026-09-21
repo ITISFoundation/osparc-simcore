@@ -415,7 +415,7 @@ types-jsonschema==4.26.0.20260202
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via types-boto3
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic

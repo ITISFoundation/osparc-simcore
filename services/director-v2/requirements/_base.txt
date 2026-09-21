@@ -483,7 +483,7 @@ typer==0.20.0
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi-cli
     #   fastapi-cloud-cli
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic

@@ -159,7 +159,7 @@ termcolor==3.3.0
     # via pytest-sugar
 types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   fastapi
     #   mypy

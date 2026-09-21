@@ -336,7 +336,7 @@ types-aiobotocore-ssm==3.8.0
     # via types-aiobotocore
 types-awscrt==0.31.3
     # via botocore-stubs
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   aiodebug
     #   fast-depends

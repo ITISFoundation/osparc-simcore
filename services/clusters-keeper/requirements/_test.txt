@@ -316,7 +316,7 @@ sympy==1.14.0
     # via cfn-lint
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator

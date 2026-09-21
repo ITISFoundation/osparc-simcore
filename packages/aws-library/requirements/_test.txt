@@ -313,7 +313,7 @@ types-s3transfer==0.16.0
     # via
     #   types-aioboto3
     #   types-boto3
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator

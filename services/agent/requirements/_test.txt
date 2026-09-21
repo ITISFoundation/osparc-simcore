@@ -290,7 +290,7 @@ sympy==1.14.0
     # via cfn-lint
 types-aiofiles==25.1.0.20260409
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator

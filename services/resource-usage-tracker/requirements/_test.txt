@@ -306,7 +306,7 @@ termcolor==3.3.0
     # via pytest-sugar
 types-requests==2.32.4.20260107
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic

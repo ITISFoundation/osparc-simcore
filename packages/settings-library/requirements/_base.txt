@@ -38,7 +38,7 @@ shellingham==1.5.4
     # via typer
 typer==0.24.1
     # via -r requirements/_base.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   pydantic
     #   pydantic-core

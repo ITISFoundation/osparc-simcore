@@ -181,7 +181,7 @@ tenacity==9.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   mypy

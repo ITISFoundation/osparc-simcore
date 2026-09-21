@@ -71,7 +71,7 @@ ruff==0.15.6
     # via -r requirements/../../../requirements/devenv.txt
 tomlkit==0.14.0
     # via pylint
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   mypy

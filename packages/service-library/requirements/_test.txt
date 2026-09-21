@@ -278,7 +278,7 @@ types-requests==2.32.4.20260107
     # via types-tqdm
 types-tqdm==4.67.3.20260303
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
