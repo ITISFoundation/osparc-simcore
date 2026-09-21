@@ -12,7 +12,7 @@ alembic==1.17.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-anyio==4.11.0
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -233,7 +233,6 @@ respx==0.22.0
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via
@@ -267,10 +266,11 @@ types-psycopg2==2.9.21.20260223
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic
+    #   anyio
     #   mypy
     #   sqlalchemy
 urllib3==2.7.0

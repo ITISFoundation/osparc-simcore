@@ -16,7 +16,7 @@ aiosignal==1.4.0
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
@@ -278,11 +278,12 @@ types-requests==2.32.4.20260107
     # via types-tqdm
 types-tqdm==4.67.3.20260303
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
+    #   anyio
     #   mypy
     #   sqlalchemy
 urllib3==2.7.0
