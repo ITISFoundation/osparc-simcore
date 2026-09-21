@@ -547,7 +547,7 @@ async def test_scheduler_start_stop_cycles_release_all_bookkeeping(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     faker: Faker,
-) -> None:
+):
     """add -> remove cycles must not leave stale entries behind in any bookkeeping dict"""
     for _ in range(_BOOKKEEPING_CYCLE_COUNT):
         new_scheduler_data = scheduler_data.model_copy(deep=True)
@@ -569,7 +569,7 @@ async def test_scheduler_start_stop_cycles_with_disabled_observation_release_all
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     faker: Faker,
-) -> None:
+):
     """a `_DISABLED_MARK` entry must not survive service removal: it has no done-callback
     to self-clean, so remove_service_from_observation must drop it explicitly"""
     for _ in range(_BOOKKEEPING_CYCLE_COUNT):
