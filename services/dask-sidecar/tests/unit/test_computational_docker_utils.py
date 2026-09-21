@@ -220,9 +220,7 @@ async def test_managed_container_always_removes_container(
 
                 raise exception_type
         # check the container was deleted
-        mocked_aiodocker.assert_has_calls(
-            calls=[call().__aenter__().containers.create().delete(remove=True, v=True, force=True)]
-        )
+        mocked_aiodocker.assert_has_calls(calls=[call().__aenter__().containers.create().delete(v=True, force=True)])
 
 
 async def test_managed_container_with_broken_container_raises_docker_exception(
