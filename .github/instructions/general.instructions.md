@@ -2,7 +2,7 @@
 applyTo: '**'
 ---
 
-This is a Python 3.13 project (see `.python-version` at the repo root) organized as a monorepo of microservices using FastAPI and aiohttp, with JavaScript frontends. See the Python-specific instructions for language-level rules.
+This is a Python project (see `.python-version` at the repo root) organized as a monorepo of microservices using FastAPI and aiohttp, with JavaScript frontends. See the Python-specific instructions for language-level rules.
 
 ## General Guidelines
 
