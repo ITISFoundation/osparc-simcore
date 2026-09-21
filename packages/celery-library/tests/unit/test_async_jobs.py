@@ -87,7 +87,7 @@ NO_RETRY_ASYNC_JOB_NAME = f"{async_job.__name__}_no_retry"
 
 
 @pytest.fixture
-def task_execution_spy() -> MagicMock:
+def task_execution_mock() -> MagicMock:
     _task_execution_mock.reset_mock()
     return _task_execution_mock
 
@@ -311,7 +311,7 @@ async def test_async_jobs_max_retries_zero_never_retries(
     with_celery_worker: WorkController,
     execution_metadata: TaskExecutionMetadata,
     owner_metadata: OwnerMetadata,
-    task_execution_spy: MagicMock,
+    task_execution_mock: MagicMock,
 ):
     error = Exception("generic error")
     async_job = await submit_job(
@@ -341,4 +341,4 @@ async def test_async_jobs_max_retries_zero_never_retries(
     assert exc.value.exc_msg == f"{error}"
 
     # should only ever be called once when retry is disabled
-    assert task_execution_spy.call_count == 1
+    assert task_execution_mock.call_count == 1
