@@ -14,6 +14,7 @@ self._to_observe is protected by an asyncio Lock
 """
 
 import asyncio
+import enum
 import functools
 import logging
 import time
@@ -75,8 +76,15 @@ from ._observer import observing_single_service
 _logger = logging.getLogger(__name__)
 
 
-type Sentinel = object
-_DISABLED_MARK: Sentinel = object()
+class _DisabledMark(enum.Enum):
+    """Sentinel: observation is disabled, no task scheduled for the service."""
+
+    VALUE = enum.auto()
+
+
+_DISABLED_MARK: Final = _DisabledMark.VALUE
+
+type _ObservationEntry = asyncio.Task | _DisabledMark
 
 _MAX_WAIT_TASKS_SHUTDOWN_S: Final[NonNegativeFloat] = 5
 
@@ -89,7 +97,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
     _lock: Lock = field(default_factory=Lock)
     _to_observe: dict[ServiceName, SchedulerData] = field(default_factory=dict)
-    _service_observation_task: dict[ServiceName, asyncio.Task | object | None] = field(default_factory=dict)
+    _service_observation_task: dict[ServiceName, _ObservationEntry | None] = field(default_factory=dict)
     _inverse_search_mapping: dict[NodeID, ServiceName] = field(default_factory=dict)
     _scheduler_task: Task | None = None
     _trigger_observation_queue_task: Task | None = None
@@ -350,7 +358,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             # cancel current observation task
             if service_name in self._service_observation_task:
-                service_task: asyncio.Task | object | None = self._service_observation_task[service_name]
+                service_task: _ObservationEntry | None = self._service_observation_task[service_name]
                 if isinstance(service_task, asyncio.Task):
                     await cancel_wait_task(service_task, max_delay=10)
 
