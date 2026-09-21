@@ -37,31 +37,23 @@ from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
 from simcore_service_webserver.db_listener._repository import (
-    EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER as _EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
-)
-from simcore_service_webserver.db_listener._repository import (
-    MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT as _MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
-)
-from simcore_service_webserver.db_listener._repository import (
-    get_comp_task as _get_comp_task,
-)
-from simcore_service_webserver.db_listener._repository import (
-    get_project_owner as _get_project_owner,
+    EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
+    MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
+    get_comp_task,
+    get_project_owner,
 )
 from simcore_service_webserver.db_listener._service import (
     _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN,
     _claim_and_process_one_outbox_event,
     _process_outbox_event,
-)
-from simcore_service_webserver.db_listener._service import (
-    claim_and_process_outbox_events as _claim_and_process_outbox_events,
+    claim_and_process_outbox_events,
 )
 from simcore_service_webserver.db_listener._task import (
     OUTBOX_LISTENER_APPLICATION_NAME,
     with_outbox_wakeup_listener,
 )
 from simcore_service_webserver.db_listener.errors import CompTaskNotFoundError
-from simcore_service_webserver.db_listener.models import ClaimOutcome as _ClaimOutcome
+from simcore_service_webserver.db_listener.models import ClaimOutcome
 from simcore_service_webserver.db_listener.plugin import (
     create_comp_tasks_listening_task,
 )
@@ -234,7 +226,7 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     # Assert the spy was called with the correct task_id
     if params.expected_calls:
         assert any(call.args[1] == updated_task_id for call in spied_get_comp_task.call_args_list), (
-            f"_get_comp_task was not called with task_id={updated_task_id}. Calls: {spied_get_comp_task.call_args_list}"
+            f"get_comp_task was not called with task_id={updated_task_id}. Calls: {spied_get_comp_task.call_args_list}"
         )
     else:
         spied_get_comp_task.assert_not_called()
@@ -399,7 +391,7 @@ async def test_get_project_owner_returns_valid_owner(
 ):
     project = await create_project(logged_user)
     async with sqlalchemy_async_engine.connect() as conn:
-        owner = await _get_project_owner(conn, project.uuid)
+        owner = await get_project_owner(conn, project.uuid)
     assert owner == logged_user["id"]
 
 
@@ -412,7 +404,7 @@ async def test_get_project_owner_raises_when_project_missing(
     missing_uuid = faker.uuid4()
     async with sqlalchemy_async_engine.connect() as conn:
         with pytest.raises(exceptions.ProjectOwnerNotFoundError):
-            await _get_project_owner(conn, missing_uuid)
+            await get_project_owner(conn, missing_uuid)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -433,7 +425,7 @@ async def test_get_comp_task_returns_task(
         node_class=NodeClass.COMPUTATIONAL,
     )
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_comp_task(conn, task["task_id"])
+        row = await get_comp_task(conn, task["task_id"])
     assert row.task_id == task["task_id"]
 
 
@@ -442,7 +434,7 @@ async def test_get_comp_task_raises_for_missing_task(
 ):
     async with sqlalchemy_async_engine.connect() as conn:
         with pytest.raises(CompTaskNotFoundError):
-            await _get_comp_task(conn, 999999)
+            await get_comp_task(conn, 999999)
 
 
 # --------- Unit tests for outbox claim/process functions ---------
@@ -621,7 +613,7 @@ async def test_claim_and_process_one_deletes_event_on_success(
     # an event was claimed, processed, and deleted
     outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
     assert outcome is not None
-    assert isinstance(outcome, _ClaimOutcome)
+    assert isinstance(outcome, ClaimOutcome)
     assert outcome.success is True
     assert outcome.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC
     assert outcome.aggregate_id == f"{task['task_id']}"
@@ -717,7 +709,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
             comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
         )
         # simulate an event that exhausted its retries
-        await conn.execute(outbox_events.update().values(attempts=_EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER))
+        await conn.execute(outbox_events.update().values(attempts=EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER))
 
     # claims skip dead-lettered events: nothing is claimable
     assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
@@ -725,7 +717,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
     # the dead-lettered row is kept for post-mortem
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows) == 1
-    assert rows[0]["attempts"] == _EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
+    assert rows[0]["attempts"] == EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -761,7 +753,7 @@ async def test_claim_and_process_outbox_events_drains_all_pending_events(
         result = await conn.execute(outbox_events.select())
         assert len(result.fetchall()) == 3
 
-    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+    await claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
 
     assert mock_project_subsystem["update_node_outputs"].call_count == 3
     async with sqlalchemy_async_engine.connect() as conn:
@@ -802,7 +794,7 @@ async def test_drain_coalesces_all_events_of_the_same_aggregate(
     rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows_before) == 10
 
-    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+    await claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
 
     # one projection for all coalesced events, not one per event
     mock_project_subsystem["update_node_outputs"].assert_called_once()
@@ -844,7 +836,7 @@ async def test_drain_coalesces_mixed_changed_columns_of_the_same_aggregate(
     rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows_before) == 2
 
-    await _claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
+    await claim_and_process_outbox_events(client.app, sqlalchemy_async_engine)
 
     # both branches ran exactly once for the coalesced pair
     mock_project_subsystem["update_node_outputs"].assert_called_once()
@@ -899,7 +891,7 @@ async def test_drain_skips_failed_aggregate_and_processes_the_rest(
     )
 
     # the drain must return (no hang / no infinite loop)
-    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+    await asyncio.wait_for(claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
 
     # every healthy aggregate was projected within this same drain
     claimed_task_ids = [call.args[2] for call in mock_process.await_args_list]
@@ -953,7 +945,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
         side_effect=TimeoutError("infrastructure is down"),
     )
 
-    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+    await asyncio.wait_for(claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
 
     # exactly one event per aggregate was marked, oldest-first, and the drain stopped:
     # the remaining event(s) keep attempts == 0
@@ -1004,7 +996,7 @@ async def test_drain_does_not_abort_on_application_level_failures(
         side_effect=RuntimeError("bug in projection code"),
     )
 
-    await asyncio.wait_for(_claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
+    await asyncio.wait_for(claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
 
     # every aggregate was attempted exactly once, none left untouched
     async with sqlalchemy_async_engine.connect() as conn:
@@ -1357,7 +1349,7 @@ async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
 
     # the hot aggregate has more pending events than the candidate batch size, so
     # pre-fix (LIMIT over raw event rows) every candidate would belong to it
-    num_hot_events = _MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT + 2
+    num_hot_events = MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT + 2
     backdated = dt.datetime.now(dt.UTC) - dt.timedelta(minutes=5)
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
