@@ -1944,6 +1944,123 @@ async def test_running_pipeline_triggers_heartbeat(
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 
 
+async def test_task_progress_event_reconciles_missing_job_id(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
+):
+    """Regression test: a progress event for a job_id dask already accepted, but whose DB
+    write (job_id, PENDING) never committed (see private-issues#648), must reconcile the
+    job_id instead of promoting the task to STARTED with job_id left NULL."""
+    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
+    run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
+    )
+    expected_pending_tasks, _ = await _assert_publish_in_dask_backend(
+        sqlalchemy_async_engine,
+        published_project,
+        expected_published_tasks,
+        mocked_dask_client,
+        scheduler_api,
+        computational_pipeline_rabbit_client_parser,
+    )
+    task = expected_pending_tasks[0]
+    assert task.job_id
+
+    # simulate the DB write never being committed: job_id is lost even though dask has it
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update()
+            .where(comp_tasks.c.project_id == f"{task.project_id}")
+            .where(comp_tasks.c.node_id == f"{task.node_id}")
+            .values(job_id=None)
+        )
+
+    await _trigger_progress_event(
+        scheduler_api,
+        job_id=task.job_id,
+        user_id=run_in_db.user_id,
+        project_id=task.project_id,
+        node_id=task.node_id,
+    )
+
+    persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=task.project_id,
+        task_ids=[task.node_id],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
+        run_id=run_in_db.run_id,
+    )
+    assert persisted_tasks[0].job_id == task.job_id
+
+
+async def test_task_progress_event_with_mismatching_job_id_is_ignored(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    mocked_dask_client: mock.MagicMock,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
+):
+    """Regression test: a stale/duplicate progress event for a job_id the task no longer owns
+    (e.g. it was resubmitted with a new job_id since) must be ignored, not applied."""
+    _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
+    run_in_db, expected_published_tasks = await _assert_start_pipeline(
+        initialized_app,
+        sqlalchemy_async_engine=sqlalchemy_async_engine,
+        published_project=published_project,
+        run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
+    )
+    expected_pending_tasks, _ = await _assert_publish_in_dask_backend(
+        sqlalchemy_async_engine,
+        published_project,
+        expected_published_tasks,
+        mocked_dask_client,
+        scheduler_api,
+        computational_pipeline_rabbit_client_parser,
+    )
+    task = expected_pending_tasks[0]
+    assert task.job_id
+
+    await _trigger_progress_event(
+        scheduler_api,
+        job_id="some-other-stale-job-id",
+        user_id=run_in_db.user_id,
+        project_id=task.project_id,
+        node_id=task.node_id,
+    )
+
+    # untouched: still PENDING with its original job_id, not promoted to STARTED
+    persisted_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=task.project_id,
+        task_ids=[task.node_id],
+        expected_state=RunningState.PENDING,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
+    assert persisted_tasks[0].job_id == task.job_id
+
+
 @pytest.fixture
 async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
