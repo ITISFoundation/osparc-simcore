@@ -25,7 +25,7 @@ annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-anyio==4.3.0
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -107,6 +107,10 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -339,10 +343,6 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   rfc3339-validator
-sniffio==1.3.1
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
 sortedcontainers==2.4.0
     # via
     #   fakeredis
@@ -378,9 +378,10 @@ types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   asyncpg-stubs
     #   fastapi
     #   fastapi-pagination
