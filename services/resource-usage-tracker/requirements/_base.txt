@@ -13,7 +13,7 @@ aiocache==0.12.2
     #   -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.21.0
+aiodocker==0.27.0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==23.2.1
     # via
@@ -477,7 +477,6 @@ types-python-dateutil==2.9.0.20240316
 typing-extensions==4.14.1
     # via
     #   aiodebug
-    #   aiodocker
     #   alembic
     #   fast-depends
     #   fastapi

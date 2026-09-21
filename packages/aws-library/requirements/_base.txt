@@ -12,7 +12,7 @@ aiocache==0.12.3
     #   -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.26.0
+aiodocker==0.27.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==25.1.0
     # via
