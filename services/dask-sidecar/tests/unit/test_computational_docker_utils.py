@@ -91,31 +91,33 @@ async def test_create_container_config(
         envs=task_envs,
         labels=task_labels,
     )
-    assert container_config.model_dump(by_alias=True) == ({
-        "Env": [
-            "INPUT_FOLDER=/inputs",
-            "OUTPUT_FOLDER=/outputs",
-            "LOG_FOLDER=/logs",
-            f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
-            f"SIMCORE_NANO_CPUS_LIMIT={task_max_resources.get('CPU', 1) * 1e9:.0f}",
-            f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024**3)}",
-            *[f"{env_var}={env_value}" for env_var, env_value in task_envs.items()],
-        ],
-        "Cmd": command,
-        "Image": f"{docker_registry}/{image}:{tag}",
-        "Labels": task_labels,
-        "HostConfig": {
-            "Binds": [
-                f"{comp_volume_mount_point}/inputs:/inputs",
-                f"{comp_volume_mount_point}/outputs:/outputs",
-                f"{comp_volume_mount_point}/logs:/logs",
+    assert container_config.model_dump(by_alias=True) == (
+        {
+            "Env": [
+                "INPUT_FOLDER=/inputs",
+                "OUTPUT_FOLDER=/outputs",
+                "LOG_FOLDER=/logs",
+                f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
+                f"SIMCORE_NANO_CPUS_LIMIT={task_max_resources.get('CPU', 1) * 1e9:.0f}",
+                f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024**3)}",
+                *[f"{env_var}={env_value}" for env_var, env_value in task_envs.items()],
             ],
-            "Init": True,
-            "Memory": task_max_resources.get("RAM", 1024**3),
-            "MemorySwap": task_max_resources.get("RAM", 1024**3),
-            "NanoCPUs": task_max_resources.get("CPU", 1) * 1e9,
-        },
-    })
+            "Cmd": command,
+            "Image": f"{docker_registry}/{image}:{tag}",
+            "Labels": task_labels,
+            "HostConfig": {
+                "Binds": [
+                    f"{comp_volume_mount_point}/inputs:/inputs",
+                    f"{comp_volume_mount_point}/outputs:/outputs",
+                    f"{comp_volume_mount_point}/logs:/logs",
+                ],
+                "Init": True,
+                "Memory": task_max_resources.get("RAM", 1024**3),
+                "MemorySwap": task_max_resources.get("RAM", 1024**3),
+                "NanoCPUs": task_max_resources.get("CPU", 1) * 1e9,
+            },
+        }
+    )
 
 
 @pytest.mark.parametrize("with_timestamp", [True, False], ids=str)
