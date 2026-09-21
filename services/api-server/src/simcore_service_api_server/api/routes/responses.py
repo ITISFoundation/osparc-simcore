@@ -67,6 +67,10 @@ _TASK_NAME = "run_chat_completion"
             "description": "The request was rejected by the chatbot service",
             "model": ErrorGet,
         },
+        status.HTTP_502_BAD_GATEWAY: {
+            "description": "The chatbot service could not be reached or failed",
+            "model": ErrorGet,
+        },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
             "description": "Chatbot service is not enabled",
             "model": ErrorGet,

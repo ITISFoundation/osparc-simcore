@@ -8981,6 +8981,16 @@
               }
             }
           },
+          "502": {
+            "description": "The chatbot service could not be reached or failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Chatbot service is not enabled",
             "content": {
