@@ -75,7 +75,9 @@ from ._observer import observing_single_service
 _logger = logging.getLogger(__name__)
 
 
-_DISABLED_MARK = object()
+type Sentinel = object
+_DISABLED_MARK: Sentinel = object()
+
 _MAX_WAIT_TASKS_SHUTDOWN_S: Final[NonNegativeFloat] = 5
 
 
