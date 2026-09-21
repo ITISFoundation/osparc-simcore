@@ -64,18 +64,18 @@ async def _process_action(action: str, payload: Any) -> Any:
 
 
 # records every task execution attempt (incl. retries) so tests can assert on retry counts
-_task_execution_spy = MagicMock()
+_task_execution_mock = MagicMock()
 
 
 def sync_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
     _ = task_key
-    _task_execution_spy()
+    _task_execution_mock()
     return asyncio.run(_process_action(action, payload))
 
 
 async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
     _ = task_key
-    _task_execution_spy()
+    _task_execution_mock()
     return await _process_action(action, payload)
 
 
@@ -88,8 +88,8 @@ NO_RETRY_ASYNC_JOB_NAME = f"{async_job.__name__}_no_retry"
 
 @pytest.fixture
 def task_execution_spy() -> MagicMock:
-    _task_execution_spy.reset_mock()
-    return _task_execution_spy
+    _task_execution_mock.reset_mock()
+    return _task_execution_mock
 
 
 @pytest.fixture
