@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-09-09T09:06:14Z\n"
+"X-Translation-Date: 2026-09-18T15:19:58Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
@@ -996,7 +996,7 @@ msgstr "Aplicación"
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:176
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:296
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:317
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:470
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:469
 msgid "Other"
 msgstr "Otros"
 
@@ -1018,7 +1018,7 @@ msgstr "Análisis de datos"
 # element related to personalized medicine, likely within a form or settings
 # panel for managing personalized medicine options.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:185
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:500
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:499
 msgid "Personalized Medicine"
 msgstr "Medicina personalizada"
 
@@ -1026,7 +1026,7 @@ msgstr "Medicina personalizada"
 # related to account requests, likely indicating a feature or setting related
 # to neurostimulation.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:188
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:497
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:496
 msgid "Neurostimulation"
 msgstr "Estimulación neuronal"
 
@@ -1034,7 +1034,7 @@ msgstr "Estimulación neuronal"
 # UI component related to account or product assessment, likely within a
 # scientific simulation application.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:191
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:479
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:478
 msgid "Safety & Efficacy Assessment"
 msgstr "Evaluación de seguridad y eficacia"
 
@@ -1049,7 +1049,7 @@ msgstr "Diseño y Optimización del Dispositivo"
 # account management, likely within a form or settings panel, where users can
 # specify or select a Magnetic Resonance Imaging (MRI) related service.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:197
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:494
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:493
 msgid "Magnetic Resonance Imaging"
 msgstr "Imágenes por Resonancia Magnética"
 
@@ -3325,7 +3325,7 @@ msgstr "Por favor, regístrese para utilizar esta funcionalidad."
 # CTX-INTERPRETATION: This string appears within a `PollTask` class, likely
 # indicating an error or failure during a polling operation, triggering an
 # error event.
-#: services/static-webserver/client/source/class/osparc/data/PollTask.js:142
+#: services/static-webserver/client/source/class/osparc/data/PollTask.js:146
 msgid "Unsuccessful polling status"
 msgstr "Estado de solicitud fallido"
 
@@ -4883,22 +4883,39 @@ msgstr "Solicite la eliminación de su cuenta."
 msgid "Update Phone Number"
 msgstr "Actualizar Número de Teléfono"
 
-# CTX-INTERPRETATION: The string appears in a user interface, guiding a user
-# through the process of transferring their projects to another user,
-# explaining the options for sharing and co-ownership.
-#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:48
+# CTX-INTERPRETATION: The string appears in the 'TransferProjects' class,
+# informing the user about transferring their projects to another user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:49
+msgid "You are about to transfer all your projects to another user."
+msgstr "Usted está a punto de transferir todos sus proyectos a otro usuario."
+
+# CTX-INTERPRETATION: This string appears in the 'TransferProjects' class
+# within the oSparc desktop application, guiding the user through two options
+# for transferring projects to another user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:50
+msgid "There are two ways to do so:"
+msgstr "Hay dos maneras de hacerlo:"
+
+# CTX-INTERPRETATION: The string appears in the context of transferring
+# projects to another user, explaining two options for sharing projects while
+# maintaining or removing co-ownership.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:51
 msgid ""
-"            You are about to transfer all your projects to another user.<br>\n"
-"            There are two ways to do so:<br>\n"
-"            - Share all your projects with the target user and keep the co-ownership. <br>\n"
-"            - Share all your projects with the target user and remove yourself as co-owner. <br>\n"
-"          "
+"- Share all your projects with the target user and keep the co-ownership."
 msgstr ""
-"Está a punto de transferir todos sus proyectos a otro usuario.\n"
-"Existen dos formas de hacerlo:\n"
-"- Compartir todos sus proyectos con el usuario objetivo y mantener la propiedad compartida.\n"
-"- Compartir todos sus proyectos con el usuario objetivo y eliminar su propia propiedad.\n"
-"          "
+"- Compartir todos sus proyectos con el usuario objetivo y mantener la "
+"propiedad compartida."
+
+# CTX-INTERPRETATION: The string appears in the context of transferring
+# projects to another user, specifically detailing one method: removing
+# oneself as a co-owner.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:52
+msgid ""
+"- Share all your projects with the target user and remove yourself as co-"
+"owner."
+msgstr ""
+"- Compartir todos sus proyectos con el usuario objetivo y eliminar su propia"
+" participación como copropietario."
 
 # CTX-INTERPRETATION: The string "Target user:" is a label within a user
 # interface element, likely used to identify the intended user or target
@@ -9059,6 +9076,70 @@ msgstr "Para obtener más información sobre Sim4Life.lite, visite %1."
 msgid "For more information about TIP, please visit %1."
 msgstr "Para obtener más información sobre TIP, visite %1."
 
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to unlock the full potential of TI Research and access
+# advanced features for planning and simulations.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:58
+msgid "Unlock the Full Potential of TI Research!"
+msgstr "Desbloquee todo el potencial de la investigación de TI!"
+
+# CTX-INTERPRETATION: The string appears in a promotional message for the TIP
+# platform, asking potential users if they are part of the TI Solutions Early
+# Adopter Program (EAP).
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:60
+msgid "Are you part of the TI Solutions Early Adopter Program (EAP)?"
+msgstr ""
+"¿Es usted miembro del programa de usuarios avanzados de TI Solutions (EAP)?"
+
+# CTX-INTERPRETATION: The string appears in a UI element encouraging users to
+# join the EAP program and access the TIP platform.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:62
+msgid ""
+"If yes, you have free access to our complete TIP platform with advanced "
+"features for TI planning and simulations. Click here to request access."
+msgstr ""
+"Si es así, tiene acceso gratuito a nuestra completa plataforma TIP con "
+"funciones avanzadas para la planificación y simulación de TI. Haga clic aquí"
+" para solicitar el acceso."
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, inviting
+# users who are not EAP members to join a research community and use
+# investigational TIBS-R devices.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:64
+msgid "Not an EAP member yet? Join our cutting-edge research community:"
+msgstr ""
+"¿Aún no eres miembro del programa EAP? Únete a nuestra comunidad de "
+"investigación de vanguardia:"
+
+# CTX-INTERPRETATION: This string appears within the TIPTeaser.js file,
+# offering potential EAP members an opportunity to use investigational TIBS-R
+# devices in their projects and contribute to advancing TI knowledge.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:66
+msgid "• Use our investigational TIBS-R devices in your projects"
+msgstr ""
+"• Utilice nuestros dispositivos investigacionales TIBS-R en sus proyectos"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to join the TI research community and contribute to
+# advancing TI knowledge.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:68
+msgid "• Contribute to advancing TI knowledge"
+msgstr "• Contribuir al avance del conocimiento de TI"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, offering
+# users a chance to join the EAP program and contribute to neurostimulation
+# technology research.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:70
+msgid "• Shape the future of neurostimulation technology"
+msgstr "• Moldea el futuro de la tecnología de neuroestimulación"
+
+# CTX-INTERPRETATION: The string appears in the TIPTeaser.js file, prompting
+# users to learn more about EAP and apply for membership.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:72
+msgid "Click here to learn more about EAP and apply today!"
+msgstr ""
+"¡Haga clic aquí para obtener más información sobre EAP y solicite hoy mismo!"
+
 # CTX-INTERPRETATION: The string 'project' is likely used to display the name
 # or alias of a project within the application, possibly in a user interface
 # element.
@@ -9169,56 +9250,56 @@ msgstr "Grupo de Investigación/Organización"
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface, possibly related to antenna design or wireless communication
 # settings within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:473
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:472
 msgid "Antenna Design for Wireless Communication"
 msgstr "Diseño de Antena para Comunicación Inalámbrica"
 
 # CTX-INTERPRETATION: This string is likely a label or title for a category or
 # section related to bioelectronics, electroceuticals, and neuroprosthetics
 # within a scientific simulation application's user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:476
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:475
 msgid "Bioelectronics, Electroceuticals & Neuroprosthetics"
 msgstr "Bioelectrónica, electroproductos y neuroprótesis"
 
 # CTX-INTERPRETATION: The string "Exposure & Compliance" likely represents a
 # label or title for a section or feature related to exposure and compliance
 # within the application, possibly in a user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:482
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:481
 msgid "Exposure & Compliance"
 msgstr "Exposición y Cumplimiento"
 
 # CTX-INTERPRETATION: The string "Focused Ultrasound" is likely a label or
 # identifier for a feature or setting related to focused ultrasound within the
 # application, possibly displayed in a user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:485
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:484
 msgid "Focused Ultrasound"
 msgstr "Ultrasonido Focalizado"
 
 # CTX-INTERPRETATION: This string is used within a user interface element,
 # likely a button or link, to indicate a section or feature related to 'In
 # <i>Silico</i> Trials' within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:488
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:487
 msgid "In <i>Silico</i> Trials"
 msgstr "En <i>Pruebas In Silico</i>"
 
 # CTX-INTERPRETATION: The string "Implant Design" is likely a label or title
 # used within a user interface, possibly related to selecting or configuring
 # an implant design within the Osparc application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:491
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:490
 msgid "Implant Design"
 msgstr "Diseño del implante"
 
 # CTX-INTERPRETATION: The string "Thermal Therapies" is likely a label or
 # title used within a user interface, possibly related to thermal therapies or
 # treatments within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:503
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:502
 msgid "Thermal Therapies"
 msgstr "Terapias térmicas"
 
 # CTX-INTERPRETATION: The string "Wireless Power Transfer Systems" is likely a
 # label or title used within a user interface, possibly in a web application,
 # to identify a section or feature related to wireless power transfer systems.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:506
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:505
 msgid "Wireless Power Transfer Systems"
 msgstr "Sistemas de Transferencia de Energía Inalámbrica"
 
@@ -9226,7 +9307,7 @@ msgstr "Sistemas de Transferencia de Energía Inalámbrica"
 # or title used within a user interface for a scientific simulation
 # application, possibly related to visualizing and analyzing blood flow and
 # perfusion within a vascular system.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:509
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:508
 msgid "Vascular Flow & Perfusion"
 msgstr "Flujo y Perfil Vascular"
 
@@ -9274,10 +9355,11 @@ msgstr ""
 "fantomas humanos computables con los simuladores de física más potentes y "
 "los modelos de tejido más avanzados, para analizar directamente fenómenos "
 "biológicos del mundo real y dispositivos técnicos complejos en un entorno "
-"biológico y anatómico validado.        <br>        <br>        Para facilitar "
-"la introducción a la plataforma, tenemos algunos Tours guiados que puede "
-"encontrar en la sección de Ayuda y soporte.        <br>        <br>        "
-"Para obtener información técnica más específica, consulte los Manuales.      "
+"biológico y anatómico validado.        <br>        <br>        Para "
+"facilitar la introducción a la plataforma, tenemos algunos Tours guiados que"
+" puede encontrar en la sección de Ayuda y soporte.        <br>        <br>"
+"        Para obtener información técnica más específica, consulte los "
+"Manuales.      "
 
 # CTX-INTERPRETATION: This string is part of the 'Welcome.js' file, likely
 # displayed as a greeting message when a user starts the Sim4Life Science
@@ -10631,23 +10713,31 @@ msgid "Add new conversation"
 msgstr "Añadir nueva conversación"
 
 # CTX-INTERPRETATION: The string appears in the CreateFunction.js file,
-# guiding the user through the requirements for creating a function within the
-# Osparc study application.
-#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:36
-msgid ""
-"\n"
-"      In order to Create a Function, the pipeline needs:\n"
-"      - at least one parameter and one probe (numbers)\n"
-"      - at least one computational app\n"
-"      - no dynamic apps\n"
-"    "
-msgstr ""
-"\n"
-"Para crear una función, la tubería necesita:\n"
-"- al menos un parámetro y un sensor (números)\n"
-"- al menos una aplicación computacional\n"
-"- ninguna aplicación dinámica\n"
-"    "
+# specifically within a function that defines the requirements for creating a
+# function pipeline.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:37
+msgid "In order to Create a Function, the pipeline needs:"
+msgstr "Para crear una función, el pipeline necesita:"
+
+# CTX-INTERPRETATION: The string appears in the CreateFunction.js file, likely
+# within a user interface or help text related to defining function parameters
+# and probes.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:38
+msgid "- at least one parameter and one probe (numbers)"
+msgstr "- al menos un parámetro y una sonda (números)"
+
+# CTX-INTERPRETATION: The string appears within the CreateFunction.js file,
+# specifying requirements for creating a function in the simulation
+# application.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:39
+msgid "- at least one computational app"
+msgstr "- al menos una aplicación computacional"
+
+# CTX-INTERPRETATION: The string appears in the CreateFunction.js file,
+# specifying that a function pipeline requires no dynamic applications.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:40
+msgid "- no dynamic apps"
+msgstr "- no aplicaciones dinámicas"
 
 # CTX-INTERPRETATION: The string "Exposed" is used within a UI layout to label
 # a field related to whether a function parameter is exposed or not, likely in
@@ -10954,41 +11044,39 @@ msgstr "Compartir Proyecto con Soporte"
 msgid "Book a Call"
 msgstr "Programar una llamada"
 
-# CTX-INTERPRETATION: The string is used to display the topic of a call or
-# conversation within the Osparc application's Conversation.js file, likely
-# for user interface elements.
+# CTX-INTERPRETATION: The string translates the 'Topic' field from a
+# configuration object used to display conversation details, specifically
+# within the oSparc support system.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:132
-msgid ""
-"\n"
-"- Topic: %1"
-msgstr ""
-"\n"
-"- Tema: %1"
+msgid "- Topic: %1"
+msgstr "- Tema: %1"
 
-# CTX-INTERPRETATION: The string is used to display additional information
-# related to a call or conversation within the application's user interface.
+# CTX-INTERPRETATION: The string is part of a message displaying additional
+# information related to a call or conversation, specifically the 'Extra Info'
+# field from the bookACallInfo object.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
-msgid ""
-"\n"
-"- Extra Info: %1"
-msgstr ""
-"\n"
-"- Información adicional: %1"
+msgid "- Extra Info: %1"
+msgstr "- Información adicional: %1"
 
-# CTX-INTERPRETATION: This string is part of a greeting message used in a
-# customer support conversation flow within the application, dynamically
-# inserting the user's name.
+# CTX-INTERPRETATION: This string is part of a greeting message within the
+# oSparc application, specifically used to initiate a conversation with the
+# user and offer assistance.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:328
-msgid "Hi %1,\n"
-msgstr "Hola %1,\n"
+msgid "Hi %1,"
+msgstr "Hola %1,"
 
+# CTX-INTERPRETATION: This string appears in the Conversation class of oSparc,
+# specifically within a function that greets the user and asks for feedback or
+# questions.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
-msgid ""
-"Have a question or feedback?\n"
-"We are happy to assist!"
-msgstr ""
-"¿Tienes alguna pregunta o comentario?\n"
-"Estaremos encantados de ayudarte."
+msgid "Have a question or feedback?"
+msgstr "¿Tiene alguna pregunta o comentario?"
+
+# CTX-INTERPRETATION: This string appears in the Conversation class of oSparc,
+# specifically within a function that greets the user and offers assistance.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
+msgid "We are happy to assist!"
+msgstr "¡Nos complace ayudar!"
 
 # CTX-INTERPRETATION: This string appears within the
 # 'osparc.support.Conversation' class, likely used to prompt a user for their
@@ -11012,16 +11100,21 @@ msgstr ""
 "Nuestro equipo de soporte se encargará de ello — por favor, confirme o edite"
 " su pregunta a continuación para comenzar."
 
-# CTX-INTERPRETATION: This message appears in the 'osparc' support system,
-# informing the user that a support ticket has been created and their request
-# will be reviewed.
+# CTX-INTERPRETATION: The string appears in the oSparc application,
+# specifically within a Conversation class, indicating that a support ticket
+# has been successfully created and the user will be contacted.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
-msgid ""
-"A support ticket has been created.\n"
-"Our team will review your request and contact you soon."
+msgid "A support ticket has been created."
+msgstr "Se ha creado un ticket de soporte."
+
+# CTX-INTERPRETATION: This string appears in the oSparc support application,
+# specifically within a conversation flow where a support ticket has been
+# created.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
+msgid "Our team will review your request and contact you soon."
 msgstr ""
-"Se ha creado un ticket de soporte.\n"
-"Nuestro equipo revisará su solicitud y se pondrá en contacto con usted pronto."
+"Nuestro equipo revisará su solicitud y se pondrá en contacto con usted "
+"pronto."
 
 # CTX-INTERPRETATION: The string "Unread" is used to label a chip or badge
 # indicating that a conversation or message within a scientific simulation
@@ -11688,7 +11781,7 @@ msgstr "Institución"
 # CTX-INTERPRETATION: This string appears within the LanguageManager class,
 # indicating a failure during a language update operation, likely displayed to
 # the user.
-#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:140
+#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:143
 msgid "Unsuccessful language update"
 msgstr "Error al actualizar el idioma"
 
@@ -13057,46 +13150,3 @@ msgid ""
 msgstr ""
 "Una vez que el pago se haya validado, los Créditos se agregarán a su Cuenta "
 "de Créditos y estarán listos para ser utilizados."
-
-# CTX-INTERPRETATION: This string appears within a function that displays
-# details about a study, indicating that any user with appropriate access can
-# open the study.
-#~ msgid " can open it"
-#~ msgstr "puede abrirlo"
-
-# CTX-INTERPRETATION: The string is part of a function that constructs a
-# message informing the user about the availability of a rental unit,
-# specifically the expiration date of the license.
-#~ msgid "will be available until "
-#~ msgstr "estará disponible hasta "
-
-# CTX-INTERPRETATION: The string " Messages" is used within the
-# ConversationPage.js file to dynamically update a label indicating the number
-# of messages in a conversation.
-#~ msgid " Messages"
-#~ msgstr " Mensajes"
-
-# CTX-INTERPRETATION: The string appears in the OrganizationsList component,
-# explaining the concept of an organization and its features to the user.
-#~ msgid "    An organization is a group of users who can share "
-#~ msgstr "Una organización es un grupo de usuarios que pueden compartir "
-
-# CTX-INTERPRETATION: The string appears within a UI element on the TagsPage,
-# explaining how tags help organize studies and improve searchability within
-# the application.
-#~ msgid "    Tags help you organize the "
-#~ msgstr ""
-#~ "Las etiquetas ayudan a organizar los estudios y facilitar la búsqueda y el "
-#~ "filtrado. "
-
-# CTX-INTERPRETATION: The string appears within a UI element explaining how to
-# assign tags to studies, specifically mentioning the 'More options...'
-# button.
-#~ msgid "  via 'More options...' on the "
-#~ msgstr " ...a través del botón 'Más opciones...' en las tarjetas de estudio. "
-
-# CTX-INTERPRETATION: The string appears within a UI element describing how to
-# use tags to categorize studies, specifically within the 'TagsPage' of the
-# application.
-#~ msgid " cards."
-#~ msgstr "tarjetas."
