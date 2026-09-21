@@ -54,22 +54,25 @@ qx.Class.define("osparc.product.TIPTeaser", {
         case "teaser-text": {
           const link1 = osparc.utils.Utils.createHTMLLink("Request Full TIP Access", "https://tip.science/");
           const link2 = osparc.utils.Utils.createHTMLLink("Learn More About EAP", "https://temporalinterference.com/");
-          const text = this.tr(`
-            Unlock the Full Potential of TI Research!<br>
-            <br>
-            Are you part of the TI Solutions Early Adopter Program (EAP)?<br>
-            <br>
-            If yes, you have free access to our complete TIP platform with advanced features for TI planning and simulations. Click here to request access.<br>
-            <br>
-            Not an EAP member yet? Join our cutting-edge research community:<br>
-            • Use our investigational TIBS-R devices in your projects<br>
-            • Contribute to advancing TI knowledge<br>
-            • Shape the future of neurostimulation technology<br>
-            <br>
-            Click here to learn more about EAP and apply today!<br>
-            <br>
-            ${link1}&nbsp&nbsp&nbsp${link2}
-          `);
+          const text = [
+            this.tr("Unlock the Full Potential of TI Research!"),
+            "<br><br>",
+            this.tr("Are you part of the TI Solutions Early Adopter Program (EAP)?"),
+            "<br><br>",
+            this.tr("If yes, you have free access to our complete TIP platform with advanced features for TI planning and simulations. Click here to request access."),
+            "<br><br>",
+            this.tr("Not an EAP member yet? Join our cutting-edge research community:"),
+            "<br>",
+            this.tr("• Use our investigational TIBS-R devices in your projects"),
+            "<br>",
+            this.tr("• Contribute to advancing TI knowledge"),
+            "<br>",
+            this.tr("• Shape the future of neurostimulation technology"),
+            "<br><br>",
+            this.tr("Click here to learn more about EAP and apply today!"),
+            "<br><br>",
+            link1 + "&nbsp&nbsp&nbsp" + link2,
+          ].join("");
           control = new qx.ui.basic.Label(text).set({
             font: "text-14",
             wrap: true,
