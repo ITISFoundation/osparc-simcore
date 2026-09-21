@@ -37,10 +37,10 @@ from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
 from simcore_service_webserver.db_listener._repository import (
-    CLAIM_CANDIDATE_BATCH as _CLAIM_CANDIDATE_BATCH,
+    EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER as _EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
 )
 from simcore_service_webserver.db_listener._repository import (
-    DEAD_LETTER_AFTER_ATTEMPTS as _DEAD_LETTER_AFTER_ATTEMPTS,
+    MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT as _MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
 )
 from simcore_service_webserver.db_listener._repository import (
     get_comp_task as _get_comp_task,
@@ -60,6 +60,7 @@ from simcore_service_webserver.db_listener._task import (
     OUTBOX_LISTENER_APPLICATION_NAME,
     with_outbox_wakeup_listener,
 )
+from simcore_service_webserver.db_listener.errors import CompTaskNotFoundError
 from simcore_service_webserver.db_listener.models import ClaimOutcome as _ClaimOutcome
 from simcore_service_webserver.db_listener.plugin import (
     create_comp_tasks_listening_task,
@@ -433,16 +434,15 @@ async def test_get_comp_task_returns_task(
     )
     async with sqlalchemy_async_engine.connect() as conn:
         row = await _get_comp_task(conn, task["task_id"])
-    assert row is not None
     assert row.task_id == task["task_id"]
 
 
-async def test_get_comp_task_returns_none_for_missing_task(
+async def test_get_comp_task_raises_for_missing_task(
     sqlalchemy_async_engine: AsyncEngine,
 ):
     async with sqlalchemy_async_engine.connect() as conn:
-        row = await _get_comp_task(conn, 999999)
-    assert row is None
+        with pytest.raises(CompTaskNotFoundError):
+            await _get_comp_task(conn, 999999)
 
 
 # --------- Unit tests for outbox claim/process functions ---------
@@ -717,7 +717,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
             comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
         )
         # simulate an event that exhausted its retries
-        await conn.execute(outbox_events.update().values(attempts=_DEAD_LETTER_AFTER_ATTEMPTS))
+        await conn.execute(outbox_events.update().values(attempts=_EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER))
 
     # claims skip dead-lettered events: nothing is claimable
     assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
@@ -725,7 +725,7 @@ async def test_dead_lettered_events_are_skipped_by_claims(
     # the dead-lettered row is kept for post-mortem
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows) == 1
-    assert rows[0]["attempts"] == _DEAD_LETTER_AFTER_ATTEMPTS
+    assert rows[0]["attempts"] == _EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -1357,7 +1357,7 @@ async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
 
     # the hot aggregate has more pending events than the candidate batch size, so
     # pre-fix (LIMIT over raw event rows) every candidate would belong to it
-    num_hot_events = _CLAIM_CANDIDATE_BATCH + 2
+    num_hot_events = _MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT + 2
     backdated = dt.datetime.now(dt.UTC) - dt.timedelta(minutes=5)
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(

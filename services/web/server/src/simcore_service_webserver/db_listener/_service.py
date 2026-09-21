@@ -41,7 +41,7 @@ from ..projects.api import (
     update_project_node_state,
 )
 from ._repository import (
-    DEAD_LETTER_AFTER_ATTEMPTS,
+    EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
     acquire_next_claimable_aggregate,
     get_comp_task,
     get_project_owner,
@@ -49,7 +49,7 @@ from ._repository import (
     remove_claimed_events,
 )
 from ._utils import convert_state_from_db
-from .errors import OutboxProcessingError
+from .errors import CompTaskNotFoundError, OutboxProcessingError
 from .models import (
     DB_OUTBOX_CHANGED_COLUMN_STATE,
     DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS,
@@ -109,9 +109,9 @@ async def _process_outbox_event(
     state; the socketio notifications themselves are not transactional and may be
     re-sent on a retried attempt (at-least-once, not exactly-once).
     """
-    comp_task = await get_comp_task(conn, task_id)
-
-    if not comp_task:
+    try:
+        comp_task = await get_comp_task(conn, task_id)
+    except CompTaskNotFoundError:
         _logger.warning(
             "comp_tasks row (task_id=%d) not found; skipping stale outbox event",
             task_id,
@@ -236,13 +236,13 @@ async def _claim_and_process_one_outbox_event(
 
 def _log_failed_attempts(failed_attempts: list[FailedAttempt], error: Exception) -> None:
     for attempt in failed_attempts:
-        if attempt.attempts >= DEAD_LETTER_AFTER_ATTEMPTS:
+        if attempt.attempts >= EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER:
             _logger.error(
                 "Outbox event %d (kind=%s, aggregate_id=%s) dead-lettered after %d attempts; last error: %s",
                 attempt.event_id,
                 attempt.kind,
                 attempt.aggregate_id,
-                DEAD_LETTER_AFTER_ATTEMPTS,
+                EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
                 error,
             )
         else:
@@ -251,7 +251,7 @@ def _log_failed_attempts(failed_attempts: list[FailedAttempt], error: Exception)
                 attempt.event_id,
                 attempt.aggregate_id,
                 attempt.attempts,
-                DEAD_LETTER_AFTER_ATTEMPTS,
+                EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
                 error,
             )
 
