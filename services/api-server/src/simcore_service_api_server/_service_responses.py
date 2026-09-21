@@ -33,7 +33,8 @@ def _relay_downstream_client_error(response: httpx.Response) -> JSONResponse:
     error body (e.g. FastAPI's `{"detail": [...]}`) -- relay it as-is, with the same
     status code, instead of masking it behind a generic backend error."""
     try:
-        errors = response.json().get("detail", response.text)
+        payload = response.json()
+        errors = payload.get("detail", response.text) if isinstance(payload, dict) else payload
     except ValueError:
         errors = response.text
     if not isinstance(errors, list):

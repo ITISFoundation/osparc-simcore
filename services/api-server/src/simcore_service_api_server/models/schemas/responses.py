@@ -101,7 +101,7 @@ class TextParam(ApiServerInputSchema):
 
 class InputMessage(ApiServerInputSchema):
     role: Literal["user", "assistant", "developer"]
-    content: str
+    content: Annotated[str, Field(min_length=1)]
     name: str = ""
 
     def to_domain_model(self) -> ChatCompletionRequestMessage:
@@ -117,7 +117,7 @@ class CreateResponseRequest(ApiServerInputSchema):
     """
 
     background: Literal[True]
-    input: list[InputMessage]
+    input: Annotated[list[InputMessage], Field(min_length=1)]
     metadata: dict[str, str] | None = None
     model: ChatModel
     stream: bool = False

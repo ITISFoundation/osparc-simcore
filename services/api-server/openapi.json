@@ -9490,7 +9490,6 @@
               "$ref": "#/components/schemas/InputMessage"
             },
             "type": "array",
-            "maxItems": 50,
             "minItems": 1,
             "title": "Input"
           },
@@ -9498,13 +9497,9 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "$ref": "#/components/schemas/MetadataValue"
+                  "type": "string"
                 },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/MetadataKey"
-                },
-                "type": "object",
-                "maxProperties": 16
+                "type": "object"
               },
               {
                 "type": "null"
@@ -9551,7 +9546,7 @@
           "temperature"
         ],
         "title": "CreateResponseRequest",
-        "description": "Request body for POST /responses."
+        "description": "Request body for POST /responses.\n\n`background` is always `True` (OpenAI Responses API compatibility placeholder);\n`stream` is the actual mode switch and takes precedence: when `True` the request\nis relayed synchronously as server-sent events instead of a background job."
       },
       "ETag": {
         "type": "string"
@@ -9892,13 +9887,11 @@
           },
           "content": {
             "type": "string",
-            "maxLength": 100000,
             "minLength": 1,
             "title": "Content"
           },
           "name": {
             "type": "string",
-            "maxLength": 200,
             "title": "Name",
             "default": ""
           }
@@ -10845,14 +10838,6 @@
             "type": "string"
           }
         ]
-      },
-      "MetadataKey": {
-        "type": "string",
-        "maxLength": 64
-      },
-      "MetadataValue": {
-        "type": "string",
-        "maxLength": 512
       },
       "OnePage_SolverPort_": {
         "properties": {
