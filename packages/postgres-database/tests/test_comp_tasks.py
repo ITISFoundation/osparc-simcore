@@ -160,3 +160,52 @@ async def test_run_hash_only_update_emits_event(
     await _update_comp_task_with(db_connection, task, run_hash="some-fresh-hash")
     await _assert_wakeup_notifications(db_notification_queue, 0)
     await _assert_outbox_events_for_task(db_connection, task_id, 1)
+
+
+@pytest.mark.parametrize(
+    "update_kwargs,expected_column",
+    [
+        pytest.param({"outputs": {"some new stuff": "it is new"}}, "outputs", id="outputs"),
+        pytest.param({"run_hash": "some-fresh-hash"}, "run_hash", id="run_hash"),
+        pytest.param({"state": StateType.ABORTED}, "state", id="state"),
+    ],
+)
+@pytest.mark.parametrize("task_class", [(NodeClass.COMPUTATIONAL)])
+async def test_each_trigger_column_alone_emits_event(
+    db_notification_queue: asyncio.Queue,
+    db_connection: AsyncConnection,
+    task: dict,
+    update_kwargs: dict,
+    expected_column: str,
+):
+    """a change to ONLY each of the trigger columns must emit a wakeup notification
+    and one outbox event reporting that column (plus `modified`, bumped by the trigger)"""
+    task_id = task["task_id"]
+
+    await _update_comp_task_with(db_connection, task, **update_kwargs)
+    await _assert_wakeup_notifications(db_notification_queue, 1)
+    await _assert_outbox_events_for_task(db_connection, task_id, 1, [["modified", expected_column]])
+
+
+@pytest.mark.parametrize(
+    "update_kwargs",
+    [
+        pytest.param({"inputs": {"an input": "a value"}}, id="inputs"),
+        pytest.param({"progress": 0.42}, id="progress"),
+    ],
+)
+@pytest.mark.parametrize("task_class", [(NodeClass.COMPUTATIONAL)])
+async def test_non_trigger_column_update_emits_nothing(
+    db_notification_queue: asyncio.Queue,
+    db_connection: AsyncConnection,
+    task: dict,
+    update_kwargs: dict,
+):
+    """updates to columns outside the trigger's set must produce neither a wakeup
+    notification nor an outbox event"""
+    task_id = task["task_id"]
+
+    await _update_comp_task_with(db_connection, task, **update_kwargs)
+    await asyncio.sleep(0.1)
+    await _assert_wakeup_notifications(db_notification_queue, 0)
+    await _assert_outbox_events_for_task(db_connection, task_id, 0)
