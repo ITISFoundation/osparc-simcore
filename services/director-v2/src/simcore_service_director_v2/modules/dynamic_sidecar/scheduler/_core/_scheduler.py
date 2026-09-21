@@ -348,7 +348,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             # cancel current observation task
             if service_name in self._service_observation_task:
-                service_task: None | asyncio.Task | object = self._service_observation_task[service_name]
+                service_task: asyncio.Task | object | None = self._service_observation_task[service_name]
                 if isinstance(service_task, asyncio.Task):
                     await cancel_wait_task(service_task, max_delay=10)
 
@@ -404,6 +404,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             del self._inverse_search_mapping[node_uuid]
             self._to_observe.pop(service_name, None)
+            # NOTE: a running observation task self-cleans via its done-callback, but a
+            # `_DISABLED_MARK` entry (set via `toggle_observation(disable=True)`) has no
+            # callback and would stay in the dict forever, leaking one entry per service.
+            self._service_observation_task.pop(service_name, None)
 
         _logger.debug("Removed service '%s' from scheduler", service_name)
 

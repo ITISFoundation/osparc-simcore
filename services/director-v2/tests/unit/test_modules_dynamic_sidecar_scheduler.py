@@ -4,6 +4,7 @@
 
 
 import logging
+import os
 import re
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable, Iterator
 from contextlib import asynccontextmanager, contextmanager
@@ -530,3 +531,64 @@ async def test_mark_all_services_in_wallet_for_removal(
                 assert can_remove is False
             case _:
                 pytest.fail("unexpected case")
+
+
+def _bookkeeping_sizes(scheduler: DynamicSidecarsScheduler) -> dict[str, int]:
+    return {
+        "_to_observe": len(scheduler.scheduler._to_observe),  # noqa: SLF001
+        "_service_observation_task": len(scheduler.scheduler._service_observation_task),  # noqa: SLF001
+        "_inverse_search_mapping": len(scheduler.scheduler._inverse_search_mapping),  # noqa: SLF001
+    }
+
+
+@pytest.fixture
+def leak_cycles() -> int:
+    return int(os.getenv("DV2_SCHEDULER_LEAK_CYCLES", "50"))
+
+
+async def test_scheduler_start_stop_cycles_release_all_bookkeeping(
+    disabled_scheduler_background_tasks: None,
+    scheduler: DynamicSidecarsScheduler,
+    scheduler_data: SchedulerData,
+    faker: Faker,
+    leak_cycles: int,
+) -> None:
+    """add -> remove cycles must not leave stale entries behind in any bookkeeping dict"""
+    for _ in range(leak_cycles):
+        new_scheduler_data = scheduler_data.model_copy(deep=True)
+        new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
+        new_scheduler_data.service_name = f"fake_{new_scheduler_data.node_uuid}"
+
+        await scheduler.scheduler.add_service_from_scheduler_data(new_scheduler_data)
+        await scheduler.scheduler.remove_service_from_observation(new_scheduler_data.node_uuid)
+
+    assert _bookkeeping_sizes(scheduler) == {
+        "_to_observe": 0,
+        "_service_observation_task": 0,
+        "_inverse_search_mapping": 0,
+    }
+
+
+async def test_scheduler_start_stop_cycles_with_disabled_observation_release_all_bookkeeping(
+    disabled_scheduler_background_tasks: None,
+    scheduler: DynamicSidecarsScheduler,
+    scheduler_data: SchedulerData,
+    faker: Faker,
+    leak_cycles: int,
+) -> None:
+    """a `_DISABLED_MARK` entry must not survive service removal: it has no done-callback
+    to self-clean, so remove_service_from_observation must drop it explicitly"""
+    for _ in range(leak_cycles):
+        new_scheduler_data = scheduler_data.model_copy(deep=True)
+        new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
+        new_scheduler_data.service_name = f"fake_{new_scheduler_data.node_uuid}"
+
+        await scheduler.scheduler.add_service_from_scheduler_data(new_scheduler_data)
+        assert scheduler.scheduler.toggle_observation(new_scheduler_data.node_uuid, disable=True) is True
+        await scheduler.scheduler.remove_service_from_observation(new_scheduler_data.node_uuid)
+
+    assert _bookkeeping_sizes(scheduler) == {
+        "_to_observe": 0,
+        "_service_observation_task": 0,
+        "_inverse_search_mapping": 0,
+    }
