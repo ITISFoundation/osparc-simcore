@@ -6,10 +6,16 @@ service/repository layer (see services/web/server/docs/DESIGN.md).
 
 from ..errors import WebServerBaseError
 
-__all__ = ("DbListenerBaseError", "OutboxProcessingError")
+__all__ = ("CompTaskNotFoundError", "DbListenerBaseError", "OutboxProcessingError")
 
 
 class DbListenerBaseError(WebServerBaseError): ...
+
+
+class CompTaskNotFoundError(DbListenerBaseError):
+    """The comp_tasks row an outbox event points at is gone (deleted task/project)"""
+
+    msg_template = "Comp task {task_id} not found"
 
 
 class OutboxProcessingError(DbListenerBaseError):

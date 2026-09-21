@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
 
 from ..projects import exceptions
+from .errors import CompTaskNotFoundError
 from .models import (
     AggregateID,
     AggregateType,
@@ -40,19 +41,9 @@ from .models import (
     OutboxEventID,
 )
 
-# claims skip an event once its attempts reach this (dead-lettered, kept for
-# post-mortem)
-DEAD_LETTER_AFTER_ATTEMPTS: Final[int] = 10
-
-# how many oldest distinct claimable aggregates are inspected (without locking)
-# when picking the aggregate to claim
-CLAIM_CANDIDATE_BATCH: Final[int] = 10
-
-# upper bound on how many pending events of one aggregate are co-claimed per
-# claim; leftovers stay queued and are claimed next round
-MAX_EVENTS_PER_AGGREGATE_CLAIM: Final[int] = 100
-
-# last_error is a Text column, but keep the stored message bounded anyway
+EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER: Final[int] = 10
+MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT: Final[int] = 10
+MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE: Final[int] = 100
 LAST_ERROR_MAX_LEN: Final[int] = 500
 
 
@@ -60,7 +51,7 @@ def _claimable_events_predicate(exclude_aggregates: set[tuple[AggregateType, Agg
     """Predicate selecting events this worker may claim: own kind, not exhausted,
     and not an aggregate the current drain already failed on."""
     claimable = (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC) & (
-        outbox_events.c.attempts < DEAD_LETTER_AFTER_ATTEMPTS
+        outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
     )
     if exclude_aggregates:
         claimable = claimable & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
@@ -98,15 +89,16 @@ async def acquire_next_claimable_aggregate(
     claimable = _claimable_events_predicate(exclude_aggregates)
 
     # one row per aggregate (GROUP BY), oldest aggregate first: the batch limit then
-    # covers CLAIM_CANDIDATE_BATCH *distinct* aggregates, so a burst of events on one
-    # aggregate locked elsewhere cannot crowd healthy aggregates out of the batch
+    # covers MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT *distinct* aggregates, so a
+    # burst of events on one aggregate locked elsewhere cannot crowd healthy
+    # aggregates out of the batch
     candidate_rows = (
         await conn.execute(
             select(outbox_events.c.kind, outbox_events.c.aggregate_id)
             .where(claimable)
             .group_by(outbox_events.c.kind, outbox_events.c.aggregate_id)
             .order_by(func.min(outbox_events.c.modified), func.min(outbox_events.c.id))
-            .limit(CLAIM_CANDIDATE_BATCH)
+            .limit(MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT)
         )
     ).all()
 
@@ -127,10 +119,10 @@ async def acquire_next_claimable_aggregate(
                 .where(
                     outbox_events.c.kind == kind,
                     outbox_events.c.aggregate_id == aggregate_id,
-                    outbox_events.c.attempts < DEAD_LETTER_AFTER_ATTEMPTS,
+                    outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
                 )
                 .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .limit(MAX_EVENTS_PER_AGGREGATE_CLAIM)
+                .limit(MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE)
                 .with_for_update(skip_locked=True)
             )
         ).fetchall()
@@ -186,7 +178,7 @@ async def record_failed_attempts(
         ]
 
 
-async def get_comp_task(conn: AsyncConnection, task_id: int) -> CompTask | None:
+async def get_comp_task(conn: AsyncConnection, task_id: int) -> CompTask:
     result = await conn.execute(
         select(
             comp_tasks.c.task_id,
@@ -199,7 +191,7 @@ async def get_comp_task(conn: AsyncConnection, task_id: int) -> CompTask | None:
     )
     row = result.fetchone()
     if row is None:
-        return None
+        raise CompTaskNotFoundError(task_id=task_id)
     return CompTask(
         task_id=row.task_id,
         project_id=row.project_id,
