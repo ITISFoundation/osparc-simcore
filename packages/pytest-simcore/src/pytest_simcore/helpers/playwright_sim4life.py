@@ -169,12 +169,14 @@ def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
 
     # Wait until grid is shown
     # NOTE: the startup screen should disappear very fast after the websocket was acquired
-    with log_context(logging.INFO, "Interact with S4l"):
-        grid_item = s4l_iframe.get_by_test_id("tree-item-Grid(Active)")
-        if grid_item.count() == 0:
-            # old ui
-            grid_item = s4l_iframe.get_by_test_id("tree-item-Grid")
-        grid_item.nth(0).click()
+    # NOTE: or_() is used instead of branching on count() because count() does not wait:
+    # the tree item may only be rendered shortly after this check (new UI: the label is
+    # dynamic, e.g. "Grid(Active)"), which would otherwise select the old-UI-only selector
+    # and time out on click.
+    with log_context(logging.INFO, msg="Interact with S4l") as ctx:
+        ctx.logger.info("Waiting for the grid item to be visible...")
+        grid_item = s4l_iframe.get_by_test_id("tree-item-Grid(Active)").or_(s4l_iframe.get_by_test_id("tree-item-Grid"))
+        grid_item.first.click()
     page.wait_for_timeout(3000)
 
 
