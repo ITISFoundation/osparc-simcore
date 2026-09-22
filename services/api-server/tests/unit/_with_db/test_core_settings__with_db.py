@@ -9,6 +9,8 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_api_server.core.settings import ApplicationSettings, BootModeEnum
 from yarl import URL
 
+pytest_simcore_core_services_selection = ["postgres"]
+
 
 def test_unit_with_db_app_environment(app_environment: EnvVarsDict):
     settings = ApplicationSettings.create_from_envs()
