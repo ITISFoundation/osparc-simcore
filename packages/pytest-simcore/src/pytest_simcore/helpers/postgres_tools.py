@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any, TypedDict
 from urllib.parse import quote_plus
@@ -11,7 +11,7 @@ import tenacity
 from pydantic import PostgresDsn
 from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
-from tenacity import retry_if_exception, stop_after_attempt
+from tenacity import RetryCallState, retry_if_exception, stop_after_attempt
 from tenacity.wait import wait_fixed
 
 _logger = logging.getLogger(__name__)
@@ -59,16 +59,32 @@ def _is_database_missing_error(error: BaseException) -> bool:
     return isinstance(error, sa_exc.ProgrammingError) and getattr(error.orig, "pgcode", None) == "3D000"
 
 
-def execute_queries(
+def _log_statement_retry(retry_state: RetryCallState, statement: str) -> None:
+    exception = retry_state.outcome.exception() if retry_state.outcome is not None else None
+    _logger.debug(
+        "Retrying PostgreSQL statement after transient database connection state (attempt %s): %s; error=%s",
+        retry_state.attempt_number,
+        statement,
+        exception,
+    )
+
+
+def _quote_database_identifier(engine: sa.engine.Engine, database: str) -> str:
+    return engine.dialect.identifier_preparer.quote(database)
+
+
+def _execute_postgres_statements(
     engine: sa.engine.Engine,
     sql_statements: list[str],
     *,
     ignore_errors: bool = False,
     before_attempt: Callable[[], None] | None = None,
 ) -> None:
-    """runs the queries in the list in order, retrying a statement on a dropped pooled
-    connection or on another backend still being attached to the database it targets (e.g.
-    DROP/CREATE DATABASE ... TEMPLATE racing pooled connections of a service under test).
+    """Runs PostgreSQL statements, retrying transient database-state failures.
+
+    The retry is needed because live test services can reconnect between backend
+    termination and ``DROP DATABASE``/``CREATE DATABASE ... TEMPLATE``. Each statement
+    gets its own connection so a failed DDL operation can be retried cleanly.
 
     `before_attempt` (if given) runs before every attempt, e.g. to re-terminate backends
     that may have reconnected since the previous attempt.
@@ -79,6 +95,7 @@ def execute_queries(
                 wait=wait_fixed(0.5),
                 stop=stop_after_attempt(5),
                 retry=retry_if_exception(_is_retryable_error),
+                before_sleep=lambda retry_state, statement=statement: _log_statement_retry(retry_state, statement),
                 reraise=True,
             ):
                 with attempt:
@@ -109,7 +126,7 @@ def _maintenance_engine(postgres_config: PostgresTestConfig) -> sa.engine.Engine
 
 
 @contextmanager
-def maintenance_engine_context(postgres_config: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
+def maintenance_engine_context(postgres_config: PostgresTestConfig) -> Generator[sa.engine.Engine]:
     """engine connected to the 'postgres' maintenance database, see `_maintenance_engine`"""
     maintenance = _maintenance_engine(postgres_config)
     try:
@@ -118,7 +135,7 @@ def maintenance_engine_context(postgres_config: PostgresTestConfig) -> Iterator[
         maintenance.dispose()
 
 
-def _terminate_backends(maintenance_engine: sa.engine.Engine, database: str) -> None:
+def _terminate_database_backends(maintenance_engine: sa.engine.Engine, database: str) -> None:
     # best-effort: callers retry the statement that needs the backends gone
     try:
         with maintenance_engine.connect() as connection, connection.begin():
@@ -133,26 +150,33 @@ def _terminate_backends(maintenance_engine: sa.engine.Engine, database: str) -> 
         _logger.info("Could not terminate backends for database %s", database, exc_info=True)
 
 
-def _drop_database(maintenance_engine: sa.engine.Engine, database: str, *, ignore_errors: bool = False) -> None:
+def _drop_postgres_database(
+    maintenance_engine: sa.engine.Engine, database: str, *, ignore_errors: bool = False
+) -> None:
     # NOTE: DROP DATABASE fails when backends re-connect between terminating them and
     # running DROP (e.g. pooled connections of a service under test), hence backends are
     # re-terminated before every retry attempt.
-    execute_queries(
+    quoted_database = _quote_database_identifier(maintenance_engine, database)
+    _execute_postgres_statements(
         maintenance_engine,
-        [f"DROP DATABASE {database};"],
+        [f"DROP DATABASE {quoted_database};"],
         ignore_errors=ignore_errors,
-        before_attempt=lambda: _terminate_backends(maintenance_engine, database),
+        before_attempt=lambda: _terminate_database_backends(maintenance_engine, database),
     )
 
 
-def _create_database_from_template(maintenance_engine: sa.engine.Engine, database: str, template_db_name: str) -> None:
+def _create_postgres_database_from_template(
+    maintenance_engine: sa.engine.Engine, database: str, template_db_name: str
+) -> None:
     # 'CREATE DATABASE ... TEMPLATE' refuses any session attached to the source, so its
     # backends are re-terminated before every retry attempt (they may reconnect in between,
     # e.g. pooled connections of a service under test).
-    execute_queries(
+    quoted_database = _quote_database_identifier(maintenance_engine, database)
+    quoted_template = _quote_database_identifier(maintenance_engine, template_db_name)
+    _execute_postgres_statements(
         maintenance_engine,
-        [f"CREATE DATABASE {database} TEMPLATE {template_db_name};"],
-        before_attempt=lambda: _terminate_backends(maintenance_engine, template_db_name),
+        [f"CREATE DATABASE {quoted_database} TEMPLATE {quoted_template};"],
+        before_attempt=lambda: _terminate_database_backends(maintenance_engine, template_db_name),
     )
 
 
@@ -175,10 +199,12 @@ def reset_database_from_template(postgres_config: PostgresTestConfig, template_d
     database = postgres_config["database"]
     with maintenance_engine_context(postgres_config) as maintenance:
         if database_exists(maintenance, database):
-            execute_queries(maintenance, [f"ALTER DATABASE {database} WITH ALLOW_CONNECTIONS off;"])
-            _drop_database(maintenance, database)
-        _create_database_from_template(maintenance, database, template_db_name)
-        execute_queries(maintenance, [f"ALTER DATABASE {database} WITH ALLOW_CONNECTIONS on;"])
+            quoted_database = _quote_database_identifier(maintenance, database)
+            _execute_postgres_statements(maintenance, [f"ALTER DATABASE {quoted_database} WITH ALLOW_CONNECTIONS off;"])
+            _drop_postgres_database(maintenance, database)
+        _create_postgres_database_from_template(maintenance, database, template_db_name)
+        quoted_database = _quote_database_identifier(maintenance, database)
+        _execute_postgres_statements(maintenance, [f"ALTER DATABASE {quoted_database} WITH ALLOW_CONNECTIONS on;"])
 
 
 def build_migrated_pg_template(postgres_config: PostgresTestConfig, template_db_name: str) -> None:
@@ -189,8 +215,9 @@ def build_migrated_pg_template(postgres_config: PostgresTestConfig, template_db_
     """
     with maintenance_engine_context(postgres_config) as maintenance:
         # a stale template (e.g. from an interrupted session) is dropped and rebuilt
-        _drop_database(maintenance, template_db_name, ignore_errors=True)
-        execute_queries(maintenance, [f"CREATE DATABASE {template_db_name};"])
+        _drop_postgres_database(maintenance, template_db_name, ignore_errors=True)
+        quoted_template = _quote_database_identifier(maintenance, template_db_name)
+        _execute_postgres_statements(maintenance, [f"CREATE DATABASE {quoted_template};"])
 
     template_config = postgres_config.copy()
     template_config["database"] = template_db_name
@@ -205,11 +232,11 @@ def build_migrated_pg_template(postgres_config: PostgresTestConfig, template_db_
 
 def drop_pg_template(postgres_config: PostgresTestConfig, template_db_name: str) -> None:
     with maintenance_engine_context(postgres_config) as maintenance:
-        _drop_database(maintenance, template_db_name, ignore_errors=True)
+        _drop_postgres_database(maintenance, template_db_name, ignore_errors=True)
 
 
 @contextmanager
-def migrated_pg_template_context(postgres_config: PostgresTestConfig, template_db_name: str) -> Iterator[str]:
+def migrated_pg_template_context(postgres_config: PostgresTestConfig, template_db_name: str) -> Generator[str]:
     """Within the context, `template_db_name` exists and is migrated to head.
 
     On exit the template database is dropped.
@@ -224,7 +251,7 @@ def migrated_pg_template_context(postgres_config: PostgresTestConfig, template_d
 @contextmanager
 def cloned_pg_database_context(
     postgres_config: PostgresTestConfig, template_db_name: str
-) -> Iterator[sa.engine.Engine]:
+) -> Generator[sa.engine.Engine]:
     """Within the context, the target database is a fresh clone of `template_db_name`.
 
     Yields an AUTOCOMMIT engine connected to the cloned database. On exit the engine is
@@ -248,7 +275,7 @@ def cloned_pg_database_context(
     finally:
         engine.dispose()
         with maintenance_engine_context(postgres_config) as maintenance:
-            _drop_database(maintenance, database, ignore_errors=True)
+            _drop_postgres_database(maintenance, database, ignore_errors=True)
 
 
 def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
@@ -273,7 +300,7 @@ def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
 @contextmanager
 def migrated_pg_tables_context(
     postgres_config: PostgresTestConfig,
-) -> Iterator[PostgresTestConfig]:
+) -> Generator[PostgresTestConfig]:
     """
     Within the context, tables are created and dropped
     using migration upgrade/downgrade routines
@@ -367,6 +394,7 @@ async def _async_insert_and_get_row(
         where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
     else:
         # Handle single primary key (existing logic)
+        assert pk_col is not None, "Primary key column must be provided if pk_value is not set"
         if pk_value is None:
             pk_value = getattr(row, pk_col.name)
         else:
@@ -418,6 +446,7 @@ def _sync_insert_and_get_row(
         where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
     else:
         # Handle single primary key (existing logic)
+        assert pk_col is not None, "Primary key column must be provided if pk_value is not set"
         if pk_value is None:
             pk_value = getattr(row, pk_col.name)
         else:
@@ -550,6 +579,7 @@ async def insert_and_get_row_lifespan(
             where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
         else:
             if pk_value is None:
+                assert pk_col is not None, "Primary key column must be provided if pk_value is not set"
                 pk_value = getattr(row, pk_col.name)
             where_clause = pk_col == pk_value
 
@@ -574,7 +604,7 @@ def sync_insert_and_get_row_lifespan(
     pk_value: Any | None = None,
     pk_cols: list[sa.Column] | None = None,
     pk_values: list[Any] | None = None,
-) -> Iterator[dict[str, Any]]:
+) -> Generator[dict[str, Any]]:
     """sync version of insert_and_get_row_lifespan.
 
     TIP: more convenient for **module-scope fixtures** that setup the
@@ -603,6 +633,7 @@ def sync_insert_and_get_row_lifespan(
             where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
         else:
             if pk_value is None:
+                assert pk_col is not None, "Primary key column must be provided if pk_value is not set"
                 pk_value = getattr(row, pk_col.name)
             where_clause = pk_col == pk_value
 
