@@ -67,6 +67,14 @@ Compare every change against the loaded instruction files. Flag violations of:
 - Logging (f-strings in log messages instead of `%s` formatting)
 - FastAPI lifecycle (deprecated `add_event_handler` instead of lifespan)
 - Module exports (`__all__` format)
+- **Redundant comments**: flag step comments that merely restate the name of the
+  call/function they annotate (e.g. `# add user to group` immediately above
+  `await add_user_to_group(...)`). Keep only comments that add intent, invariants,
+  or non-obvious semantics not derivable from the identifier — fold those into the
+  docstring when they describe the callee's contract.
+- **Internal org/process speak in code**: flag comments or identifiers that leak
+  management/organizational vocabulary (e.g. "PO", "PM", "sprint") into production
+  source; use the code's own domain vocabulary instead (e.g. `reviewer_id`).
 
 #### Check 2 — Software Design
 

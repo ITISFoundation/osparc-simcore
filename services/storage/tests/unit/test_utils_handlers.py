@@ -53,7 +53,7 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
     [
         (
             InvalidFileIdentifierError(identifier="pytest file identifier", details="pytest details"),
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             FileMetaDataNotFoundError(file_id="pytest file ID"),
@@ -81,7 +81,7 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
         ),
         (
             LinkAlreadyExistsError(file_id="pytest file ID"),
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
         (
             DBAPIError.instance(
@@ -144,11 +144,11 @@ async def test_request_validation_error_handler(initialized_app: FastAPI, client
     response = await client.get("/test")
     assert_status(
         response,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         None,
         expected_msg=_error_msg,
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 async def test_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):

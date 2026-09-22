@@ -106,4 +106,4 @@ test-openai-api-compatibility: openapi-openai-compatible.json ## Tests that the 
 		--fail-on ERR \
 		--flatten-allof \
 		"/specs/openapi-openai-compatible.json" \
-		"https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml"
+		"https://raw.githubusercontent.com/openai/openai-openapi/main/openapi.yaml"

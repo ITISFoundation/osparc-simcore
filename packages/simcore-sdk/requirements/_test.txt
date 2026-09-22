@@ -112,6 +112,10 @@ frozenlist==1.8.0
     #   aiosignal
 graphql-core==3.2.8
     # via moto
+greenlet==3.3.2
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 icdiff==2.0.10
     # via pytest-icdiff
 idna==3.19
@@ -326,7 +330,7 @@ types-requests==2.32.4.20260107
     # via types-tqdm
 types-tqdm==4.67.3.20260303
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic

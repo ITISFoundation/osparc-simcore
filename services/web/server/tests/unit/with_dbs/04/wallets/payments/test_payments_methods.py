@@ -168,7 +168,7 @@ async def _add_payment_method(client: TestClient, wallet_id: WalletID) -> Paymen
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
     [
-        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (1, status.HTTP_422_UNPROCESSABLE_CONTENT),
         (123.45, status.HTTP_200_OK),
     ],
 )
@@ -341,7 +341,7 @@ def mock_payment_dependencies(
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
     [
-        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (1, status.HTTP_422_UNPROCESSABLE_CONTENT),
         (26, status.HTTP_202_ACCEPTED),
     ],
 )

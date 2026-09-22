@@ -295,6 +295,10 @@ class BaseCompScheduler(ABC):
         def _need_heartbeat(task: CompTaskAtDB) -> bool:
             if task.state not in RUNNING_STATES:
                 return False
+            # NOTE: a RUNNING task without a job_id is orphaned/stuck (see _fix_tasks_stuck_pending_without_job_id)
+            # and must not be heartbeated as it is not tracked in the computational backend anymore
+            if task.job_id is None:
+                return False
 
             if task.last_heartbeat is None:
                 assert task.start  # nosec
@@ -328,17 +332,23 @@ class BaseCompScheduler(ABC):
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
         """safety-net for https://github.com/ITISFoundation/private-issues/issues/648:
-        resets tasks stuck in PENDING without a job_id back to PUBLISHED so they get restarted."""
+        resets tasks stuck in PENDING/STARTED without a job_id back to PUBLISHED so they get restarted.
+
+        NOTE: PENDING/STARTED tasks without a job_id (e.g. after a crash/re-deployment or a silenced
+        exception) are invisible to `_update_states_from_comp_backend` (job_id is required to poll the
+        backend) and would otherwise be heartbeated forever without ever progressing.
+        """
         stuck_node_ids = [
             NodeID(node_id)
             for node_id, task in comp_tasks.items()
-            if task.state is RunningState.PENDING and task.job_id is None
+            if task.state in (RunningState.PENDING, RunningState.STARTED) and task.job_id is None
         ]
         if not stuck_node_ids:
             return comp_tasks
 
         _logger.warning(
-            "found %d task(s) stuck in PENDING without a job_id, resetting them to PUBLISHED so they get restarted: %s",
+            "found %d task(s) stuck in PENDING/STARTED without a job_id, "
+            "resetting them to PUBLISHED so they get restarted: %s",
             len(stuck_node_ids),
             stuck_node_ids,
         )

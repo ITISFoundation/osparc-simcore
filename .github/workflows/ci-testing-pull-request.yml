@@ -58,7 +58,6 @@ jobs:
     timeout-minutes: 10
     name: "api-server openai compatibility"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
