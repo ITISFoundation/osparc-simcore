@@ -140,11 +140,6 @@ def sync_engine(
     _engine.dispose()
 
 
-@pytest.fixture(scope="session")
-def postgres_dsn(postgres_service: PostgreServiceInfoDict) -> dict[str, str]:
-    return {key: f"{postgres_service[key]}" for key in ("user", "password", "database", "host", "port")}
-
-
 @pytest.fixture
 def migrated_db(
     postgres_db_per_test_from_template: sqlalchemy.engine.Engine,
