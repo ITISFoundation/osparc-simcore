@@ -13,7 +13,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.14.2
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -179,9 +179,10 @@ types-python-jose==3.5.0.20250531
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   mypy
     #   sqlalchemy
 urllib3==2.7.0

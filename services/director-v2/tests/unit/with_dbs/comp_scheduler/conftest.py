@@ -114,7 +114,7 @@ def minimal_configuration(
             "DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_ENABLED": "1",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "S3_ENDPOINT": faker.url(),
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),

@@ -29,7 +29,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.14.2
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -415,10 +415,11 @@ types-jsonschema==4.26.0.20260202
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via types-boto3
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   mypy

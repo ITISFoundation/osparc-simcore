@@ -10,7 +10,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   starlette
@@ -296,9 +296,10 @@ types-s3transfer==0.16.0
     # via
     #   types-aioboto3
     #   types-boto3
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   fastapi

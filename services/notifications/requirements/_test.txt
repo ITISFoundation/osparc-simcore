@@ -4,6 +4,10 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
+anyio==4.15.1
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
@@ -62,6 +66,10 @@ faker==40.38.0
 fakeredis==2.34.1
     # via -r requirements/_test.in
 greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -160,9 +168,10 @@ tenacity==9.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   mypy
     #   sqlalchemy
 tzdata==2025.2

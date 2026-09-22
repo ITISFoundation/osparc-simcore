@@ -4,6 +4,10 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
+anyio==4.15.1
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 billiard==4.2.4
     # via
     #   -c requirements/_base.txt
@@ -167,9 +171,10 @@ tenacity==9.1.4
     #   pytest-celery
 termcolor==3.3.0
     # via pytest-sugar
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   flexcache
     #   flexparser
     #   pint

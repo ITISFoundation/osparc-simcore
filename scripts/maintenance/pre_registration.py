@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
@@ -10,7 +11,8 @@
 Examples of usage:
     $ uv run pre_registration.py --help
 
-    $ uv run pre_registration.py pre-register pre_register_users.json --base-url http://localhost:8001 --email admin@email.com
+    $ uv run pre_registration.py pre-register pre_register_users.json \
+        --base-url http://localhost:8001 --email admin@email.com
 
     $ uv run pre_registration.py invite user@example.com --base-url http://localhost:8001 --email admin@email.com
 
@@ -51,6 +53,9 @@ def _print_error(message: str) -> None:
     typer.secho(f"Error: {message}", fg=typer.colors.RED, err=True)
 
 
+MAX_EXTRA_CREDITS_USD = 500
+
+
 class LoginCredentialsRequest(BaseModel):
     """Request body model for login endpoint"""
 
@@ -61,15 +66,15 @@ class LoginCredentialsRequest(BaseModel):
 class PreRegisterUserRequest(BaseModel):
     """Request body model for pre-registering a user"""
 
-    firstName: str
-    lastName: str
+    firstName: str  # noqa: N815
+    lastName: str  # noqa: N815
     email: EmailStr
     institution: str | None = None
     phone: str | None = None
     address: str | None = None
     city: str | None = None
     state: Annotated[str | None, Field(description="State, province, canton, ...")]
-    postalCode: str | None = None
+    postalCode: str | None = None  # noqa: N815
     country: str | None = None
     extras: dict[str, Any] = {}
 
@@ -78,8 +83,8 @@ class InvitationGenerateRequest(BaseModel):
     """Request body model for generating an invitation"""
 
     guest: EmailStr
-    trialAccountDays: PositiveInt | None = None
-    extraCreditsInUsd: Annotated[int, Field(ge=0, lt=500)] | None = None
+    trialAccountDays: PositiveInt | None = None  # noqa: N815
+    extraCreditsInUsd: Annotated[int, Field(ge=0, lt=500)] | None = None  # noqa: N815
 
 
 async def _login(client: AsyncClient, email: EmailStr, password: SecretStr) -> dict[str, Any]:
@@ -106,7 +111,7 @@ async def _logout_current_user(client: AsyncClient):
     r.raise_for_status()
 
 
-async def _pre_register_user(
+async def _pre_register_user(  # noqa: PLR0913, PLR0917
     client: AsyncClient,
     first_name: str,
     last_name: str,
@@ -118,7 +123,7 @@ async def _pre_register_user(
     state: str | None = None,
     postal_code: str | None = None,
     country: str | None = None,
-    extras: dict[str, Any] = {},
+    extras: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Pre-register a user in the system"""
     path = "/v0/admin/user-accounts:pre-register"
@@ -134,7 +139,7 @@ async def _pre_register_user(
         state=state,
         postalCode=postal_code or "",
         country=country,
-        extras=extras,
+        extras=extras or {},
     )
 
     response = await client.post(path, json=user_data.model_dump(mode="json"))
@@ -242,7 +247,7 @@ async def run_pre_registration(
     """Run the pre-registration process"""
     # Read and parse the users file
     try:
-        users_data_raw = json.loads(users_file_path.read_text())
+        users_data_raw = json.loads(await asyncio.to_thread(users_file_path.read_text))
         users_data = TypeAdapter(list[PreRegisterUserRequest]).validate_python(users_data_raw)
     except json.JSONDecodeError:
         _print_error(f"{users_file_path} is not a valid JSON file")
@@ -319,7 +324,7 @@ async def run_create_invitation(
             timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
             output_filename = f"invitation_{guest_email.split('@')[0]}_{timestamp}.json"
             output_path = Path(output_filename)
-            output_path.write_text(json.dumps(result, indent=1))
+            await asyncio.to_thread(output_path.write_text, json.dumps(result, indent=1))
             _print_success(f"Result written to {output_path}")
 
             # Logout
@@ -345,14 +350,13 @@ async def run_bulk_create_invitation(
     """Run the bulk invitation process"""
     # Read and parse the emails file
     try:
-        file_content = emails_file_path.read_text()
+        file_content = await asyncio.to_thread(emails_file_path.read_text)
         data = json.loads(file_content)
 
         # Check if the file contains a list of emails or objects with email property
         if isinstance(data, list):
             if all(isinstance(item, str) for item in data):
-                # Simple list of email strings
-                data = data
+                pass  # already a simple list of email strings
             elif all(isinstance(item, dict) and "email" in item for item in data):
                 # List of objects with email property (like pre-registered users)
                 data = [item["email"].lower() for item in data]
@@ -481,7 +485,7 @@ def invite(
         typer.Argument(help="Email address of the guest to invite"),
     ],
     trial_days: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--trial-days",
             "-t",
@@ -489,7 +493,7 @@ def invite(
         ),
     ] = None,
     extra_credits: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--extra-credits",
             "-c",
@@ -509,7 +513,7 @@ def invite(
         _print_error("Trial days must be a positive integer")
         sys.exit(os.EX_USAGE)
 
-    if extra_credits is not None and (extra_credits < 0 or extra_credits >= 500):
+    if extra_credits is not None and (extra_credits < 0 or extra_credits >= MAX_EXTRA_CREDITS_USD):
         _print_error("Extra credits must be between 0 and 499")
         sys.exit(os.EX_USAGE)
 
@@ -534,7 +538,7 @@ def invite_all(
         typer.Argument(help="Path to JSON file containing emails to invite"),
     ],
     trial_days: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--trial-days",
             "-t",
@@ -542,7 +546,7 @@ def invite_all(
         ),
     ] = None,
     extra_credits: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--extra-credits",
             "-c",
@@ -571,7 +575,7 @@ def invite_all(
         _print_error("Trial days must be a positive integer")
         sys.exit(os.EX_USAGE)
 
-    if extra_credits is not None and (extra_credits < 0 or extra_credits >= 500):
+    if extra_credits is not None and (extra_credits < 0 or extra_credits >= MAX_EXTRA_CREDITS_USD):
         _print_error("Extra credits must be between 0 and 499")
         sys.exit(os.EX_USAGE)
 

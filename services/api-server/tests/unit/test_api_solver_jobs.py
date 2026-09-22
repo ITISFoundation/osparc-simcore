@@ -197,7 +197,7 @@ async def test_get_solver_job_pricing_unit(
     elif capture_file == "get_job_pricing_unit_invalid_job.json":
         assert response.status_code == status.HTTP_404_NOT_FOUND
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     else:
         pytest.fail(reason=f"Unknown {capture_file=}")
 
@@ -675,6 +675,6 @@ async def test_start_solver_job_with_invalid_encryption(
         json=model_dump_with_secrets(encryption, show_secrets=True),
     )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     body = response.json()
     assert "nonexistent_port" in str(body)

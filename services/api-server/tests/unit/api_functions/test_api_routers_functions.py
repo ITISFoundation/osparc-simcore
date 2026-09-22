@@ -91,7 +91,7 @@ async def test_register_function_invalid(
         "project_id": str(uuid4()),
     }
     response = await client.post(f"{API_VTAG}/functions", json=invalid_function, auth=auth)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Input tag 'invalid_class' found using 'function_class' does not" in response.json()["errors"][0]["msg"]
 
 

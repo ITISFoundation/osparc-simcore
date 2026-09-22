@@ -83,7 +83,7 @@ types-psycopg2==2.9.21.20260223
     # via -r requirements/_test.in
 types-requests==2.32.4.20260107
     # via types-docker
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt

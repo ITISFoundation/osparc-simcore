@@ -29,6 +29,10 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
+anyio==4.15.1
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
@@ -269,9 +273,10 @@ sympy==1.14.0
     # via cfn-lint
 types-aiofiles==25.1.0.20260409
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic

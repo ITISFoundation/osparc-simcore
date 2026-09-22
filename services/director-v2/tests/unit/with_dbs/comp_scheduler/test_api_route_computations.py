@@ -644,7 +644,7 @@ async def test_start_computation_without_product_fails(
             "collection_run_id": f"{fake_collection_run_id}",
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, response.text
 
 
 async def test_start_computation_without_collection_run_id_fails(
@@ -669,7 +669,7 @@ async def test_start_computation_without_collection_run_id_fails(
             "start_pipeline": f"{True}",
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, response.text
 
 
 async def test_start_computation(

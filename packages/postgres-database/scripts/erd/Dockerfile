@@ -20,7 +20,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean
 
-
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=uv_build /uv /uvx /bin/
 
 # devenv
 COPY requirements.txt requirements.txt

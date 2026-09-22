@@ -10,7 +10,7 @@ aiocache==0.12.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.24.0
+aiodocker==0.27.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -36,7 +36,7 @@ annotated-doc==0.0.5
     # via fastapi
 annotated-types==0.7.0
     # via pydantic
-anyio==4.14.2
+anyio==4.15.1
     # via
     #   fast-depends
     #   faststream
@@ -52,7 +52,7 @@ asgi-lifespan==2.1.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
-asyncpg==0.30.0
+asyncpg==0.31.0
     # via sqlalchemy
 attrs==25.1.0
     # via
@@ -410,10 +410,11 @@ typer==0.16.1
     #   fastapi-cloud-cli
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
+    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream
