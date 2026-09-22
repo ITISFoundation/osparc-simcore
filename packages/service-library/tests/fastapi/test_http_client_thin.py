@@ -15,10 +15,10 @@ from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     ClientHttpError,
     UnexpectedStatusError,
-    _get_shared_ssl_context,
     expect_status,
     retry_on_errors,
 )
+from servicelib.ssl_context import get_shared_ssl_context
 from servicelib.tracing import TracingConfig
 
 _TIMEOUT_OVERWRITE: Final[int] = 1
@@ -159,10 +159,10 @@ def test_ssl_context_is_built_once_and_shared(request_timeout: int):
     class ATestClient(BaseThinClient): ...
 
     tracing_config = TracingConfig.create(service_name="test-client", tracing_settings=None)
-    _get_shared_ssl_context.cache_clear()
+    get_shared_ssl_context.cache_clear()
 
     with mock.patch(
-        "servicelib.fastapi.http_client_thin.create_ssl_context",
+        "servicelib.ssl_context.create_ssl_context",
         wraps=httpx.create_ssl_context,
     ) as mocked_factory:
         clients = [ATestClient(total_retry_interval=request_timeout, tracing_config=tracing_config) for _ in range(3)]
@@ -170,16 +170,16 @@ def test_ssl_context_is_built_once_and_shared(request_timeout: int):
     assert mocked_factory.call_count == 1
 
     contexts = {id(_get_client_ssl_context(client)) for client in clients}
-    assert contexts == {id(_get_shared_ssl_context())}
+    assert contexts == {id(get_shared_ssl_context())}
 
 
 def test_shared_ssl_context_keeps_httpx_trust_store():
-    _get_shared_ssl_context.cache_clear()
+    get_shared_ssl_context.cache_clear()
 
     def _ca_serials(context):
         return {cert["serialNumber"] for cert in context.get_ca_certs()}
 
-    assert _ca_serials(_get_shared_ssl_context()) == _ca_serials(httpx.create_ssl_context())
+    assert _ca_serials(get_shared_ssl_context()) == _ca_serials(httpx.create_ssl_context())
 
 
 async def test_methods_do_not_return_response(

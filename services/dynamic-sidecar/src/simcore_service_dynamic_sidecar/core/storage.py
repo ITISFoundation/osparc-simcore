@@ -6,6 +6,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyUrl, TypeAdapter
 from servicelib.logging_utils import log_context
+from servicelib.ssl_context import get_shared_ssl_context
 from settings_library.node_ports import StorageAuthSettings
 
 from ..modules.service_liveness import wait_for_service_liveness
@@ -46,7 +47,9 @@ async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> 
         logging.DEBUG,
         msg=f"checking storage connection at {url=} {auth=}",
     ):
-        async with AsyncClient(auth=auth, timeout=_LIVENESS_TIMEOUT.total_seconds()) as session:
+        async with AsyncClient(
+            auth=auth, timeout=_LIVENESS_TIMEOUT.total_seconds(), verify=get_shared_ssl_context()
+        ) as session:
             result = await session.get(url)
             if result.status_code == status.HTTP_200_OK:
                 _logger.debug("storage connection established")

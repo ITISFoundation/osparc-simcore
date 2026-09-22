@@ -2,12 +2,11 @@ import asyncio
 import functools
 import inspect
 import logging
-import ssl
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from common_library.errors_classes import OsparcErrorMixin
-from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError, create_ssl_context
+from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
 from httpx._types import TimeoutTypes, URLTypes
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
@@ -16,20 +15,11 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
+from ..ssl_context import get_shared_ssl_context
 from ..tracing import TracingConfig, setup_httpx_client_tracing
 from .http_client import BaseHTTPApi
 
 _logger = logging.getLogger(__name__)
-
-
-@functools.lru_cache(maxsize=1)
-def _get_shared_ssl_context() -> ssl.SSLContext:
-    """Parsing the CA bundle costs ~3MB, so it is done once per process.
-
-    Uses httpx's own factory to keep its default trust store (certifi and
-    the SSL_CERT_FILE/SSL_CERT_DIR overrides) unchanged.
-    """
-    return create_ssl_context()
 
 
 """
@@ -227,7 +217,7 @@ class BaseThinClient(BaseHTTPApi):
         if default_http_client_timeout:
             client_args["timeout"] = default_http_client_timeout
 
-        client = AsyncClient(verify=_get_shared_ssl_context(), **client_args)
+        client = AsyncClient(verify=get_shared_ssl_context(), **client_args)
         if tracing_config.tracing_enabled:
             setup_httpx_client_tracing(client, tracing_config=tracing_config)
         super().__init__(client=client)
