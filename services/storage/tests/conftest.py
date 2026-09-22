@@ -17,7 +17,6 @@ from typing import Any, Final, cast
 
 import httpx2
 import pytest
-import respx
 import simcore_service_storage
 from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
@@ -218,7 +217,7 @@ def app_settings(
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
-    datcore_adapter_service_mock: respx.MockRouter,
+    datcore_adapter_service_mock: httpx2.MockTransport,
     mocked_redis_server: None,
 ) -> ApplicationSettings:
     test_app_settings = ApplicationSettings.create_from_envs()
