@@ -172,8 +172,8 @@ types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
-    #   anyio
     #   alembic
+    #   anyio
     #   fastapi
     #   mypy
     #   pydantic

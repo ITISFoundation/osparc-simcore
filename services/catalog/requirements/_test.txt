@@ -30,7 +30,6 @@ attrs==25.2.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
-    #   pytest-docker
     #   referencing
 certifi==2025.1.31
     # via
@@ -142,7 +141,6 @@ pytest==9.1.1
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
-    #   pytest-docker
     #   pytest-mock
 pytest-aiohttp==1.1.1
     # via -r requirements/_test.in
@@ -151,8 +149,6 @@ pytest-asyncio==1.4.0
 pytest-benchmark==5.3.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
-    # via -r requirements/_test.in
-pytest-docker==3.2.5
     # via -r requirements/_test.in
 pytest-mock==3.15.1
     # via -r requirements/_test.in
