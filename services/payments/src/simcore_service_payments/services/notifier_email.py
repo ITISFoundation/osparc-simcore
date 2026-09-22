@@ -62,7 +62,7 @@ _INVOICE_PDF_TIMEOUT: Final = httpx2.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
     stop=stop_after_attempt(_INVOICE_PDF_RETRY_ATTEMPTS),
     reraise=True,
 )
-async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx2.Response:
     async with httpx2.AsyncClient(
         follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT, verify=get_shared_ssl_context()
     ) as client:
