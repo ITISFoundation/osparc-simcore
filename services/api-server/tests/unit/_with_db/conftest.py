@@ -46,13 +46,14 @@ def migrated_db(
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     default_app_env_vars: EnvVarsDict,
+    postgres_env_vars_dict: EnvVarsDict,
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.configure_rabbitmq")
     mocker.patch("simcore_service_api_server.core.application.configure_api_server_prometheus_instrumentation")
 
-    envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
+    envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars, **postgres_env_vars_dict})
     assert "API_SERVER_POSTGRES" not in envs
 
     # Should be sufficient to create settings
