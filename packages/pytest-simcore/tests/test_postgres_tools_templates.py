@@ -10,6 +10,7 @@ import tenacity
 from pydantic import PostgresDsn
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
+    _is_database_missing_error,
     cloned_pg_database_context,
     database_exists,
     drop_pg_template,
@@ -76,6 +77,17 @@ def _engine_to(config: PostgresTestConfig, database: str) -> sa.engine.Engine:
 def _count_rows(engine: sa.engine.Engine, table: sa.Table) -> int:
     with engine.connect() as conn:
         return int(conn.execute(sa.select(sa.func.count()).select_from(table)).scalar())
+
+
+def test_is_database_missing_error_only_matches_postgres_undefined_database():
+    class _DatabaseMissingError:
+        pgcode = "3D000"
+
+    missing = sa.exc.ProgrammingError("statement", {}, _DatabaseMissingError())
+    other = sa.exc.ProgrammingError("statement", {}, RuntimeError("other error"))
+
+    assert _is_database_missing_error(missing)
+    assert not _is_database_missing_error(other)
 
 
 def test_template_is_built_once_and_clones_are_isolated(postgres_container: PostgresTestConfig):

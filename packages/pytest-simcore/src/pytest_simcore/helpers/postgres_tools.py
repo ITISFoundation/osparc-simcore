@@ -55,6 +55,10 @@ def _is_retryable_error(error: BaseException) -> bool:
     return is_retryable_operational_error(error) or _is_database_accessed_error(error)
 
 
+def _is_database_missing_error(error: BaseException) -> bool:
+    return isinstance(error, sa_exc.ProgrammingError) and getattr(error.orig, "pgcode", None) == "3D000"
+
+
 def execute_queries(
     engine: sa.engine.Engine,
     sql_statements: list[str],
@@ -88,12 +92,9 @@ def execute_queries(
                             # Recreate stale pooled connections before the retry.
                             engine.dispose()
                         raise
-        except Exception as e:  # pylint: disable=broad-except
-            if ignore_errors:
-                # when running tests initially a database to be dropped may not exist
-                # which can safely be ignored. The debug message is here to catch future
-                # errors and avoid time wasting
-                print(f"SQL error which can be ignored: {e}")
+        except sa_exc.ProgrammingError as e:
+            if ignore_errors and _is_database_missing_error(e):
+                _logger.debug("Database does not exist while executing %s", statement)
                 continue
             raise
 
