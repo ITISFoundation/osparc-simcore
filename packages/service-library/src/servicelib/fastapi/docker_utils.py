@@ -20,6 +20,7 @@ from ..docker_utils import (
 )
 from ..logging_utils import log_catch
 from ..progress_bar import AsyncReportCB, ProgressBarData
+from ..ssl_context import get_shared_ssl_context
 
 _DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("200MiB")
 
@@ -30,7 +31,7 @@ async def retrieve_image_layer_information(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ) -> DockerImageManifestsV2 | None:
     with log_catch(_logger, reraise=False):
-        async with httpx2.AsyncClient() as client:
+        async with httpx2.AsyncClient(verify=get_shared_ssl_context()) as client:
             image_complete_url = get_image_complete_url(image, registry_settings)
             auth = None
             if registry_settings.REGISTRY_URL in f"{image_complete_url}":

@@ -14,6 +14,7 @@ import aiofiles.tempfile
 import httpx2
 from fastapi import FastAPI
 from servicelib.container_utils import run_command_in_container
+from servicelib.ssl_context import get_shared_ssl_context
 from settings_library.utils_r_clone import resolve_provider
 
 from ..core.settings import ApplicationSettings
@@ -126,7 +127,9 @@ def _get_self_container_ip() -> str:
 async def _get_self_container() -> str:
     ip = _get_self_container_ip()
 
-    async with httpx2.AsyncClient(transport=httpx2.AsyncHTTPTransport(uds="/var/run/docker.sock")) as client:
+    async with httpx2.AsyncClient(
+        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock", verify=get_shared_ssl_context())
+    ) as client:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
             if ip in json.dumps(entry):

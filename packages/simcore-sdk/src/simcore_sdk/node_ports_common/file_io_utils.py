@@ -17,17 +17,14 @@ from aiohttp import (
     RequestInfo,
 )
 from common_library.json_serialization import json_loads
-from models_library.api_schemas_storage.storage_schemas import (
-    ETag,
-    FileUploadSchema,
-    UploadedPart,
-)
+from models_library.api_schemas_storage.storage_schemas import ETag, FileUploadSchema, UploadedPart
 from models_library.basic_types import SHA256Str
 from multidict import MultiMapping
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
+from servicelib.ssl_context import get_shared_ssl_context
 from servicelib.utils import logged_gather, partition_gen
 from tenacity.after import after_log
 from tenacity.asyncio import AsyncRetrying
@@ -182,7 +179,8 @@ async def download_link_to_file(
             async with AsyncExitStack() as stack:
                 client = await stack.enter_async_context(
                     httpx2.AsyncClient(
-                        timeout=httpx2.Timeout(client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT)
+                        timeout=httpx.Timeout(client_request_settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT),
+                        verify=get_shared_ssl_context(),
                     )
                 )
                 response = await stack.enter_async_context(client.stream("GET", f"{url}"))
@@ -232,13 +230,10 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     # Sometimes AWS responds with a 500 or 503 which shall be retried,
     # form more information see:
     # https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/
-    if exc.status in (
+    return exc.status in (
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         status.HTTP_503_SERVICE_UNAVAILABLE,
-    ):
-        return True
-
-    return False
+    )
 
 
 async def _session_put(

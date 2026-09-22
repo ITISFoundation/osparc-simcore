@@ -2,7 +2,7 @@ import asyncio
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from enum import Enum
+from enum import StrEnum
 
 import typer
 from fastapi import FastAPI, status
@@ -17,6 +17,7 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
+from servicelib.ssl_context import get_shared_ssl_context
 from servicelib.tracing import TracingConfig
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
@@ -129,7 +130,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
 ### PROJECT STATE
 
 
-class StatusIcon(str, Enum):
+class StatusIcon(StrEnum):
     OK = ":green_heart:"
     ONGOING = ":yellow_heart:"
     FAILED = ":broken_heart:"
@@ -227,7 +228,7 @@ async def _get_nodes_render_data(
     workbench = await projects_nodes_repository.get_all(project_id)
 
     render_data: list[RenderData] = []
-    async with AsyncClient() as client:
+    async with AsyncClient(verify=get_shared_ssl_context()) as client:
         for node_uuid, node_content in workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
             render_data.append(await _to_render_data(client, node_uuid, node_content.label, service_type))
