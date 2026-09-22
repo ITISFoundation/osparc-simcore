@@ -5,8 +5,12 @@ from collections.abc import AsyncIterator, Callable
 from typing import Final
 
 from aiohttp import web
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter as OTLPSpanExporterHTTP
-from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor  # pylint:disable=no-name-in-module
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as OTLPSpanExporterHTTP,
+)
+from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
+    AioHttpClientInstrumentor,
+)
 from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
     AioHttpServerInstrumentor,
     create_aiohttp_middleware,

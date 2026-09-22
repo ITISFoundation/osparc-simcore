@@ -20,21 +20,25 @@ def _retained_meter_count(provider: _ProxyMeterProvider) -> int:
 def isolated_otel_meter_provider() -> Iterator[_ProxyMeterProvider]:
     """Gives each test a pristine global meter provider.
 
-    The OpenTelemetry meter provider is a process-wide global that can only be
-    set once, so it must be saved and restored around every test.
+    The OpenTelemetry meter provider is a process-wide global guarded by a
+    one-shot `Once`. Without resetting that guard too, a later
+    `set_meter_provider()` is silently refused and tests become order-dependent.
     """
     otel_metrics = metrics._internal  # noqa: SLF001
     saved_provider = otel_metrics._METER_PROVIDER  # noqa: SLF001
     saved_proxy = otel_metrics._PROXY_METER_PROVIDER  # noqa: SLF001
+    saved_set_once = otel_metrics._METER_PROVIDER_SET_ONCE  # noqa: SLF001
 
     fresh_proxy = _ProxyMeterProvider()
     otel_metrics._METER_PROVIDER = None  # noqa: SLF001
     otel_metrics._PROXY_METER_PROVIDER = fresh_proxy  # noqa: SLF001
+    otel_metrics._METER_PROVIDER_SET_ONCE = type(saved_set_once)()  # noqa: SLF001
 
     yield fresh_proxy
 
     otel_metrics._METER_PROVIDER = saved_provider  # noqa: SLF001
     otel_metrics._PROXY_METER_PROVIDER = saved_proxy  # noqa: SLF001
+    otel_metrics._METER_PROVIDER_SET_ONCE = saved_set_once  # noqa: SLF001
 
 
 def test_proxy_meter_provider_retains_every_meter(
@@ -69,6 +73,7 @@ def test_setup_meter_provider_is_idempotent(
 ):
     setup_meter_provider()
     first_provider = metrics.get_meter_provider()
+    assert isinstance(first_provider, NoOpMeterProvider)
 
     setup_meter_provider()
 

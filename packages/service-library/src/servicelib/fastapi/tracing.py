@@ -5,7 +5,9 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import LifespanManager, State
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter as OTLPSpanExporterHTTP
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as OTLPSpanExporterHTTP,
+)
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -15,12 +17,18 @@ from yarl import URL
 
 from ..logging_utils import log_catch, log_context
 from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
-from ..tracing import TracingConfig, get_trace_info_headers, setup_meter_provider
+from ..tracing import (
+    TracingConfig,
+    get_trace_info_headers,
+    setup_meter_provider,
+)
 
 _logger = logging.getLogger(__name__)
 
 try:
-    from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+    from opentelemetry.instrumentation.asyncpg import (
+        AsyncPGInstrumentor,
+    )
 
     HAS_ASYNCPG = True
 except ImportError:
@@ -65,7 +73,9 @@ except ImportError:
     HAS_REQUESTS = False
 
 try:
-    from opentelemetry.instrumentation.aio_pika.aio_pika_instrumentor import AioPikaInstrumentor
+    from opentelemetry.instrumentation.aio_pika.aio_pika_instrumentor import (
+        AioPikaInstrumentor,
+    )
 
     HAS_AIOPIKA_INSTRUMENTOR = True
 except ImportError:
