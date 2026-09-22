@@ -60,7 +60,7 @@ asgi-lifespan==2.1.0
     #   -r requirements/_base.in
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
-asyncpg==0.30.0
+asyncpg==0.31.0
     # via
     #   -r requirements/_base.in
     #   sqlalchemy

@@ -31,11 +31,11 @@ anyio==4.15.1
     #   httpx
     #   starlette
     #   watchfiles
-asyncpg==0.30.0
+asyncpg==0.31.0
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs
-asyncpg-stubs==0.30.2
+asyncpg-stubs==0.31.3
     # via -r requirements/_test.in
 attrs==25.4.0
     # via
