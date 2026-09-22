@@ -39,10 +39,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 ## POSTGRES -----
 
-# NOTE: 'pytest_simcore.postgres_service' is loaded as a plugin by the top-level conftest,
-# providing 'postgres_db_per_test_from_template' (the test database is re-cloned from a
-# session-scoped template migrated once with alembic) which 'migrated_db' below builds on
-
 
 _CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
