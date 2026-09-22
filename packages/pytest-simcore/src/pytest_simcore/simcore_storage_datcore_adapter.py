@@ -3,11 +3,10 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 
 import httpx2
 import pytest
-import respx
 from faker import Faker
 from fastapi_pagination import LimitOffsetPage, LimitOffsetParams
 from servicelib.aiohttp import status
@@ -15,51 +14,68 @@ from simcore_service_storage.modules.datcore_adapter.datcore_adapter_settings im
     DatcoreAdapterSettings,
 )
 
-from pytest_simcore.helpers.host import get_localhost_ip
-
 
 @pytest.fixture
-def datcore_adapter_service_mock(faker: Faker) -> Iterator[respx.MockRouter]:
+async def datcore_adapter_service_mock(
+    faker: Faker, monkeypatch: pytest.MonkeyPatch
+) -> AsyncIterator[httpx2.MockTransport]:
+    """Mocks the datcore-adapter service's HTTP API using ``httpx2.MockTransport``.
+
+    NOTE: respx cannot intercept httpx2 traffic (httpx2.AsyncClient is not an
+    httpx.AsyncClient subclass), therefore the mock is installed by replacing
+    the httpx2.AsyncHTTPTransport factory used by servicelib.fastapi.httpx_client
+    while this fixture is active. Any request NOT addressed to the datcore-adapter
+    endpoint is passed through to the real transport.
+    """
     dat_core_settings = DatcoreAdapterSettings.create_from_envs()
-    datcore_adapter_base_url = dat_core_settings.endpoint
-    # mock base endpoint
-    with respx.mock(
-        base_url=datcore_adapter_base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mocker:
-        # NOTE: passthrough the localhost and the local ip
-        respx_mocker.route(host="127.0.0.1").pass_through()
-        respx_mocker.route(host=get_localhost_ip()).pass_through()
+    base_url = httpx2.URL(dat_core_settings.endpoint)
 
-        respx_mocker.get("/user/profile", name="get_user_profile").respond(
-            status.HTTP_200_OK, json=faker.pydict(allowed_types=(str,))
-        )
-        respx_mocker.get(re.compile(r"/datasets/(?P<dataset_id>[^/]+)/files_legacy")).respond(
-            status.HTTP_200_OK, json=[]
-        )
-        list_datasets_re = re.compile(r"/datasets")
-        respx_mocker.get(list_datasets_re, name="list_datasets").respond(
-            status.HTTP_200_OK,
-            json=LimitOffsetPage.create(items=[], params=LimitOffsetParams(limit=10, offset=0), total=0).model_dump(
-                mode="json"
-            ),
-        )
+    # created before patching httpx2.AsyncHTTPTransport below
+    real_transport = httpx2.AsyncHTTPTransport(http2=True)
 
-        def _create_download_link(request, file_id):
+    def _mocked_response(path: str) -> httpx2.Response:
+        if path == "/user/profile":
+            return httpx2.Response(status.HTTP_200_OK, json=faker.pydict(allowed_types=(str,)))
+
+        if re.search(r"/datasets/[^/]+/files_legacy", path):
+            return httpx2.Response(status.HTTP_200_OK, json=[])
+
+        if "/datasets" in path:
             return httpx2.Response(
-                status.HTTP_404_NOT_FOUND,
-                json={"error": f"{file_id} not found!"},
+                status.HTTP_200_OK,
+                json=LimitOffsetPage.create(items=[], params=LimitOffsetParams(limit=10, offset=0), total=0).model_dump(
+                    mode="json"
+                ),
             )
 
-        respx_mocker.get(re.compile(r"/files/(?P<file_id>[^/]+)"), name="get_file_download_link").mock(
-            side_effect=_create_download_link
-        )
+        if file_id_match := re.search(r"/files/([^/]+)", path):
+            return httpx2.Response(
+                status.HTTP_404_NOT_FOUND,
+                json={"error": f"{file_id_match.group(1)} not found!"},
+            )
 
-        respx_mocker.get(
-            "/",
-            name="healthcheck",
-        ).respond(status.HTTP_200_OK, json={"message": "ok"})
-        respx_mocker.get("", name="base_endpoint").respond(status.HTTP_200_OK, json={"message": "root entrypoint"})
+        if path == "/":
+            return httpx2.Response(status.HTTP_200_OK, json={"message": "ok"})
 
-        yield respx_mocker
+        return httpx2.Response(status.HTTP_404_NOT_FOUND, json={"error": f"{path} is not mocked"})
+
+    async def _handler(request: httpx2.Request) -> httpx2.Response:
+        url = request.url
+        if url.host != base_url.host or url.port != base_url.port or not url.path.startswith(base_url.path):
+            # NOTE: passthrough anything not addressed to the datcore-adapter service
+            return await real_transport.handle_async_request(request)
+        return _mocked_response(url.path.removeprefix(base_url.path) or "/")
+
+    mock_transport = httpx2.MockTransport(handler=_handler)
+
+    # The app's shared httpx2 client (servicelib.fastapi.httpx_client) is created with an
+    # explicit httpx2.AsyncHTTPTransport: swap it for the mock while this fixture is active.
+    def _mock_transport_factory(*_args, **_kwargs):
+        return mock_transport
+
+    monkeypatch.setattr(httpx2, "AsyncHTTPTransport", _mock_transport_factory)
+
+    try:
+        yield mock_transport
+    finally:
+        await real_transport.aclose()
