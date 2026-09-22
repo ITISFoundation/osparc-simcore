@@ -68,7 +68,8 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
                 confirm_dialog.close()
 
                 url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}:stop"
-                await httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()).get(f"{url}")
+                async with httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
+                    await client.get(f"{url}")
 
                 ui.notify(f"Submitted stop request for {node_id}. Please give the service some time to stop!")
 

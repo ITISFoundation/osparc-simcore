@@ -22,7 +22,8 @@ def _render_remove_from_tracking(node_id):
             confirm_dialog.close()
 
             url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}/tracker:remove"
-            await httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()).get(f"{url}")
+            async with httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
+                await client.get(f"{url}")
 
             ui.notify(f"Service {node_id} removed from tracking")
             ui.navigate.to("/")

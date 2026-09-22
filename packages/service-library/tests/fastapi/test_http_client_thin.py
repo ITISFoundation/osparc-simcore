@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
+import ssl
 from collections.abc import AsyncIterable, Iterable
 from typing import Final
 from unittest import mock
@@ -150,7 +151,7 @@ async def test_retry_on_errors_raises_client_http_error(
         await client.raises_http_error()
 
 
-def _get_client_ssl_context(client: BaseThinClient):
+def _get_client_ssl_context(client: BaseThinClient) -> ssl.SSLContext:
     # pylint: disable=protected-access
     return client.client._transport._pool._ssl_context  # type: ignore[attr-defined] # noqa: SLF001
 
@@ -176,7 +177,7 @@ def test_ssl_context_is_built_once_and_shared(request_timeout: int):
 def test_shared_ssl_context_keeps_httpx_trust_store():
     get_shared_ssl_context.cache_clear()
 
-    def _ca_serials(context):
+    def _ca_serials(context: ssl.SSLContext) -> set[str]:
         return {cert["serialNumber"] for cert in context.get_ca_certs()}
 
     assert _ca_serials(get_shared_ssl_context()) == _ca_serials(httpx.create_ssl_context())
