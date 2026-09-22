@@ -153,7 +153,7 @@ def fake_data_dir(tests_data_dir: Path) -> Path:
 @pytest.fixture
 def fake_project(tests_data_dir: Path) -> ProjectDict:
     """fake data for a project in a response body of GET /project/{uuid} (see tests/data/fake-project.json)"""
-    # NOTE: rename as fake_project_data since it does not produce a BaseModel but its **data
+    # TODO: rename as fake_project_data since it does not produce a BaseModel but its **data
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())
@@ -205,7 +205,7 @@ async def logged_user(
 def monkeypatch_setenv_from_app_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[AppConfigDict], EnvVarsDict]:
-    # NOTE: Change signature to be analogous to
+    # TODO: Change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch
     def _patch(app_config: dict) -> EnvVarsDict:
