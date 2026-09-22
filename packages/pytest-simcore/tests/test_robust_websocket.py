@@ -129,6 +129,19 @@ def _wait_for_connected(real_page: Page) -> None:
     real_page.wait_for_function("() => window.ws && window.ws.connected === true")
 
 
+def _take_socket_offline_and_wait_closed(page: Page, websocket: PlaywrightWebSocket) -> None:
+    # NOTE: a websocket cannot be closed through playwright's API and an explicit client-side
+    # manager close() would stop the socket.io automatic reconnections the tests rely on:
+    # simulate a dead transport instead (like the connection refused during a cold start) and
+    # wait until the page-side socket.io client notices it.
+    page.context.set_offline(True)
+    for _ in range(120):  # wait (max ~30s) until the client notices the dead transport
+        if websocket.is_closed():
+            return
+        page.wait_for_timeout(250)
+    pytest.fail("expected the websocket to be closed while offline")
+
+
 def _decode_socketio_message(raw_response: str) -> str:
     event = decode_socketio_42_message(raw_response)
     assert event.name == "message"
@@ -211,13 +224,8 @@ def test_robust_websocket_reconnects_when_socket_closed_before_wrapping(
     _wait_for_connected(real_page)
 
     # take the socket down at the transport level so the page-side socket.io client
-    # *automatically* retries (an explicit client-side close() would stop it from reconnecting)
-    real_page.context.set_offline(True)
-    for _ in range(60):  # wait (max ~30s) until the client notices the dead transport
-        if websocket.is_closed():
-            break
-        real_page.wait_for_timeout(500)
-    assert websocket.is_closed(), "expected the websocket to be closed while offline"
+    # *automatically* retries once back online
+    _take_socket_offline_and_wait_closed(real_page, websocket)
 
     # NOTE: back online the page-side client keeps retrying; the wrapper must adopt one of
     # those new connections during construction (the old socket's events are long gone)
@@ -252,15 +260,21 @@ def test_robust_websocket_reconnection_honors_ws_predicate(
     websocket = _open_socketio_connection(real_page, fastapi_server)
     _wait_for_connected(real_page)
 
-    # schedule a *second*, distinguishable socket.io client: it appears ~2s from now, i.e. after
-    # the wrapper starts waiting for a new socket below
+    # once the socket is back online below, a *plain* (non-matching) socket.io client reconnects
+    # ~1s later and a *marker* (matching) one ~2.5s later: the wrapper built below must skip the
+    # first candidate and adopt the second
     marker_query = {"osparc-test-marker": "robust"}
+
+    _take_socket_offline_and_wait_closed(real_page, websocket)
     real_page.evaluate(
         f"""
         setTimeout(() => {{
+            window.plainRetry = io("{fastapi_server}", {{ transports: ["websocket"] }});
+        }}, 1000);
+        setTimeout(() => {{
             window.markerClient = io("{fastapi_server}",
                 {{ transports: ["websocket"], query: {json.dumps(marker_query)} }});
-        }}, 2000);
+        }}, 2500);
         """
     )
 
@@ -270,10 +284,9 @@ def test_robust_websocket_reconnection_honors_ws_predicate(
         checked_urls.append(candidate.url)
         return "osparc-test-marker=robust" in candidate.url
 
-    # closing at the playwright level makes the page-side client auto-reconnect with its
-    # *plain* url (~1s later): those candidates must be rejected by the predicate until the
-    # marker client above connects (~2s later)
-    websocket.close()
+    # NOTE: the socket is already closed here, so the wrapper reconnects during construction,
+    # filtering every candidate through `ws_predicate` until the marker client connects
+    real_page.context.set_offline(False)
     robust_ws = RobustWebSocket(page=real_page, ws=websocket, ws_predicate=_marker_only, reconnect_timeout=30000)
 
     assert any("osparc-test-marker=robust" not in url for url in checked_urls), (
