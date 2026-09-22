@@ -52,7 +52,7 @@ asgi-lifespan==2.1.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 asgiref==3.10.0
     # via opentelemetry-instrumentation-asgi
-asyncpg==0.30.0
+asyncpg==0.31.0
     # via sqlalchemy
 attrs==25.4.0
     # via
