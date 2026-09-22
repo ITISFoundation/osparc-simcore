@@ -128,7 +128,7 @@ async def _get_self_container() -> str:
     ip = _get_self_container_ip()
 
     async with httpx2.AsyncClient(
-        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock", verify=get_shared_ssl_context())
+        transport=httpx2.AsyncHTTPTransport(uds="/var/run/docker.sock", verify=get_shared_ssl_context())
     ) as client:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
