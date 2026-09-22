@@ -87,7 +87,7 @@ types-jsonschema==4.26.0.20260202
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   flexcache
