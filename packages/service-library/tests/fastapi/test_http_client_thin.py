@@ -150,6 +150,11 @@ async def test_retry_on_errors_raises_client_http_error(
         await client.raises_http_error()
 
 
+def _get_client_ssl_context(client: BaseThinClient):
+    # pylint: disable=protected-access
+    return client.client._transport._pool._ssl_context  # type: ignore[attr-defined] # noqa: SLF001
+
+
 def test_ssl_context_is_built_once_and_shared(request_timeout: int):
     class ATestClient(BaseThinClient): ...
 
@@ -164,8 +169,7 @@ def test_ssl_context_is_built_once_and_shared(request_timeout: int):
 
     assert mocked_factory.call_count == 1
 
-    contexts = {id(c.client._transport._pool._ssl_context) for c in clients}  # noqa: SLF001
-    assert len(contexts) == 1
+    contexts = {id(_get_client_ssl_context(client)) for client in clients}
     assert contexts == {id(_get_shared_ssl_context())}
 
 
