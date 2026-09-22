@@ -299,6 +299,43 @@ def test_robust_websocket_reconnection_honors_ws_predicate(
     robust_ws.auto_reconnect = False
 
 
+def test_wait_until_connected_returns_immediately_on_already_established_socket(
+    download_playwright_browser: None, real_page: Page, fastapi_server: str
+):
+    """Regression test for the initial-frame race: `page.expect_websocket` resolves when the
+    browser *creates* the socket, so the socket.io 'open' frame can be delivered before
+    `RobustWebSocket.__post_init__` attaches its `framereceived` listener. Here the race is
+    forced deterministically: the socket is only wrapped *after* the page-side client reports
+    `connected === true` (i.e. the open frame was definitely already received). Wrapping such
+    an already-established healthy socket must mark it as connected right away: otherwise
+    `wait_until_connected` spins until a *later* frame arrives (engine.io pings come only ~25s
+    later) and spuriously times out a perfectly connected socket.
+    """
+    real_page.goto(fastapi_server)
+    _load_socketio_client(real_page)
+    with real_page.expect_websocket() as ws_info:
+        real_page.evaluate(
+            f"""
+            window.ws = io("{fastapi_server}", {{ transports: ["websocket"] }});
+            """
+        )
+        websocket = ws_info.value
+
+    # the client is connected, i.e. it already received the socket.io 'open' frame -
+    # this happens strictly *before* the wrapper attaches its listener below
+    _wait_for_connected(real_page)
+
+    robust_ws = RobustWebSocket(page=real_page, ws=websocket)
+    assert robust_ws.ws is websocket
+    assert not robust_ws.ws.is_closed()
+    assert robust_ws._num_reconnections == 0  # noqa: SLF001
+
+    # a healthy socket must be considered connected immediately, not after its *next* frame
+    robust_ws.wait_until_connected(timeout=3000)
+
+    robust_ws.auto_reconnect = False
+
+
 def test_wait_until_connected_returns_after_socket_swap_and_times_out(robust_ws: RobustWebSocket, real_page: Page):
     """Regression test for `RobustWebSocket.wait_until_connected`: it must block (pumping the
     page's event loop so the event-driven reconnection can proceed) until the *new* socket has

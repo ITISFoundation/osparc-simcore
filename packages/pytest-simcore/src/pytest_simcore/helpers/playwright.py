@@ -244,13 +244,25 @@ class RobustWebSocket:
 
     def __post_init__(self) -> None:
         self._configure_websocket_events()
-        if self.auto_reconnect and self.ws.is_closed():
+        if self.ws.is_closed():
+            if not self.auto_reconnect:
+                return
             # NOTE: a websocket whose handshake already failed (e.g. a socket.io connection refused
             # during a service's cold start) has already fired its events before being captured,
             # so the listeners attached above never see them: reconnect right away.
             _logger.warning("%s WebSocket is already closed. Attempting to reconnect...", self.log_prefix)
             self._reconnect_handled.add(id(self.ws))
             self._attempt_reconnect(_logger)
+        else:
+            # NOTE: a socket that is not closed completed its handshake: it is connected even if its
+            # first frame (e.g. the socket.io 'open' packet) was already delivered before the
+            # listeners above could be attached, since `page.expect_websocket` resolves as soon as
+            # the browser *creates* the socket. Without this, `wait_until_connected` would wait for
+            # an unrelated later frame (engine.io pings come ~25s later) on a healthy socket.
+            self._mark_connected(self.ws)
+
+    def _mark_connected(self, socket: WebSocket) -> None:
+        self._frames_received_on.add(id(socket))
 
     def _configure_websocket_events(self) -> None:
         # NOTE: bind the current socket in the closure: the 'socketerror' event only carries the
@@ -327,6 +339,9 @@ class RobustWebSocket:
 
         self.ws = ws_info.value
         self._num_reconnections += 1
+        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even
+        # if its first frame raced ahead of the listeners attached below (same as in __post_init__)
+        self._mark_connected(self.ws)
         logger.info(
             "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
             self._num_reconnections,
