@@ -5,12 +5,8 @@ from collections.abc import AsyncIterator, Callable
 from typing import Final
 
 from aiohttp import web
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-    OTLPSpanExporter as OTLPSpanExporterHTTP,
-)
-from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
-    AioHttpClientInstrumentor,
-)
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter as OTLPSpanExporterHTTP
+from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor  # pylint:disable=no-name-in-module
 from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
     AioHttpServerInstrumentor,
     create_aiohttp_middleware,
@@ -28,6 +24,7 @@ from ..tracing import (
     TracingConfig,
     create_standard_attributes,
     get_trace_info_headers,
+    setup_meter_provider,
 )
 
 _logger = logging.getLogger(__name__)
@@ -141,6 +138,8 @@ def _startup(
 
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
+
+    setup_meter_provider()
 
     # Instrument aiohttp server
     if add_response_trace_id_header:
