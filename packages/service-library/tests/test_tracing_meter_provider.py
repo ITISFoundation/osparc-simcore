@@ -78,3 +78,4 @@ def test_setup_meter_provider_is_idempotent(
     setup_meter_provider()
 
     assert metrics.get_meter_provider() is first_provider
+    assert _retained_meter_count(isolated_otel_meter_provider) == 0
