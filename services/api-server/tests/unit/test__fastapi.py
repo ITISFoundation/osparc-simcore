@@ -36,7 +36,7 @@ from simcore_service_api_server.models.schemas.solvers import (
 @pytest.fixture
 def client() -> TestClient:
     # overrides client.
-    # WARNING: this is NOT httpx.AsyncClient
+    # WARNING: this is NOT httpx2.AsyncClient
 
     router = APIRouter(prefix="/solvers")
 

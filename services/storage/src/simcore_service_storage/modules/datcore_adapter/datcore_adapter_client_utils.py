@@ -3,13 +3,13 @@ from collections.abc import Callable
 from math import ceil
 from typing import Any
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
 )
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 
 from ...core.settings import get_application_settings
 from .datcore_adapter_exceptions import (
@@ -34,7 +34,7 @@ async def request(
 ) -> dict[str, Any] | list[dict[str, Any]]:
     datcore_adapter_settings = get_application_settings(app).DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + path
-    client = get_httpx_client(app)
+    client = get_httpx2_client(app)
 
     try:
         if request_kwargs is None:
@@ -55,14 +55,14 @@ async def request(
         assert isinstance(response_data, dict | list)  # nosec
         return response_data
 
-    except httpx.HTTPStatusError as exc:
+    except httpx2.HTTPStatusError as exc:
         raise DatcoreAdapterResponseError(status=exc.response.status_code, reason=f"{exc}") from exc
 
     except TimeoutError as exc:
         msg = f"datcore-adapter server timed-out: {exc}"
         raise DatcoreAdapterTimeoutError(msg) from exc
 
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         msg = f"unexpected request error: {exc}"
         raise DatcoreAdapterClientError(msg) from exc
 

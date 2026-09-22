@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock
 
-import httpx
+import httpx2
 import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
@@ -217,9 +217,9 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
 
 
 @pytest.fixture()
-async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url="http://director-v2.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

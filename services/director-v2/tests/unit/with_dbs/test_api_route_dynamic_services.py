@@ -18,7 +18,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from httpx import URL, QueryParams
+from httpx2 import URL, QueryParams
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
     RetrieveDataOutEnveloped,

@@ -12,9 +12,9 @@ import functools
 import logging
 from collections.abc import Callable, Coroutine
 
-import httpx
+import httpx2
 from fastapi import HTTPException
-from httpx import Headers
+from httpx2 import Headers
 from starlette import status
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -27,10 +27,10 @@ def handle_retry(logger: logging.Logger):
     """
     Retry policy after connection timeout or a network error
 
-    SEE https://www.python-httpx.org/exceptions/
+    SEE https://www.python-httpx2.org/exceptions/
     """
     return retry(
-        retry=retry_if_exception_type((httpx.TimeoutException, httpx.NetworkError)),
+        retry=retry_if_exception_type((httpx2.TimeoutException, httpx2.NetworkError)),
         wait=wait_fixed(2),
         stop=stop_after_attempt(3),
         reraise=True,
@@ -53,12 +53,12 @@ def handle_errors(service_name: str, logger: logging.Logger):
 
     def decorator_func(request_func: Callable[..., Coroutine]):
         @functools.wraps(request_func)
-        async def wrapper_func(*args, **kwargs) -> httpx.Response:
+        async def wrapper_func(*args, **kwargs) -> httpx2.Response:
             try:
                 # TODO: assert signature!?
-                resp: httpx.Response = await request_func(*args, **kwargs)
+                resp: httpx2.Response = await request_func(*args, **kwargs)
 
-            except httpx.RequestError as err:
+            except httpx2.RequestError as err:
                 logger.error("Failed request %s(%s, %s)", request_func.__name__, args, kwargs)
                 raise HTTPException(
                     status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -66,9 +66,9 @@ def handle_errors(service_name: str, logger: logging.Logger):
                 ) from err
 
             # status response errors
-            if httpx.codes.is_client_error(resp.status_code):
+            if httpx2.codes.is_client_error(resp.status_code):
                 raise HTTPException(resp.status_code, detail=resp.reason_phrase)
-            if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
+            if httpx2.codes.is_server_error(resp.status_code):  # i.e. 5XX error
                 logger.error(
                     "%s service error:\n|Request|\n%s\n%s\n%s\n|Response|\n%s\n%s\n%s",
                     service_name,

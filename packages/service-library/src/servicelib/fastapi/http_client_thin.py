@@ -6,8 +6,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from common_library.errors_classes import OsparcErrorMixin
-from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
-from httpx._types import TimeoutTypes, URLTypes
+from httpx2 import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
+from httpx2._types import TimeoutTypes, URLTypes
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -16,7 +16,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from ..ssl_context import get_shared_ssl_context
-from ..tracing import TracingConfig, setup_httpx_client_tracing
+from ..tracing import TracingConfig, setup_httpx2_client_tracing
 from .http_client import BaseHTTPApi
 
 _logger = logging.getLogger(__name__)
@@ -43,9 +43,9 @@ class BaseHttpClientError(BaseClientError):
 
 
 class ClientHttpError(BaseHttpClientError):
-    """used to captures all httpx.HttpError"""
+    """used to captures all httpx2.HttpError"""
 
-    msg_template: str = "Received httpx.HTTPError: {error}"
+    msg_template: str = "Received httpx2.HTTPError: {error}"
 
 
 class UnexpectedStatusError(BaseHttpClientError):
@@ -91,7 +91,7 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
 
 
 def _assert_public_interface(obj: object, extra_allowed_method_names: set[str] | None = None) -> None:
-    # makes sure all user public defined methods return `httpx.Response`
+    # makes sure all user public defined methods return `httpx2.Response`
 
     _allowed_names: set[str] = {
         "setup_client",
@@ -119,7 +119,7 @@ def retry_on_errors(
 ) -> Callable[..., Callable[..., Awaitable[Response]]]:
     """
     Will retry the request on `ConnectError` and `PoolTimeout`.
-    Also wraps `httpx.HTTPError`
+    Also wraps `httpx2.HTTPError`
     raises:
     - `ClientHttpError`
     """
@@ -127,7 +127,7 @@ def retry_on_errors(
     def decorator(
         request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
-        assert asyncio.iscoroutinefunction(request_func)
+        assert inspect.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
@@ -205,7 +205,7 @@ class BaseThinClient(BaseHTTPApi):
 
         client_args: dict[str, Any] = {
             # NOTE: the default httpx pool limit configurations look good
-            # https://www.python-httpx.org/advanced/#pool-limit-configuration
+            # https://www.python-httpx2.org/advanced/#pool-limit-configuration
             # instruct the remote uvicorn web server to close the connections
             # https://www.uvicorn.org/server-behavior/#http-headers
             "headers": {
@@ -219,7 +219,7 @@ class BaseThinClient(BaseHTTPApi):
 
         client = AsyncClient(verify=get_shared_ssl_context(), **client_args)
         if tracing_config.tracing_enabled:
-            setup_httpx_client_tracing(client, tracing_config=tracing_config)
+            setup_httpx2_client_tracing(client, tracing_config=tracing_config)
         super().__init__(client=client)
 
     async def __aenter__(self):

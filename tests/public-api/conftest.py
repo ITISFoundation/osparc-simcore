@@ -13,7 +13,7 @@ from collections.abc import Awaitable, Callable, Iterator
 from pprint import pformat
 from typing import Any
 
-import httpx
+import httpx2
 import osparc
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -78,7 +78,7 @@ def registry_ready() -> None:
         before_sleep=before_sleep_log(_logger, logging.INFO),
     ):
         with attempt:
-            resp = httpx.get("http://127.0.0.1:9081/v0/")
+            resp = httpx2.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
             _logger.info(
                 "Connection to osparc-simcore web API succeeded [%s]",
@@ -100,7 +100,7 @@ def registered_user(registry_ready: None) -> Iterator[RegisteredUserDict]:
         api_secret="",
     )
 
-    with httpx.Client(base_url="http://127.0.0.1:9081/v0") as client:
+    with httpx2.Client(base_url="http://127.0.0.1:9081/v0") as client:
         # setup user via web-api
         resp = client.post(
             "/auth/login",

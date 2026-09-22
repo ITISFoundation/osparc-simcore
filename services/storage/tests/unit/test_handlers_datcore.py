@@ -1,4 +1,4 @@
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, status
 from models_library.products import ProductName
@@ -31,7 +31,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 )
 async def test_entrypoint_without_api_tokens_return_401(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     entrypoint: str,
     user_id: UserID,

@@ -357,8 +357,6 @@ requests==2.34.2
     #   responses
 responses==0.26.0
     # via moto
-respx==0.22.0
-    # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.28.0

@@ -8,7 +8,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import TypeAdapter
 from simcore_service_api_server.core.settings import ChatbotSettings
 from simcore_service_api_server.models.domain.chatbot import (

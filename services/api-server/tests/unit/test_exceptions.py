@@ -6,10 +6,10 @@
 from http import HTTPStatus
 from uuid import UUID
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, HTTPException, status
-from httpx import HTTPStatusError, Request, Response
+from httpx2 import HTTPStatusError, Request, Response
 from simcore_service_api_server.exceptions import setup_exception_handlers
 from simcore_service_api_server.exceptions.backend_errors import (
     BaseBackEndError,
@@ -60,7 +60,7 @@ def app() -> FastAPI:
     return app
 
 
-async def test_raised_http_exception(client: httpx.AsyncClient):
+async def test_raised_http_exception(client: httpx2.AsyncClient):
     response = await client.post("/raise-http-exception")
 
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
@@ -70,7 +70,7 @@ async def test_raised_http_exception(client: httpx.AsyncClient):
 
 
 async def test_fastapi_http_exception_respond_with_error_model(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
 ):
     response = await client.get("/invalid")
 
@@ -80,7 +80,7 @@ async def test_fastapi_http_exception_respond_with_error_model(
     assert got.errors == [HTTPStatus(response.status_code).phrase]
 
 
-async def test_custom_error_handlers(client: httpx.AsyncClient):
+async def test_custom_error_handlers(client: httpx2.AsyncClient):
     response = await client.post("/raise-custom-error")
 
     assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY

@@ -103,7 +103,6 @@ httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -r requirements/_test.in
     #   respx
 icdiff==2.0.10
     # via pytest-icdiff

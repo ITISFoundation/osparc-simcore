@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, NamedTuple
 from unittest.mock import Mock
 
-import httpx
+import httpx2
 import jsonref
 import pytest
 import respx
@@ -250,21 +250,21 @@ def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]
 @pytest.fixture
 def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
-        def _init_200(request: httpx.Request):
+        def _init_200(request: httpx2.Request):
             assert InitPayment.model_validate_json(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(PaymentInitiated(payment_id=faker.uuid4())),
             )
 
-        def _cancel_200(request: httpx.Request):
+        def _cancel_200(request: httpx2.Request):
             assert PaymentInitiated.model_validate_json(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             # responds with an empty authough it can also contain a message
-            return httpx.Response(status.HTTP_200_OK, json={})
+            return httpx2.Response(status.HTTP_200_OK, json={})
 
         mock_router.post(
             path="/init",
@@ -298,7 +298,7 @@ def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: Payme
     _payment_methods: dict[str, PaymentMethodInfoTuple] = {}
 
     def _mock(mock_router: MockRouter):
-        def _init(request: httpx.Request):
+        def _init(request: httpx2.Request):
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             pm_id = faker.uuid4()
@@ -307,44 +307,44 @@ def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: Payme
                 get=GetPaymentMethod(**random_payment_method_view(id=pm_id)),
             )
 
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(PaymentMethodInitiated(payment_method_id=pm_id)),
             )
 
-        def _get(request: httpx.Request, pm_id: PaymentMethodID):
+        def _get(request: httpx2.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             try:
                 _, payment_method = _payment_methods[pm_id]
-                return httpx.Response(status.HTTP_200_OK, json=jsonable_encoder(payment_method))
+                return httpx2.Response(status.HTTP_200_OK, json=jsonable_encoder(payment_method))
             except KeyError:
-                return httpx.Response(status.HTTP_404_NOT_FOUND)
+                return httpx2.Response(status.HTTP_404_NOT_FOUND)
 
-        def _del(request: httpx.Request, pm_id: PaymentMethodID):
+        def _del(request: httpx2.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             try:
                 _payment_methods.pop(pm_id)
-                return httpx.Response(status.HTTP_204_NO_CONTENT)
+                return httpx2.Response(status.HTTP_204_NO_CONTENT)
             except KeyError:
-                return httpx.Response(status.HTTP_404_NOT_FOUND)
+                return httpx2.Response(status.HTTP_404_NOT_FOUND)
 
-        def _batch_get(request: httpx.Request):
+        def _batch_get(request: httpx2.Request):
             assert "*" not in request.headers["X-Init-Api-Secret"]
             batch = BatchGetPaymentMethods.model_validate_json(request.content)
 
             try:
                 items = [_payment_methods[pm].get for pm in batch.payment_methods_ids]
             except KeyError:
-                return httpx.Response(status.HTTP_404_NOT_FOUND)
+                return httpx2.Response(status.HTTP_404_NOT_FOUND)
 
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(PaymentMethodsBatch(items=items)),
             )
 
-        def _pay(request: httpx.Request, pm_id: PaymentMethodID):
+        def _pay(request: httpx2.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
             assert InitPayment.model_validate_json(request.content) is not None
 
@@ -355,7 +355,7 @@ def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: Payme
 
             if pm_id == no_funds_payment_method_id:
                 # SEE https://stripe.com/docs/testing#declined-payments
-                return httpx.Response(
+                return httpx2.Response(
                     status.HTTP_200_OK,
                     json=jsonable_encoder(
                         AckPaymentWithPaymentMethod(
@@ -367,7 +367,7 @@ def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: Payme
                     ),
                 )
 
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(
                     AckPaymentWithPaymentMethod(
@@ -464,15 +464,15 @@ def mock_payments_stripe_routes(faker: Faker) -> Callable:
     """Mocks https://docs.stripe.com/api. In the future https://github.com/stripe/stripe-mock might be used"""
 
     def _mock(mock_router: MockRouter):
-        def _list_products(request: httpx.Request):
+        def _list_products(request: httpx2.Request):
             assert "Bearer " in request.headers["authorization"]
 
-            return httpx.Response(status.HTTP_200_OK, json={"object": "list", "data": []})
+            return httpx2.Response(status.HTTP_200_OK, json={"object": "list", "data": []})
 
-        def _get_invoice(request: httpx.Request):
+        def _get_invoice(request: httpx2.Request):
             assert "Bearer " in request.headers["authorization"]
 
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_200_OK,
                 json={"hosted_invoice_url": "https://fake-invoice.com/?id=12345"},
             )

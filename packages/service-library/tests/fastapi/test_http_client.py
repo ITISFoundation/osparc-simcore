@@ -8,7 +8,7 @@
 from collections.abc import Iterator
 from typing import ClassVar
 
-import httpx
+import httpx2
 import pytest
 import respx
 from asgi_lifespan import LifespanManager
@@ -81,7 +81,7 @@ async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
         app_state_name: ClassVar[str] = "my_client_api"
 
     # create
-    api = MyClientApi(client=httpx.AsyncClient(base_url=base_url))
+    api = MyClientApi(client=httpx2.AsyncClient(base_url=base_url))
 
     app_lifespan = AppLifespanManager[FastAPI]()
     api.attach_lifespan_to(app_lifespan)

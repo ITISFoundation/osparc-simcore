@@ -9,7 +9,7 @@ import json
 from collections.abc import AsyncIterator, Iterator
 from typing import get_args
 
-import httpx
+import httpx2
 import pytest
 import respx
 from aiohttp.test_utils import TestClient
@@ -59,14 +59,14 @@ def mocked_chatbot_api(faker: Faker) -> Iterator[respx.MockRouter]:
         choices=[ResponseItem(index=0, message=ResponseMessage(content="42"))],
     )
 
-    def _side_effect(request: httpx.Request) -> httpx.Response:
+    def _side_effect(request: httpx2.Request) -> httpx2.Response:
         # This function will be called for each request to the mocked endpoint
         # You can customize the response based on the request if needed
         request_body = json.loads(request.content)
         TypeAdapter(_CHATBOT_MODELS).validate_python(request_body.get("model"))
         metadata = request_body.get("metadata", {})
         TypeAdapter(_CHATBOT_ARCHITECTURE).validate_python(metadata.get("graph_name"))
-        return httpx.Response(200, json=chatbot_response.model_dump(mode="json"))
+        return httpx2.Response(200, json=chatbot_response.model_dump(mode="json"))
 
     with respx.mock(base_url=_BASE_URL) as mock:
         # Create a side_effect that returns responses in sequence

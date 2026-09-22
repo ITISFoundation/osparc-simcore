@@ -146,6 +146,7 @@ set_app_default_http_error_handlers(app)
 ```python
 from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 
+
 def setup_exception_handlers(app: FastAPI) -> None:
     # MUST come before catch-all Exception handler
     app.add_exception_handler(HealthCheckError, health_check_error_handler)
@@ -209,14 +210,14 @@ Add or update unit tests to cover:
 
 Example test shape:
 ```python
-async def test_healthcheck_healthy(client: httpx.AsyncClient):
+async def test_healthcheck_healthy(client: httpx2.AsyncClient):
     response = await client.get("/")
     assert response.status_code == 200
     assert "@" in response.text
 
 
 async def test_healthcheck_unhealthy_rabbitmq(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mock_unhealthy_rabbitmq: None,
 ):
     response = await client.get("/")

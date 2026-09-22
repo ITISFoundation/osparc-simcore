@@ -16,7 +16,7 @@ aiodocker
 aiofiles
 arrow # date/time
 faststream
-httpx[http2]
+httpx2
 opentelemetry-api
 opentelemetry-exporter-otlp
 opentelemetry-instrumentation-aio-pika

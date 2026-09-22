@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import httpx
+import httpx2
 from fastapi import status
 from fastapi.testclient import TestClient
 from simcore_service_invitations._meta import API_VTAG
@@ -13,7 +13,7 @@ from simcore_service_invitations.services.invitations import InvitationInputs
 
 def test_invalid_http_basic_auth(
     client: TestClient,
-    invalid_basic_auth: httpx.BasicAuth | None,
+    invalid_basic_auth: httpx2.BasicAuth | None,
     invitation_data: InvitationInputs,
 ):
     response = client.post(

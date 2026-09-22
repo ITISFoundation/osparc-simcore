@@ -6,10 +6,10 @@
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -25,12 +25,12 @@ async def test_get_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     capture: str,
 ):
     def _get_wallet_side_effect(
-        request: httpx.Request,
+        request: httpx2.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
@@ -65,7 +65,7 @@ async def test_get_default_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
 ):
     create_respx_mock_from_capture(

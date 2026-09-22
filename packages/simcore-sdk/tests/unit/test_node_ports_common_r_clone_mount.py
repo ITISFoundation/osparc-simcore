@@ -22,7 +22,7 @@ from aiodocker.types import JSONObject
 from botocore.client import Config
 from common_library.async_tools import cancel_wait_task
 from faker import Faker
-from httpx import HTTPError
+from httpx2 import HTTPError
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID

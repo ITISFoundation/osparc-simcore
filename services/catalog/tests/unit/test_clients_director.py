@@ -10,7 +10,7 @@ import urllib.parse
 from collections.abc import Callable
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, status
 from models_library.services_metadata_published import ServiceMetaDataPublished
@@ -126,7 +126,7 @@ async def test_director_client_get_service_extras_without_org_labels(
         name="get_service_labels_no_org",
     )
     def _get_service_labels_no_org(request, service_key, service_version):
-        return httpx.Response(
+        return httpx2.Response(
             status_code=status.HTTP_200_OK,
             json={"data": get_mocked_service_labels(service_key, service_version, include_org_labels=False)},
         )

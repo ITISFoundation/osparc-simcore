@@ -7,7 +7,7 @@
 import json
 from unittest.mock import MagicMock
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -43,12 +43,12 @@ def mocked_webserver_rest_api(app: FastAPI):
         me["language"] = "es_ES"
 
         def _get_me(request):
-            return httpx.Response(status.HTTP_200_OK, json={"data": me})
+            return httpx2.Response(status.HTTP_200_OK, json={"data": me})
 
-        def _update_me(request: httpx.Request):
+        def _update_me(request: httpx2.Request):
             changes = json.loads(request.content.decode(request.headers.encoding))
             me.update(changes)
-            return httpx.Response(status.HTTP_200_OK, json={"data": me})
+            return httpx2.Response(status.HTTP_200_OK, json={"data": me})
 
         respx_mock.get("/me", name="get_me").mock(side_effect=_get_me)
         respx_mock.patch("/me", name="update_me").mock(side_effect=_update_me)
@@ -57,8 +57,8 @@ def mocked_webserver_rest_api(app: FastAPI):
 
 
 async def test_get_profile(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):
@@ -82,8 +82,8 @@ async def test_get_profile(
 
 
 async def test_update_profile(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):

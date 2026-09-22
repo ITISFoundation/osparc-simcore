@@ -19,7 +19,6 @@ docker
 faker
 fakeredis[lua]
 flaky
-httpx
 moto[server]
 psutil
 pytest

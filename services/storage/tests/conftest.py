@@ -15,9 +15,8 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import Any, Final, cast
 
-import httpx
+import httpx2
 import pytest
-import respx
 import simcore_service_storage
 from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
@@ -218,7 +217,7 @@ def app_settings(
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs: EnvVarsDict,
-    datcore_adapter_service_mock: respx.MockRouter,
+    datcore_adapter_service_mock: httpx2.MockTransport,
     mocked_redis_server: None,
 ) -> ApplicationSettings:
     test_app_settings = ApplicationSettings.create_from_envs()
@@ -249,9 +248,9 @@ async def initialized_app(
 @pytest.fixture
 async def client(
     initialized_app: FastAPI,
-) -> AsyncIterator[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+) -> AsyncIterator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
@@ -295,7 +294,7 @@ def location_id(request: pytest.FixtureRequest) -> LocationID:
 @pytest.fixture
 async def get_file_meta_data(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
 ) -> Callable[..., Awaitable[FileMetaDataGet]]:
@@ -320,7 +319,7 @@ async def get_file_meta_data(
 @pytest.fixture
 async def create_upload_file_link_v2(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
@@ -363,7 +362,7 @@ def upload_file(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     project_id: ProjectID,
     node_id: NodeID,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
@@ -476,7 +475,7 @@ async def with_versioning_enabled(
 async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     with_storage_celery_worker: TestWorkController,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(dir_name: str, project_id: ProjectID, node_id: NodeID) -> SimcoreS3FileID:
@@ -630,7 +629,7 @@ async def populate_directory(
 @pytest.fixture
 async def delete_directory(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,

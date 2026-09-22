@@ -16,7 +16,7 @@ from typing import Final, Literal, cast
 from unittest.mock import AsyncMock
 from uuid import UUID
 
-import httpx
+import httpx2
 import pytest
 import respx
 from attr import dataclass
@@ -177,7 +177,7 @@ def produce_logs(
 
 
 async def test_multiple_producers_and_single_consumer(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
@@ -308,15 +308,15 @@ async def test_log_distributor_multiple_streams(
 
 @pytest.fixture
 async def create_log_streamer_with_distributor(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
     mocked_directorv2_rest_api_base: respx.MockRouter,
     log_distributor: LogDistributor,
-) -> Callable[[Callable[..., httpx.Response]], LogStreamer]:
+) -> Callable[[Callable[..., httpx2.Response]], LogStreamer]:
     def _create_log_streamer_with_distributor(
-        get_computation: Callable[..., httpx.Response],
+        get_computation: Callable[..., httpx2.Response],
     ) -> LogStreamer:
         mocked_directorv2_rest_api_base.get(f"/v2/computations/{project_id}").mock(side_effect=get_computation)
 
@@ -337,7 +337,7 @@ async def test_log_streamer_with_distributor(
     node_id: NodeID,
     produce_logs: Callable,
     log_distributor: LogDistributor,
-    create_log_streamer_with_distributor: Callable[[Callable[..., httpx.Response]], LogStreamer],
+    create_log_streamer_with_distributor: Callable[[Callable[..., httpx2.Response]], LogStreamer],
     faker: Faker,
 ):
     published_logs: list[str] = []
@@ -352,7 +352,7 @@ async def test_log_streamer_with_distributor(
 
     publish_task = asyncio.create_task(_log_publisher())
 
-    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+    def _get_computation(request: httpx2.Request, **kwargs) -> httpx2.Response:
         task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
         if publish_task.done():
             task.state = RunningState.SUCCESS
@@ -360,7 +360,7 @@ async def test_log_streamer_with_distributor(
         else:
             task.state = RunningState.STARTED
             task.stopped = None
-        return httpx.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
+        return httpx2.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
 
     log_streamer = create_log_streamer_with_distributor(_get_computation)
 
@@ -390,7 +390,7 @@ async def test_log_streamer_not_raise_with_distributor(
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
-    create_log_streamer_with_distributor: Callable[[Callable[..., httpx.Response]], LogStreamer],
+    create_log_streamer_with_distributor: Callable[[Callable[..., httpx2.Response]], LogStreamer],
 ):
     class InvalidLoggerRabbitMessage(LoggerRabbitMessage):
         channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
@@ -413,11 +413,11 @@ async def test_log_streamer_not_raise_with_distributor(
 
     await produce_logs("expected", log_message=log_rabbit_message)
 
-    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+    def _get_computation(request: httpx2.Request, **kwargs) -> httpx2.Response:
         task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
         task.state = RunningState.SUCCESS
         task.stopped = datetime.now()
-        return httpx.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
+        return httpx2.Response(status_code=status.HTTP_200_OK, json=jsonable_encoder(task))
 
     log_streamer = create_log_streamer_with_distributor(_get_computation)
     ii: int = 0
@@ -463,7 +463,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
 @pytest.mark.parametrize("is_healthy", [True, False])
 async def test_logstreaming_health_checker(
-    mocker: MockFixture, client: httpx.AsyncClient, app: FastAPI, is_healthy: bool
+    mocker: MockFixture, client: httpx2.AsyncClient, app: FastAPI, is_healthy: bool
 ):
     health_checker = get_health_checker(app)
     health_checker._timeout_seconds = 0.5

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TypedDict
 from uuid import UUID
 
-import httpx
+import httpx2
 import jinja2
 import pytest
 from faker import Faker
@@ -43,9 +43,9 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
     environment = jinja2.Environment(loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True)
     template = environment.get_template(mock_name)
 
-    def _response(request: httpx.Request, project_id: str):
+    def _response(request: httpx2.Request, project_id: str):
         capture = HttpApiCallCaptureModel.model_validate_json(template.render(project_id=project_id))
-        return httpx.Response(status_code=capture.status_code, json=capture.response_body)
+        return httpx2.Response(status_code=capture.status_code, json=capture.response_body)
 
     mocked_webserver_rest_api.delete(
         path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
@@ -57,8 +57,8 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4111")
 async def test_delete_non_existing_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     faker: Faker,
@@ -114,8 +114,8 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4111")
 async def test_create_and_delete_solver_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_catalog_rpc_api: dict[str, MockType],
@@ -162,8 +162,8 @@ async def test_create_and_delete_solver_job(
 )
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_job(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
@@ -178,7 +178,7 @@ async def test_create_job(
     callback = mock_webserver_router["create_projects"].side_effect
     assert callback is not None
 
-    def create_project_side_effect(request: httpx.Request):
+    def create_project_side_effect(request: httpx2.Request):
         # check `hidden` bool
         query = dict(elm.split("=") for elm in request.url.query.decode().split("&"))
         _hidden = query.get("hidden")
@@ -226,9 +226,9 @@ def mocked_backend_services_apis_for_delete_job_assets(
     computation_state: RunningState = request.param
 
     # Patch PATCH /projects/{project_id}
-    def _patch_project(request: httpx.Request, **kwargs):
+    def _patch_project(request: httpx2.Request, **kwargs):
         # Accept any patch, return 204 No Content
-        return httpx.Response(status_code=status.HTTP_204_NO_CONTENT)
+        return httpx2.Response(status_code=status.HTTP_204_NO_CONTENT)
 
     mocked_webserver_rest_api.patch(
         path__regex=r"/projects/(?P<project_id>[\w-]+)$",
@@ -236,14 +236,14 @@ def mocked_backend_services_apis_for_delete_job_assets(
     ).mock(side_effect=_patch_project)
 
     # mock computation state
-    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+    def _get_computation(request: httpx2.Request, **kwargs) -> httpx2.Response:
         task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
         task.state = computation_state
         task.stopped = None
         if not computation_state.is_running():
             task.stopped = datetime.now(tz=UTC)
 
-        return httpx.Response(status_code=status.HTTP_200_OK, json=task.model_dump(mode="json"))
+        return httpx2.Response(status_code=status.HTTP_200_OK, json=task.model_dump(mode="json"))
 
     mocked_directorv2_rest_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
@@ -263,8 +263,8 @@ def mocked_backend_services_apis_for_delete_job_assets(
     indirect=True,
 )
 async def test_delete_job_assets_endpoint(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],
@@ -296,8 +296,8 @@ async def test_delete_job_assets_endpoint(
     indirect=True,
 )
 async def test_delete_job_assets_endpoint_computation_running(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],

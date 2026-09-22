@@ -9,7 +9,15 @@ from unittest import mock
 import arrow
 import httpx
 import pytest
-from httpx import HTTPError, PoolTimeout, Request, RequestError, Response, TransportError, codes
+from httpx2 import (
+    HTTPError,
+    PoolTimeout,
+    Request,
+    RequestError,
+    Response,
+    TransportError,
+    codes,
+)
 from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (

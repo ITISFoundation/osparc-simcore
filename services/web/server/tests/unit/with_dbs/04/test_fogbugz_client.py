@@ -7,7 +7,7 @@
 import json
 from collections.abc import Iterator
 
-import httpx
+import httpx2
 import pytest
 import respx
 from aiohttp.test_utils import TestClient
@@ -70,7 +70,7 @@ def mock_fogbugz_api(fake_api_base_url: str) -> Iterator[respx.MockRouter]:
     with respx.mock(base_url=fake_api_base_url) as mock:
         # Create a side_effect that returns responses in sequence
         mock.post(path="/f/api/0/jsonapi").mock(
-            side_effect=[httpx.Response(200, json=response) for response in responses]
+            side_effect=[httpx2.Response(200, json=response) for response in responses]
         )
         yield mock
 

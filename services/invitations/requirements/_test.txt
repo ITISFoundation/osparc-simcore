@@ -16,26 +16,8 @@ coverage==7.16.0
     #   pytest-cov
 faker==40.38.0
     # via -r requirements/_test.in
-h11==0.16.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
-httpcore==1.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
-httpx==0.28.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
 hypothesis==6.151.9
     # via -r requirements/_test.in
-idna==3.19
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   httpx
 iniconfig==2.3.0
     # via pytest
 packaging==24.2

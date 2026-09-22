@@ -3,7 +3,7 @@ from celery.exceptions import (  # type: ignore[import-untyped] #pylint: disable
 )
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from httpx import HTTPError as HttpxException
+from httpx2 import HTTPError as HttpxException
 from models_library.functions_errors import FunctionBaseError
 from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 from starlette import status

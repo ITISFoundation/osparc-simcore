@@ -19,7 +19,6 @@ deepdiff
 docker
 faker
 fakeredis[lua]
-httpx
 moto[server]
 parse
 psutil

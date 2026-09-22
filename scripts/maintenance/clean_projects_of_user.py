@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import typer
-from httpx import URL, AsyncClient, HTTPStatusError, Timeout, codes
+from httpx2 import URL, AsyncClient, HTTPStatusError, Timeout, codes
 from pydantic import EmailStr, SecretStr, TypeAdapter
 from rich.console import Console
 from rich.panel import Panel

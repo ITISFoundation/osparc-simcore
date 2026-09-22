@@ -6,7 +6,7 @@
 
 from unittest.mock import Mock
 
-import httpx
+import httpx2
 import simcore_service_storage._meta
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import HealthCheck, S3BucketName
@@ -23,7 +23,7 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-async def test_health_check(initialized_app: FastAPI, client: httpx.AsyncClient):
+async def test_health_check(initialized_app: FastAPI, client: httpx2.AsyncClient):
     url = url_from_operation_id(client, initialized_app, "get_health")
     response = await client.get(f"{url}")
     app_health, error = assert_status(response, status.HTTP_200_OK, HealthCheck)
@@ -38,7 +38,7 @@ async def test_health_check(initialized_app: FastAPI, client: httpx.AsyncClient)
 
 async def test_health_check_fails_when_redis_is_unhealthy(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
 ):
     unhealthy_redis_client_manager = Mock()
     unhealthy_redis_client_manager.healthy = False
@@ -54,7 +54,7 @@ async def test_health_check_fails_when_redis_is_unhealthy(
     assert response.json() == {"error": {"errors": [REDIS_CLIENT_UNHEALTHY_MSG]}}
 
 
-async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient):
+async def test_health_status(initialized_app: FastAPI, client: httpx2.AsyncClient):
     url = url_from_operation_id(client, initialized_app, "get_status")
     response = await client.get(f"{url}")
     app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
@@ -78,7 +78,7 @@ async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient
 
 async def test_bad_health_status_if_bucket_missing(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     storage_s3_bucket: S3BucketName,
     s3_client: S3Client,
 ):
@@ -100,7 +100,7 @@ async def test_bad_health_status_if_bucket_missing(
 
 async def test_bad_health_status_if_s3_server_missing(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_aws_server: ThreadedMotoServer,
 ):
     url = url_from_operation_id(client, initialized_app, "get_status")

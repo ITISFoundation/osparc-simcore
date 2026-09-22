@@ -3,7 +3,7 @@ from datetime import timedelta
 from typing import Final, NamedTuple
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import AnyUrl, TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.ssl_context import get_shared_ssl_context

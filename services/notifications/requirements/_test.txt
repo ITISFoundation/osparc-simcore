@@ -26,8 +26,6 @@ certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   httpcore
-    #   httpx
     #   requests
 charset-normalizer==3.4.1
     # via
@@ -74,21 +72,10 @@ greenlet==3.2.4
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
-    #   httpcore
-httpcore==1.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
-httpx==0.28.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
+    #   sqlalchemy
 idna==3.19
     # via
     #   -c requirements/_base.txt
-    #   anyio
-    #   httpx
     #   requests
 iniconfig==2.3.0
     # via pytest

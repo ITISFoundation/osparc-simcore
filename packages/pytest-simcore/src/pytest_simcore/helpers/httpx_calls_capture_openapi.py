@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Final, Literal
 from urllib.parse import unquote
 
-import httpx
+import httpx2
 import jsonref
 from pydantic import TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
@@ -43,14 +43,14 @@ settings_classes: Final = [
 ]
 
 
-def _get_openapi_specs(url: httpx.URL) -> dict[str, Any]:
+def _get_openapi_specs(url: httpx2.URL) -> dict[str, Any]:
     openapi_url = None
     target = (url.host, url.port)
 
     for prefix, cls, openapi_path in settings_classes:
         with suppress(ValidationError):
             settings = cls.create_from_envs()
-            base_url = httpx.URL(settings.base_url)
+            base_url = httpx2.URL(settings.base_url)
             if (base_url.host, base_url.port) == target:
                 vtag = getattr(settings, f"{prefix}_VTAG")
                 openapi_url = settings.base_url + openapi_path.format(vtag)
@@ -60,7 +60,7 @@ def _get_openapi_specs(url: httpx.URL) -> dict[str, Any]:
         msg = f"{url=} has not been added yet to the testing system. Please do so yourself"
         raise OpenApiSpecError(msg)
 
-    response = httpx.get(openapi_url)
+    response = httpx2.get(openapi_url)
     response.raise_for_status()
 
     if not response.content:
@@ -91,8 +91,8 @@ def _get_params(openapi_spec: dict[str, Any], path: str, method: str | None = No
 
 def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDescription:
     def parts(p: str) -> tuple[str, ...]:
-        all_parts: list[str] = sum((elm.split("/") for elm in p.split(":")), start=[])
-        return tuple(part for part in all_parts if len(part) > 0)
+        all_parts: list[str] = [part for elm in p.split(":") for part in elm.split("/") if len(part) > 0]
+        return tuple(all_parts)
 
     for p in openapi_spec["paths"]:
         openapi_parts: tuple[str, ...] = tuple(parts(p))
@@ -108,9 +108,9 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDe
         ):
             continue
         path_param_indices_iter = iter(path_param_indices)
-        for key in path_params:
+        for param in path_params.values():
             ii = next(path_param_indices_iter)
-            path_params[key].response_value = unquote(response_path.parts[ii])
+            param.response_value = unquote(response_path.parts[ii])
         return PathDescription(
             path=p,
             path_parameters=list(path_params.values()),
@@ -120,7 +120,7 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDe
 
 
 def enhance_path_description_from_openapi_spec(
-    response: httpx.Response,
+    response: httpx2.Response,
 ) -> PathDescription:
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url)
     return _determine_path(openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0]))

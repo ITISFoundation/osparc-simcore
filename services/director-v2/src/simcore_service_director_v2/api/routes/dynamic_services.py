@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Annotated, Final
 
-import httpx
+import httpx2
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -240,7 +240,7 @@ async def service_retrieve_data_on_ports(
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             dynamic_services_settings.DYNAMIC_SCHEDULER
         )
-        timeout = httpx.Timeout(
+        timeout = httpx2.Timeout(
             dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             connect=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )

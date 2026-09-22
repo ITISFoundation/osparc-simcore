@@ -11,7 +11,7 @@ import logging
 import time
 from unittest import mock
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI, status
@@ -523,9 +523,9 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
     app_settings = get_application_settings(app)
     realm_url = f"http://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}/v2/token"
 
-    def _bearer_manifest_handler(request: httpx.Request) -> httpx.Response:
+    def _bearer_manifest_handler(request: httpx2.Request) -> httpx2.Response:
         if f"Bearer {fake_token}" not in request.headers.get("authorization", ""):
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_401_UNAUTHORIZED,
                 headers={
                     "WWW-Authenticate": (
@@ -533,7 +533,7 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
                     )
                 },
             )
-        return httpx.Response(
+        return httpx2.Response(
             status.HTTP_200_OK,
             json=_make_manifest_response(config_digest),
             headers={
@@ -542,9 +542,9 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
             },
         )
 
-    def _bearer_blob_handler(request: httpx.Request) -> httpx.Response:
+    def _bearer_blob_handler(request: httpx2.Request) -> httpx2.Response:
         if f"Bearer {fake_token}" not in request.headers.get("authorization", ""):
-            return httpx.Response(
+            return httpx2.Response(
                 status.HTTP_401_UNAUTHORIZED,
                 headers={
                     "WWW-Authenticate": (
@@ -552,7 +552,7 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
                     )
                 },
             )
-        return httpx.Response(
+        return httpx2.Response(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={"Location": s3_presigned_url},
         )

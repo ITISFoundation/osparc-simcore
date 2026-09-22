@@ -7,7 +7,7 @@ from textwrap import dedent
 from typing import Annotated, Final, Self
 
 from attr import dataclass
-from httpx import AsyncClient, HTTPError
+from httpx2 import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
 from models_library.docker import DockerLabelKey
@@ -58,7 +58,11 @@ class _RCloneContainerLabels(BaseModel):
     @classmethod
     def from_rc_credentials(cls, *, rc_user: str, rc_password: str, vfs_write_back_s: int) -> Self:
         return TypeAdapter(cls).validate_python(
-            {"rc-user": rc_user, "rc-password": rc_password, "vfs-write-back-s": vfs_write_back_s}
+            {
+                "rc-user": rc_user,
+                "rc-password": rc_password,
+                "vfs-write-back-s": vfs_write_back_s,
+            }
         )
 
     @classmethod

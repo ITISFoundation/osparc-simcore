@@ -10,14 +10,14 @@ from typing import Any, Final, cast
 import aiodocker
 import aiodocker.networks
 import arrow
-import httpx
+import httpx2
 import tenacity
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, status
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
-from servicelib.fastapi.httpx_client import get_httpx_client
+from servicelib.fastapi.httpx_client import get_httpx2_client
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
@@ -499,7 +499,7 @@ async def _pass_port_to_service(
     service_name: str,
     port: str,
     service_boot_parameters_labels: list[Any],
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     app_settings: ApplicationSettings,
 ) -> None:
     for param in service_boot_parameters_labels:
@@ -758,7 +758,7 @@ async def _start_docker_service(  # noqa: PLR0913
         if isinstance(service_boot_parameters_labels, list):
             service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
             if published_port:
-                httpx_client = get_httpx_client(app)
+                httpx_client = get_httpx2_client(app)
                 await _pass_port_to_service(
                     service_name,
                     published_port,
@@ -1018,9 +1018,9 @@ async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
     wait=wait_random_exponential(min=1, max=5),
     stop=stop_after_attempt(3),
     reraise=True,
-    retry=retry_if_exception_type(httpx.RequestError),
+    retry=retry_if_exception_type(httpx2.RequestError),
 )
-async def _save_service_state(service_host_name: str, client: httpx.AsyncClient) -> None:
+async def _save_service_state(service_host_name: str, client: httpx2.AsyncClient) -> None:
     try:
         response = await client.post(
             url=f"http://{service_host_name}/state",  # NOSONAR
@@ -1028,7 +1028,7 @@ async def _save_service_state(service_host_name: str, client: httpx.AsyncClient)
         )
         response.raise_for_status()
 
-    except httpx.HTTPStatusError as err:
+    except httpx2.HTTPStatusError as err:
         if err.response.status_code in _STATE_SAVE_IGNORED_STATUS_CODES:
             # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
             # therefore we assume there is nothing to be saved and do not raise exception
@@ -1090,8 +1090,8 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
         if save_state:
             _logger.debug("saving state of service %s...", service_host_name)
             try:
-                await _save_service_state(service_host_name, client=get_httpx_client(app))
-            except httpx.HTTPStatusError as err:
+                await _save_service_state(service_host_name, client=get_httpx2_client(app))
+            except httpx2.HTTPStatusError as err:
                 raise ServiceStateSaveError(
                     service_uuid=node_uuid,
                     reason=f"service {service_host_name} rejected to save state, "
@@ -1099,7 +1099,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                     "Aborting stop service to prevent data loss.",
                 ) from err
 
-            except httpx.RequestError as err:
+            except httpx2.RequestError as err:
                 _logger.warning(
                     "Could not save state because %s is unreachable [%s].Resuming stop_service.",
                     service_host_name,

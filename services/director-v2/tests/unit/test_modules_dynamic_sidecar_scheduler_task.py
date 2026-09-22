@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Final
 from unittest.mock import AsyncMock
 
-import httpx
+import httpx2
 import pytest
 import respx
 from common_library.json_serialization import json_dumps
@@ -100,7 +100,7 @@ def mock_containers_docker_status(
         mock.get(
             re.compile(rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/v1/containers\?only_status=true"),
             name="containers_docker_status",
-        ).mock(httpx.Response(200, json={}))
+        ).mock(httpx2.Response(200, json={}))
         mock.get(f"{service_endpoint}/health", name="is_healthy").respond(json={"is_healthy": True})
 
         yield mock

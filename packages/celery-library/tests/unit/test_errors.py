@@ -5,7 +5,7 @@
 from collections.abc import Iterator
 
 import celery_library.errors_adapters as errors_adapters_module
-import httpx
+import httpx2
 import pytest
 from celery.exceptions import (  # type: ignore[import-untyped]
     BackendGetMetaError,
@@ -27,14 +27,14 @@ from redis.exceptions import DataError as RedisDataError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
 
-def _make_http_status_error() -> httpx.HTTPStatusError:
+def _make_http_status_error() -> httpx2.HTTPStatusError:
     # NOTE: httpx.HTTPStatusError can be pickled (dumps succeeds) but cannot be
     # reconstructed by pickle.loads since __init__ requires keyword-only
     # `request`/`response` -- it used to crash the consumers of failed jobs
-    return httpx.HTTPStatusError(
+    return httpx2.HTTPStatusError(
         "Client error '404 Not Found'",
-        request=httpx.Request("GET", "http://fake-storage/v0/files"),
-        response=httpx.Response(404),
+        request=httpx2.Request("GET", "http://fake-storage/v0/files"),
+        response=httpx2.Response(404),
     )
 
 
@@ -52,7 +52,7 @@ class TransferableHTTPStatusError(OsparcErrorMixin, Exception):
     # Adapters to/from
 
     @classmethod
-    def from_http_status_error(cls, error: httpx.HTTPStatusError) -> "TransferableHTTPStatusError":
+    def from_http_status_error(cls, error: httpx2.HTTPStatusError) -> "TransferableHTTPStatusError":
         return cls(
             original_message=f"{error}",
             method=error.request.method,
@@ -61,13 +61,13 @@ class TransferableHTTPStatusError(OsparcErrorMixin, Exception):
             reason_phrase=error.response.reason_phrase,
         )
 
-    def to_http_status_error(self) -> httpx.HTTPStatusError:
-        return httpx.HTTPStatusError(
+    def to_http_status_error(self) -> httpx2.HTTPStatusError:
+        return httpx2.HTTPStatusError(
             self.original_message,
-            request=httpx.Request(self.method, self.url),
+            request=httpx2.Request(self.method, self.url),
             # httpx derives reason_phrase from status_code (its __init__ does not
             # accept one), so the wire field is only kept for reporting
-            response=httpx.Response(self.status_code),
+            response=httpx2.Response(self.status_code),
         )
 
 
@@ -78,7 +78,7 @@ def registered_http_status_error_adapter() -> Iterator[None]:
     to_wire_snapshot = dict(errors_adapters_module.to_wire_adapters)
     from_wire_snapshot = dict(errors_adapters_module.from_wire_adapters)
     register_transferable_error_adapter(
-        original_type=httpx.HTTPStatusError,
+        original_type=httpx2.HTTPStatusError,
         wire_type=TransferableHTTPStatusError,
         to_wire=TransferableHTTPStatusError.from_http_status_error,
         from_wire=TransferableHTTPStatusError.to_http_status_error,
@@ -97,7 +97,7 @@ def test_adapter_round_trips_the_original_error(registered_http_status_error_ada
     result = encode_celery_transferable_error(original_error)
     decoded = decode_celery_transferable_error(result)
 
-    assert isinstance(decoded, httpx.HTTPStatusError)
+    assert isinstance(decoded, httpx2.HTTPStatusError)
     assert decoded.response.status_code == 404
     assert decoded.request.method == "GET"
     assert f"{decoded.request.url}" == "http://fake-storage/v0/files"

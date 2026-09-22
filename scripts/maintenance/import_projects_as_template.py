@@ -14,7 +14,7 @@ from contextlib import suppress
 from pathlib import Path
 
 import typer
-from httpx import URL, AsyncClient, HTTPStatusError
+from httpx2 import URL, AsyncClient, HTTPStatusError
 from pydantic.networks import EmailStr
 from pydantic.types import SecretStr
 
