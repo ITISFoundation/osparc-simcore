@@ -8,12 +8,13 @@ import contextlib
 import json
 import logging
 import re
+import threading
 import typing
 from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from enum import Enum, unique
+from enum import StrEnum, unique
 from types import TracebackType
 from typing import Any, Final
 
@@ -47,7 +48,7 @@ _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
 @unique
-class RunningState(str, Enum):
+class RunningState(StrEnum):
     # NOTE: this is a duplicate of models-library/project_states.py
     # It must remain as such until that module is pydantic V2 compatible
     """State of execution of a project's computational workflow
@@ -77,7 +78,7 @@ class RunningState(str, Enum):
 
 
 @unique
-class NodeProgressType(str, Enum):
+class NodeProgressType(StrEnum):
     # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
     # It must remain as such until that module is pydantic V2 compatible
     CLUSTER_UP_SCALING = "CLUSTER_UP_SCALING"
@@ -103,12 +104,12 @@ class NodeProgressType(str, Enum):
         }
 
 
-class ServiceType(str, Enum):
+class ServiceType(StrEnum):
     DYNAMIC = "DYNAMIC"
     COMPUTATIONAL = "COMPUTATIONAL"
 
 
-class _OSparcMessages(str, Enum):
+class _OSparcMessages(StrEnum):
     NODE_UPDATED = "nodeUpdated"
     NODE_PROGRESS = "nodeProgress"
     PROJECT_STATE_UPDATED = "projectStateUpdated"
@@ -234,40 +235,73 @@ class RobustWebSocket:
     ws: WebSocket
     _num_reconnections: int = 0
     auto_reconnect: bool = True
+    ws_predicate: typing.Callable[[WebSocket], bool] | None = None
+    reconnect_timeout: float = 5 * SECOND
+    log_prefix: str = _WEBSOCKET_MESSAGE_PREFIX
+    _reconnect_lock: threading.Lock = field(init=False, repr=False, default_factory=threading.Lock)
+    _reconnect_handled: set[int] = field(init=False, repr=False, default_factory=set)
+    _frames_received_on: set[int] = field(init=False, repr=False, default_factory=set)
 
     def __post_init__(self) -> None:
         self._configure_websocket_events()
+        if self.auto_reconnect and self.ws.is_closed():
+            # NOTE: a websocket whose handshake already failed (e.g. a socket.io connection refused
+            # during a service's cold start) has already fired its events before being captured,
+            # so the listeners attached above never see them: reconnect right away.
+            _logger.warning("%s WebSocket is already closed. Attempting to reconnect...", self.log_prefix)
+            self._reconnect_handled.add(id(self.ws))
+            self._attempt_reconnect(_logger)
 
     def _configure_websocket_events(self) -> None:
+        # NOTE: bind the current socket in the closure: the 'socketerror' event only carries the
+        # error message, so the socket must be identified through the closure instead.
+        socket = self.ws
+
         with log_context(
             logging.INFO,
             msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
         ) as ctx:
 
             def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_PREFIX, payload)
+                ctx.logger.debug("%s⬇️ Frame sent: %s", self.log_prefix, payload)
 
             def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_PREFIX, payload)
+                # NOTE: receiving a frame is the proof that this socket's handshake succeeded
+                # (a socket.io server sends its 'open' packet immediately on connect)
+                self._frames_received_on.add(id(socket))
+                ctx.logger.debug("%s⬆️ Frame received: %s", self.log_prefix, payload)
+
+            def _trigger_reconnect(reason: str) -> None:
+                with self._reconnect_lock:
+                    # NOTE: a failed handshake emits both 'socketerror' and 'close' on the same
+                    # socket; only the first event may trigger a reconnect, the second wait would
+                    # otherwise hang until timeout waiting for a websocket that never arrives.
+                    if id(socket) in self._reconnect_handled:
+                        return
+                    self._reconnect_handled.add(id(socket))
+                ctx.logger.warning("%s⚠️ %s. Attempting to reconnect...", self.log_prefix, reason)
+                self._attempt_reconnect(ctx.logger)
 
             def on_close(_: WebSocket) -> None:
-                if self.auto_reconnect:
-                    ctx.logger.warning(
-                        "%s⚠️ WebSocket closed. Attempting to reconnect...",
-                        _WEBSOCKET_MESSAGE_PREFIX,
-                    )
-                    self._attempt_reconnect(ctx.logger)
-                else:
-                    ctx.logger.info("%s WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX)
+                if not self.auto_reconnect:
+                    ctx.logger.info("%s WebSocket closed.", self.log_prefix)
+                    return
+                _trigger_reconnect("WebSocket closed")
 
             def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_PREFIX, error_msg)
+                if not self.auto_reconnect:
+                    ctx.logger.error("%s❌ WebSocket error: %s", self.log_prefix, error_msg)
+                    return
+                # NOTE: expected during e.g. a service cold start, where the socket.io client
+                # immediately retries (polling, then websocket upgrade).
+                ctx.logger.warning("%s❌ WebSocket error: %s (expecting a reconnection)", self.log_prefix, error_msg)
+                _trigger_reconnect(f"WebSocket error: {error_msg}")
 
             # Attach core event listeners
-            self.ws.on("framesent", on_framesent)
-            self.ws.on("framereceived", on_framereceived)
-            self.ws.on("close", on_close)
-            self.ws.on("socketerror", on_socketerror)
+            socket.on("framesent", on_framesent)
+            socket.on("framereceived", on_framereceived)
+            socket.on("close", on_close)
+            socket.on("socketerror", on_socketerror)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -282,7 +316,13 @@ class RobustWebSocket:
         """
         Attempt to reconnect the WebSocket and restore event listeners.
         """
-        with self.page.expect_websocket(timeout=5000) as ws_info:
+
+        def _accept(new_websocket: WebSocket) -> bool:
+            if self.ws_predicate is not None and not self.ws_predicate(new_websocket):
+                return False
+            return not new_websocket.is_closed()
+
+        with self.page.expect_websocket(_accept, timeout=self.reconnect_timeout) as ws_info:
             assert not ws_info.value.is_closed()
 
         self.ws = ws_info.value
@@ -304,6 +344,22 @@ class RobustWebSocket:
         Register an event listener that keeps waiting across reconnections.
         """
         return _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
+
+    def wait_until_connected(self, *, timeout: float) -> None:
+        """
+        Block until the current websocket is connected, i.e. it received its first frame
+        (possibly after a reconnection), raising a `TimeoutError` if that does not happen
+        within `timeout` milliseconds.
+        """
+        with log_context(logging.INFO, msg=f"waiting for websocket connection (timeout: {timeout}ms)") as ctx:
+            deadline = datetime.now(UTC) + timedelta(milliseconds=timeout)
+            while id(self.ws) not in self._frames_received_on:
+                if datetime.now(UTC) > deadline:
+                    msg = f"Timeout {timeout}ms exceeded while waiting for the websocket to connect."
+                    raise PlaywrightTimeoutError(msg)
+                # NOTE: pumping the page's event loop lets the event-driven reconnection proceed
+                self.page.wait_for_timeout(100)
+            ctx.logger.debug("%s WebSocket is connected.", self.log_prefix)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:

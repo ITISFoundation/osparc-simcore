@@ -58,3 +58,7 @@ def test_sim4life(
 
     if check_videostreaming:
         check_video_streaming(page, s4l_iframe, s4l_websocket)
+
+    # NOTE: the test is done with this websocket: closing it during teardown (e.g. when the
+    # project is closed) is expected, so do not treat it as a disconnection needing a reconnect
+    s4l_websocket.auto_reconnect = False
