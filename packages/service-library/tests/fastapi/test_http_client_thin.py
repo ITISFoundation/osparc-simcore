@@ -3,24 +3,19 @@
 import logging
 from collections.abc import AsyncIterable, Iterable
 from typing import Final
+from unittest import mock
 
 import arrow
+import httpx
 import pytest
-from httpx import (
-    HTTPError,
-    PoolTimeout,
-    Request,
-    RequestError,
-    Response,
-    TransportError,
-    codes,
-)
+from httpx import HTTPError, PoolTimeout, Request, RequestError, Response, TransportError, codes
 from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
     ClientHttpError,
     UnexpectedStatusError,
+    _get_shared_ssl_context,
     expect_status,
     retry_on_errors,
 )
@@ -153,6 +148,34 @@ async def test_retry_on_errors_raises_client_http_error(
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
+
+
+def test_ssl_context_is_built_once_and_shared(request_timeout: int):
+    class ATestClient(BaseThinClient): ...
+
+    tracing_config = TracingConfig.create(service_name="test-client", tracing_settings=None)
+    _get_shared_ssl_context.cache_clear()
+
+    with mock.patch(
+        "servicelib.fastapi.http_client_thin.create_ssl_context",
+        wraps=httpx.create_ssl_context,
+    ) as mocked_factory:
+        clients = [ATestClient(total_retry_interval=request_timeout, tracing_config=tracing_config) for _ in range(3)]
+
+    assert mocked_factory.call_count == 1
+
+    contexts = {id(c.client._transport._pool._ssl_context) for c in clients}  # noqa: SLF001
+    assert len(contexts) == 1
+    assert contexts == {id(_get_shared_ssl_context())}
+
+
+def test_shared_ssl_context_keeps_httpx_trust_store():
+    _get_shared_ssl_context.cache_clear()
+
+    def _ca_serials(context):
+        return {cert["serialNumber"] for cert in context.get_ca_certs()}
+
+    assert _ca_serials(_get_shared_ssl_context()) == _ca_serials(httpx.create_ssl_context())
 
 
 async def test_methods_do_not_return_response(

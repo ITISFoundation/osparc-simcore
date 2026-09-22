@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from common_library.errors_classes import OsparcErrorMixin
-from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
+from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError, create_ssl_context
 from httpx._types import TimeoutTypes, URLTypes
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
@@ -24,8 +24,12 @@ _logger = logging.getLogger(__name__)
 
 @functools.lru_cache(maxsize=1)
 def _get_shared_ssl_context() -> ssl.SSLContext:
-    """Parsing the CA bundle costs ~3MB, so it is done once per process."""
-    return ssl.create_default_context()
+    """Parsing the CA bundle costs ~3MB, so it is done once per process.
+
+    Uses httpx's own factory to keep its default trust store (certifi and
+    the SSL_CERT_FILE/SSL_CERT_DIR overrides) unchanged.
+    """
+    return create_ssl_context()
 
 
 """
