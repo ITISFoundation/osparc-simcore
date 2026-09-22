@@ -6,7 +6,6 @@ from collections.abc import Iterator
 import docker
 import pytest
 import sqlalchemy as sa
-import tenacity
 from pydantic import PostgresDsn
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
@@ -17,9 +16,8 @@ from pytest_simcore.helpers.postgres_tools import (
     maintenance_engine_context,
     migrated_pg_template_context,
     reset_database_from_template,
+    wait_engine_ready,
 )
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 postgres_config = {
     "user": "test",
@@ -50,9 +48,7 @@ def postgres_container() -> Iterator[PostgresTestConfig]:
 
         dsn = f"postgresql+psycopg2://{postgres_config['user']}:{postgres_config['password']}@{postgres_config['host']}:{port}/{postgres_config['database']}"
         engine = sa.create_engine(dsn)
-        for attempt in tenacity.Retrying(wait=wait_fixed(0.2), stop=stop_after_delay(60), reraise=True):
-            with attempt, engine.connect():
-                pass
+        wait_engine_ready(engine, timeout=60)
         engine.dispose()
         yield {**postgres_config, "port": port}
     finally:

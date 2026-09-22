@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, TypedDict
+from typing import Any, Final, TypedDict
 from urllib.parse import quote_plus
 
 import simcore_postgres_database.cli
@@ -11,10 +11,28 @@ import tenacity
 from pydantic import PostgresDsn
 from sqlalchemy import exc as sa_exc
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
-from tenacity import RetryCallState, retry_if_exception, stop_after_attempt
+from tenacity import RetryCallState, retry_if_exception
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 _logger = logging.getLogger(__name__)
+
+# retries are meant to be fast: these are tests and the transient states
+# (backends reconnecting, server closing stale connections) resolve quickly
+_RETRY_WAIT: Final[wait_fixed] = wait_fixed(0.1)
+_RETRY_TIMEOUT: Final[float] = 5  # seconds
+_CONNECT_READY_TIMEOUT: Final[float] = 5  # seconds
+
+
+def wait_engine_ready(engine: sa.engine.Engine, *, timeout: float) -> None:
+    """blocks until `engine` accepts connections or `timeout` (seconds) expires"""
+    for attempt in tenacity.Retrying(
+        wait=_RETRY_WAIT,
+        stop=stop_after_delay(timeout),
+        reraise=True,
+    ):
+        with attempt, engine.connect():
+            break
 
 
 class PostgresTestConfig(TypedDict):
@@ -42,7 +60,7 @@ def _is_server_connection_drop(error: sa_exc.OperationalError) -> bool:
     return "server closed the connection unexpectedly" in error_msg
 
 
-def is_retryable_operational_error(error: BaseException) -> bool:
+def _is_retryable_operational_error(error: BaseException) -> bool:
     return isinstance(error, sa_exc.OperationalError) and _is_server_connection_drop(error)
 
 
@@ -52,7 +70,7 @@ def _is_database_accessed_error(error: BaseException) -> bool:
 
 
 def _is_retryable_error(error: BaseException) -> bool:
-    return is_retryable_operational_error(error) or _is_database_accessed_error(error)
+    return _is_retryable_operational_error(error) or _is_database_accessed_error(error)
 
 
 def _is_database_missing_error(error: BaseException) -> bool:
@@ -73,6 +91,40 @@ def _quote_database_identifier(engine: sa.engine.Engine, database: str) -> str:
     return engine.dialect.identifier_preparer.quote(database)
 
 
+def _execute_statement_with_retry(
+    engine: sa.engine.Engine,
+    statement: str,
+    before_attempt: Callable[[], None] | None,
+) -> None:
+    connection: sa.Connection | None = None
+    try:
+        for attempt in tenacity.Retrying(
+            wait=_RETRY_WAIT,
+            stop=stop_after_delay(_RETRY_TIMEOUT),
+            retry=retry_if_exception(_is_retryable_error),
+            before_sleep=lambda retry_state: _log_statement_retry(retry_state, statement),
+            reraise=True,
+        ):
+            with attempt:
+                if before_attempt is not None:
+                    before_attempt()
+                try:
+                    if connection is None or connection.closed:
+                        connection = engine.connect()
+                    connection.execute(sa.text(statement))
+                except sa_exc.OperationalError as e:
+                    if _is_server_connection_drop(e):
+                        # the held/pooled connections are stale: recreate them before the retry
+                        if connection is not None:
+                            connection.invalidate()
+                        engine.dispose()
+                        connection = None
+                    raise
+    finally:
+        if connection is not None and not connection.closed:
+            connection.close()
+
+
 def _execute_postgres_statements(
     engine: sa.engine.Engine,
     sql_statements: list[str],
@@ -84,31 +136,16 @@ def _execute_postgres_statements(
 
     The retry is needed because live test services can reconnect between backend
     termination and ``DROP DATABASE``/``CREATE DATABASE ... TEMPLATE``. Each statement
-    gets its own connection so a failed DDL operation can be retried cleanly.
+    is executed on a single held connection (the engine runs in AUTOCOMMIT, so every
+    statement commits on its own) and retried on it, without creating a transaction
+    per attempt.
 
     `before_attempt` (if given) runs before every attempt, e.g. to re-terminate backends
     that may have reconnected since the previous attempt.
     """
     for statement in sql_statements:
         try:
-            for attempt in tenacity.Retrying(
-                wait=wait_fixed(0.5),
-                stop=stop_after_attempt(5),
-                retry=retry_if_exception(_is_retryable_error),
-                before_sleep=lambda retry_state, statement=statement: _log_statement_retry(retry_state, statement),
-                reraise=True,
-            ):
-                with attempt:
-                    if before_attempt is not None:
-                        before_attempt()
-                    try:
-                        with engine.connect() as connection, connection.begin():
-                            connection.execute(sa.text(statement))
-                    except sa_exc.OperationalError as e:
-                        if _is_server_connection_drop(e):
-                            # Recreate stale pooled connections before the retry.
-                            engine.dispose()
-                        raise
+            _execute_statement_with_retry(engine, statement, before_attempt)
         except sa_exc.ProgrammingError as e:
             if ignore_errors and _is_database_missing_error(e):
                 _logger.debug("Database does not exist while executing %s", statement)
@@ -263,14 +300,7 @@ def cloned_pg_database_context(
 
     engine = sa.create_engine(_build_sync_dsn(postgres_config), isolation_level="AUTOCOMMIT")
     try:
-        for attempt in tenacity.Retrying(
-            wait=wait_fixed(1),
-            retry=retry_if_exception(is_retryable_operational_error),
-            reraise=True,
-            stop=stop_after_attempt(3),
-        ):
-            with attempt, engine.connect():
-                break
+        wait_engine_ready(engine, timeout=_CONNECT_READY_TIMEOUT)
         yield engine
     finally:
         engine.dispose()

@@ -2,18 +2,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 import logging
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Final, cast
 
 import pytest
 import sqlalchemy as sa
-import tenacity
 from pydantic import PostgresDsn
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
@@ -25,6 +21,7 @@ from .helpers.postgres_tools import (
     database_exists,
     drop_pg_template,
     maintenance_engine_context,
+    wait_engine_ready,
 )
 from .helpers.typing_env import EnvVarsDict
 
@@ -76,15 +73,8 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
     assert isinstance(engine, sa.engine.Engine)  # nosec
 
     # Attempts until responsive
-    for attempt in tenacity.Retrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(5 * _MINUTE),
-        reraise=True,
-    ):
-        with attempt:
-            print(f"--> Connecting to {dsn}, attempt {attempt.retry_state.attempt_number}...")
-            with engine.connect():
-                print(f"Connection to {dsn} succeeded [{json.dumps(attempt.retry_state.retry_object.statistics)}]")
+    _logger.info("Connecting to %s", dsn)
+    wait_engine_ready(engine, timeout=5 * _MINUTE)
 
     yield engine
 
@@ -110,9 +100,7 @@ def _postgres_migrated_template_state() -> Iterator[dict[str, Any]]:
 def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: dict[str, Any]) -> None:
     with maintenance_engine_context(postgres_dsn) as maintenance:
         # wait until the server accepts connections (the stack may have just been deployed)
-        for attempt in tenacity.Retrying(wait=wait_fixed(1), stop=stop_after_delay(_MINUTE), reraise=True):
-            with attempt, maintenance.connect():
-                pass
+        wait_engine_ready(maintenance, timeout=_MINUTE)
 
         # NOTE: the template may be missing if the postgres instance was recycled
         # between fixtures (e.g. stack redeploy without --keep-docker-up)
