@@ -50,7 +50,10 @@ class TaskProgressEvent(BaseTaskEvent):
         json_schema_extra={
             "examples": [
                 {
-                    "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
+                    "job_id": "simcore/services/comp/sleeper:1.1.0"
+                    ":projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8"
+                    ":nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d"
+                    ":uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
                     "progress": 0,
                     "task_owner": {
                         "user_id": 32,
@@ -61,7 +64,10 @@ class TaskProgressEvent(BaseTaskEvent):
                     },
                 },
                 {
-                    "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
+                    "job_id": "simcore/services/comp/sleeper:1.1.0"
+                    ":projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8"
+                    ":nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d"
+                    ":uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
                     "progress": 1.0,
                     "task_owner": {
                         "user_id": 32,

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, StrEnum
 from functools import total_ordering
 
 _USER_ROLE_TO_LEVEL = {
@@ -61,7 +61,7 @@ class UserStatus(str, Enum):
     DELETED = "DELETED"
 
 
-class AccountRequestStatus(str, Enum):
+class AccountRequestStatus(StrEnum):
     """Status of the request for an account"""
 
     PENDING = "PENDING"  # Pending PO review to approve/reject the request
