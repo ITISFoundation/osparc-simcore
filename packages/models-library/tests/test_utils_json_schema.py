@@ -87,7 +87,7 @@ def test_jsonschema_validate_data_error(valid_schema):
     error = err_info.value
     assert isinstance(error, JsonSchemaValidationError)
     assert error.message == "'s' is a required property"
-    assert error.path == deque([])
+    assert error.path == deque()
     assert error.schema_path == deque(["required"])
     assert error.schema == schema
     assert error.context == []

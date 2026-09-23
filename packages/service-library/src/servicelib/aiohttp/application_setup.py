@@ -121,7 +121,7 @@ def _get_app_settings_and_field_name(
     if app_settings:
         if not settings_field_name:
             # NOTE: hard-coded WEBSERVER_ temporary
-            settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
+            settings_field_name = f"WEBSERVER_{arg_module_name.rsplit('.', maxsplit=1)[-1].upper()}"
 
         logger.debug("Checking addon's %s ", f"{settings_field_name=}")
 
