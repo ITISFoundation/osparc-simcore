@@ -1,4 +1,5 @@
 import json
+from typing import Final
 
 import arrow
 import requests
@@ -6,19 +7,22 @@ import requests
 from monitor_release.models import RunningSidecar
 from monitor_release.settings import LegacySettings
 
+_REQUEST_TIMEOUT: Final[float] = 30.0
+
 
 def get_bearer_token(settings: LegacySettings):
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     payload = json.dumps(
         {
             "Username": settings.portainer_username,
-            "Password": settings.portainer_password,
+            "Password": settings.portainer_password.get_secret_value(),
         }
     )
     response = requests.post(
         f"{settings.portainer_url}/portainer/api/auth",
         headers=headers,
         data=payload,
+        timeout=_REQUEST_TIMEOUT,
     )
     return response.json()["jwt"]
 
@@ -33,6 +37,7 @@ def get_services(settings: LegacySettings, bearer_token):
             "Authorization": "Bearer " + bearer_token,
             "Content-Type": "application/json",
         },
+        timeout=_REQUEST_TIMEOUT,
     )
     return response.json()
 
@@ -45,6 +50,7 @@ def get_tasks(settings: LegacySettings, bearer_token):
             "Authorization": "Bearer " + bearer_token,
             "Content-Type": "application/json",
         },
+        timeout=_REQUEST_TIMEOUT,
     )
     return response.json()
 
@@ -52,35 +58,35 @@ def get_tasks(settings: LegacySettings, bearer_token):
 def get_containers(settings: LegacySettings, bearer_token):
     bearer_token = get_bearer_token(settings)
 
-    containers_url = f"{settings.portainer_url}/portainer/api/endpoints/{settings.portainer_endpoint_version}/docker/containers/json?all=true"
+    containers_url = (
+        f"{settings.portainer_url}/portainer/api/endpoints/"
+        f"{settings.portainer_endpoint_version}/docker/containers/json?all=true"
+    )
     response = requests.get(
         containers_url,
         headers={
             "Authorization": "Bearer " + bearer_token,
             "Content-Type": "application/json",
         },
+        timeout=_REQUEST_TIMEOUT,
     )
     return response.json()
 
 
 def check_simcore_running_sidecars(settings: LegacySettings, services):
-    running_sidecars: list[RunningSidecar] = []
-    for service in services:
-        if (
-            service["Spec"]["Name"].startswith("dy-sidecar")
-            and service["Spec"]["Labels"]["io.simcore.runtime.swarm-stack-name"] == settings.swarm_stack_name
-        ):
-            running_sidecars.append(
-                RunningSidecar(
-                    name=service["Spec"]["Name"],
-                    created_at=arrow.get(service["CreatedAt"]).datetime,
-                    user_id=service["Spec"]["Labels"]["io.simcore.runtime.user-id"],
-                    project_id=service["Spec"]["Labels"]["io.simcore.runtime.project-id"],
-                    service_key=service["Spec"]["Labels"]["io.simcore.runtime.service-key"],
-                    service_version=service["Spec"]["Labels"]["io.simcore.runtime.service-version"],
-                )
-            )
-    return running_sidecars
+    return [
+        RunningSidecar(
+            name=service["Spec"]["Name"],
+            created_at=arrow.get(service["CreatedAt"]).datetime,
+            user_id=service["Spec"]["Labels"]["io.simcore.runtime.user-id"],
+            project_id=service["Spec"]["Labels"]["io.simcore.runtime.project-id"],
+            service_key=service["Spec"]["Labels"]["io.simcore.runtime.service-key"],
+            service_version=service["Spec"]["Labels"]["io.simcore.runtime.service-version"],
+        )
+        for service in services
+        if service["Spec"]["Name"].startswith("dy-sidecar")
+        and service["Spec"]["Labels"]["io.simcore.runtime.swarm-stack-name"] == settings.swarm_stack_name
+    ]
 
 
 def _generate_containers_map(containers):

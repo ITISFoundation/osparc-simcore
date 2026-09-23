@@ -27,8 +27,8 @@ from yarl import URL
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, minio_s3_settings_envs: EnvVarsDict) -> EnvVarsDict:
-    # overwrite to add minio real settings
+def mock_env(mock_env: EnvVarsDict, s3_storage_settings_envs: EnvVarsDict) -> EnvVarsDict:
+    # overwrite to add s3-storage real settings
     return mock_env
 
 
@@ -36,7 +36,7 @@ def mock_env(mock_env: EnvVarsDict, minio_s3_settings_envs: EnvVarsDict) -> EnvV
 def update_project_workbench_with_comp_tasks(
     postgres_db: sa.engine.Engine,
 ) -> Callable:
-    def _updator(project_uuid: str):
+    def _updater(project_uuid: str):
         with postgres_db.connect() as con, con.begin():
             # select all projects_nodes for this project
             result = con.execute(projects_nodes.select().where(projects_nodes.c.project_uuid == project_uuid))
@@ -57,7 +57,7 @@ def update_project_workbench_with_comp_tasks(
                     .where((projects_nodes.c.node_id == node_id) & (projects_nodes.c.project_uuid == project_uuid))
                 )
 
-    return _updator
+    return _updater
 
 
 @pytest.fixture(scope="session")

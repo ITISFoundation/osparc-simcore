@@ -2,7 +2,7 @@ import secrets
 import string
 from typing import Any, Final
 
-from pydantic import StrictInt, validate_call
+from pydantic import SecretBytes, SecretStr, StrictInt, validate_call
 
 MIN_PASSWORD_LENGTH = 30
 _SAFE_SYMBOLS = "!$%*+,-.:=?@^_~"  # avoid issues with parsing, espapes etc
@@ -67,29 +67,22 @@ def _is_possibly_sensitive(name: str, sensitive_keywords: set[str]) -> bool:
     return any(k.lower() in name.lower() for k in sensitive_keywords)
 
 
-def mask_sensitive_data(
-    data: dict[str, Any], *, extra_sensitive_keywords: set[str] | None = None
-) -> dict:
+def mask_sensitive_data(data: dict[str, Any], *, extra_sensitive_keywords: set[str] | None = None) -> dict:
     """Replaces the sensitive values in the dict with a placeholder  before logging
 
-    Sensitive values are detected testing the key name (i.e. a str(key) ) againts sensitive keywords `pass` or `secret`.
+    Sensitive values are detected testing the key name (i.e. a str(key) ) against sensitive keywords `pass` or `secret`.
 
     NOTE: this function is used to avoid logging sensitive information like passwords or secrets
     """
-    sensitive_keywords = _DEFAULT_SENSITIVE_KEYWORDS | (
-        extra_sensitive_keywords or set()
-    )
+    sensitive_keywords = _DEFAULT_SENSITIVE_KEYWORDS | (extra_sensitive_keywords or set())
     masked_data: dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, dict):
-            masked_data[key] = mask_sensitive_data(
-                value, extra_sensitive_keywords=sensitive_keywords
-            )
+            masked_data[key] = mask_sensitive_data(value, extra_sensitive_keywords=sensitive_keywords)
+        elif isinstance(value, SecretStr | SecretBytes):
+            # values explicitly marked as secrets are masked regardless of the key name
+            masked_data[key] = _PLACEHOLDER
         else:
-            masked_data[key] = (
-                _PLACEHOLDER
-                if _is_possibly_sensitive(f"{key}", sensitive_keywords)
-                else value
-            )
+            masked_data[key] = _PLACEHOLDER if _is_possibly_sensitive(f"{key}", sensitive_keywords) else value
 
     return masked_data

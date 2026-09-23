@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BeforeValidator, Field
+from pydantic import BeforeValidator, Field, SecretStr
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -15,7 +15,7 @@ class EC2Settings(BaseCustomSettings):
         Field(description="do not define if using standard AWS"),
     ] = None
     EC2_REGION_NAME: str = "us-east-1"
-    EC2_SECRET_ACCESS_KEY: str
+    EC2_SECRET_ACCESS_KEY: SecretStr
 
     model_config = SettingsConfigDict(
         json_schema_extra={

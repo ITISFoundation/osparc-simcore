@@ -1,3 +1,12 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "httpx",
+#     "typer",
+# ]
+# ///
+
 import asyncio
 
 import httpx
@@ -35,8 +44,7 @@ async def _compile_registry_report(registry: str, user: str, password: str) -> d
 
     progressbar.render_finish()
 
-    repository_tags = {r["name"]: r["tags"] for r in responses}
-    return repository_tags
+    return {r["name"]: r["tags"] for r in responses}
 
 
 def _format(repo_tags: dict[str, list[str]], header_name: str, header_color: str) -> str:

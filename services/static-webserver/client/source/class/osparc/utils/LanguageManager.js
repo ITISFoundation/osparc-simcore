@@ -106,6 +106,9 @@ qx.Class.define("osparc.utils.LanguageManager", {
      * @return {Boolean} true if the locale was available and applied, false otherwise.
      */
     setLocale: function(localeCode) {
+      if (!osparc.product.Utils.isLocaleEnabled()) {
+        return false;
+      }
       if (!this.getAvailableLocales().includes(localeCode)) {
         console.warn(`Locale "${localeCode}" is not available; keeping current locale.`);
         return false;

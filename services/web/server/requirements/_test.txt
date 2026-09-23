@@ -25,17 +25,17 @@ annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-anyio==4.3.0
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
     #   starlette
     #   watchfiles
-asyncpg==0.30.0
+asyncpg==0.31.0
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs
-asyncpg-stubs==0.30.2
+asyncpg-stubs==0.31.3
     # via -r requirements/_test.in
 attrs==25.4.0
     # via
@@ -281,10 +281,6 @@ pytest-sugar==1.1.1
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
-python-dateutil==2.8.2
-    # via
-    #   -c requirements/_base.txt
-    #   faker
 python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
@@ -347,10 +343,6 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   rfc3339-validator
-sniffio==1.3.1
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
 sortedcontainers==2.4.0
     # via
     #   fakeredis
@@ -386,9 +378,10 @@ types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   asyncpg-stubs
     #   fastapi
     #   fastapi-pagination

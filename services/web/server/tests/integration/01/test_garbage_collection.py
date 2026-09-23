@@ -77,7 +77,7 @@ pytest_simcore_core_services_selection = [
     "sto-worker",
 ]
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
     "redis-commander",
 ]

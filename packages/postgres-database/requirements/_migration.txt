@@ -40,7 +40,7 @@ sqlalchemy==2.0.51
     #   alembic
 tenacity==9.1.4
     # via -r requirements/_migration.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic

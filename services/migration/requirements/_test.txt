@@ -15,7 +15,7 @@ coverage==7.16.0
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-greenlet==3.3.2
+greenlet==3.5.6
     # via sqlalchemy
 idna==3.19
     # via requests
@@ -80,7 +80,7 @@ sqlalchemy==2.0.51
     #   -r requirements/_test.in
 tenacity==9.1.4
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   mypy
     #   sqlalchemy

@@ -12,7 +12,7 @@ aiocache==0.12.3
     #   -r requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.26.0
+aiodocker==0.27.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==25.1.0
     # via
@@ -27,7 +27,7 @@ aiohttp==3.14.3
     #   aiodocker
 aioitertools==0.13.0
     # via aiobotocore
-aiormq==6.9.3
+aiormq==6.9.4
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
@@ -37,7 +37,7 @@ annotated-doc==0.0.4
     #   typer
 annotated-types==0.7.0
     # via pydantic
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   fast-depends
     #   faststream
@@ -336,9 +336,10 @@ types-aiobotocore-ssm==3.8.0
     # via types-aiobotocore
 types-awscrt==0.31.3
     # via botocore-stubs
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   aiodebug
+    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream

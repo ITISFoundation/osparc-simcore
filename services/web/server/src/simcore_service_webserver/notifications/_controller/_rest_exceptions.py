@@ -32,7 +32,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         ),
     ),
     NotificationsTemplateContextValidationError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message(
             "Validation of context failed for notification template '{template_name}'.",
             _version=1,

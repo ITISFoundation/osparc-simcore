@@ -4,7 +4,7 @@
 
 import json
 from copy import deepcopy
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 from uuid import uuid4
 
 import pytest
@@ -18,6 +18,8 @@ from common_library.json_serialization import (
 from faker import Faker
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, HttpUrl, TypeAdapter
 from pydantic.json import pydantic_encoder
+
+type ConstrainedFloat = Annotated[float, Field(ge=0.0, le=1.0)]
 
 
 @pytest.fixture
@@ -53,7 +55,19 @@ def test_serialized_non_str_dict_keys():
     json_dumps({1: "foo"})
 
 
-ConstrainedFloat: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]
+def test_serialized_tuple_dict_keys_raises_without_sanitize_keys():
+    # OPT_NON_STR_KEYS does not cover tuple keys (e.g. distributed's digest metrics)
+    with pytest.raises(TypeError, match="Dict key must"):
+        json_dumps({("a", "b"): "foo"})
+
+
+def test_serialized_tuple_dict_keys_with_sanitize_keys():
+    assert json_dumps({("a", "b"): "foo", "nested": {("c",): 1}}, sanitize_keys=True) == json_dumps(
+        {
+            "('a', 'b')": "foo",
+            "nested": {"('c',)": 1},
+        }
+    )
 
 
 def test_serialized_constraint_floats():

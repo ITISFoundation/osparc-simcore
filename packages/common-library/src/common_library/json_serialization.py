@@ -140,6 +140,23 @@ def representation_encoder(obj: Any):
         return str(obj)
 
 
+_JSON_KEY_SAFE_TYPES = (str, int, float, bool, type(None), datetime.datetime, datetime.date, datetime.time, UUID)
+
+
+def _sanitize_non_str_keys(obj: Any) -> Any:
+    """Recursively replaces dict keys unsupported by OPT_NON_STR_KEYS (e.g. tuples) with `str(key)`."""
+    if isinstance(obj, dict):
+        return {
+            (key if isinstance(key, _JSON_KEY_SAFE_TYPES) else str(key)): _sanitize_non_str_keys(value)
+            for key, value in obj.items()
+        }
+    if isinstance(obj, list):
+        return [_sanitize_non_str_keys(item) for item in obj]
+    if isinstance(obj, tuple):
+        return tuple(_sanitize_non_str_keys(item) for item in obj)
+    return obj
+
+
 def json_dumps(
     obj: Any,
     *,
@@ -147,6 +164,7 @@ def json_dumps(
     sort_keys: bool = False,
     indent: int | None = None,
     separators: SeparatorTuple | tuple[str, str] | None = None,
+    sanitize_keys: bool = False,
 ) -> str:
     """json.dumps-like API implemented with orjson.dumps in the core
 
@@ -167,6 +185,9 @@ def json_dumps(
         # some examples with time-stamps that were corrupted because of this replacement.
         msg = f"Only {_orjson_default_separator} supported, got {separators}"
         raise ValueError(msg)
+
+    if sanitize_keys:
+        obj = _sanitize_non_str_keys(obj)
 
     # serialize
     result: str = orjson.dumps(obj, default=default, option=option).decode("utf-8")

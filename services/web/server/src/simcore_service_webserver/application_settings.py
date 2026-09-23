@@ -282,7 +282,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     WEBSERVER_LICENSES: Annotated[
-        LicensesSettings | None | bool,
+        LicensesSettings | bool | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
             # NOTE: `bool` is to keep backwards compatibility
@@ -595,6 +595,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_DEV_FEATURES_ENABLED": True,
+                "WEBSERVER_LOCALIZED_MESSAGES_ENABLED": True,
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",

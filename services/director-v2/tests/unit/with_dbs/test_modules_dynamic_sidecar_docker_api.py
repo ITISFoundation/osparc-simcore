@@ -84,7 +84,7 @@ def dynamic_sidecar_settings(
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
 
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())
@@ -129,7 +129,8 @@ async def cleanup_swarm_network(
     async for attempt in AsyncRetrying(reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)):
         with attempt:
             print(
-                f"removing network with {simcore_services_network_name=}, attempt {attempt.retry_state.attempt_number}..."
+                f"removing network with {simcore_services_network_name=}, "
+                f"attempt {attempt.retry_state.attempt_number}..."
             )
             docker_network = await async_docker_client.networks.get(simcore_services_network_name)
             assert await docker_network.delete() is True
@@ -175,6 +176,7 @@ def dynamic_sidecar_service_spec(
 ) -> dict[str, Any]:
     # "joseluisq/static-web-server" is ~2MB docker image
     scheduler_data_from_http_request.service_name = dynamic_sidecar_service_name
+    swarm_stack_name = f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
 
     return {
         "name": dynamic_sidecar_service_name,
@@ -185,7 +187,7 @@ def dynamic_sidecar_service_spec(
             f"{to_simcore_runtime_docker_label_key('project_id')}": f"{uuid4()}",
             f"{to_simcore_runtime_docker_label_key('user_id')}": "123",
             f"{to_simcore_runtime_docker_label_key('node_id')}": f"{uuid4()}",
-            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": swarm_stack_name,
             f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
             f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
             f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -220,6 +222,7 @@ def dynamic_sidecar_stack_specs(
     project_id: ProjectID,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ) -> list[dict[str, Any]]:
+    swarm_stack_name = f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
     return [
         {
             "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy",
@@ -228,7 +231,7 @@ def dynamic_sidecar_stack_specs(
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
-                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": swarm_stack_name,
                 f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
                 f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
                 f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -241,7 +244,7 @@ def dynamic_sidecar_stack_specs(
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
-                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": swarm_stack_name,
                 f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
                 f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
                 f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -625,7 +628,9 @@ async def test_get_projects_networks_containers(
     params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
     filtered_networks = (
         # pylint:disable=protected-access
-        await async_docker_client.networks.docker._query_json("networks", params=params)
+        await async_docker_client.networks.docker._query_json(  # noqa: SLF001
+            "networks", params=params
+        )
     )
     assert len(filtered_networks) == 1
     filtered_network = filtered_networks[0]

@@ -203,7 +203,7 @@ async def test_pay_project_debt(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
     )
     resp = await client.post(f"{base_url}", json={"amount": 100})  # <-- Error input (must be negative!)
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Use endpoint properly
     base_url = client.app.router["pay_project_debt"].url_for(
