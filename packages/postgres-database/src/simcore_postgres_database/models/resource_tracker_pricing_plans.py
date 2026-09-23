@@ -8,7 +8,7 @@ from ._common import RefActions, column_created_datetime, column_modified_dateti
 from .base import metadata
 
 
-class PricingPlanClassification(str, enum.Enum):
+class PricingPlanClassification(enum.StrEnum):
     """
     These are our custom pricing plan classifications, each of them can have different behaviour.
     Potential examples:
@@ -60,7 +60,8 @@ resource_tracker_pricing_plans = sa.Table(
         "classification",
         sa.Enum(PricingPlanClassification),
         nullable=False,
-        doc="Pricing plan classification, ex. tier, storage, cpu_hour. Each classification can have different behaviour.",
+        doc="Pricing plan classification, ex. tier, storage, cpu_hour. Each classification can have different "
+        "behaviour.",
     ),
     sa.Column(
         "is_active",

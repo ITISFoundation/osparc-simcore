@@ -42,7 +42,8 @@ resource_tracker_pricing_plan_to_service = sa.Table(
         sa.Boolean(),
         nullable=False,
         default=False,
-        doc="Option to mark default pricing plan for the service (ex. when there are more pricing plans for the same service)",
+        doc="Option to mark default pricing plan for the service (ex. when there are more pricing plans for the "
+        "same service)",
     ),
     # ---------------------------
     sa.ForeignKeyConstraint(

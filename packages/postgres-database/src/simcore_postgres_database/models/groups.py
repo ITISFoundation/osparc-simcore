@@ -143,7 +143,8 @@ END; $$ LANGUAGE 'plpgsql';
 
 set_add_unique_everyone_group = sa.DDL(
     """
-INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE') ON CONFLICT DO NOTHING;
+INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE')
+ON CONFLICT DO NOTHING;
 """
 )
 

@@ -114,11 +114,13 @@ DECLARE
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- set primary group
-        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
+        INSERT INTO "groups" ("name", "description", "type")
+        VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
         -- set everyone goup
-        INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
+        INSERT INTO "user_to_groups" ("uid", "gid")
+        VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
     ELSEIF TG_OP = 'DELETE' THEN
@@ -131,7 +133,8 @@ END; $$ LANGUAGE 'plpgsql';
 
     set_add_unique_everyone_group = sa.DDL(
         """
-INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE') ON CONFLICT DO NOTHING;
+INSERT INTO "groups" ("name", "description", "type") VALUES ('Everyone', 'all users', 'EVERYONE')
+ON CONFLICT DO NOTHING;
 """
     )
 

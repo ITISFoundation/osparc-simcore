@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, TypeVar
+from typing import Any
 
 import sqlalchemy as sa
 from pydantic import BaseModel
@@ -23,7 +23,8 @@ async def pass_or_acquire_connection(
     The caller must manage the lifecycle of any connection explicitly passed in, but the function handles the
     cleanup for connections it creates itself.
 
-    This function **does not open new transactions** and therefore is recommended only for read-only database operations.
+    This function **does not open new transactions** and therefore is recommended only for
+    read-only database operations.
     """
     # NOTE: When connection is passed, the engine is actually not needed
     # NOTE: Creator is responsible of closing connection
@@ -46,8 +47,9 @@ async def transaction_context(
 ) -> AsyncIterator[AsyncConnection]:
     """
     When to use: For WRITE operations!
-    This function manages the database connection and ensures that a transaction context is established for write operations.
-    It supports both outer and nested transactions, providing flexibility for scenarios where transactions may already exist in the calling context.
+    This function manages the database connection and ensures that a transaction context is established for
+    write operations. It supports both outer and nested transactions, providing flexibility for scenarios where
+    transactions may already exist in the calling context.
     """
     async with pass_or_acquire_connection(engine, connection) as conn:
         if conn.in_transaction():
@@ -62,14 +64,7 @@ async def transaction_context(
                 assert not conn.in_transaction()  # nosec
 
 
-SQLModel = TypeVar(
-    # Towards using https://sqlmodel.tiangolo.com/#create-a-sqlmodel-model
-    "SQLModel",
-    bound=BaseModel,
-)
-
-
-def get_columns_from_db_model(table: sa.Table, model_cls: type[SQLModel]) -> list[sa.Column]:
+def get_columns_from_db_model[SQLModel: BaseModel](table: sa.Table, model_cls: type[SQLModel]) -> list[sa.Column]:
     """
     Usage example:
 

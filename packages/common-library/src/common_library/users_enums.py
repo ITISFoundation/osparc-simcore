@@ -46,7 +46,7 @@ class UserRole(Enum):
         return NotImplemented
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     # This is a transition state. The user is registered but not confirmed. NOTE that this
     # state is currently unused by the registration flow (no confirmation step), but stays
     # part of the lifecycle for legacy/other flows (e.g. `check_other_registrations`).

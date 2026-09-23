@@ -33,7 +33,8 @@ def upgrade():
                        ROW_NUMBER() OVER (PARTITION BY function_job_collection_uuid) AS row_number
                 FROM funcapi_function_job_collections_to_function_jobs
             ) AS sub
-            WHERE funcapi_function_job_collections_to_function_jobs.function_job_collection_uuid = sub.function_job_collection_uuid
+            WHERE funcapi_function_job_collections_to_function_jobs.function_job_collection_uuid
+                = sub.function_job_collection_uuid
               AND funcapi_function_job_collections_to_function_jobs.function_job_uuid = sub.function_job_uuid
             """
         )

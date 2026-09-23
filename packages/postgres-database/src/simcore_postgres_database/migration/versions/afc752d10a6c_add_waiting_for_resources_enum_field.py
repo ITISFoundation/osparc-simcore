@@ -24,7 +24,8 @@ def upgrade():
     conn = op.get_bind()
     result = conn.execute(
         sa.DDL(
-            f"SELECT * FROM pg_enum WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = '{enum_type_name}') AND enumlabel = '{new_value}'"
+            f"SELECT * FROM pg_enum WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = '{enum_type_name}') "
+            f"AND enumlabel = '{new_value}'"
         )
     )
     value_exists = result.fetchone() is not None

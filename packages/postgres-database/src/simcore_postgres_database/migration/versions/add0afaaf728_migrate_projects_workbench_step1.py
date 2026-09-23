@@ -35,7 +35,7 @@ def upgrade():
     connection = op.get_bind()
 
     for project_uuid, workbench, creation_date, last_change_date in connection.execute(projects_table.select()):
-        for node_id in workbench.keys():
+        for node_id in workbench:
             connection.execute(
                 projects_nodes_table.insert().values(
                     project_uuid=project_uuid,
