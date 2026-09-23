@@ -108,10 +108,7 @@ class MixinServiceSettings:
         # post process parts dict
         kwargs = {}
         for k, v in parts.items():  # type: ignore[assignment]
-            if isinstance(v, SecretStr):
-                value = v.get_secret_value()
-            else:
-                value = v
+            value = v.get_secret_value() if isinstance(v, SecretStr) else v
 
             if value is not None:
                 kwargs[k] = value

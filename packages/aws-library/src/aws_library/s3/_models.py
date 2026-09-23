@@ -7,10 +7,13 @@ from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, BaseModel, ByteSize, Field
 from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
+# NOTE: S3ObjectKey/S3ObjectPrefix keep the TypeAlias form because they are invoked as
+# constructors (e.g. S3ObjectKey(...)) in _client.py and by out-of-area consumers; a PEP 695
+# `type` alias is not callable.
 S3ObjectKey: TypeAlias = str
 S3ObjectPrefix: TypeAlias = Path
-UploadID: TypeAlias = str
-PathCursor: TypeAlias = str
+type UploadID = str
+type PathCursor = str
 
 
 class S3MetaData(BaseModel, frozen=True):
