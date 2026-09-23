@@ -32,7 +32,7 @@ folder that owns a cohesive piece of functionality and is structured in well-def
 # application.py
 def create_application() -> web.Application:
     app = create_safe_application()
-    setup_settings(app)          # assemble + freeze settings
+    setup_settings(app)  # assemble + freeze settings
     # ... setup_<domain>(app) for each enabled plugin
     return app
 ```
@@ -179,7 +179,7 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
 - A `_` prefix marks a module as **private** — applies to `_repository.py`, `_service.py`, `_<feature>_aggregation_service.py`. Never import these from other domains.
 - **Satellite name collision:** a satellite `<other_domain>_service.py` has the same module name as the primary facade it wraps (e.g., `projects/tags_service.py` and `tags/tags_service.py` both import as `tags_service`). When both are needed in the same file, alias the **satellite** with the consuming domain as prefix:
   ```python
-  from ..tags import tags_service                              # primary facade
+  from ..tags import tags_service  # primary facade
   from ..projects import tags_service as project_tags_service  # satellite (consuming domain = projects)
   ```
 - Public modules export via an explicit `__all__` with no implementation.
@@ -188,13 +188,13 @@ Each domain folder follows this layout. Modules prefixed with `_` are **private*
 
 ```python
 # ✅ Correct — namespace imports for services/satellites, direct imports for types and exceptions
-from ..users import users_service           # service: namespace import
-from ..projects import tags_service         # satellite in projects domain: namespace import
-from ..users.models import UserID           # type: direct name import
+from ..users import users_service  # service: namespace import
+from ..projects import tags_service  # satellite in projects domain: namespace import
+from ..users.models import UserID  # type: direct name import
 from ..users.errors import UserNotFoundError  # exception: direct name import
 
 # ✅ When a satellite name collides with the primary facade it wraps, alias the satellite:
-from ..tags import tags_service                              # primary facade of tags domain
+from ..tags import tags_service  # primary facade of tags domain
 from ..projects import tags_service as project_tags_service  # satellite — alias with consuming domain prefix
 
 user_id: UserID = 123
@@ -208,8 +208,8 @@ except UserNotFoundError:
 # ❌ Wrong — wrong surface, private modules, or mixed-up style
 from ..users.users_service import get_users_in_group  # avoid name import from service facade
 from ..users._users_repository import get_users_ids_in_group  # _prefix = private
-from ..users._errors import UserNotFoundError          # should be errors.py (no _)
-from ..projects._tags_service import get_tags          # _prefix = private
+from ..users._errors import UserNotFoundError  # should be errors.py (no _)
+from ..projects._tags_service import get_tags  # _prefix = private
 ```
 
 ---
@@ -237,6 +237,7 @@ cycles structurally, not syntactically:
   ```python
   # ✅ user_preferences imports only the leaf errors module — no cycle possible
   from ..users.errors import FrontendUserPreferenceIsNotDefinedError
+
   raise FrontendUserPreferenceIsNotDefinedError("...")
 
   # ❌ importing users_service would pull in _service.py transitively — cycle risk

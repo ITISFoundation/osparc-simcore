@@ -146,6 +146,7 @@ set_app_default_http_error_handlers(app)
 ```python
 from servicelib.fastapi.health import HealthCheckError, health_check_error_handler
 
+
 def setup_exception_handlers(app: FastAPI) -> None:
     # MUST come before catch-all Exception handler
     app.add_exception_handler(HealthCheckError, health_check_error_handler)

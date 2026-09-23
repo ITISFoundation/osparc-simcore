@@ -21,6 +21,7 @@ Follow these guidelines:
 ```python
 from pydantic import BaseModel, Field
 
+
 class UserModel(BaseModel):
     name: str = Field(default="Anonymous", description="User's display name")
     age: int = Field(default=18, ge=0, lt=120)
@@ -35,6 +36,7 @@ class UserModel(BaseModel):
 from typing import Annotated
 from pydantic import BaseModel, Field
 from common_library.basic_types import DEFAULT_FACTORY
+
 
 class UserModel(BaseModel):
     name: Annotated[str, Field(description="User's display name")] = "Anonymous"
@@ -52,6 +54,7 @@ class UserModel(BaseModel):
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 
+
 class ProjectModel(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, description="Unique project identifier")
     name: str = Field(default="Untitled Project", min_length=3, max_length=50)
@@ -60,7 +63,6 @@ class ProjectModel(BaseModel):
     str_with_default: str = Field(default="foo")
 
     config: dict = Field(default={"version": "1.0", "theme": "default"})
-
 ```
 
 ### After:
@@ -71,6 +73,7 @@ from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from common_library.basic_types import DEFAULT_FACTORY
 
+
 class ProjectModel(BaseModel):
     id: Annotated[str, Field(default_factory=uuid.uuid4, description="Unique project identifier")] = DEFAULT_FACTORY
     name: Annotated[str, Field(min_length=3, max_length=50)] = "Untitled Project"
@@ -79,5 +82,4 @@ class ProjectModel(BaseModel):
     str_with_default: str = "foo"
 
     config: dict = {"version": "1.0", "theme": "default"}
-
 ```

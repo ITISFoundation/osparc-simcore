@@ -12,6 +12,7 @@ Convert all string-based app key constants to use type-safe web.AppKey.
   with:
   ```python
   from aiohttp import web
+
   CONSTNAME_APPKEY: Final = web.AppKey("CONSTNAME", ValueType)
   ```
   (Replace ValueType with the actual type stored under this key.)
