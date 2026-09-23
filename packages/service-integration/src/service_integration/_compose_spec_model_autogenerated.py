@@ -56,7 +56,9 @@ class DependsOn(BaseModel):
     condition: Annotated[
         Literal["service_started", "service_healthy", "service_completed_successfully"],
         Field(
-            description="Condition to wait for. 'service_started' waits until the service has started, 'service_healthy' waits until the service is healthy (as defined by its healthcheck), 'service_completed_successfully' waits until the service has completed successfully."
+            description="Condition to wait for. 'service_started' waits until the service has started, "
+            "'service_healthy' waits until the service is healthy (as defined by its healthcheck), "
+            "'service_completed_successfully' waits until the service has completed successfully."
         ),
     ]
 
@@ -160,7 +162,8 @@ class Ports(BaseModel):
     mode: Annotated[
         str | None,
         Field(
-            description="The port binding mode, either 'host' for publishing a host port or 'ingress' for load balancing."
+            description="The port binding mode, either 'host' for publishing a host port or 'ingress' for load "
+            "balancing."
         ),
     ] = None
     host_ip: Annotated[str | None, Field(description="The host IP to bind to.")] = None
@@ -185,7 +188,8 @@ class Bind(BaseModel):
     propagation: Annotated[
         str | None,
         Field(
-            description="The propagation mode for the bind mount: 'shared', 'slave', 'private', 'rshared', 'rslave', or 'rprivate'."
+            description="The propagation mode for the bind mount: 'shared', 'slave', 'private', 'rshared', 'rslave', "
+            "or 'rprivate'."
         ),
     ] = None
     create_host_path: Annotated[
@@ -261,7 +265,9 @@ class Healthcheck(BaseModel):
     test: Annotated[
         str | list[str] | None,
         Field(
-            description="The test to perform to check container health. Can be a string or a list. The first item is either NONE, CMD, or CMD-SHELL. If it's CMD, the rest of the command is exec'd. If it's CMD-SHELL, the rest is run in the shell."
+            description="The test to perform to check container health. Can be a string or a list. The first item is "
+            "either NONE, CMD, or CMD-SHELL. If it's CMD, the rest of the command is exec'd. If it's CMD-SHELL, the "
+            "rest is run in the shell."
         ),
     ] = None
     timeout: Annotated[
@@ -271,13 +277,15 @@ class Healthcheck(BaseModel):
     start_period: Annotated[
         str | None,
         Field(
-            description="Start period for the container to initialize before starting health-retries countdown (e.g., '1s', '1m30s'). Default: 0s."
+            description="Start period for the container to initialize before starting health-retries countdown (e.g., "
+            "'1s', '1m30s'). Default: 0s."
         ),
     ] = None
     start_interval: Annotated[
         str | None,
         Field(
-            description="Time between running the check during the start period (e.g., '1s', '1m30s'). Default: interval value."
+            description="Time between running the check during the start period (e.g., '1s', '1m30s'). Default: "
+            "interval value."
         ),
     ] = None
 
@@ -294,7 +302,8 @@ class RollbackConfig(BaseModel):
     parallelism: Annotated[
         int | str | None,
         Field(
-            description="The number of containers to rollback at a time. If set to 0, all containers rollback simultaneously."
+            description="The number of containers to rollback at a time. If set to 0, all containers rollback "
+            "simultaneously."
         ),
     ] = None
     delay: Annotated[
@@ -480,7 +489,8 @@ class GenericResources(RootModel[list[GenericResource]]):
     root: Annotated[
         list[GenericResource],
         Field(
-            description="User-defined resources for services, allowing services to reserve specialized hardware resources."
+            description="User-defined resources for services, allowing services to reserve specialized hardware "
+            "resources."
         ),
     ]
 
@@ -602,7 +612,8 @@ class Command(RootModel[str | list[str] | None]):
     root: Annotated[
         str | list[str] | None,
         Field(
-            description="Command to run in the container, which can be specified as a string (shell form) or array (exec form)."
+            description="Command to run in the container, which can be specified as a string (shell form) or array "
+            "(exec form)."
         ),
     ]
 
@@ -620,7 +631,8 @@ class EnvFile1(BaseModel):
     format: Annotated[
         str | None,
         Field(
-            description="Format attribute lets you to use an alternative file formats for env_file. When not set, env_file is parsed according to Compose rules."
+            description="Format attribute lets you to use an alternative file formats for env_file. When not set, "
+            "env_file is parsed according to Compose rules."
         ),
     ] = None
     required: Annotated[
@@ -746,7 +758,8 @@ class ServiceConfigOrSecret1(BaseModel):
     target: Annotated[
         str | None,
         Field(
-            description="Path in the container where the config or secret will be mounted. Defaults to /<source> for configs and /run/secrets/<source> for secrets."
+            description="Path in the container where the config or secret will be mounted. Defaults to /<source> for "
+            "configs and /run/secrets/<source> for secrets."
         ),
     ] = None
     uid: Annotated[
@@ -760,7 +773,8 @@ class ServiceConfigOrSecret1(BaseModel):
     mode: Annotated[
         float | str | None,
         Field(
-            description="File permission mode inside the container, in octal. Default is 0444 for configs and 0400 for secrets."
+            description="File permission mode inside the container, in octal. Default is 0444 for configs and 0400 "
+            "for secrets."
         ),
     ] = None
 
@@ -842,7 +856,8 @@ class Build(BaseModel):
     ssh: Annotated[
         ListOrDict | None,
         Field(
-            description="SSH agent socket or keys to expose to the build. Format is either a string or a list of 'default|<id>[=<socket>|<key>[,<key>]]'."
+            description="SSH agent socket or keys to expose to the build. Format is either a string or a list of "
+            "'default|<id>[=<socket>|<key>[,<key>]]'."
         ),
     ] = None
     labels: Annotated[ListOrDict | None, Field(description="Labels to apply to the built image.")] = None
@@ -862,7 +877,8 @@ class Build(BaseModel):
     network: Annotated[
         str | None,
         Field(
-            description="Network mode to use for the build. Options include 'default', 'none', 'host', or a network name."
+            description="Network mode to use for the build. Options include 'default', 'none', 'host', or a network "
+            "name."
         ),
     ] = None
     provenance: Annotated[str | bool | None, Field(description="Add a provenance attestation")] = None
@@ -878,7 +894,8 @@ class Build(BaseModel):
     shm_size: Annotated[
         int | str | None,
         Field(
-            description="Size of /dev/shm for the build container. A string value can use suffix like '2g' for 2 gigabytes."
+            description="Size of /dev/shm for the build container. A string value can use suffix like '2g' for 2 "
+            "gigabytes."
         ),
     ] = None
     extra_hosts: Annotated[
@@ -1014,13 +1031,17 @@ class Volumes(BaseModel):
     type: Annotated[
         Literal["bind", "volume", "tmpfs", "cluster", "npipe", "image"],
         Field(
-            description="The mount type: bind for mounting host directories, volume for named volumes, tmpfs for temporary filesystems, cluster for cluster volumes, npipe for named pipes, or image for mounting from an image."
+            description="The mount type: bind for mounting host directories, volume for named volumes, tmpfs for "
+            "temporary filesystems, cluster for cluster volumes, npipe for named pipes, or image for mounting from an "
+            "image."
         ),
     ]
     source: Annotated[
         str | None,
         Field(
-            description="The source of the mount, a path on the host for a bind mount, a docker image reference for an image mount, or the name of a volume defined in the top-level volumes key. Not applicable for a tmpfs mount."
+            description="The source of the mount, a path on the host for a bind mount, a docker image reference for "
+            "an image mount, or the name of a volume defined in the top-level volumes key. Not applicable for a tmpfs "
+            "mount."
         ),
     ] = None
     target: Annotated[
@@ -1224,7 +1245,8 @@ class Config(BaseModel):
 
 class ServiceHook(BaseModel):
     """
-    Configuration for service lifecycle hooks, which are commands executed at specific points in a container's lifecycle.
+    Configuration for service lifecycle hooks, which are commands executed at specific points in a container's
+    lifecycle.
     """
 
     model_config = ConfigDict(
@@ -1262,7 +1284,8 @@ class WatchItem(BaseModel):
     action: Annotated[
         Literal["rebuild", "sync", "restart", "sync+restart", "sync+exec"],
         Field(
-            description="Action to take when a change is detected: rebuild the container, sync files, restart the container, sync and restart, or sync and execute a command."
+            description="Action to take when a change is detected: rebuild the container, sync files, restart the "
+            "container, sync and restart, or sync and execute a command."
         ),
     ]
     target: Annotated[
@@ -1293,7 +1316,8 @@ class Development(BaseModel):
     watch: Annotated[
         list[WatchItem] | None,
         Field(
-            description="Configure watch mode for the service, which monitors file changes and performs actions in response."
+            description="Configure watch mode for the service, which monitors file changes and performs actions in "
+            "response."
         ),
     ] = None
 
@@ -1310,7 +1334,8 @@ class Reservations(BaseModel):
     cpus: Annotated[
         float | str | None,
         Field(
-            description="Reservation for how much of the available CPU resources, as number of cores, a container can use."
+            description="Reservation for how much of the available CPU resources, as number of cores, a container can "
+            "use."
         ),
     ] = None
     memory: Annotated[
@@ -1377,7 +1402,8 @@ class Deployment(BaseModel):
     placement: Annotated[
         Placement | None,
         Field(
-            description="Constraints and preferences for the platform to select a physical node to run service containers"
+            description="Constraints and preferences for the platform to select a physical node to run service "
+            "containers"
         ),
     ] = None
 
@@ -1398,7 +1424,8 @@ class Include1(BaseModel):
     env_file: Annotated[
         StringOrList | None,
         Field(
-            description="Path to the environment files to use to define default values when interpolating variables in the Compose files being parsed."
+            description="Path to the environment files to use to define default values when interpolating variables "
+            "in the Compose files being parsed."
         ),
     ] = None
     project_directory: Annotated[
@@ -1446,7 +1473,8 @@ class Service(BaseModel):
     cgroup: Annotated[
         Literal["host", "private"] | None,
         Field(
-            description="Specify the cgroup namespace to join. Use 'host' to use the host's cgroup namespace, or 'private' to use a private cgroup namespace."
+            description="Specify the cgroup namespace to join. Use 'host' to use the host's cgroup namespace, or "
+            "'private' to use a private cgroup namespace."
         ),
     ] = None
     cgroup_parent: Annotated[
@@ -1507,7 +1535,8 @@ class Service(BaseModel):
     depends_on: Annotated[
         ListOfStrings | dict[str, DependsOn] | None,
         Field(
-            description="Express dependency between services. Service dependencies cause services to be started in dependency order. The dependent service will wait for the dependency to be ready before starting."
+            description="Express dependency between services. Service dependencies cause services to be started in "
+            "dependency order. The dependent service will wait for the dependency to be ready before starting."
         ),
     ] = None
     device_cgroup_rules: Annotated[
@@ -1537,13 +1566,15 @@ class Service(BaseModel):
     entrypoint: Annotated[
         Command | None,
         Field(
-            description="Override the default entrypoint declared by the container image, for example 'ENTRYPOINT' in Dockerfile."
+            description="Override the default entrypoint declared by the container image, for example 'ENTRYPOINT' in "
+            "Dockerfile."
         ),
     ] = None
     env_file: Annotated[
         EnvFile | None,
         Field(
-            description="Add environment variables from a file or multiple files. Can be a single file path or a list of file paths."
+            description="Add environment variables from a file or multiple files. Can be a single file path or a list "
+            "of file paths."
         ),
     ] = None
     label_file: Annotated[
@@ -1557,7 +1588,8 @@ class Service(BaseModel):
     expose: Annotated[
         list[str | float] | None,
         Field(
-            description="Expose ports without publishing them to the host machine - they'll only be accessible to linked services."
+            description="Expose ports without publishing them to the host machine - they'll only be accessible to "
+            "linked services."
         ),
     ] = None
     extends: Annotated[
@@ -1567,13 +1599,15 @@ class Service(BaseModel):
     provider: Annotated[
         Provider | None,
         Field(
-            description="Specify a service which will not be manage by Compose directly, and delegate its management to an external provider."
+            description="Specify a service which will not be manage by Compose directly, and delegate its management "
+            "to an external provider."
         ),
     ] = None
     external_links: Annotated[
         list[str] | None,
         Field(
-            description="Link to services started outside this Compose application. Specify services as <service_name>:<alias>."
+            description="Link to services started outside this Compose application. Specify services as "
+            "<service_name>:<alias>."
         ),
     ] = None
     extra_hosts: Annotated[
@@ -1583,7 +1617,8 @@ class Service(BaseModel):
     gpus: Annotated[
         Gpus | None,
         Field(
-            description="Define GPU devices to use. Can be set to 'all' to use all GPUs, or a list of specific GPU devices."
+            description="Define GPU devices to use. Can be set to 'all' to use all GPUs, or a list of specific GPU "
+            "devices."
         ),
     ] = None
     group_add: Annotated[
@@ -1601,7 +1636,8 @@ class Service(BaseModel):
     image: Annotated[
         str | None,
         Field(
-            description="Specify the image to start the container from. Can be a repository/tag, a digest, or a local image ID."
+            description="Specify the image to start the container from. Can be a repository/tag, a digest, or a local "
+            "image ID."
         ),
     ] = None
     init: Annotated[
@@ -1611,7 +1647,9 @@ class Service(BaseModel):
     ipc: Annotated[
         str | None,
         Field(
-            description="IPC sharing mode for the service container. Use 'host' to share the host's IPC namespace, 'service:[service_name]' to share with another service, or 'shareable' to allow other services to share this service's IPC namespace."
+            description="IPC sharing mode for the service container. Use 'host' to share the host's IPC namespace, "
+            "'service:[service_name]' to share with another service, or 'shareable' to allow other services to share "
+            "this service's IPC namespace."
         ),
     ] = None
     isolation: Annotated[
@@ -1625,7 +1663,8 @@ class Service(BaseModel):
     links: Annotated[
         list[str] | None,
         Field(
-            description="Link to containers in another service. Either specify both the service name and a link alias (SERVICE:ALIAS), or just the service name."
+            description="Link to containers in another service. Either specify both the service name and a link alias "
+            "(SERVICE:ALIAS), or just the service name."
         ),
     ] = None
     logging: Annotated[Logging | None, Field(description="Logging configuration for the service.")] = None
@@ -1648,7 +1687,8 @@ class Service(BaseModel):
     network_mode: Annotated[
         str | None,
         Field(
-            description="Network mode. Values can be 'bridge', 'host', 'none', 'service:[service name]', or 'container:[container name]'."
+            description="Network mode. Values can be 'bridge', 'host', 'none', 'service:[service name]', or "
+            "'container:[container name]'."
         ),
     ] = None
     models: Annotated[
@@ -1658,7 +1698,8 @@ class Service(BaseModel):
     networks: Annotated[
         ListOfStrings | dict[str, Networks | None] | None,
         Field(
-            description="Networks to join, referencing entries under the top-level networks key. Can be a list of network names or a mapping of network name to network configuration."
+            description="Networks to join, referencing entries under the top-level networks key. Can be a list of "
+            "network names or a mapping of network name to network configuration."
         ),
     ] = None
     oom_kill_disable: Annotated[bool | str | None, Field(description="Disable OOM Killer for the container.")] = None
@@ -1686,7 +1727,8 @@ class Service(BaseModel):
     pre_stop: Annotated[
         list[ServiceHook] | None,
         Field(
-            description="Commands to run before the container stops. If any command fails, the container stop is aborted."
+            description="Commands to run before the container stops. If any command fails, the container stop is "
+            "aborted."
         ),
     ] = None
     privileged: Annotated[
@@ -1696,13 +1738,15 @@ class Service(BaseModel):
     profiles: Annotated[
         ListOfStrings | None,
         Field(
-            description="List of profiles for this service. When profiles are specified, services are only started when the profile is activated."
+            description="List of profiles for this service. When profiles are specified, services are only started "
+            "when the profile is activated."
         ),
     ] = None
     pull_policy: Annotated[
         str | None,
         Field(
-            description="Policy for pulling images. Options include: 'always', 'never', 'if_not_present', 'missing', 'build', or time-based refresh policies.",
+            description="Policy for pulling images. Options include: 'always', 'never', 'if_not_present', 'missing', "
+            "'build', or time-based refresh policies.",
             pattern="always|never|build|if_not_present|missing|refresh|daily|weekly|every_([0-9]+[wdhms])+",
         ),
     ] = None
@@ -1717,7 +1761,8 @@ class Service(BaseModel):
     restart: Annotated[
         str | None,
         Field(
-            description="Restart policy for the service container. Options include: 'no', 'always', 'on-failure', and 'unless-stopped'."
+            description="Restart policy for the service container. Options include: 'no', 'always', 'on-failure', and "
+            "'unless-stopped'."
         ),
     ] = None
     runtime: Annotated[
@@ -1748,7 +1793,8 @@ class Service(BaseModel):
     stop_grace_period: Annotated[
         str | None,
         Field(
-            description="Time to wait for the container to stop gracefully before sending SIGKILL (e.g., '1s', '1m30s')."
+            description="Time to wait for the container to stop gracefully before sending SIGKILL (e.g., '1s', "
+            "'1m30s')."
         ),
     ] = None
     stop_signal: Annotated[
@@ -1790,13 +1836,15 @@ class Service(BaseModel):
     volumes: Annotated[
         list[str | Volumes] | None,
         Field(
-            description="Mount host paths or named volumes accessible to the container. Short syntax (VOLUME:CONTAINER_PATH[:MODE])"
+            description="Mount host paths or named volumes accessible to the container. Short syntax "
+            "(VOLUME:CONTAINER_PATH[:MODE])"
         ),
     ] = None
     volumes_from: Annotated[
         list[str] | None,
         Field(
-            description="Mount volumes from another service or container. Optionally specify read-only access (ro) or read-write (rw)."
+            description="Mount volumes from another service or container. Optionally specify read-only access (ro) or "
+            "read-write (rw)."
         ),
     ] = None
     working_dir: Annotated[
