@@ -43,7 +43,8 @@ BEGIN
 
     IF group_id IS NOT NULL THEN
         IF TG_OP = 'INSERT' THEN
-            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete") VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
+            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete")
+            VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
         END IF;
     END IF;
 
@@ -110,9 +111,9 @@ def upgrade():
         CAST(js.value ->> 'write' as bool) as write,
         CAST(js.value ->> 'delete' as bool) as delete,
         CURRENT_TIMESTAMP as created,
-	    CURRENT_TIMESTAMP as modified
+        CURRENT_TIMESTAMP as modified
     from projects,
-  	    json_each(projects.access_rights::json) AS js;
+        json_each(projects.access_rights::json) AS js;
     """
         )
     )

@@ -25,7 +25,8 @@ def upgrade():
             "job_parent_resource_name",
             sa.String(),
             nullable=False,
-            doc="Prefix for the job resource name. For example, if the relative resource name is shelves/shelf1/books/book2, the parent resource name is shelves/shelf1.",
+            doc="Prefix for the job resource name. For example, if the relative resource name is "
+            "shelves/shelf1/books/book2, the parent resource name is shelves/shelf1.",
         ),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
