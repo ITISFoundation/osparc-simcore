@@ -217,4 +217,6 @@ repo*.config*
 
 # temporary folders used by agents within workspace
 .tmp
+
+# throwaway working files for experiments
 .scratch
