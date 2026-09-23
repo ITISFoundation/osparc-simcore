@@ -25,7 +25,8 @@ from docker.models.images import Image
 
 _FOLDER_NAMES = ["input", "output"]
 
-## FIXME: 'Not all images have this home directory. Why impose it? Maybe I am mistaken but I do not understand what this var refers to.' by ANE
+## FIXME: 'Not all images have this home directory. Why impose it? Maybe I am mistaken
+#  but I do not understand what this var refers to.' by ANE
 _CONTAINER_FOLDER = Path("/home/scu/data")
 
 

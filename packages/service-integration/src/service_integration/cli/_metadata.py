@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
@@ -11,12 +11,12 @@ from ..versioning import bump_version_string
 from ..yaml_utils import ordered_safe_dump, ordered_safe_load
 
 
-class TargetVersionChoices(str, Enum):
+class TargetVersionChoices(StrEnum):
     INTEGRATION_VERSION = "integration-version"
     SEMANTIC_VERSION = "version"
 
 
-class UpgradeTags(str, Enum):
+class UpgradeTags(StrEnum):
     MAJOR = "major"
     MINOR = "minor"
     PATCH = "patch"
