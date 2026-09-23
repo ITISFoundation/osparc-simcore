@@ -87,7 +87,7 @@ def classify_reqs_path(reqs_path: str) -> ReqsClassification:
     if any(k in reqs_path for k in ("_test.txt", "requirements.txt")) or "test" in reqs_path:
         reqs_type = "test"
     else:
-        reqs_type = reqs_path.split("/")[-1].replace(".txt", "").strip("_")
+        reqs_type = reqs_path.rsplit("/", maxsplit=1)[-1].replace(".txt", "").strip("_")
 
     parts = reqs_path.split("/")
     module_type, module_name = parts[:2]

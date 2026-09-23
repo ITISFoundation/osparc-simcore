@@ -129,9 +129,9 @@ async def get_services_for_user_in_product(
 
 @cached(
     ttl=_CACHE_TTL,
-    key_builder=lambda _f,
-    *_args,
-    **kw: f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}",
+    key_builder=lambda _f, *_args, **kw: (
+        f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}"
+    ),
     cache=Cache.MEMORY,
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
 )

@@ -137,7 +137,7 @@ async def _get_node_infos(
 ) -> tuple[ServiceMetaDataPublished | None, ServiceExtras | None, SimcoreServiceLabels | None]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
-            _FRONTEND_SERVICES_CATALOG.get(node.key, None),
+            _FRONTEND_SERVICES_CATALOG.get(node.key),
             None,
             None,
         )
