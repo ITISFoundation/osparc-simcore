@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task, delayed_start
-from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
+from tenacity import before_sleep_log, retry, retry_if_exception_type, retry_if_result
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_catch, log_context
@@ -59,25 +59,26 @@ def periodic(
     def _decorator(
         async_fun: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
-        class _InternalTryAgain(TryAgain):
-            # Local exception to prevent reacting to similarTryAgain exceptions raised by the wrapped func
-            # e.g. when this decorators is used twice on the same function
-            ...
-
         nap = asyncio.sleep if early_wake_up_event is None else SleepUsingAsyncioEvent(early_wake_up_event)
+
+        # NOTE: _wrapper always returns None, so retrying on that result keeps the loop running
+        retry_condition = retry_if_result(lambda result: result is None)
+        if not raise_on_error:
+            # also retry on Exception (retry_if_exception_type() excludes BaseExceptions
+            # such as asyncio.CancelledError, which must always stop the loop)
+            retry_condition = retry_condition | retry_if_exception_type()
 
         @retry(
             sleep=nap,
             wait=wait_fixed(interval.total_seconds()),
             reraise=True,
-            retry=(retry_if_exception_type(_InternalTryAgain) if raise_on_error else retry_if_exception_type()),
+            retry=retry_condition,
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         @functools.wraps(async_fun)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             with log_catch(_logger, reraise=True):
                 await async_fun(*args, **kwargs)
-            raise _InternalTryAgain
 
         return _wrapper
 
