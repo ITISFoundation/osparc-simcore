@@ -61,12 +61,11 @@ def periodic(
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         nap = asyncio.sleep if early_wake_up_event is None else SleepUsingAsyncioEvent(early_wake_up_event)
 
-        # NOTE: _wrapper always returns None, so retrying on that result keeps the loop running
-        retry_condition = retry_if_result(lambda result: result is None)
-        if not raise_on_error:
-            # also retry on Exception (retry_if_exception_type() excludes BaseExceptions
-            # such as asyncio.CancelledError, which must always stop the loop)
-            retry_condition = retry_condition | retry_if_exception_type()
+        # NOTE: _wrapper always returns None, so retrying on that result keeps the loop running.
+        # When not raising on error, retry also on Exception (retry_if_exception_type() excludes
+        # BaseExceptions such as asyncio.CancelledError, which must always stop the loop)
+        keep_running = retry_if_result(lambda result: result is None)
+        retry_condition = keep_running if raise_on_error else keep_running | retry_if_exception_type()
 
         @retry(
             sleep=nap,
