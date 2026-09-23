@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-SemanticVersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
+type SemanticVersionStr = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
 
 
 def bump_version_string(current_version: str, bump: str) -> str:
@@ -31,7 +31,8 @@ def bump_version_string(current_version: str, bump: str) -> str:
 
 
 # ### versioning
-# a single version number does not suffice. Instead we should have a set of versions that describes "what is inside the container"
+# a single version number does not suffice. Instead we should have a set of versions that
+# describes "what is inside the container"
 # - service version (following semantic versioning): for the published service
 # - service integration version: sidecar
 # - executable name: the public name of the wrapped program (e.g. matlab)
