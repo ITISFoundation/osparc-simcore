@@ -21,7 +21,8 @@ def upgrade():
         batch_op.alter_column(
             "trashed_at",
             new_column_name="trashed",
-            comment="The date and time when the folders was marked as trashed. Null if the folders has not been trashed [default].",
+            comment="The date and time when the folders was marked as trashed. Null if the folders has not "
+            "been trashed [default].",
         )
         batch_op.add_column(
             sa.Column(
@@ -44,7 +45,8 @@ def upgrade():
         batch_op.alter_column(
             "trashed_at",
             new_column_name="trashed",
-            comment="The date and time when the projects was marked as trashed. Null if the projects has not been trashed [default].",
+            comment="The date and time when the projects was marked as trashed. Null if the projects has not "
+            "been trashed [default].",
         )
         batch_op.add_column(
             sa.Column(
@@ -71,7 +73,8 @@ def downgrade():
         batch_op.alter_column(
             "trashed",
             new_column_name="trashed_at",
-            comment="The date and time when the project was marked as trashed. Null if the project has not been trashed [default].",
+            comment="The date and time when the project was marked as trashed. Null if the project has not "
+            "been trashed [default].",
         )
 
     with op.batch_alter_table("folders_v2") as batch_op:
@@ -80,5 +83,6 @@ def downgrade():
         batch_op.alter_column(
             "trashed",
             new_column_name="trashed_at",
-            comment="The date and time when the folder was marked as trashed. Null if the folder has not been trashed [default].",
+            comment="The date and time when the folder was marked as trashed. Null if the folder has not been "
+            "trashed [default].",
         )

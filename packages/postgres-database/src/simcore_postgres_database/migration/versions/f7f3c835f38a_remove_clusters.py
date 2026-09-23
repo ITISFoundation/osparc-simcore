@@ -44,7 +44,8 @@ DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read", "write", "delete") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+        INSERT INTO "cluster_to_groups" ("gid", "cluster_id", "read", "write", "delete")
+        VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';

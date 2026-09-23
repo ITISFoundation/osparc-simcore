@@ -17,7 +17,8 @@ users_pre_registration_details = sa.Table(
     "users_pre_registration_details",
     #
     # Provides extra attributes for a user that either not required or that are provided before the user is created.
-    # The latter state is denoted as "pre-registration" and specific attributes in this state are prefixed with `pre_`. Therefore,
+    # The latter state is denoted as "pre-registration" and specific attributes in this state are
+    # prefixed with `pre_`. Therefore,
     # a row can be added in this table during pre-registration i.e. even before the `users` row exists.
     #
     metadata,

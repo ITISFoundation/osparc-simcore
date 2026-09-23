@@ -36,7 +36,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 async def test_numerics_precision_and_scale(asyncpg_engine: AsyncEngine):
     # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Numeric
-    # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
+    # precision: This parameter specifies the total number of digits that can be stored, both before and after
+    # the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
 
     async with (
