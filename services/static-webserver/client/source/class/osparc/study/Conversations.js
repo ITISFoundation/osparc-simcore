@@ -231,12 +231,11 @@ qx.Class.define("osparc.study.Conversations", {
         });
         conversationsLayout.getChildControl("bar").add(newConversationButton);
       }
-      // remove and add to move to last position
+      // move to last position
       const bar = conversationsLayout.getChildControl("bar");
-      if (bar.indexOf(this.__newConversationButton) > -1) {
-        bar.remove(this.__newConversationButton);
+      if (bar.getChildren().length > 1) {
+        bar.add(this.__newConversationButton);
       }
-      bar.add(this.__newConversationButton);
     },
 
     __removeConversationPage: function(conversationId, changeSelection = false) {
