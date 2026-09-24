@@ -66,11 +66,13 @@ async def _assert_message_received(
     ):
         with attempt:
             print(
-                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, "
+                f"{attempt.retry_state.idle_for}]"
             )
             assert mocked_message_parser.call_count == expected_call_count
             print(
-                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, "
+                f"{attempt.retry_state.idle_for}]"
             )
     return [message_parser(mocked_message_parser.call_args_list[c].args[0]) for c in range(expected_call_count)]
 

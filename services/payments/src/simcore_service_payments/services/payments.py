@@ -235,7 +235,8 @@ async def pay_with_payment_method(  # noqa: PLR0913
     Raises:
         Any exception raised by the payment service gateway or postgre is propagated upwards.
 
-        UnverifiedPaymentError: when the payment could not be verified (e.g. timeout with gateway). DO NOT RETRY in this case!
+        UnverifiedPaymentError: when the payment could not be verified
+            (e.g. timeout with gateway). DO NOT RETRY in this case!
     """
     initiated_at = arrow.utcnow().datetime
 
