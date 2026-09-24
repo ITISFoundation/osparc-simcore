@@ -28,6 +28,8 @@ pytest_simcore_ops_services_selection = [
 
 _FAST_POLL_INTERVAL: Final[float] = 0.01
 _VERY_SLOW_POLL_INTERVAL: Final[float] = 1
+# fails the test instead of hanging it if the loop ever stops terminating
+_NON_TERMINATING_LOOP_GUARD: Final[float] = 5
 
 
 @pytest.fixture
@@ -220,7 +222,7 @@ async def test_periodic_applied_twice_still_stops_on_error(
         await mock_func()
 
     with pytest.raises(CustomError):
-        await _func()
+        await asyncio.wait_for(_func(), timeout=_NON_TERMINATING_LOOP_GUARD)
 
     mock_func.assert_called_once()
 
@@ -240,3 +242,48 @@ async def test_periodic_applied_twice_keeps_running_on_error(
     await cancel_wait_task(task)
 
     assert mock_func.call_count > 1
+
+
+async def test_periodic_calling_another_periodic_does_not_share_loop_signal(
+    task_interval: datetime.timedelta,
+):
+    # the inner loop never returns, so the outer one stays on its first iteration instead
+    # of mistaking anything from the inner decorator for "keep running"
+    inner_calls, outer_calls = 0, 0
+
+    @periodic(interval=task_interval, raise_on_error=True)
+    async def _inner() -> None:
+        nonlocal inner_calls
+        inner_calls += 1
+
+    @periodic(interval=task_interval, raise_on_error=True)
+    async def _outer() -> None:
+        nonlocal outer_calls
+        outer_calls += 1
+        await _inner()
+
+    task = asyncio.create_task(_outer())
+    await asyncio.sleep(5 * task_interval.total_seconds())
+    await cancel_wait_task(task)
+
+    assert outer_calls == 1
+    assert inner_calls > 1
+
+
+async def test_periodic_calling_another_periodic_propagates_error(
+    task_interval: datetime.timedelta,
+):
+    mock_func = AsyncMock(side_effect=CustomError("Test error"))
+
+    @periodic(interval=task_interval, raise_on_error=True)
+    async def _inner() -> None:
+        await mock_func()
+
+    @periodic(interval=task_interval, raise_on_error=True)
+    async def _outer() -> None:
+        await _inner()
+
+    with pytest.raises(CustomError):
+        await asyncio.wait_for(_outer(), timeout=_NON_TERMINATING_LOOP_GUARD)
+
+    mock_func.assert_called_once()
