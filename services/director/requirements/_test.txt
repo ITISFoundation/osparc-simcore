@@ -15,7 +15,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.6.2.post1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -145,12 +145,15 @@ respx==0.22.0
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via fakeredis
 termcolor==3.3.0
     # via pytest-sugar
+typing-extensions==4.16.0
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
 urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

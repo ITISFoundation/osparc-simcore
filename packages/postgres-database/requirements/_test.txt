@@ -16,6 +16,11 @@ cryptography==50.0.0
     #   types-paramiko
 faker==40.38.0
     # via -r requirements/_test.in
+greenlet==3.3.2
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_migration.txt
+    #   sqlalchemy
 iniconfig==2.3.0
     # via pytest
 librt==0.8.1
@@ -78,7 +83,7 @@ types-psycopg2==2.9.21.20260223
     # via -r requirements/_test.in
 types-requests==2.32.4.20260107
     # via types-docker
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt

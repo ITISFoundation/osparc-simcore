@@ -28,6 +28,7 @@ from ..tracing import (
     TracingConfig,
     create_standard_attributes,
     get_trace_info_headers,
+    setup_meter_provider,
 )
 
 _logger = logging.getLogger(__name__)
@@ -141,6 +142,8 @@ def _startup(
 
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
+
+    setup_meter_provider()
 
     # Instrument aiohttp server
     if add_response_trace_id_header:
