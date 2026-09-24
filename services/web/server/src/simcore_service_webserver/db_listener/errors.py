@@ -5,6 +5,7 @@ service/repository layer (see services/web/server/docs/DESIGN.md).
 """
 
 from ..errors import WebServerBaseError
+from .models import AggregateID, AggregateType, OutboxEventID
 
 __all__ = ("CompTaskNotFoundError", "DbListenerBaseError", "OutboxProcessingError")
 
@@ -24,6 +25,15 @@ class OutboxProcessingError(DbListenerBaseError):
     Raised to abort the claim transaction; carries the context needed to record
     the failed attempt once the transaction has rolled back (the claim's locks
     released and pending delete undone).
+
+    The attributes are provided as keyword context to OsparcErrorMixin.__init__
+    (which stores them in the instance dict); the annotations below only declare
+    them for static type-checkers.
     """
+
+    kind: AggregateType
+    aggregate_id: AggregateID
+    event_ids: list[OutboxEventID]
+    cause: Exception
 
     msg_template = "Failed to process outbox events of aggregate {kind}:{aggregate_id}"

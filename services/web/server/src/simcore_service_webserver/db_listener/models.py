@@ -9,6 +9,7 @@ from typing import Any, Final, NewType
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, ConfigDict
+from simcore_postgres_database.models.comp_pipeline import StateType
 
 # consumer's meaning of an event's changed_columns: a change to any of these
 # comp_tasks columns must refresh the node's outputs projection / its running
@@ -37,7 +38,7 @@ __all__ = (
 
 
 class _BaseFrozenModel(BaseModel):
-    model_config = ConfigDict(frozen=True, slots=True)
+    model_config = ConfigDict(frozen=True)
 
 
 class ClaimOutcome(_BaseFrozenModel):
@@ -73,7 +74,7 @@ class CompTask(_BaseFrozenModel):
     node_id: NodeID
     outputs: dict[str, Any] | None
     run_hash: str | None
-    state: str | None
+    state: StateType | None
 
 
 class FailedAttempt(_BaseFrozenModel):
