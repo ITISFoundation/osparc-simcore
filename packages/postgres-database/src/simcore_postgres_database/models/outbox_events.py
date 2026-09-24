@@ -3,6 +3,9 @@
 Stores events atomically with the domain-entity update that produced them, so a
 separate worker can reliably pick them up afterwards. This is a work queue, not
 an event log: a successfully processed row is deleted, not retained.
+Rows that exhausted their retries (dead-letters) are kept beyond that for
+post-mortem; the worker that owns each `kind` is responsible for purging its
+expired dead-letters so this table does not grow without bound.
 """
 
 import sqlalchemy as sa
