@@ -27,7 +27,6 @@ import pytest
 import pytest_asyncio
 import redis
 import redis.asyncio as aioredis
-import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -45,7 +44,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture, MockType
-from pytest_simcore.helpers import postgres_tools
+from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -116,10 +115,13 @@ def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.Monkey
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(docker_compose_env: pytest.MonkeyPatch) -> str:
+def docker_compose_file(docker_compose_env: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory) -> str:
     """Overrides pytest-docker fixture"""
     compose_path = CURRENT_DIR / "docker-compose-devel.yml"
     assert compose_path.exists()
+    compose_path = filter_compose_file_for_ci(
+        compose_path, ("postgres", "rabbit", "redis"), tmp_path_factory.mktemp("compose")
+    )
     return f"{compose_path}"
 
 
@@ -550,31 +552,6 @@ def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
     )
 
     return url
-
-
-@pytest.fixture(scope="module")
-def postgres_db(postgres_dsn: dict, postgres_service: str) -> Iterator[sa.engine.Engine]:
-    # Overrides packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db to reduce scope
-    url = postgres_service
-
-    # Configures db and initializes tables
-    kwargs = postgres_dsn.copy()
-    assert pg_cli.discover.callback
-    pg_cli.discover.callback(**kwargs)
-    assert pg_cli.upgrade.callback
-    pg_cli.upgrade.callback("head")
-    # Uses synchronous engine for that
-    sync_engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
-
-    yield sync_engine
-
-    try:
-        # NOTE: we directly drop the table, that is faster
-        # testing the upgrade/downgrade is already done in postgres-database.
-        # there is no need to it here.
-        postgres_tools.force_drop_all_tables(sync_engine)
-    finally:
-        sync_engine.dispose()
 
 
 @pytest.fixture

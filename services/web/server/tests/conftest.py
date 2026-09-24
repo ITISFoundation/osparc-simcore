@@ -84,6 +84,7 @@ pytest_plugins = [
     "pytest_simcore.hypothesis_type_strategies",
     "pytest_simcore.logging",
     "pytest_simcore.openapi_specs",
+    "pytest_simcore.postgres_live_stack_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",

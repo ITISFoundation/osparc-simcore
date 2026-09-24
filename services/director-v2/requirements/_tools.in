@@ -7,3 +7,6 @@
 
 # basic dev tools
 watchdog[watchmedo]
+
+# memory profiler used to hunt leaks via 'memray run --native -m uvicorn ...' (boot.sh)
+memray
