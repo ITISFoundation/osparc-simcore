@@ -8,7 +8,7 @@ SEE ALSO:
 """
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated, TypeVar
+from typing import TYPE_CHECKING, Annotated, Generic, TypeVar
 
 from annotated_types import doc
 from pydantic import BaseModel
@@ -32,12 +32,12 @@ else:
     TField = TypeVar("TField", bound=str)
 
 
-class OrderClause[TField: str](BaseModel):
+class OrderClause(BaseModel, Generic[TField]):  # noqa: UP046
     field: TField
     direction: OrderDirection = OrderDirection.ASC
 
 
-def check_ordering_list[TField: str](
+def check_ordering_list(  # noqa: UP047
     order_by: list[tuple[TField, OrderDirection]],
 ) -> Annotated[
     list[tuple[TField, OrderDirection]],
