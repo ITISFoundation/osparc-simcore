@@ -205,3 +205,38 @@ async def test_periodic_task_logs_error(
             await asyncio.sleep(2 * task_interval.total_seconds())
 
     assert "Test error" in caplog.text
+
+
+async def test_periodic_applied_twice_still_stops_on_error(
+    task_interval: datetime.timedelta,
+):
+    # the loop is driven by the wrapped function returning None, so the inner decorator
+    # does not signal anything the outer one could mistake for "keep running"
+    mock_func = AsyncMock(side_effect=CustomError("Test error"))
+
+    @periodic(interval=task_interval, raise_on_error=True)
+    @periodic(interval=task_interval, raise_on_error=True)
+    async def _func() -> None:
+        await mock_func()
+
+    with pytest.raises(CustomError):
+        await _func()
+
+    mock_func.assert_called_once()
+
+
+async def test_periodic_applied_twice_keeps_running_on_error(
+    task_interval: datetime.timedelta,
+):
+    mock_func = AsyncMock(side_effect=CustomError("Test error"))
+
+    @periodic(interval=task_interval, raise_on_error=False)
+    @periodic(interval=task_interval, raise_on_error=False)
+    async def _func() -> None:
+        await mock_func()
+
+    task = asyncio.create_task(_func())
+    await asyncio.sleep(5 * task_interval.total_seconds())
+    await cancel_wait_task(task)
+
+    assert mock_func.call_count > 1
