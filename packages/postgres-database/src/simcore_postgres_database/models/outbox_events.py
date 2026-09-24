@@ -68,6 +68,14 @@ outbox_events = sa.Table(
         nullable=True,
         doc="Last error message if processing failed",
     ),
+    sa.Column(
+        "next_attempt_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.text("now()"),
+        doc="Earliest time the event may be claimed again; failures push it forward"
+        " to space out retries (backoff), so a wake-up storm cannot burn all attempts",
+    ),
     # serves the claim query's "WHERE kind=... ORDER BY modified, id" (oldest-first):
     # kind is the only equality column, so it must come first for the index to provide
     # the ordering. The "attempts < N" filter is applied on top (dead-lettered rows are

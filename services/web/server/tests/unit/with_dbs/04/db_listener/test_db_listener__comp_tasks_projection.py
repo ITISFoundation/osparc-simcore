@@ -679,7 +679,13 @@ async def test_failed_processing_keeps_event_for_retry(
     assert rows[0]["attempts"] == 1
     assert "boom" in rows[0]["last_error"]
 
-    # a second attempt bumps attempts again (row updated in place, not re-inserted)
+    # inside the retry backoff window the event is not claimable again
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+
+    # once the backoff window passed, a second attempt bumps attempts again
+    # (row updated in place, not re-inserted)
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(outbox_events.update().values(next_attempt_at=sa.text("now() - interval '1 hour'")))
     outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
     assert outcome is not None
     assert outcome.success is False

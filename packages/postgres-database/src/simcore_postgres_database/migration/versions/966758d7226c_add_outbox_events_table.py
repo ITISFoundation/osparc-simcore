@@ -47,6 +47,7 @@ def upgrade():
         sa.Column("modified", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("attempts", sa.Integer(), server_default="0", nullable=False),
         sa.Column("last_error", sa.Text(), nullable=True),
+        sa.Column("next_attempt_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_outbox_events_claim", "outbox_events", ["kind", "modified", "id"], unique=False)

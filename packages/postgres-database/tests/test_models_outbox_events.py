@@ -22,3 +22,14 @@ def test_outbox_events_claim_index_matches_claim_query_ordering():
     # kind is the claim query's only equality column: it must come first so the index
     # can also provide the "ORDER BY modified, id" without a sort step
     assert [c.name for c in index.columns] == ["kind", "modified", "id"]
+
+
+def test_outbox_events_has_retry_backoff_column():
+    table = metadata.tables["outbox_events"]
+    column = table.c.next_attempt_at
+    # claims gate on it ("not claimable until"), so it must never be NULL and fresh
+    # events must be immediately claimable
+    assert not column.nullable
+    assert column.server_default is not None
+    assert isinstance(column.type, sa.DateTime)
+    assert column.type.timezone
