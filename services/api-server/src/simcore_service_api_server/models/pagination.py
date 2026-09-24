@@ -39,7 +39,9 @@ class Links(BaseModel):
     self: str | None = Field(default=..., examples=["/api/v1/users?limit=1&offset=1"])
 
 
-class _UseRequiredLimitOffsetLinks(UseLimitOffsetLinks):
+# NOTE: base from fastapi_pagination has a deep third-party hierarchy that
+# cannot be flattened from here
+class _UseRequiredLimitOffsetLinks(UseLimitOffsetLinks):  # pylint: disable=too-many-ancestors
     def customize_page_ns(self, page_cls: PageCls, ns: ClsNamespace) -> None:
         def _resolve_required_links(page: _LimitOffsetPage[Any]) -> Links:
             return Links.model_validate(self.resolve_links(page), from_attributes=True)
