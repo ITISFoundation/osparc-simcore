@@ -22,6 +22,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
+from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
@@ -266,3 +267,62 @@ async def test_skip_observation_cycle_after_error(
             assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
     else:
         assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
+
+
+@pytest.fixture
+def always_failing_event() -> Iterator[None]:
+    """Scheduler event that always raises: puts the service into FAILING status on
+    the first observation cycle, after which the scheduler runs automatic removal
+    """
+
+    class _AlwaysFailingEvent(DynamicSchedulerEvent):
+        @classmethod
+        async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:  # noqa: ARG003
+            return True
+
+        @classmethod
+        async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:  # noqa: ARG003
+            msg = "Failed as planned"
+            raise RuntimeError(msg)
+
+    saved: list[type[DynamicSchedulerEvent]] = list(REGISTERED_EVENTS)
+    REGISTERED_EVENTS.clear()
+    REGISTERED_EVENTS.append(_AlwaysFailingEvent)
+    try:
+        yield
+    finally:
+        REGISTERED_EVENTS[:] = saved
+
+
+async def test_service_removal_completes_when_agent_node_was_removed(
+    mock_exclusive: None,
+    docker_swarm: None,
+    minimal_app: FastAPI,
+    mock_projects_repository: None,
+    always_failing_event: None,
+    scheduler: DynamicSidecarsScheduler,
+    scheduler_data: SchedulerData,
+    mock_rpc_calls: None,
+    mocker: MockerFixture,
+) -> None:
+    """Regression: when the agent's autoscaling node is removed while a service is
+    being torn down, `force_container_cleanup` raises `RemoteMethodNotRegisteredError`.
+    Teardown must tolerate it and complete, otherwise the service stays in the
+    scheduler's observation maps forever (permanent memory leak)
+    """
+
+    async def _raise_agent_gone(*args, **kwargs) -> None:
+        raise RemoteMethodNotRegisteredError(method_name="force_container_cleanup", incoming_message=None)
+
+    mocker.patch.object(_events_utils, "force_container_cleanup", side_effect=_raise_agent_gone)
+
+    scheduler_data.requires_data_mounting = False
+    await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
+    assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
+
+    # observation cycle: 1st -> event raises (FAILING), 2nd -> automatic removal
+    await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 30)
+
+    # the node must be fully released despite the missing agent
+    assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
+    assert f"{scheduler_data.node_uuid}" not in minimal_app.state.sidecars_api_clients
