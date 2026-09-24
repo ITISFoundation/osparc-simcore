@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Literal
 
@@ -20,7 +20,7 @@ class ErrorModel(BaseModel):
     trace: list | None = None
 
 
-class StripeTaxExempt(str, Enum):
+class StripeTaxExempt(StrEnum):
     exempt = "exempt"
     none = "none"  # <-- if customer is from CH or LI
     reverse = "reverse"  # <-- if customer is outside of CH or LI

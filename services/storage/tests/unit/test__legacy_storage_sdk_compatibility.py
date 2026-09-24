@@ -143,7 +143,8 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
     Here we test the calls from 'simcore_service_storage_sdk' used in simcore_sdk.node_ports.filemanage (v0.3.2)
     SEE https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/packages/simcore-sdk/src/simcore_sdk/node_ports/filemanager.py
 
-    NOTICE that 'simcore_service_storage_sdk' was automatically built using OAS v0.1.0 despite the fact that at that time
+    NOTICE that 'simcore_service_storage_sdk' was automatically built using OAS v0.1.0
+    despite the fact that at that time
     the OAS had already change!!!
     """
 

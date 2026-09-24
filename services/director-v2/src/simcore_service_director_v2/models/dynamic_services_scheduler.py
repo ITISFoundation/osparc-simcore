@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Mapping
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, TypeAlias
@@ -84,7 +84,7 @@ def assemble_service_name(service_prefix: str, node_uuid: NodeID) -> str:
     return _strip_service_name("_".join([service_prefix, str(node_uuid)]))
 
 
-class DynamicSidecarStatus(str, Enum):
+class DynamicSidecarStatus(StrEnum):
     OK = "ok"  # running as expected
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 

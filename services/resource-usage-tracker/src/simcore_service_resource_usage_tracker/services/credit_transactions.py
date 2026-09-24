@@ -110,14 +110,22 @@ async def pay_project_debt(
         transaction_status=CreditTransactionStatus.IN_DEBT,
     )
 
+    _debt = total_project_debt_amount.available_osparc_credits
+    _msg_not_equal = (
+        f"Project DEBT of {_debt} does not equal to payment: "
+        f"new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, "
+        f"current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
+    )
     if total_project_debt_amount.available_osparc_credits != new_wallet_transaction.osparc_credits:
-        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
-        raise WalletTransactionError(msg=msg)
+        raise WalletTransactionError(msg=_msg_not_equal)
     if -total_project_debt_amount.available_osparc_credits != current_wallet_transaction.osparc_credits:
-        msg = f"Project DEBT of {total_project_debt_amount.available_osparc_credits} does not equal to payment: new_wallet {new_wallet_transaction.wallet_id} credits {new_wallet_transaction.osparc_credits}, current wallet {current_wallet_transaction.wallet_id} credits {current_wallet_transaction.osparc_credits}"
-        raise WalletTransactionError(msg=msg)
+        raise WalletTransactionError(msg=_msg_not_equal)
     if current_wallet_transaction.product_name != new_wallet_transaction.product_name:
-        msg = f"Currently we do not support credit exchange between different products. New wallet {new_wallet_transaction.wallet_id}, current wallet {current_wallet_transaction.wallet_id}"
+        msg = (
+            f"Currently we do not support credit exchange between different products. "
+            f"New wallet {new_wallet_transaction.wallet_id}, "
+            f"current wallet {current_wallet_transaction.wallet_id}"
+        )
         raise WalletTransactionError(msg=msg)
 
     # Does the new wallet has enough credits to pay the debt?
@@ -127,7 +135,12 @@ async def pay_project_debt(
         wallet_id=new_wallet_transaction.wallet_id,
     )
     if new_wallet_total_credit_amount.available_osparc_credits + total_project_debt_amount.available_osparc_credits < 0:
-        msg = f"New wallet {new_wallet_transaction.wallet_id} doesn't have enough credits {new_wallet_total_credit_amount.available_osparc_credits} to pay the debt {total_project_debt_amount.available_osparc_credits} of current wallet {current_wallet_transaction.wallet_id}"
+        msg = (
+            f"New wallet {new_wallet_transaction.wallet_id} doesn't have enough credits "
+            f"{new_wallet_total_credit_amount.available_osparc_credits} to pay the debt "
+            f"{total_project_debt_amount.available_osparc_credits} of current wallet "
+            f"{current_wallet_transaction.wallet_id}"
+        )
         raise WalletTransactionError(msg=msg)
 
     new_wallet_transaction_create = CreditTransactionCreate(

@@ -87,11 +87,13 @@ async def assert_and_wait_for_pipeline_status(
         elapsed_s = time.monotonic() - start
         with attempt:
             print(
-                f"Waiting for pipeline '{project_uuid=}' state to be one of: {wait_for_states=}, attempt={attempt.retry_state.attempt_number}, time={elapsed_s}s"
+                f"Waiting for pipeline '{project_uuid=}' state to be one of: {wait_for_states=}, "
+                f"attempt={attempt.retry_state.attempt_number}, time={elapsed_s}s"
             )
             task_out = await check_pipeline_state()
             print(
-                f"Pipeline '{project_uuid=}' state successfully became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
+                f"Pipeline '{project_uuid=}' state successfully became '{task_out.state}'\n"
+                f"{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
             )
 
             return task_out

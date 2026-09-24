@@ -7,7 +7,7 @@ from asyncio import CancelledError
 from collections import deque
 from collections.abc import Coroutine
 from contextlib import AsyncExitStack
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import cast
 
@@ -37,7 +37,7 @@ from ..core.settings import ApplicationSettings, get_settings
 from ..modules.notifications import PortNotifier
 
 
-class PortTypeName(str, Enum):
+class PortTypeName(StrEnum):
     INPUTS = "inputs"
     OUTPUTS = "outputs"
 
@@ -61,8 +61,7 @@ def _get_size_of_value(value: tuple[ItemConcreteValue | None, SetKWargs | None])
         path = value
         if value.is_symlink():
             path = Path(value.parent) / Path(os.readlink(value))
-        size_bytes = path.stat().st_size
-        return size_bytes
+        return path.stat().st_size
     return sys.getsizeof(value)
 
 
