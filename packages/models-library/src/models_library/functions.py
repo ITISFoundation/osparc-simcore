@@ -20,9 +20,9 @@ from .batch_operations import BatchGetEnvelope, BatchUpdateEnvelope
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
-TaskID: TypeAlias = str
-FunctionID: TypeAlias = UUID
-FunctionJobID: TypeAlias = UUID
+TaskID: TypeAlias = str  # noqa: UP040
+FunctionID: TypeAlias = UUID  # noqa: UP040
+FunctionJobID: TypeAlias = UUID  # noqa: UP040
 type FileID = UUID
 
 type InputTypes = FileID | float | int | bool | str | list
@@ -70,8 +70,8 @@ class FunctionClass(StrEnum):
     PYTHON_CODE = "PYTHON_CODE"
 
 
-FunctionClassSpecificData: TypeAlias = dict[str, Any]
-FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
+FunctionClassSpecificData: TypeAlias = dict[str, Any]  # noqa: UP040
+FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData  # noqa: UP040
 
 
 # NOTE, use InputTypes here, but api is throwing weird errors and asking for dict for elements
@@ -472,12 +472,16 @@ class FunctionUserApiAccessRights(BaseModel):
 
 
 type FunctionJobAccessRights = FunctionAccessRights
-type FunctionJobAccessRightsDB = FunctionAccessRightsDB
+# NOTE: kept as a runtime class binding (not PEP 695 `type`) because it is passed
+# as a class value to get_columns_from_db_model(), which reads .model_fields
+FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB  # noqa: UP040
 type FunctionJobUserAccessRights = FunctionUserAccessRights
 type FunctionJobGroupAccessRights = FunctionGroupAccessRights
 
 type FunctionJobCollectionAccessRights = FunctionAccessRights
-type FunctionJobCollectionAccessRightsDB = FunctionAccessRightsDB
+# NOTE: kept as a runtime class binding (not PEP 695 `type`) because it is passed
+# as a class value to get_columns_from_db_model(), which reads .model_fields
+FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB  # noqa: UP040
 type FunctionJobCollectionUserAccessRights = FunctionUserAccessRights
 type FunctionJobCollectionGroupAccessRights = FunctionGroupAccessRights
 
