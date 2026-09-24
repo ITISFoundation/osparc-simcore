@@ -28,7 +28,7 @@ __all__: tuple[str, ...] = (
 
 NonNegativeDecimal: TypeAlias = Annotated[Decimal, Field(ge=0)]
 
-PositiveDecimal: TypeAlias = Annotated[Decimal, Field(gt=0)]
+type PositiveDecimal = Annotated[Decimal, Field(gt=0)]
 
 # Used for amounts like credits or dollars
 # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
@@ -41,7 +41,7 @@ PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
+type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
 
 
 # e.g. 'v5'
@@ -50,26 +50,26 @@ VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 VersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 # e.g. '1.23.11' or '2.1.0-rc2' or not 0.1.0-alpha  (see test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-SemanticVersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
+type SemanticVersionStr = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
 
 # checksums
 # sha1sum path/to/file
-SHA1Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{40}$")]
+type SHA1Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{40}$")]
 
 # sha256sum path/to/file
 SHA256Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$")]
 
 # md5sum path/to/file
-MD5Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
+type MD5Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
 
 # env var
-EnvVarKey: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
+type EnvVarKey = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
-UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
+type UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 
-SafeQueryStr: TypeAlias = Annotated[
+type SafeQueryStr = Annotated[
     str,
     StringConstraints(
         max_length=512,  # Reasonable limit for query parameters to avoid overflows
@@ -146,8 +146,8 @@ class IDStr(ConstrainedStr):
 
 
 # auto-incremented primary-key IDs
-IdInt: TypeAlias = PositiveInt
-PrimaryKeyInt: TypeAlias = PositiveInt
+type IdInt = PositiveInt
+type PrimaryKeyInt = PositiveInt
 
 
 # https e.g. https://techterms.com/definition/https

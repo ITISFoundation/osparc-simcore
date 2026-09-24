@@ -37,7 +37,8 @@ def test_service_port_with_boolean():
         {
             "displayOrder": 3,
             "label": "Same title and description is more usual than you might think",
-            "description": "Same title and description is more usual than you might think",  # <- same label and description!
+            # <- same label and description!
+            "description": "Same title and description is more usual than you might think",
             "type": "boolean",
             "defaultValue": False,  # <- has a default
         }

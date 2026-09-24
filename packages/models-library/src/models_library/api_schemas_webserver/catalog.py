@@ -1,4 +1,4 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
@@ -10,8 +10,8 @@ from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
 from ._base import InputSchema, OutputSchema
 
-ServiceInputKey: TypeAlias = ServicePortKey
-ServiceOutputKey: TypeAlias = ServicePortKey
+type ServiceInputKey = ServicePortKey
+type ServiceOutputKey = ServicePortKey
 
 
 class _BaseCommonApiExtension(BaseModel):
@@ -98,9 +98,9 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     )
 
 
-ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
-ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
-ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
+type ServiceInputsGetDict = dict[ServicePortKey, ServiceInputGet]
+type ServiceOutputsGetDict = dict[ServicePortKey, ServiceOutputGet]
+type ServiceResourcesGet = api_schemas_catalog_services.ServiceResourcesGet
 
 
 class CatalogLatestServiceGet(api_schemas_catalog_services.LatestServiceGet):

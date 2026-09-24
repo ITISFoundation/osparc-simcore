@@ -74,7 +74,7 @@ class UnresolvedOsparcVariableIdentifierError(OsparcErrorMixin, TypeError):
     msg_template = "Provided argument is unresolved: value={value}"
 
 
-def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
+def raise_if_unresolved[T](var: OsparcVariableIdentifier | T) -> T:
     """Raise error or return original value
 
     Use like below to make linters play nice.
@@ -91,7 +91,7 @@ def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
     return var  # type: ignore[return-value]
 
 
-def replace_osparc_variable_identifier(  # noqa: C901
+def replace_osparc_variable_identifier[T](  # noqa: C901
     obj: T, osparc_variables: dict[str, Any]
 ) -> T:
     """Replaces mostly in place an instance of `OsparcVariableIdentifier` with the

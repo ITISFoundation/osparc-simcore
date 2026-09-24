@@ -7,7 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 import copy
 from datetime import datetime
-from typing import Annotated, Any, Literal, Self, TypeAlias
+from typing import Annotated, Any, Literal, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
@@ -204,7 +204,7 @@ class ProjectGet(OutputSchema):
         )
 
 
-TaskProjectGet: TypeAlias = TaskGet
+type TaskProjectGet = TaskGet
 
 
 class ProjectListItem(ProjectGet): ...
@@ -284,7 +284,7 @@ class ProjectDocument(OutputSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-ProjectDocumentVersion: TypeAlias = int
+type ProjectDocumentVersion = int
 
 
 __all__: tuple[str, ...] = (

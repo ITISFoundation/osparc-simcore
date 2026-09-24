@@ -1,7 +1,8 @@
 # pylint: disable-all
 
 #
-# wget https://raw.githubusercontent.com/tiangolo/fastapi/master/fastapi/encoders.py --output-document=_original_fastapi_encoders
+# wget https://raw.githubusercontent.com/tiangolo/fastapi/master/fastapi/encoders.py \
+#     --output-document=_original_fastapi_encoders
 #
 import dataclasses
 from collections import defaultdict, deque
@@ -9,7 +10,7 @@ from collections.abc import Callable
 from enum import Enum
 from pathlib import PurePath
 from types import GeneratorType
-from typing import Annotated, Any, Union, get_origin
+from typing import Annotated, Any, get_origin
 
 from common_library.json_serialization import ENCODERS_BY_TYPE
 from pydantic import BaseModel
@@ -19,7 +20,7 @@ from typing_extensions import Doc
 Undefined = PydanticUndefined
 UndefinedType = PydanticUndefinedType
 
-IncEx = Union[set[int], set[str], dict[int, Any], dict[str, Any]]
+type IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any]
 
 
 def generate_encoders_by_class_tuples(
@@ -220,22 +221,20 @@ def jsonable_encoder(
                 encoded_dict[encoded_key] = encoded_value
         return encoded_dict
     if isinstance(obj, (list, set, frozenset, GeneratorType, tuple, deque)):
-        encoded_list = []
-        for item in obj:
-            encoded_list.append(
-                jsonable_encoder(
-                    item,
-                    include=include,
-                    exclude=exclude,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    exclude_none=exclude_none,
-                    custom_encoder=custom_encoder,
-                    sqlalchemy_safe=sqlalchemy_safe,
-                )
+        return [
+            jsonable_encoder(
+                item,
+                include=include,
+                exclude=exclude,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                custom_encoder=custom_encoder,
+                sqlalchemy_safe=sqlalchemy_safe,
             )
-        return encoded_list
+            for item in obj
+        ]
 
     if type(obj) in ENCODERS_BY_TYPE:
         return ENCODERS_BY_TYPE[type(obj)](obj)

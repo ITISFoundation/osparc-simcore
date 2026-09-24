@@ -1,5 +1,5 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, RootModel
 
@@ -7,7 +7,7 @@ DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")
 
 
-class DictModel(RootModel[dict[DictKey, DictValue]], Generic[DictKey, DictValue]):
+class DictModel[DictKey, DictValue](RootModel[dict[DictKey, DictValue]]):
     root: dict[DictKey, DictValue]
 
     def __getitem__(self, k: DictKey) -> DictValue:
@@ -44,7 +44,7 @@ class DictModel(RootModel[dict[DictKey, DictValue]], Generic[DictKey, DictValue]
 DataT = TypeVar("DataT")
 
 
-class ListModel(RootModel[list[DataT]], Generic[DataT]):
+class ListModel[DataT](RootModel[list[DataT]]):
     root: list[DataT]
 
     def __iter__(self):
@@ -57,7 +57,7 @@ class ListModel(RootModel[list[DataT]], Generic[DataT]):
         return len(self.root)
 
 
-class Envelope(BaseModel, Generic[DataT]):
+class Envelope[DataT](BaseModel):
     data: DataT | None = None
     error: Any | None = None
 

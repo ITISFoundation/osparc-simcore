@@ -1,6 +1,5 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -11,7 +10,7 @@ from .resource_tracker import PricingPlanId, PricingUnitCostId, PricingUnitId
 from .users import UserID
 from .wallets import WalletID
 
-LicensedItemPurchaseID: TypeAlias = UUID
+type LicensedItemPurchaseID = UUID
 
 
 class LicensedItemsPurchasesCreate(BaseModel):

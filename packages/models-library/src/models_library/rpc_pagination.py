@@ -1,13 +1,12 @@
 # mypy: disable-error-code=truthy-function
 from math import ceil
-from typing import Any, Generic
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
 from .rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    ItemT,
     Page,
     PageLimitInt,
     PageMetaInfoLimitOffset,
@@ -49,7 +48,7 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
         )
 
 
-class PageRpc(Page[ItemT], Generic[ItemT]):
+class PageRpc[ItemT](Page[ItemT]):
     links: PageRefsParams = Field(alias="_links")  # type: ignore
 
     @classmethod
@@ -60,7 +59,7 @@ class PageRpc(Page[ItemT], Generic[ItemT]):
         total: int,
         limit: int,
         offset: int,
-    ) -> "PageRpc":
+    ) -> "PageRpc[ItemT]":
         return cls(
             _meta=PageMetaInfoLimitOffset(total=total, count=len(chunk), limit=limit, offset=offset),
             _links=PageRefsParams.create(total=total, limit=limit, offset=offset),

@@ -2,8 +2,8 @@
 Models both project and node states
 """
 
-from enum import Enum, unique
-from typing import Annotated, Final, Self, TypeAlias
+from enum import StrEnum, unique
+from typing import Annotated, Final, Self
 
 from pydantic import (
     BaseModel,
@@ -20,18 +20,22 @@ from .projects_access import Owner
 
 
 @unique
-class RunningState(str, Enum):
+class RunningState(StrEnum):
     """State of execution of a project's computational workflow
 
     SEE StateType for task state
 
     # Computational backend states explained:
-    - UNKNOWN - The backend doesn't know about the task anymore, it has disappeared from the system or it was never created (eg. when we are asking for the task)
+    - UNKNOWN - The backend doesn't know about the task anymore, it has disappeared
+      from the system or it was never created (eg. when we are asking for the task)
     - NOT_STARTED - Default state when the task is created
     - PUBLISHED - The task has been submitted to the computational backend (click on "Run" button in the UI)
-    - PENDING - Task has been transferred to the Dask scheduler and is waiting for a worker to pick it up (director-v2 --> Dask scheduler)
-       - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)
-    - WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task; waiting for one to become available
+    - PENDING - Task has been transferred to the Dask scheduler and is waiting for a
+      worker to pick it up (director-v2 --> Dask scheduler)
+       - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING
+         -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)
+    - WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task;
+      waiting for one to become available
     - WAITING_FOR_RESOURCES - No worker (Dask worker) is available to run the task; waiting for one to become available
     - STARTED - A worker has picked up the task and is executing it
     - SUCCESS - Task finished successfully
@@ -73,13 +77,13 @@ RUNNING_STATE_COMPLETED_STATES: Final[tuple[RunningState, ...]] = (
 
 
 @unique
-class DataState(str, Enum):
+class DataState(StrEnum):
     UP_TO_DATE = "UPTODATE"
     OUTDATED = "OUTDATED"
 
 
 @unique
-class ProjectStatus(str, Enum):
+class ProjectStatus(StrEnum):
     CLOSED = "CLOSED"
     CLOSING = "CLOSING"
     CLONING = "CLONING"
@@ -89,9 +93,9 @@ class ProjectStatus(str, Enum):
     MAINTAINING = "MAINTAINING"  # used for maintenance tasks, like removing EFS data
 
 
-ProjectShareStatus: TypeAlias = Annotated[ProjectStatus, Field(description="The status of the project")]
-ProjectShareLocked: TypeAlias = Annotated[bool, Field(description="True if the project is locked")]
-ProjectShareCurrentUserGroupIDs: TypeAlias = Annotated[
+type ProjectShareStatus = Annotated[ProjectStatus, Field(description="The status of the project")]
+type ProjectShareLocked = Annotated[bool, Field(description="True if the project is locked")]
+type ProjectShareCurrentUserGroupIDs = Annotated[
     list[GroupID],
     Field(description="Current users in the project (if the project is locked, the list contains only the lock owner)"),
 ]
@@ -228,8 +232,8 @@ class ProjectRunningState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-ProjectStateShareState: TypeAlias = Annotated[ProjectShareState, Field(description="The project share state")]
-ProjectStateRunningState: TypeAlias = Annotated[ProjectRunningState, Field(description="The project running state")]
+type ProjectStateShareState = Annotated[ProjectShareState, Field(description="The project share state")]
+type ProjectStateRunningState = Annotated[ProjectRunningState, Field(description="The project running state")]
 
 
 class ProjectState(BaseModel):

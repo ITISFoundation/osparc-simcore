@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Mapping
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any, Final, Literal, TypeAlias
 from uuid import UUID
 
@@ -23,13 +23,13 @@ from .utils.change_case import snake_to_camel
 TaskID: TypeAlias = str
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
-FileID: TypeAlias = UUID
+type FileID = UUID
 
-InputTypes: TypeAlias = FileID | float | int | bool | str | list
+type InputTypes = FileID | float | int | bool | str | list
 _MAX_LIST_LENGTH: Final[int] = 50
 
 
-class FunctionSchemaClass(str, Enum):
+class FunctionSchemaClass(StrEnum):
     json_schema = "application/schema+json"
 
 
@@ -53,18 +53,18 @@ class JSONFunctionOutputSchema(JSONFunctionSchema):
     schema_class: Literal[FunctionSchemaClass.json_schema] = FunctionSchemaClass.json_schema
 
 
-FunctionInputSchema: TypeAlias = Annotated[
+type FunctionInputSchema = Annotated[
     JSONFunctionInputSchema,
     Field(discriminator="schema_class"),
 ]
 
-FunctionOutputSchema: TypeAlias = Annotated[
+type FunctionOutputSchema = Annotated[
     JSONFunctionOutputSchema,
     Field(discriminator="schema_class"),
 ]
 
 
-class FunctionClass(str, Enum):
+class FunctionClass(StrEnum):
     PROJECT = "PROJECT"
     SOLVER = "SOLVER"
     PYTHON_CODE = "PYTHON_CODE"
@@ -76,17 +76,17 @@ FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
 
 # NOTE, use InputTypes here, but api is throwing weird errors and asking for dict for elements
 # see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
-FunctionInputs: TypeAlias = dict[str, Any] | None
+type FunctionInputs = dict[str, Any] | None
 
-FunctionInputsList: TypeAlias = Annotated[
+type FunctionInputsList = Annotated[
     list[FunctionInputs],
     Field(max_length=_MAX_LIST_LENGTH),
 ]
 
 
-FunctionOutputs: TypeAlias = dict[str, Any] | None
+type FunctionOutputs = dict[str, Any] | None
 
-FunctionOutputsLogfile: TypeAlias = Any
+type FunctionOutputsLogfile = Any
 
 
 class FunctionBase(BaseModel):
@@ -148,7 +148,7 @@ class RegisteredProjectFunction(ProjectFunction, RegisteredFunctionBase):
     )
 
 
-SolverJobID: TypeAlias = UUID
+type SolverJobID = UUID
 
 
 class SolverFunction(FunctionBase):
@@ -170,16 +170,16 @@ class RegisteredPythonCodeFunction(PythonCodeFunction, RegisteredFunctionBase):
     pass
 
 
-Function: TypeAlias = Annotated[
+type Function = Annotated[
     ProjectFunction | PythonCodeFunction | SolverFunction,
     Field(discriminator="function_class"),
 ]
-RegisteredFunction: TypeAlias = Annotated[
+type RegisteredFunction = Annotated[
     RegisteredProjectFunction | RegisteredPythonCodeFunction | RegisteredSolverFunction,
     Field(discriminator="function_class"),
 ]
 
-FunctionJobCollectionID: TypeAlias = projects.ProjectID
+type FunctionJobCollectionID = projects.ProjectID
 
 
 class FunctionJobBase(BaseModel):
@@ -235,11 +235,11 @@ class RegisteredPythonCodeFunctionJobPatch(BaseModel):
     description: str | None
 
 
-FunctionJob: TypeAlias = Annotated[
+type FunctionJob = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
-FunctionJobList: TypeAlias = Annotated[list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH)]
+type FunctionJobList = Annotated[list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH)]
 
 
 class RegisteredFunctionJobBase(FunctionJobBase):
@@ -259,7 +259,7 @@ class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJ
     pass
 
 
-RegisteredFunctionJob: TypeAlias = Annotated[
+type RegisteredFunctionJob = Annotated[
     RegisteredProjectFunctionJob | RegisteredPythonCodeFunctionJob | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
@@ -288,7 +288,7 @@ class FunctionJobPatchRequest(BaseModel):
     patch: RegisteredFunctionJobPatch
 
 
-FunctionJobPatchRequestList: TypeAlias = Annotated[
+type FunctionJobPatchRequestList = Annotated[
     list[FunctionJobPatchRequest],
     Field(
         max_length=_MAX_LIST_LENGTH,
@@ -317,7 +317,7 @@ class RegisteredPythonCodeFunctionJobWithStatus(RegisteredPythonCodeFunctionJob,
     pass
 
 
-RegisteredFunctionJobWithStatus: TypeAlias = Annotated[
+type RegisteredFunctionJobWithStatus = Annotated[
     RegisteredProjectFunctionJobWithStatus
     | RegisteredPythonCodeFunctionJobWithStatus
     | RegisteredSolverFunctionJobWithStatus,
@@ -471,15 +471,15 @@ class FunctionUserApiAccessRights(BaseModel):
     )
 
 
-FunctionJobAccessRights: TypeAlias = FunctionAccessRights
-FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB
-FunctionJobUserAccessRights: TypeAlias = FunctionUserAccessRights
-FunctionJobGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+type FunctionJobAccessRights = FunctionAccessRights
+type FunctionJobAccessRightsDB = FunctionAccessRightsDB
+type FunctionJobUserAccessRights = FunctionUserAccessRights
+type FunctionJobGroupAccessRights = FunctionGroupAccessRights
 
-FunctionJobCollectionAccessRights: TypeAlias = FunctionAccessRights
-FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB
-FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
-FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+type FunctionJobCollectionAccessRights = FunctionAccessRights
+type FunctionJobCollectionAccessRightsDB = FunctionAccessRightsDB
+type FunctionJobCollectionUserAccessRights = FunctionUserAccessRights
+type FunctionJobCollectionGroupAccessRights = FunctionGroupAccessRights
 
 
 class FunctionsApiAccessRights(StrAutoEnum):
