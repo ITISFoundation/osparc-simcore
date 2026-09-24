@@ -80,12 +80,12 @@ psycogreen==1.0.2
     # via locust-plugins
 psycopg2-binary==2.9.11
     # via locust-plugins
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   -r requirements/_test.in
     #   jsf
     #   pydantic-settings
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via pydantic
 pydantic-settings==2.14.2
     # via -r requirements/_test.in

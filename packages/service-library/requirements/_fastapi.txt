@@ -101,13 +101,13 @@ packaging==26.0
     # via opentelemetry-instrumentation
 prometheus-client==0.26.0
     # via -r requirements/_fastapi.in
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   fastapi
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via pydantic
 pydantic-extra-types==2.11.1
     # via fastapi
