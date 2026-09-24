@@ -25,14 +25,10 @@ Please preserve the following behaviors when implementing batch operations:
     - https://google.aip.dev/231
 """
 
-from typing import Annotated, TypeVar
+from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter
-
-ResourceT = TypeVar("ResourceT")
-IdentifierT = TypeVar("IdentifierT")
-SchemaT = TypeVar("SchemaT")
 
 
 def _deduplicate_preserving_order[IdentifierT](identifiers: list[IdentifierT]) -> list[IdentifierT]:

@@ -1,6 +1,6 @@
 import os
 from copy import deepcopy
-from typing import Annotated, Any, Final, TypeVar
+from typing import Annotated, Any, Final
 
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, Discriminator, PositiveInt, Tag
@@ -9,8 +9,6 @@ from models_library.basic_types import ConstrainedStr
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 from .utils.types import get_types_from_annotated_union
-
-T = TypeVar("T")
 
 
 class _BaseOsparcVariableIdentifier(ConstrainedStr):

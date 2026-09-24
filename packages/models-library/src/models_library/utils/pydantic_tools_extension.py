@@ -1,8 +1,4 @@
-from typing import TypeVar
-
 from pydantic import TypeAdapter, ValidationError
-
-T = TypeVar("T")
 
 
 def parse_obj_or_none[T](type_: type[T], obj) -> T | None:
