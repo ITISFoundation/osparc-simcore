@@ -31,6 +31,7 @@ pytest_plugins = [
     "pytest_simcore.file_extra",
     "pytest_simcore.logging",
     "pytest_simcore.s3_storage_service",
+    "pytest_simcore.postgres_live_stack_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.r_clone",

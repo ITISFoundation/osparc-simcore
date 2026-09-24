@@ -6,10 +6,10 @@ SEE https://scicrunch.org/resolver
 
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from aiohttp import ClientSession
-from pydantic import Field, ValidationError
+from pydantic import BeforeValidator, Field, ValidationError
 from pydantic.main import BaseModel
 from pydantic.types import NonNegativeInt
 
@@ -49,8 +49,16 @@ class HitDetail(BaseModel):
     source: HitSource = Field(..., alias="_source")
 
 
+def _extract_total(total: Any) -> Any:
+    # NOTE: scicrunch API changed (Sep.2026): "total" can be reported as an
+    # Elasticsearch-style object, e.g. {"value": 1, "relation": "eq"}
+    if isinstance(total, dict):
+        return total.get("value")
+    return total
+
+
 class Hits(BaseModel):
-    total: NonNegativeInt
+    total: Annotated[NonNegativeInt, BeforeValidator(_extract_total)]
     hits: list[HitDetail]
 
 

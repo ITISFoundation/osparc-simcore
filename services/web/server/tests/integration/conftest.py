@@ -25,6 +25,7 @@ from string import Template
 from unittest import mock
 
 import pytest
+import sqlalchemy as sa
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
@@ -35,6 +36,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 _logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def postgres_db(postgres_live_stack_db: sa.engine.Engine) -> sa.engine.Engine:
+    """Shadows the template-clone `postgres_db` from `pytest_simcore.postgres_service`
+    with the in-place + teardown-reset variant required by live-stack integration
+    tests, see `pytest_simcore.postgres_live_stack_service`.
+    """
+    return postgres_live_stack_db
 
 
 @pytest.fixture(scope="module")
