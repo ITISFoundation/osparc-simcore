@@ -31,6 +31,15 @@ from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
 
+@pytest.fixture(scope="module")
+def postgres_db(postgres_live_stack_db: sa.engine.Engine) -> sa.engine.Engine:
+    """Shadows the template-clone `postgres_db` from `pytest_simcore.postgres_service`
+    with the in-place + teardown-reset variant required by live-stack integration
+    tests, see `pytest_simcore.postgres_live_stack_service`.
+    """
+    return postgres_live_stack_db
+
+
 @pytest.fixture
 def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
     # inject user in db
