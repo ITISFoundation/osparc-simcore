@@ -13,6 +13,7 @@ No two replicas can ever process events for the same aggregate concurrently,
 while different aggregates remain fully parallel.
 """
 
+import datetime as dt
 from collections.abc import Sequence
 from typing import Final
 
@@ -35,6 +36,7 @@ from .errors import CompTaskNotFoundError
 from .models import (
     AggregateID,
     AggregateType,
+    ClaimableAggregate,
     ClaimedAggregate,
     CompTask,
     FailedAttempt,
@@ -47,7 +49,7 @@ MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE: Final[int] = 100
 LAST_ERROR_MAX_LEN: Final[int] = 500
 
 
-def _claimable_events_predicate(exclude_aggregates: set[tuple[AggregateType, AggregateID]]) -> ColumnElement[bool]:
+def _claimable_events_predicate(exclude_aggregates: set[ClaimableAggregate]) -> ColumnElement[bool]:
     """Predicate selecting events this worker may claim: own kind, not exhausted,
     and not an aggregate the current drain already failed on."""
     claimable = (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC) & (
@@ -55,43 +57,23 @@ def _claimable_events_predicate(exclude_aggregates: set[tuple[AggregateType, Agg
     )
     if exclude_aggregates:
         claimable = claimable & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
-            list(exclude_aggregates)
+            [(a.kind, a.aggregate_id) for a in exclude_aggregates]
         )
     return claimable
 
 
-async def acquire_next_claimable_aggregate(
-    conn: AsyncConnection, exclude_aggregates: set[tuple[AggregateType, AggregateID]]
-) -> ClaimedAggregate | None:
-    """Pick, advisory-lock, and row-lock the oldest claimable aggregate no other replica holds.
+async def list_claimable_aggregates(
+    conn: AsyncConnection, exclude_aggregates: set[ClaimableAggregate]
+) -> list[ClaimableAggregate]:
+    """List the oldest claimable aggregates (read-only: no locking at all).
 
-    The oldest distinct aggregates are listed with a read-only query (no locking at
-    all), so candidate selection can never block or strand another replica. Their
-    aggregates are then offered the per-aggregate advisory lock
-    (pg_try_advisory_xact_lock, keyed on kind + aggregate_id) one at a time: an
-    aggregate already processed by another replica is skipped and stays fully
-    parallel to it. Including kind in the lock key keeps this worker's lock
-    namespace separate from other (future) producers that may reuse the same id space.
-
-    Once a lock is won, its rows are re-checked with FOR UPDATE SKIP LOCKED: if they
-    were claimed and deleted by another replica between the read-only scan above and
-    the lock being granted, that candidate is skipped (the harmless advisory lock is
-    kept until commit) and the next one is tried -- so a single raced-away candidate
-    can never end candidate selection early while others in the same batch are still
-    free. Holding the row lock until commit guarantees events of the same aggregate
-    are never processed concurrently, so socketio notifications for one aggregate
-    can't be emitted out of order across replicas.
-
-    Returns the ClaimedAggregate (the locked event ids plus the union of their
-    changed_columns), or None when no candidate aggregate is both free and still
-    pending.
+    One row per *distinct* aggregate (GROUP BY), oldest aggregate first, so a burst
+    of events on one aggregate locked elsewhere cannot crowd healthy aggregates out
+    of the batch. The drain reuses this bounded batch across claims and only pays
+    the scan cost again once the batch is exhausted, which keeps draining a backlog
+    linear in the number of claimed aggregates.
     """
     claimable = _claimable_events_predicate(exclude_aggregates)
-
-    # one row per aggregate (GROUP BY), oldest aggregate first: the batch limit then
-    # covers MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT *distinct* aggregates, so a
-    # burst of events on one aggregate locked elsewhere cannot crowd healthy
-    # aggregates out of the batch
     candidate_rows = (
         await conn.execute(
             select(outbox_events.c.kind, outbox_events.c.aggregate_id)
@@ -100,42 +82,60 @@ async def acquire_next_claimable_aggregate(
             .order_by(func.min(outbox_events.c.modified), func.min(outbox_events.c.id))
             .limit(MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT)
         )
-    ).all()
+    ).fetchall()
+    return [ClaimableAggregate(kind=r.kind, aggregate_id=r.aggregate_id) for r in candidate_rows]
 
-    for kind, aggregate_id in candidate_rows:
-        # lock namespace must match the claim namespace (kind + aggregate_id):
-        # another producer reusing the same id space must not collide with ours
-        acquired = (
-            await conn.execute(
-                select(func.pg_try_advisory_xact_lock(func.hashtextextended(f"{kind}:{aggregate_id}", 0)))
-            )
-        ).scalar_one()
-        if not acquired:
-            continue
 
-        co_claimed_rows = (
-            await conn.execute(
-                select(outbox_events.c.id, outbox_events.c.changed_columns)
-                .where(
-                    outbox_events.c.kind == kind,
-                    outbox_events.c.aggregate_id == aggregate_id,
-                    outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
-                )
-                .order_by(outbox_events.c.modified, outbox_events.c.id)
-                .limit(MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE)
-                .with_for_update(skip_locked=True)
+async def claim_aggregate(conn: AsyncConnection, candidate: ClaimableAggregate) -> ClaimedAggregate | None:
+    """Advisory-lock and row-lock a known aggregate, co-claiming its pending events.
+
+    The per-aggregate advisory lock (pg_try_advisory_xact_lock, keyed on kind +
+    aggregate_id) is taken first: an aggregate already processed by another replica
+    is skipped and stays fully parallel to it. Including kind in the lock key keeps
+    this worker's lock namespace separate from other (future) producers that may
+    reuse the same id space.
+
+    Once the lock is won, the events are re-checked with FOR UPDATE SKIP LOCKED: if
+    they were claimed and deleted by another replica between the read-only scan and
+    the lock being granted, this returns None (the harmless advisory lock is kept
+    until commit) and the caller moves on to the next candidate.
+
+    Holding the row lock until commit guarantees events of the same aggregate are
+    never processed concurrently, so socketio notifications for one aggregate can't
+    be emitted out of order across replicas.
+
+    Returns the ClaimedAggregate (the locked event ids plus the union of their
+    changed_columns), or None when the aggregate is locked elsewhere or has no
+    claimable event left.
+    """
+    lock_key = f"{candidate.kind}:{candidate.aggregate_id}"
+    acquired = (
+        await conn.execute(select(func.pg_try_advisory_xact_lock(func.hashtextextended(lock_key, 0))))
+    ).scalar_one()
+    if not acquired:
+        return None
+
+    co_claimed_rows = (
+        await conn.execute(
+            select(outbox_events.c.id, outbox_events.c.changed_columns)
+            .where(
+                outbox_events.c.kind == candidate.kind,
+                outbox_events.c.aggregate_id == candidate.aggregate_id,
+                outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
             )
-        ).fetchall()
-        if co_claimed_rows:
-            return ClaimedAggregate(
-                kind=AggregateType(kind),
-                aggregate_id=AggregateID(aggregate_id),
-                event_ids=[OutboxEventID(r.id) for r in co_claimed_rows],
-                changed_columns=frozenset(col for r in co_claimed_rows for col in (r.changed_columns or [])),
-            )
-        # raced away since the read-only scan above: try the next candidate instead
-        # of giving up on the whole batch
-    return None
+            .order_by(outbox_events.c.modified, outbox_events.c.id)
+            .limit(MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE)
+            .with_for_update(skip_locked=True)
+        )
+    ).fetchall()
+    if not co_claimed_rows:
+        return None
+    return ClaimedAggregate(
+        kind=candidate.kind,
+        aggregate_id=candidate.aggregate_id,
+        event_ids=[OutboxEventID(r.id) for r in co_claimed_rows],
+        changed_columns=frozenset(col for r in co_claimed_rows for col in (r.changed_columns or [])),
+    )
 
 
 async def remove_claimed_events(conn: AsyncConnection, event_ids: Sequence[OutboxEventID]) -> None:
@@ -176,6 +176,25 @@ async def record_failed_attempts(
             )
             for r in result.fetchall()
         ]
+
+
+async def delete_expired_dead_letters(engine: AsyncEngine, retention: dt.timedelta) -> int:
+    """Delete dead-lettered events older than the retention period, returning the number of rows removed.
+
+    Dead-lettered events (attempts exhausted) are kept for post-mortem, but without a
+    bound they accumulate forever: claims skip them via the attempts filter, yet the
+    candidate scan still reads them on every drain. Deleting them once they are older
+    than ``retention`` bounds that scan while keeping recent failures investigable.
+    """
+    async with transaction_context(engine) as conn:
+        result = await conn.execute(
+            outbox_events.delete().where(
+                outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC,
+                outbox_events.c.attempts >= EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
+                outbox_events.c.modified < dt.datetime.now(dt.UTC) - retention,
+            )
+        )
+        return result.rowcount if result.rowcount is not None else 0
 
 
 async def get_comp_task(conn: AsyncConnection, task_id: int) -> CompTask:

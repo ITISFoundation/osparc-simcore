@@ -1136,6 +1136,17 @@ async def test_concurrent_claims_process_different_aggregates_in_parallel(
                 comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
             )
 
+    # both claims must be projecting at the same time to pass: the barrier only clears
+    # once the two concurrent projections reach it, so if the advisory lock serialized
+    # the aggregates the first claim would block forever and the wait_for would time out
+    barrier = asyncio.Barrier(2)
+
+    async def _rendezvous_on_projection(*args: Any, **kwargs: Any) -> str:
+        await asyncio.wait_for(barrier.wait(), timeout=5.0)
+        return ""
+
+    mock_project_subsystem["update_node_outputs"].side_effect = _rendezvous_on_projection
+
     results = await asyncio.gather(
         _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),
         _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()),

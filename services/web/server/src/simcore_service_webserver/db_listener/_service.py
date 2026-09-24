@@ -18,9 +18,11 @@ payload did. All pending events of the same aggregate are coalesced into a singl
 projection (union of their changed_columns), so a burst of changes to one task
 produces one socketio notification instead of one per event.
 Failed attempts are counted on the row itself; events that exceed the maximum
-number of attempts are dead-lettered (skipped by claims, kept for post-mortem).
+number of attempts are dead-lettered (skipped by claims, kept for post-mortem
+until a periodic purge removes them once they age out).
 """
 
+import datetime
 import logging
 from typing import Final
 
@@ -29,7 +31,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from simcore_postgres_database.utils_repos import transaction_context
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -42,9 +44,11 @@ from ..projects.api import (
 )
 from ._repository import (
     EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
-    acquire_next_claimable_aggregate,
+    claim_aggregate,
+    delete_expired_dead_letters,
     get_comp_task,
     get_project_owner,
+    list_claimable_aggregates,
     record_failed_attempts,
     remove_claimed_events,
 )
@@ -53,13 +57,14 @@ from .errors import CompTaskNotFoundError, OutboxProcessingError
 from .models import (
     DB_OUTBOX_CHANGED_COLUMN_STATE,
     DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS,
-    AggregateID,
-    AggregateType,
+    ClaimableAggregate,
     ClaimOutcome,
     FailedAttempt,
 )
 
 _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
+
+_DEAD_LETTER_RETENTION: Final[datetime.timedelta] = datetime.timedelta(days=30)
 
 # only these count towards _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: a broken DB/socket
 # connection affects every aggregate alike, unlike an application-level bug tied to
@@ -161,47 +166,40 @@ async def _process_outbox_event(
         )
 
 
-async def _claim_and_process_one_outbox_event(
-    app: web.Application,
-    engine: AsyncEngine,
-    exclude_aggregates: set[tuple[AggregateType, AggregateID]],
+async def _claim_and_process_aggregate(
+    app: web.Application, engine: AsyncEngine, candidate: ClaimableAggregate
 ) -> ClaimOutcome | None:
     """Claim, process, and delete every pending event of one aggregate (at-least-once).
 
     Claiming never locks more than the aggregate it is about to process:
-    _repository.acquire_next_claimable_aggregate elects (via the per-aggregate advisory
-    lock) the oldest claimable aggregate no other replica holds; only then are event
-    rows locked -- all pending events of the winning aggregate are co-claimed
-    (FOR UPDATE SKIP LOCKED) and projected once: the union of their changed_columns
-    describes everything that happened since the last projection, and
-    _process_outbox_event re-reads the current comp_tasks row, so a burst of N events
-    for one aggregate fans out a single socketio notification instead of N.
+    _repository.claim_aggregate takes the per-aggregate advisory lock and only then
+    row-locks the events -- all pending events of the winning aggregate are
+    co-claimed (FOR UPDATE SKIP LOCKED) and projected once: the union of their
+    changed_columns describes everything that happened since the last projection,
+    and _process_outbox_event re-reads the current comp_tasks row, so a burst of N
+    events for one aggregate fans out a single socketio notification instead of N.
 
-    The claim-process-delete cycle runs in a single transaction: the advisory lock and
-    the winner's row locks are held while the events are processed, and released
+    The claim-process-delete cycle runs in a single transaction: the advisory lock
+    and the winner's row locks are held while the events are processed, and released
     automatically on commit or rollback. A failed projection rolls back only the
     *claim* (locks + pending delete): the projection itself writes through the app's
-    repositories and socket.io -- outside this transaction -- so those writes are not
-    undone and the retried attempt converges by re-reading the current row
+    repositories and socket.io -- outside this transaction -- so those writes are
+    not undone and the retried attempt converges by re-reading the current row
     (at-least-once delivery).
 
-    ``exclude_aggregates`` is a set of (kind, aggregate_id) pairs the drain wants to
-    skip, so an aggregate that already failed in this drain cannot starve the rest of
-    the queue.
-
-    Returns the ClaimOutcome (success flag + the aggregate claimed), or None when no
-    event could be claimed -- either the queue is drained, or every candidate's
-    aggregate is currently locked by another replica (retried on the next cycle).
+    Returns the ClaimOutcome (success flag + the aggregate claimed), or None when
+    the aggregate is currently claimed by another replica or lost its pending events
+    in the meantime (the caller moves on to its next candidate).
 
     NOTE: processing runs while the transaction (and both locks) is open, so it must
     remain short-lived (DB updates + socketio notifications only).
     """
     try:
         async with transaction_context(engine) as conn:
-            # elect one free aggregate (advisory lock + row lock) before processing
-            claimed = await acquire_next_claimable_aggregate(conn, exclude_aggregates)
+            # win the aggregate (advisory lock + row lock) before processing
+            claimed = await claim_aggregate(conn, candidate)
             if claimed is None:
-                # drained, or every candidate aggregate is locked by another replica
+                # locked by another replica, or its events were claimed in-between
                 return None
 
             _logger.debug(
@@ -231,7 +229,27 @@ async def _claim_and_process_one_outbox_event(
             is_infra_error=isinstance(failed.cause, _INFRA_EXCEPTION_TYPES),
         )
 
-    return ClaimOutcome(success=True, kind=claimed.kind, aggregate_id=claimed.aggregate_id)
+    return ClaimOutcome(success=True, kind=candidate.kind, aggregate_id=candidate.aggregate_id)
+
+
+async def _claim_and_process_one_outbox_event(
+    app: web.Application,
+    engine: AsyncEngine,
+    exclude_aggregates: set[ClaimableAggregate],
+) -> ClaimOutcome | None:
+    """Convenience for tests and single-shot claims: scan, then claim the first free
+    candidate. The drain reuses a bounded batch instead and must not call this per claim.
+
+    ``exclude_aggregates`` is a set of (kind, aggregate_id) pairs to skip, so an
+    aggregate that already failed cannot starve the rest of the queue.
+    """
+    async with pass_or_acquire_connection(engine) as conn:
+        candidates = await list_claimable_aggregates(conn, exclude_aggregates)
+    for candidate in candidates:
+        outcome = await _claim_and_process_aggregate(app, engine, candidate)
+        if outcome is not None:
+            return outcome
+    return None
 
 
 def _log_failed_attempts(failed_attempts: list[FailedAttempt], error: Exception) -> None:
@@ -276,24 +294,55 @@ async def claim_and_process_outbox_events(app: web.Application, engine: AsyncEng
 
     The drain also stops when every claimable event's aggregate is currently locked
     by another replica: the next cycle will retry, by which time that replica is likely done.
+
+    Claim candidates come from a bounded batch (list_claimable_aggregates) that is
+    refilled only once exhausted, so draining a backlog of N aggregates costs O(N)
+    scans rather than one scan per claim. Stale candidates (claimed elsewhere or
+    failed in this drain) are skipped from memory and cost only a cheap claim
+    attempt, and the batch limit bounds how many of them can accumulate per refill.
     """
-    failed_aggregates: set[tuple[AggregateType, AggregateID]] = set()
+    failed_aggregates: set[ClaimableAggregate] = set()
     consecutive_infra_failed_aggregates = 0
     while True:
-        outcome = await _claim_and_process_one_outbox_event(app, engine, failed_aggregates)
-        if outcome is None:
-            return  # queue drained, or all remaining aggregates are locked elsewhere
-        if outcome.success:
-            consecutive_infra_failed_aggregates = 0
-            continue
-        failed_aggregates.add((outcome.kind, outcome.aggregate_id))
-        if not outcome.is_infra_error:
-            continue  # application-level failure: does not threaten the rest of the drain
-        consecutive_infra_failed_aggregates += 1
-        if consecutive_infra_failed_aggregates >= _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN:
-            _logger.warning(
-                "Stopping outbox drain after %d aggregates failed with an infrastructure-like"
-                " error and no success in-between; will retry on next cycle",
-                consecutive_infra_failed_aggregates,
-            )
+        async with pass_or_acquire_connection(engine) as conn:
+            batch = await list_claimable_aggregates(conn, failed_aggregates)
+        batch_was_claimable = False
+        for candidate in batch:
+            # (candidates already excluded from the scan by failed_aggregates)
+            outcome = await _claim_and_process_aggregate(app, engine, candidate)
+            if outcome is None:
+                continue  # aggregate locked by another replica: move on to the next candidate
+            batch_was_claimable = True
+            if outcome.success:
+                consecutive_infra_failed_aggregates = 0
+                continue
+            failed_aggregates.add(ClaimableAggregate(kind=outcome.kind, aggregate_id=outcome.aggregate_id))
+            if not outcome.is_infra_error:
+                continue  # application-level failure: does not threaten the rest of the drain
+            consecutive_infra_failed_aggregates += 1
+            if consecutive_infra_failed_aggregates >= _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN:
+                _logger.warning(
+                    "Stopping outbox drain after %d aggregates failed with an infrastructure-like"
+                    " error and no success in-between; will retry on next cycle",
+                    consecutive_infra_failed_aggregates,
+                )
+                return
+        if not batch_was_claimable:
+            # queue drained, or everything still pending is locked elsewhere:
+            # rescanning now would just find the same batch again, so stop here
             return
+
+
+async def purge_dead_letters(engine: AsyncEngine) -> None:
+    """Remove dead-lettered events past the retention period (periodic maintenance).
+
+    With several replicas the purge may run on all of them, which is harmless: the
+    DELETE is idempotent and only removes rows every replica agrees are expired.
+    """
+    removed = await delete_expired_dead_letters(engine, _DEAD_LETTER_RETENTION)
+    if removed:
+        _logger.info(
+            "Removed %d dead-lettered outbox event(s) older than %s",
+            removed,
+            _DEAD_LETTER_RETENTION,
+        )
