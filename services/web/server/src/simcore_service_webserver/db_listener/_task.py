@@ -23,9 +23,11 @@ from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
 from .._meta import APP_NAME
 from ..db.plugin import get_asyncpg_engine
 from ..db.settings import get_plugin_settings
-from ._service import claim_and_process_outbox_events
+from ._service import claim_and_process_outbox_events, purge_dead_letters
 
-_OUTBOX_POLL_INTERVAL_S: Final[int] = 30
+_OUTBOX_POLL_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
+
+_DEAD_LETTER_PURGE_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(hours=1)
 
 # shown as pg_stat_activity.application_name for the dedicated LISTEN connection,
 # so it can be told apart from the app's pooled connections in e.g. Adminer
@@ -81,9 +83,16 @@ async def with_outbox_wakeup_listener(
         try:
             yield wakeup_event
         finally:
-            await listen_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
+            if not listen_conn.is_closed():
+                # removing the listener on an already-dropped connection raises
+                # InterfaceError and would break the app's shutdown
+                await listen_conn.remove_listener(DB_CHANNEL_NAME, _on_wakeup)
     finally:
-        await listen_conn.close()
+        try:
+            await listen_conn.close()
+        except Exception:  # pylint: disable=broad-except
+            # the connection may already be gone (e.g. server restart); nothing left to clean
+            _logger.debug("outbox wake-up connection could not be closed cleanly", exc_info=True)
 
 
 async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterator[None]:
@@ -94,10 +103,16 @@ async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterato
         with_outbox_wakeup_listener(app) as wakeup_event,
         periodic_task(
             claim_and_process_outbox_events,
-            interval=datetime.timedelta(seconds=_OUTBOX_POLL_INTERVAL_S),
+            interval=_OUTBOX_POLL_INTERVAL,
             task_name="outbox projector",
             early_wake_up_event=wakeup_event,
             app=app,
+            engine=get_asyncpg_engine(app),
+        ),
+        periodic_task(
+            purge_dead_letters,
+            interval=_DEAD_LETTER_PURGE_INTERVAL,
+            task_name="dead-letter purger",
             engine=get_asyncpg_engine(app),
         ),
     ):

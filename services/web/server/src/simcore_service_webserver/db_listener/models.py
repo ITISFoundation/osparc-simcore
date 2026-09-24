@@ -28,6 +28,7 @@ __all__ = (
     "AggregateID",
     "AggregateType",
     "ClaimOutcome",
+    "ClaimableAggregate",
     "ClaimedAggregate",
     "CompTask",
     "FailedAttempt",
@@ -49,11 +50,16 @@ class ClaimOutcome(_BaseFrozenModel):
     is_infra_error: bool = False
 
 
-class ClaimedAggregate(_BaseFrozenModel):
-    """All outbox events a single claim won for one aggregate."""
+class ClaimableAggregate(_BaseFrozenModel):
+    """Aggregate with at least one claimable outbox event, as listed by a candidate scan."""
 
     kind: AggregateType
     aggregate_id: AggregateID
+
+
+class ClaimedAggregate(ClaimableAggregate):
+    """All outbox events a single claim won for one aggregate."""
+
     event_ids: list[OutboxEventID]
     # union of the changed_columns of all co-claimed events
     changed_columns: frozenset[str]
