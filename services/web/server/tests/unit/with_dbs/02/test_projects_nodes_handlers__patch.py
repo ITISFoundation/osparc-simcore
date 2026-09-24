@@ -262,6 +262,8 @@ async def test_patch_computational_project_node_notifies_only_updated_node(
 
     await assert_status(resp, expected)
     mocked_notify_project_node_update.assert_awaited_once()
+    # REST-triggered notifications are not strict (only the outbox consumer is)
+    assert not mocked_notify_project_node_update.await_args.kwargs.get("strict", False)
     notified_project = mocked_notify_project_node_update.await_args.args[1]
     assert set(notified_project["workbench"]) == {node_id}
     assert notified_project["workbench"][node_id]["label"] == "updated label"
@@ -299,6 +301,8 @@ async def test_patch_project_node_notifies_outputs_updated_during_pipeline_sync(
 
     await assert_status(resp, expected)
     mocked_notify_project_node_update.assert_awaited_once()
+    # REST-triggered notifications are not strict (only the outbox consumer is)
+    assert not mocked_notify_project_node_update.await_args.kwargs.get("strict", False)
     notified_project = mocked_notify_project_node_update.await_args.args[1]
     assert notified_project["workbench"][node_id]["outputs"] == outputs_updated_during_pipeline_sync
 
@@ -369,6 +373,8 @@ async def test_patch_project_node_inputs_notifies(
     notify_project_nodes_update.assert_awaited_once()
     list_project_groups.assert_awaited_once()
     assert notify_project_nodes_update.await_args is not None
+    # REST-triggered notifications are not strict (only the outbox consumer is)
+    assert not notify_project_nodes_update.await_args.kwargs.get("strict", False)
     assert not DeepDiff(
         [f"{node_id}" for node_id in notify_project_nodes_update.await_args.args[2]],
         list(user_project["workbench"].keys()),

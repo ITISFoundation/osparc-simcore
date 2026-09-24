@@ -25,13 +25,19 @@ async def _safe_emit(
     room: SocketIORoomStr,
     message: SocketMessageDict,
     ignore_queue: bool,
+    strict: bool,
 ):
     # NOTE 1 : we configured message queue (i.e. socketio servers are backed with rabbitMQ)
     # so if `ignore_queue=True` then the server can directly communicate with the
     # client without having to send his message first to rabbitMQ and then back to itself.
     #
     # NOTE 2: `emit` method is not designed to be used concurrently
-    with log_catch(_logger, reraise=False):
+    #
+    # NOTE 3: emitting to a room with no members (e.g. all users disconnected) is a
+    # no-op that never raises; `strict=True` only propagates real emit failures
+    # (e.g. the RabbitMQ-backed manager is down), for callers that must not treat
+    # a lost notification as success (e.g. the outbox consumer, at-least-once).
+    with log_catch(_logger, reraise=strict):
         event = message["event_type"]
         data = jsonable_encoder(message["data"])
         await sio.emit(
@@ -49,6 +55,7 @@ async def send_message_to_user(
     message: SocketMessageDict,
     *,
     ignore_queue: bool = False,
+    strict: bool = False,
 ) -> None:
     """
     Keyword Arguments:
@@ -64,6 +71,7 @@ async def send_message_to_user(
         room=SocketIORoomStr.from_user_id(user_id),
         message=message,
         ignore_queue=ignore_queue,
+        strict=strict,
     )
 
 
@@ -71,6 +79,8 @@ async def send_message_to_standard_group(
     app: Application,
     group_id: StandardGroupID,
     message: SocketMessageDict,
+    *,
+    strict: bool = False,
 ) -> None:
     """
     WARNING: please do not use primary groups here. To transmit to the
@@ -87,6 +97,7 @@ async def send_message_to_standard_group(
         # NOTE: A standard group refers to different users
         # that might be connected to different replicas
         ignore_queue=False,
+        strict=strict,
     )
 
 
@@ -94,6 +105,8 @@ async def send_message_to_project_room(
     app: Application,
     project_id: ProjectID,
     message: SocketMessageDict,
+    *,
+    strict: bool = False,
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
@@ -102,4 +115,5 @@ async def send_message_to_project_room(
         room=SocketIORoomStr.from_project_id(project_id),
         message=message,
         ignore_queue=False,
+        strict=strict,
     )
