@@ -306,17 +306,17 @@ async def test_conversation_messages_validation_errors(
     # Test creating message with missing content
     body = {"type": "MESSAGE"}
     resp = await client.post(f"{create_url}", json=body)
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test creating message with missing type
     body = {"content": "Test message"}
     resp = await client.post(f"{create_url}", json=body)
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test creating message with invalid type
     body = {"content": "Test message", "type": "INVALID_TYPE"}
     resp = await client.post(f"{create_url}", json=body)
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test creating message with empty content
     body = {"content": "", "type": "MESSAGE"}

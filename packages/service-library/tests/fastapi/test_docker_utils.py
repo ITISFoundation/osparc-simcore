@@ -229,9 +229,13 @@ async def test_pull_image_without_layer_information(
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
-    expected_warning = "pulling image without layer information"
+    # NOTE: since the extraction might go very fast on a local machine vs EC2 we skip that warning here
+    expected_warnings = ["pulling image without layer information", "Estimated extraction for"]
     assert not [
-        r.message for r in caplog.records if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING"
+        and not any(r.message.startswith(expected_warning) for expected_warning in expected_warnings)
     ]
 
     # pull a second time should, the image is already there, but the progress is then 0
@@ -247,7 +251,10 @@ async def test_pull_image_without_layer_information(
     _assert_progress_report_values(mocked_progress_cb, total=1)
     # check there were no warnings
     assert not [
-        r.message for r in caplog.records if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING"
+        and not any(r.message.startswith(expected_warning) for expected_warning in expected_warnings)
     ]
 
 

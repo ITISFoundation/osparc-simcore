@@ -1,0 +1,56 @@
+name: CodSpeed
+# NOTE: this workflow measures the CPU performance of the benchmark suite in
+# 'tests/benchmarks' and reports it to CodSpeed (https://app.codspeed.io/ITISFoundation/osparc-simcore).
+#
+# - on 'push' to master: builds the performance baseline
+# - on 'pull_request': compares against the baseline and comments on regressions
+# - 'workflow_dispatch': allows CodSpeed to trigger a backtest analysis
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # required for OpenID Connect authentication with CodSpeed
+  id-token: write
+
+env:
+  COLUMNS: 120
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmarks:
+    timeout-minutes: 30
+    name: "[benchmarks] codspeed"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/benchmarks/requirements/ci.txt"
+          setup-docker: "false"
+          expose-github-runtime: "false"
+      - name: install
+        run: ./ci/github/benchmarks/codspeed.bash install
+      - name: benchmark
+        uses: CodSpeedHQ/action@v5.2.1
+        with:
+          mode: simulation
+          run: ./ci/github/benchmarks/codspeed.bash benchmark

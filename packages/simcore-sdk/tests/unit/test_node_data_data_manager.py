@@ -9,6 +9,7 @@ from pathlib import Path
 from shutil import copy, make_archive
 from unittest import mock
 
+import aiofiles.os
 import pytest
 from faker import Faker
 from models_library.projects import ProjectID
@@ -50,7 +51,7 @@ def r_clone_settings(faker: Faker) -> RCloneSettings:
                 "S3_SECRET_KEY": faker.pystr(),
                 "S3_BUCKET_NAME": faker.pystr(),
             },
-            "R_CLONE_PROVIDER": S3Provider.MINIO,
+            "R_CLONE_PROVIDER": S3Provider.RUSTFS,
         }
     )
 
@@ -77,7 +78,7 @@ async def test_push_folder(
     faker: Faker,
 ):
     # create some files
-    assert tmpdir.exists()
+    assert await aiofiles.os.path.exists(tmpdir)
 
     # create a folder to upload
     test_folder = Path(tmpdir) / "test_folder"
@@ -175,7 +176,7 @@ async def test_pull_legacy_archive(
     faker: Faker,
     create_legacy_archive: bool,
 ):
-    assert tmpdir.exists()
+    assert await aiofiles.os.path.exists(tmpdir)
     # create a folder to compress from
     test_control_folder = Path(tmpdir) / "test_control_folder"
     test_control_folder.mkdir()
@@ -197,7 +198,7 @@ async def test_pull_legacy_archive(
         "zip",
         root_dir=test_control_folder,
     )
-    assert Path(archive_file).exists()
+    assert await aiofiles.os.path.exists(archive_file)
     # create mock downloaded folder
     test_download_folder = Path(tmpdir) / "test_download_folder"
     test_download_folder.mkdir()

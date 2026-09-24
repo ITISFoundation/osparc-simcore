@@ -89,11 +89,11 @@ pydantic-core==2.46.4
     # via pydantic
 pydantic-settings==2.14.2
     # via -r requirements/_test.in
-pygments==2.19.2
+pygments==2.21.0
     # via pytest
 pytest==9.1.1
     # via locust
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 python-engineio==4.13.5
     # via
@@ -124,7 +124,7 @@ smart-open==7.5.1
     # via jsf
 tenacity==9.1.4
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   jsf
     #   locust-plugins
@@ -141,7 +141,7 @@ urllib3==2.7.0
     #   requests
 websocket-client==1.9.0
     # via python-socketio
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors

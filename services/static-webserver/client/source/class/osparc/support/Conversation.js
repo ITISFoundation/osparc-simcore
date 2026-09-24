@@ -129,9 +129,9 @@ qx.Class.define("osparc.support.Conversation", {
                 // add a first message
                 let msg = this.tr("Book a Call");
                 if (bookACallInfo) {
-                  msg += this.tr("\n- Topic: %1", bookACallInfo["topic"]);
+                  msg += "\n" + this.tr("- Topic: %1", bookACallInfo["topic"]);
                   if ("extraInfo" in bookACallInfo) {
-                    msg += this.tr("\n- Extra Info: %1", bookACallInfo["extraInfo"]);
+                    msg += "\n" + this.tr("- Extra Info: %1", bookACallInfo["extraInfo"]);
                   }
                 }
                 prePostMessagePromise = this.__postMessage(msg);
@@ -325,10 +325,10 @@ qx.Class.define("osparc.support.Conversation", {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
       let msg = null;
-      const greet = this.tr("Hi %1,\n", osparc.auth.Data.getInstance().getFriendlyUserName());
+      const greet = this.tr("Hi %1,", osparc.auth.Data.getInstance().getFriendlyUserName()) + "\n";
       switch (type) {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
-          msg = greet + this.tr("Have a question or feedback?\nWe are happy to assist!");
+          msg = greet + this.tr("Have a question or feedback?") + "\n" + this.tr("We are happy to assist!");
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           msg = greet + this.tr("Let us know what your availability is and we will get back to you shortly to schedule a meeting.");
@@ -337,7 +337,7 @@ qx.Class.define("osparc.support.Conversation", {
           msg = greet + this.tr("Our support team will take it from here — please confirm or edit your question below to get started.");
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
-          msg = this.tr("A support ticket has been created.\nOur team will review your request and contact you soon.");
+          msg = this.tr("A support ticket has been created.") + "\n" + this.tr("Our team will review your request and contact you soon.");
           break;
       }
       if (msg) {

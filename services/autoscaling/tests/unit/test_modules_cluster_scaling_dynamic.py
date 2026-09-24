@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# ruff: noqa
 
 import asyncio
 import datetime
@@ -271,13 +272,17 @@ class _ScaleUpParams:
 
 @pytest.fixture
 async def create_services_batch(
-    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]],
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str], str | list[str], list[str]], Awaitable[Service]
+    ],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int, dict], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
     async def _(scale_up_params: _ScaleUpParams) -> list[Service]:
+        acceptable_initial_states = ["pending", "running"] if scale_up_params.num_services > 1 else ["pending"]
+
         return await asyncio.gather(
             *(
                 create_service(
@@ -288,7 +293,7 @@ async def create_services_batch(
                         scale_up_params.service_resources.generic_resources,
                     ),
                     service_monitored_labels | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
-                    "pending",
+                    acceptable_initial_states,
                     (
                         [
                             f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
@@ -1105,7 +1110,7 @@ async def test_cluster_scaling_up_and_down(
 )
 async def test_cluster_scaling_up_and_down_against_aws(
     skip_if_no_external_envfile: None,
-    external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
+    external_ec2_instances_allowed_types: dict[str, EC2InstanceBootSpecific] | None,
     with_labelize_drain_nodes: EnvVarsDict,
     app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
@@ -2283,7 +2288,7 @@ async def with_multiple_small_subnet_ids(
     [
         pytest.param(
             _ScaleUpParams(
-                imposed_instance_type=None,
+                imposed_instance_type="r5n.4xlarge",
                 service_resources=Resources(cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",  # 1 GPU, 16 CPUs, 128GiB

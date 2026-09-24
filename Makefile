@@ -41,7 +41,6 @@ SERVICES_NAMES_TO_BUILD := \
   director \
   director-v2 \
   dynamic-sidecar \
-	efs-guardian \
 	invitations \
   migration \
 	notifications \
@@ -74,7 +73,6 @@ export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
 export DOCKER_API_PROXY_API_VERSION := $(shell cat $(CURDIR)/services/docker-api-proxy/VERSION)
 export DYNAMIC_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dynamic-sidecar/VERSION)
-export EFS_GUARDIAN_API_VERSION := $(shell cat $(CURDIR)/services/efs-guardian/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export MIGRATION_API_VERSION := $(shell cat $(CURDIR)/services/migration/VERSION)
@@ -393,7 +391,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
-printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
+printf "$$rows" "Storage S3 (RustFS)" "http://$(get_my_ip).nip.io:9090/rustfs/console/" 12345678 12345678;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
@@ -618,17 +616,21 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 .PHONY: devenv devenv-all node-env
 
+# Single source of truth for the uv version (see requirements/UV_VERSION for the pinning note).
+# tests/environment-setup/test_used_uv.py verifies all other references stay in sync.
+UV_VERSION := $(shell cat requirements/UV_VERSION)
+
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				curl -LsSf https://astral.sh/uv/install.sh | sh; \
+				curl -LsSf https://astral.sh/uv/$(UV_VERSION)/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		# upgrading uv
+		# upgrading uv (pinned, see note above)
 		@if [ "${CI}" != "true" ]; then \
-			uv self --quiet update; \
+			uv self --quiet update $(UV_VERSION) || true; \
 		else \
 			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi

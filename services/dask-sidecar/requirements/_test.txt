@@ -221,7 +221,7 @@ pydantic-core==2.46.4
     #   pydantic
 pyftpdlib==2.2.0
     # via pytest-localftpserver
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -258,7 +258,7 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   aiobotocore
     #   botocore
-python-dotenv==1.2.1
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -328,7 +328,7 @@ types-awscrt==0.34.1
     #   botocore-stubs
 types-s3transfer==0.16.0
     # via types-aioboto3
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
@@ -348,7 +348,7 @@ urllib3==2.7.0
     #   docker
     #   requests
     #   responses
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors

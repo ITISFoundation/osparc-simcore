@@ -58,6 +58,9 @@ def _compensate_for_slow_systems(number: float) -> float:
     return number * 10
 
 
+type ContextKey = tuple[int, int, int]
+
+
 @pytest.mark.no_leaks
 async def test_context_aware_dispatch(
     sleep_duration: float, ensure_run_in_sequence_context_is_empty: None, faker: Faker
@@ -80,7 +83,12 @@ async def test_context_aware_dispatch(
             "c3": faker.random_int(0, 10),
         }
 
-    contexts = [make_context() for _ in range(10)]
+    rng = random.Random(0xC0FFEE)  # noqa: S311
+    context_keys: set[ContextKey] = set()
+    while len(context_keys) < 10:
+        context_keys.add((rng.randrange(1_000_000), rng.randrange(1_000_000), rng.randrange(1_000_000)))
+
+    contexts = [{"c1": key[0], "c2": key[1], "c3": key[2]} for key in context_keys]
 
     locked_stores = {}
     expected_outcomes = {}
@@ -91,7 +99,7 @@ async def test_context_aware_dispatch(
 
     tasks = deque()
     for control in range(1000):
-        context = random.choice(contexts)
+        context = random.choice(contexts)  # noqa: S311
         key = make_key_from_context(context)
         expected_outcomes[key].append(control)
 
@@ -101,33 +109,34 @@ async def test_context_aware_dispatch(
         task = asyncio.get_event_loop().create_task(orderly(**params))
         tasks.append(task)
 
-    for task in tasks:
-        await task
+    await asyncio.wait_for(asyncio.gather(*tasks), timeout=30)
 
     for context in contexts:
         key = make_key_from_context(context)
         assert list(expected_outcomes[key]) == await locked_stores[key].get_all()
+
+    await asyncio.sleep(0)  # allow any remaining tasks to complete
 
 
 @pytest.mark.no_leaks
 async def test_context_aware_function_sometimes_fails(
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-    class DidFailException(Exception):
+    class DidFailError(Exception):
         pass
 
     @run_sequentially_in_context(target_args=["will_fail"])
     async def sometimes_failing(will_fail: bool) -> bool:
         if will_fail:
             msg = "I was instructed to fail"
-            raise DidFailException(msg)
+            raise DidFailError(msg)
         return True
 
     for x in range(100):
         raise_error = x % 2 == 0
 
         if raise_error:
-            with pytest.raises(DidFailException):
+            with pytest.raises(DidFailError):
                 await sometimes_failing(raise_error)
         else:
             assert await sometimes_failing(raise_error) is True
@@ -143,7 +152,7 @@ async def test_context_aware_wrong_target_args_name(
     async def target_function(the_param: Any) -> None:
         return None
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:  # noqa: PT011
         await target_function("something")
 
     message = f"Expected '{expected_param_name}' in '{target_function.__name__}' arguments."

@@ -131,7 +131,11 @@ qx.Class.define("osparc.data.PollTask", {
 
     __pollTaskState: function() {
       const statusPath = this.self().extractPathname(this.getStatusHref());
-      fetch(statusPath)
+      fetch(statusPath, {
+        headers: {
+          "X-Simcore-Language": osparc.utils.LanguageManager.getBackendLocale()
+        }
+      })
         .then(resp => {
           if (this.__aborting || this.getDone()) {
             return null;

@@ -609,7 +609,7 @@ def inspect_comp_pipelines(
 async def _inspect_comp_pipelines_async(
     deploy_config: Path, s3_prefix_template: str, limit: int | None, report_csv: str
 ) -> None:
-    deploy_config = deploy_config.expanduser()
+    deploy_config = deploy_config.expanduser()  # noqa: ASYNC240
     environment = _load_repo_config(deploy_config)
     dbcfg = _db_config_from_env(environment)
     s3cfg = _s3_config_from_env(environment, s3_prefix_template)
@@ -665,7 +665,7 @@ def cleanup_comp_pipelines(
 
 
 async def _cleanup_async(deploy_config: Path, report_csv: Path, *, yes: bool) -> None:
-    deploy_config = deploy_config.expanduser()
+    deploy_config = deploy_config.expanduser()  # noqa: ASYNC240
     environment = _load_repo_config(deploy_config)
     dbcfg = _db_config_from_env(environment)
     bastion = _parse_inventory(deploy_config)
@@ -712,7 +712,7 @@ def inspect_bucket(
 
 
 async def _inspect_bucket_async(deploy_config: Path, report_csv: str) -> None:
-    deploy_config = deploy_config.expanduser()
+    deploy_config = deploy_config.expanduser()  # noqa: ASYNC240
     environment = _load_repo_config(deploy_config)
     dbcfg = _db_config_from_env(environment)
     s3cfg = _s3_config_from_env(environment, "{project_id}/")
@@ -811,7 +811,7 @@ def cleanup_bucket(
 
 
 async def _cleanup_bucket_async(deploy_config: Path, report_csv: Path, *, permanent: bool) -> None:
-    deploy_config = deploy_config.expanduser()
+    deploy_config = deploy_config.expanduser()  # noqa: ASYNC240
     environment = _load_repo_config(deploy_config)
     s3cfg = _s3_config_from_env(environment, "{project_id}/")
     client = s3_client(s3cfg)

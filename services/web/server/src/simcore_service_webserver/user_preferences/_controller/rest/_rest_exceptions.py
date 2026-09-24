@@ -28,7 +28,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         FrontendUserPreferenceIsNotDefinedError.msg_template,
     ),
     FrontendUserPreferenceValueIsInvalidError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         FrontendUserPreferenceValueIsInvalidError.msg_template,
     ),
 }

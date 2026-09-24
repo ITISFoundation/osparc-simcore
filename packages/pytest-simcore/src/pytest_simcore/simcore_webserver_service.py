@@ -6,7 +6,7 @@
 import aiohttp
 import pytest
 import tenacity
-from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
+from servicelib.retry_policies import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
@@ -22,14 +22,13 @@ def webserver_endpoint(docker_stack: dict, env_vars_for_docker_compose: EnvVarsD
     return URL(f"http://{endpoint}")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def webserver_service(webserver_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_webserver_responsive(webserver_endpoint)
 
     return webserver_endpoint
 
 
-# TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_webserver_responsive(webserver_endpoint: URL):
     async with aiohttp.ClientSession() as session, session.get(webserver_endpoint.with_path("/v0/")) as resp:

@@ -20,6 +20,7 @@ from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
 from ..tracing import (
     TracingConfig,
     get_trace_info_headers,
+    setup_meter_provider,
 )
 
 _logger = logging.getLogger(__name__)
@@ -120,6 +121,8 @@ def _startup(
     )
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
+
+    setup_meter_provider()
 
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_context(

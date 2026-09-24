@@ -150,6 +150,7 @@ def mock_environment(
 ) -> EnvVarsDict:
     if is_user_services_tracing_enabled:
         tracing_vars = {
+            "DYNAMIC_SIDECAR_TRACING": "{}",
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "http://jaeger",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "4318",
             "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY": "1.0",

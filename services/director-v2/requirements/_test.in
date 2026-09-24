@@ -21,7 +21,6 @@ flaky
 pytest
 pytest-asyncio
 pytest-cov
-pytest-docker
 pytest-icdiff
 pytest-mock
 pytest-runner

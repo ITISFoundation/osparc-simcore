@@ -57,7 +57,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
 ]
 
@@ -92,7 +92,7 @@ def mock_environment(
     rabbit_service: RabbitSettings,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
@@ -105,7 +105,7 @@ def mock_environment(
         "STORAGE_PORT": f"{storage_endpoint.port}",
         "DY_SIDECAR_USER_ID": f"{user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "R_CLONE_PROVIDER": "MINIO",
+        "R_CLONE_PROVIDER": "RUSTFS",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         **{k: f"{v}" for k, v in rabbit_service.model_dump().items()},
         **base_mock_envs,

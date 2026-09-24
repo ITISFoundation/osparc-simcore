@@ -208,9 +208,9 @@ async def phone_confirmation(request: web.Request):
 
     request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
-    if (
-        expected := await _twofa_service.get_2fa_code(request.app, request_body.email)
-    ) and request_body.code.get_secret_value() == expected:
+    if await _twofa_service.verify_2fa_code(
+        request.app, user_email=request_body.email, code=request_body.code.get_secret_value()
+    ):
         # consumes code
         await _twofa_service.delete_2fa_code(request.app, request_body.email)
 

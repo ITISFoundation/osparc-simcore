@@ -137,7 +137,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: UserID) -
 
 
 async def remove_guest_user_with_all_its_resources(app: web.Application, user_id: UserID) -> None:
-    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
+    """Removes a GUEST user with all its associated projects and S3 files"""
 
     try:
         user_role: UserRole = await users_service.get_user_role(app, user_id=user_id)

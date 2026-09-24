@@ -225,7 +225,7 @@ pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -262,7 +262,7 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   aiobotocore
     #   botocore
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -330,7 +330,7 @@ types-requests==2.32.4.20260107
     # via types-tqdm
 types-tqdm==4.67.3.20260303
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic
@@ -354,7 +354,7 @@ urllib3==2.7.0
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors

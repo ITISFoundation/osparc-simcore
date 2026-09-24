@@ -28,6 +28,7 @@ pytest_plugins = [
     "pytest_simcore.httpbin_service",
     "pytest_simcore.httpx_calls_capture",
     "pytest_simcore.logging",
+    "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",

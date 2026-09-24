@@ -9,9 +9,11 @@ import pickle
 import socket
 import threading
 from collections import deque
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from logging.handlers import DEFAULT_UDP_LOGGING_PORT, DatagramHandler
+from multiprocessing.queues import Queue
 from pathlib import Path
+from time import sleep
 from typing import Final
 from unittest.mock import AsyncMock, Mock
 
@@ -20,11 +22,15 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from models_library.basic_types import PortInt
+from pydantic import PositiveFloat
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
     _logging_event_handler,
     configure_attribute_monitor,
+)
+from simcore_service_dynamic_sidecar.modules.attribute_monitor._logging_event_handler import (
+    _LoggingEventHandlerProcess,
 )
 
 # NOTE: multiprocessing logs do not work with logcap,
@@ -33,6 +39,8 @@ from simcore_service_dynamic_sidecar.modules.attribute_monitor import (
 
 DATAGRAM_PORT: Final[PortInt] = PortInt(DEFAULT_UDP_LOGGING_PORT)
 ENSURE_LOGS_DELIVERED: Final[float] = 0.1
+_CONCURRENT_CALLS: Final[int] = 10
+_SLOW_KILL_DURATION_S: Final[float] = 0.1
 
 
 @pytest.fixture
@@ -60,10 +68,7 @@ class LogRecordKeeper:
         self._records.appendleft(x)
 
     def has_log_within(self, **expected_logrec_fields) -> bool:
-        for rec in self._records:
-            if all(str(v) in str(rec[k]) for k, v in expected_logrec_fields.items()):
-                return True
-        return False
+        return any(all(str(v) in str(rec[k]) for k, v in expected_logrec_fields.items()) for rec in self._records)
 
     def __len__(self) -> int:
         return len(self._records)
@@ -116,6 +121,43 @@ async def logging_event_handler_observer(
     async with app_lifespan(fake_app):
         assert fake_app.state.attribute_monitor
         yield None
+
+
+def test_logging_event_handler_process_concurrent_stop_does_not_raise(
+    fake_dy_volumes_mount_dir: Path,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _LoggingEventHandlerProcess(
+        path_to_observe=fake_dy_volumes_mount_dir,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+    # a slow kill() keeps `_process` set long enough for a concurrent caller to observe it
+    observer_process._process = Mock(kill=lambda: sleep(_SLOW_KILL_DURATION_S))  # noqa: SLF001
+
+    assert not run_concurrently([observer_process._stop_process] * _CONCURRENT_CALLS)  # noqa: SLF001
+
+
+def test_logging_event_handler_process_concurrent_start_and_stop_does_not_raise(
+    fake_dy_volumes_mount_dir: Path,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _LoggingEventHandlerProcess(
+        path_to_observe=fake_dy_volumes_mount_dir,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+
+    assert not run_concurrently(
+        [observer_process.start_process, observer_process._stop_process]  # noqa: SLF001
+        * _CONCURRENT_CALLS
+    )
+
+    observer_process.shutdown()
 
 
 @pytest.mark.parametrize(

@@ -19,6 +19,7 @@ _PRODUCT_COLUMNS = (
     products.c.display_name,
     products.c.support_email,
     products.c.vendor,
+    products.c.base_url,
 )
 
 
@@ -49,7 +50,7 @@ class ProductRepository(BaseRepository):
             display_name=row.display_name,
             vendor_display_inline=vendor_display_inline,
             support_email=row.support_email,
-            homepage_url=vendor.get("url"),
+            homepage_url=row.base_url,
             ui=ProductUI(
                 logo_url=ui.get("logo_url"),
                 strong_color=ui.get("strong_color"),

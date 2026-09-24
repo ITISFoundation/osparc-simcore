@@ -65,7 +65,3 @@ def get_instrumentation(app: FastAPI) -> DirectorV0Instrumentation:
     if not app.state.instrumentation:
         raise ConfigurationError(msg="Instrumentation not setup. Please check the configuration.")
     return cast(DirectorV0Instrumentation, app.state.instrumentation)
-
-
-def has_instrumentation(app: FastAPI) -> bool:
-    return hasattr(app.state, "instrumentation")

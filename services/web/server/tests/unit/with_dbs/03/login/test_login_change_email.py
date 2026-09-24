@@ -60,7 +60,7 @@ async def test_change_to_existing_email(client: TestClient):
         )
         await assert_status(
             response,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             "This email cannot be used",
         )
 

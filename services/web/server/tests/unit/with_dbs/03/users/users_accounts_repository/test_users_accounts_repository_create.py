@@ -155,7 +155,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     )
     pre_registration_details_db_cleanup.append(pre_registration_id)
 
-    invitation_extras = {
+    extras = {
         "invitation": {
             "issuer": str(reviewer_id),
             "guest": test_email,
@@ -172,7 +172,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=new_status,
-        invitation_extras=invitation_extras,
+        extras=extras,
     )
 
     registrations, count = await _accounts_repository.list_user_pre_registrations(

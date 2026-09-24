@@ -177,7 +177,7 @@ async def test_search_files(
     response = await client.post(f"{url}")
 
     if kind != "owned":
-        assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY, None)
+        assert_status(response, status.HTTP_422_UNPROCESSABLE_CONTENT, None)
         return
 
     list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])

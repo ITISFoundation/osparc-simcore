@@ -102,7 +102,10 @@ qx.Class.define("osparc.po.UsersSearch", {
           };
           osparc.data.Resources.fetch("poUsers", "searchByEmail", params)
             .then(data => {
-              findingStatus.setValue(data.length + this.tr(" user(s) found"));
+              const message = data.length === 1 ?
+                this.tr("1 user found") :
+                this.tr("%1 users found", data.length);
+              findingStatus.setValue(message);
               this.__populateFoundUsersLayout(data);
             })
             .catch(err => {
