@@ -73,7 +73,9 @@ def paginate_data(
 
     return PageDict(
         _meta=PageMetaInfoLimitOffset(total=total, count=len(data), limit=limit, offset=offset),
-        _links=PageLinks(
+        # NOTE: pylint cannot see that `self` is a pydantic model field (the
+        # `_links.self` pagination contract) and flags the keyword as superseded
+        _links=PageLinks(  # pylint: disable=kwarg-superseded-by-positional-arg
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
             first=_replace_query(request_url, {"offset": 0, "limit": limit}),
             prev=(
