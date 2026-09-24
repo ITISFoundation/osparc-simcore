@@ -6,7 +6,10 @@ class CatalogRpcError(OsparcErrorMixin, Exception):
 
 
 class CatalogInconsistentRpcError(CatalogRpcError):
-    msg_template = "Catalog is inconsistent: The following  services are in the database but missing in the registry manifest {missing_services}"
+    msg_template = (
+        "Catalog is inconsistent: The following  services are in the database but missing in the "
+        "registry manifest {missing_services}"
+    )
 
 
 class CatalogItemNotFoundRpcError(CatalogRpcError):

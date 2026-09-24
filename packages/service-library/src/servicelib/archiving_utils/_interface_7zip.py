@@ -288,7 +288,8 @@ async def unarchive_dir(
 
         tqdm_progress = exit_stack.enter_context(
             tqdm.tqdm(
-                desc=f"decompressing {archive_to_extract} -> {destination_folder} [{file_count} file{'' if file_count == 1 else 's'}"
+                desc=f"decompressing {archive_to_extract} -> {destination_folder} "
+                f"[{file_count} file{'' if file_count == 1 else 's'}"
                 f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
                 total=total_bytes,
                 **TQDM_MULTI_FILES_OPTIONS,
@@ -309,8 +310,12 @@ async def unarchive_dir(
                 "-y",  # reply yes to all
             ]
         )
+        _cmd = (
+            f"{_7ZIP_EXECUTABLE} {options} {shlex.quote(f'{archive_to_extract}')} "
+            f"-o{shlex.quote(f'{destination_folder}')}"
+        )
         await _run_cli_command(
-            f"{_7ZIP_EXECUTABLE} {options} {shlex.quote(f'{archive_to_extract}')} -o{shlex.quote(f'{destination_folder}')}",
+            _cmd,
             output_handler=_7ZipProgressParser(_decompressed_bytes).parse_chunk,
         )
 

@@ -1,4 +1,4 @@
-from typing import Any, Final, TypedDict, TypeVar
+from typing import Any, Final, TypedDict
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
@@ -46,13 +46,17 @@ def safe_status_message(message: str | None, max_length: int = MAX_STATUS_MESSAG
     If the message is longer than max_length, it will be truncated and "..." will be appended.
 
     This prevents issues such as:
-        - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes when reading Status line is too long.
+        - `aiohttp.http_exceptions.LineTooLong`: 400, message: Got more than 8190 bytes
+          when reading Status line is too long.
         - Multiline not allowed in HTTP reason attribute (aiohttp now raises ValueError).
 
     See:
-        - When to use http status and/or text messages https://github.com/ITISFoundation/osparc-simcore/pull/7760
-        - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing](https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
-        - [RFC 9110, Section 15.5: Reason Phrase](https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
+        - When to use http status and/or text messages
+          https://github.com/ITISFoundation/osparc-simcore/pull/7760
+        - [RFC 9112, Section 4.1: HTTP/1.1 Message Syntax and Routing]
+          (https://datatracker.ietf.org/doc/html/rfc9112#section-4.1) (status line length limits)
+        - [RFC 9110, Section 15.5: Reason Phrase]
+          (https://datatracker.ietf.org/doc/html/rfc9110#section-15.5) (reason phrase definition)
     """
     assert max_length > 0  # nosec
 
@@ -67,10 +71,7 @@ def safe_status_message(message: str | None, max_length: int = MAX_STATUS_MESSAG
     return flat_message[: max_length - 3] + "..."
 
 
-T_HTTPError = TypeVar("T_HTTPError", bound=HTTPError)
-
-
-def create_http_error(
+def create_http_error[T_HTTPError: HTTPError](
     errors: list[Exception] | Exception,
     error_message: str | None = None,
     http_error_cls: type[T_HTTPError] = web.HTTPInternalServerError,  # type: ignore[assignment]
@@ -132,10 +133,7 @@ def exception_to_response(exception: HTTPError) -> web.Response:
     # so it can be used as
     # SEE https://github.com/aio-libs/aiohttp/issues/2415
 
-    if exception.reason:
-        reason = safe_status_message(exception.reason)
-    else:
-        reason = get_code_description(exception.status)
+    reason = safe_status_message(exception.reason) if exception.reason else get_code_description(exception.status)
 
     return web.Response(
         status=exception.status,
