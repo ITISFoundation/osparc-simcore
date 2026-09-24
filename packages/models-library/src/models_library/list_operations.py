@@ -7,14 +7,14 @@ SEE ALSO:
     - batch_operations.py
 """
 
-from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Generic, TypeVar
+from enum import StrEnum
+from typing import TYPE_CHECKING, Annotated, TypeVar
 
 from annotated_types import doc
 from pydantic import BaseModel
 
 
-class OrderDirection(str, Enum):
+class OrderDirection(StrEnum):
     ASC = "asc"
     DESC = "desc"
 
@@ -32,12 +32,12 @@ else:
     TField = TypeVar("TField", bound=str)
 
 
-class OrderClause(BaseModel, Generic[TField]):
+class OrderClause[TField: str](BaseModel):
     field: TField
     direction: OrderDirection = OrderDirection.ASC
 
 
-def check_ordering_list(
+def check_ordering_list[TField: str](
     order_by: list[tuple[TField, OrderDirection]],
 ) -> Annotated[
     list[tuple[TField, OrderDirection]],
@@ -55,7 +55,10 @@ def check_ordering_list(
         if field in seen_fields:
             # Field already seen - check if direction matches
             if seen_fields[field] != direction:
-                msg = f"Field '{field}' appears with conflicting directions: {seen_fields[field].value} and {direction.value}"
+                msg = (
+                    f"Field '{field}' appears with conflicting directions: "
+                    f"{seen_fields[field].value} and {direction.value}"
+                )
                 raise ValueError(msg)
             # Same field and direction - skip duplicate
             continue

@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from .projects import ProjectID
 from .users import UserID
 
-CommentID: TypeAlias = PositiveInt
+type CommentID = PositiveInt
 
 
 class _ProjectsCommentsBase(BaseModel):

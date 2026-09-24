@@ -1,10 +1,10 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt
 
 
-class WidgetType(str, Enum):
+class WidgetType(StrEnum):
     TextArea = "TextArea"
     SelectBox = "SelectBox"
 

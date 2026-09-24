@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 
 from pydantic import (
     BaseModel,
@@ -22,7 +22,7 @@ from .utils.json_schema import (
     jsonschema_validate_schema,
 )
 
-PropertyTypeStr: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_TYPE_RE)]
+type PropertyTypeStr = Annotated[str, StringConstraints(pattern=PROPERTY_TYPE_RE)]
 
 
 class BaseServiceIOModel(BaseModel):

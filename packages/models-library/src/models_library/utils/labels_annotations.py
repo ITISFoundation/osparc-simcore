@@ -5,11 +5,11 @@ This module defines how this config is serialized/deserialized to/from docker la
 """
 
 from json.decoder import JSONDecodeError
-from typing import Any, TypeAlias
+from typing import Any
 
 from common_library.json_serialization import json_dumps, json_loads
 
-LabelsAnnotationsDict: TypeAlias = dict[str, str | float | bool | None]
+type LabelsAnnotationsDict = dict[str, str | float | bool | None]
 
 # SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
 #  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
@@ -28,11 +28,8 @@ def to_labels(config: dict[str, Any], *, prefix_key: str, trim_key_head: bool = 
     labels: LabelsAnnotationsDict = {}
     for key, value in config.items():
         if trim_key_head:
-            if isinstance(value, str):
-                # Avoids double quotes, i.e. '"${VERSION}"'
-                label = value
-            else:
-                label = json_dumps(value, sort_keys=False)
+            # Avoids double quotes, i.e. '"${VERSION}"'
+            label = value if isinstance(value, str) else json_dumps(value, sort_keys=False)
         else:
             label = json_dumps({key: value}, sort_keys=False)
 

@@ -59,7 +59,10 @@ def test_substitution_with_new_and_legacy_identifiers():
     containers-allowed-outgoing-permit-list:
         s4l-core:
             - hostname: $OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOST
-              tcp_ports: [$OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT, $OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT]
+              tcp_ports: [
+                  $OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_PRIMARY_PORT,
+                  $OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_SECONDARY_PORT,
+              ]
               dns_resolver:
                   address: $OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_DNS_RESOLVER_IP
                   port: $OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_DNS_RESOLVER_PORT
@@ -125,7 +128,10 @@ def test_substitution_with_new_and_legacy_identifiers():
     containers-allowed-outgoing-permit-list:
         s4l-core:
             - hostname: VALUE
-              tcp_ports: [VALUE, VALUE]
+              tcp_ports: [
+                  VALUE,
+                  VALUE,
+              ]
               dns_resolver:
                   address: VALUE
                   port: VALUE

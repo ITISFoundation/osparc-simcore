@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import auto
-from typing import TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -16,7 +15,7 @@ from .groups import GroupID
 from .users import UserID
 from .utils.enums import StrAutoEnum
 
-WorkspaceID: TypeAlias = PositiveInt
+type WorkspaceID = PositiveInt
 
 
 class WorkspaceScope(StrAutoEnum):
