@@ -4,7 +4,7 @@ from models_library.basic_types import IDStr
 from pydantic import BaseModel
 
 TaskUID: TypeAlias = IDStr  # Unique identifier provided by the TaskTracker
-ClassUniqueReference: TypeAlias = str
+type ClassUniqueReference = str
 
 
 class TaskResultSuccess(BaseModel):
@@ -26,4 +26,4 @@ class TaskResultCancelledError(BaseModel):
     result_type: Literal["cancelled"] = "cancelled"
 
 
-TaskExecutionResult: TypeAlias = TaskResultSuccess | TaskResultError | TaskResultCancelledError
+type TaskExecutionResult = TaskResultSuccess | TaskResultError | TaskResultCancelledError

@@ -55,12 +55,15 @@ Used internally for scheduling the task's execution:
 
 - `Scheduled`: triggered by `start` and creates a schedule for the task
 - `SubmitTask`: decreases retry counter
-- `Worker`: checks if enough workers slots are available (can refuse task), creates from `run` code and saves the result.
+- `Worker`: checks if enough workers slots are available (can refuse task), creates from `run` code
+  and saves the result.
 - `ErrorResult`: checks if it can reschedule the task or gives up
 - `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the schedule
 - `DeferredResult`: invokes `on_result` and removes the schedule
-- `ManuallyCancelled`: sends message to all instances to cancel. The instance handling the task will cancel the task and remove the schedule
-- `Removed*`: is a fake state that does not exist only used to convey the information that the cancellation event is triggered after removal
+- `ManuallyCancelled`: sends message to all instances to cancel. The instance handling the task will
+  cancel the task and remove the schedule
+- `Removed*`: is a fake state that does not exist only used to convey the information that the
+  cancellation event is triggered after removal
 """
 
 from ._base_deferred_handler import (

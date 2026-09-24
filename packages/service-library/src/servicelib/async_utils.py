@@ -57,7 +57,7 @@ class Context:
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 
-def _generate_context_key(
+def _generate_context_key[**P, R](
     function: Callable[P, Awaitable[R]],
     target_args: list[str],
     args: Any,
@@ -84,8 +84,7 @@ def _generate_context_key(
 
         key_parts.append(f"{function.__name__}_{context_key}")
 
-    key = ":".join(map(str, key_parts))
-    return key
+    return ":".join(map(str, key_parts))
 
 
 @asynccontextmanager
