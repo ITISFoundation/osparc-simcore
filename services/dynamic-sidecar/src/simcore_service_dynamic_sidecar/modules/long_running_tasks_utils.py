@@ -12,7 +12,7 @@ from servicelib.container_utils import (
 )
 from servicelib.logging_utils import log_context
 
-from ..core.utils import get_self_container
+from ..core.utils import get_self_container_name
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
 
@@ -57,7 +57,7 @@ async def ensure_read_permissions_on_user_service_data(
         mounted_volumes.disk_outputs_path,
     ):
         await run_command_in_container(
-            get_self_container(),
+            get_self_container_name(),
             command=f"chmod -R g+rX,o+rX '{path_to_store}'",
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )

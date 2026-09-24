@@ -21,7 +21,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePat
 
 from ..core.rabbitmq import get_rabbitmq_client
 from ..core.settings import ApplicationSettings
-from ..core.utils import get_self_container
+from ..core.utils import get_self_container_name
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 
@@ -90,7 +90,7 @@ async def _try_remove_from_disk_volumes(
         return
 
     await run_command_in_container(
-        get_self_container(),
+        get_self_container_name(),
         command=["rm", "-rf", f"{local_path}"],
         timeout=_TIMEOUT_REMOVAL.total_seconds(),
     )

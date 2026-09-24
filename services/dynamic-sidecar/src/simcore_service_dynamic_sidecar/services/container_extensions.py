@@ -15,7 +15,7 @@ from servicelib.container_utils import run_command_in_container
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
-from ..core.utils import get_self_container
+from ..core.utils import get_self_container_name
 from ..modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.outputs import (
@@ -75,7 +75,7 @@ async def restrict_input_permissions(app: FastAPI) -> None:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
     await run_command_in_container(
-        get_self_container(),
+        get_self_container_name(),
         command=_get_restrict_input_permissions_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
@@ -85,7 +85,7 @@ async def grant_input_permissions(app: FastAPI) -> None:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
     await run_command_in_container(
-        get_self_container(),
+        get_self_container_name(),
         command=_get_grant_input_permissions_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )

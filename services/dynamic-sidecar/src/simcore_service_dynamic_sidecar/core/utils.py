@@ -23,7 +23,7 @@ class CommandResult(NamedTuple):
         return f"'{self.command}' finished_ok='{self.success}' elapsed='{self.elapsed}'\n{self.message}"
 
 
-def get_self_container() -> str:
+def get_self_container_name() -> str:
     return os.environ["HOSTNAME"]
 
 
