@@ -579,6 +579,9 @@ async def test_process_outbox_event_with_state_change(
     mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
+    # the outbox path must notify strictly, so a failed emit keeps the event for a retry
+    assert mock_project_subsystem["_update_project_state.notify_project_node_update"].await_args.kwargs["strict"]
+    assert mock_project_subsystem["_update_project_state.notify_project_state_update"].await_args.kwargs["strict"]
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -840,9 +843,12 @@ async def test_drain_coalesces_mixed_changed_columns_of_the_same_aggregate(
 
     # both branches ran exactly once for the coalesced pair
     mock_project_subsystem["update_node_outputs"].assert_called_once()
+    assert mock_project_subsystem["update_node_outputs"].await_args.kwargs["strict_notification"]
     mock_project_subsystem["_update_project_state.update_project_node_state"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_node_update"].assert_called_once()
     mock_project_subsystem["_update_project_state.notify_project_state_update"].assert_called_once()
+    assert mock_project_subsystem["_update_project_state.notify_project_node_update"].await_args.kwargs["strict"]
+    assert mock_project_subsystem["_update_project_state.notify_project_state_update"].await_args.kwargs["strict"]
     assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
 
 
