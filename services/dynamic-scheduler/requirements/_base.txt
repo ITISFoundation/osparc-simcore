@@ -118,7 +118,7 @@ hpack==4.2.0
     # via h2
 httpcore==1.0.9
     # via httpx
-httptools==0.6.4
+httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via
@@ -444,7 +444,7 @@ urllib3==2.7.0
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
     #   sentry-sdk
-uvicorn==0.34.2
+uvicorn==0.53.0
     # via
     #   fastapi
     #   fastapi-cli
