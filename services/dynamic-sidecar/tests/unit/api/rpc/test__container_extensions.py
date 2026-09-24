@@ -288,7 +288,7 @@ async def test_writable_inputs_failed_grant_is_retried_by_queued_caller(
     first_grant_started = asyncio.Event()
     release_first_grant = asyncio.Event()
 
-    async def _flaky_exec(*args, **kwargs) -> None:
+    async def _flaky_exec(*_args: Any, **kwargs: Any) -> None:
         nonlocal first_attempt
         if kwargs.get("command") == grant_command and first_attempt:
             first_attempt = False
@@ -336,7 +336,7 @@ async def test_writable_inputs_registers_without_waiting_for_slow_grant(
     grant_started = asyncio.Event()
     release_grant = asyncio.Event()
 
-    async def _slow_exec(*args, **kwargs) -> None:
+    async def _slow_exec(*_args: Any, **kwargs: Any) -> None:
         if kwargs.get("command") == _create_grant_input_permissions_command(inputs_path):
             grant_started.set()
             await release_grant.wait()

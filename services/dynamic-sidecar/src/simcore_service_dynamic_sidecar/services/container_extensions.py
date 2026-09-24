@@ -129,8 +129,10 @@ async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
         last = state.active_count == 0
         async with state.io_lock:
             if last and state.is_writable:
-                await restrict_input_permissions(app)
-                state.is_writable = False
+                try:
+                    await restrict_input_permissions(app)
+                finally:
+                    state.is_writable = False
 
 
 async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:
