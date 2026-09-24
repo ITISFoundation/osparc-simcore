@@ -25,6 +25,7 @@ number of attempts are dead-lettered (skipped by claims, kept for post-mortem
 until a periodic purge removes them once they age out).
 """
 
+import asyncio
 import datetime
 import logging
 from typing import Final
@@ -68,6 +69,11 @@ from .models import (
 _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
 
 _DEAD_LETTER_RETENTION: Final[datetime.timedelta] = datetime.timedelta(days=30)
+
+# hard deadline on processing one aggregate: the socketio fan-out rides on RabbitMQ and
+# a half-open broker connection can stall a publish indefinitely, which would pin the
+# claim transaction, its locks, and pool connections until the replica restarts
+_PROCESSING_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
 
 # only these count towards _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: a broken DB/socket
 # connection affects every aggregate alike, unlike an application-level bug tied to
@@ -198,8 +204,9 @@ async def _claim_and_process_aggregate(
     the aggregate is currently claimed by another replica or lost its pending events
     in the meantime (the caller moves on to its next candidate).
 
-    NOTE: processing runs while the transaction (and both locks) is open, so it must
-    remain short-lived (DB updates + socketio notifications only).
+    NOTE: processing runs while the transaction (and both locks) is open, so it is
+    capped by _PROCESSING_TIMEOUT (DB updates + socketio notifications only); a stalled
+    publish aborts the claim as an infrastructure failure instead of pinning the locks.
     """
     try:
         async with transaction_context(engine) as conn:
@@ -216,7 +223,8 @@ async def _claim_and_process_aggregate(
                 claimed.aggregate_id,
             )
             try:
-                await _process_outbox_event(app, conn, int(claimed.aggregate_id), claimed.changed_columns)
+                async with asyncio.timeout(_PROCESSING_TIMEOUT.total_seconds()):
+                    await _process_outbox_event(app, conn, int(claimed.aggregate_id), claimed.changed_columns)
             except Exception as exc:
                 raise OutboxProcessingError(
                     kind=claimed.kind,
