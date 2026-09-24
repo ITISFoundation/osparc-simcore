@@ -25,6 +25,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectAtDB
@@ -328,6 +329,73 @@ async def test_genuine_cancellation_still_propagates(
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows) == 1, "a genuinely cancelled claim must roll back, keeping the event"
     assert rows[0]["attempts"] == 0
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_failed_event_not_reclaimable_until_backoff_elapsed(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    mock_project_writes: Callable[[dict[str, Any]], None],
+    mocked_socketio_emit: MockType,
+    faker: Faker,
+):
+    """A failed event must not be immediately re-claimable: every unrelated outbox
+    insert wakes the drain, and without a time gate a transient broker/DB outage
+    retries the same aggregate on successive wake-ups and burns all attempts in
+    seconds. After a failure the event carries next_attempt_at in the future and is
+    skipped by claims until it passes (then it retries with attempts preserved).
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs={},
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    mock_project_writes(_outbox_test_project(project, task["node_id"]))
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    mocked_socketio_emit.side_effect = ConnectionResetError("broker connection closed")
+
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None
+    assert outcome.success is False
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
+    assert rows[0]["attempts"] == 1
+    assert rows[0]["next_attempt_at"] is not None
+
+    # the backoff window is active: a successive wake-up must find nothing to claim
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None, (
+        "a failed event inside its backoff window must not be re-claimed"
+    )
+    # no extra attempt burned while blocked by the backoff
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert rows[0]["attempts"] == 1
+
+    # once the window has passed, the event becomes claimable again
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            outbox_events.update()
+            .values(next_attempt_at=sa.text("now() - interval '1 hour'"))
+            .where(outbox_events.c.aggregate_id == f"{task['task_id']}")
+        )
+
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None, "the event must be claimable again once next_attempt_at passed"
+    assert outcome.success is False
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert rows[0]["attempts"] == 2, "the retry after the backoff window must count as next attempt"
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
