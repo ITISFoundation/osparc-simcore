@@ -45,9 +45,20 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
             ),
         )
 
-    warning_logs = [log for log in all_logs if "warning" in log]
-    error_logs = [log for log in all_logs if "error" in log]
+    # docker logs arrive in chunks that may bundle several lines; check one line at a time
+    all_log_lines = [line for log in all_logs for line in log.splitlines()]
+
+    warning_logs = [log for log in all_log_lines if "warning" in log]
+    error_logs = [log for log in all_log_lines if "error" in log]
     RABBIT_SKIPPED_WARNINGS = [
+        # startup deprecation notices (e.g. transient_nonexcl_queues, management_metrics_collection):
+        # RabbitMQ logs each as a multi-line warning block (all lines share the same report)
+        "Deprecated features",
+        "deprecated_features",
+        "this feature can still be used",
+        "the feature will be removed",
+        "To continue using this feature",
+        "as if the feature was removed",
         "rebuilding indices from scratch",
     ]
     filtered_warning_logs = [log for log in warning_logs if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)]
