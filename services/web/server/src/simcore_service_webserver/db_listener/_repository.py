@@ -48,12 +48,21 @@ MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT: Final[int] = 10
 MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE: Final[int] = 100
 LAST_ERROR_MAX_LEN: Final[int] = 500
 
+# exponential retry backoff: after attempt N an event is unclaimable for
+# min(RETRY_BACKOFF_BASE_S * 2**N, RETRY_BACKOFF_MAX_S) seconds. Without this gate,
+# every unrelated outbox insert wakes the drain and a transient outage could burn all
+# attempts (and dead-letter everything) within seconds of wake-up storms.
+RETRY_BACKOFF_BASE_S: Final[int] = 2
+RETRY_BACKOFF_MAX_S: Final[int] = 900
+
 
 def _claimable_events_predicate(exclude_aggregates: set[ClaimableAggregate]) -> ColumnElement[bool]:
     """Predicate selecting events this worker may claim: own kind, not exhausted,
-    and not an aggregate the current drain already failed on."""
-    claimable = (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC) & (
-        outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
+    backoff elapsed, and not an aggregate the current drain already failed on."""
+    claimable = (
+        (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC)
+        & (outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER)
+        & (outbox_events.c.next_attempt_at <= func.now())
     )
     if exclude_aggregates:
         claimable = claimable & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
@@ -122,6 +131,7 @@ async def claim_aggregate(conn: AsyncConnection, candidate: ClaimableAggregate) 
                 outbox_events.c.kind == candidate.kind,
                 outbox_events.c.aggregate_id == candidate.aggregate_id,
                 outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
+                outbox_events.c.next_attempt_at <= func.now(),
             )
             .order_by(outbox_events.c.modified, outbox_events.c.id)
             .limit(MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE)
@@ -147,17 +157,23 @@ async def record_failed_attempts(
 ) -> list[FailedAttempt]:
     """Record a failed processing attempt on every co-claimed event (separate transaction).
 
-    The UPDATE bumps `attempts`/`last_error` and (via the auto-update trigger)
-    refreshes `modified`, which pushes the events to the back of the oldest-first
-    queue and thereby spaces out retries.
+    The UPDATE bumps `attempts`/`last_error`, pushes `next_attempt_at` forward with an
+    exponential backoff (the event stays unclaimable until then), and (via the
+    auto-update trigger) refreshes `modified`, which moves the events to the back of
+    the oldest-first queue.
     Returns the updated events so the caller can report retries vs. dead-lettering.
     """
+    backoff_secs = func.least(
+        RETRY_BACKOFF_BASE_S * func.pow(2, outbox_events.c.attempts + 1),
+        RETRY_BACKOFF_MAX_S,
+    )
     async with transaction_context(engine) as conn:
         result = await conn.execute(
             outbox_events.update()
             .values(
                 attempts=outbox_events.c.attempts + 1,
                 last_error=str(error)[:LAST_ERROR_MAX_LEN],
+                next_attempt_at=func.now() + func.make_interval(0, 0, 0, 0, 0, 0, backoff_secs),
             )
             .where(outbox_events.c.id.in_(event_ids))
             .returning(
