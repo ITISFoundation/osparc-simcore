@@ -47,9 +47,8 @@ from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from simcore_service_dynamic_sidecar.services.container_extensions import (
     _TIMEOUT_PERMISSION_CHANGES,
-    _get_grant_input_permissions_command,
-    _get_restrict_input_permissions_command,
-    _get_writable_inputs_state,
+    _create_grant_input_permissions_command,
+    _create_restrict_input_permissions_command,
     grant_input_permissions,
     restrict_input_permissions,
     writable_inputs,
@@ -176,7 +175,7 @@ async def test_restrict_input_permissions(
 
     mock_input_permissions_toggle.assert_awaited_once_with(
         self_container_name,
-        command=_get_restrict_input_permissions_command(inputs_path),
+        command=_create_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -191,7 +190,7 @@ async def test_grant_input_permissions(
 
     mock_input_permissions_toggle.assert_awaited_once_with(
         self_container_name,
-        command=_get_grant_input_permissions_command(inputs_path),
+        command=_create_grant_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -205,13 +204,13 @@ async def test_writable_inputs_grants_then_restricts(
     async with writable_inputs(app):
         mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
-            command=_get_grant_input_permissions_command(inputs_path),
+            command=_create_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
     mock_input_permissions_toggle.assert_awaited_with(
         self_container_name,
-        command=_get_restrict_input_permissions_command(inputs_path),
+        command=_create_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -255,7 +254,7 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
         # second caller is still writing: only the initial grant must have happened
         mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
-            command=_get_grant_input_permissions_command(inputs_path),
+            command=_create_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
         release_first.set()
@@ -264,13 +263,13 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
         # first caller exited but the second is still inside: must stay writable
         mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
-            command=_get_grant_input_permissions_command(inputs_path),
+            command=_create_grant_input_permissions_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
     mock_input_permissions_toggle.assert_awaited_with(
         self_container_name,
-        command=_get_restrict_input_permissions_command(inputs_path),
+        command=_create_restrict_input_permissions_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -286,12 +285,12 @@ async def test_writable_inputs_registers_without_waiting_for_slow_grant(
     release_grant = asyncio.Event()
 
     async def _slow_exec(*args, **kwargs) -> None:
-        if kwargs.get("command") == _get_grant_input_permissions_command(inputs_path):
+        if kwargs.get("command") == _create_grant_input_permissions_command(inputs_path):
             grant_started.set()
             await release_grant.wait()
 
     mock_input_permissions_toggle.side_effect = _slow_exec
-    state = _get_writable_inputs_state(app)
+    state = app.state.writable_inputs_state
 
     async def _enter() -> None:
         async with writable_inputs(app):

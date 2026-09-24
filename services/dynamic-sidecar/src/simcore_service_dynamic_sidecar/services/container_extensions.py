@@ -62,11 +62,11 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
     outputs_context.non_file_type_port_keys = non_file_port_keys
 
 
-def _get_restrict_input_permissions_command(inputs_path: Path) -> str:
+def _create_restrict_input_permissions_command(inputs_path: Path) -> str:
     return f"chmod -R a-w '{inputs_path}'"
 
 
-def _get_grant_input_permissions_command(inputs_path: Path) -> str:
+def _create_grant_input_permissions_command(inputs_path: Path) -> str:
     return f"chmod -R a+w '{inputs_path}'"
 
 
@@ -76,7 +76,7 @@ async def restrict_input_permissions(app: FastAPI) -> None:
 
     await run_command_in_container(
         get_self_container_name(),
-        command=_get_restrict_input_permissions_command(mounted_volumes.disk_inputs_path),
+        command=_create_restrict_input_permissions_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -86,7 +86,7 @@ async def grant_input_permissions(app: FastAPI) -> None:
 
     await run_command_in_container(
         get_self_container_name(),
-        command=_get_grant_input_permissions_command(mounted_volumes.disk_inputs_path),
+        command=_create_grant_input_permissions_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -108,14 +108,9 @@ def configure_writable_inputs(app_lifespan: LifespanManager[FastAPI]) -> None:
     app_lifespan.add(_writable_inputs_lifespan)
 
 
-def _get_writable_inputs_state(app: FastAPI) -> _WritableInputsState:
-    state: _WritableInputsState = app.state.writable_inputs_state
-    return state
-
-
 @asynccontextmanager
 async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
-    state = _get_writable_inputs_state(app)
+    state: _WritableInputsState = app.state.writable_inputs_state
 
     state.active_count += 1
     first = state.active_count == 1
