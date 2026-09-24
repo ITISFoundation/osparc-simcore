@@ -28,14 +28,16 @@ def with_project_locked(
     owner: Owner | None,
     notification_cb: Callable[[], Awaitable[None]] | None,
 ) -> Callable[[Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]]:
-    """creates a distributed auto sustained Redis lock for project with project_uuid, keeping its status and owner in the lock data
+    """creates a distributed auto sustained Redis lock for project with project_uuid, keeping its
+    status and owner in the lock data
 
     Arguments:
         redis_client -- the client to use to access redis
         project_uuid -- the project UUID
         status -- the project status
         owner -- the owner of the lock (default: {None})
-        notification_cb -- an optional notification callback that will be called AFTER the project is locked and AFTER it was unlocked
+        notification_cb -- an optional notification callback that will be called AFTER the project
+            is locked and AFTER it was unlocked
 
     Returns:
         the decorated function return value

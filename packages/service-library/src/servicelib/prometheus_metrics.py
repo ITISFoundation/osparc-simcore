@@ -102,7 +102,8 @@ def get_prometheus_metrics() -> PrometheusMetrics:
 
     event_loop_lag = Gauge(
         name="asyncio_event_loop_lag_seconds",
-        documentation="Time between scheduling and execution of event loop callbacks. >10ms consistently indicates event loop saturation",
+        documentation="Time between scheduling and execution of event loop callbacks. "
+        ">10ms consistently indicates event loop saturation",
         labelnames=[],
         registry=registry,
     )

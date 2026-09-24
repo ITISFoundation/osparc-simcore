@@ -10,7 +10,7 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 import json.decoder
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Final, TypeVar
+from typing import Final
 
 from aiohttp import web
 from common_library.user_messages import user_message
@@ -19,9 +19,6 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from . import status
-
-ModelClass = TypeVar("ModelClass", bound=BaseModel)
-ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
 
 APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey("APP_JSON_SCHEMA_SPECS_KEY", dict[str, object])
 
@@ -87,7 +84,7 @@ def handle_validation_as_http_error(*, error_msg_template: str, resource_name: s
 #
 
 
-def parse_request_path_parameters_as(
+def parse_request_path_parameters_as[ModelClass: BaseModel](
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -109,7 +106,7 @@ def parse_request_path_parameters_as(
         return parameters_schema_cls.model_validate(data)
 
 
-def parse_request_query_parameters_as(
+def parse_request_query_parameters_as[ModelClass: BaseModel](
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -137,7 +134,7 @@ def parse_request_query_parameters_as(
         return model
 
 
-def parse_request_headers_as(
+def parse_request_headers_as[ModelClass: BaseModel](
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
 ) -> ModelClass:
@@ -149,7 +146,7 @@ def parse_request_headers_as(
         return parameters_schema_cls.model_validate(data)
 
 
-async def parse_request_body_as(
+async def parse_request_body_as[ModelOrListOrDictType: BaseModel | list | dict](
     model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,
 ) -> ModelOrListOrDictType:

@@ -3,7 +3,7 @@ and adds helper functions.
 """
 
 import inspect
-from typing import Any, TypeVar
+from typing import Any
 
 from aiohttp import web_exceptions
 from aiohttp.web_exceptions import (
@@ -42,10 +42,7 @@ class HTTPLoopDetectedError(HTTPServerError):
     status_code = status.HTTP_508_LOOP_DETECTED
 
 
-E = TypeVar("E", bound="HTTPException")
-
-
-def get_all_aiohttp_http_exceptions(
+def get_all_aiohttp_http_exceptions[E: HTTPException](
     base_http_exception_cls: type[E],
 ) -> dict[int, type[E]]:
     # Inverse map from code to HTTPException classes

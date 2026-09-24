@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 import arrow
@@ -10,7 +10,7 @@ from ._base_deferred_handler import StartContext
 from ._models import ClassUniqueReference, TaskExecutionResult
 
 
-class TaskState(str, Enum):
+class TaskState(StrEnum):
     # entrypoint state
     SCHEDULED = "SCHEDULED"
 

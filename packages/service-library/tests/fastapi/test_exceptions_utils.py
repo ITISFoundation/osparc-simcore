@@ -72,4 +72,4 @@ async def test_non_http_error_handling(client: AsyncClient, code: int | str, exc
     response = await client.post(f"/raise/{code}")
     print(response)
 
-    error = TypeAdapter(DefaultApiError).validate_json(response.text)
+    TypeAdapter(DefaultApiError).validate_json(response.text)
