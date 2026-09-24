@@ -69,6 +69,9 @@ class FunctionsListExtraQueryParams(RequestParameters):
     ] = None
 
 
+# NOTE: composition of reusable query-parameter mixins is the intended design;
+# the ancestor count comes from the pagination/filtering mixins, not from here
+# pylint: disable-next=too-many-ancestors
 class FunctionsListQueryParams(
     PageQueryParameters,
     FunctionListOrderQueryParams,  # type: ignore[misc, valid-type]

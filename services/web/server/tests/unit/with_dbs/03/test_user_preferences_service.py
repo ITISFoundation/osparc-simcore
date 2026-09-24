@@ -206,9 +206,11 @@ def test_expected_fields_in_serialization():
         assert set(preference_class().to_db().keys()) == {"value"}
 
 
-_INACTIVITY_IDENTIFIER: Final[str] = UserInactivityThresholdFrontendUserPreference.model_fields[
-    "preference_identifier"
-].default
+_INACTIVITY_IDENTIFIER: Final[str] = next(
+    field.default
+    for name, field in UserInactivityThresholdFrontendUserPreference.model_fields.items()
+    if name == "preference_identifier"
+)
 _MINUTE: Final[int] = 60
 _HOUR: Final[int] = 60 * _MINUTE
 

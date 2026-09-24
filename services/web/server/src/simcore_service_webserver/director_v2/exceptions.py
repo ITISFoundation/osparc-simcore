@@ -23,5 +23,8 @@ class DirectorV2PipelineStatesRetrievalError(DirectorV2BaseError):
     msg_template = "Could not retrieve pipeline states"
 
 
+# NOTE: deliberately deep domain error hierarchy (service -> pipeline -> v2);
+# flattening it would lose the error-classification semantics
+# pylint: disable-next=too-many-ancestors
 class ComputationNotFoundError(DirectorV2ServiceError):
     msg_template = "Computation '{project_id}' not found"
