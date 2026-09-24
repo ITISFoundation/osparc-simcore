@@ -43,6 +43,14 @@ class PostgresTestConfig(TypedDict):
     port: str
 
 
+class PgTemplateState(TypedDict):
+    """session-scoped holder tracking a migrated template database (built lazily,
+    since resolving the DSN may require module-scoped fixtures)"""
+
+    built: bool
+    dsn: PostgresTestConfig | None
+
+
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
     url = PostgresDsn.build(
         scheme="postgresql+psycopg2",

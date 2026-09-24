@@ -15,6 +15,7 @@ from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.monkeypatch_envs import setenvs_from_dict
 from .helpers.postgres_tools import (
+    PgTemplateState,
     PostgresTestConfig,
     build_migrated_pg_template,
     cloned_pg_database_context,
@@ -82,11 +83,11 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
 
 
 @pytest.fixture(scope="session")
-def _postgres_migrated_template_state() -> Iterator[dict[str, Any]]:
+def _postgres_migrated_template_state() -> Iterator[PgTemplateState]:
     # NOTE: the template database itself is built lazily by postgres_db because resolving
     # the DSN can require module-scoped fixtures (e.g. docker_stack published ports). This
     # holder only tracks state and drops the template at session end.
-    state: dict[str, Any] = {"built": False, "dsn": None}
+    state: PgTemplateState = {"built": False, "dsn": None}
     yield state
     if (dsn := state["dsn"]) is not None:
         try:
@@ -97,7 +98,7 @@ def _postgres_migrated_template_state() -> Iterator[dict[str, Any]]:
             _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
 
 
-def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: dict[str, Any]) -> None:
+def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: PgTemplateState) -> None:
     with maintenance_engine_context(postgres_dsn) as maintenance:
         # wait until the server accepts connections (the stack may have just been deployed)
         wait_engine_ready(maintenance, timeout=_MINUTE)
@@ -115,7 +116,7 @@ def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: dict[str,
 @pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
-    _postgres_migrated_template_state: dict[str, Any],
+    _postgres_migrated_template_state: PgTemplateState,
 ) -> Iterator[sa.engine.Engine]:
     """A postgres database migrated to head and an sqlalchemy engine connected to it.
 
@@ -134,7 +135,7 @@ def postgres_db(
 @pytest.fixture
 def postgres_db_per_test_from_template(
     postgres_dsn: PostgresTestConfig,
-    _postgres_migrated_template_state: dict[str, Any],
+    _postgres_migrated_template_state: PgTemplateState,
 ) -> Iterator[sa.engine.Engine]:
     """Same as postgres_db but the test database is re-cloned from the
     migrated template before EVERY test (function scope), for suites whose DB fixture

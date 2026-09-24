@@ -30,7 +30,7 @@ Usage:
 
 import logging
 from collections.abc import Iterator
-from typing import Any, Final
+from typing import Final
 
 import docker
 import pytest
@@ -38,6 +38,7 @@ import simcore_postgres_database.cli
 import sqlalchemy as sa
 
 from pytest_simcore.helpers.postgres_tools import (
+    PgTemplateState,
     PostgresTestConfig,
     build_migrated_pg_template,
     database_exists,
@@ -54,10 +55,10 @@ _PG_RESET_TEMPLATE_DB: Final[str] = "integration_pg_reset_template"
 
 
 @pytest.fixture(scope="session")
-def _pg_reset_template_state() -> Iterator[dict[str, Any]]:
+def _pg_reset_template_state() -> Iterator[PgTemplateState]:
     # NOTE: the template is built lazily (resolving the DSN requires the module-scoped
     # docker stack), this holder only tracks state and drops the template at session end
-    state: dict[str, Any] = {"built": False, "dsn": None}
+    state: PgTemplateState = {"built": False, "dsn": None}
     yield state
     if (dsn := state["dsn"]) is not None:
         try:
@@ -78,7 +79,7 @@ def postgres_live_stack_db(
     postgres_dsn: PostgresTestConfig,
     postgres_engine: sa.engine.Engine,
     docker_client: docker.DockerClient,
-    _pg_reset_template_state: dict[str, Any],
+    _pg_reset_template_state: PgTemplateState,
 ) -> Iterator[sa.engine.Engine]:
     """In-place migrated postgres database (instead of the template-clone `postgres_db`
     provided by `pytest_simcore.postgres_service`), see module docstring.
