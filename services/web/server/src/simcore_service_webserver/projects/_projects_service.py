@@ -2451,9 +2451,11 @@ async def _send_message_to_rooms(
     app: web.Application,
     rooms: Iterable[GroupID],
     message: SocketMessageDict,
+    *,
+    strict: bool,
 ) -> None:
     await limited_gather(
-        *(socketio_service.send_message_to_standard_group(app, room, message) for room in rooms),
+        *(socketio_service.send_message_to_standard_group(app, room, message, strict=strict) for room in rooms),
         log=_logger,
         limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
     )
@@ -2463,15 +2465,19 @@ async def _send_message_to_project_groups(
     app: web.Application,
     project_id: ProjectID,
     message: SocketMessageDict,
+    *,
+    strict: bool,
 ) -> None:
     rooms_to_notify = await _list_project_group_rooms_to_notify(app, project_id)
-    await _send_message_to_rooms(app, rooms_to_notify, message)
+    await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
     notify_only_user: UserID | None = None,
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2492,15 +2498,18 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
+            strict=strict,
         )
     else:
-        await _send_message_to_project_groups(app, project["uuid"], message)
+        await _send_message_to_project_groups(app, project["uuid"], message, strict=strict)
 
 
 async def notify_project_nodes_update(
     app: web.Application,
     project: dict,
     node_ids: Iterable[NodeID],
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2518,15 +2527,17 @@ async def notify_project_nodes_update(
             data=data,
         )
 
-        await _send_message_to_rooms(app, rooms_to_notify, message)
+        await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
+    *,
+    strict: bool = False,
 ) -> None:
-    await notify_project_nodes_update(app, project, (node_id,))
+    await notify_project_nodes_update(app, project, (node_id,), strict=strict)
 
 
 async def retrieve_and_notify_project_locked_state(
