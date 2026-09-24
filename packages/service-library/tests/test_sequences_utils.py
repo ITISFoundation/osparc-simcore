@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from typing import Any
 
 import pytest
-from servicelib.sequences_utils import T, pairwise, partition_gen
+from servicelib.sequences_utils import pairwise, partition_gen
 
 
 @pytest.mark.parametrize(
@@ -53,7 +53,7 @@ def test_partition_gen(input_list: list[Any], expected: list[tuple[Any, ...]], s
 
     # check returned type
     for entry in result:
-        assert type(entry) == tuple
+        assert isinstance(entry, tuple)
 
 
 @pytest.mark.parametrize(
@@ -66,5 +66,5 @@ def test_partition_gen(input_list: list[Any], expected: list[tuple[Any, ...]], s
         pytest.param([1, 2, 3, 4], [(1, 2), (2, 3), (3, 4)], id="4_elements"),
     ],
 )
-def test_pairwise(input_iter: Iterable[T], expected: Iterable[tuple[T, T]]):
+def test_pairwise[T](input_iter: Iterable[T], expected: Iterable[tuple[T, T]]):
     assert list(pairwise(input_iter)) == expected
