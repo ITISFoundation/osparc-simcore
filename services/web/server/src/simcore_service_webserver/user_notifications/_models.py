@@ -35,7 +35,7 @@ class BaseUserNotification(BaseModel):
     date: datetime
     product: Literal["UNDEFINED"] | ProductName = "UNDEFINED"
     resource_id: Literal[""] | str = ""
-    user_from_id: None | UserID = None
+    user_from_id: UserID | None = None
 
     @field_validator("category", mode="before")
     @classmethod

@@ -2,9 +2,10 @@
 This framework can serve different variants of the front-end client denoted 'products'
 
 A product can be customized using settings defined in the backend (see products pg table).
-Some of these are also transmitted to the front-end client via statics (see statis_settings.py)
+Some of these are also transmitted to the front-end client via statics (see statics/settings.py)
 
-At every request to this service API, a middleware discovers which product is the requester and sets the appropriate product context
+At every request to this service API, a middleware discovers which product is the requester and
+sets the appropriate product context
 
 """
 

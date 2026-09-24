@@ -67,7 +67,8 @@ async def register_licensed_resource(
         if licensed_resource.licensed_resource_data != new_licensed_resource_data:
             ddiff = DeepDiff(licensed_resource.licensed_resource_data, new_licensed_resource_data)
             msg = (
-                f"DIFFERENT_RESOURCE: {resource_key=} found in licensed_resource_id={licensed_resource.licensed_resource_id} with different data. "
+                f"DIFFERENT_RESOURCE: {resource_key=} found in "
+                f"licensed_resource_id={licensed_resource.licensed_resource_id} with different data. "
                 f"Diff:\n\t{pformat(ddiff, indent=2, width=200)}"
             )
             return RegistrationResult(licensed_resource, RegistrationState.DIFFERENT_RESOURCE, msg)
@@ -75,7 +76,8 @@ async def register_licensed_resource(
         return RegistrationResult(
             licensed_resource,
             RegistrationState.ALREADY_REGISTERED,
-            f"ALREADY_REGISTERED: {resource_key=} found in licensed_resource_id={licensed_resource.licensed_resource_id}",
+            f"ALREADY_REGISTERED: {resource_key=} found in "
+            f"licensed_resource_id={licensed_resource.licensed_resource_id}",
         )
 
     except LicensedResourceNotFoundError:
@@ -90,7 +92,8 @@ async def register_licensed_resource(
         return RegistrationResult(
             licensed_resource,
             RegistrationState.NEWLY_REGISTERED,
-            f"NEWLY_REGISTERED: {resource_key=} registered with licensed_resource_id={licensed_resource.licensed_resource_id}",
+            f"NEWLY_REGISTERED: {resource_key=} registered with "
+            f"licensed_resource_id={licensed_resource.licensed_resource_id}",
         )
 
 

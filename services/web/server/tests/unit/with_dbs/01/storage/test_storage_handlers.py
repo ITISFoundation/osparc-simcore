@@ -91,7 +91,8 @@ PREFIX = "/" + "v0" + "/storage"
 
 
 @pytest.mark.xfail(
-    reason="This is really weird: A first test that fails is necessary to make this test module work with pytest-asyncio>=0.24.0. "
+    reason="This is really weird: A first test that fails is necessary to make this test module "
+    "work with pytest-asyncio>=0.24.0. "
     "Maybe because of module/session event loops?"
 )
 async def test_pytest_asyncio_failure(

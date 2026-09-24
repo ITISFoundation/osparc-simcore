@@ -1,10 +1,8 @@
-from typing import TypeAlias
-
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel
 
-_DB_KEY: TypeAlias = str
+type _DB_KEY = str
 
 
 class CompTaskNotificationPayload(BaseModel):

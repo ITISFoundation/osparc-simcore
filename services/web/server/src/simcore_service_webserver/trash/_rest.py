@@ -27,7 +27,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "The project is currently in use and cannot be moved to trash. Please stop all running services first and try again.",
+            "The project is currently in use and cannot be moved to trash. Please stop all running "
+            "services first and try again.",
             _version=1,
         ),
     ),

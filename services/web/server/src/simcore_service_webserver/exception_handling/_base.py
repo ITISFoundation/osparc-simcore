@@ -3,7 +3,7 @@ import logging
 from collections.abc import Callable, Iterable
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
-from typing import Protocol, TypeAlias
+from typing import Protocol
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler as WebHandler
@@ -29,7 +29,7 @@ class AiohttpExceptionHandler(Protocol):
         """
 
 
-ExceptionHandlersMap: TypeAlias = dict[type[Exception], AiohttpExceptionHandler]
+type ExceptionHandlersMap = dict[type[Exception], AiohttpExceptionHandler]
 
 
 def _sort_exceptions_by_specificity(
@@ -63,7 +63,8 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
         # etc
 
     ```
-    and `exception_handlers_map` defines the mapping of exception types (`exc_type*`) to their handlers (`exc_handler*`).
+    and `exception_handlers_map` defines the mapping of exception types (`exc_type*`)
+    to their handlers (`exc_handler*`).
     """
 
     def __init__(

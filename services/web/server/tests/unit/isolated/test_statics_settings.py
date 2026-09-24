@@ -18,7 +18,9 @@ FOGBUGZ_NEWCASE_URL_TEMPLATE = (
 
 # NEW case url (see product overrides env_prefix = WEBSERVER_S4L_ ... )
 # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
-# https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
+# https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug
+#   &ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>
+#   &ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
 class OsparcDependency(BaseModel):
     name: str
     version: str

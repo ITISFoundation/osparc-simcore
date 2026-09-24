@@ -14,7 +14,8 @@ class RealTimeCollaborationSettings(BaseCustomSettings):
     RTC_MAX_NUMBER_OF_USERS: Annotated[
         PositiveInt | None,
         Field(
-            description="Maximum number of user sessions allowed on a single project at once. (null disables the limit)",
+            description="Maximum number of user sessions allowed on a single project at once. "
+            "(null disables the limit)",
         ),
     ]
 

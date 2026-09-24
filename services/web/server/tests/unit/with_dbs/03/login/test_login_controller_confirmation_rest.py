@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 from collections.abc import Callable, Coroutine
-from typing import Any, TypeAlias
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -21,7 +21,7 @@ from simcore_service_webserver.users import _users_service
 from simcore_service_webserver.wallets import _api as _wallets_service
 from simcore_service_webserver.wallets import _db as _wallets_repository
 
-CreateTokenCallable: TypeAlias = Callable[[int, ActionLiteralStr, str | None], Coroutine[Any, Any, Confirmation]]
+type CreateTokenCallable = Callable[[int, ActionLiteralStr, str | None], Coroutine[Any, Any, Confirmation]]
 
 
 @pytest.fixture
