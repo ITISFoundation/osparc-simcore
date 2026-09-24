@@ -19,6 +19,7 @@ drain must survive it — while a genuine cancellation still propagates.
 """
 
 import asyncio
+import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from unittest import mock
@@ -327,3 +328,61 @@ async def test_genuine_cancellation_still_propagates(
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows) == 1, "a genuinely cancelled claim must roll back, keeping the event"
     assert rows[0]["attempts"] == 0
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_stalled_emit_times_out_and_keeps_event(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    mock_project_writes: Callable[[dict[str, Any]], None],
+    mocked_socketio_emit: MockType,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+):
+    """A stalled socket.io publish (half-open broker TCP, nothing ever acked) must not
+    pin the claim transaction, the advisory/row locks, and pool connections forever:
+    processing has a deadline, after which the claim fails as an infrastructure error,
+    the claim rolls back, and the event stays for a retry.
+    """
+    assert client.app
+    monkeypatch.setattr(
+        "simcore_service_webserver.db_listener._service._PROCESSING_TIMEOUT",
+        datetime.timedelta(milliseconds=500),
+    )
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs={},
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    mock_project_writes(_outbox_test_project(project, task["node_id"]))
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+
+    stalled = asyncio.Event()  # never set: the publish hangs without raising
+
+    async def _stalled_emit(*_args, **_kwargs):
+        await stalled.wait()
+
+    mocked_socketio_emit.side_effect = _stalled_emit
+
+    # no external cancellation here: the deadline must do it; fail the test if not
+    outcome = await asyncio.wait_for(
+        _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()), timeout=15
+    )
+    assert outcome is not None
+    assert outcome.success is False, "a stalled emit must fail the claim, not hang it"
+    assert outcome.is_infra_error is True
+
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1, "a timed-out claim must roll back, keeping the event"
+    assert rows[0]["attempts"] == 1
