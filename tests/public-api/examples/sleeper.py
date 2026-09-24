@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from osparc import File, Job, JobInputs, JobOutputs, JobStatus, Solver, UsersApi
 from osparc.api import FilesApi, SolversApi
 
-CLIENT_VERSION = tuple(map(int, osparc.__version__.split(".")))
+CLIENT_VERSION = tuple(int(x) for x in osparc.__version__.split(".") if x.isdigit())
 assert CLIENT_VERSION >= (0, 4, 3)
 
 

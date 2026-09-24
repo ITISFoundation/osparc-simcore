@@ -171,7 +171,8 @@ async def _pull_push_service(
             image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
             image_labels.update(
                 {
-                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
+                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", '
+                    f'"affiliation": "IT\'IS Foundation"}}] }}'
                 }
             )
             image_labels.update({"maintainer": f"{owner_email}"})

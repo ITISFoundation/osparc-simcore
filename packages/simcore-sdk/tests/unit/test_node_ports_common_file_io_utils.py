@@ -252,8 +252,9 @@ async def test_upload_file_to_presigned_links(
     as it is waiting for more data.
 
     Until this can be reproduced this shall stay here.
-    Mind also this link https://github.com/aws/aws-sdk-js/issues/281 where it seems removing the Content-length header helped:
-    this could be done and tested by: packages/simcore-sdk/src/simcore_sdk/node_ports_common/file_io_utils.py:274-276
+    Mind also this link https://github.com/aws/aws-sdk-js/issues/281 where it seems removing
+    the Content-length header helped: this could be done and tested by:
+    packages/simcore-sdk/src/simcore_sdk/node_ports_common/file_io_utils.py:274-276
 
     For this we need the EXACT size of the file that is uploaded. Therefore according changes to output the size
     in bytes of the problematic file were added.

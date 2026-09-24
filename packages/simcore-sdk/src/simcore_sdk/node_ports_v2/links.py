@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from models_library.basic_regex import UUID_RE
 from models_library.projects_nodes_io import BaseFileLink, DownloadLink
@@ -28,17 +28,17 @@ class FileLink(BaseFileLink):
 
 
 # TODO: needs to be in sync with project_nodes.InputTypes and project_nodes.OutputTypes
-DataItemValue = Union[
-    StrictBool,
-    StrictInt,
-    StrictFloat,
-    StrictStr,
-    DownloadLink,
-    PortLink,
-    FileLink,
-    list[Any],  # arrays
-    dict[str, Any],  # object
-]
+DataItemValue = (
+    StrictBool
+    | StrictInt
+    | StrictFloat
+    | StrictStr
+    | DownloadLink
+    | PortLink
+    | FileLink
+    | list[Any]  # arrays
+    | dict[str, Any]  # object
+)
 
 #
 # - the port's value is stored as Optional[DataItemValue]
@@ -47,9 +47,9 @@ DataItemValue = Union[
 # - ItemValue values are resolved into ItemConcreteValue using Port.get()
 # - ItemConcreteValue are the types finally consumed by the actual service port
 #
-SchemaValidatedTypes = Union[StrictBool, StrictInt, StrictFloat, StrictStr, list[Any], dict[str, Any]]
-ItemValue = Union[SchemaValidatedTypes, AnyUrl]
-ItemConcreteValue = Union[SchemaValidatedTypes, Path]
+SchemaValidatedTypes = StrictBool | StrictInt | StrictFloat | StrictStr | list[Any] | dict[str, Any]
+ItemValue = SchemaValidatedTypes | AnyUrl
+ItemConcreteValue = SchemaValidatedTypes | Path
 ItemConcreteValueTypes = (
     type[StrictBool]
     | type[StrictInt]
