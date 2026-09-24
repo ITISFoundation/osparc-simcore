@@ -8,7 +8,7 @@ from enum import StrEnum
 from typing import Annotated, Final, Literal
 
 import jsonschema
-from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator
+from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 from referencing.jsonschema import ObjectSchema
 
@@ -18,6 +18,10 @@ from .base import ApiServerInputSchema, ApiServerOutputSchema
 _ChatCompletionRequestMessageAdapter: Final[TypeAdapter[ChatCompletionRequestMessage]] = TypeAdapter(
     ChatCompletionRequestMessage
 )
+
+# sanity limit to avoid abuses, the actual actual validation is plaed in the
+# vendor service
+_MAX_CHAT_INPUT_CHARS: Final[int] = 3_000_000
 
 
 class ResponseStatus(StrEnum):
@@ -123,6 +127,22 @@ class CreateResponseRequest(ApiServerInputSchema):
     stream: bool = False
     temperature: Temperature
     text: TextParam = TextParam()
+
+    @model_validator(mode="after")
+    def _validate_input_budget(self) -> "CreateResponseRequest":
+        total_chars = sum(len(msg.content) for msg in self.input)
+        if total_chars > _MAX_CHAT_INPUT_CHARS:
+            _error_type = "conversation_input_budget_exceeded"
+            _msg_template = (
+                "This conversation is {total} characters, over the {limit}-character limit "
+                "the assistant can process. Please shorten it or start a new conversation to continue."
+            )
+            raise PydanticCustomError(
+                _error_type,
+                _msg_template,
+                {"total": f"{total_chars:,}", "limit": f"{_MAX_CHAT_INPUT_CHARS:,}"},
+            )
+        return self
 
     def to_chat_response_format(self) -> ChatResponseFormat | None:
         fmt = self.text.format
