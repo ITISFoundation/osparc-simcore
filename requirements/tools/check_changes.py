@@ -105,15 +105,12 @@ def get_symbol(c: ReqsClassification):
 
 
 def format_reqs_paths(req_paths):
-    used_packages = []
     symbols = defaultdict(list)
     for rp in req_paths:
         c = classify_reqs_path(rp)
         symbols[c.module_name].append(get_symbol(c))
 
-    for module_name in sorted(symbols.keys()):
-        used_packages.append(f"{module_name}{''.join(symbols[module_name])}")
-    return used_packages
+    return [f"{module_name}{''.join(symbols[module_name])}" for module_name in sorted(symbols.keys())]
 
 
 def main_changes_stats() -> None:
@@ -207,10 +204,7 @@ def parse_dependencies(repodir: Path, *, exclude: set | None = None) -> list[Req
         try:
             t = {"_base.txt": "base", "_test.txt": "test", "_tools.txt": "tool"}[reqfile.name]
         except KeyError:
-            if "test" in f"{reqfile.parent}":
-                t = "test"
-            else:
-                t = "other"
+            t = "test" if "test" in f"{reqfile.parent}" else "other"
 
         reqs.append(
             ReqFile(
@@ -240,7 +234,7 @@ def repo_wide_changes(exclude: set | None = None) -> None:
         for i, name in enumerate(sorted(deps.keys()), start=1):
 
             def _norm(thing):
-                return [f"{v}" for v in sorted(list(set(thing)))]
+                return [f"{v}" for v in sorted(set(thing))]
 
             bases = _norm(deps[name]["base"])
             tests = _norm(deps[name]["test"])

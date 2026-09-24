@@ -22,7 +22,7 @@ import pytest
 from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
 from tenacity import Retrying, TryAgain, retry_if_exception_type, stop_after_delay, wait_fixed
 
-osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
+osparc_VERSION = tuple(int(x) for x in osparc.__version__.split(".") if x.isdigit())
 assert osparc_VERSION >= (0, 4, 3)
 
 

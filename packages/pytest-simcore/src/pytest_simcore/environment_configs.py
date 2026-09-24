@@ -66,7 +66,8 @@ def external_envfile_dict(request: pytest.FixtureRequest, osparc_simcore_root_di
     if envs:
         response = input(
             f"🚨 CAUTION: You are about to run tests using environment variables loaded from '{envfile}'.\n"
-            "This may cause tests to interact with or modify real external systems (e.g., production or staging environments).\n"
+            "This may cause tests to interact with or modify real external systems "
+            "(e.g., production or staging environments).\n"
             "Proceeding could result in data loss or unintended side effects.\n"
             "Are you sure you want to continue? [y/N]: "
         )

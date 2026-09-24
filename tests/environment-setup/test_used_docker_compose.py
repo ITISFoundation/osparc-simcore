@@ -45,7 +45,8 @@ def test_no_docker_compose_v1_in_ci_scripts(
 
         versions_in_workflow_files.update(versions_in_file)
     assert len(versions_in_workflow_files) == 0, (
-        f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
+        f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, "
+        f"please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
     )
 
 
@@ -143,7 +144,8 @@ def test_network_names_contain_only_letters_and_underscores(
     e.g. `make .stack-simcore-development.yml` produces a compose file that do not include these networks which
     results in an error when the stack starts that prints something like
 
-    ERROR: failed to create service master-simcore_docker-api-proxy: Error response from daemon: network master-simcore_docker-api-network not found
+    ERROR: failed to create service master-simcore_docker-api-proxy: Error response from daemon:
+    network master-simcore_docker-api-network not found
     """
     assert compose_path.exists()
     compose = yaml.safe_load(compose_path.read_text())
@@ -152,5 +154,6 @@ def test_network_names_contain_only_letters_and_underscores(
 
     for network_name in networks:
         assert re.match(r"^[a-zA-Z_]+$", network_name), (
-            f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid characters. Only letters and underscores are allowed."
+            f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid "
+            "characters. Only letters and underscores are allowed."
         )

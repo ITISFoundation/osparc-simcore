@@ -59,7 +59,10 @@ class CapturedParameterSchema(BaseModel):
     def regex_pattern(self) -> str:
         # first deal with recursive types:
         if self.oneOf:
-            msg = "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
+            msg = (
+                "Current version cannot compute regex patterns in case of oneOf. "
+                "Please go ahead and implement it yourself."
+            )
             raise NotImplementedError(msg)
         if self.anyOf is not None:
             return "|".join(

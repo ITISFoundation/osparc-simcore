@@ -48,7 +48,7 @@ class Function(BaseModel):
     description: str
     input_schema: Annotated[Schema, Field()] = Schema()
     output_schema: Annotated[Schema, Field()] = Schema()
-    default_inputs: Annotated[dict[str, Any], Field()] = dict()
+    default_inputs: Annotated[dict[str, Any], Field()] = {}
     solver_key: Annotated[str, Field()] = _SOLVER_KEY
     solver_version: Annotated[str, Field()] = _SOLVER_VERSION
 

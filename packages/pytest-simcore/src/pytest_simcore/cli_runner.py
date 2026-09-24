@@ -20,6 +20,8 @@ def cli_runner() -> CliRunner:
 
 @pytest.fixture
 def isolated_cli_runner(cli_runner: CliRunner) -> Iterator[CliRunner]:
-    """Instance of `typer.testing.CliRunner` running under a temporary working directory for isolated filesystem tests."""
+    """Instance of `typer.testing.CliRunner` running under a temporary working directory
+    for isolated filesystem tests.
+    """
     with cli_runner.isolated_filesystem():
         yield cli_runner

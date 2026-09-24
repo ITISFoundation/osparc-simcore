@@ -52,7 +52,8 @@ def _(parser: LocustArgumentParser) -> None:
         "--n-jobs",
         type=int,
         default=None,
-        help=f"Number of jobs to run via map-endpoint. If not set, a random number between 0 and {_MAX_NJOBS} is selected",
+        help=f"Number of jobs to run via map-endpoint. If not set, a random number "
+        f"between 0 and {_MAX_NJOBS} is selected",
     )
 
 
@@ -90,7 +91,7 @@ class WebApiUser(OsparcWebUserBase):
         job_collection_uuid = response.json().get("uid")
 
         # wait for the job to complete
-        query_params = dict(include_status=True, function_job_collection_id=job_collection_uuid)
+        query_params = {"include_status": True, "function_job_collection_id": job_collection_uuid}
         for attempt in Retrying(
             stop=stop_after_delay(max_delay=max_poll_time),
             wait=wait_exponential(multiplier=1, min=1, max=10),
@@ -111,7 +112,8 @@ class WebApiUser(OsparcWebUserBase):
                     statuses = [item.get("status", {}) for item in items]
                     all_job_statuses.extend([status.get("status", None) for status in statuses if status])
                     assert not any(status is None for status in all_job_statuses), (
-                        f"Test misconfiguration: Function job collection ({job_collection_uuid=}) listed {statuses=} with missing status"
+                        f"Test misconfiguration: Function job collection ({job_collection_uuid=}) "
+                        f"listed {statuses=} with missing status"
                     )
                     links = response.json().get("links", {})
                     assert isinstance(links, dict)
@@ -122,5 +124,6 @@ class WebApiUser(OsparcWebUserBase):
 
                 if any(status != "SUCCESS" for status in all_job_statuses):
                     raise ValueError(
-                        f"Function job ({job_collection_uuid=}) for function ({function_uuid=}) returned {all_job_statuses=}"
+                        f"Function job ({job_collection_uuid=}) for function ({function_uuid=}) "
+                        f"returned {all_job_statuses=}"
                     )
