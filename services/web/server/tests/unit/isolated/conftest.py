@@ -140,7 +140,8 @@ def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 @pytest.fixture
 def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     #
-    # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
+    # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    #   local/webserver:production printenv
     #
     return setenvs_from_envfile(
         monkeypatch,

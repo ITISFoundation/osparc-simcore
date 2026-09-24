@@ -181,7 +181,9 @@ async def pay_debt_with_different_wallet(
         user_id=user_id,
         user_email=user["email"],
         osparc_credits=debt_amount,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}.",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {current_wallet_id} to wallet {new_wallet_id}. Project id {project_id}."
+        ),
         created_at=_created_at,
     )
 
@@ -192,7 +194,9 @@ async def pay_debt_with_different_wallet(
         user_id=user_id,
         user_email=user["email"],
         osparc_credits=-debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}.",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {new_wallet_id} to wallet {current_wallet_id}. Project id {project_id}."
+        ),
         created_at=_created_at,
     )
 

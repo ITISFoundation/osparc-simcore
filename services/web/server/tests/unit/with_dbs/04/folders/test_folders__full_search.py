@@ -120,7 +120,7 @@ async def test_folders_full_search(
         # create a new folder
         url = client.app.router["create_folder"].url_for()
         resp = await client.post(f"{url}", json={"name": "New user folder"})
-        new_user_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+        _new_user_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
         # list full folder search
         url = client.app.router["list_folders_full_search"].url_for()

@@ -34,11 +34,12 @@ async def test_iter_latest_product_services(
 ):
     """Test iterating through latest product services."""
     # Act
-    services = []
-    async for service in iter_latest_product_services(
-        studies_dispatcher_settings, asyncpg_engine, product_name="osparc"
-    ):
-        services.append(service)
+    services = [
+        service
+        async for service in iter_latest_product_services(
+            studies_dispatcher_settings, asyncpg_engine, product_name="osparc"
+        )
+    ]
 
     # Assert
     assert len(services) == 1
@@ -59,15 +60,16 @@ async def test_iter_latest_product_services_with_pagination(
 ):
     """Test iterating through services with pagination."""
     # Act
-    services = []
-    async for service in iter_latest_product_services(
-        studies_dispatcher_settings,
-        asyncpg_engine,
-        product_name="osparc",
-        page_number=1,
-        page_size=1,
-    ):
-        services.append(service)
+    services = [
+        service
+        async for service in iter_latest_product_services(
+            studies_dispatcher_settings,
+            asyncpg_engine,
+            product_name="osparc",
+            page_number=1,
+            page_size=1,
+        )
+    ]
 
     # Assert
     assert len(services) == 1
