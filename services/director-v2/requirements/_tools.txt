@@ -27,12 +27,39 @@ isort==8.0.1
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
+jinja2==3.1.6
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
+    #   memray
 librt==0.8.1
     # via
     #   -c requirements/_test.txt
     #   mypy
+linkify-it-py==2.2.0
+    # via markdown-it-py
+markdown-it-py==4.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   mdit-py-plugins
+    #   rich
+    #   textual
+markupsafe==3.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
+    #   jinja2
 mccabe==0.7.0
     # via pylint
+mdit-py-plugins==0.6.1
+    # via textual
+mdurl==0.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   markdown-it-py
+memray==1.20.0
+    # via -r requirements/_tools.in
 mypy==1.19.1
     # via
     #   -c requirements/_test.txt
@@ -60,9 +87,16 @@ platformdirs==4.5.0
     #   black
     #   pylint
     #   python-discovery
+    #   textual
     #   virtualenv
 pre-commit==4.5.1
     # via -r requirements/../../../requirements/devenv.txt
+pygments==2.21.0
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
+    #   rich
+    #   textual
 pylint==4.0.5
     # via -r requirements/../../../requirements/devenv.txt
 python-discovery==1.1.3
@@ -76,8 +110,15 @@ pyyaml==6.0.3
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
+rich==14.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   memray
+    #   textual
 ruff==0.15.6
     # via -r requirements/../../../requirements/devenv.txt
+textual==8.2.8
+    # via memray
 tomlkit==0.14.0
     # via pylint
 typing-extensions==4.16.0
@@ -85,6 +126,7 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
+    #   textual
 virtualenv==21.2.0
     # via pre-commit
 watchdog==6.0.0

@@ -52,7 +52,7 @@ h11==0.16.0
     #   uvicorn
 httpcore==1.0.9
     # via httpx
-httptools==0.7.1
+httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via
@@ -169,7 +169,7 @@ urllib3==2.7.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   sentry-sdk
-uvicorn==0.42.0
+uvicorn==0.53.0
     # via
     #   fastapi
     #   fastapi-cli
@@ -178,7 +178,7 @@ uvloop==0.22.1
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn
-websockets==16.0
+websockets==17.1
     # via uvicorn
 wrapt==1.17.3
     # via opentelemetry-instrumentation
