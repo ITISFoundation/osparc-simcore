@@ -114,7 +114,6 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
             "DIRECTOR_TRACING",
             "DIRECTOR_V2_TRACING",
             "DYNAMIC_SCHEDULER_TRACING",
-            "EFS_GUARDIAN_TRACING",
             "INVITATIONS_TRACING",
             "PAYMENTS_TRACING",
             "RESOURCE_USAGE_TRACKER_TRACING",
@@ -270,7 +269,7 @@ def ops_services_selection(request) -> list[str]:
     return getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
 
 
-_CI_ALLOWED_OPS_SERVICE_NAMES: Final[tuple[str, ...]] = ("minio",)
+_CI_ALLOWED_OPS_SERVICE_NAMES: Final[tuple[str, ...]] = ("s3-storage",)
 
 
 @pytest.fixture(scope="module")
@@ -325,7 +324,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -
         _save_docker_logs_to_folder(failed_test_directory)
 
 
-def _minio_fix(service_environs: dict) -> dict:
+def _fix_s3_endpoint_to_host(service_environs: dict[str, str]) -> dict[str, str]:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
         service_environs["S3_ENDPOINT"] = f"http://{get_localhost_ip()}:9001"
@@ -358,7 +357,7 @@ def _filter_services_and_dump(include: list, services_compose: dict, docker_comp
         if "build" in service:
             service.pop("build", None)
         if "environment" in service:
-            service["environment"] = _minio_fix(service["environment"])
+            service["environment"] = _fix_s3_endpoint_to_host(service["environment"])
 
         if name == "postgres":
             # NOTE: # -c fsync=off is not recommended for production as this disable writing to disk https://pythonspeed.com/articles/faster-db-tests/

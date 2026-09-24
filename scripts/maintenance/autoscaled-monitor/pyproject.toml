@@ -22,7 +22,7 @@ dependencies = [
   "orjson>=3.11.7",
 ]
 name = "autoscaled-monitor"
-version = "1.2.0"
+version = "1.2.1"
 authors = [
   { name = "Sylvain Anderegg", email = "35365065+sanderegg@users.noreply.github.com" },
 ]
@@ -34,5 +34,5 @@ requires-python = ">=3.13"
 autoscaled-monitor = "autoscaled_monitor.main:app"
 
 [build-system]
-requires = ["uv_build>=0.10.9,<0.11.0"]
+requires = ["uv_build>=0.12.10,<0.13.0"]
 build-backend = "uv_build"

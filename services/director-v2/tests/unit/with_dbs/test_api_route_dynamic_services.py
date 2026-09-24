@@ -150,7 +150,7 @@ def mock_env(
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())
@@ -307,7 +307,6 @@ def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
         return_value=UserExtraProperties(
             is_internet_enabled=False,
             is_telemetry_enabled=False,
-            is_efs_enabled=False,
             mount_data=False,
         )
     )

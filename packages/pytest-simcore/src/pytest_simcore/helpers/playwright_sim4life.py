@@ -32,6 +32,9 @@ _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 )
 _S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
 _S4L_COPY_WORKSPACE_TIME: Final[int] = 60 * SECOND
+# NOTE: after a failed first handshake, the socket.io client reconnects via polling and upgrades
+# to a websocket shortly after s4l-core starts listening; allow plenty of time for that.
+_S4L_WEBSOCKET_RECONNECT_TIMEOUT: Final[int] = 30 * SECOND
 
 
 @dataclass(kw_only=True)
@@ -97,7 +100,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
 
 
 class WaitForS4LDict(TypedDict):
-    websocket: WebSocket
+    websocket: RobustWebSocket
     iframe: FrameLocator
 
 
@@ -137,26 +140,20 @@ def wait_for_launched_s4l(
                 product_url=product_url,
                 is_service_legacy=is_service_legacy,
             )
-        s4l_websocket = ws_info.value
+        # NOTE: the first websocket connection to s4l-core typically fails (502) while s4l-core is
+        # still booting; the socket.io client then retries (polling, then a websocket upgrade).
+        # A RobustWebSocket re-attaches to that reconnected socket instead of erroring out.
+        s4l_websocket = RobustWebSocket(
+            page=page,
+            ws=ws_info.value,
+            ws_predicate=S4LWaitForWebsocket(logger=ctx.logger),
+            reconnect_timeout=_S4L_WEBSOCKET_RECONNECT_TIMEOUT,
+            log_prefix=_WEBSOCKET_MESSAGE_S4L_PREFIX,
+        )
+        # NOTE: block here (instead of reconnecting lazily) so the caller always gets a connected
+        # websocket, e.g. before interacting with the S4L UI or waiting for streaming events.
+        s4l_websocket.wait_until_connected(timeout=_S4L_WEBSOCKET_RECONNECT_TIMEOUT)
         ctx.logger.info("acquired S4L websocket!")
-
-        def on_framesent(payload: str | bytes) -> None:
-            ctx.logger.debug("%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload)
-
-        def on_framereceived(payload: str | bytes) -> None:
-            ctx.logger.debug("%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload)
-
-        def on_close(_: WebSocket) -> None:
-            ctx.logger.warning("%s⚠️ WebSocket closed.", _WEBSOCKET_MESSAGE_S4L_PREFIX)
-
-        def on_socketerror(error_msg: str) -> None:
-            ctx.logger.error("%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, error_msg)
-
-        # Attach core event listeners
-        s4l_websocket.on("framesent", on_framesent)
-        s4l_websocket.on("framereceived", on_framereceived)
-        s4l_websocket.on("close", on_close)
-        s4l_websocket.on("socketerror", on_socketerror)
 
         return {
             "websocket": s4l_websocket,
@@ -172,16 +169,18 @@ def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
 
     # Wait until grid is shown
     # NOTE: the startup screen should disappear very fast after the websocket was acquired
-    with log_context(logging.INFO, "Interact with S4l"):
-        grid_item = s4l_iframe.get_by_test_id("tree-item-Grid(Active)")
-        if grid_item.count() == 0:
-            # old ui
-            grid_item = s4l_iframe.get_by_test_id("tree-item-Grid")
-        grid_item.nth(0).click()
+    # NOTE: or_() is used instead of branching on count() because count() does not wait:
+    # the tree item may only be rendered shortly after this check (new UI: the label is
+    # dynamic, e.g. "Grid(Active)"), which would otherwise select the old-UI-only selector
+    # and time out on click.
+    with log_context(logging.INFO, msg="Interact with S4l") as ctx:
+        ctx.logger.info("Waiting for the grid item to be visible...")
+        grid_item = s4l_iframe.get_by_test_id("tree-item-Grid(Active)").or_(s4l_iframe.get_by_test_id("tree-item-Grid"))
+        grid_item.first.click()
     page.wait_for_timeout(3000)
 
 
-def check_video_streaming(page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket) -> None:
+def check_video_streaming(page: Page, s4l_iframe: FrameLocator, s4l_websocket: RobustWebSocket) -> None:
     assert _S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME < _S4L_STREAMING_ESTABLISHMENT_MAX_TIME
     with log_context(logging.INFO, "Check videostreaming works"):
         waiter = _S4LSocketIOCheckBitRateIncreasesMessagePrinter(

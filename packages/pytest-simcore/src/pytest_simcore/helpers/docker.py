@@ -4,12 +4,13 @@ import os
 import re
 import subprocess
 from collections.abc import Container, Iterable
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 import docker
 import yaml
+from docker.models.services import Service
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
@@ -18,7 +19,7 @@ from tenacity.wait import wait_fixed
 
 # NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status1 because some of the
 # packages tests installations do not include this library!!
-class ContainerStatus(str, Enum):
+class ContainerStatus(StrEnum):
     """
     String representation of the container state. Can be one of "created",
     "running", "paused", "restarting", "removing", "exited", or "dead".
@@ -45,6 +46,23 @@ _NORMPATH_COUNT = 0
 log = logging.getLogger(__name__)
 
 
+def _pick_service(candidates: list[Service], service_name: str, target_ports: list[int] | int | None) -> Service:
+    # docker service names are '{stack}_{service}': prefer matches at the stack-separator
+    # boundary so e.g. 'storage' does not also hit another stack's 's3-storage' service
+    if len(candidates) > 1:
+        boundary = [s for s in candidates if s.name == service_name or s.name.endswith(f"_{service_name}")]
+        candidates = boundary or candidates
+    if len(candidates) > 1 and isinstance(target_ports, int):
+        # finally disambiguate by the service actually publishing the requested target port
+        with_port = [
+            s
+            for s in candidates
+            if any(p.get("TargetPort") == target_ports for p in s.attrs["Endpoint"].get("Ports", []))
+        ]
+        candidates = with_port or candidates
+    return candidates[0]
+
+
 @retry(
     wait=wait_fixed(2),
     stop=stop_after_attempt(10),
@@ -57,12 +75,12 @@ def get_service_published_port(service_name: str, target_ports: list[int] | int 
     # NOTE: retries since services can take some time to start
     client = docker.from_env()
 
-    services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
-    if not services:
+    candidates = [s for s in client.services.list() if str(s.name).endswith(service_name)]
+    if not candidates:
         msg = f"Cannot find published port for service '{service_name}'.Probably services still not started."
         raise RuntimeError(msg)
 
-    service_ports = services[0].attrs["Endpoint"].get("Ports")
+    service_ports = _pick_service(candidates, service_name, target_ports).attrs["Endpoint"].get("Ports")
     if not service_ports:
         msg = (
             f"Cannot find published port for service '{service_name}' in endpoint.Probably services still not started."
@@ -167,8 +185,8 @@ def run_docker_compose_config(
 
     # Specify an alternate compose files
     #  - When you use multiple Compose files, all paths in the files are relative
-    #       to the first configuration file specified with -f.
-    #    You can use the --project-directory option to override this base path.
+    #    to the first configuration file specified with -f. You can use the
+    #    --project-directory option to override this base path.
     for docker_compose_path in docker_compose_paths:
         bash_options += [os.path.relpath(docker_compose_path, project_dir)]
 

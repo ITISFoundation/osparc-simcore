@@ -52,7 +52,7 @@ def to_desc(exceptions: list[type[Exception]] | type[Exception]):
         status.HTTP_409_CONFLICT: {
             "description": to_desc([ProjectTooManyProjectOpenedError]),
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": to_desc([ValidationError])},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": to_desc([ValidationError])},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": to_desc([DirectorV2ServiceError])},
     },
 )

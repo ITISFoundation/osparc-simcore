@@ -26,7 +26,6 @@ pytest
 pytest-asyncio
 pytest-celery
 pytest-cov
-pytest-docker
 pytest-mock
 pytest-runner
 respx

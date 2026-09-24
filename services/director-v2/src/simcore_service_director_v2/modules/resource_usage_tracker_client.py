@@ -9,9 +9,6 @@ from typing import cast
 import httpx
 from fastapi import FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
-    WalletTotalCredits,
-)
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingPlanGet,
     RutPricingUnitGet,
@@ -23,7 +20,6 @@ from models_library.resource_tracker import (
     PricingUnitId,
 )
 from models_library.services import ServiceKey, ServiceVersion
-from models_library.wallets import WalletID
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
 
@@ -138,18 +134,6 @@ class ResourceUsageTrackerClient:
         )
         response.raise_for_status()
         return RutPricingUnitGet.model_validate(response.json())
-
-    async def get_wallet_credits(
-        self,
-        product_name: ProductName,
-        wallet_id: WalletID,
-    ) -> WalletTotalCredits:
-        response = await self.client.post(
-            "/credit-transactions/credits:sum",
-            params={"product_name": product_name, "wallet_id": wallet_id},
-        )
-        response.raise_for_status()
-        return WalletTotalCredits.model_validate(response.json())
 
     #
     # app

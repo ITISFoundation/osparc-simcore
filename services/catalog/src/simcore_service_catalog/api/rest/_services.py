@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Annotated, Any, TypeAlias, cast
+from typing import Annotated, Any, cast
 
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -29,8 +29,6 @@ from .._dependencies.repository import get_repository
 from .._dependencies.services import get_service_from_manifest
 
 _logger = logging.getLogger(__name__)
-
-ServicesSelection: TypeAlias = set[tuple[str, str]]
 
 
 def _compose_service_details(

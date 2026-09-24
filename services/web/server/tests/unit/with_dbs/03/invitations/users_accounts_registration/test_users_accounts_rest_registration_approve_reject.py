@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from decimal import Decimal
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -12,6 +13,7 @@ from common_library.users_enums import UserRole, UserStatus
 from faker import Faker
 from models_library.notifications import Channel
 from models_library.products import ProductName
+from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
@@ -19,6 +21,9 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.products import products_service
+from simcore_service_webserver.wallets import _api as _wallets_service
+from simcore_service_webserver.wallets import _db as _wallets_repository
 
 
 @pytest.fixture
@@ -534,14 +539,32 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     pre_registration_details_db_cleanup: None,
     mock_notifications_send_message: AsyncMock,
     mock_notifications_preview_template: AsyncMock,
+    mocker: MockerFixture,
 ):
     """An already-registered user granted access to a new product must be added
-    directly to that product's group, with no invitation generated.
+    directly to that product's group, with no invitation generated, and must
+    receive the extra credits (in USD) the PO decided on at approval time.
 
     SEE decision: https://github.com/ITISFoundation/private-issues/issues/461#issuecomment-4981796351
     : invitation-based password redefinition confused users who already had an account.
     """
     assert client.app
+
+    extra_credits_in_usd = 20
+
+    # The default test product has no price (payment disabled), so fake a
+    # payment-enabled product (1 credit per USD) to exercise the credits grant
+    product = products_service.get_product(client.app, product_name)
+    payment_enabled_product = product.model_copy(update={"is_payment_enabled": True, "credits_per_usd": Decimal(1)})
+    mocker.patch(
+        "simcore_service_webserver.products.products_service.get_product",
+        return_value=payment_enabled_product,
+    )
+    mock_add_credits_to_wallet = mocker.patch(
+        "simcore_service_webserver.wallets._events.resource_usage_service.add_credits_to_wallet",
+        spec=True,
+        return_value=None,
+    )
 
     test_email = account_request_form["email"]
 
@@ -578,11 +601,16 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     assert preview_data.get("invitationUrl") is None
     message_content = preview_data["messageContent"]
 
-    # 4. Approve without an invitationUrl
+    # 4. Approve without an invitationUrl, granting extra credits to the
+    # already-registered user (the PO's decision, like in registration)
     resp = await client.post(
         f"{client.app.router['approve_user_account'].url_for()}",
         headers={X_PRODUCT_NAME_HEADER: product_name},
-        json={"email": test_email, "messageContent": message_content},
+        json={
+            "email": test_email,
+            "messageContent": message_content,
+            "extraCreditsInUsd": extra_credits_in_usd,
+        },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -600,5 +628,29 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     assert user_data["userId"] == new_user.id
     assert product_name in user_data["products"]
 
+    # the PO's credits decision is persisted in the pre-registration extras (audit)
+    assert user_data["extras"]["approval"] == {"extra_credits_in_usd": extra_credits_in_usd}
+
     # 6. Notification was sent using the "added to product" template, not "approved"
     mock_notifications_send_message.assert_called_once()
+
+    # 7. The user must get a default wallet in the new product (via
+    # SIGNAL_ON_USER_CONFIRMATION emitted on approval), just like on registration.
+    wallets = await _wallets_service.list_wallets_for_user(client.app, user_id=new_user.id, product_name=product_name)
+    assert len(wallets) == 1
+
+    # 8. and the wallet is topped up with the credits the PO granted
+    assert mock_add_credits_to_wallet.called
+    credits_kwargs = mock_add_credits_to_wallet.call_args_list[0].kwargs
+    assert credits_kwargs["wallet_id"] == wallets[0].wallet_id
+    assert credits_kwargs["user_id"] == new_user.id
+    assert credits_kwargs["product_name"] == product_name
+    assert credits_kwargs["osparc_credits"] == extra_credits_in_usd * payment_enabled_product.credits_per_usd
+    assert credits_kwargs["payment_id"] == "INVITATION"
+
+    # delete to allow teardown
+    await _wallets_repository.delete_wallet(
+        client.app,
+        wallet_id=wallets[0].wallet_id,
+        product_name=product_name,
+    )

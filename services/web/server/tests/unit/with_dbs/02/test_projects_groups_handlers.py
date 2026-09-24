@@ -268,7 +268,7 @@ async def test_share_project(
             "delete": True,
         },
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize(

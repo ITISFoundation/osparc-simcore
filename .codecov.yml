@@ -27,10 +27,10 @@ component_management:
         branches:
           - "!master"
   individual_components:
-    - componend_id: pkg_pytest_simcore
+    - component_id: pkg_pytest_simcore
       paths:
         - packages/pytest-simcore/**
-    - componend_id: pkg_common_library
+    - component_id: pkg_common_library
       paths:
         - packages/common-library/**
     - component_id: pkg_aws_library
@@ -93,9 +93,6 @@ component_management:
     - component_id: dynamic_sidecar
       paths:
         - services/dynamic-sidecar/**
-    - component_id: efs_guardian
-      paths:
-        - services/efs-guardian/**
     - component_id: invitations
       paths:
         - services/invitations/**

@@ -117,11 +117,11 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         ),
     ),
     ProjectInvalidUsageError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message("The project cannot be used in this way.", _version=1),
     ),
     ProjectTooManyNodesError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message(
             "The project cannot contain more than {max_num_nodes} nodes. Requested: {requested_num_nodes}.",
             _version=1,

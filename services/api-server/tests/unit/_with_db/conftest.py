@@ -4,27 +4,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import os
-import shutil
-import subprocess
-import sys
-from collections.abc import AsyncGenerator, Callable, Iterable
-from pathlib import Path
-from typing import TypedDict
-from urllib.parse import quote_plus
+from collections.abc import AsyncGenerator, Callable
 
 import httpx
 import pytest
-import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
-import sqlalchemy.engine
-import yaml
 from fastapi import FastAPI
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pydantic import PositiveInt
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers import postgres_tools
-from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import (
     random_api_auth,
     random_product,
@@ -43,139 +31,29 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 ## POSTGRES -----
 
 
-_CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-@pytest.fixture(scope="session")
-def docker_compose_file(default_app_env_vars: dict[str, str], tmpdir_factory: Callable) -> Path:
-    # Overrides fixture in https://github.com/avast/pytest-docker
-
-    # NOTE: do not forget to add the current environ here, otherwise docker compose fails
-    environ = dict(os.environ)
-    environ.update(default_app_env_vars)
-
-    src_path = _CURRENT_DIR / "data" / "docker-compose.yml"
-    assert src_path.exists()
-    src_path = filter_compose_file_for_ci(src_path, ("postgres",), Path(str(tmpdir_factory.mktemp("compose"))))
-
-    dst_path = Path(str(tmpdir_factory.mktemp("config").join("docker-compose.yml")))
-
-    shutil.copy(src_path, dst_path.parent)
-    assert dst_path.exists()
-
-    # configs
-    subprocess.run(  # noqa: S602
-        f'docker compose --file "{src_path}" config > "{dst_path}"',
-        shell=True,
-        check=True,
-        env=environ,
-    )
-
-    return dst_path
-
-
-class PostgreServiceInfoDict(TypedDict):
-    dsn: str
-    user: str
-    password: str
-    host: str
-    port: int
-    database: str
-
-
-@pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> PostgreServiceInfoDict:
-    # check docker-compose's environ is resolved properly
-    config = yaml.safe_load(docker_compose_file.read_text())
-    environ = config["services"]["postgres"]["environment"]
-
-    # builds DSN
-    config = {
-        "user": environ["POSTGRES_USER"],
-        "password": environ["POSTGRES_PASSWORD"],
-        "host": docker_ip,
-        "port": docker_services.port_for("postgres", 5432),
-        "database": environ["POSTGRES_DB"],
-    }
-
-    user = quote_plus(config["user"])
-    password = quote_plus(config["password"])
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=user,
-        password=password,
-        host=config["host"],
-        port=config["port"],
-        database=config["database"],
-    )
-
-    def _create_checker() -> Callable:
-        def is_postgres_responsive() -> bool:
-            try:
-                engine = sa.create_engine(dsn)
-                conn = engine.connect()
-                conn.close()
-            except sa.exc.OperationalError:
-                return False
-            return True
-
-        return is_postgres_responsive
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=_create_checker(),
-        timeout=30.0,
-        pause=0.1,
-    )
-
-    config["dsn"] = dsn
-    return PostgreServiceInfoDict(**config)
-
-
-@pytest.fixture(scope="session")
-def sync_engine(
-    postgres_service: PostgreServiceInfoDict,
-) -> Iterable[sqlalchemy.engine.Engine]:
-    _engine: sqlalchemy.engine.Engine = sa.create_engine(url=postgres_service["dsn"])
-    yield _engine
-    _engine.dispose()
-
-
 @pytest.fixture
-def migrated_db(postgres_service: dict, sync_engine: sqlalchemy.engine.Engine):
+def migrated_db(
+    postgres_db_per_test_from_template: sa.engine.Engine,
+) -> None:
     # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
-    # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
-    # fixture to have local scope
-    #
-    kwargs = postgres_service.copy()
-    kwargs.pop("dsn")
-    assert pg_cli.discover.callback is not None
-    pg_cli.discover.callback(**kwargs)
-
-    assert pg_cli.upgrade.callback is not None
-    pg_cli.upgrade.callback("head")
-
-    yield
-
-    assert pg_cli.downgrade.callback is not None
-    pg_cli.downgrade.callback("base")
-
-    assert pg_cli.clean.callback is not None
-    pg_cli.clean.callback()
-
-    postgres_tools.force_drop_all_tables(sync_engine)
+    # (fresh migrated schema before every test), but instead of running alembic
+    # 'upgrade head'/'downgrade base' for every test, the database is re-cloned from a
+    # session-scoped migrated template
+    assert postgres_db_per_test_from_template is not None
 
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     default_app_env_vars: EnvVarsDict,
+    postgres_env_vars_dict: EnvVarsDict,
     mocker: MockerFixture,
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.configure_rabbitmq")
     mocker.patch("simcore_service_api_server.core.application.configure_api_server_prometheus_instrumentation")
 
-    envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
+    envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars, **postgres_env_vars_dict})
     assert "API_SERVER_POSTGRES" not in envs
 
     # Should be sufficient to create settings

@@ -2,160 +2,41 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
+import logging
 from collections.abc import AsyncIterator, Iterator
-from typing import Final
-from urllib.parse import quote_plus
+from typing import Any, Final, cast
 
-import docker
 import pytest
 import sqlalchemy as sa
-import tenacity
-from sqlalchemy import exc as sa_exc
+from pydantic import PostgresDsn
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from tenacity import retry_if_exception, stop_after_attempt
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.monkeypatch_envs import setenvs_from_dict
-from .helpers.postgres_tools import PostgresTestConfig, migrated_pg_tables_context
+from .helpers.postgres_tools import (
+    PgTemplateState,
+    PostgresTestConfig,
+    build_migrated_pg_template,
+    cloned_pg_database_context,
+    database_exists,
+    drop_pg_template,
+    maintenance_engine_context,
+    wait_engine_ready,
+)
 from .helpers.typing_env import EnvVarsDict
 
-_TEMPLATE_DB_TO_RESTORE = "template_simcore_db"
+_logger = logging.getLogger(__name__)
+
+_TEMPLATE_DB_TO_RESTORE: Final[str] = "template_simcore_db"
+
+_PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
 
 
-def _is_server_connection_drop(error: sa_exc.OperationalError) -> bool:
-    error_msg = str(error).lower()
-    return "server closed the connection unexpectedly" in error_msg
-
-
-def _is_retryable_operational_error(error: BaseException) -> bool:
-    return isinstance(error, sa_exc.OperationalError) and _is_server_connection_drop(error)
-
-
-def _execute_queries(
-    postgres_engine: sa.engine.Engine,
-    sql_statements: list[str],
-    *,
-    ignore_errors: bool = False,
-) -> None:
-    """runs the queries in the list in order"""
-    for statement in sql_statements:
-        try:
-            for attempt in tenacity.Retrying(
-                retry=retry_if_exception(_is_retryable_operational_error),
-                stop=stop_after_attempt(2),
-                reraise=True,
-            ):
-                with attempt:
-                    try:
-                        with postgres_engine.connect() as connection, connection.begin():
-                            connection.execute(sa.text(statement))
-                    except sa_exc.OperationalError as e:
-                        if _is_server_connection_drop(e):
-                            # Recreate stale pooled connections before the retry.
-                            postgres_engine.dispose()
-                        raise
-        except Exception as e:  # pylint: disable=broad-except
-            if ignore_errors:
-                # when running tests initially the TEMPLATE_DB_TO_RESTORE does not exist and will cause an error
-                # which can safely be ignored. The debug message is here to catch future errors and
-                # avoid time wasting
-                print(f"SQL error which can be ignored: {e}")
-                continue
-            raise
-
-
-def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine) -> None:
-    # create a template db, the removal is necessary to allow for the usage of --keep-docker-up
-    queries = [
-        # disconnect existing users
-        f"""
-        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity
-        WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}' AND pid <> pg_backend_pid();
-        """,  # noqa: S608
-        # drop template database
-        f"ALTER DATABASE {_TEMPLATE_DB_TO_RESTORE} is_template false;",
-        f"DROP DATABASE {_TEMPLATE_DB_TO_RESTORE};",
-        # create template database
-        """
-        CREATE DATABASE {template_db} WITH TEMPLATE {original_db} OWNER {db_user};
-        """.format(
-            template_db=_TEMPLATE_DB_TO_RESTORE,
-            original_db=postgres_dsn["database"],
-            db_user=postgres_dsn["user"],
-        ),
-    ]
-    _execute_queries(postgres_engine, queries, ignore_errors=True)
-
-
-def _drop_template_db(postgres_engine: sa.engine.Engine) -> None:
-    # remove the template db
-    postgres_engine.dispose()
-    queries = [
-        # drop template database
-        f"ALTER DATABASE {_TEMPLATE_DB_TO_RESTORE} is_template false;",
-        f"DROP DATABASE {_TEMPLATE_DB_TO_RESTORE};",
-    ]
-    _execute_queries(postgres_engine, queries)
-
-
-@pytest.fixture(scope="module")
-def postgres_with_template_db(
-    postgres_db: sa.engine.Engine,
-    postgres_dsn: PostgresTestConfig,
-    postgres_engine: sa.engine.Engine,
-) -> Iterator[sa.engine.Engine]:
-    _create_template_db(postgres_dsn, postgres_engine)
-    yield postgres_engine
-    _drop_template_db(postgres_engine)
-
-
-@pytest.fixture
-def drop_db_engine(postgres_dsn: PostgresTestConfig) -> sa.engine.Engine:
-    postgres_dsn_copy = postgres_dsn.copy()  # make a copy to change these parameters
-    postgres_dsn_copy["database"] = "postgres"
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=quote_plus(postgres_dsn_copy["user"]),
-        password=quote_plus(postgres_dsn_copy["password"]),
-        host=postgres_dsn_copy["host"],
-        port=postgres_dsn_copy["port"],
-        database=postgres_dsn_copy["database"],
-    )
-    return sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
-
-
-@pytest.fixture
-def database_from_template_before_each_function(
-    postgres_dsn: PostgresTestConfig, drop_db_engine: sa.engine.Engine, postgres_db
-) -> None:
-    """
-    Will recrate the db before running each test.
-
-    **Note: must be implemented in the module where the the
-    `postgres_with_template_db` is used and mark autouse=True**
-
-    It is possible to drop the application database by using another one like
-    the posgtres database. The db will be recreated from the previously created template
-
-    The postgres_db fixture is required for the template database to be created.
-    """
-
-    queries = [
-        # terminate existing connections to the database
-        f"""
-        SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity
-        WHERE pg_stat_activity.datname = '{postgres_dsn["database"]}';
-        """,  # noqa: S608
-        # drop database
-        f"DROP DATABASE {postgres_dsn['database']};",
-        # create from template database
-        f"CREATE DATABASE {postgres_dsn['database']} TEMPLATE {_TEMPLATE_DB_TO_RESTORE};",
-    ]
-
-    _execute_queries(drop_db_engine, queries)
+def _as_pg_config(postgres_dsn: dict[str, Any]) -> PostgresTestConfig:
+    # suites may pass richer dicts (e.g. with a prebuilt "dsn"), keep only the keys
+    # understood by simcore_postgres_database.cli
+    return cast(PostgresTestConfig, {k: postgres_dsn[k] for k in _PG_CONFIG_KEYS})
 
 
 @pytest.fixture(scope="module")
@@ -178,46 +59,93 @@ _MINUTE: Final[int] = 60
 
 @pytest.fixture(scope="module")
 def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
-    dsn = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(
-        user=quote_plus(postgres_dsn["user"]),
-        password=quote_plus(postgres_dsn["password"]),
-        host=postgres_dsn["host"],
-        port=postgres_dsn["port"],
-        database=postgres_dsn["database"],
+    dsn = str(
+        PostgresDsn.build(
+            scheme="postgresql+psycopg2",
+            username=postgres_dsn["user"],
+            password=postgres_dsn["password"],
+            host=postgres_dsn["host"],
+            port=int(postgres_dsn["port"]),
+            path=postgres_dsn["database"],
+        )
     )
 
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
     assert isinstance(engine, sa.engine.Engine)  # nosec
 
     # Attempts until responsive
-    for attempt in tenacity.Retrying(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(5 * _MINUTE),
-        reraise=True,
-    ):
-        with attempt:
-            print(f"--> Connecting to {dsn}, attempt {attempt.retry_state.attempt_number}...")
-            with engine.connect():
-                print(f"Connection to {dsn} succeeded [{json.dumps(attempt.retry_state.retry_object.statistics)}]")
+    _logger.info("Connecting to %s", dsn)
+    wait_engine_ready(engine, timeout=5 * _MINUTE)
 
     yield engine
 
     engine.dispose()
 
 
+@pytest.fixture(scope="session")
+def _postgres_migrated_template_state() -> Iterator[PgTemplateState]:
+    # NOTE: the template database itself is built lazily by postgres_db because resolving
+    # the DSN can require module-scoped fixtures (e.g. docker_stack published ports). This
+    # holder only tracks state and drops the template at session end.
+    state: PgTemplateState = {"built": False, "dsn": None}
+    yield state
+    if (dsn := state["dsn"]) is not None:
+        try:
+            drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+        except Exception:  # pylint: disable=broad-except
+            # best-effort: the module-scoped docker stack may already have removed the
+            # postgres service/volume this template lived on by the time the session ends
+            _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
+
+
+def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: PgTemplateState) -> None:
+    with maintenance_engine_context(postgres_dsn) as maintenance:
+        # wait until the server accepts connections (the stack may have just been deployed)
+        wait_engine_ready(maintenance, timeout=_MINUTE)
+
+        # NOTE: the template may be missing if the postgres instance was recycled
+        # between fixtures (e.g. stack redeploy without --keep-docker-up)
+        needs_build = not state["built"] or not database_exists(maintenance, _TEMPLATE_DB_TO_RESTORE)
+
+    if needs_build:
+        build_migrated_pg_template(postgres_dsn, _TEMPLATE_DB_TO_RESTORE)
+        state["built"] = True
+    state["dsn"] = postgres_dsn
+
+
 @pytest.fixture(scope="module")
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
-    postgres_engine: sa.engine.Engine,
-    docker_client: docker.DockerClient,
+    _postgres_migrated_template_state: PgTemplateState,
 ) -> Iterator[sa.engine.Engine]:
-    """
-    A postgres database init with empty tables
-    and an sqlalchemy engine connected to it
-    """
+    """A postgres database migrated to head and an sqlalchemy engine connected to it.
 
-    with migrated_pg_tables_context(postgres_dsn.copy()):
-        yield postgres_engine
+    The database is migrated ONCE per test session into a template database (alembic
+    'upgrade head') and recreated as an isolated clone of it ('CREATE DATABASE ...
+    TEMPLATE') before every test module, i.e. each module starts on a fresh, fully
+    migrated and empty schema.
+    """
+    dsn = _as_pg_config(postgres_dsn)
+    _ensure_migrated_template(dsn, _postgres_migrated_template_state)
+
+    with cloned_pg_database_context(dsn, _TEMPLATE_DB_TO_RESTORE) as engine:
+        yield engine
+
+
+@pytest.fixture
+def postgres_db_per_test_from_template(
+    postgres_dsn: PostgresTestConfig,
+    _postgres_migrated_template_state: PgTemplateState,
+) -> Iterator[sa.engine.Engine]:
+    """Same as postgres_db but the test database is re-cloned from the
+    migrated template before EVERY test (function scope), for suites whose DB fixture
+    is function-scoped.
+    """
+    dsn = _as_pg_config(postgres_dsn)
+    _ensure_migrated_template(dsn, _postgres_migrated_template_state)
+
+    with cloned_pg_database_context(dsn, _TEMPLATE_DB_TO_RESTORE) as engine:
+        yield engine
 
 
 @pytest.fixture

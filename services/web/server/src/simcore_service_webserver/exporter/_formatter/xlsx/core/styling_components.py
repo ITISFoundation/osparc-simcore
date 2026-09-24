@@ -93,11 +93,3 @@ class Borders:
     border_top_light = BorderWithStyle("top", border_style=BORDER_THIN, color=COLOR_BLACK)
     border_left_light = BorderWithStyle("left", border_style=BORDER_THIN, color=COLOR_BLACK)
     border_right_light = BorderWithStyle("right", border_style=BORDER_THIN, color=COLOR_BLACK)
-
-
-class AlignTopCenter(BaseXLSXCellData):
-    alignment = Alignment(horizontal="center", vertical="top")
-
-
-class AlignTop(BaseXLSXCellData):
-    alignment = Alignment(vertical="top")

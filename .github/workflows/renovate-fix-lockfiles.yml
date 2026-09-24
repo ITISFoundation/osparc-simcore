@@ -35,16 +35,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: setup python environment
-        uses: actions/setup-python@v7.0.0
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
-          python-version: "3.13"
-
-      - name: install uv
-        uses: astral-sh/setup-uv@v10.0.1
-        with:
-          version: "0.11.x"
-          enable-cache: false
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
 
       - name: re-run make reqs per changed directory, targeting only the packages Renovate bumped
         run: |

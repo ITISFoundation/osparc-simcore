@@ -1,12 +1,9 @@
 import contextlib
-import datetime
 import logging
 from copy import deepcopy
 from typing import Any
 
-import arrow
 import networkx as nx
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
@@ -175,62 +172,6 @@ async def create_minimal_computational_graph_based_on_selection(
                 minimal_nodes_selection.add(f"{node}")
 
     return complete_dag.subgraph(minimal_nodes_selection)
-
-
-def compute_pipeline_started_timestamp(
-    pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
-) -> datetime.datetime | None:
-    if not pipeline_dag.nodes:
-        return None
-    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {f"{task.node_id}": task for task in comp_tasks}
-    tomorrow = arrow.utcnow().shift(days=1).datetime
-    try:
-        pipeline_started_at: datetime.datetime | None = min(
-            node_id_to_comp_task[node_id].start or tomorrow for node_id in pipeline_dag.nodes
-        )
-    except KeyError as exc:
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                "Node missing in comp_tasks",
-                error=exc,
-                error_context={"pipeline_dag": pipeline_dag.nodes, "comp_tasks": comp_tasks},
-                tip="Ensure all nodes in the pipeline have corresponding computational tasks. "
-                "Computed started timestamp cannot be determined. Computational tasks should "
-                "not be modified while a pipeline is running.",
-            )
-        )
-        return None
-    if pipeline_started_at == tomorrow:
-        pipeline_started_at = None
-    return pipeline_started_at
-
-
-def compute_pipeline_stopped_timestamp(
-    pipeline_dag: nx.DiGraph, comp_tasks: list[CompTaskAtDB]
-) -> datetime.datetime | None:
-    if not pipeline_dag.nodes:
-        return None
-    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {f"{task.node_id}": task for task in comp_tasks}
-    tomorrow = arrow.utcnow().shift(days=1).datetime
-    try:
-        pipeline_stopped_at: datetime.datetime | None = max(
-            node_id_to_comp_task[node_id].end or tomorrow for node_id in pipeline_dag.nodes
-        )
-    except KeyError as exc:
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                "Node missing in comp_tasks",
-                error=exc,
-                error_context={"pipeline_dag": pipeline_dag.nodes, "comp_tasks": comp_tasks},
-                tip="Ensure all nodes in the pipeline have corresponding computational tasks. "
-                "Computed stopped timestamp cannot be determined. Computational tasks should "
-                "not be modified while a pipeline is running.",
-            )
-        )
-        return None
-    if pipeline_stopped_at == tomorrow:
-        pipeline_stopped_at = None
-    return pipeline_stopped_at
 
 
 async def compute_pipeline_details(

@@ -65,7 +65,7 @@ async def test_payment_on_invalid_wallet(
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4657")
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
-    [(1, status.HTTP_422_UNPROCESSABLE_ENTITY), (25, status.HTTP_201_CREATED)],
+    [(1, status.HTTP_422_UNPROCESSABLE_CONTENT), (25, status.HTTP_201_CREATED)],
 )
 async def test_one_time_payment_workflow(
     latest_osparc_price: Decimal,

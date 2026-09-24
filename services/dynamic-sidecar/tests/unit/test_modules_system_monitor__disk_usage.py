@@ -205,29 +205,3 @@ async def test_disk_usage_monitor_new_frontend_format(
     assert len(frontend_usage) == 1
     assert MountPathCategory.HOST in frontend_usage
     assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage("1294390525952")
-
-    # emulate EFS sending metrics, 2 entries are found
-
-    disk_usage_monitor.set_disk_usage_for_path(
-        {
-            ".data_assets": _get_mocked_disk_usage("1GB"),
-            "home_user_workspace": _get_mocked_disk_usage("1GB"),
-        }
-    )
-
-    frontend_usage = await _wait_for_usage()
-    print(json_dumps(frontend_usage, indent=2))
-    assert len(frontend_usage) == 2
-    assert MountPathCategory.HOST in frontend_usage
-    assert MountPathCategory.STATES_VOLUMES in frontend_usage
-    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage("1294390525952")
-    assert frontend_usage[MountPathCategory.STATES_VOLUMES] == _get_mocked_disk_usage("1GB")
-
-    # emulate data could not be mapped
-    disk_usage_monitor.set_disk_usage_for_path(
-        {
-            "missing_path": _get_mocked_disk_usage("2GB"),
-        }
-    )
-    with pytest.raises(RuntimeError):
-        frontend_usage = await _wait_for_usage()
