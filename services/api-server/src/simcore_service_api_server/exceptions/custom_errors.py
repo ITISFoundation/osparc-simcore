@@ -10,7 +10,8 @@ class CustomBaseError(ApiServerBaseError):
 class InsufficientCreditsError(CustomBaseError):
     # NOTE: Same message as WalletNotEnoughCreditsError
     msg_template = user_message(
-        "Wallet '{wallet_name}' has {wallet_credit_amount} credits. Please add credits before requesting solver outputs.",
+        "Wallet '{wallet_name}' has {wallet_credit_amount} credits. "
+        "Please add credits before requesting solver outputs.",
         _version=1,
     )
 

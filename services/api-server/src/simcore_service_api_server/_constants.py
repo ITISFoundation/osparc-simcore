@@ -7,7 +7,8 @@ MSG_BACKEND_SERVICE_UNAVAILABLE: Final[str] = user_message(
 )
 
 MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE: Final[str] = user_message(
-    "Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience.",
+    "Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. "
+    "Thank you for your patience.",
     _version=2,
 )
 

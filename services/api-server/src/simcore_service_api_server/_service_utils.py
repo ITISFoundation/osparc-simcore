@@ -28,5 +28,8 @@ def check_user_product_consistency(
         )
         raise ServiceConfigurationError(service_cls_name=service_cls_name, detail_msg=msg)
     if product_name != service_provider.product_name:
-        msg = f"Product name {product_name} does not match {service_provider.__class__.__name__}product name {service_provider.product_name}"
+        msg = (
+            f"Product name {product_name} does not match {service_provider.__class__.__name__}"
+            f"product name {service_provider.product_name}"
+        )
         raise ServiceConfigurationError(service_cls_name=service_cls_name, detail_msg=msg)

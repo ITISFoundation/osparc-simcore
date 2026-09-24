@@ -8,7 +8,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 import httpx
 import jsonref
@@ -32,7 +32,7 @@ try:
     OPENAPI_CORE_INSTALLED = True
 
 except ImportError:
-    Spec: TypeAlias = Any
+    type Spec = Any
     StarletteOpenAPIRequest = pytest.fail
     StarletteOpenAPIResponse = pytest.fail
     create_spec = pytest.fail
@@ -116,7 +116,14 @@ def test_openapion_capture_mock(
         )
 
 
-_CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str | None, str | None]] = [
+_SEMVER_PATTERN = (
+    r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}"
+    r"(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)"
+    r"(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?"
+    r"(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+)
+
+_CAPTURE_REGEX_TEST_CASES: list[tuple[str, str | dict, str | None, str | None]] = [
     (
         "solver_key",
         """{
@@ -134,16 +141,12 @@ _CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str | None, str | None]] = [
     ),
     (
         "solver_version",
-        r"""{
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
+        {
+            "required": True,
+            "schema": {"title": "Version", "pattern": _SEMVER_PATTERN, "type": "string"},
             "name": "version",
-            "in": "path"
-          }""",
+            "in": "path",
+        },
         "2.0.2",
         "2.s.6",
     ),
@@ -210,9 +213,10 @@ _CAPTURE_REGEX_TEST_CASES: list[tuple[str, str, str | None, str | None]] = [
 
 
 @pytest.mark.parametrize("params", _CAPTURE_REGEX_TEST_CASES, ids=lambda x: x[0])
-def test_param_regex_pattern(params: tuple[str, str, str, str]):
+def test_param_regex_pattern(params: tuple[str, str | dict, str, str]):
     _, openapi_param, match, non_match = params
-    param: CapturedParameter = CapturedParameter(**json.loads(openapi_param))
+    param_specs = openapi_param if isinstance(openapi_param, dict) else json.loads(openapi_param)
+    param: CapturedParameter = CapturedParameter(**param_specs)
     pattern = param.schema_.regex_pattern
     pattern = "^" + pattern + "$"
     if match is not None:
