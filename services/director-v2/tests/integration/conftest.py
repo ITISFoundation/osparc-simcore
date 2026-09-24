@@ -32,6 +32,15 @@ def mock_env(mock_env: EnvVarsDict, s3_storage_settings_envs: EnvVarsDict) -> En
     return mock_env
 
 
+@pytest.fixture(scope="module")
+def postgres_db(postgres_live_stack_db: sa.engine.Engine) -> sa.engine.Engine:
+    """Shadows the template-clone `postgres_db` from `pytest_simcore.postgres_service`
+    with the in-place + teardown-reset variant required by live-stack integration
+    tests, see `pytest_simcore.postgres_live_stack_service`.
+    """
+    return postgres_live_stack_db
+
+
 @pytest.fixture
 def update_project_workbench_with_comp_tasks(
     postgres_db: sa.engine.Engine,

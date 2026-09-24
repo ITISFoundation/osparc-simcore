@@ -295,12 +295,17 @@ class RobustWebSocket:
                 self._attempt_reconnect(ctx.logger)
 
             def on_close(_: WebSocket) -> None:
+                # NOTE: a closed socket is no longer proof of connectivity: without dropping
+                # the stale proof, `wait_until_connected` would return immediately on the
+                # dead socket while its (event-dispatched) reconnection has not completed yet.
+                self._frames_received_on.discard(id(socket))
                 if not self.auto_reconnect:
                     ctx.logger.info("%s WebSocket closed.", self.log_prefix)
                     return
                 _trigger_reconnect("WebSocket closed")
 
             def on_socketerror(error_msg: str) -> None:
+                self._frames_received_on.discard(id(socket))
                 if not self.auto_reconnect:
                     ctx.logger.error("%s❌ WebSocket error: %s", self.log_prefix, error_msg)
                     return
@@ -368,12 +373,18 @@ class RobustWebSocket:
         """
         with log_context(logging.INFO, msg=f"waiting for websocket connection (timeout: {timeout}ms)") as ctx:
             deadline = datetime.now(UTC) + timedelta(milliseconds=timeout)
-            while id(self.ws) not in self._frames_received_on:
+            while True:
+                # NOTE: pumping the page's event loop lets event-driven reconnections proceed.
+                # It must happen *before* evaluating connectivity: websocket events are
+                # dispatched only while the loop is pumped, so a 'close' that the browser has
+                # already emitted but that has not been dispatched yet would otherwise leave a
+                # stale proof-of-life on the (now dead) socket and make this return immediately.
+                self.page.wait_for_timeout(100)
+                if not self.ws.is_closed() and id(self.ws) in self._frames_received_on:
+                    break
                 if datetime.now(UTC) > deadline:
                     msg = f"Timeout {timeout}ms exceeded while waiting for the websocket to connect."
                     raise PlaywrightTimeoutError(msg)
-                # NOTE: pumping the page's event loop lets the event-driven reconnection proceed
-                self.page.wait_for_timeout(100)
             ctx.logger.debug("%s WebSocket is connected.", self.log_prefix)
 
 

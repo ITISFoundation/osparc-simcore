@@ -91,11 +91,6 @@ WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY
 
 
 @pytest.fixture(autouse=True)
-def _drop_and_recreate_postgres(database_from_template_before_each_function):
-    return
-
-
-@pytest.fixture(autouse=True)
 async def _delete_all_redis_keys(redis_settings: RedisSettings):
     client = aioredis.from_url(
         redis_settings.build_redis_dsn(RedisDatabase.RESOURCES),
@@ -141,7 +136,7 @@ def director_v2_service_mock(
 async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     app_config: dict[str, Any],
-    postgres_with_template_db: sa.engine.Engine,
+    postgres_db: sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
     redis_client: aioredis.Redis,
