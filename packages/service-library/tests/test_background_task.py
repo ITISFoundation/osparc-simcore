@@ -28,8 +28,6 @@ pytest_simcore_ops_services_selection = [
 
 _FAST_POLL_INTERVAL: Final[float] = 0.01
 _VERY_SLOW_POLL_INTERVAL: Final[float] = 1
-# fails the test instead of hanging it if the loop ever stops terminating
-_NON_TERMINATING_LOOP_GUARD: Final[float] = 5
 
 
 @pytest.fixture
@@ -221,8 +219,12 @@ async def test_periodic_applied_twice_still_stops_on_error(
     async def _func() -> None:
         await mock_func()
 
+    task = asyncio.create_task(_func())
+    await asyncio.sleep(5 * task_interval.total_seconds())
+
+    assert task.done()
     with pytest.raises(CustomError):
-        await asyncio.wait_for(_func(), timeout=_NON_TERMINATING_LOOP_GUARD)
+        await task
 
     mock_func.assert_called_once()
 
@@ -283,7 +285,11 @@ async def test_periodic_calling_another_periodic_propagates_error(
     async def _outer() -> None:
         await _inner()
 
+    task = asyncio.create_task(_outer())
+    await asyncio.sleep(5 * task_interval.total_seconds())
+
+    assert task.done()
     with pytest.raises(CustomError):
-        await asyncio.wait_for(_outer(), timeout=_NON_TERMINATING_LOOP_GUARD)
+        await task
 
     mock_func.assert_called_once()
