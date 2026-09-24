@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated
 
 import packaging.version
 from models_library.utils.change_case import camel_to_snake
@@ -85,8 +85,5 @@ class BaseService(BaseModel):
         raise NotImplementedError("Subclasses must implement this method")
 
 
-DataT = TypeVar("DataT")
-
-
-class ApiServerEnvelope(BaseModel, Generic[DataT]):
+class ApiServerEnvelope[DataT](BaseModel):
     data: DataT

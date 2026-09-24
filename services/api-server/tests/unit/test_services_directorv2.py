@@ -37,11 +37,13 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     # tests to reproduce reported OEC:139646582688800
     #
 
-    #   File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/services/director_v2.py", line 135, in get_computation
+    #   File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/services/director_v2.py",
+    #     line 135, in get_computation
     #     response.raise_for_status()
     #   File "/home/scu/.venv/lib/python3.10/site-packages/httpx/_models.py", line 761, in raise_for_status
     #     raise HTTPStatusError(message, request=request, response=self)
-    # httpx.HTTPStatusError: Client error '404 Not Found' for url '/v2/computations/c7ad07d3-513f-4368-bcf0-354143b6a048?user_id=94'
+    # httpx.HTTPStatusError: Client error '404 Not Found' for url
+    #     '/v2/computations/c7ad07d3-513f-4368-bcf0-354143b6a048?user_id=94'
 
     for method in ("GET", "POST", "DELETE"):
         mocked_directorv2_rest_api_base.request(
@@ -49,13 +51,16 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
             path__regex=r"/v2/computations/",
         ).respond(status_code=status.HTTP_404_NOT_FOUND)
 
-    #  File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/service_errors_utils.py", line 116, in service_exception_handler
+    #  File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/
+    #     service_errors_utils.py", line 116, in service_exception_handler
     #    status_code, detail, headers = _get_http_exception_kwargs(
-    #  File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/service_errors_utils.py", line 66, in _get_http_exception_kwargs
+    #  File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/
+    #     service_errors_utils.py", line 66, in _get_http_exception_kwargs
     #    raise exception_type(**detail_kwargs)
     # simcore_service_api_server.exceptions.backend_errors.JobNotFoundError: <exception str() failed>  <-- !!!!!!!!!
     #
-    # File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/handlers/_handlers_backend_errors.py", line 12, in backend_error_handler
+    # File "/home/scu/.venv/lib/python3.10/site-packages/simcore_service_api_server/exceptions/handlers/"
+    #     "_handlers_backend_errors.py", line 12, in backend_error_handler
     #     return create_error_json_response(f"{exc}", status_code=exc.status_code)
     #   File "pydantic/errors.py", line 127, in pydantic.errors.PydanticErrorMixin.__str__
     # KeyError: 'project_id'
