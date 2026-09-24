@@ -5,6 +5,15 @@
 
 SEE ALSO:
     - batch_operations.py
+
+
+NOTE:
+    `OrderClause`/`check_ordering_list` keep the `Generic[TField]` syntax (see
+    `# noqa` below) instead of PEP 695 type parameters: PEP 695 declares each
+    parameter independently, so it cannot reference the shared `TField` TypeVar
+    whose bound is the `LiteralField` protocol under `TYPE_CHECKING` (falling
+    back to `str` at runtime). Converting them narrows the bound to `str` and
+    breaks mypy at call sites such as `rest_ordering.OrderingQueryParams`.
 """
 
 from enum import StrEnum
