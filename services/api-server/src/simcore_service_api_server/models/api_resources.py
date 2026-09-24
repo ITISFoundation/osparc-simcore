@@ -1,6 +1,6 @@
 import re
 import urllib.parse
-from typing import Annotated, TypeAlias
+from typing import Annotated
 from uuid import UUID
 
 import parse  # type: ignore[import-untyped]
@@ -31,9 +31,7 @@ from pydantic.types import StringConstraints
 _RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
 
-RelativeResourceName: TypeAlias = Annotated[
-    str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE), Field(frozen=True)
-]
+type RelativeResourceName = Annotated[str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE), Field(frozen=True)]
 
 # NOTE: we quote parts in a single resource_name and unquote when split
 
@@ -54,8 +52,10 @@ def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
 def split_resource_name(resource_name: RelativeResourceName) -> tuple[str, ...]:
     """
     Example:
-        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
-        returns ("solvers", "simcore/services/comp/isolve", "releases", "1.3.4", "jobs", "f622946d-fd29-35b9-a193-abdd1095167c", "outputs", "output 22")
+        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4"
+        "/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+        returns ("solvers", "simcore/services/comp/isolve", "releases", "1.3.4", "jobs",
+        "f622946d-fd29-35b9-a193-abdd1095167c", "outputs", "output 22")
     """
     quoted_parts = resource_name.split("/")
     return tuple(f"{urllib.parse.unquote_plus(p)}" for p in quoted_parts)
@@ -64,7 +64,8 @@ def split_resource_name(resource_name: RelativeResourceName) -> tuple[str, ...]:
 def parse_collections_ids(resource_name: RelativeResourceName) -> tuple[str, ...]:
     """
     Example:
-        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4"
+        "/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
         returns ("solvers", "releases", "jobs", "outputs")
     """
     parts = split_resource_name(resource_name)
@@ -74,8 +75,10 @@ def parse_collections_ids(resource_name: RelativeResourceName) -> tuple[str, ...
 def parse_resources_ids(resource_name: RelativeResourceName) -> tuple[str, ...]:
     """
     Example:
-        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
-        returns ("simcore/services/comp/isolve", "1.3.4", "f622946d-fd29-35b9-a193-abdd1095167c", "output 22")
+        resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4"
+        "/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+        returns ("simcore/services/comp/isolve", "1.3.4", "f622946d-fd29-35b9-a193-abdd1095167c",
+        "output 22")
     """
     parts = split_resource_name(resource_name)
     return parts[1::2]

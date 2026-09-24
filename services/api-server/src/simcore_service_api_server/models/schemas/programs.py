@@ -14,7 +14,8 @@ from .base import (
     BaseService,
 )
 
-# - API will add flexibility to identify solver resources using aliases. Analogously to docker images e.g. a/b == a/b:latest == a/b:2.3
+# - API will add flexibility to identify solver resources using aliases. Analogously to docker images
+#   e.g. a/b == a/b:latest == a/b:2.3
 #
 LATEST_VERSION = "latest"
 

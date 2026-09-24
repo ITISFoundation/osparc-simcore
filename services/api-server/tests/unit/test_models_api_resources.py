@@ -16,7 +16,10 @@ from simcore_service_api_server.models.api_resources import (
 
 
 def test_parse_resource_id():
-    resource_name = "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+    resource_name = (
+        "solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/1.3.4"
+        "/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs/output+22"
+    )
     parts = (
         "solvers",
         "simcore/services/comp/isolve",
