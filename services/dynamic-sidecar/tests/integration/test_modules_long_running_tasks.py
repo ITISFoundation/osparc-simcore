@@ -39,11 +39,11 @@ from simcore_postgres_database.models.projects import projects
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import upload_path
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
-from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME
 from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
     restore_user_services_state_paths,
     save_user_services_state_paths,
 )
+from simcore_service_dynamic_sidecar.modules.mounted_fs import HIDDEN_FILE_NAME
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 

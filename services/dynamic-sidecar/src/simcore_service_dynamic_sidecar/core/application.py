@@ -1,5 +1,4 @@
 import logging
-from asyncio import Lock
 from collections.abc import AsyncIterator
 from contextlib import AbstractContextManager
 from typing import Any, ClassVar
@@ -20,12 +19,10 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
-from ..services.container_extensions import restrict_input_permissions
 from .docker_compose_utils import docker_compose_down
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .settings import ApplicationSettings
-from .utils import volumes_fix_permissions
 
 _NOISY_LOGGERS = ("httpcore",)
 
@@ -187,6 +184,7 @@ def _configure_plugins(
         configure_user_services_preferences,
     )
     from ..services.container_extensions import configure_writable_inputs
+    from ..services.container_restart_lock import configure_container_restart_lock
     from .docker_logs import configure_background_log_fetcher
     from .external_dependencies import configure_check_dependencies
     from .rabbitmq import configure_rabbitmq
@@ -218,23 +216,10 @@ def _configure_plugins(
     configure_r_clone_mount_manager(app_lifespan)
     configure_file_notification_subscriber(app_lifespan)
 
+    configure_container_restart_lock(app_lifespan)
+
     if app.state.settings.are_prometheus_metrics_enabled:
         configure_prometheus_metrics(app_lifespan)
-
-
-def _configure_application_lifespan(
-    app: FastAPI,
-    app_lifespan: LifespanManager[FastAPI],
-) -> None:
-    async def _application_lifespan(_: FastAPI) -> AsyncIterator[State]:
-        app.state.container_restart_lock = Lock()
-
-        app_state = AppState(app)
-        await volumes_fix_permissions(app_state.mounted_volumes)
-        await restrict_input_permissions(app)
-        yield {}
-
-    app_lifespan.add(_application_lifespan)
 
 
 def _configure_compose_cleanup_lifespan(
@@ -273,7 +258,6 @@ def _create_app(
 
     _configure_compose_cleanup_lifespan(app_lifespan)
     _configure_plugins(app, app_lifespan, tracing_config)
-    _configure_application_lifespan(app, app_lifespan)
 
     app.add_exception_handler(
         NodeNotFoundError,
