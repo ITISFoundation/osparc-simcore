@@ -309,12 +309,15 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         swarm_stack_name=swarm_stack_name,
     )
     if scheduler_data.dynamic_sidecar.docker_node_id:
-        await force_container_cleanup(
-            rabbit_rpc_client,
-            docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-            swarm_stack_name=swarm_stack_name,
-            node_id=scheduler_data.node_uuid,
-        )
+        try:
+            await force_container_cleanup(
+                rabbit_rpc_client,
+                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                swarm_stack_name=swarm_stack_name,
+                node_id=scheduler_data.node_uuid,
+            )
+        except RemoteMethodNotRegisteredError as e:
+            _logger.info("Could not force container cleanup, because: '%s'", e)
 
     await task_progress.update(message="removing network", percent=0.2)
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
