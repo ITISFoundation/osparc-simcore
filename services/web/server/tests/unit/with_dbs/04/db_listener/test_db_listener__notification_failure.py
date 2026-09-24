@@ -243,7 +243,7 @@ async def test_forged_cancelled_error_keeps_drain_alive(
     """The socket.io RabbitMQ manager forges a CancelledError from aio-pika's
     ChannelInvalidStateError (e.g. the reconnect race during a RabbitMQ restart) even
     though nothing was cancelled. _safe_emit translates it into a ConnectionError
-    (see tests/unit/isolated/socketio/test_messages.py), so here it must behave like
+    (see tests/unit/isolated/test_socketio__messages.py), so here it must behave like
     any other socket.io backend failure: the event is kept for a retry, the drain
     survives, and it is classified as an infrastructure error.
     SEE https://github.com/miguelgrinberg/python-socketio/commit/cd7f781c022dd1d1ec3c6695a0fd6ab3ce864fd5
