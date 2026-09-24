@@ -22,9 +22,9 @@ class OutboxProcessingError(DbListenerBaseError):
     """Projection of a claimed outbox aggregate failed.
 
     Pure control-flow marker: raised to abort (roll back) the claim transaction, so
-    its advisory and row locks are released and the pending delete undone. It carries
-    no payload -- the failed claim stays in the raiser's scope and the underlying
-    error arrives chained (`raise ... from`).
+    its advisory and row locks are released and the pending delete undone. The
+    aggregate context is message-only -- the failed claim stays in the raiser's
+    scope and the underlying error arrives chained (`raise ... from`).
     """
 
-    msg_template = "Failed to process outbox events of the claimed aggregate"
+    msg_template = "Failed to process outbox events of aggregate {kind}:{aggregate_id}"

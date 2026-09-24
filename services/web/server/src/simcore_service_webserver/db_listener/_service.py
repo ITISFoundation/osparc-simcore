@@ -230,8 +230,9 @@ async def _claim_and_process_aggregate(
             except Exception as exc:
                 # abort the claim transaction (locks released, pending delete undone):
                 # the claim is kept in this scope and the cause rides on the exception
-                # chain, so the marker below only has to signal the rollback
-                raise OutboxProcessingError from exc
+                # chain, so the marker below only has to signal the rollback (its
+                # aggregate context is message-only)
+                raise OutboxProcessingError(kind=claimed.kind, aggregate_id=claimed.aggregate_id) from exc
 
             await remove_claimed_events(conn, claimed.event_ids)
     except OutboxProcessingError as failed:
