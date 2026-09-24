@@ -26,15 +26,14 @@ def validate_docker_image(dockerimage: str, schema: Path):
     if docker_labels:
         log.info("Found docker labels in image %s", dockerimage)
         image_tags = {}
-        for key in docker_labels.keys():
+        for key, label in docker_labels.items():
             if key.startswith("io.simcore."):
                 try:
-                    label_data = json.loads(docker_labels[key])
+                    label_data = json.loads(label)
                 except json.JSONDecodeError:
-                    log.exception("Invalid json label %s", docker_labels[key])
+                    log.exception("Invalid json label %s", label)
                     raise
-                for label_key in label_data.keys():
-                    image_tags[label_key] = label_data[label_key]
+                image_tags.update(label_data)
 
         if image_tags:
             log.info("Found image tags in docker image")

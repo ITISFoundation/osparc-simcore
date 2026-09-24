@@ -52,13 +52,11 @@ class Registry:
 
             yield from r.json()["repositories"]
 
-            if link := r.headers.get("Link"):
-                #  until the Link header is no longer set in the response
-                # SEE https://docs.docker.com/registry/spec/api/#pagination-1
-                # ex=.g. '</v2/_catalog?last=simcore%2Fservices%2Fcomp%2Fcontrolcore-mmpc&n=5>; rel="next"'
-                if m := re.match(r'<([^><]+)>;\s+rel=([\w"]+)', link):
-                    next_page = m.group(1)
-                    yield from _req(url=next_page)
+            #  until the Link header is no longer set in the response
+            # SEE https://docs.docker.com/registry/spec/api/#pagination-1
+            # ex=.g. '</v2/_catalog?last=simcore%2Fservices%2Fcomp%2Fcontrolcore-mmpc&n=5>; rel="next"'
+            if (link := r.headers.get("Link")) and (m := re.match(r'<([^><]+)>;\s+rel=([\w"]+)', link)):
+                yield from _req(url=m.group(1))
 
         assert limit > 0
         query = {"n": limit}
@@ -120,9 +118,9 @@ def extract_metadata(labels: dict[str, Any]) -> dict[str, Any]:
     }
     """
     meta = {}
-    for key in labels:
+    for key, label in labels.items():
         if key.startswith("io.simcore."):
-            meta.update(**json.loads(labels[key]))
+            meta.update(**json.loads(label))
     return meta
 
 
@@ -134,9 +132,9 @@ def extract_extra_service_metadata(labels: dict[str, Any]) -> dict[str, Any]:
     }
     """
     meta = {}
-    for key in labels:
+    for key, label in labels.items():
         if key.startswith("simcore.service."):
-            value = labels[key].strip()
+            value = label.strip()
             with suppress(json.decoder.JSONDecodeError):
                 # ignore  e.g. key=value where value is a raw name
                 value = json.loads(value)

@@ -37,7 +37,8 @@ class ClientSessionContextManager:
     async def __aexit__(self, exc_type, exc, tb) -> None:
         if self.is_owned:
             warnings.warn(
-                "Optional session is not recommended, pass instead controlled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
+                "Optional session is not recommended, pass instead controlled session "
+                "(e.g. from app[APP_CLIENT_SESSION_KEY])",
                 category=DeprecationWarning,
             )
             await self.active_session.close()

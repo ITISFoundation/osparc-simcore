@@ -68,9 +68,8 @@ def fetch_data(client: httpx.Client, project_id: UUID, checkpoint: CheckPoint):
             for port_name, value in row.results.values[node_id].items():
                 data[f"{label}[{port_name}]"].append(value)
 
-    df = pd.DataFrame(data, index=pd.Series(index))
     # TODO: add metadata?
-    return df
+    return pd.DataFrame(data, index=pd.Series(index))
 
 
 def process_data(df: pd.DataFrame):

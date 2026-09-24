@@ -3,7 +3,7 @@
 import re
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, TypeVar
+from typing import Any
 
 import httpx
 from models_library.generics import Envelope
@@ -11,10 +11,8 @@ from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.status_codes_utils import get_code_display_name, is_error
 
-T = TypeVar("T")
 
-
-def assert_status(
+def assert_status[T](
     response: httpx.Response,
     expected_status_code: int,
     response_model: type[T] | None,
@@ -76,10 +74,7 @@ def _do_assert_error(
     if expected_msg:
         assert details is not None
         # find the expected msg are in the details
-        if isinstance(expected_msg, list):
-            list_expected_msg = expected_msg
-        else:
-            list_expected_msg = [expected_msg]
+        list_expected_msg = expected_msg if isinstance(expected_msg, list) else [expected_msg]
 
         for msg in list_expected_msg:
             assert any(msg == e or re.search(msg, e) for e in details), f"could not find {msg=} in {details=}"

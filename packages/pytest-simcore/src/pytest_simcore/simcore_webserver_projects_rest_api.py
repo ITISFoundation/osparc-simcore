@@ -756,11 +756,24 @@ CREATE_FROM_TEMPLATE = HttpApiCallCapture(
     },
     response_body={
         "data": {
-            "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
+            "task_id": (
+                "POST%20%2Fv0%2Fprojects%3Ffrom_study"
+                "%3Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13"
+            ),
             "task_name": "POST /v0/projects?from_study=ee87ff60-4147-4381-bcb8-59d076dbc788",
-            "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
-            "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13/result",
-            "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13",
+            "status_href": (
+                "/v0/tasks/POST%2520%252Fv0%252Fprojects"
+                "%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13"
+            ),
+            "result_href": (
+                "/v0/tasks/POST%2520%252Fv0%252Fprojects"
+                "%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788"
+                ".261e4470-4132-47a3-82d1-7c38bed30e13/result"
+            ),
+            "abort_href": (
+                "/v0/tasks/POST%2520%252Fv0%252Fprojects"
+                "%253Ffrom_study%253Dee87ff60-4147-4381-bcb8-59d076dbc788.261e4470-4132-47a3-82d1-7c38bed30e13"
+            ),
         }
     },
     status_code=HTTPStatus.ACCEPTED,  # 202

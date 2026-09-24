@@ -1,6 +1,6 @@
-from typing import Any, Literal, TypeAlias, TypedDict
+from typing import Any, Literal, TypedDict
 
-ServiceNameStr: TypeAlias = str
+type ServiceNameStr = str
 
 
 class ComposeSpecDict(TypedDict):

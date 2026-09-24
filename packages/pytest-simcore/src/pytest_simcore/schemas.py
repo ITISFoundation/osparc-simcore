@@ -26,8 +26,7 @@ def node_meta_schema_file(common_schemas_specs_dir: Path) -> Path:
 @pytest.fixture(scope="session")
 def node_meta_schema(node_meta_schema_file: Path) -> dict:
     with node_meta_schema_file.open() as fp:
-        node_schema = json.load(fp)
-        return node_schema
+        return json.load(fp)
 
 
 @pytest.fixture(scope="session")

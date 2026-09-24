@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 _logger = logging.getLogger(__name__)
-_DEFAULT_THREADHOLD_MB = 512
+_DEFAULT_THRESHOLD_MB = 512
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -14,8 +14,9 @@ def pytest_addoption(parser: pytest.Parser):
         "--disk-usage-threshold",
         action="store",
         type=float,
-        default=_DEFAULT_THREADHOLD_MB,
-        help="Set the threshold for disk usage increase in Megabytes. No warning if increase is below this value. [default={_DEFAULT_THREADHOLD_MB}]",
+        default=_DEFAULT_THRESHOLD_MB,
+        help="Set the threshold for disk usage increase in Megabytes. No warning if increase "
+        f"is below this value. [default={_DEFAULT_THRESHOLD_MB}]",
     )
 
 
@@ -40,7 +41,8 @@ class DiskUsagePlugin:
     in specific tests, modules, or the entire test session.
 
     As example, the CI in gh-actions reported this:
-        XMinioStorageFull: Storage backend has reached its minimum free drive threshold. Please delete a few objects to proceed.
+        XMinioStorageFull: Storage backend has reached its minimum free drive threshold.
+        Please delete a few objects to proceed.
     """
 
     def __init__(self, config):

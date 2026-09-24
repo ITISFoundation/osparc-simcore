@@ -47,13 +47,12 @@ def main(njobs: int, log_job: bool = False):
 
     uploaded_files = []
     registered_functions = []
-    job_statuses = dict()
+    job_statuses = {}
 
     with osparc_client.ApiClient(configuration) as api_client:
         try:
             api_instance = osparc_client.FunctionsApi(api_client)
             job_api_instance = osparc_client.FunctionJobsApi(api_client)
-            job_collection_api_instance = osparc_client.FunctionJobCollectionsApi(api_client)
             file_client_instance = osparc_client.FilesApi(api_client)
             user_api_instance = osparc_client.UsersApi(api_client)
 
