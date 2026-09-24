@@ -32,12 +32,13 @@ runtime clips with ``overflow: hidden``, so an oversized FA7 glyph would still b
 cropped. Advance widths are deliberately left untouched here so the qooxdoo box
 dimensions are unchanged -- only the visible ink shrinks.
 """
+
 import sys
 from pathlib import Path
 
 from fontTools.misc.transform import Identity
-from fontTools.pens.cu2quPen import Cu2QuPen
 from fontTools.pens.boundsPen import BoundsPen
+from fontTools.pens.cu2quPen import Cu2QuPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont, newTable
@@ -76,11 +77,7 @@ def _build_font(src: Path, ttf_out: Path, woff2_out: Path) -> None:
             if ink_height > max_ink:
                 scale = max_ink / ink_height
                 cx = (x_min + x_max) / 2
-                transform = (
-                    Identity.translate(cx, em_center)
-                    .scale(scale)
-                    .translate(-cx, -em_center)
-                )
+                transform = Identity.translate(cx, em_center).scale(scale).translate(-cx, -em_center)
 
         tt_pen = TTGlyphPen(glyph_set)
         cu2qu_pen = Cu2QuPen(tt_pen, MAX_ERR, reverse_direction=True)

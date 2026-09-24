@@ -1,13 +1,10 @@
 from abc import abstractmethod
-from typing import Generic, TypeVar
 
 from ._mixins import DisplayaMixin, ParentMixin
 from .base_display_model import BaseUpdatableDisplayModel
 
-M = TypeVar("M", bound=BaseUpdatableDisplayModel)
 
-
-class BaseUpdatableComponent(DisplayaMixin, ParentMixin, Generic[M]):
+class BaseUpdatableComponent[M: BaseUpdatableDisplayModel](DisplayaMixin, ParentMixin):
     def __init__(self, display_model: M):
         super().__init__()
 
