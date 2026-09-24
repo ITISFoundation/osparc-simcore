@@ -37,7 +37,8 @@ def test_sanitize_legacy_data():
             "gid": "27",
             "label": "A user",
             "description": "A very special user",
-            "thumbnail": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAADMCAMAAABp5J",  # <--- encoded thumbnail are discarded
+            # <--- encoded thumbnail are discarded
+            "thumbnail": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAADMCAMAAABp5J",
             "accessRights": {"read": True, "write": False, "delete": False},
         }
     )

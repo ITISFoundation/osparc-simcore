@@ -38,7 +38,8 @@ class FunctionFilters(Filters):
     search_by_title: Annotated[
         str | None,
         Field(
-            description="A search query to filter functions by their title. This field performs a case-insensitive partial match against the function title field.",
+            description="A search query to filter functions by their title. This field performs a "
+            "case-insensitive partial match against the function title field.",
         ),
     ] = None
 
@@ -81,7 +82,8 @@ class FunctionDeleteQueryParams(BaseModel):
     force: Annotated[
         bool,
         Field(
-            description="If true, deletes the function even if it has associated jobs; otherwise, returns HTTP_409_CONFLICT if jobs exist.",
+            description="If true, deletes the function even if it has associated jobs; otherwise, "
+            "returns HTTP_409_CONFLICT if jobs exist.",
         ),
     ] = False
 

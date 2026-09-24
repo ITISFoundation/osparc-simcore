@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable, Iterator
-from typing import Any, Generic, Literal, TypeAlias, TypeVar
+from typing import Any, Literal
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
@@ -28,7 +28,8 @@ def create_url_for_function(app: web.Application, request_url: URL, request_head
                 request_url.origin()
                 .with_scheme(
                     # Custom header by traefik. See labels in docker-compose as:
-                    # - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
+                    # - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers
+                    #   .customrequestheaders.X-Forwarded-Proto=http
                     request_headers.get(X_FORWARDED_PROTO, request_url.scheme)
                 )
                 .with_path(str(rel_url))
@@ -36,7 +37,10 @@ def create_url_for_function(app: web.Application, request_url: URL, request_head
             return f"{_url}"
 
         except KeyError as err:
-            msg = f"Cannot find URL because there is no resource registered as {route_name=}Check name spelling or whether the router was not registered"
+            msg = (
+                f"Cannot find URL because there is no resource registered as {route_name=}"
+                "Check name spelling or whether the router was not registered"
+            )
             raise RuntimeError(msg) from err
 
     return _url_for
@@ -44,10 +48,7 @@ def create_url_for_function(app: web.Application, request_url: URL, request_head
 
 def envelope_json_response(obj: Any, status_cls: type[HTTPException] = web.HTTPOk) -> web.Response:
     # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3646
-    if issubclass(status_cls, HTTPError):
-        enveloped = Envelope[Any](error=obj)
-    else:
-        enveloped = Envelope[Any](data=obj)
+    enveloped = Envelope[Any](error=obj) if issubclass(status_cls, HTTPError) else Envelope[Any](data=obj)
 
     return web.Response(
         text=json_dumps(enveloped.model_dump(**RESPONSE_MODEL_POLICY)),
@@ -67,7 +68,7 @@ def create_json_response_from_page(page: Page[ItemT]) -> web.Response:
 # Special models and responses for the front-end
 #
 
-PageStr: TypeAlias = Literal["view", "error"]
+type PageStr = Literal["view", "error"]
 
 
 def create_redirect_to_page_response(app: web.Application, page: PageStr, **parameters) -> web.HTTPFound:
@@ -95,10 +96,7 @@ def create_redirect_to_page_response(app: web.Application, page: PageStr, **para
     return web.HTTPFound(location=redirect_url)
 
 
-PageParameters = TypeVar("PageParameters", bound=BaseModel)
-
-
-class NextPage(BaseModel, Generic[PageParameters]):
+class NextPage[PageParameters: BaseModel](BaseModel):
     """
     This is the body of a 2XX response to pass the front-end
     what kind of page shall be display next and some information about it

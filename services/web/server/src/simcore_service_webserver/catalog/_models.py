@@ -1,4 +1,4 @@
-from typing import TypeAlias, TypedDict
+from typing import TypedDict
 
 from models_library.api_schemas_catalog.services import MyServicesRpcBatchGet
 
@@ -8,4 +8,4 @@ class ServiceKeyVersionDict(TypedDict):
     version: str
 
 
-MyServicesBatchGetResult: TypeAlias = MyServicesRpcBatchGet
+type MyServicesBatchGetResult = MyServicesRpcBatchGet

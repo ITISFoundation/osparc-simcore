@@ -23,5 +23,6 @@ class BelowMinimumPaymentError(ProductError):
 class MissingStripeConfigError(ProductError):
     msg_template = (
         "Missing product stripe for product {product_name}.\n"
-        "NOTE: This is currently setup manually by the operator in pg database via adminer and also in the stripe platform."
+        "NOTE: This is currently setup manually by the operator in pg database via adminer and also "
+        "in the stripe platform."
     )

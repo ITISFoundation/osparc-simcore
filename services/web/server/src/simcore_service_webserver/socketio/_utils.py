@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any, Final, TypeAlias
+from typing import Any, Final
 
 from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
@@ -20,20 +20,21 @@ def get_socket_server(app: web.Application) -> AsyncServer:
 
 
 # The socket ID that was assigned to the client
-SocketID: TypeAlias = str
+type SocketID = str
 
-# The environ argument is a dictionary in standard WSGI format containing the request information, including HTTP headers
-EnvironDict: TypeAlias = dict[str, Any]
+# The environ argument is a dictionary in standard WSGI format containing the request
+# information, including HTTP headers
+type EnvironDict = dict[str, Any]
 
 # Connect event
-SocketioConnectEventHandler: TypeAlias = Callable[[SocketID, EnvironDict, web.Application], Awaitable[None]]
+type SocketioConnectEventHandler = Callable[[SocketID, EnvironDict, web.Application], Awaitable[None]]
 
 # Disconnect event
-SocketioDisconnectEventHandler: TypeAlias = Callable[[SocketID, web.Application], Awaitable[None]]
+type SocketioDisconnectEventHandler = Callable[[SocketID, web.Application], Awaitable[None]]
 
 # Event
-AnyData: TypeAlias = Any
-SocketioEventHandler: TypeAlias = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
+type AnyData = Any
+type SocketioEventHandler = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
 
 _socketio_handlers_registry: list[
     (SocketioEventHandler | SocketioConnectEventHandler | SocketioDisconnectEventHandler)

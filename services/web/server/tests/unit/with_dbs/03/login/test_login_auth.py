@@ -262,7 +262,7 @@ async def test_multiple_users_login_logout_concurrently(
 
         # Try to access profile after logout
         profile_after_logout_resp = await user_client.get(profile_url)
-        _, error = await assert_status(profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED)
+        _, _error = await assert_status(profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED)
 
         # No need to manually close the client as aiohttp_client fixture handles cleanup
 

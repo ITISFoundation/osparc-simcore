@@ -35,7 +35,8 @@ _logger = logging.getLogger(__name__)
 # redis `resources` db has composed-keys formatted as '${user_id=}:${client_session_id=}:{suffix}'
 #    Example:
 #        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:alive = 1
-#        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:resources = {project_id: ... , socket_id: ...}
+#        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:resources
+#             = {project_id: ... , socket_id: ...}
 #
 
 
@@ -47,7 +48,8 @@ class RedisResourceRegistry:
 
     Example:
         Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:alive = 1
-        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:resources = {project_id: ... , socket_id: ...}
+        Key: user_id=1:client_session_id=7f40353b-db02-4474-a44d-23ce6a6e428c:resources
+             = {project_id: ... , socket_id: ...}
     """
 
     def __init__(self, app: web.Application):

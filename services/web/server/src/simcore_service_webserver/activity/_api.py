@@ -9,7 +9,10 @@ async def query_prometheus(session: aiohttp.ClientSession, url: URL, query: str)
 
 
 async def get_cpu_usage(session, url, user_id):
-    cpu_query = f'sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s])) * 100'
+    cpu_query = (
+        f"sum by (container_label_node_id) (irate(container_cpu_usage_seconds_total"
+        f'{{container_label_node_id=~".+", container_label_user_id="{user_id}"}}[20s])) * 100'
+    )
     return await query_prometheus(session, url, cpu_query)
 
 

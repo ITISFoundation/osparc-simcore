@@ -84,7 +84,7 @@ async def moving_folder_id(
             "parentFolderId": f"{second_folder['folderId']}",
         },
     )
-    third_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    _third_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     ### Move projects to subfolder
     # add first project to the folder
