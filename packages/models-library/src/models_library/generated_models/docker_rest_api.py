@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Annotated, Any
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, RootModel
@@ -17,7 +17,7 @@ class Model(RootModel[Any]):
     root: Any
 
 
-class Type(str, Enum):
+class Type(StrEnum):
     tcp = "tcp"
     udp = "udp"
     sctp = "sctp"
@@ -43,7 +43,7 @@ class Port(BaseModel):
     type: Annotated[Type, Field(alias="Type")]
 
 
-class Type1(str, Enum):
+class Type1(StrEnum):
     """
     The mount type:
 
@@ -193,7 +193,7 @@ class ThrottleDevice(BaseModel):
     rate: Annotated[int | None, Field(alias="Rate", description="Rate", ge=0)] = None
 
 
-class Type2(str, Enum):
+class Type2(StrEnum):
     """
     The mount type. Available types:
 
@@ -212,7 +212,7 @@ class Type2(str, Enum):
     cluster = "cluster"
 
 
-class Propagation(str, Enum):
+class Propagation(StrEnum):
     """
     A propagation mode with the value `[r]private`, `[r]shared`, or `[r]slave`.
     """
@@ -381,7 +381,7 @@ class Mount(BaseModel):
     ] = None
 
 
-class Name(str, Enum):
+class Name(StrEnum):
     """
     - Empty string means not to restart
     - `no` Do not automatically restart
@@ -777,7 +777,7 @@ class HealthConfig(BaseModel):
     ] = None
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """
     Status is one of `none`, `starting`, `healthy` or `unhealthy`
 
@@ -830,7 +830,7 @@ class HealthcheckResult(BaseModel):
     output: Annotated[str | None, Field(alias="Output", description="Output from last check")] = None
 
 
-class Type3(str, Enum):
+class Type3(StrEnum):
     json_file = "json-file"
     syslog = "syslog"
     journald = "journald"
@@ -861,7 +861,7 @@ class ConsoleSizeItem(RootModel[int]):
     root: Annotated[int, Field(ge=0)]
 
 
-class CgroupnsMode(str, Enum):
+class CgroupnsMode(StrEnum):
     """
     cgroup namespace mode for the container. Possible values are:
 
@@ -877,7 +877,7 @@ class CgroupnsMode(str, Enum):
     host = "host"
 
 
-class Isolation(str, Enum):
+class Isolation(StrEnum):
     """
     Isolation technology of the container. (Windows only)
 
@@ -1698,7 +1698,7 @@ class ProcessConfig(BaseModel):
     arguments: list[str] | None = None
 
 
-class Scope(str, Enum):
+class Scope(StrEnum):
     """
     The level at which the volume exists. Either `global` for cluster-wide,
     or `local` for machine level.
@@ -1809,7 +1809,7 @@ class PeerInfo(BaseModel):
     ] = None
 
 
-class Type4(str, Enum):
+class Type4(StrEnum):
     """
     Cache record type.
 
@@ -2045,7 +2045,7 @@ class Settings(BaseModel):
     devices: Annotated[list[PluginDevice], Field(alias="Devices")]
 
 
-class ProtocolScheme(str, Enum):
+class ProtocolScheme(StrEnum):
     """
     Protocol to use for clients connecting to the plugin.
     """
@@ -2252,7 +2252,7 @@ class ObjectVersion(BaseModel):
     index: Annotated[int | None, Field(alias="Index", examples=[373531])] = None
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     """
     Role of the node.
     """
@@ -2261,7 +2261,7 @@ class Role(str, Enum):
     manager = "manager"
 
 
-class Availability(str, Enum):
+class Availability(StrEnum):
     """
     Availability of the node.
     """
@@ -2404,7 +2404,7 @@ class TLSInfo(BaseModel):
     ] = None
 
 
-class NodeState(str, Enum):
+class NodeState(StrEnum):
     """
     NodeState represents the state of a node.
     """
@@ -2415,7 +2415,7 @@ class NodeState(str, Enum):
     disconnected = "disconnected"
 
 
-class Reachability(str, Enum):
+class Reachability(StrEnum):
     """
     Reachability represents the reachability of a node.
     """
@@ -2510,7 +2510,7 @@ class Dispatcher(BaseModel):
     ] = None
 
 
-class Protocol(str, Enum):
+class Protocol(StrEnum):
     """
     Protocol for communication with the external CA (currently
     only `cfssl` is supported).
@@ -2901,7 +2901,7 @@ class SeLinuxContext(BaseModel):
     level: Annotated[str | None, Field(alias="Level", description="SELinux level label")] = None
 
 
-class Mode(str, Enum):
+class Mode(StrEnum):
     default = "default"
     unconfined = "unconfined"
     custom = "custom"
@@ -2922,7 +2922,7 @@ class Seccomp(BaseModel):
     ] = None
 
 
-class Mode1(str, Enum):
+class Mode1(StrEnum):
     default = "default"
     disabled = "disabled"
 
@@ -3120,7 +3120,7 @@ class Config1(BaseModel):
     ] = None
 
 
-class Isolation1(str, Enum):
+class Isolation1(StrEnum):
     """
     Isolation technology of the containers running the service.
     (Windows only)
@@ -3323,7 +3323,7 @@ class NetworkAttachmentSpec(BaseModel):
     ] = None
 
 
-class Condition(str, Enum):
+class Condition(StrEnum):
     """
     Condition for restart.
     """
@@ -3445,7 +3445,7 @@ class LogDriver1(BaseModel):
     options: Annotated[dict[str, str] | None, Field(alias="Options")] = None
 
 
-class TaskState(str, Enum):
+class TaskState(StrEnum):
     new = "new"
     allocated = "allocated"
     pending = "pending"
@@ -3535,7 +3535,7 @@ class Mode2(BaseModel):
     ] = None
 
 
-class FailureAction(str, Enum):
+class FailureAction(StrEnum):
     """
     Action to take if an updated task fails to run, or stops running
     during the update.
@@ -3547,7 +3547,7 @@ class FailureAction(str, Enum):
     rollback = "rollback"
 
 
-class Order(str, Enum):
+class Order(StrEnum):
     """
     The order of operations when rolling out an updated task. Either
     the old task is shut down before the new task is started, or the
@@ -3608,7 +3608,7 @@ class UpdateConfig(BaseModel):
     ] = None
 
 
-class FailureAction1(str, Enum):
+class FailureAction1(StrEnum):
     """
     Action to take if an rolled back task fails to run, or stops
     running during the rollback.
@@ -3619,7 +3619,7 @@ class FailureAction1(str, Enum):
     pause = "pause"
 
 
-class Order1(str, Enum):
+class Order1(StrEnum):
     """
     The order of operations when rolling back a task. Either the old
     task is shut down before the new task is started, or the new task
@@ -3683,7 +3683,7 @@ class RollbackConfig(BaseModel):
     ] = None
 
 
-class PublishMode(str, Enum):
+class PublishMode(StrEnum):
     """
     The mode in which port is published.
 
@@ -3725,7 +3725,7 @@ class EndpointPortConfig(BaseModel):
     ] = PublishMode.ingress
 
 
-class Mode3(str, Enum):
+class Mode3(StrEnum):
     """
     The mode of resolution to use for internal load balancing between tasks.
 
@@ -3776,7 +3776,7 @@ class Endpoint(BaseModel):
     virtual_i_ps: Annotated[list[VirtualIP] | None, Field(alias="VirtualIPs")] = None
 
 
-class State(str, Enum):
+class State(StrEnum):
     updating = "updating"
     paused = "paused"
     completed = "completed"
@@ -4042,7 +4042,7 @@ class Config2(BaseModel):
     spec: Annotated[ConfigSpec | None, Field(alias="Spec")] = None
 
 
-class Status1(str, Enum):
+class Status1(StrEnum):
     """
     String representation of the container state. Can be one of "created",
     "running", "paused", "restarting", "removing", "exited", or "dead".
@@ -4223,7 +4223,7 @@ class SystemVersion(BaseModel):
     ] = None
 
 
-class CgroupDriver(str, Enum):
+class CgroupDriver(StrEnum):
     """
     The driver to use for managing cgroups.
 
@@ -4234,7 +4234,7 @@ class CgroupDriver(str, Enum):
     none = "none"
 
 
-class CgroupVersion(str, Enum):
+class CgroupVersion(StrEnum):
     """
     The version of the cgroup.
 
@@ -4244,7 +4244,7 @@ class CgroupVersion(str, Enum):
     field_2 = "2"
 
 
-class Isolation2(str, Enum):
+class Isolation2(StrEnum):
     """
     Represents the isolation technology to use as a default for containers.
     The supported values are platform-specific.
@@ -4459,7 +4459,7 @@ class Commit(BaseModel):
     ] = None
 
 
-class LocalNodeState(str, Enum):
+class LocalNodeState(StrEnum):
     """
     Current local status of this node.
     """
@@ -4562,7 +4562,7 @@ class EventActor(BaseModel):
     ] = None
 
 
-class Type5(str, Enum):
+class Type5(StrEnum):
     """
     The type of object emitting the event
     """
@@ -4580,7 +4580,7 @@ class Type5(str, Enum):
     volume = "volume"
 
 
-class Scope1(str, Enum):
+class Scope1(StrEnum):
     """
     Scope of the event. Engine events are `local` scope. Cluster (Swarm)
     events are `swarm` scope.
@@ -4730,7 +4730,7 @@ class DistributionInspectResponse(BaseModel):
     ]
 
 
-class State1(str, Enum):
+class State1(StrEnum):
     """
     The published state of the volume.
     * `pending-publish` The volume should be published to this node, but the call to the controller plugin to do so has not yet been successfully completed.
@@ -4773,7 +4773,7 @@ class PublishStatu(BaseModel):
     ] = None
 
 
-class Scope2(str, Enum):
+class Scope2(StrEnum):
     """
     The set of nodes this volume can be used on at one time.
     - `single` The volume may only be scheduled to one node at a time.
@@ -4785,7 +4785,7 @@ class Scope2(str, Enum):
     multi = "multi"
 
 
-class Sharing(str, Enum):
+class Sharing(StrEnum):
     """
     The number and way that different tasks can use this volume
     at one time.
@@ -4854,7 +4854,7 @@ class CapacityRange(BaseModel):
     ] = None
 
 
-class Availability1(str, Enum):
+class Availability1(StrEnum):
     """
     The availability of the volume for use in tasks.
     - `active` The volume is fully available for scheduling on the cluster

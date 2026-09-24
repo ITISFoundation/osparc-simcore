@@ -58,15 +58,19 @@ class ServiceBaseDisplay(BaseModel):
     description_ui: Annotated[
         bool,
         Field(
-            description="A flag to enable the `description` to be presented as a single web page (=true) or in another structured format (default=false)."
+            description="A flag to enable the `description` to be presented as a single "
+            "web page (=true) or in another structured format (default=false)."
         ),
     ] = False
     version_display: Annotated[
         str | None,
         Field(
             description="A user-friendly or marketing name for the release."
-            "This can be used to reference the release in a more readable and recognizable format, such as 'Matterhorn Release,' 'Spring Update,' or 'Holiday Edition.' "
-            "This name is not used for version comparison but is useful for communication and documentation purposes."
+            "This can be used to reference the release in a more readable and "
+            "recognizable format, such as 'Matterhorn Release,' 'Spring Update,' "
+            "or 'Holiday Edition.' "
+            "This name is not used for version comparison but is useful for "
+            "communication and documentation purposes."
         ),
     ] = None
 

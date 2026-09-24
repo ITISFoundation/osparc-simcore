@@ -443,7 +443,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     ] = RestartPolicy.NO_RESTART
 
     containers_allowed_outgoing_permit_list: Annotated[
-        None | (Json[dict[str, list[NATRule]]]),
+        Json[dict[str, list[NATRule]]] | None,
         Field(
             alias="simcore.service.containers-allowed-outgoing-permit-list",
             description="allow internet access to certain domain names and ports per container",

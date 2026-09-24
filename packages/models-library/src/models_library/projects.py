@@ -3,7 +3,7 @@ Models a study's project document
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
@@ -37,14 +37,14 @@ from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
 
 ProjectID: TypeAlias = UUID
-CommitID: TypeAlias = int
-ClassifierID: TypeAlias = str
+type CommitID = int
+type ClassifierID = str
 
-NodesDict: TypeAlias = dict[NodeIDStr, Node]
+type NodesDict = dict[NodeIDStr, Node]
 _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-ProjectIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
+type ProjectIDStr = Annotated[str, StringConstraints(pattern=UUID_RE_BASE)]
 
 
 class DateTimeStr(ConstrainedStr):
@@ -56,7 +56,7 @@ class DateTimeStr(ConstrainedStr):
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
-class ProjectType(str, Enum):
+class ProjectType(StrEnum):
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
 

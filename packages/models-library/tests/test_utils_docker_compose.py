@@ -6,6 +6,7 @@
 
 import pytest
 import yaml
+from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
     MATCH_SIMCORE_REGISTRY,

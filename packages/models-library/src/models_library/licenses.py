@@ -6,7 +6,6 @@ from typing import (
     NamedTuple,
     NewType,
     NotRequired,
-    TypeAlias,
     TypedDict,
     cast,
 )
@@ -15,14 +14,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
 
-from models_library.resource_tracker import PricingPlanId
-
 from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-LicensedItemID: TypeAlias = UUID
-LicensedResourceID: TypeAlias = UUID
+type LicensedItemID = UUID
+type LicensedResourceID = UUID
 
 LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
 LicensedItemKey = NewType("LicensedItemKey", str)

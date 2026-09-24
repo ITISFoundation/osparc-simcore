@@ -16,13 +16,15 @@ class SearchResultItem(BaseModel):
     created_at: Annotated[
         datetime.datetime | None,
         Field(
-            description="Creation timestamp. None is possible because of heavy computation required to retrieve this information"
+            description="Creation timestamp. None is possible because of heavy "
+            "computation required to retrieve this information"
         ),
     ]
     modified_at: Annotated[
         datetime.datetime | None,
         Field(
-            description="Last modification timestamp. None is possible because of heavy computation required to retrieve this information"
+            description="Last modification timestamp. None is possible because of "
+            "heavy computation required to retrieve this information"
         ),
     ]
     size: ByteSize | UNDEFINED_SIZE_TYPE

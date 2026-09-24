@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 
 from pydantic import (
     BaseModel,
@@ -26,7 +26,7 @@ class WorkerMetrics(BaseModel):
     task_counts: Annotated[TaskCounts, Field(description="task details")]
 
 
-AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
+type AvailableResources = DictModel[str, PositiveFloat]
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
@@ -50,7 +50,7 @@ class Worker(BaseModel):
     metrics: WorkerMetrics
 
 
-WorkersDict: TypeAlias = dict[AnyUrl, Worker]
+type WorkersDict = dict[AnyUrl, Worker]
 
 
 class Scheduler(BaseModel):

@@ -36,11 +36,9 @@ _URLType = _YarlURL | _StarletteURL
 
 def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
     """This helper function ensures query replacement works with both"""
-    new_url: _URLType | _StarletteURL
-    if isinstance(url, _YarlURL):
-        new_url = url.update_query(query)
-    else:
-        new_url = url.replace_query_params(**query)
+    new_url: _URLType | _StarletteURL = (
+        url.update_query(query) if isinstance(url, _YarlURL) else url.replace_query_params(**query)
+    )
 
     new_url_str = f"{new_url}"
     return f"{TypeAdapter(AnyHttpUrl).validate_python(new_url_str)}"

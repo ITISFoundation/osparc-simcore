@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum, unique
+from enum import StrEnum, unique
 from pathlib import Path
 from typing import Annotated
 
@@ -13,7 +13,7 @@ class DatasetMetaData(BaseModel):
 
 
 @unique
-class DataType(str, Enum):
+class DataType(StrEnum):
     FILE = "FILE"
     FOLDER = "FOLDER"
 

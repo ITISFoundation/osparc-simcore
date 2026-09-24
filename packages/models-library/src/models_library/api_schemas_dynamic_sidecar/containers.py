@@ -1,5 +1,3 @@
-from typing import TypeAlias
-
 from pydantic import BaseModel, ConfigDict, NonNegativeFloat
 
 
@@ -15,6 +13,6 @@ class ActivityInfo(BaseModel):
     )
 
 
-ActivityInfoOrNone: TypeAlias = ActivityInfo | None
+type ActivityInfoOrNone = ActivityInfo | None
 
-DockerComposeYamlStr: TypeAlias = str
+type DockerComposeYamlStr = str
