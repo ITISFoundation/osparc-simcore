@@ -2,6 +2,7 @@
 This module takes care of sending events to the connected webclient through the socket.io interface
 """
 
+import asyncio
 import logging
 
 from aiohttp.web import Application
@@ -40,12 +41,25 @@ async def _safe_emit(
     with log_catch(_logger, reraise=strict):
         event = message["event_type"]
         data = jsonable_encoder(message["data"])
-        await sio.emit(
-            event=event,
-            data=data,
-            room=room,
-            ignore_queue=ignore_queue,
-        )
+        try:
+            await sio.emit(
+                event=event,
+                data=data,
+                room=room,
+                ignore_queue=ignore_queue,
+            )
+        except asyncio.CancelledError as err:
+            task = asyncio.current_task()
+            if task is not None and task.cancelling():
+                raise  # a cancellation someone actually requested
+            # The socket.io RabbitMQ manager raises CancelledError from aio-pika's
+            # ChannelInvalidStateError even though nobody cancelled (e.g. the
+            # reconnect race during a broker restart). Translating it here keeps it
+            # a normal emit failure: strict callers retry it, non-strict ones only
+            # log it, and it cannot get lost in a gather(return_exceptions=True).
+            # SEE https://github.com/miguelgrinberg/python-socketio/commit/cd7f781c022dd1d1ec3c6695a0fd6ab3ce864fd5
+            msg = "socket.io emit failed (broker channel invalid)"
+            raise ConnectionError(msg) from err
         _logger.debug("emitted socketio event '%s' to room '%s'", event, room)
 
 

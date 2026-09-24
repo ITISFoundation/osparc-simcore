@@ -25,7 +25,6 @@ number of attempts are dead-lettered (skipped by claims, kept for post-mortem
 until a periodic purge removes them once they age out).
 """
 
-import asyncio
 import datetime
 import logging
 from typing import Final
@@ -227,32 +226,6 @@ async def _claim_and_process_aggregate(
                 ) from exc
 
             await remove_claimed_events(conn, claimed.event_ids)
-    except asyncio.CancelledError:
-        current_task = asyncio.current_task()
-        if current_task is not None and current_task.cancelling():
-            raise  # genuine cancellation (e.g. shutdown): claim rolled back, event stays claimable
-        # the socket.io RabbitMQ manager forges a CancelledError whenever aio-pika
-        # reports a channel in an invalid state (e.g. the reconnect race during a
-        # broker restart) even though nothing was cancelled:
-        # https://github.com/miguelgrinberg/python-socketio/commit/cd7f781c022dd1d1ec3c6695a0fd6ab3ce864fd5
-        # letting it escape here would silently end the drain task and stall the
-        # queue until a restart. The claim already rolled back, so report an
-        # infrastructure failure (aggregate excluded from this drain, retried later)
-        # and keep the drain task alive.
-        _logger.warning(
-            "Outbox aggregate %s:%s raised a CancelledError no one requested (the"
-            " socket.io manager forges it from aio_pika ChannelInvalidStateError);"
-            " treating it as an infrastructure error to keep the drain task alive",
-            candidate.kind,
-            candidate.aggregate_id,
-            exc_info=True,
-        )
-        return ClaimOutcome(
-            success=False,
-            kind=candidate.kind,
-            aggregate_id=candidate.aggregate_id,
-            is_infra_error=True,
-        )
     except OutboxProcessingError as failed:
         updated = await record_failed_attempts(engine, failed.event_ids, failed.cause)
         _log_failed_attempts(updated, failed.cause)

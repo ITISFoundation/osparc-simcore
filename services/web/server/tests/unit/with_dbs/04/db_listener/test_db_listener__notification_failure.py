@@ -240,9 +240,10 @@ async def test_forged_cancelled_error_keeps_drain_alive(
 ):
     """The socket.io RabbitMQ manager forges a CancelledError from aio-pika's
     ChannelInvalidStateError (e.g. the reconnect race during a RabbitMQ restart) even
-    though nothing was cancelled. Nobody requested the cancellation, so the drain must
-    NOT die with it: the aggregate is reported as an infrastructure failure, the event
-    stays claimable, and the claim rolls back (no attempt counted).
+    though nothing was cancelled. _safe_emit translates it into a ConnectionError
+    (see tests/unit/isolated/socketio/test_messages.py), so here it must behave like
+    any other socket.io backend failure: the event is kept for a retry, the drain
+    survives, and it is classified as an infrastructure error.
     SEE https://github.com/miguelgrinberg/python-socketio/commit/cd7f781c022dd1d1ec3c6695a0fd6ab3ce864fd5
     """
     assert client.app
@@ -270,10 +271,10 @@ async def test_forged_cancelled_error_keeps_drain_alive(
     assert outcome.success is False, "a forged cancellation must fail the claim, not kill the caller"
     assert outcome.is_infra_error is True
 
-    # claim rolled back: event kept and untouched (no attempt counted either)
+    # translated at the source into a normal emit failure: event kept for a retry
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
-    assert len(rows) == 1, "event interrupted by a forged cancellation must stay claimable"
-    assert rows[0]["attempts"] == 0
+    assert len(rows) == 1, "event whose socket.io notification failed must NOT be deleted"
+    assert rows[0]["attempts"] == 1
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
