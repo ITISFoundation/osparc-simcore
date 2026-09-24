@@ -95,6 +95,8 @@ async def grant_input_permissions(app: FastAPI) -> None:
 class _WritableInputsState:
     io_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     active_count: int = 0
+    # whether the inputs folder is currently writable, guarded by io_lock
+    is_writable: bool = False
 
 
 async def _writable_inputs_lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -113,18 +115,22 @@ async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
     state: _WritableInputsState = app.state.writable_inputs_state
 
     state.active_count += 1
-    first = state.active_count == 1
     try:
         async with state.io_lock:
-            if first:
+            # NOTE: is_writable is checked instead of relying on active_count:
+            # a previous entrant's grant may have failed or been cancelled,
+            # in which case the inputs are still read-only and must be granted here
+            if not state.is_writable:
                 await grant_input_permissions(app)
+                state.is_writable = True
         yield
     finally:
         state.active_count -= 1
         last = state.active_count == 0
         async with state.io_lock:
-            if last:
+            if last and state.is_writable:
                 await restrict_input_permissions(app)
+                state.is_writable = False
 
 
 async def attach_container_to_network(*, container_id: str, network_id: str, network_aliases: list[str]) -> None:

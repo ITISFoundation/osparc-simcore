@@ -274,6 +274,58 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
     )
 
 
+async def test_writable_inputs_failed_grant_is_retried_by_queued_caller(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    inputs_path: Path,
+):
+    # regression test: when the first caller's grant fails, a queued caller
+    # must retry the grant instead of running with read-only inputs
+    grant_command = _create_grant_input_permissions_command(inputs_path)
+    restrict_command = _create_restrict_input_permissions_command(inputs_path)
+
+    first_attempt = True
+    first_grant_started = asyncio.Event()
+    release_first_grant = asyncio.Event()
+
+    async def _flaky_exec(*args, **kwargs) -> None:
+        nonlocal first_attempt
+        if kwargs.get("command") == grant_command and first_attempt:
+            first_attempt = False
+            first_grant_started.set()
+            await release_first_grant.wait()
+            msg = "grant failed"
+            raise RuntimeError(msg)
+
+    mock_input_permissions_toggle.side_effect = _flaky_exec
+
+    entered_second = asyncio.Event()
+
+    async def _enter() -> None:
+        async with writable_inputs(app):
+            entered_second.set()
+
+    first_task = asyncio.create_task(_enter())
+    await first_grant_started.wait()
+
+    second_task = asyncio.create_task(_enter())
+    await asyncio.sleep(0)  # let the second caller queue on the io lock
+
+    release_first_grant.set()
+    with pytest.raises(RuntimeError):
+        await first_task
+
+    await second_task
+    assert entered_second.is_set()
+
+    grant_calls = [c for c in mock_input_permissions_toggle.await_args_list if c.kwargs.get("command") == grant_command]
+    restrict_calls = [
+        c for c in mock_input_permissions_toggle.await_args_list if c.kwargs.get("command") == restrict_command
+    ]
+    assert len(grant_calls) == 2  # first failed, second retried
+    assert len(restrict_calls) == 1  # restricted only after the last caller exited
+
+
 async def test_writable_inputs_registers_without_waiting_for_slow_grant(
     app: FastAPI,
     mock_input_permissions_toggle: AsyncMock,
