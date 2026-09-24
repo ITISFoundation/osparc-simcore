@@ -62,6 +62,7 @@ from .models import (
     DB_OUTBOX_CHANGED_COLUMN_STATE,
     DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS,
     ClaimableAggregate,
+    ClaimedAggregate,
     ClaimOutcome,
     FailedAttempt,
 )
@@ -208,6 +209,7 @@ async def _claim_and_process_aggregate(
     capped by _PROCESSING_TIMEOUT (DB updates + socketio notifications only); a stalled
     publish aborts the claim as an infrastructure failure instead of pinning the locks.
     """
+    claimed: ClaimedAggregate | None = None
     try:
         async with transaction_context(engine) as conn:
             # win the aggregate (advisory lock + row lock) before processing
@@ -226,22 +228,24 @@ async def _claim_and_process_aggregate(
                 async with asyncio.timeout(_PROCESSING_TIMEOUT.total_seconds()):
                     await _process_outbox_event(app, conn, int(claimed.aggregate_id), claimed.changed_columns)
             except Exception as exc:
-                raise OutboxProcessingError(
-                    kind=claimed.kind,
-                    aggregate_id=claimed.aggregate_id,
-                    event_ids=claimed.event_ids,
-                    cause=exc,
-                ) from exc
+                # abort the claim transaction (locks released, pending delete undone):
+                # the claim is kept in this scope and the cause rides on the exception
+                # chain, so the marker below only has to signal the rollback
+                raise OutboxProcessingError from exc
 
             await remove_claimed_events(conn, claimed.event_ids)
     except OutboxProcessingError as failed:
-        updated = await record_failed_attempts(engine, failed.event_ids, failed.cause)
-        _log_failed_attempts(updated, failed.cause)
+        # only raised from within the block above, where both are always set
+        assert claimed is not None  # nosec
+        cause = failed.__cause__
+        assert isinstance(cause, Exception)  # nosec
+        updated = await record_failed_attempts(engine, claimed.event_ids, cause)
+        _log_failed_attempts(updated, cause)
         return ClaimOutcome(
             success=False,
-            kind=failed.kind,
-            aggregate_id=failed.aggregate_id,
-            is_infra_error=isinstance(failed.cause, _INFRA_EXCEPTION_TYPES),
+            kind=claimed.kind,
+            aggregate_id=claimed.aggregate_id,
+            is_infra_error=isinstance(cause, _INFRA_EXCEPTION_TYPES),
         )
 
     return ClaimOutcome(success=True, kind=candidate.kind, aggregate_id=candidate.aggregate_id)

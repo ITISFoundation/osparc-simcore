@@ -5,7 +5,6 @@ service/repository layer (see services/web/server/docs/DESIGN.md).
 """
 
 from ..errors import WebServerBaseError
-from .models import AggregateID, AggregateType, OutboxEventID
 
 __all__ = ("CompTaskNotFoundError", "DbListenerBaseError", "OutboxProcessingError")
 
@@ -22,18 +21,10 @@ class CompTaskNotFoundError(DbListenerBaseError):
 class OutboxProcessingError(DbListenerBaseError):
     """Projection of a claimed outbox aggregate failed.
 
-    Raised to abort the claim transaction; carries the context needed to record
-    the failed attempt once the transaction has rolled back (the claim's locks
-    released and pending delete undone).
-
-    The attributes are provided as keyword context to OsparcErrorMixin.__init__
-    (which stores them in the instance dict); the annotations below only declare
-    them for static type-checkers.
+    Pure control-flow marker: raised to abort (roll back) the claim transaction, so
+    its advisory and row locks are released and the pending delete undone. It carries
+    no payload -- the failed claim stays in the raiser's scope and the underlying
+    error arrives chained (`raise ... from`).
     """
 
-    kind: AggregateType
-    aggregate_id: AggregateID
-    event_ids: list[OutboxEventID]
-    cause: Exception
-
-    msg_template = "Failed to process outbox events of aggregate {kind}:{aggregate_id}"
+    msg_template = "Failed to process outbox events of the claimed aggregate"
