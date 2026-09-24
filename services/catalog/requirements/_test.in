@@ -23,7 +23,6 @@ pytest
 pytest-aiohttp
 pytest-benchmark
 pytest-cov
-pytest-docker
 pytest-mock
 pytest-runner
 respx

@@ -24,6 +24,8 @@ from simcore_service_api_server.models.schemas.model_adapter import (
     WalletGetWithAvailableCreditsLegacy,
 )
 
+pytest_simcore_core_services_selection = ["postgres"]
+
 
 async def test_product_webserver(
     client: httpx.AsyncClient,

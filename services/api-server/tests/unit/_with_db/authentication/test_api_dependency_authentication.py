@@ -15,6 +15,8 @@ from simcore_service_api_server.api.dependencies.authentication import (
 from simcore_service_api_server.repository.api_keys import ApiKeysRepository
 from simcore_service_api_server.repository.users import UsersRepository
 
+pytest_simcore_core_services_selection = ["postgres"]
+
 
 async def test_rest_dependency_authentication(
     api_key_in_db: ApiKeyInDB,
