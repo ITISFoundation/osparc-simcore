@@ -9,6 +9,9 @@ that MUST be shared (e.g. one docker stack) via a cross-process file lock + refe
 registry, so exactly one worker performs the real setup/teardown while the others attach to it.
 """
 
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -67,3 +70,68 @@ class SharedResourceRegistry:
 
     def is_ready(self) -> bool:
         return self._ready_marker.exists()
+
+
+class ReaderWriterLock:
+    """Cross-process reader-writer lock for xdist workers sharing one resource (e.g. the
+    docker daemon): most tests ("readers") may run concurrently with each other, but a few
+    sensitive tests ("writers") need to run with NO other test concurrently touching the
+    resource, across every worker - e.g. because they list/inspect ALL matching entities and
+    are sensitive to interference from unrelated, concurrent churn by other workers.
+    """
+
+    def __init__(self, root_tmp_path: Path, name: str) -> None:
+        self._control_lock_path = root_tmp_path / f"{name}.rw.lock"
+        self._readers_dir = root_tmp_path / f"{name}.rw.readers"
+        self._writer_marker = root_tmp_path / f"{name}.rw.writer"
+        self._readers_dir.mkdir(parents=True, exist_ok=True)
+
+    def _has_readers(self) -> bool:
+        return any(self._readers_dir.iterdir())
+
+    @contextmanager
+    def read_lock(self, token: str, *, timeout: float = 5 * 60, poll_interval: float = 0.2) -> Iterator[None]:
+        """Waits for any in-progress writer to finish, then registers as a reader."""
+        deadline = time.monotonic() + timeout
+        while True:
+            with FileLock(str(self._control_lock_path)):
+                if not self._writer_marker.exists():
+                    (self._readers_dir / f"{token}.reader").touch()
+                    break
+            if time.monotonic() > deadline:
+                msg = f"Timed out waiting for an active writer to release {self._writer_marker}"
+                raise TimeoutError(msg)
+            time.sleep(poll_interval)
+        try:
+            yield
+        finally:
+            with FileLock(str(self._control_lock_path)):
+                (self._readers_dir / f"{token}.reader").unlink(missing_ok=True)
+
+    @contextmanager
+    def write_lock(self, *, timeout: float = 5 * 60, poll_interval: float = 0.2) -> Iterator[None]:
+        """Waits to become the sole writer, then waits for all current readers to finish,
+        blocking new readers/writers in the meantime; releases both on exit."""
+        deadline = time.monotonic() + timeout
+        while True:
+            with FileLock(str(self._control_lock_path)):
+                if not self._writer_marker.exists():
+                    self._writer_marker.touch()
+                    break
+            if time.monotonic() > deadline:
+                msg = f"Timed out waiting to become the writer for {self._writer_marker}"
+                raise TimeoutError(msg)
+            time.sleep(poll_interval)
+        try:
+            while True:
+                with FileLock(str(self._control_lock_path)):
+                    if not self._has_readers():
+                        break
+                if time.monotonic() > deadline:
+                    msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
+                    raise TimeoutError(msg)
+                time.sleep(poll_interval)
+            yield
+        finally:
+            with FileLock(str(self._control_lock_path)):
+                self._writer_marker.unlink(missing_ok=True)
