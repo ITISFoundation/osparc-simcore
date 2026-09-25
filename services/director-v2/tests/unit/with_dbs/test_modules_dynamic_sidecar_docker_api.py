@@ -164,8 +164,8 @@ async def cleanup_test_service_name(
 
 
 @pytest.fixture
-def dynamic_sidecar_service_name() -> str:
-    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar"
+def dynamic_sidecar_service_name(faker: Faker) -> str:
+    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar_{faker.hostname(0)}"
 
 
 @pytest.fixture
@@ -308,8 +308,8 @@ async def existing_network(async_docker_client: aiodocker.Docker, project_id: Pr
 
 
 @pytest.fixture
-def service_name() -> str:
-    return "mock-service-name"
+def service_name(faker: Faker) -> str:
+    return f"mock-service-name-{faker.hostname(0)}"
 
 
 @pytest.fixture(
