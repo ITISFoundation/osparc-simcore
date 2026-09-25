@@ -5,6 +5,7 @@
 import asyncio
 import datetime
 import logging
+import re
 import sys
 from collections.abc import AsyncIterable, AsyncIterator
 from typing import Any
@@ -69,9 +70,9 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def dynamic_services_scheduler_settings(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, simcore_services_network_name: str
 ) -> DynamicServicesSchedulerSettings:
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     return DynamicServicesSchedulerSettings.create_from_envs()
 
@@ -402,12 +403,13 @@ async def test_get_swarm_network_ok(
 
 async def test_get_swarm_network_missing_network(
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    simcore_services_network_name: str,
     docker_swarm: None,
 ):
     with pytest.raises(
         DynamicSidecarError,
         match=r"Unexpected dynamic sidecar error: "
-        r"Swarm network name \(searching for \'\*test_network_name\*\'\) is not configured."
+        rf"Swarm network name \(searching for \'\*{re.escape(simcore_services_network_name)}\*\'\) is not configured."
         r"Found following networks: \[\]",
     ):
         await docker_api.get_swarm_network(dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME)
