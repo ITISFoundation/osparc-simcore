@@ -13,10 +13,20 @@ from botocore.client import Config
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 
+from .helpers.xdist import get_worker_id
+
 
 @pytest.fixture
-def s3_settings() -> S3Settings:
-    return S3Settings.create_from_envs()
+def s3_settings(request: pytest.FixtureRequest) -> S3Settings:
+    settings = S3Settings.create_from_envs()
+
+    # under xdist, each worker gets its own bucket on the SAME shared S3/rustfs container, so
+    # concurrent workers never race create/empty on the same bucket name
+    worker_id = get_worker_id(request)
+    if worker_id != "master":
+        settings = settings.model_copy(update={"S3_BUCKET_NAME": f"{settings.S3_BUCKET_NAME}_{worker_id}"})
+
+    return settings
 
 
 @pytest.fixture
