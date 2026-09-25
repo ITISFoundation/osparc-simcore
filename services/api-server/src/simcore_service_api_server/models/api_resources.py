@@ -1,6 +1,6 @@
 import re
 import urllib.parse
-from typing import Annotated
+from typing import Annotated, TypeAlias
 from uuid import UUID
 
 import parse  # type: ignore[import-untyped]
@@ -31,7 +31,9 @@ from pydantic.types import StringConstraints
 _RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
 
-type RelativeResourceName = Annotated[str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE), Field(frozen=True)]
+RelativeResourceName: TypeAlias = Annotated[  # noqa: UP040
+    str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE), Field(frozen=True)
+]
 
 # NOTE: we quote parts in a single resource_name and unquote when split
 

@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-type SemanticVersionStr = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
+SemanticVersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]  # noqa: UP040
 
 
 def bump_version_string(current_version: str, bump: str) -> str:

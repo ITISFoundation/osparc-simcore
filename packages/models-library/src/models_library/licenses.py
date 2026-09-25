@@ -6,6 +6,7 @@ from typing import (
     NamedTuple,
     NewType,
     NotRequired,
+    TypeAlias,
     TypedDict,
     cast,
 )
@@ -18,7 +19,7 @@ from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-type LicensedItemID = UUID
+LicensedItemID: TypeAlias = UUID  # noqa: UP040
 type LicensedResourceID = UUID
 
 LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"

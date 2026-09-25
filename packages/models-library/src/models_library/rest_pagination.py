@@ -1,4 +1,4 @@
-from typing import Annotated, Final, TypeVar
+from typing import Annotated, Final, TypeAlias, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
@@ -22,7 +22,7 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 MINIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 1
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
-type PageLimitInt = Annotated[
+PageLimitInt: TypeAlias = Annotated[  # noqa: UP040
     int,
     Field(
         ge=MINIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -30,14 +30,14 @@ type PageLimitInt = Annotated[
         description="The maximum number of items to return in a single page.",
     ),
 ]
-type PageOffsetInt = Annotated[
+PageOffsetInt: TypeAlias = Annotated[  # noqa: UP040
     int,
     Field(
         ge=0,
         description="The number of items to skip before starting to collect the items for the current pag",
     ),
 ]
-type PageTotalCount = NonNegativeInt
+PageTotalCount: TypeAlias = NonNegativeInt  # noqa: UP040
 
 
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(PageLimitInt).validate_python(20)

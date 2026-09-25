@@ -2,7 +2,7 @@ import logging
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import IntEnum, auto
-from typing import NamedTuple
+from typing import NamedTuple, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -20,10 +20,10 @@ from .utils.enums import StrAutoEnum
 
 _logger = logging.getLogger(__name__)
 
-type PricingPlanId = PositiveInt
-type PricingUnitId = PositiveInt
-type PricingUnitCostId = PositiveInt
-type CreditTransactionId = PositiveInt
+PricingPlanId: TypeAlias = PositiveInt  # noqa: UP040
+PricingUnitId: TypeAlias = PositiveInt  # noqa: UP040
+PricingUnitCostId: TypeAlias = PositiveInt  # noqa: UP040
+CreditTransactionId: TypeAlias = PositiveInt  # noqa: UP040
 
 
 class ResourceTrackerServiceType(StrAutoEnum):

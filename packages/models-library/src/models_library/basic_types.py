@@ -50,7 +50,7 @@ VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 VersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 # e.g. '1.23.11' or '2.1.0-rc2' or not 0.1.0-alpha  (see test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-type SemanticVersionStr = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
+SemanticVersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]  # noqa: UP040
 
 # checksums
 # sha1sum path/to/file
@@ -63,13 +63,13 @@ SHA256Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{6
 type MD5Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
 
 # env var
-type EnvVarKey = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
+EnvVarKey: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]  # noqa: UP040
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
 type UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 
-type SafeQueryStr = Annotated[
+SafeQueryStr: TypeAlias = Annotated[  # noqa: UP040
     str,
     StringConstraints(
         max_length=512,  # Reasonable limit for query parameters to avoid overflows

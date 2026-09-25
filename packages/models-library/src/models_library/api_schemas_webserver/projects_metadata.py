@@ -1,11 +1,13 @@
+from typing import TypeAlias
+
 from pydantic import Field, StrictBool, StrictFloat, StrictInt
 
 from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
 # Limits metadata values
-type MetaValueType = StrictBool | StrictInt | StrictFloat | str
-type MetadataDict = dict[str, MetaValueType]
+MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str  # noqa: UP040
+MetadataDict: TypeAlias = dict[str, MetaValueType]  # noqa: UP040
 
 
 class ProjectMetadataGet(OutputSchema):

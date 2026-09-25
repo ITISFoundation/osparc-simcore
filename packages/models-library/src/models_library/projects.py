@@ -37,10 +37,10 @@ from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
 
 ProjectID: TypeAlias = UUID
-type CommitID = int
-type ClassifierID = str
+CommitID: TypeAlias = int  # noqa: UP040
+ClassifierID: TypeAlias = str  # noqa: UP040
 
-type NodesDict = dict[NodeIDStr, Node]
+NodesDict: TypeAlias = dict[NodeIDStr, Node]  # noqa: UP040
 _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
