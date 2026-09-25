@@ -28,6 +28,7 @@ until a periodic purge removes them once they age out).
 import asyncio
 import datetime
 import logging
+from enum import Enum, auto
 from typing import Final
 
 from aiohttp import web
@@ -68,6 +69,15 @@ from .models import (
 )
 
 _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: Final[int] = 3
+
+
+class _BatchOutcome(Enum):
+    """Outcome of processing one claimable batch inside the outbox drain."""
+
+    ABORT_DRAIN = auto()  # infrastructure failures spiked: stop this drain
+    DRAIN_EMPTY = auto()  # no aggregate in the batch was claimable: stop the drain
+    MORE_TO_DRAIN = auto()  # at least one aggregate was claimed: refill and continue
+
 
 _DEAD_LETTER_RETENTION: Final[datetime.timedelta] = datetime.timedelta(days=30)
 
@@ -294,6 +304,47 @@ def _log_failed_attempts(failed_attempts: list[FailedAttempt], error: Exception)
             )
 
 
+async def _process_claimable_batch(
+    app: web.Application,
+    engine: AsyncEngine,
+    batch: list[ClaimableAggregate],
+    failed_aggregates: set[ClaimableAggregate],
+    consecutive_infra_failed_aggregates: int,
+) -> tuple[int, _BatchOutcome]:
+    """Claim and process every candidate of one batch, updating the drain state in place.
+
+    ``failed_aggregates`` is mutated with each failed (kind, aggregate_id) so the next
+    batch excludes them. Returns the updated consecutive infrastructure-failure count
+    and the outcome deciding whether the caller keeps draining (see _BatchOutcome).
+    """
+    batch_was_claimable = False
+    for candidate in batch:
+        # (candidates already excluded from the scan by failed_aggregates)
+        outcome = await _claim_and_process_aggregate(app, engine, candidate)
+        if outcome is None:
+            continue  # aggregate locked by another replica: move on to the next candidate
+        batch_was_claimable = True
+        if outcome.success:
+            consecutive_infra_failed_aggregates = 0
+            continue
+        failed_aggregates.add(ClaimableAggregate(kind=outcome.kind, aggregate_id=outcome.aggregate_id))
+        if not outcome.is_infra_error:
+            continue  # application-level failure: does not threaten the rest of the drain
+        consecutive_infra_failed_aggregates += 1
+        if consecutive_infra_failed_aggregates >= _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN:
+            _logger.warning(
+                "Stopping outbox drain after %d aggregates failed with an infrastructure-like"
+                " error and no success in-between; will retry on next cycle",
+                consecutive_infra_failed_aggregates,
+            )
+            return consecutive_infra_failed_aggregates, _BatchOutcome.ABORT_DRAIN
+    if not batch_was_claimable:
+        # queue drained, or everything still pending is locked elsewhere:
+        # rescanning now would just find the same batch again, so stop here
+        return consecutive_infra_failed_aggregates, _BatchOutcome.DRAIN_EMPTY
+    return consecutive_infra_failed_aggregates, _BatchOutcome.MORE_TO_DRAIN
+
+
 async def claim_and_process_outbox_events(app: web.Application, engine: AsyncEngine) -> None:
     """Drain pending outbox events, one aggregate at a time, safe for concurrent replicas.
 
@@ -326,30 +377,10 @@ async def claim_and_process_outbox_events(app: web.Application, engine: AsyncEng
     while True:
         async with pass_or_acquire_connection(engine) as conn:
             batch = await list_claimable_aggregates(conn, failed_aggregates)
-        batch_was_claimable = False
-        for candidate in batch:
-            # (candidates already excluded from the scan by failed_aggregates)
-            outcome = await _claim_and_process_aggregate(app, engine, candidate)
-            if outcome is None:
-                continue  # aggregate locked by another replica: move on to the next candidate
-            batch_was_claimable = True
-            if outcome.success:
-                consecutive_infra_failed_aggregates = 0
-                continue
-            failed_aggregates.add(ClaimableAggregate(kind=outcome.kind, aggregate_id=outcome.aggregate_id))
-            if not outcome.is_infra_error:
-                continue  # application-level failure: does not threaten the rest of the drain
-            consecutive_infra_failed_aggregates += 1
-            if consecutive_infra_failed_aggregates >= _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN:
-                _logger.warning(
-                    "Stopping outbox drain after %d aggregates failed with an infrastructure-like"
-                    " error and no success in-between; will retry on next cycle",
-                    consecutive_infra_failed_aggregates,
-                )
-                return
-        if not batch_was_claimable:
-            # queue drained, or everything still pending is locked elsewhere:
-            # rescanning now would just find the same batch again, so stop here
+        consecutive_infra_failed_aggregates, outcome = await _process_claimable_batch(
+            app, engine, batch, failed_aggregates, consecutive_infra_failed_aggregates
+        )
+        if outcome in (_BatchOutcome.ABORT_DRAIN, _BatchOutcome.DRAIN_EMPTY):
             return
 
 
