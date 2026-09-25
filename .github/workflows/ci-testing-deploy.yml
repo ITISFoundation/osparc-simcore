@@ -405,7 +405,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db 02
+        run: ./ci/github/unit-testing/webserver.bash test_with_db_parallel 02
       - uses: codecov/codecov-action@v7
         with:
           flags: unittests #optional
