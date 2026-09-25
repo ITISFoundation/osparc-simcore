@@ -356,7 +356,12 @@ def test_create_dynamic_services(
     service: dict[str, Any],
     exp_status_code: int,
     is_legacy: bool,
+    faker: Faker,
 ):
+    # NOTE: all parametrized cases share the same static JSON-schema example, so give this
+    # invocation its own node_uuid: concurrent xdist workers running different cases would
+    # otherwise collide trying to schedule a service for the same node_uuid
+    service = {**service, "node_uuid": faker.uuid4()}
     post_data = DynamicServiceCreate.model_validate(service)
 
     response = client.post(
