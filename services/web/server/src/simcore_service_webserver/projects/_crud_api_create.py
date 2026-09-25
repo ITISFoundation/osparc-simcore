@@ -43,6 +43,11 @@ from ..storage.api import copy_data_folders_from_project, get_project_total_size
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from ..workspaces.workspaces_service import check_user_workspace_access, get_user_workspace
 from . import _folders_repository, _projects_repository, _projects_service, _trash_service
+from ._constants import (
+    MSG_PARENT_NODE_NOT_FOUND_ERROR,
+    MSG_PARENT_PROJECT_NOT_FOUND_ERROR,
+    MSG_PROJECT_NOT_FOUND_ERROR,
+)
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_repository_legacy import ProjectDBAPI
@@ -565,13 +570,18 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             raise web.HTTPBadRequest(text="Invalid project data") from exc
 
         except ProjectNotFoundError as exc:
-            raise web.HTTPNotFound(text=f"Project {exc.project_uuid} not found") from exc
+            raise web.HTTPNotFound(text=MSG_PROJECT_NOT_FOUND_ERROR) from exc
 
         except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
             raise web.HTTPForbidden from exc
 
         except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
-            raise web.HTTPNotFound(text=f"{exc}") from exc
+            msg = (
+                MSG_PARENT_PROJECT_NOT_FOUND_ERROR
+                if isinstance(exc, ParentProjectNotFoundError)
+                else MSG_PARENT_NODE_NOT_FOUND_ERROR
+            )
+            raise web.HTTPNotFound(text=msg) from exc
 
 
 def register_create_project_task(app: web.Application) -> None:
