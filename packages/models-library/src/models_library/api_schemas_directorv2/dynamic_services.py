@@ -1,4 +1,4 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
 from pydantic import AnyHttpUrl, BaseModel, BeforeValidator, ByteSize, ConfigDict, Field
 from pydantic.config import JsonDict
@@ -6,7 +6,7 @@ from pydantic.config import JsonDict
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
 from ..services_creation import CreateServiceMetricsAdditionalParams
-from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
+from ..services_resources import SERVICE_RESOURCES_DICT_EXAMPLES, ServiceResourcesDict
 from ..wallets import WalletInfo
 from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
 
@@ -75,10 +75,10 @@ class DynamicServiceCreate(ServiceDetails):
                     "product_name": "osparc",
                     "product_api_base_url": "https://api.local/",
                     "can_save": True,
-                    "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "service_resources": SERVICE_RESOURCES_DICT_EXAMPLES[0],
+                    "wallet_info": WalletInfo.model_json_schema()["examples"][0],
+                    "pricing_info": PricingInfo.model_json_schema()["examples"][0],
+                    "hardware_info": HardwareInfo.model_json_schema()["examples"][0],
                 }
             }
         )
@@ -88,7 +88,7 @@ class DynamicServiceCreate(ServiceDetails):
     )
 
 
-DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails
+type DynamicServiceGet = RunningDynamicServiceDetails
 
 
 class GetProjectInactivityResponse(BaseModel):

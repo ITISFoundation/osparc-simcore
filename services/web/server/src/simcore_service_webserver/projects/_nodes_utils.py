@@ -28,10 +28,3 @@ def validate_new_service_resources(resources: ServiceResourcesDict, *, new_resou
                 container_name=container_name,
                 expected_image=resources[container_name].image,
             )
-
-
-def set_reservation_same_as_limit(
-    resources: ServiceResourcesDict,
-) -> None:
-    for container_resources in resources.values():
-        container_resources.set_reservation_same_as_limit()
