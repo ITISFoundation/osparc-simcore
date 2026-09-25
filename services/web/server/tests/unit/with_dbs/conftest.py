@@ -28,6 +28,7 @@ import pytest_asyncio
 import redis
 import redis.asyncio as aioredis
 import sqlalchemy as sa
+import tenacity
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from celery_library.async_jobs import (
@@ -42,7 +43,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from pytest_docker.plugin import Services
+from pytest_docker.plugin import DockerComposeExecutor, Services
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import random_product
@@ -51,6 +52,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from pytest_simcore.helpers.xdist import SharedResourceRegistry, get_worker_id, get_xdist_root_tmp_path
 from redis import Redis
 from servicelib import tracing
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -123,6 +125,58 @@ def docker_compose_file(docker_compose_env: pytest.MonkeyPatch, tmp_path_factory
         compose_path, ("postgres", "rabbit", "redis"), tmp_path_factory.mktemp("compose")
     )
     return f"{compose_path}"
+
+
+@pytest.fixture(scope="session")
+def docker_compose_project_name() -> str:
+    """Overrides pytest-docker fixture: a FIXED (not PID-based) project name so that, under
+    pytest-xdist, every worker process targets the SAME physical postgres/rabbit/redis
+    containers instead of each spinning up its own stack.
+    """
+    return "pytest-webserver-with-dbs"
+
+
+@pytest.fixture(scope="session")
+def docker_services(
+    docker_compose_command: str,
+    docker_compose_file: str,
+    docker_compose_project_name: str,
+    docker_setup: str,
+    docker_cleanup: str,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[Services]:
+    """Overrides pytest-docker fixture: coordinates `docker compose up`/`down` across
+    pytest-xdist worker processes via a cross-process reference-counted registry (see
+    `SharedResourceRegistry`), so exactly one worker brings the shared stack up and only the
+    last one brings it down, regardless of how many workers use it.
+    """
+    registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), "webserver_docker_compose")
+    token = f"{get_worker_id(request)}-{uuid.uuid4().hex}"
+    owns_stack = registry.register(token)
+
+    docker_compose = DockerComposeExecutor(docker_compose_command, docker_compose_file, docker_compose_project_name)
+
+    if owns_stack:
+        for command in [docker_setup] if isinstance(docker_setup, str) else docker_setup:
+            docker_compose.execute(command)
+        registry.mark_ready()
+    else:
+        # another worker owns the setup: wait until it signals the stack is ready
+        for attempt in tenacity.Retrying(
+            wait=tenacity.wait_fixed(1), stop=tenacity.stop_after_delay(5 * 60), reraise=True
+        ):
+            with attempt:
+                assert registry.is_ready()
+
+    yield Services(docker_compose)
+
+    if not registry.unregister(token):
+        # other workers still use the shared stack
+        return
+
+    for command in [docker_cleanup] if isinstance(docker_cleanup, str) else docker_cleanup:
+        docker_compose.execute(command)
 
 
 # WEB SERVER/CLIENT FIXTURES ------------------------------------------------
@@ -532,10 +586,19 @@ def _is_postgres_responsive(url: str):
 
 
 @pytest.fixture(scope="session")
-def postgres_dsn(docker_services: Services, docker_ip: str | Any, default_app_cfg: dict) -> dict:
+def postgres_dsn(
+    docker_services: Services, docker_ip: str | Any, default_app_cfg: dict, request: pytest.FixtureRequest
+) -> dict:
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
     cfg["host"] = docker_ip
     cfg["port"] = docker_services.port_for("postgres", 5432)
+
+    # under xdist, each worker gets its own database clone name on the SAME postgres
+    # container, so concurrent workers never DROP/CREATE the same database
+    worker_id = get_worker_id(request)
+    if worker_id != "master":
+        cfg["database"] = f"{cfg['database']}_{worker_id}"
+
     return cfg
 
 
