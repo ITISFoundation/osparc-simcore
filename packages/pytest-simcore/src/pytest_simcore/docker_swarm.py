@@ -311,13 +311,15 @@ def interactive_services_subnet_docker_network(
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def docker_stack(  # noqa: C901, PLR0912
+async def docker_stack(  # noqa: C901, PLR0912, PLR0915
     osparc_simcore_services_dir: Path,
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
+    simcore_docker_compose: dict,
+    ops_docker_compose: dict,
     keep_docker_up: bool,
     env_vars_for_docker_compose: EnvVarsDict,
     request: pytest.FixtureRequest,
@@ -337,16 +339,33 @@ async def docker_stack(  # noqa: C901, PLR0912
 
     assert core_stack_name
     assert core_stack_name.startswith("pytest-")
+
+    def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str) -> Path:
+        if get_worker_id(request) == "master":
+            # single-process run: unaffected, same per-module filtered selection as before
+            return filtered_path
+        # NOTE: under xdist, different test modules may declare different (smaller)
+        # `core_services_selection`/`ops_services_selection` subsets, but only the FIRST
+        # module to reach this fixture actually deploys (see `owns_stack` below) - deploying
+        # ITS OWN filtered subset would starve later modules of services they need (e.g. a
+        # module selecting only "postgres" would prevent "rabbit"/"redis" from ever being
+        # deployed for other modules). Deploy the FULL, unfiltered compose instead so every
+        # module's selection is always already satisfied.
+        full_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_full_docker_compose.yml"
+        if not full_path.exists():
+            full_path.write_text(yaml.safe_dump(unfiltered))
+        return full_path
+
     stacks = [
         (
             "ops",
             ops_stack_name,
-            ops_docker_compose_file,
+            _compose_file_for(ops_docker_compose, ops_docker_compose_file, "ops"),
         ),
         (
             "core",
             core_stack_name,
-            core_docker_compose_file,
+            _compose_file_for(simcore_docker_compose, core_docker_compose_file, "core"),
         ),
     ]
 
