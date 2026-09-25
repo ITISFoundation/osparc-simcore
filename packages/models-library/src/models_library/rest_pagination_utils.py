@@ -69,7 +69,9 @@ def paginate_data(
 
     raises ValidationError
     """
-    last_page = ceil(total / limit) - 1
+    # an empty collection has no last page: clamping keeps every link at offset=0 instead of
+    # emitting a negative offset when the requested page is past the end
+    last_page = max(ceil(total / limit) - 1, 0)
 
     data = [item.model_dump() if hasattr(item, "model_dump") else item for item in chunk]
 
