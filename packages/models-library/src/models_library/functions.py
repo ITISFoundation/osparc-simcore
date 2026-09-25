@@ -53,12 +53,12 @@ class JSONFunctionOutputSchema(JSONFunctionSchema):
     schema_class: Literal[FunctionSchemaClass.json_schema] = FunctionSchemaClass.json_schema
 
 
-type FunctionInputSchema = Annotated[
+FunctionInputSchema: TypeAlias = Annotated[  # noqa: UP040
     JSONFunctionInputSchema,
     Field(discriminator="schema_class"),
 ]
 
-type FunctionOutputSchema = Annotated[
+FunctionOutputSchema: TypeAlias = Annotated[  # noqa: UP040
     JSONFunctionOutputSchema,
     Field(discriminator="schema_class"),
 ]
@@ -76,7 +76,7 @@ FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData  # noqa: UP0
 
 # NOTE, use InputTypes here, but api is throwing weird errors and asking for dict for elements
 # see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
-type FunctionInputs = dict[str, Any] | None
+FunctionInputs: TypeAlias = dict[str, Any] | None  # noqa: UP040
 
 type FunctionInputsList = Annotated[
     list[FunctionInputs],
@@ -84,7 +84,7 @@ type FunctionInputsList = Annotated[
 ]
 
 
-type FunctionOutputs = dict[str, Any] | None
+FunctionOutputs: TypeAlias = dict[str, Any] | None  # noqa: UP040
 
 type FunctionOutputsLogfile = Any
 
@@ -174,12 +174,12 @@ type Function = Annotated[
     ProjectFunction | PythonCodeFunction | SolverFunction,
     Field(discriminator="function_class"),
 ]
-type RegisteredFunction = Annotated[
+RegisteredFunction: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunction | RegisteredPythonCodeFunction | RegisteredSolverFunction,
     Field(discriminator="function_class"),
 ]
 
-type FunctionJobCollectionID = projects.ProjectID
+FunctionJobCollectionID: TypeAlias = projects.ProjectID  # noqa: UP040
 
 
 class FunctionJobBase(BaseModel):
@@ -259,7 +259,7 @@ class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJ
     pass
 
 
-type RegisteredFunctionJob = Annotated[
+RegisteredFunctionJob: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunctionJob | RegisteredPythonCodeFunctionJob | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
@@ -317,7 +317,7 @@ class RegisteredPythonCodeFunctionJobWithStatus(RegisteredPythonCodeFunctionJob,
     pass
 
 
-type RegisteredFunctionJobWithStatus = Annotated[
+RegisteredFunctionJobWithStatus: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunctionJobWithStatus
     | RegisteredPythonCodeFunctionJobWithStatus
     | RegisteredSolverFunctionJobWithStatus,

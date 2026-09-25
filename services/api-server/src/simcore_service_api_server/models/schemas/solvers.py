@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
@@ -116,7 +116,7 @@ class Solver(BaseService):
         return compose_resource_name("solvers", key, "releases", version)
 
 
-type PortKindStr = Literal["input", "output"]
+PortKindStr: TypeAlias = Literal["input", "output"]  # noqa: UP040
 
 
 class SolverPort(BaseModel):
