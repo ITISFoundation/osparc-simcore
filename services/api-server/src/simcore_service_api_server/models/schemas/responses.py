@@ -19,8 +19,10 @@ _ChatCompletionRequestMessageAdapter: Final[TypeAdapter[ChatCompletionRequestMes
     ChatCompletionRequestMessage
 )
 
-# sanity limit to avoid abuses, the actual actual validation is plaed in the
-# vendor service
+# Sanity cap to avoid abuses, deliberately higher than the real budget enforced
+# by s4l-ai (models/_base.py), which derives it from the model's context window
+# and rejects over-budget conversations. This lets plausible conversations
+# through while still bounding request sizes at this edge.
 _MAX_CHAT_INPUT_CHARS: Final[int] = 3_000_000
 
 
