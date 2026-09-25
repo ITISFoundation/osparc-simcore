@@ -20,7 +20,7 @@ from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
 LicensedItemID: TypeAlias = UUID  # noqa: UP040
-type LicensedResourceID = UUID
+LicensedResourceID: TypeAlias = UUID  # noqa: UP040
 
 LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
 LicensedItemKey = NewType("LicensedItemKey", str)
