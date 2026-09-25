@@ -104,3 +104,13 @@ curl -X 'POST' \
   "trial_account_days": 2
 }'
 ```
+
+
+## memory profiling with memray
+
+Opt-in [memray](https://bloomberg.github.io/memray/) wrapper around uvicorn in
+`docker/boot.sh` (development image only) — see the
+[shared runbook](../README.md#memory-profiling-with-memray) for the full how-to.
+
+- variables: `INVITATIONS_MEMRAY_*` (master switch `INVITATIONS_MEMRAY_ENABLED`, `live` mode by default, live port `10255`)
+- viewer: `docker exec -it "$(docker compose ps -q invitations)" memray live 10255`

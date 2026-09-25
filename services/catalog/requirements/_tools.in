@@ -5,3 +5,7 @@
 
 # basic dev tools
 watchdog[watchmedo]
+
+# memory profiler used to hunt leaks via 'memray run --live-remote -m uvicorn ...' (boot.sh)
+# opt-in through CATALOG_MEMRAY_ENABLED=true
+memray

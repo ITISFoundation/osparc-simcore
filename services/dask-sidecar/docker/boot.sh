@@ -12,6 +12,10 @@ print_info() {
   echo "${GREEN}INFO [$(basename "$0")]:${NC}$1"
 }
 
+print_error() {
+  echo "ERROR: [$(basename "$0")] $1"
+}
+
 # BOOTING application ---------------------------------------------
 print_info "Booting in ${SC_BOOT_MODE} mode ..."
 print_info "  User    :$(id "$(whoami)")"
@@ -61,7 +65,7 @@ distributed:
     worker-saturation: ${DASK_WORKER_SATURATION:-inf}
 EOF
 
-# Check if DASK_TLS_CA_FILE is present and add the necesary configs
+# Check if DASK_TLS_CA_FILE is present and add the necessary configs
 if [ -n "${DASK_TLS_CA_FILE:-}" ]; then
   print_info "TLS authentication enabled"
   cat >>/home/scu/.config/dask/distributed.yaml <<EOF
@@ -82,6 +86,35 @@ if [ -n "${DASK_TLS_CA_FILE:-}" ]; then
 EOF
 fi
 
+#
+# MEMRAY profiling (opt-in, development image only, see
+# services/README.md#memory-profiling-with-memray)
+#
+# - DASK_SIDECAR_MEMRAY_ENABLED=true wraps 'dask scheduler'/'dask worker' with memray
+# - dask forks worker processes and memray cannot combine live tracking with
+#   --follow-fork, therefore 'file' (the default here) writes one capture per process
+#   to DASK_SIDECAR_MEMRAY_OUTPUT_DIR. 'live' only tracks the main process.
+#
+is_true() {
+  case "$(printf '%s' "${1:-False}" | tr '[:upper:]' '[:lower:]')" in
+    true | 1) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+MEMRAY_ON=False
+if is_true "${DASK_SIDECAR_MEMRAY_ENABLED:-False}"; then
+  if ! command -v memray >/dev/null 2>&1; then
+    print_error "DASK_SIDECAR_MEMRAY_ENABLED is set but memray is not installed" \
+      "(only available in the development image, see requirements/_tools.in)"
+    exit 1
+  fi
+  MEMRAY_ON=True
+fi
+MEMRAY_MODE=${DASK_SIDECAR_MEMRAY_MODE:-file}
+MEMRAY_PORT=${DASK_SIDECAR_MEMRAY_PORT:-10262}
+MEMRAY_OUTPUT_DIR=${DASK_SIDECAR_MEMRAY_OUTPUT_DIR:-/tmp/memray}
+
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   scheduler_version=$(dask scheduler --version)
   print_info "Starting as dask scheduler:${scheduler_version}..."
@@ -92,6 +125,23 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
       --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
       --ignore-directories -- \
       dask scheduler \
+      --preload simcore_service_dask_sidecar.scheduler
+  elif [ "${MEMRAY_ON}" = "True" ]; then
+    # memray options MUST precede '-m dask', otherwise they are passed to dask
+    set -- run
+    if is_true "${DASK_SIDECAR_MEMRAY_NATIVE:-True}"; then
+      set -- "$@" --native
+    fi
+    if [ "${MEMRAY_MODE}" = "live" ]; then
+      print_info "memray live tracking: run 'memray live ${MEMRAY_PORT}' (e.g. via docker exec) ..."
+      set -- "$@" --live-remote --live-port "${MEMRAY_PORT}"
+    else
+      mkdir -p "${MEMRAY_OUTPUT_DIR}"
+      MEMRAY_OUTPUT="${MEMRAY_OUTPUT_DIR}/dask-sidecar.$(date +%Y%m%dT%H%M%SZ).${$}.bin"
+      print_info "memray writing capture to ${MEMRAY_OUTPUT} ..."
+      set -- "$@" --force --follow-fork --output "${MEMRAY_OUTPUT}"
+    fi
+    exec memray "$@" -m dask scheduler \
       --preload simcore_service_dask_sidecar.scheduler
   else
     exec dask scheduler \
@@ -189,6 +239,30 @@ else
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
       dask worker "${DASK_SCHEDULER_URL}" \
+      --local-directory /tmp/dask-sidecar \
+      --preload simcore_service_dask_sidecar.worker \
+      --nworkers "${DASK_NPROCS}" \
+      --nthreads "${DASK_NTHREADS}" \
+      --dashboard-address 8787 \
+      --memory-limit "${DASK_MEMORY_LIMIT}" \
+      --resources "$resources" \
+      --name "${DASK_WORKER_NAME}"
+  elif [ "${MEMRAY_ON}" = "True" ]; then
+    # memray options MUST precede '-m dask', otherwise they are passed to dask
+    set -- run
+    if is_true "${DASK_SIDECAR_MEMRAY_NATIVE:-True}"; then
+      set -- "$@" --native
+    fi
+    if [ "${MEMRAY_MODE}" = "live" ]; then
+      print_info "memray live tracking (main process only): run 'memray live ${MEMRAY_PORT}' ..."
+      set -- "$@" --live-remote --live-port "${MEMRAY_PORT}"
+    else
+      mkdir -p "${MEMRAY_OUTPUT_DIR}"
+      MEMRAY_OUTPUT="${MEMRAY_OUTPUT_DIR}/dask-sidecar.$(date +%Y%m%dT%H%M%SZ).${$}.bin"
+      print_info "memray writing captures (worker processes included) to ${MEMRAY_OUTPUT}.* ..."
+      set -- "$@" --force --follow-fork --output "${MEMRAY_OUTPUT}"
+    fi
+    exec memray "$@" -m dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.worker \
       --nworkers "${DASK_NPROCS}" \

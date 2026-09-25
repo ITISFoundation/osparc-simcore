@@ -9,3 +9,13 @@ Here is a diagram of how this service interacts with the rest of internal and ex
 ![[doc/payments.drawio.svg]]
 
 - Further details on the use case and requirements in https://github.com/ITISFoundation/osparc-simcore/issues/4657
+
+
+## memory profiling with memray
+
+Opt-in [memray](https://bloomberg.github.io/memray/) wrapper around uvicorn in
+`docker/boot.sh` (development image only) — see the
+[shared runbook](../README.md#memory-profiling-with-memray) for the full how-to.
+
+- variables: `PAYMENTS_MEMRAY_*` (master switch `PAYMENTS_MEMRAY_ENABLED`, `live` mode by default, live port `10258`)
+- viewer: `docker exec -it "$(docker compose ps -q payments)" memray live 10258`

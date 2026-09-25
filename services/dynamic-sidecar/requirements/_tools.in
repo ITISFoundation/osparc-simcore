@@ -4,3 +4,7 @@
 --constraint _test.txt
 
 --requirement ../../../requirements/devenv.txt
+
+# memory profiler used to hunt leaks via 'memray run --live-remote -m uvicorn ...' (boot.sh)
+# opt-in through DYNAMIC_SIDECAR_MEMRAY_ENABLED=true
+memray

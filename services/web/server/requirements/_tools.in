@@ -6,3 +6,7 @@
 
 inotify # for gunicorn reloading mechanism
 types-cachetools
+
+# memory profiler used to hunt leaks via 'memray run --follow-fork -m gunicorn ...' (boot.sh)
+# opt-in through WEBSERVER_MEMRAY_ENABLED=true
+memray

@@ -15,6 +15,7 @@ When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENAB
 :
 ```python
 from httpx import AsyncClient, BasicAuth
+
 headers: dict[str, str] = {"x-profile-api-server": "true"}
 async with AsyncClient(base_url="<host>", auth=BasicAuth(username="<username>", password="<password>")) as client:
     async with client.stream("GET", f"/v0/me", timeout=20, headers=headers) as response:
@@ -69,3 +70,13 @@ In this diagram the development workflow/progress is indicated with 🔨-arrows 
 ## Acknowledgments
 
   Many of the ideas in this design were taken from the **excellent** work at https://github.com/nsidnev/fastapi-realworld-example-app by *Nik Sidnev* using the **extraordinary** [fastapi](https://fastapi.tiangolo.com/) package by *Sebastian Ramirez*.
+
+
+## memory profiling with memray
+
+Opt-in [memray](https://bloomberg.github.io/memray/) wrapper around uvicorn and the ``celery`` worker (``api-worker``) in
+`docker/boot.sh` (development image only) — see the
+[shared runbook](../README.md#memory-profiling-with-memray) for the full how-to.
+
+- variables: `API_SERVER_MEMRAY_*` (master switch `API_SERVER_MEMRAY_ENABLED`, `live` mode by default, live port `10257`)
+- viewer: `docker exec -it "$(docker compose ps -q api-server)" memray live 10257`

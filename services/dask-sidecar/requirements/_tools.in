@@ -6,3 +6,7 @@
 
 # basic dev tools
 watchdog[watchmedo]
+
+# memory profiler used to hunt leaks via 'memray run --follow-fork -m dask ...' (boot.sh)
+# opt-in through DASK_SIDECAR_MEMRAY_ENABLED=true
+memray

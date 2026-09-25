@@ -7,3 +7,7 @@
 change_case # for tools/get_api
 jinja2 # for tools/get_api
 watchdog[watchmedo]
+
+# memory profiler used to hunt leaks via 'memray run --live-remote -m uvicorn ...' (boot.sh)
+# opt-in through API_SERVER_MEMRAY_ENABLED=true
+memray

@@ -6,3 +6,7 @@
 --requirement ../../../requirements/devenv.txt
 
 watchdog[watchmedo]
+
+# memory profiler used to hunt leaks via 'memray run --live-remote -m uvicorn ...' (boot.sh)
+# opt-in through DATCORE_ADAPTER_MEMRAY_ENABLED=true
+memray
