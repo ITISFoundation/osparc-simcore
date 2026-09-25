@@ -15,7 +15,7 @@ from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
 
 _TRACES_PATH: Final[Path] = Path("/traces")
-HIDDEN_FILE_NAME: Final[str] = ".hidden_do_not_remove"
+_HIDDEN_FILE_NAME: Final[str] = ".hidden_do_not_remove"
 
 
 def _ensure_path(path: Path) -> Path:
@@ -182,7 +182,7 @@ async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
     # the same permissions are ensured and avoids
     # issues when starting the services
     for volume_path in mounted_volumes.all_disk_paths_iter():
-        hidden_file = volume_path / HIDDEN_FILE_NAME
+        hidden_file = volume_path / _HIDDEN_FILE_NAME
         hidden_file.write_text(
             f"Directory must not be empty.\nCreated by {__file__}.\n"
             "Required by oSPARC internals to properly enforce permissions on this "
