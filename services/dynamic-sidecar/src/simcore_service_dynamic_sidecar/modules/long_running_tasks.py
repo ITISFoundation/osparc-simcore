@@ -63,7 +63,7 @@ from ..modules.outputs import (
 )
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from ..services.container_extensions import writable_inputs
-from ..services.container_restart_lock import get_container_restart_lock
+from ..services.container_restart_lock import container_restart_locked
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
@@ -582,7 +582,7 @@ async def restart_user_services(
     # NOTE: if containers inspect reports that the containers are restarting
     # or some other state, the service will get shutdown, to prevent this
     # blocking status while containers are being restarted.
-    async with get_container_restart_lock(app):
+    async with container_restart_locked(app):
         await progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
             msg = "No spec for docker compose command was found"

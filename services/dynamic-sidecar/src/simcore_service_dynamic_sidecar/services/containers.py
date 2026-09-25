@@ -28,7 +28,7 @@ from ..core.validation import (
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.user_services_tracing import is_user_services_tracing_enabled
-from .container_restart_lock import get_container_restart_lock
+from .container_restart_lock import container_restart_locked
 
 _logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def _format_result(container_inspect: dict[str, Any], *, only_status: bool) -> d
 
 
 async def containers_docker_inspect(app: FastAPI, *, only_status: bool) -> dict[str, Any]:
-    container_restart_lock = get_container_restart_lock(app)
+    container_restart_lock = container_restart_locked(app)
     shared_store: SharedStore = app.state.shared_store
 
     async with container_restart_lock, docker_client() as docker:

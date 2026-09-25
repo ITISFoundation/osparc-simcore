@@ -14,6 +14,6 @@ def configure_container_restart_lock(app_lifespan: LifespanManager[FastAPI]) -> 
     app_lifespan.add(_container_restart_lock_lifespan)
 
 
-def get_container_restart_lock(app: FastAPI) -> Lock:
+def container_restart_locked(app: FastAPI) -> Lock:
     container_restart_lock: Lock = app.state.container_restart_lock
     return container_restart_lock
