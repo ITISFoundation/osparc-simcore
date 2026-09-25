@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 
 from common_library.json_serialization import json_loads
 from models_library.basic_regex import MIME_TYPE_RE
@@ -105,7 +105,7 @@ class FileUrl(BaseModel):
     )
 
 
-type PortValue = Annotated[
+PortValue: TypeAlias = Annotated[  # noqa: UP040
     StrictBool | StrictInt | StrictFloat | StrictStr | FileUrl | list[Any] | dict[str, Any] | None,
     Field(union_mode="left_to_right"),
 ]
@@ -133,7 +133,7 @@ class TaskInputData(DictModel[ServicePortKey, PortValue]):
     )
 
 
-type PortSchemaValue = Annotated[PortSchema | FilePortSchema, Field(union_mode="left_to_right")]
+PortSchemaValue: TypeAlias = Annotated[PortSchema | FilePortSchema, Field(union_mode="left_to_right")]  # noqa: UP040
 
 
 class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):
