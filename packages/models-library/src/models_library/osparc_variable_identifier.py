@@ -89,9 +89,27 @@ def raise_if_unresolved[T](var: OsparcVariableIdentifier | T) -> T:
     return var  # type: ignore[return-value]
 
 
-def replace_osparc_variable_identifier[T](  # noqa: C901
-    obj: T, osparc_variables: dict[str, Any]
-) -> T:
+def _replace_in_container(obj: Any, osparc_variables: dict[str, Any]) -> Any:
+    """Replaces in place (when mutable) or rebuilds (tuple/set) the elements of a container"""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
+        return obj
+    if isinstance(obj, BaseModel):
+        for key, value in obj.__dict__.items():
+            obj.__dict__[key] = replace_osparc_variable_identifier(value, osparc_variables)
+        return obj
+    if isinstance(obj, list):
+        for i, item in enumerate(obj):
+            obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
+        return obj
+    if isinstance(obj, tuple):
+        return tuple(replace_osparc_variable_identifier(item, osparc_variables) for item in obj)
+    assert isinstance(obj, set)  # no other caller
+    return {replace_osparc_variable_identifier(item, osparc_variables) for item in obj}
+
+
+def replace_osparc_variable_identifier[T](obj: T, osparc_variables: dict[str, Any]) -> T:
     """Replaces mostly in place an instance of `OsparcVariableIdentifier` with the
     value provided inside `osparc_variables`.
 
@@ -116,21 +134,8 @@ def replace_osparc_variable_identifier[T](  # noqa: C901
             return deepcopy(osparc_variables[obj.name])  # type: ignore[no-any-return,attr-defined]
         if obj.default_value is not None:  # type: ignore[attr-defined]
             return deepcopy(obj.default_value)  # type: ignore[no-any-return,attr-defined]
-    elif isinstance(obj, dict):
-        for key, value in obj.items():
-            obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
-    elif isinstance(obj, BaseModel):
-        for key, value in obj.__dict__.items():
-            obj.__dict__[key] = replace_osparc_variable_identifier(value, osparc_variables)
-    elif isinstance(obj, list):
-        for i, item in enumerate(obj):
-            obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
-    elif isinstance(obj, tuple):
-        new_tuple = tuple(replace_osparc_variable_identifier(item, osparc_variables) for item in obj)
-        obj = new_tuple  # type: ignore
-    elif isinstance(obj, set):
-        new_set = {replace_osparc_variable_identifier(item, osparc_variables) for item in obj}
-        obj = new_set  # type: ignore
+    elif isinstance(obj, dict | BaseModel | list | tuple | set):
+        return _replace_in_container(obj, osparc_variables)  # type: ignore[no-any-return]
     return obj
 
 
