@@ -12,6 +12,7 @@ docker
 faker
 fastapi
 fastapi-lifespan-manager
+filelock
 flaky
 pytest
 pytest-asyncio

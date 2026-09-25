@@ -2,6 +2,10 @@
 #    uv pip compile --output-file=requirements/requirements.txt requirements/requirements.in
 annotated-types==0.7.0
     # via pydantic
+faker==40.39.0
+    # via -r requirements/requirements.in
+filelock==4.0.3
+    # via -r requirements/requirements.in
 iniconfig==2.3.0
     # via pytest
 packaging==26.0
