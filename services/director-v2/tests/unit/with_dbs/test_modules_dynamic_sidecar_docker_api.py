@@ -70,10 +70,12 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def dynamic_services_scheduler_settings(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, simcore_services_network_name: str
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, simcore_services_network_name: str, faker: Faker
 ) -> DynamicServicesSchedulerSettings:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    # NOTE: unique per test since it's used as a docker label filter to list "this test's own"
+    # dynamic-sidecar services; a fixed value collides across concurrent xdist workers
+    monkeypatch.setenv("SWARM_STACK_NAME", f"test-swarm-{faker.uuid4()}")
     return DynamicServicesSchedulerSettings.create_from_envs()
 
 
