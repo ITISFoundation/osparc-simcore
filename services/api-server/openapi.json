@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.16.1"
+    "version": "0.16.2"
   },
   "paths": {
     "/v0/meta": {
@@ -8948,7 +8948,7 @@
           "responses"
         ],
         "summary": "Create Response",
-        "description": "Creates a model response (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*",
+        "description": "Creates a model response (OpenAI Responses API compatible)\n\nNew in *version 0.13.2*\n\nAdded in *version 0.16.2*: `stream` field: when true, relays the answer as server-sent events instead of a background job",
         "operationId": "create_response_v0_responses_post",
         "requestBody": {
           "content": {
@@ -8971,8 +8971,8 @@
               }
             }
           },
-          "503": {
-            "description": "Chatbot service is not enabled",
+          "422": {
+            "description": "The request was rejected by the chatbot service",
             "content": {
               "application/json": {
                 "schema": {
@@ -8981,12 +8981,22 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "502": {
+            "description": "The chatbot service could not be reached or failed",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Chatbot service is not enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -9490,7 +9500,6 @@
               "$ref": "#/components/schemas/InputMessage"
             },
             "type": "array",
-            "maxItems": 50,
             "minItems": 1,
             "title": "Input"
           },
@@ -9498,13 +9507,9 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "$ref": "#/components/schemas/MetadataValue"
+                  "type": "string"
                 },
-                "propertyNames": {
-                  "$ref": "#/components/schemas/MetadataKey"
-                },
-                "type": "object",
-                "maxProperties": 16
+                "type": "object"
               },
               {
                 "type": "null"
@@ -9513,7 +9518,20 @@
             "title": "Metadata"
           },
           "model": {
+            "type": "string",
+            "enum": [
+              "gpt-3.5-turbo",
+              "gpt-4.1-nano",
+              "gpt-4o-mini",
+              "gpt-5.2",
+              "gpt-5.6-sol"
+            ],
             "title": "Model"
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
           },
           "temperature": {
             "type": "number",
@@ -9538,7 +9556,7 @@
           "temperature"
         ],
         "title": "CreateResponseRequest",
-        "description": "Request body for POST /responses."
+        "description": "Request body for POST /responses.\n\n`background` is always `True` (OpenAI Responses API compatibility placeholder);\n`stream` is the actual mode switch and takes precedence: when `True` the request\nis relayed synchronously as server-sent events instead of a background job."
       },
       "ETag": {
         "type": "string"
@@ -9879,13 +9897,11 @@
           },
           "content": {
             "type": "string",
-            "maxLength": 100000,
             "minLength": 1,
             "title": "Content"
           },
           "name": {
             "type": "string",
-            "maxLength": 200,
             "title": "Name",
             "default": ""
           }
@@ -10832,14 +10848,6 @@
             "type": "string"
           }
         ]
-      },
-      "MetadataKey": {
-        "type": "string",
-        "maxLength": 64
-      },
-      "MetadataValue": {
-        "type": "string",
-        "maxLength": 512
       },
       "OnePage_SolverPort_": {
         "properties": {
@@ -12892,13 +12900,13 @@
             "title": "Output"
           },
           "status": {
-            "$ref": "#/components/schemas/ResponseStatus",
-            "default": "in_progress"
+            "$ref": "#/components/schemas/ResponseStatus"
           }
         },
         "type": "object",
         "required": [
-          "id"
+          "id",
+          "status"
         ],
         "title": "ResponseObject",
         "description": "Response object returned by both POST and GET endpoints."

@@ -5,24 +5,25 @@ as needed — the breaking-change check ensures we stay compatible.
 """
 
 from enum import StrEnum
-from typing import Annotated, Any, Final, Literal, get_args
+from typing import Annotated, Final, Literal
 
 import jsonschema
-from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator
+from pydantic import Discriminator, Field, Tag, TypeAdapter, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 from referencing.jsonschema import ObjectSchema
 
-from ..domain.chatbot import ChatCompletionRequestMessage, ChatResponseFormat
+from ..domain.chatbot import ChatCompletionRequestMessage, ChatResponseFormat, Temperature
 from .base import ApiServerInputSchema, ApiServerOutputSchema
-
-Temperature = Annotated[float, Field(ge=0, le=2)]
-
-type MetadataKey = Annotated[str, Field(max_length=64)]
-type MetadataValue = Annotated[str, Field(max_length=512)]
 
 _ChatCompletionRequestMessageAdapter: Final[TypeAdapter[ChatCompletionRequestMessage]] = TypeAdapter(
     ChatCompletionRequestMessage
 )
+
+# Sanity cap to avoid abuses, deliberately higher than the real budget enforced
+# by s4l-ai (models/_base.py), which derives it from the model's context window
+# and rejects over-budget conversations. This lets plausible conversations
+# through while still bounding request sizes at this edge.
+_MAX_CHAT_INPUT_CHARS: Final[int] = 3_000_000
 
 
 class ResponseStatus(StrEnum):
@@ -106,31 +107,50 @@ class TextParam(ApiServerInputSchema):
 
 class InputMessage(ApiServerInputSchema):
     role: Literal["user", "assistant", "developer"]
-    content: Annotated[str, Field(min_length=1, max_length=100_000)]
-    name: Annotated[str, Field(max_length=200)] = ""
+    content: Annotated[str, Field(min_length=1)]
+    name: str = ""
 
     def to_domain_model(self) -> ChatCompletionRequestMessage:
         return _ChatCompletionRequestMessageAdapter.validate_python(self.model_dump())
 
 
 class CreateResponseRequest(ApiServerInputSchema):
-    """Request body for POST /responses."""
+    """Request body for POST /responses.
+
+    `background` is always `True` (OpenAI Responses API compatibility placeholder);
+    `stream` is the actual mode switch and takes precedence: when `True` the request
+    is relayed synchronously as server-sent events instead of a background job.
+    """
 
     background: Literal[True]
-    input: Annotated[list[InputMessage], Field(min_length=1, max_length=50)]
-    metadata: Annotated[dict[MetadataKey, MetadataValue], Field(max_length=16)] | None = None
-    model: Any  # validation is done in validator because of OpenAI's tricky OAS
+    input: Annotated[list[InputMessage], Field(min_length=1)]
+    metadata: dict[str, str] | None = None
+    model: ChatModel
+    stream: bool = False
     temperature: Temperature
     text: TextParam = TextParam()
 
-    @field_validator("model")
-    @classmethod
-    def _check_supported_model(cls, v: Any) -> str:
-        supported = get_args(ChatModel)
-        if not isinstance(v, str) or v not in supported:
-            msg = f"Model '{v}' is not supported. Supported models: {sorted(supported)}"
-            raise ValueError(msg)
-        return v
+    @model_validator(mode="after")
+    def _validate_input_budget(self) -> "CreateResponseRequest":
+        total_chars = sum(len(msg.content) for msg in self.input)
+        if total_chars > _MAX_CHAT_INPUT_CHARS:
+            _error_type = "conversation_input_budget_exceeded"
+            _msg_template = (
+                "This conversation is {total} characters, over the {limit}-character limit "
+                "the assistant can process. Please shorten it or start a new conversation to continue."
+            )
+            raise PydanticCustomError(
+                _error_type,
+                _msg_template,
+                {"total": f"{total_chars:,}", "limit": f"{_MAX_CHAT_INPUT_CHARS:,}"},
+            )
+        return self
+
+    def to_chat_response_format(self) -> ChatResponseFormat | None:
+        fmt = self.text.format
+        if isinstance(fmt, TextResponseFormatJsonSchema):
+            return fmt.to_domain()
+        return None
 
 
 class OutputTextContent(ApiServerOutputSchema):
@@ -155,4 +175,4 @@ class ResponseObject(ApiServerOutputSchema):
     error: dict[str, str] | None = None
     model: str | None = None
     output: list[OutputMessage] | None = None
-    status: ResponseStatus = ResponseStatus.IN_PROGRESS
+    status: ResponseStatus

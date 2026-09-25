@@ -48,9 +48,10 @@ def get_api_client(client_type: type[BaseServiceClientApi]) -> Callable:
     def _get_client_from_app(request: Request) -> BaseServiceClientApi:
         client_obj = client_type.get_instance(request.app)
         if client_obj is None:
+            service_display_name = client_type.__name__.removesuffix("Api")
             raise HTTPException(
                 status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"{client_type.service_name.title()} service was disabled",
+                detail=f"{service_display_name} service was disabled",
             )
 
         assert isinstance(client_obj, client_type)  # nosec
