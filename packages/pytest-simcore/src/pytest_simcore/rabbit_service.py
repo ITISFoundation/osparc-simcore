@@ -5,8 +5,14 @@
 
 import asyncio
 import contextlib
+import json
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+import urllib.error
+import urllib.request
+from base64 import b64encode
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Final
+from urllib.parse import quote
 
 import aio_pika
 import pytest
@@ -20,8 +26,12 @@ from tenacity.wait import wait_fixed
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
+from .helpers.xdist import get_worker_id
 
 _logger = logging.getLogger(__name__)
+
+# NOTE: fixed host port mapping for the management API/UI, see services/docker-compose.local.yml
+_MANAGEMENT_PORT: Final[int] = 15672
 
 
 @tenacity.retry(
@@ -35,10 +45,67 @@ async def wait_till_rabbit_responsive(url: str) -> None:
         ...
 
 
+def _management_api_request(method: str, url: str, user: str, password: str, body: dict | None = None) -> None:
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(url, data=data, method=method)  # noqa: S310
+    request.add_header("Content-Type", "application/json")
+    credentials = b64encode(f"{user}:{password}".encode()).decode()
+    request.add_header("Authorization", f"Basic {credentials}")
+    try:
+        urllib.request.urlopen(request, timeout=10)  # noqa: S310
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404 and method == "DELETE":
+            return
+        raise
+
+
+def _create_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
+    quoted_vhost = quote(vhost, safe="")
+    _management_api_request("PUT", f"{management_url}/api/vhosts/{quoted_vhost}", user, password)
+    _management_api_request(
+        "PUT",
+        f"{management_url}/api/permissions/{quoted_vhost}/{user}",
+        user,
+        password,
+        body={"configure": ".*", "write": ".*", "read": ".*"},
+    )
+
+
+def _delete_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
+    _management_api_request("DELETE", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
+
+
+@pytest.fixture(scope="session")
+def _rabbit_worker_vhost(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
+) -> Iterator[str]:
+    """Isolates each xdist worker's RabbitMQ traffic in its own vhost on the SAME shared
+    broker: some exchanges/queues (e.g. comp_scheduler broadcasts, `aio_pika`'s own hardcoded
+    "rpc.dlx" RPC exchange) use fixed, non-worker-scoped names, so concurrent workers sharing
+    the default vhost cross-talk. No-op (default vhost "/") when not running under xdist.
+    """
+    worker_id = get_worker_id(request)
+    if worker_id == "master":
+        yield "/"
+        return
+
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
+    assert f"{prefix}_rabbit" in docker_stack["services"]
+    management_url = f"http://{get_localhost_ip()}:{_MANAGEMENT_PORT}"
+    user = env_vars_for_docker_compose["RABBIT_USER"]
+    password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
+    vhost = f"pytest_{worker_id}"
+
+    _create_vhost(management_url, vhost, user, password)
+    yield vhost
+    _delete_vhost(management_url, vhost, user, password)
+
+
 @pytest.fixture
 def rabbit_env_vars_dict(
     docker_stack: dict,
     env_vars_for_docker_compose: EnvVarsDict,
+    _rabbit_worker_vhost: str,
 ) -> EnvVarsDict:
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
@@ -51,6 +118,7 @@ def rabbit_env_vars_dict(
         "RABBIT_HOST": get_localhost_ip(),
         "RABBIT_PORT": f"{port}",
         "RABBIT_SECURE": env_vars_for_docker_compose["RABBIT_SECURE"],
+        "RABBIT_VHOST": _rabbit_worker_vhost,
     }
 
 
