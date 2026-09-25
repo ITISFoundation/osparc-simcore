@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
 from common_library.json_serialization import json_loads
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
@@ -317,7 +318,18 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 node_id=scheduler_data.node_uuid,
             )
         except RemoteMethodNotRegisteredError as e:
-            _logger.info("Could not force container cleanup, because: '%s'", e)
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    f"Could not force container cleanup for {scheduler_data.service_name}",
+                    error=e,
+                    error_context={
+                        "node_uuid": f"{scheduler_data.node_uuid}",
+                        "service_name": scheduler_data.service_name,
+                        "docker_node_id": scheduler_data.dynamic_sidecar.docker_node_id,
+                    },
+                    tip=("The container might have not been removed and requires manual intervention."),
+                )
+            )
 
     await task_progress.update(message="removing network", percent=0.2)
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
@@ -337,7 +349,18 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 NoServiceVolumesFoundRPCError,
                 RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
             ) as e:
-                _logger.info("Could not remove volumes, because: '%s'", e)
+                _logger.warning(
+                    **create_troubleshooting_log_kwargs(
+                        f"Could not remove volumes for {scheduler_data.service_name}",
+                        error=e,
+                        error_context={
+                            "node_uuid": f"{scheduler_data.node_uuid}",
+                            "service_name": scheduler_data.service_name,
+                            "docker_node_id": scheduler_data.dynamic_sidecar.docker_node_id,
+                        },
+                        tip=("The volumes might have not been removed and require manual intervention."),
+                    )
+                )
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
@@ -346,13 +369,11 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     await task_progress.update(message="removing project networks", percent=0.8)
     used_projects_networks = await get_projects_networks_containers(project_id=scheduler_data.project_id)
-    await logged_gather(
-        *[
-            try_to_remove_network(network_name)
-            for network_name, container_count in used_projects_networks.items()
-            if container_count == 0
-        ]
-    )
+    await logged_gather(*[
+        try_to_remove_network(network_name)
+        for network_name, container_count in used_projects_networks.items()
+        if container_count == 0
+    ])
 
     # pylint: disable=protected-access
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
@@ -538,20 +559,18 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save
         else VolumeStatus.CONTENT_NO_SAVE_REQUIRED
     )
-    await logged_gather(
-        *(
-            sidecars_client.update_volume_state(
-                scheduler_data.endpoint,
-                volume_category=VolumeCategory.STATES,
-                volume_status=volume_status,
-            ),
-            sidecars_client.update_volume_state(
-                scheduler_data.endpoint,
-                volume_category=VolumeCategory.OUTPUTS,
-                volume_status=volume_status,
-            ),
-        )
-    )
+    await logged_gather(*(
+        sidecars_client.update_volume_state(
+            scheduler_data.endpoint,
+            volume_category=VolumeCategory.STATES,
+            volume_status=volume_status,
+        ),
+        sidecars_client.update_volume_state(
+            scheduler_data.endpoint,
+            volume_category=VolumeCategory.OUTPUTS,
+            volume_status=volume_status,
+        ),
+    ))
 
     async def _pull_output_ports_with_metrics() -> None:
         with track_duration() as duration:
