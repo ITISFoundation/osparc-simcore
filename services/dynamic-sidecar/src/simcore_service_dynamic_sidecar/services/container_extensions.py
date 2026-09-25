@@ -62,31 +62,30 @@ async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceO
     outputs_context.non_file_type_port_keys = non_file_port_keys
 
 
-def _create_restrict_input_permissions_command(inputs_path: Path) -> str:
+def _create_deny_write_access_command(inputs_path: Path) -> str:
     return f"chmod -R a-w '{inputs_path}'"
 
 
-def _create_grant_input_permissions_command(inputs_path: Path) -> str:
+def _create_grant_write_access_command(inputs_path: Path) -> str:
     return f"chmod -R a+w '{inputs_path}'"
 
 
-async def restrict_input_permissions(app: FastAPI) -> None:
-    # user services must not be able to write to the inputs folder, it is managed for them
+async def deny_write_access_to_inputs(app: FastAPI) -> None:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
     await run_command_in_container(
         get_self_container_name(),
-        command=_create_restrict_input_permissions_command(mounted_volumes.disk_inputs_path),
+        command=_create_deny_write_access_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
 
-async def grant_input_permissions(app: FastAPI) -> None:
+async def grant_write_access_to_inputs(app: FastAPI) -> None:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
     await run_command_in_container(
         get_self_container_name(),
-        command=_create_grant_input_permissions_command(mounted_volumes.disk_inputs_path),
+        command=_create_grant_write_access_command(mounted_volumes.disk_inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -102,7 +101,7 @@ class _WritableInputsState:
 async def _input_permissions_lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.writable_inputs_state = _WritableInputsState()
     # inputs are read-only by default, see writable_inputs for granting access
-    await restrict_input_permissions(app)
+    await deny_write_access_to_inputs(app)
     yield
 
 
@@ -121,7 +120,7 @@ async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
             # a previous entrant's grant may have failed or been cancelled,
             # in which case the inputs are still read-only and must be granted here
             if not state.is_writable:
-                await grant_input_permissions(app)
+                await grant_write_access_to_inputs(app)
                 state.is_writable = True
         yield
     finally:
@@ -130,7 +129,7 @@ async def writable_inputs(app: FastAPI) -> AsyncGenerator[None]:
         async with state.io_lock:
             if last and state.is_writable:
                 try:
-                    await restrict_input_permissions(app)
+                    await deny_write_access_to_inputs(app)
                 finally:
                     state.is_writable = False
 

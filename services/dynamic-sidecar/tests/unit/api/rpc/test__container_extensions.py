@@ -47,10 +47,10 @@ from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from simcore_service_dynamic_sidecar.services.container_extensions import (
     _TIMEOUT_PERMISSION_CHANGES,
-    _create_grant_input_permissions_command,
-    _create_restrict_input_permissions_command,
-    grant_input_permissions,
-    restrict_input_permissions,
+    _create_deny_write_access_command,
+    _create_grant_write_access_command,
+    deny_write_access_to_inputs,
+    grant_write_access_to_inputs,
     writable_inputs,
 )
 from utils import get_lrt_result
@@ -165,32 +165,32 @@ def inputs_path(app: FastAPI) -> Path:
     return AppState(app).mounted_volumes.disk_inputs_path
 
 
-async def test_restrict_input_permissions(
+async def test_deny_write_access_to_inputs(
     app: FastAPI,
     mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
     inputs_path: Path,
 ):
-    await restrict_input_permissions(app)
+    await deny_write_access_to_inputs(app)
 
     mock_input_permissions_toggle.assert_awaited_once_with(
         self_container_name,
-        command=_create_restrict_input_permissions_command(inputs_path),
+        command=_create_deny_write_access_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
 
-async def test_grant_input_permissions(
+async def test_grant_write_access_to_inputs(
     app: FastAPI,
     mock_input_permissions_toggle: AsyncMock,
     self_container_name: str,
     inputs_path: Path,
 ):
-    await grant_input_permissions(app)
+    await grant_write_access_to_inputs(app)
 
     mock_input_permissions_toggle.assert_awaited_once_with(
         self_container_name,
-        command=_create_grant_input_permissions_command(inputs_path),
+        command=_create_grant_write_access_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -204,13 +204,13 @@ async def test_writable_inputs_grants_then_restricts(
     async with writable_inputs(app):
         mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
-            command=_create_grant_input_permissions_command(inputs_path),
+            command=_create_grant_write_access_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
     mock_input_permissions_toggle.assert_awaited_with(
         self_container_name,
-        command=_create_restrict_input_permissions_command(inputs_path),
+        command=_create_deny_write_access_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -254,7 +254,7 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
         # second caller is still writing: only the initial grant must have happened
         mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
-            command=_create_grant_input_permissions_command(inputs_path),
+            command=_create_grant_write_access_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
         release_first.set()
@@ -263,13 +263,13 @@ async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
         # first caller exited but the second is still inside: must stay writable
         mock_input_permissions_toggle.assert_awaited_once_with(
             self_container_name,
-            command=_create_grant_input_permissions_command(inputs_path),
+            command=_create_grant_write_access_command(inputs_path),
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
 
     mock_input_permissions_toggle.assert_awaited_with(
         self_container_name,
-        command=_create_restrict_input_permissions_command(inputs_path),
+        command=_create_deny_write_access_command(inputs_path),
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
@@ -281,8 +281,8 @@ async def test_writable_inputs_failed_grant_is_retried_by_queued_caller(
 ):
     # regression test: when the first caller's grant fails, a queued caller
     # must retry the grant instead of running with read-only inputs
-    grant_command = _create_grant_input_permissions_command(inputs_path)
-    restrict_command = _create_restrict_input_permissions_command(inputs_path)
+    grant_command = _create_grant_write_access_command(inputs_path)
+    restrict_command = _create_deny_write_access_command(inputs_path)
 
     first_attempt = True
     first_grant_started = asyncio.Event()
@@ -337,7 +337,7 @@ async def test_writable_inputs_registers_without_waiting_for_slow_grant(
     release_grant = asyncio.Event()
 
     async def _slow_exec(*_args: Any, **kwargs: Any) -> None:
-        if kwargs.get("command") == _create_grant_input_permissions_command(inputs_path):
+        if kwargs.get("command") == _create_grant_write_access_command(inputs_path):
             grant_started.set()
             await release_grant.wait()
 
