@@ -26,13 +26,13 @@ if TYPE_CHECKING:
 
 ServicePortKey: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
 
-type FileName = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
+FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]  # noqa: UP040
 
 ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
 
 type ServiceKeyEncoded = Annotated[str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)]
 
-type DynamicServiceKey = Annotated[str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)]
+DynamicServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)]  # noqa: UP040
 
 type ComputationalServiceKey = Annotated[str, StringConstraints(pattern=COMPUTATIONAL_SERVICE_KEY_RE)]
 

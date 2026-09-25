@@ -1,3 +1,4 @@
+from typing import TypeAlias
 from uuid import UUID
 
-type LicensedItemCheckoutID = UUID
+LicensedItemCheckoutID: TypeAlias = UUID  # noqa: UP040

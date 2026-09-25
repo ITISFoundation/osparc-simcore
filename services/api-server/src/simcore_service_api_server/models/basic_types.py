@@ -1,10 +1,10 @@
-from typing import Annotated, NamedTuple
+from typing import Annotated, NamedTuple, TypeAlias
 
 from fastapi.responses import StreamingResponse
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from pydantic import StringConstraints
 
-type VersionStr = Annotated[str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)]
+VersionStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)]  # noqa: UP040
 
 type FileNameStr = Annotated[str, StringConstraints(strip_whitespace=True)]
 

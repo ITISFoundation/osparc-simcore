@@ -1,5 +1,5 @@
 import datetime
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from pydantic import ConfigDict, Field, HttpUrl
 
@@ -179,7 +179,7 @@ type FunctionToRegister = Annotated[
     Field(discriminator="function_class"),
 ]
 
-type RegisteredFunctionGet = Annotated[
+RegisteredFunctionGet: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunctionGet | RegisteredSolverFunctionGet,
     Field(discriminator="function_class"),
 ]

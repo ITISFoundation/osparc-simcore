@@ -11,7 +11,7 @@ import hashlib
 import re
 import traceback
 from datetime import UTC, datetime
-from typing import Annotated, Final
+from typing import Annotated, Final, TypeAlias
 
 from pydantic import StringConstraints, TypeAdapter
 
@@ -25,7 +25,7 @@ _NAMED_PATTERN = re.compile(
 _PATTERN = re.compile(r"OEC:[a-fA-F0-9]{12}-\d{13,14}")
 
 
-type ErrorCodeStr = Annotated[str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)]
+ErrorCodeStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)]  # noqa: UP040
 
 
 def _create_fingerprint(exc: BaseException) -> str:

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, validate_call
 from pydantic.config import JsonDict
@@ -9,9 +9,9 @@ _logger = logging.getLogger(__name__)
 
 TaskId = str
 
-type ProgressMessage = str
+ProgressMessage: TypeAlias = str  # noqa: UP040
 
-type ProgressPercent = Annotated[float, Field(ge=0.0, le=1.0)]
+ProgressPercent: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]  # noqa: UP040
 
 
 class TaskProgress(BaseModel):

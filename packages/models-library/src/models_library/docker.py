@@ -32,7 +32,7 @@ type DockerPlacementConstraint = Annotated[
 ]
 
 
-type DockerNodeID = Annotated[str, StringConstraints(strip_whitespace=True, pattern=re.compile(r"[a-zA-Z0-9]"))]
+DockerNodeID: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=re.compile(r"[a-zA-Z0-9]"))]  # noqa: UP040
 
 
 # Docker placement labels for node-specific constraints

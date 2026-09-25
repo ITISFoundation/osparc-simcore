@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Final
+from typing import Final, TypeAlias
 
 from pydantic import ConfigDict, Field, NonNegativeInt
 
@@ -13,8 +13,8 @@ from .services_enums import ServiceType
 from .services_io import ServiceInput, ServiceOutput
 from .services_types import ServicePortKey
 
-type ServiceInputsDict = dict[ServicePortKey, ServiceInput]
-type ServiceOutputsDict = dict[ServicePortKey, ServiceOutput]
+ServiceInputsDict: TypeAlias = dict[ServicePortKey, ServiceInput]  # noqa: UP040
+ServiceOutputsDict: TypeAlias = dict[ServicePortKey, ServiceOutput]  # noqa: UP040
 
 
 _EXAMPLE: Final = {
