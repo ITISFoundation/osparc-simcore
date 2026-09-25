@@ -40,17 +40,6 @@ test_with_db() {
   popd
 }
 
-# NOTE: pilot for parallelizing DB-dependent tests with pytest-xdist while keeping a single
-# shared docker stack (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py)
-test_with_db_parallel() {
-  # shellcheck source=/dev/null
-  source .venv/bin/activate
-  pushd services/web/server
-  echo "testing in services/web/server/tests/unit/with_dbs/$1 (parallel)"
-  make test-ci-unit test-path="with_dbs/$1" pytest-parameters="--numprocesses=auto"
-  popd
-}
-
 typecheck() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
