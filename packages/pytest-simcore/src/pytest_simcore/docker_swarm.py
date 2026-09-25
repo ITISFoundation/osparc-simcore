@@ -29,6 +29,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 
+from .docker_compose import _filter_services_and_dump
+from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
@@ -340,7 +342,19 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
     assert core_stack_name
     assert core_stack_name.startswith("pytest-")
 
-    def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str) -> Path:
+    def _collected_services_union(attr_name: str) -> list[str]:
+        # NOTE: collection completes before any test runs, so `session.items` already lists
+        # every test this run will execute (the full suite, or a `-k`-filtered subset)
+        seen: set[str] = set()
+        union: list[str] = []
+        for item in request.session.items:
+            for name in getattr(item.module, attr_name, []):
+                if name not in seen:
+                    seen.add(name)
+                    union.append(name)
+        return union
+
+    def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str, selection_attr: str) -> Path:
         if get_worker_id(request) == "master":
             # single-process run: unaffected, same per-module filtered selection as before
             return filtered_path
@@ -349,23 +363,29 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
         # module to reach this fixture actually deploys (see `owns_stack` below) - deploying
         # ITS OWN filtered subset would starve later modules of services they need (e.g. a
         # module selecting only "postgres" would prevent "rabbit"/"redis" from ever being
-        # deployed for other modules). Deploy the FULL, unfiltered compose instead so every
-        # module's selection is always already satisfied.
-        full_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_full_docker_compose.yml"
-        if not full_path.exists():
-            full_path.write_text(yaml.safe_dump(unfiltered))
-        return full_path
+        # deployed for other modules). Deploy the UNION of every collected module's selection
+        # instead, so every module's selection is always already satisfied - deploying the
+        # full, unfiltered compose is NOT an option: it includes production services whose
+        # images aren't built/available in a test environment.
+        union_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_union_docker_compose.yml"
+        if not union_path.exists():
+            _filter_services_and_dump(_collected_services_union(selection_attr), unfiltered, union_path)
+        return union_path
 
     stacks = [
         (
             "ops",
             ops_stack_name,
-            _compose_file_for(ops_docker_compose, ops_docker_compose_file, "ops"),
+            _compose_file_for(
+                ops_docker_compose, ops_docker_compose_file, "ops", FIXTURE_CONFIG_OPS_SERVICES_SELECTION
+            ),
         ),
         (
             "core",
             core_stack_name,
-            _compose_file_for(simcore_docker_compose, core_docker_compose_file, "core"),
+            _compose_file_for(
+                simcore_docker_compose, core_docker_compose_file, "core", FIXTURE_CONFIG_CORE_SERVICES_SELECTION
+            ),
         ),
     ]
 
