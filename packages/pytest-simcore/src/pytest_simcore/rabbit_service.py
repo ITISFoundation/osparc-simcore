@@ -75,7 +75,7 @@ def _delete_vhost(management_url: str, vhost: str, user: str, password: str) -> 
     _management_api_request("DELETE", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def _rabbit_worker_vhost(
     docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
 ) -> Iterator[str]:
@@ -83,6 +83,9 @@ def _rabbit_worker_vhost(
     broker: some exchanges/queues (e.g. comp_scheduler broadcasts, `aio_pika`'s own hardcoded
     "rpc.dlx" RPC exchange) use fixed, non-worker-scoped names, so concurrent workers sharing
     the default vhost cross-talk. No-op (default vhost "/") when not running under xdist.
+
+    NOTE: module-scoped (not session-scoped) to match `docker_stack`'s scope: a fixture cannot
+    depend on one with a narrower scope.
     """
     worker_id = get_worker_id(request)
     if worker_id == "master":
