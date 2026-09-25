@@ -42,6 +42,8 @@ faker==40.38.0
     # via -r requirements/_test.in
 fastapi==0.141.1
     # via -r requirements/_test.in
+filelock==4.0.3
+    # via -r requirements/_test.in
 frozenlist==1.8.0
     # via
     #   aiohttp
