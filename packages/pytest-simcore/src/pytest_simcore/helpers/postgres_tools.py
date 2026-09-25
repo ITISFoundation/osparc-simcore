@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Final, TypedDict
+from typing import Any, Final, NotRequired, TypedDict
 from urllib.parse import quote_plus
 
 import simcore_postgres_database.cli
@@ -49,6 +49,9 @@ class PgTemplateState(TypedDict):
 
     built: bool
     dsn: PostgresTestConfig | None
+    # under xdist: whether this worker already registered/waited for the shared template once
+    registered: NotRequired[bool]
+    owns_build: NotRequired[bool]
 
 
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
