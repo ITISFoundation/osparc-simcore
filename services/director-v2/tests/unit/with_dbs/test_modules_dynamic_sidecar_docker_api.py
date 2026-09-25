@@ -168,7 +168,8 @@ async def cleanup_test_service_name(
 
 @pytest.fixture
 def dynamic_sidecar_service_name(faker: Faker) -> str:
-    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar_{faker.uuid4()}"
+    # NOTE: docker service names are limited to 63 characters
+    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar_{faker.uuid4()[:8]}"
 
 
 @pytest.fixture
