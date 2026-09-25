@@ -225,11 +225,15 @@ def dynamic_sidecar_stack_specs(
     user_id: UserID,
     project_id: ProjectID,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    faker: Faker,
 ) -> list[dict[str, Any]]:
     swarm_stack_name = f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
+    # NOTE: unique per test (docker service names are limited to 63 characters) so concurrent
+    # xdist workers sharing the swarm don't collide on the same fixed service name
+    unique_suffix = faker.uuid4()[:8]
     return [
         {
-            "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy",
+            "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy_{unique_suffix}",
             "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
             "labels": {
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
@@ -242,7 +246,7 @@ def dynamic_sidecar_stack_specs(
             },
         },
         {
-            "name": f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_fake_sidecar",
+            "name": f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_fake_sidecar_{unique_suffix}",
             "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
             "labels": {
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
