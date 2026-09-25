@@ -19,10 +19,10 @@ def disable_inputs_pulling(app: FastAPI) -> None:
     inputs_state.inputs_pulling_enabled = False
 
 
-async def _inputs_lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def _inputs_pulling_lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.inputs_state = InputsState()
     yield
 
 
-def configure_inputs(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(_inputs_lifespan)
+def configure_inputs_pulling(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_inputs_pulling_lifespan)

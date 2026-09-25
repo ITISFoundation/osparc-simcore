@@ -99,15 +99,15 @@ class _WritableInputsState:
     is_writable: bool = False
 
 
-async def _writable_inputs_lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def _input_permissions_lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.writable_inputs_state = _WritableInputsState()
     # inputs are read-only by default, see writable_inputs for granting access
     await restrict_input_permissions(app)
     yield
 
 
-def configure_writable_inputs(app_lifespan: LifespanManager[FastAPI]) -> None:
-    app_lifespan.add(_writable_inputs_lifespan)
+def configure_input_permissions(app_lifespan: LifespanManager[FastAPI]) -> None:
+    app_lifespan.add(_input_permissions_lifespan)
 
 
 @asynccontextmanager
