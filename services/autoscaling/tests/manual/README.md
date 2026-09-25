@@ -53,19 +53,22 @@ ipython
 ```
 ```python
 import distributed
+
 # connect to the dask-scheduler running on the EC2 machine
 client = distributed.Client("tcp://{EC2_INSTANCE_PUBLIC_IP}:8786")
 
+
 # some dummy test function to run remotely
-def test_fct(x,y):
-  return x+y
+def test_fct(x, y):
+    return x + y
+
 
 # send the task over to the dask-scheduler
 future = client.submit(test_fct, 3, 54, resources={"CPU": 1}, pure=False)
 
 # this will trigger the autoscaling to create a new machine (ensure the EC2_INSTANCES_ALLOWED_TYPES variable allows for machines capable of running the job with the wanted resources)
 # after about 3 minutes the job will be run
-future.done() # shall return True once done
+future.done()  # shall return True once done
 
 # remove the future from the dask-scheduler memory, shall trigger the autoscaling service to remove the created machine
 del future

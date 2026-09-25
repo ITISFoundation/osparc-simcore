@@ -74,7 +74,7 @@ async def _make_request(
     **kwargs,
 ) -> tuple[DataBody | str, int]:
     async with session.request(method, url, headers=headers, json=data, **kwargs) as response:
-        payload: dict[str, Any] | list[dict[str, Any]] | None | str = (
+        payload: dict[str, Any] | list[dict[str, Any]] | str | None = (
             await response.json() if response.content_type == MIMETYPE_APPLICATION_JSON else await response.text()
         )
 

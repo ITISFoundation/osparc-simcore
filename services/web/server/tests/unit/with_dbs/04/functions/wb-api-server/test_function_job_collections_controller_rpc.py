@@ -336,10 +336,7 @@ async def test_list_function_job_collections_filtered_function_id(
 
     registered_collections = []
     for coll_i in range(5):
-        if coll_i < 3:
-            function_id = registered_function.uid
-        else:
-            function_id = other_registered_function.uid
+        function_id = registered_function.uid if coll_i < 3 else other_registered_function.uid
         # Create a function job collection
         function_jobs = [
             ProjectFunctionJob(

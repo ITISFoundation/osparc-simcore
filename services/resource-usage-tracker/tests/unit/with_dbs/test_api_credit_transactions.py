@@ -341,7 +341,8 @@ async def test_pay_project_debt(
     assert output.available_osparc_credits == -100
     _project_debt_amount = output.available_osparc_credits
 
-    # We test situation when new and current wallet transaction amount are not setup properly by the client (ex. webserver)
+    # We test situation when new and current wallet transaction amount are not
+    # setup properly by the client (ex. webserver)
     new_wallet_transaction = CreditTransactionCreateBody(
         product_name=product_name,
         wallet_id=_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS,
@@ -349,7 +350,9 @@ async def test_pay_project_debt(
         user_id=_USER_ID_1,
         user_email=faker.email(),
         osparc_credits=_project_debt_amount - 50,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS}",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS}"
+        ),
         created_at=datetime.now(UTC),
     )
     current_wallet_transaction = CreditTransactionCreateBody(
@@ -359,7 +362,9 @@ async def test_pay_project_debt(
         user_id=_USER_ID_1,
         user_email=faker.email(),
         osparc_credits=-_project_debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS} to wallet {_WALLET_ID}",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS} to wallet {_WALLET_ID}"
+        ),
         created_at=datetime.now(UTC),
     )
 
@@ -379,7 +384,9 @@ async def test_pay_project_debt(
         user_id=_USER_ID_1,
         user_email="test@test.com",
         osparc_credits=_project_debt_amount,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS}",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS}"
+        ),
         created_at=datetime.now(UTC),
     )
     current_wallet_transaction = CreditTransactionCreateBody(
@@ -389,7 +396,9 @@ async def test_pay_project_debt(
         user_id=_USER_ID_1,
         user_email="test@test.com",
         osparc_credits=-_project_debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS} to wallet {_WALLET_ID}",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS} to wallet {_WALLET_ID}"
+        ),
         created_at=datetime.now(UTC),
     )
 
@@ -409,7 +418,9 @@ async def test_pay_project_debt(
         user_id=_USER_ID_1,
         user_email="test@test.com",
         osparc_credits=_project_debt_amount,  # <-- Negative number
-        payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS}",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {_WALLET_ID} to wallet {_WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS}"
+        ),
         created_at=datetime.now(UTC),
     )
     current_wallet_transaction = CreditTransactionCreateBody(
@@ -419,7 +430,9 @@ async def test_pay_project_debt(
         user_id=_USER_ID_1,
         user_email="test@test.com",
         osparc_credits=-_project_debt_amount,  # <-- Positive number
-        payment_transaction_id=f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS} to wallet {_WALLET_ID}",
+        payment_transaction_id=(
+            f"Payment transaction from wallet {_WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS} to wallet {_WALLET_ID}"
+        ),
         created_at=datetime.now(UTC),
     )
 

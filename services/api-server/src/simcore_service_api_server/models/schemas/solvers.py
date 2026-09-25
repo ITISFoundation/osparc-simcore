@@ -17,14 +17,16 @@ from ..api_resources import compose_resource_name
 from .base import BaseService
 
 # NOTE:
-# - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint
+# - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry
+#   deployed. This constraint
 #   should be responsibility of the catalog. Those prefix
 # - Strictly speaking solvers should be a collection and releases a sub-collection, i.e. solvers/*/releases/*
 #   But, based on user feedback, everything was flattened into a released-solvers resource simply denoted "solvers"
 STRICT_RELEASE_NAME_REGEX_W_CAPTURE = r"^([^\s:]+)+:([^\s:/]+)$"
 STRICT_RELEASE_NAME_REGEX = r"^[^\s:]+:[0-9\.]+$"
 
-# - API will add flexibility to identify solver resources using aliases. Analogously to docker images e.g. a/b == a/b:latest == a/b:2.3
+# - API will add flexibility to identify solver resources using aliases. Analogously to docker images
+#   e.g. a/b == a/b:latest == a/b:2.3
 #
 SOLVER_ALIAS_REGEX = r"^([^\s:]+)+:?([^\s:/]*)$"
 LATEST_VERSION = "latest"
@@ -114,7 +116,7 @@ class Solver(BaseService):
         return compose_resource_name("solvers", key, "releases", version)
 
 
-PortKindStr: TypeAlias = Literal["input", "output"]
+PortKindStr: TypeAlias = Literal["input", "output"]  # noqa: UP040
 
 
 class SolverPort(BaseModel):

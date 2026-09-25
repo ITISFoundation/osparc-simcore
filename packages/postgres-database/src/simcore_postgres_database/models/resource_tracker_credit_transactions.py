@@ -16,7 +16,7 @@ from ._common import (
 from .base import metadata
 
 
-class CreditTransactionStatus(str, enum.Enum):
+class CreditTransactionStatus(enum.StrEnum):
     PENDING = "PENDING"
     BILLED = "BILLED"
     IN_DEBT = "IN_DEBT"
@@ -24,7 +24,7 @@ class CreditTransactionStatus(str, enum.Enum):
     REQUIRES_MANUAL_REVIEW = "REQUIRES_MANUAL_REVIEW"
 
 
-class CreditTransactionClassification(str, enum.Enum):
+class CreditTransactionClassification(enum.StrEnum):
     ADD_WALLET_TOP_UP = "ADD_WALLET_TOP_UP"  # user top up credits
     DEDUCT_SERVICE_RUN = "DEDUCT_SERVICE_RUN"  # computational/dynamic service run costs)
     DEDUCT_LICENSE_PURCHASE = "DEDUCT_LICENSE_PURCHASE"

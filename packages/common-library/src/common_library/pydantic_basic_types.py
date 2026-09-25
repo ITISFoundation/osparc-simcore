@@ -1,11 +1,11 @@
 from re import Pattern
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final
 
 from pydantic import Field
 from pydantic_core import core_schema
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
+type RegisteredPortInt = Annotated[int, Field(gt=1024, lt=65535)]
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
@@ -63,7 +63,8 @@ class ShortTruncatedStr(ConstrainedStr):
     # NOTE: Use to input e.g. titles or display names
     # A truncated string:
     #   - Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-    #   - Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently, i.e. without raising errors.
+    #   - Ensures that the **input** data length to the API is controlled and prevents exceeding large
+    #     inputs silently, i.e. without raising errors.
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
     strip_whitespace = True
     curtail_length = 600

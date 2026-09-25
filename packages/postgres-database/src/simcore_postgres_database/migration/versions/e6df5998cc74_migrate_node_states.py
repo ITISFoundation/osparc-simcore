@@ -21,7 +21,8 @@ def upgrade():
         sa.DDL(
             """
 UPDATE projects
-    SET workbench = (regexp_replace(workbench::text, '"state": ("[^"]*")', '"state": {"currentStatus": \\1}', 'g'))::json
+    SET workbench = (regexp_replace(workbench::text, '"state": ("[^"]*")',
+    '"state": {"currentStatus": \\1}', 'g'))::json
     WHERE workbench::text LIKE '%%state%%'
         """
         )
@@ -34,7 +35,8 @@ def downgrade():
         sa.DDL(
             """
     UPDATE projects
-        SET workbench = (regexp_replace(workbench::text, '"state": {("[^"]+": [^,]+, )*"currentStatus": ("[^"]+")}', '"state": \\2', 'g'))::json
+        SET workbench = (regexp_replace(workbench::text, '"state": {("[^"]+": [^,]+, )*"currentStatus": ("[^"]+")}',
+        '"state": \\2', 'g'))::json
         WHERE workbench::text LIKE '%%state%%'
             """
         )

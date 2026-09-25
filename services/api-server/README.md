@@ -15,6 +15,7 @@ When in development mode (the environment variable `API_SERVER_DEV_FEATURES_ENAB
 :
 ```python
 from httpx import AsyncClient, BasicAuth
+
 headers: dict[str, str] = {"x-profile-api-server": "true"}
 async with AsyncClient(base_url="<host>", auth=BasicAuth(username="<username>", password="<password>")) as client:
     async with client.stream("GET", f"/v0/me", timeout=20, headers=headers) as response:

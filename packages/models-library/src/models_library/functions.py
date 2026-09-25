@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Mapping
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any, Final, Literal, TypeAlias
 from uuid import UUID
 
@@ -20,16 +20,16 @@ from .batch_operations import BatchGetEnvelope, BatchUpdateEnvelope
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
-TaskID: TypeAlias = str
-FunctionID: TypeAlias = UUID
-FunctionJobID: TypeAlias = UUID
-FileID: TypeAlias = UUID
+TaskID: TypeAlias = str  # noqa: UP040
+FunctionID: TypeAlias = UUID  # noqa: UP040
+FunctionJobID: TypeAlias = UUID  # noqa: UP040
+type FileID = UUID
 
-InputTypes: TypeAlias = FileID | float | int | bool | str | list
+type InputTypes = FileID | float | int | bool | str | list
 _MAX_LIST_LENGTH: Final[int] = 50
 
 
-class FunctionSchemaClass(str, Enum):
+class FunctionSchemaClass(StrEnum):
     json_schema = "application/schema+json"
 
 
@@ -53,40 +53,40 @@ class JSONFunctionOutputSchema(JSONFunctionSchema):
     schema_class: Literal[FunctionSchemaClass.json_schema] = FunctionSchemaClass.json_schema
 
 
-FunctionInputSchema: TypeAlias = Annotated[
+FunctionInputSchema: TypeAlias = Annotated[  # noqa: UP040
     JSONFunctionInputSchema,
     Field(discriminator="schema_class"),
 ]
 
-FunctionOutputSchema: TypeAlias = Annotated[
+FunctionOutputSchema: TypeAlias = Annotated[  # noqa: UP040
     JSONFunctionOutputSchema,
     Field(discriminator="schema_class"),
 ]
 
 
-class FunctionClass(str, Enum):
+class FunctionClass(StrEnum):
     PROJECT = "PROJECT"
     SOLVER = "SOLVER"
     PYTHON_CODE = "PYTHON_CODE"
 
 
-FunctionClassSpecificData: TypeAlias = dict[str, Any]
-FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData
+FunctionClassSpecificData: TypeAlias = dict[str, Any]  # noqa: UP040
+FunctionJobClassSpecificData: TypeAlias = FunctionClassSpecificData  # noqa: UP040
 
 
 # NOTE, use InputTypes here, but api is throwing weird errors and asking for dict for elements
 # see here https://github.com/ITISFoundation/osparc-simcore/issues/7659
-FunctionInputs: TypeAlias = dict[str, Any] | None
+FunctionInputs: TypeAlias = dict[str, Any] | None  # noqa: UP040
 
-FunctionInputsList: TypeAlias = Annotated[
+type FunctionInputsList = Annotated[
     list[FunctionInputs],
     Field(max_length=_MAX_LIST_LENGTH),
 ]
 
 
-FunctionOutputs: TypeAlias = dict[str, Any] | None
+FunctionOutputs: TypeAlias = dict[str, Any] | None  # noqa: UP040
 
-FunctionOutputsLogfile: TypeAlias = Any
+type FunctionOutputsLogfile = Any
 
 
 class FunctionBase(BaseModel):
@@ -148,7 +148,7 @@ class RegisteredProjectFunction(ProjectFunction, RegisteredFunctionBase):
     )
 
 
-SolverJobID: TypeAlias = UUID
+type SolverJobID = UUID
 
 
 class SolverFunction(FunctionBase):
@@ -170,16 +170,16 @@ class RegisteredPythonCodeFunction(PythonCodeFunction, RegisteredFunctionBase):
     pass
 
 
-Function: TypeAlias = Annotated[
+type Function = Annotated[
     ProjectFunction | PythonCodeFunction | SolverFunction,
     Field(discriminator="function_class"),
 ]
-RegisteredFunction: TypeAlias = Annotated[
+RegisteredFunction: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunction | RegisteredPythonCodeFunction | RegisteredSolverFunction,
     Field(discriminator="function_class"),
 ]
 
-FunctionJobCollectionID: TypeAlias = projects.ProjectID
+FunctionJobCollectionID: TypeAlias = projects.ProjectID  # noqa: UP040
 
 
 class FunctionJobBase(BaseModel):
@@ -235,11 +235,11 @@ class RegisteredPythonCodeFunctionJobPatch(BaseModel):
     description: str | None
 
 
-FunctionJob: TypeAlias = Annotated[
+type FunctionJob = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
-FunctionJobList: TypeAlias = Annotated[list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH)]
+type FunctionJobList = Annotated[list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH)]
 
 
 class RegisteredFunctionJobBase(FunctionJobBase):
@@ -259,7 +259,7 @@ class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJ
     pass
 
 
-RegisteredFunctionJob: TypeAlias = Annotated[
+RegisteredFunctionJob: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunctionJob | RegisteredPythonCodeFunctionJob | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
@@ -288,7 +288,7 @@ class FunctionJobPatchRequest(BaseModel):
     patch: RegisteredFunctionJobPatch
 
 
-FunctionJobPatchRequestList: TypeAlias = Annotated[
+type FunctionJobPatchRequestList = Annotated[
     list[FunctionJobPatchRequest],
     Field(
         max_length=_MAX_LIST_LENGTH,
@@ -317,7 +317,7 @@ class RegisteredPythonCodeFunctionJobWithStatus(RegisteredPythonCodeFunctionJob,
     pass
 
 
-RegisteredFunctionJobWithStatus: TypeAlias = Annotated[
+RegisteredFunctionJobWithStatus: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunctionJobWithStatus
     | RegisteredPythonCodeFunctionJobWithStatus
     | RegisteredSolverFunctionJobWithStatus,
@@ -471,15 +471,19 @@ class FunctionUserApiAccessRights(BaseModel):
     )
 
 
-FunctionJobAccessRights: TypeAlias = FunctionAccessRights
-FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB
-FunctionJobUserAccessRights: TypeAlias = FunctionUserAccessRights
-FunctionJobGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+type FunctionJobAccessRights = FunctionAccessRights
+# NOTE: kept as a runtime class binding (not PEP 695 `type`) because it is passed
+# as a class value to get_columns_from_db_model(), which reads .model_fields
+FunctionJobAccessRightsDB: TypeAlias = FunctionAccessRightsDB  # noqa: UP040
+type FunctionJobUserAccessRights = FunctionUserAccessRights
+type FunctionJobGroupAccessRights = FunctionGroupAccessRights
 
-FunctionJobCollectionAccessRights: TypeAlias = FunctionAccessRights
-FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB
-FunctionJobCollectionUserAccessRights: TypeAlias = FunctionUserAccessRights
-FunctionJobCollectionGroupAccessRights: TypeAlias = FunctionGroupAccessRights
+type FunctionJobCollectionAccessRights = FunctionAccessRights
+# NOTE: kept as a runtime class binding (not PEP 695 `type`) because it is passed
+# as a class value to get_columns_from_db_model(), which reads .model_fields
+FunctionJobCollectionAccessRightsDB: TypeAlias = FunctionAccessRightsDB  # noqa: UP040
+type FunctionJobCollectionUserAccessRights = FunctionUserAccessRights
+type FunctionJobCollectionGroupAccessRights = FunctionGroupAccessRights
 
 
 class FunctionsApiAccessRights(StrAutoEnum):

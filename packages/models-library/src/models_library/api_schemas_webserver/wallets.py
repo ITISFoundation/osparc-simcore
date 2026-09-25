@@ -215,7 +215,8 @@ class GetWalletAutoRecharge(OutputSchema):
     )
     payment_method_id: PaymentMethodID | None = Field(
         ...,
-        description="Payment method in the wallet used to perform the auto-recharge payments or None if still undefined",
+        description="Payment method in the wallet used to perform the "
+        "auto-recharge payments or None if still undefined",
     )
     min_balance_in_credits: NonNegativeDecimal = Field(
         ...,

@@ -69,6 +69,14 @@ def get_dynamic_proxy_spec(
     if proxy_settings.PROXY_EXPOSE_PORT:
         ports.append({"Protocol": "tcp", "TargetPort": 80})
 
+    # traefik label key prefixes (extracted to keep label definitions within the line length)
+    sec_headers_mw = f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers"
+    auth_mw = f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth"
+    traefik_router = f"traefik.http.routers.{scheduler_data.proxy_service_name}"
+    content_security_policy = (
+        f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}"
+    )
+
     return {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
@@ -76,27 +84,27 @@ def get_dynamic_proxy_spec(
             "traefik.swarm.network": swarm_network_name,
             "traefik.enable": "true",
             # security
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowcredentials": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowheaders": f"{X_SIMCORE_USER_AGENT},Set-Cookie",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": ",".join(
+            f"{sec_headers_mw}.headers.accesscontrolallowcredentials": "true",
+            f"{sec_headers_mw}.headers.customresponseheaders.Content-Security-Policy": content_security_policy,
+            f"{sec_headers_mw}.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
+            f"{sec_headers_mw}.headers.accesscontrolallowheaders": f"{X_SIMCORE_USER_AGENT},Set-Cookie",
+            f"{sec_headers_mw}.headers.accessControlAllowOriginList": ",".join(
                 [
                     f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
                     f"{scheduler_data.request_scheme}://{scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
                 ]
             ),
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
+            f"{sec_headers_mw}.headers.accesscontrolmaxage": "100",
+            f"{sec_headers_mw}.headers.addvaryheader": "true",
             # auth
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{wb_auth_settings.api_base_url}/auth:check",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
+            f"{auth_mw}.forwardauth.address": f"{wb_auth_settings.api_base_url}/auth:check",
+            f"{auth_mw}.forwardauth.trustForwardHeader": "true",
+            f"{auth_mw}.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
             # routing
             f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?P<host>.+)`)",
+            f"{traefik_router}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?P<host>.+)`)",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": ",".join(
                 [
                     f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm",

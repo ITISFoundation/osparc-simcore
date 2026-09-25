@@ -1,3 +1,6 @@
+# NOTE: pylint cannot see that `self` is a pydantic model field (the `_links.self`
+# pagination contract) and flags the keyword as superseded at every PageLinks(...) call
+# pylint: disable=kwarg-superseded-by-positional-arg
 import pytest
 from models_library.rest_pagination import Page, PageLinks, PageMetaInfoLimitOffset
 from models_library.rest_pagination_utils import PageDict, paginate_data

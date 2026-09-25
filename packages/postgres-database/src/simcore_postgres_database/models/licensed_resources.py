@@ -50,7 +50,8 @@ licensed_resources = sa.Table(
         sa.SmallInteger,
         nullable=False,
         server_default="0",
-        doc="Used for sorting 0 (first) > 1 (second) > 2 (third) (ex. if we want to manually adjust how it is presented in the Market)",
+        doc="Used for sorting 0 (first) > 1 (second) > 2 (third) "
+        "(ex. if we want to manually adjust how it is presented in the Market)",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),

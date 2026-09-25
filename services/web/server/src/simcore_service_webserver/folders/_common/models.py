@@ -58,7 +58,8 @@ class FoldersListQueryParams(
 ):
     folder_id: Annotated[FolderID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
         default=None,
-        description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
+        description="List the subfolders of this folder. By default, list the subfolders of the "
+        "root directory (Folder ID is None).",
     )
     workspace_id: Annotated[WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
         default=None,

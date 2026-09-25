@@ -4,11 +4,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by instances of httpx.AsyncClient
-when interacting with a real backend. These captures can then be used to create a respx.MockRouter, which emulates the backend while running
-your tests.
+The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by
+instances of httpx.AsyncClient when interacting with a real backend. These captures can then be
+used to create a respx.MockRouter, which emulates the backend while running your tests.
 
-This module ensures a reliable reproduction and maintenance of mock responses that reflect the real backend environments used for testing.
+This module ensures a reliable reproduction and maintenance of mock responses that reflect the
+real backend environments used for testing.
 
 ## Setting Up the Module and Spy in Your Test Suite (once)
 - Include 'pytest_simcore.httpx_calls_capture' in your `pytest_plugins`.
@@ -16,12 +17,14 @@ This module ensures a reliable reproduction and maintenance of mock responses th
 
 ## Creating Mock Captures (every time you want to create/update the mock)
 - Initialize the real backend.
-- Execute tests using the command: `pytest --spy-httpx-calls-enabled=true --spy-httpx-calls-capture-path="my-captures.json"`.
+- Execute tests using the command: `pytest --spy-httpx-calls-enabled=true
+  --spy-httpx-calls-capture-path="my-captures.json"`.
 - Terminate the real backend once testing is complete.
 
 ## Configuring Tests with Mock Captures (once)
 - Transfer `my-captures.json` to the `tests/mocks` directory.
-- Utilize `create_respx_mock_from_capture(..., capture_path=".../my-captures.json", ...)` to automatically generate a mock for your tests.
+- Utilize `create_respx_mock_from_capture(..., capture_path=".../my-captures.json", ...)` to
+  automatically generate a mock for your tests.
 
 ## Utilizing Mocks (normal test runs)
 - Conduct your tests without enabling the spy, i.e., do not use the `--spy-httpx-calls-enabled` flag.
@@ -64,14 +67,16 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         type=bool,
         default=False,
-        help="If set, it activates a capture mechanism while the tests is running that can be used to generate mock data in respx",
+        help="If set, it activates a capture mechanism while the tests is running that can be "
+        "used to generate mock data in respx",
     )
     simcore_group.addoption(
         "--spy-httpx-calls-capture-path",
         action="store",
         type=Path,
         default=None,
-        help=f"Path to json file to store capture calls from httpx clients during the tests. Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
+        help=f"Path to json file to store capture calls from httpx clients during the tests. "
+        f"Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
     )
 
 
@@ -139,8 +144,8 @@ def backend_env_vars_overrides(
     services_mocks_enabled: bool,
     osparc_simcore_root_dir: Path,
 ) -> EnvVarsDict:
-    """If --spy_httpx_calls_enabled=true, then it returns the env vars (i.e. host and port) pointing to the **REAL** back-end services
-    , otherwise it returns an empty dict
+    """If --spy_httpx_calls_enabled=true, then it returns the env vars (i. e. host and port)
+    pointing to the **REAL** back-end services, otherwise it returns an empty dict
     """
     overrides = {}
     if not services_mocks_enabled:
@@ -148,7 +153,8 @@ def backend_env_vars_overrides(
             content = yaml.safe_load((osparc_simcore_root_dir / ".stack-simcore-production.yml").read_text())
         except FileNotFoundError as err:
             pytest.fail(
-                f"Cannot run --spy_httpx_calls_enabled=true without deploying osparc-simcore locally\n. TIP: run `make prod-up`\n{err}"
+                "Cannot run --spy_httpx_calls_enabled=true without deploying osparc-simcore "
+                f"locally\n. TIP: run `make prod-up`\n{err}"
             )
 
         for name in get_args(ServiceHostNames):
@@ -190,7 +196,7 @@ def create_respx_mock_from_capture(
     if spy_httpx_calls_enabled=False  otherwise it skips this fixture
     """
 
-    # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
+    # NOTE: multiple improvements on this function planned in https://github.com/ITISFoundation/osparc-simcore/issues/5705
     def _(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,

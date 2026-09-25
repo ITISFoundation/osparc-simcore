@@ -19,7 +19,10 @@ _PUBLIC_ANNOUNCEMENTS_REDIS_KEY: Final[str] = "public"
 # Here we validate them and log a big-fat error if there is something wrong
 # Invalid announcements are not passed to the front-end
 #
-_MSG_REDIS_ERROR = f"Invalid announcements[{_PUBLIC_ANNOUNCEMENTS_REDIS_KEY}] in redis. Please check values introduced *by hand*. Skipping"
+_MSG_REDIS_ERROR = (
+    f"Invalid announcements[{_PUBLIC_ANNOUNCEMENTS_REDIS_KEY}] in redis. "
+    "Please check values introduced *by hand*. Skipping"
+)
 
 
 async def list_announcements(

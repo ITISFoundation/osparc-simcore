@@ -21,7 +21,8 @@ class InvitationInputs(BaseModel):
     issuer: Annotated[
         str,
         Field(
-            description="Identifies who issued the invitation. E.g. an email, a service name etc. NOTE: it will be trimmed if exceeds maximum",
+            description="Identifies who issued the invitation. E.g. an email, a service name etc. "
+            "NOTE: it will be trimmed if exceeds maximum",
             min_length=1,
             max_length=_MAX_LEN,
         ),
@@ -43,7 +44,8 @@ class InvitationInputs(BaseModel):
     extra_credits_in_usd: Annotated[
         PositiveInt | None,
         Field(
-            description="If set, the account's primary wallet will add extra credits corresponding to this amount in USD",
+            description="If set, the account's primary wallet will add extra credits "
+            "corresponding to this amount in USD",
         ),
     ] = None
     product: Annotated[

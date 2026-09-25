@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeAlias
+from typing import Any
 
 from common_library.error_codes import ErrorCodeStr
 from fastapi.encoders import jsonable_encoder
@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from ...models.schemas.errors import ErrorGet
 
-ExceptionHandler: TypeAlias = Callable[[Request, BaseException], Awaitable[JSONResponse]]
+type ExceptionHandler = Callable[[Request, BaseException], Awaitable[JSONResponse]]
 
 
 def create_error_json_response(

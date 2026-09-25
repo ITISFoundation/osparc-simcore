@@ -87,7 +87,8 @@ class ProjectCreateQueryParams(BaseModel):
     copy_data: Annotated[
         bool,
         Field(
-            description="Option to copy data when creating from an existing template or as a template, defaults to True",
+            description="Option to copy data when creating from an existing template or as a "
+            "template, defaults to True",
         ),
     ] = True
     hidden: Annotated[
@@ -109,7 +110,8 @@ class ProjectFilters(Filters):
     search_by_project_name: Annotated[
         str | None,
         Field(
-            description="A search query to filter projects by their name. This field performs a case-insensitive partial match against the project name field.",
+            description="A search query to filter projects by their name. This field performs a "
+            "case-insensitive partial match against the project name field.",
         ),
     ] = None
     job_parent_resource_name: Annotated[

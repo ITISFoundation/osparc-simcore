@@ -7,9 +7,11 @@ from ...models._utils_pydantic import UriSchema
 from .. import api_resources
 from . import solvers
 
+# NOTE: StudyID keeps the TypeAlias form (UP040 retention): tests call it as a constructor,
+# and PEP 695 `type` aliases are not callable.
 StudyID: TypeAlias = projects.ProjectID
-NodeName: TypeAlias = str
-DownloadLink: TypeAlias = Annotated[AnyHttpUrl, UriSchema()]
+NodeName: TypeAlias = str  # noqa: UP040
+DownloadLink: TypeAlias = Annotated[AnyHttpUrl, UriSchema()]  # noqa: UP040
 
 
 class Study(BaseModel):

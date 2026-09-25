@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import NamedTuple, TypeAlias
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .constants import QUANTIZE_EXP_ARG
 from .models.products_prices import products_prices
 
-StripePriceID: TypeAlias = str
-StripeTaxRateID: TypeAlias = str
+type StripePriceID = str
+type StripeTaxRateID = str
 
 
 class ProductPriceInfo(NamedTuple):

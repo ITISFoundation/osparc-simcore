@@ -25,7 +25,7 @@ _NAMED_PATTERN = re.compile(
 _PATTERN = re.compile(r"OEC:[a-fA-F0-9]{12}-\d{13,14}")
 
 
-ErrorCodeStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)]
+ErrorCodeStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)]  # noqa: UP040
 
 
 def _create_fingerprint(exc: BaseException) -> str:

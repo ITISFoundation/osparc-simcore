@@ -6,7 +6,7 @@ from ._common import RefActions, column_created_datetime, column_modified_dateti
 from .base import metadata
 
 
-class WalletStatus(str, enum.Enum):
+class WalletStatus(enum.StrEnum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
 
@@ -84,7 +84,8 @@ DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO "wallet_to_groups" ("gid", "wallet_id", "read", "write", "delete") VALUES (NEW.owner, NEW.wallet_id, TRUE, TRUE, TRUE);
+        INSERT INTO "wallet_to_groups" ("gid", "wallet_id", "read", "write", "delete")
+        VALUES (NEW.owner, NEW.wallet_id, TRUE, TRUE, TRUE);
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';

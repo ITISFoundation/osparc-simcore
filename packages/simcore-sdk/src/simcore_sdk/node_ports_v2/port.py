@@ -105,7 +105,10 @@ class Port(BaseServiceIOModel):
         if v is not None and (property_type := info.data.get("property_type")) and not isinstance(v, PortLink):
             if port_utils.is_file_type(property_type):
                 if not isinstance(v, FileLink | DownloadLink):
-                    msg = f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"
+                    msg = (
+                        f"{property_type!r} value does not validate against any of "
+                        "FileLink, DownloadLink or PortLink schemas"
+                    )
                     raise ValueError(msg)
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
@@ -235,7 +238,7 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | ItemConcreteValue = await port_utils.get_value_from_link(
+                other_port_concretevalue: ItemConcreteValue | None = await port_utils.get_value_from_link(
                     # pylint: disable=protected-access
                     key=self.key,
                     value=self.value,
@@ -275,8 +278,7 @@ class Port(BaseServiceIOModel):
             if value is None:
                 return None
 
-            concrete_value = self._py_value_converter(value)
-            return concrete_value
+            return self._py_value_converter(value)
 
         # assigns to validate result
         v = await _evaluate()

@@ -51,7 +51,8 @@ def upgrade():
             "trashed",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="The date and time when the licensed_item was marked as trashed. Null if the licensed_item has not been trashed [default].",
+            comment="The date and time when the licensed_item was marked as trashed. Null if the licensed_item "
+            "has not been trashed [default].",
         ),
     )
     # ### end Alembic commands ###

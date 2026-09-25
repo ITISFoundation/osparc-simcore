@@ -13,8 +13,8 @@ from .services_enums import ServiceType
 from .services_io import ServiceInput, ServiceOutput
 from .services_types import ServicePortKey
 
-ServiceInputsDict: TypeAlias = dict[ServicePortKey, ServiceInput]
-ServiceOutputsDict: TypeAlias = dict[ServicePortKey, ServiceOutput]
+ServiceInputsDict: TypeAlias = dict[ServicePortKey, ServiceInput]  # noqa: UP040
+ServiceOutputsDict: TypeAlias = dict[ServicePortKey, ServiceOutput]  # noqa: UP040
 
 
 _EXAMPLE: Final = {
@@ -104,7 +104,8 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
     integration_version: SemanticVersionStr | None = Field(
         None,
         alias="integration-version",
-        description="This version is used to maintain backward compatibility when there are changes in the way a service is integrated into the framework",
+        description="This version is used to maintain backward compatibility when there are "
+        "changes in the way a service is integrated into the framework",
     )
 
     service_type: ServiceType = Field(

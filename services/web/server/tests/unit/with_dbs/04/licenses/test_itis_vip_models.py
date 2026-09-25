@@ -22,7 +22,8 @@ from simcore_service_webserver.licenses._itis_vip_models import (
 
 
 def test_pre_validator_feature_descriptor_to_dict():
-    # Makes sure the regex used here, which is vulnerable to polynomial runtime due to backtracking, cannot lead to denial of service.
+    # Makes sure the regex used here, which is vulnerable to polynomial runtime due to
+    # backtracking, cannot lead to denial of service.
     with pytest.raises(ValidationError) as err_info:
         _feature_descriptor_to_dict("a" * 10000 + ": " + "b" * 10000)
     assert err_info.value.errors()[0]["type"] == "string_too_long"
@@ -33,7 +34,10 @@ def test_pre_validator_feature_descriptor_to_dict():
     [
         (
             # checks fix: regex expected at least one space after `:`
-            "{species:Mouse, functionality:Static, height:95 mm, date: 2012-01-01, name:Male OF1 Mouse, sex:Male, version:1.0, weight:35.5 g}",
+            (
+                "{species:Mouse, functionality:Static, height:95 mm, date: 2012-01-01, "
+                "name:Male OF1 Mouse, sex:Male, version:1.0, weight:35.5 g}"
+            ),
             {
                 "version": "1.0",
                 "weight": "35.5 g",

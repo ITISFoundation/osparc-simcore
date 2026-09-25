@@ -172,7 +172,8 @@ def test_union_types_coercion():
 
 
 def test_nullable_fields_from_pydantic_v1():
-    # Tests issue found during migration. Pydantic v1 would default to None all nullable fields when they were not **explicitly** set with `...` as required
+    # Tests issue found during migration. Pydantic v1 would default to None all nullable
+    # fields when they were not **explicitly** set with `...` as required
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/6751
     class MyModel(BaseModel):
         # pydanticv1 would add a default to fields set as nullable
@@ -208,9 +209,12 @@ def test_nullable_fields_from_pydantic_v1():
 #
 # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
 #
-# `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3. Instead, you should use the validate_by_name configuration setting.
-# When validate_by_name=True and validate_by_alias=True, this is strictly equivalent to the previous behavior of populate_by_name=True.
-# In v2.11, we also introduced a validate_by_alias setting that introduces more fine grained control for validation behavior.
+# `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3.
+# Instead, you should use the validate_by_name configuration setting.
+# When validate_by_name=True and validate_by_alias=True, this is strictly equivalent to
+# the previous behavior of populate_by_name=True.
+# In v2.11, we also introduced a validate_by_alias setting that introduces more fine
+# grained control for validation behavior.
 # Here's how you might go about using the new settings to achieve the same behavior:
 #
 

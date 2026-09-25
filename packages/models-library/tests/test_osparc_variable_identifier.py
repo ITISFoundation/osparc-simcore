@@ -149,3 +149,57 @@ def test_osparc_variable_name_and_default_value(
     osparc_variable_identifier = _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python(str_identifier)
     assert osparc_variable_identifier.name == expected_osparc_variable_name
     assert osparc_variable_identifier.default_value == expected_default_value
+
+
+def _new_identifier() -> OsparcVariableIdentifier:
+    return _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python("$OSPARC_VARIABLE_1")
+
+
+def test_replace_in_nested_containers_preserves_types_and_replaces_in_place():
+    osparc_variables = {"OSPARC_VARIABLE_1": "1"}
+
+    class _Nested(BaseModel):
+        items: list[Any]
+
+    nested_list: list[Any] = [_new_identifier(), 7]
+    obj = _Nested(
+        items=[
+            _new_identifier(),
+            {"k": _new_identifier()},
+            (_new_identifier(),),
+            {"a": {"k": _new_identifier()}},
+            nested_list,
+        ]
+    )
+
+    returned = replace_osparc_variable_identifier(obj, osparc_variables)
+
+    # in-place for BaseModel/dict/list: same objects mutated
+    assert returned is obj
+    assert obj.items[0] == "1"
+    dict_item = obj.items[1]
+    assert isinstance(dict_item, dict)
+    assert dict_item["k"] == "1"
+    list_item = obj.items[4]
+    assert list_item is nested_list
+    assert list_item[0] == "1"
+    assert list_item[1] == 7
+
+    # rebuilt containers keep their type and replace their elements
+    tuple_item = obj.items[2]
+    assert isinstance(tuple_item, tuple)
+    assert tuple_item == ("1",)
+    set_item = replace_osparc_variable_identifier({_new_identifier()}, osparc_variables)
+    assert isinstance(set_item, set)
+    assert set_item == {"1"}
+
+
+def test_replace_falls_back_to_default_value_in_containers():
+    identifier = _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python("${OSPARC_VARIABLE_1:-fallback}")
+    replaced = replace_osparc_variable_identifier({"k": [identifier]}, {})
+    assert replaced == {"k": ["fallback"]}
+
+
+@pytest.mark.parametrize("pass_through", ["a string", 42, 3.14, None, True])
+def test_replace_passes_through_non_containers(pass_through: Any):
+    assert replace_osparc_variable_identifier(pass_through, {"OSPARC_VARIABLE_1": "1"}) == pass_through

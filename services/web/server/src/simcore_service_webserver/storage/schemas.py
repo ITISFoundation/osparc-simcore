@@ -1,5 +1,5 @@
-from enum import Enum
-from typing import Any, TypeAlias
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, RootModel
 # slashes, and when applying validation via `StorageFileID`
 # it raises an error. Before `StorageFileID`, `str` was the
 # type used in the OpenAPI specs.
-StorageFileIDStr: TypeAlias = str
+type StorageFileIDStr = str
 
 
 class FileLocation(BaseModel):
@@ -45,7 +45,7 @@ class FileUploadComplete(BaseModel):
     links: Links1
 
 
-class State(str, Enum):
+class State(StrEnum):
     ok = "ok"
     nok = "nok"
 

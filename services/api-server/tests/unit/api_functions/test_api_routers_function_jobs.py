@@ -304,7 +304,7 @@ async def test_get_function_job_status(
             submitted_at=datetime.fromisoformat("2023-01-01T00:00:00"),
             started_at=datetime.fromisoformat("2023-01-01T01:00:00"),
             stopped_at=datetime.fromisoformat("2023-01-01T02:00:00"),
-            state=RunningState(value=job_status),
+            state=RunningState(job_status),
         ),
     )
 

@@ -157,7 +157,10 @@ def ensure_pattern_has_enough_characters_before(  # pylint: disable=dangerous-de
         non_wildcard_chars = len([c for c in value if c not in wildcard_chars])
 
         if non_wildcard_chars < min_non_wildcard_chars:
-            msg = f"Pattern '{value}' must contain at least {min_non_wildcard_chars} non-wildcard characters, got {non_wildcard_chars}"
+            msg = (
+                f"Pattern '{value}' must contain at least {min_non_wildcard_chars} "
+                f"non-wildcard characters, got {non_wildcard_chars}"
+            )
             raise ValueError(msg)
         return value
 

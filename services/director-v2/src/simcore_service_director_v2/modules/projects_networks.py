@@ -198,7 +198,9 @@ async def _get_networks_with_aliases_for_default_network(
 
         # only add if network label is valid, otherwise it will be skipped
         try:
-            network_alias = TypeAdapter(DockerNetworkAlias).validate_python(node_content.label)
+            # NOTE: explicit annotation required since mypy cannot infer
+            # TypeAdapter(...).validate_python() with PEP 695 type aliases
+            network_alias: DockerNetworkAlias = TypeAdapter(DockerNetworkAlias).validate_python(node_content.label)
         except ValidationError:
             message = LoggerRabbitMessage(
                 user_id=user_id,

@@ -22,7 +22,7 @@ DASK_SIDECAR_APP_STARTED_BANNER_MSG = rf"""
  | (_) \__ \ |_) | (_| | | | (__  | (_| | (_| \__ \   <  \__ \ | (_| |  __/ (_| (_| | |
   \___/|___/ .__/ \__,_|_|  \___|  \__,_|\__,_|___/_|\_\ |___/_|\__,_|\___|\___\__,_|_|             v{__version__} with dask=={version("dask")}
            |_|
-"""
+"""  # noqa: E501
 
 DASK_SCHEDULER_APP_STARTED_BANNER_MSG = rf"""
 
@@ -33,7 +33,7 @@ DASK_SCHEDULER_APP_STARTED_BANNER_MSG = rf"""
   \___/|___/ .__/ \__,_|_|  \___|  \__,_|\__,_|___/_|\_\ |___/\___|_| |_|\___|\__,_|\__,_|_|\___|_|                          v{__version__} with dask=={version("dask")}
            |_|
 
-"""
+"""  # noqa: E501
 
 
 def print_dask_sidecar_banner() -> None:

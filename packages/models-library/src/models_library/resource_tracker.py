@@ -20,10 +20,10 @@ from .utils.enums import StrAutoEnum
 
 _logger = logging.getLogger(__name__)
 
-PricingPlanId: TypeAlias = PositiveInt
-PricingUnitId: TypeAlias = PositiveInt
-PricingUnitCostId: TypeAlias = PositiveInt
-CreditTransactionId: TypeAlias = PositiveInt
+PricingPlanId: TypeAlias = PositiveInt  # noqa: UP040
+PricingUnitId: TypeAlias = PositiveInt  # noqa: UP040
+PricingUnitCostId: TypeAlias = PositiveInt  # noqa: UP040
+CreditTransactionId: TypeAlias = PositiveInt  # noqa: UP040
 
 
 class ResourceTrackerServiceType(StrAutoEnum):
@@ -42,14 +42,16 @@ class CreditTransactionStatus(StrAutoEnum):
 
     PENDING = auto()
     # The transaction is pending and has not yet been finalized.
-    # Example: During the running of a service, the transaction remains in the Pending state until the service is stopped.
+    # Example: During the running of a service, the transaction remains in the
+    # Pending state until the service is stopped.
 
     BILLED = auto()
     # The transaction has been successfully billed.
 
     IN_DEBT = auto()
     # The transaction is marked as in debt.
-    # Example: This occurs when a computational job continues to run even though the user does not have sufficient credits in their wallet.
+    # Example: This occurs when a computational job continues to run even though
+    # the user does not have sufficient credits in their wallet.
 
     NOT_BILLED = auto()
     # The transaction will not be billed.

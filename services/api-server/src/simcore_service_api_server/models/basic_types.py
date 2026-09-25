@@ -4,9 +4,9 @@ from fastapi.responses import StreamingResponse
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from pydantic import StringConstraints
 
-VersionStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)]
+VersionStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)]  # noqa: UP040
 
-FileNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
+type FileNameStr = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class LogStreamingResponse(StreamingResponse):

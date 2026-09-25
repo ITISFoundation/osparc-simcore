@@ -16,7 +16,7 @@ from .groups import GroupID
 from .users import UserID
 from .utils.enums import StrAutoEnum
 
-WorkspaceID: TypeAlias = PositiveInt
+WorkspaceID: TypeAlias = PositiveInt  # noqa: UP040
 
 
 class WorkspaceScope(StrAutoEnum):

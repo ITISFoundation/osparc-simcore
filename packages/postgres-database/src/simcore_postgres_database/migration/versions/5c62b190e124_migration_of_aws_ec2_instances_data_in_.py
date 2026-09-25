@@ -19,7 +19,8 @@ depends_on = None
 
 
 def upgrade():
-    # One time migration to populate specific info with some reasonable value, it will be changed manually based on concrete needs
+    # One time migration to populate specific info with some reasonable value, it will be changed manually
+    # based on concrete needs
     op.execute(resource_tracker_pricing_units.update().values(specific_info={"aws_ec2_instances": ["t3.medium"]}))
 
 

@@ -2,12 +2,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import TypeAlias
-
 import packaging.version
 from packaging.version import Version
 
-_VersionOrStr: TypeAlias = Version | str
+type _VersionOrStr = Version | str
 
 
 def as_version(v: _VersionOrStr) -> Version:

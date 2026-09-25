@@ -57,7 +57,7 @@ def create_simulation() -> ApiSimulation:
     manual_grid_settings.Resolution = (2.0,) * 3  # model units
 
     # Voxels
-    auto_voxel_settings = sim.AddAutomaticVoxelerSettings(source_box)
+    sim.AddAutomaticVoxelerSettings(source_box)
 
     # Solver settings
     options = sim.SolverSettings.Kernel.enum

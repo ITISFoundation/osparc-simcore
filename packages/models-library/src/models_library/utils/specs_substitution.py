@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple, TypeAlias, cast
+from typing import Any, NamedTuple, cast
 
 from common_library.errors_classes import OsparcErrorMixin
 from common_library.json_serialization import json_dumps, json_loads
@@ -12,7 +12,7 @@ from .string_substitution import (
 
 # This constraint on substitution values is to avoid
 # deserialization issues on the TextTemplate substitution!
-SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
+type SubstitutionValue = StrictBool | StrictInt | StrictFloat | str
 
 
 class IdentifierSubstitutionError(OsparcErrorMixin, KeyError):

@@ -26,7 +26,7 @@ class _TestOwnerMetadata(OwnerMetadata):
 
 
 @pytest.fixture
-def test_owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
+def test_owner_metadata() -> dict[str, str | int | bool | list[str] | None]:
     data = {
         "string_": _faker.word(),
         "int_": _faker.random_int(),
@@ -40,7 +40,7 @@ def test_owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
 
 
 async def test_task_filter_serialization(
-    test_owner_metadata: dict[str, str | int | bool | None | list[str]],
+    test_owner_metadata: dict[str, str | int | bool | list[str] | None],
 ):
     task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
     assert task_filter.model_dump() == test_owner_metadata
@@ -67,7 +67,7 @@ async def test_task_filter_sorting_key_not_serialized():
 
 
 async def test_task_filter_task_uuid(
-    test_owner_metadata: dict[str, str | int | bool | None | list[str]],
+    test_owner_metadata: dict[str, str | int | bool | list[str] | None],
 ):
     task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
     task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())

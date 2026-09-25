@@ -116,7 +116,7 @@ def incoming_compose_file(
     ],
 )
 @pytest.mark.parametrize("allow_internet_access", [True, False])
-def test_inject_backend_networking(networks: None | dict, incoming_compose_file: str, allow_internet_access: bool):
+def test_inject_backend_networking(networks: dict | None, incoming_compose_file: str, allow_internet_access: bool):
     """
     NOTE: this goes with issue [https://github.com/ITISFoundation/osparc-simcore/issues/3261]
     """

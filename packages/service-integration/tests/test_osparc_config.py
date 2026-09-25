@@ -31,11 +31,10 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
     labels_annotations = data["services"][service_name[labels_fixture_name]]["build"]["labels"]
 
     # patch -> replaces some environs
-    if compose_spec := labels_annotations.get("simcore.service.compose-spec"):
-        if compose_spec == "${DOCKER_COMPOSE_SPECIFICATION}":
-            labels_annotations["simcore.service.compose-spec"] = json.dumps(
-                yaml.safe_load((tests_data_dir / "compose-spec.yml").read_text())
-            )
+    if labels_annotations.get("simcore.service.compose-spec") == "${DOCKER_COMPOSE_SPECIFICATION}":
+        labels_annotations["simcore.service.compose-spec"] = json.dumps(
+            yaml.safe_load((tests_data_dir / "compose-spec.yml").read_text())
+        )
     return labels_annotations
 
 

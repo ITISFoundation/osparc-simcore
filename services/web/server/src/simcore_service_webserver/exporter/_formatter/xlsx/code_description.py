@@ -151,13 +151,15 @@ class RRIDSheetPart(BaseSheetDivisionParts):
             (
                 f"B{o + 2}",
                 T(
-                    "Tools or resources used as part of the model, simulation, or data processing (henceforth referred to as project)"
+                    "Tools or resources used as part of the model, simulation, or data processing "
+                    "(henceforth referred to as project)"
                 ),
             ),
             (
                 f"B{o + 3}",
                 T(
-                    "Resources identifier (with 'RRID:')  associated with the project submission and its tools and resources"
+                    "Resources identifier (with 'RRID:')  associated with the project submission "
+                    "and its tools and resources"
                 ),
             ),
             (
@@ -324,7 +326,8 @@ class TSRSheetPart(BaseSheetDivisionParts):
             (
                 f"B{o + 9}",
                 T(
-                    "Link to primary forge repository for the project. For example, o²S²PARC, github, or gitlab instance."
+                    "Link to primary forge repository for the project. For example, o²S²PARC, github, "
+                    "or gitlab instance."
                 ),
             ),
             (f"C{o + 9}", T("https://github.com/SciCrunch/sparc-curation")),
@@ -543,7 +546,8 @@ class InputsOutputsSheetPart(BaseSheetDivisionParts):
             (
                 f"B{o + 12}",
                 T(
-                    "Type (bool, int/enum, real, complex/phasor, vector, time series, array, table, field, structure, file, other)"
+                    "Type (bool, int/enum, real, complex/phasor, vector, time series, array, table, "
+                    "field, structure, file, other)"
                 )
                 | Backgrounds.green,
             ),

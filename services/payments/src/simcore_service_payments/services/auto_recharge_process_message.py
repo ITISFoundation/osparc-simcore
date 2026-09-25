@@ -88,7 +88,8 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
         except Exception as e:  # pylint: disable=broad-except
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    "Auto-recharge payment failed. Message will be acknowledged to prevent risk of double payment on retry.",
+                    "Auto-recharge payment failed. Message will be acknowledged "
+                    "to prevent risk of double payment on retry.",
                     error=e,
                     error_context={
                         "wallet_id": str(rabbit_message.wallet_id),
@@ -97,7 +98,8 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
                         "product_name": rabbit_message.product_name,
                     },
                     tip=(
-                        "IMPORTANT: This may result in payments without credits added if the error was due to an unverified payment. "
+                        "IMPORTANT: This may result in payments without credits added "
+                        "if the error was due to an unverified payment. "
                         "Verify that payment was processed and credits were added to the wallet."
                     ),
                 ),

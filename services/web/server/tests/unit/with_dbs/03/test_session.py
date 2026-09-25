@@ -107,12 +107,18 @@ async def test_security_identity_is_email_and_product(
     "session_key",
     [
         Fernet.generate_key(),
-        # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32], # FAILS: ensure this value has at least 44 characters (type=value_error.any_str.min_length; limit_value=44)
+        # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32],
+        #   # FAILS: ensure this value has at least 44 characters
+        #   (type=value_error.any_str.min_length; limit_value=44)
         b"REPLACE_ME-with_a-key_of-length_44-12345678=",
         b"REPLACE_ME_with_result__Fernet_generate_key=",
         "REPLACE_ME_with_result__Fernet_generate_key=",
-        # "REPLACE_ME_with_a_key_of_44__character_long".encode("utf-8"),  # FAILS: ensure this value has at least 44 characters (type=value_error.any_str.min_length; limit_value=44)
-        # "REPLACE ME with a key of at least length 44.".encode("utf-8"), # FAILS: Invalid session key value='REPLACE ME with a key of at least length 44.': Incorrect padding (type=value_error)
+        # "REPLACE_ME_with_a_key_of_44__character_long".encode("utf-8"),
+        #   # FAILS: ensure this value has at least 44 characters
+        #   (type=value_error.any_str.min_length; limit_value=44)
+        # "REPLACE ME with a key of at least length 44.".encode("utf-8"),
+        #   # FAILS: Invalid session key value='REPLACE ME with a key of at least length 44.':
+        #   Incorrect padding (type=value_error)
         "REPLACE-ME-with-a-key-of-at-least-length-44=",
         None,
     ],

@@ -204,7 +204,7 @@ class ProjectGet(OutputSchema):
         )
 
 
-TaskProjectGet: TypeAlias = TaskGet
+TaskProjectGet: TypeAlias = TaskGet  # noqa: UP040
 
 
 class ProjectListItem(ProjectGet): ...
@@ -284,7 +284,7 @@ class ProjectDocument(OutputSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
-ProjectDocumentVersion: TypeAlias = int
+type ProjectDocumentVersion = int
 
 
 __all__: tuple[str, ...] = (

@@ -59,7 +59,8 @@ def upgrade():
             "trashed",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="The date and time when the licensed_resources was marked as trashed. Null if the licensed_resources has not been trashed [default].",
+            comment="The date and time when the licensed_resources was marked as trashed. Null if the "
+            "licensed_resources has not been trashed [default].",
         ),
         sa.PrimaryKeyConstraint("licensed_resource_id"),
         sa.UniqueConstraint(
@@ -74,7 +75,8 @@ def upgrade():
     op.execute(
         sa.DDL(
             """
-    INSERT INTO licensed_resources (display_name, licensed_resource_name, licensed_resource_type, licensed_resource_data, created, modified)
+    INSERT INTO licensed_resources (display_name, licensed_resource_name, licensed_resource_type,
+    licensed_resource_data, created, modified)
     SELECT
         display_name,
         licensed_resource_name,

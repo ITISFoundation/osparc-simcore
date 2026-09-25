@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from common_library.async_tools import cancel_wait_task
 
@@ -14,17 +14,14 @@ from .logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
 
-P = ParamSpec("P")
-R = TypeVar("R")
-
 
 if TYPE_CHECKING:
     Queue = asyncio.Queue
 else:
 
     class FakeGenericMeta(type):
-        def __getitem__(self, item):
-            return self
+        def __getitem__(cls, item):
+            return cls
 
     class Queue(asyncio.Queue, metaclass=FakeGenericMeta):  # pylint: disable=function-redefined
         pass
@@ -57,7 +54,7 @@ class Context:
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 
-def _generate_context_key(
+def _generate_context_key[**P, R](
     function: Callable[P, Awaitable[R]],
     target_args: list[str],
     args: Any,
@@ -84,8 +81,7 @@ def _generate_context_key(
 
         key_parts.append(f"{function.__name__}_{context_key}")
 
-    key = ":".join(map(str, key_parts))
-    return key
+    return ":".join(map(str, key_parts))
 
 
 @asynccontextmanager
@@ -123,8 +119,8 @@ async def _sequential_worker(
 
         _context.task = asyncio.create_task(
             worker(
-                _context._in_queue,  # pylint: disable=protected-access
-                _context._out_queue,  # pylint: disable=protected-access
+                _context._in_queue,  # noqa: SLF001  # pylint: disable=protected-access
+                _context._out_queue,  # noqa: SLF001  # pylint: disable=protected-access
             )
         )
         _sequential_jobs_contexts[key] = _context
@@ -132,13 +128,13 @@ async def _sequential_worker(
     context = _sequential_jobs_contexts[key]
 
     try:
-        context._n_users += 1  # pylint: disable=protected-access
+        context._n_users += 1  # noqa: SLF001  # pylint: disable=protected-access
         yield context
     finally:
         # NOTE: Popping the context from _sequential_jobs_contexts must be done synchronously after it is checked that the context is not in use
         # to avoid new tasks being added to the context before it is removed.
-        context._n_users -= 1  # pylint: disable=protected-access
-        if context._n_users == 0:  # pylint: disable=protected-access
+        context._n_users -= 1  # noqa: SLF001  # pylint: disable=protected-access
+        if context._n_users == 0:  # noqa: SLF001  # pylint: disable=protected-access
             if key in _sequential_jobs_contexts:
                 context = _sequential_jobs_contexts.pop(key)
             if context.task is not None:
@@ -151,7 +147,7 @@ async def _sequential_worker(
 # Instead we should annotate this decorator with ParamSpec and TypeVar generics.
 # SEE https://peps.python.org/pep-0612/
 #
-def run_sequentially_in_context(
+def run_sequentially_in_context[**P, R](
     target_args: list[str] | None = None,
 ) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """All request to function with same calling context will be run sequentially.
