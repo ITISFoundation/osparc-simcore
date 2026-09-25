@@ -648,13 +648,22 @@ def _is_redis_responsive(host: str, port: int, password: str) -> bool:
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip, default_app_cfg: dict) -> RedisSettings:
+def redis_service(docker_services, docker_ip, default_app_cfg: dict, request: pytest.FixtureRequest) -> RedisSettings:
     # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
     password = default_app_cfg["resource_manager"]["redis"]["password"]
-    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password)
+    # under xdist, each worker reserves its own bank of logical redis databases on the SAME
+    # shared container, so this worker's own redis usage never collides with another worker's
+    worker_id = get_worker_id(request)
+    db_offset = 0
+    if worker_id != "master":
+        digits = "".join(ch for ch in worker_id if ch.isdigit())
+        db_offset = (int(digits) + 1 if digits else 1) * len(RedisDatabase)
+    redis_settings = RedisSettings(
+        REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password, REDIS_DB_OFFSET=db_offset
+    )
 
     docker_services.wait_until_responsive(
         check=lambda: _is_redis_responsive(host, port, password),
@@ -673,7 +682,8 @@ async def redis_client(redis_service: RedisSettings) -> AsyncIterator[aioredis.R
     )
     yield client
 
-    await client.flushall()
+    # NOTE: flushdb (not flushall) - only clears the db actually used by this fixture/worker
+    await client.flushdb()
     await client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
 
 
@@ -690,7 +700,8 @@ async def redis_locks_client(
 
     yield client
 
-    await client.flushall()
+    # NOTE: flushdb (not flushall) - only clears the db actually used by this fixture/worker
+    await client.flushdb()
     await client.aclose(close_connection_pool=True)
 
 

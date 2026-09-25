@@ -189,7 +189,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "12",
+        "128",
 
         # Persist mutations in AOF as well.
         "--appendonly",
