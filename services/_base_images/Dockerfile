@@ -21,7 +21,7 @@
 #
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.13.9"
+ARG PYTHON_VERSION="3.14.4"
 # NOTE: pinned exactly: uv 0.12.14 rejects wheels with .data payloads when the install
 # destination is a symlink (e.g. /usr/local/man in python:* images), breaking blosc installs.
 # SEE https://github.com/astral-sh/uv/issues/21692 — unpin once fixed upstream.

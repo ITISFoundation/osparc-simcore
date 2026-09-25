@@ -27,12 +27,15 @@ from models_library.functions import (
     TaskID,
 )
 from models_library.products import ProductName
-from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
+from models_library.progress_bar import (
+    PROGRESS_STRUCTURED_MESSAGE_EXAMPLES,
+    ProgressReport,
+    ProgressStructuredMessage,
+)
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
-from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
@@ -273,11 +276,7 @@ async def test_get_function_job_status(
                 total=1.0,
                 attempt=1,
                 unit=None,
-                message=ProgressStructuredMessage.model_validate(
-                    ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
-                        "examples"
-                    ][0]
-                ),
+                message=ProgressStructuredMessage.model_validate(PROGRESS_STRUCTURED_MESSAGE_EXAMPLES[0]),
             ),
         )
 

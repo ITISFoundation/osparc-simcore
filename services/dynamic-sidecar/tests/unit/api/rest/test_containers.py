@@ -82,6 +82,7 @@ async def _assert_enable_output_ports(test_client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
+    await _wait_for_command_delivered(test_client.application.state.outputs_context)
 
 
 async def _assert_disable_output_ports(test_client: TestClient) -> None:
@@ -91,6 +92,21 @@ async def _assert_disable_output_ports(test_client: TestClient) -> None:
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
+    await _wait_for_command_delivered(test_client.application.state.outputs_context)
+
+
+async def _wait_for_command_delivered(outputs_context: OutputsContext) -> None:
+    # NOTE: commands (port keys registration / propagation toggles) are applied
+    # by a thread running inside a separate process. Filesystem writes must wait
+    # until the last command was consumed there, otherwise the generated events
+    # are silently discarded by the watchdog handler
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert outputs_context.file_system_event_handler_queue.qsize() == 0
+
+    # NOTE: the consumer thread dequeues the message just a moment before
+    # applying it, let it land before generating filesystem events
+    await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
 
 
 async def _start_containers(
@@ -454,6 +470,7 @@ async def test_outputs_watcher_disabling(
         random_subdir = f"{uuid4()}"
 
         await outputs_context.set_file_type_port_keys([random_subdir])
+        await _wait_for_command_delivered(outputs_context)
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
@@ -474,33 +491,35 @@ async def test_outputs_watcher_disabling(
                 else:
                     assert len(events_in_dir) == 0
 
-    def _assert_events_generated(*, expected_events: int) -> None:
-        events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
-        assert len(events_set) == expected_events
+    async def _assert_events_generated(*, expected_events: int) -> None:
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
+                assert len(events_set) == expected_events
 
     # by default outputs-watcher it is disabled
-    _assert_events_generated(expected_events=0)
+    await _assert_events_generated(expected_events=0)
     await _create_port_key_events(is_propagation_enabled=False)
-    _assert_events_generated(expected_events=0)
+    await _assert_events_generated(expected_events=0)
 
     # after enabling new events will be generated
     await _assert_enable_output_ports(test_client)
-    _assert_events_generated(expected_events=0)
+    await _assert_events_generated(expected_events=0)
     await _create_port_key_events(is_propagation_enabled=True)
-    _assert_events_generated(expected_events=1)
+    await _assert_events_generated(expected_events=1)
 
     # disabling again, no longer generate events
     await _assert_disable_output_ports(test_client)
-    _assert_events_generated(expected_events=1)
+    await _assert_events_generated(expected_events=1)
     await _create_port_key_events(is_propagation_enabled=False)
-    _assert_events_generated(expected_events=1)
+    await _assert_events_generated(expected_events=1)
 
     # enabling once more time, events are once again generated
     await _assert_enable_output_ports(test_client)
-    _assert_events_generated(expected_events=1)
+    await _assert_events_generated(expected_events=1)
     for i in range(10):
         await _create_port_key_events(is_propagation_enabled=True)
-        _assert_events_generated(expected_events=2 + i)
+        await _assert_events_generated(expected_events=2 + i)
 
 
 async def test_container_create_outputs_dirs(

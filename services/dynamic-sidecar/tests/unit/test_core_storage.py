@@ -7,10 +7,10 @@ from typing import Annotated, Final
 from unittest.mock import Mock
 
 import pytest
-import requests
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from httpx import AsyncClient
 from pydantic import TypeAdapter
 from settings_library.node_ports import StorageAuthSettings
 from simcore_service_dynamic_sidecar.core.storage import (
@@ -19,9 +19,10 @@ from simcore_service_dynamic_sidecar.core.storage import (
 )
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
+_SERVER_STARTUP_TIMEOUT_S: Final[float] = 30
 
-@pytest.fixture
-def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
+
+def _create_storage_app(username: str | None, password: str | None) -> FastAPI:
     app = FastAPI()
     security = HTTPBasic()
 
@@ -55,6 +56,10 @@ def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
     return app
 
 
+def _run_server(host: str, port: int, username: str | None, password: str | None) -> None:
+    uvicorn.run(_create_storage_app(username, password), host=host, port=port)
+
+
 @pytest.fixture
 def storage_auth_settings(username: str | None, password: str | None) -> StorageAuthSettings:
     return TypeAdapter(StorageAuthSettings).validate_python(
@@ -67,34 +72,34 @@ def storage_auth_settings(username: str | None, password: str | None) -> Storage
     )
 
 
-def _get_base_url(storage_auth_settings: StorageAuthSettings) -> str:
-    return f"http://{storage_auth_settings.STORAGE_HOST}:{storage_auth_settings.STORAGE_PORT}"
-
-
 @pytest.fixture
 async def mock_storage_server(
-    mock_storage_app: None, storage_auth_settings: StorageAuthSettings
+    username: str | None,
+    password: str | None,
+    storage_auth_settings: StorageAuthSettings,
 ) -> AsyncIterable[None]:
-    def _run_server(app):
-        uvicorn.run(
-            app,
-            host=storage_auth_settings.STORAGE_HOST,
-            port=storage_auth_settings.STORAGE_PORT,
-        )
-
-    process = multiprocessing.Process(target=_run_server, args=(mock_storage_app,))
+    process = multiprocessing.Process(
+        target=_run_server,
+        args=(
+            storage_auth_settings.STORAGE_HOST,
+            storage_auth_settings.STORAGE_PORT,
+            username,
+            password,
+        ),
+    )
     process.start()
 
-    base_url = _get_base_url(storage_auth_settings)
+    base_url = f"http://{storage_auth_settings.STORAGE_HOST}:{storage_auth_settings.STORAGE_PORT}"
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(1),
-        reraise=True,
-    ):
-        with attempt:
-            response = requests.get(f"{base_url}/", timeout=1)
-            assert response.status_code == status.HTTP_200_OK
+    async with AsyncClient(timeout=1) as client:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(_SERVER_STARTUP_TIMEOUT_S),
+            reraise=True,
+        ):
+            with attempt:
+                response = await client.get(f"{base_url}/")
+                assert response.status_code == status.HTTP_200_OK
 
     yield None
 
