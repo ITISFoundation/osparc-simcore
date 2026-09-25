@@ -18,6 +18,9 @@ import pytest
 import respx
 import simcore_service_catalog
 import simcore_service_catalog.core.application
+import simcore_service_catalog.service.manifest_cache
+from aiocache import SimpleMemoryCache  # type: ignore[import-untyped]
+from aiocache.serializers import JsonSerializer  # type: ignore[import-untyped]
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -52,6 +55,7 @@ pytest_plugins = [
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
 
@@ -113,8 +117,23 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 
 @pytest.fixture
+def in_memory_service_manifest_cache(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        simcore_service_catalog.service.manifest_cache,
+        "configure_redis_client_sdk",
+        autospec=True,
+    )
+    mocker.patch.object(
+        simcore_service_catalog.service.manifest_cache,
+        "create_service_manifest_cache",
+        side_effect=lambda _: SimpleMemoryCache(serializer=JsonSerializer()),
+    )
+
+
+@pytest.fixture
 async def app(
     app_settings: ApplicationSettings,
+    in_memory_service_manifest_cache: None,
     is_pdb_enabled: bool,
     capfd: pytest.CaptureFixture[str],
 ) -> AsyncIterator[FastAPI]:
@@ -146,7 +165,11 @@ async def app(
 
 
 @pytest.fixture
-def client(app_settings: ApplicationSettings, capfd: pytest.CaptureFixture[str]) -> Iterator[TestClient]:
+def client(
+    app_settings: ApplicationSettings,
+    in_memory_service_manifest_cache: None,
+    capfd: pytest.CaptureFixture[str],
+) -> Iterator[TestClient]:
     # NOTE: DO NOT add `app` as a dependency since it is already initialized
 
     # create instance

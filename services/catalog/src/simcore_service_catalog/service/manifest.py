@@ -1,37 +1,50 @@
 """Services Manifest API Documentation
 
-The `service.manifest` module provides a read-only API to access the services catalog. The term "Manifest" refers to a detailed, finalized list,
-traditionally used to denote items that are recorded as part of an official inventory or log, emphasizing the immutable nature of the data.
+The `service.manifest` module provides a read-only API to access the services catalog.
+The term "Manifest" refers to a detailed, finalized list,
+traditionally used to denote items that are recorded as part of an official inventory or log,
+emphasizing the immutable nature of the data.
 
 ### Service Registration
 Services are registered within the manifest in two distinct methods:
 
 1. **Docker Registry Integration:**
-   - Services can be registered by pushing a Docker image, complete with appropriate labels and tags, to a Docker registry.
-   - These are generally services registered through the Docker registry method, catering primarily to end-user functionalities.
+   - Services can be registered by pushing a Docker image,
+     complete with appropriate labels and tags, to a Docker registry.
+   - These are generally services registered through the Docker registry method,
+     catering primarily to end-user functionalities.
    - Example services include user-oriented applications like `sleeper`.
 
 2. **Function Service Definition:**
-   - Services can also be directly defined in the codebase as function services, which typically support framework operations.
-   - These services are usually defined programmatically within the code and are integral to the framework's infrastructure.
+   - Services can also be directly defined in the codebase as function services,
+     which typically support framework operations.
+   - These services are usually defined programmatically within the code and are integral
+     to the framework's infrastructure.
    - Examples include utility services like `FilePicker`.
 
 
 ### Usage
-This API is designed for read-only interactions, allowing users to retrieve information about registered services but not to modify the registry.
+This API is designed for read-only interactions,
+allowing users to retrieve information about registered services but not to modify the registry.
 This ensures data integrity and consistency across the system.
 
 
 """
 
 import logging
-from typing import Any, TypeAlias, cast
+from datetime import UTC, datetime, timedelta
+from itertools import batched
+from typing import Any, Final, cast
 
-from aiocache import cached  # type: ignore[import-untyped]
+from aiocache.base import BaseCache  # type: ignore[import-untyped]
+from fastapi import HTTPException, status
 from models_library.function_services_catalog.api import iter_service_docker_data
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
+from redis.exceptions import RedisError
+from servicelib.logging_utils import log_context
+from servicelib.redis import BaseRedisError, RedisClientSDK, exclusive
 from servicelib.utils import limited_gather
 
 from .._constants import DIRECTOR_CACHING_TTL
@@ -42,14 +55,60 @@ from .function_services import get_function_service, is_function_service
 _logger = logging.getLogger(__name__)
 
 
-ServiceMetaDataPublishedDict: TypeAlias = dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished]
+type ServiceMetaDataPublishedDict = dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished]
 
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
+_SERVICE_CACHE_FULL_SNAPSHOT_KEY: Final[str] = "services_map_full_snapshot"
+_SERVICE_CACHE_PREWARM_LOCK_KEY = "catalog:service_manifest:prewarm"
+_SERVICE_CACHE_SNAPSHOT_KEY: Final[str] = "services_map_snapshot"
+_SERVICE_METADATA_LIST_ADAPTER = TypeAdapter(list[ServiceMetaDataPublished])
+
+# NOTE: bounds each atomic MULTI/EXEC so bulk writes do not stall the shared redis
+_SERVICE_CACHE_WRITE_CHUNK_SIZE: Final[int] = 500
+
+
+def _build_service_cache_key(
+    *,
+    key: ServiceKey,
+    version: ServiceVersion,
+) -> str:
+    return f"get_service/{key}/{version}"
+
+
+async def _is_snapshot_fresh(
+    service_cache: BaseCache,
+    *,
+    max_snapshot_age: timedelta | None = None,
+) -> bool:
+    """Tells whether the last full registry snapshot is still cached"""
+    try:
+        snapshot_timestamp = await service_cache.get(_SERVICE_CACHE_SNAPSHOT_KEY)
+        if snapshot_timestamp is None:
+            return False
+        if max_snapshot_age is None:
+            return True
+        return datetime.now(UTC) - datetime.fromisoformat(snapshot_timestamp) <= max_snapshot_age
+    except (RedisError, TimeoutError, TypeError, ValueError):
+        _logger.warning("Failed to read the service manifest cache snapshot marker", exc_info=True)
+        return False
+
+
+async def _get_cached_services_map(service_cache: BaseCache) -> ServiceMetaDataPublishedDict | None:
+    try:
+        cached_snapshot = await service_cache.get(_SERVICE_CACHE_FULL_SNAPSHOT_KEY)
+        if cached_snapshot is None:
+            return None
+        services = _SERVICE_METADATA_LIST_ADAPTER.validate_python(cached_snapshot)
+        return {(service.key, service.version): service for service in services}
+    except (RedisError, TimeoutError, ValidationError):
+        _logger.warning("Failed to read the full service manifest cache snapshot", exc_info=True)
+        return None
 
 
 async def get_services_map(
     director_client: DirectorClient,
+    service_cache: BaseCache,
 ) -> ServiceMetaDataPublishedDict:
     # NOTE: using Low-level API to avoid validation
     services_in_registry = cast(list[dict[str, Any]], await director_client.get("/services"))
@@ -59,7 +118,7 @@ async def get_services_map(
     for service in services_in_registry:
         try:
             service_data = ServiceMetaDataPublished.model_validate(service)
-            services[(service_data.key, service_data.version)] = service_data
+            services[service_data.key, service_data.version] = service_data
 
         except ValidationError:
             # NOTE: this is necessary since registry DOES NOT provides any guarantee of the meta-data
@@ -74,16 +133,39 @@ async def get_services_map(
                 )
                 _error_already_logged.add(errored_service)
 
+    cache_entries = [
+        (
+            _build_service_cache_key(
+                key=service.key,
+                version=service.version,
+            ),
+            service.model_dump(mode="json", by_alias=True),
+        )
+        for service in services.values()
+    ]
+    try:
+        for chunk in batched(cache_entries, _SERVICE_CACHE_WRITE_CHUNK_SIZE, strict=False):
+            await service_cache.multi_set(list(chunk), ttl=DIRECTOR_CACHING_TTL)
+        await service_cache.set(
+            _SERVICE_CACHE_FULL_SNAPSHOT_KEY,
+            [cache_value for _, cache_value in cache_entries],
+            ttl=DIRECTOR_CACHING_TTL,
+        )
+        # NOTE: only this marker's presence matters, its ttl defines how long a snapshot stays fresh
+        await service_cache.set(
+            _SERVICE_CACHE_SNAPSHOT_KEY,
+            datetime.now(UTC).isoformat(),
+            ttl=DIRECTOR_CACHING_TTL,
+        )
+        _logger.info("Refreshed the service manifest cache with %d entries", len(cache_entries))
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
     return services
 
 
-@cached(
-    ttl=DIRECTOR_CACHING_TTL,
-    namespace=__name__,
-    key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['key']}/{kw['version']}",
-)
 async def get_service(
     director_client: DirectorClient,
+    service_cache: BaseCache,
     *,
     key: ServiceKey,
     version: ServiceVersion,
@@ -94,18 +176,199 @@ async def get_service(
     raises if does not exist or if validation fails
     """
     if is_function_service(key):
-        service = get_function_service(key=key, version=version)
-    else:
-        service = await director_client.get_service(service_key=key, service_version=version)
+        return get_function_service(key=key, version=version)
+
+    cache_key = _build_service_cache_key(key=key, version=version)
+    try:
+        if (cached_service := await service_cache.get(cache_key)) is not None:
+            return ServiceMetaDataPublished.model_validate(cached_service)
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to read '%s' from the service manifest cache", cache_key, exc_info=True)
+    except ValidationError:
+        _logger.warning("Discarding invalid entry '%s' from the service manifest cache", cache_key, exc_info=True)
+
+    _logger.debug("Cache miss for '%s', falling back to the director", cache_key)
+    service = await director_client.get_service(service_key=key, service_version=version)
+
+    try:
+        await service_cache.set(
+            cache_key,
+            service.model_dump(mode="json", by_alias=True),
+            ttl=DIRECTOR_CACHING_TTL,
+        )
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to write '%s' to the service manifest cache", cache_key, exc_info=True)
     return service
+
+
+async def _resolve_batch_service(
+    *,
+    key: ServiceKey,
+    version: ServiceVersion,
+    cached_service: Any,
+    services_map: ServiceMetaDataPublishedDict | None,
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+) -> ServiceMetaDataPublished:
+    if cached_service is not None:
+        try:
+            return ServiceMetaDataPublished.model_validate(cached_service)
+        except ValidationError:
+            _logger.warning(
+                "Discarding invalid entry '%s' from the service manifest cache",
+                _build_service_cache_key(key=key, version=version),
+                exc_info=True,
+            )
+
+    if services_map is not None:
+        if service := services_map.get((key, version)):
+            return service
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return await get_service(
+        key=key,
+        version=version,
+        director_client=director_client,
+        service_cache=service_cache,
+    )
+
+
+def _get_lock_client(*_args: Any, lock_client: RedisClientSDK, **_kwargs: Any) -> RedisClientSDK:
+    return lock_client
+
+
+@exclusive(
+    _get_lock_client,
+    lock_key=_SERVICE_CACHE_PREWARM_LOCK_KEY,
+    blocking=True,
+)
+async def _prewarm_service_cache(
+    *,
+    lock_client: RedisClientSDK,
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+    max_snapshot_age: timedelta | None = None,
+) -> ServiceMetaDataPublishedDict:
+    del lock_client
+    with log_context(_logger, logging.INFO, "prewarming service manifest cache"):
+        if await _is_snapshot_fresh(service_cache, max_snapshot_age=max_snapshot_age):
+            services_map = await _get_cached_services_map(service_cache)
+            if services_map is not None:
+                _logger.info("Service manifest cache was already prewarmed by another replica")
+                return services_map
+        return await get_services_map(director_client, service_cache)
+
+
+async def get_services_map_with_lock(
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+    *,
+    lock_client: RedisClientSDK | None,
+    max_snapshot_age: timedelta | None = None,
+) -> ServiceMetaDataPublishedDict:
+    if lock_client is None:
+        return await get_services_map(director_client, service_cache)
+    return await _prewarm_service_cache(
+        lock_client=lock_client,
+        director_client=director_client,
+        service_cache=service_cache,
+        max_snapshot_age=max_snapshot_age,
+    )
+
+
+async def _refresh_batch_from_registry(
+    *,
+    cache_keys: list[str],
+    cached_services: list[Any],
+    director_client: DirectorClient,
+    service_cache: BaseCache,
+    lock_client: RedisClientSDK | None,
+) -> tuple[ServiceMetaDataPublishedDict, list[Any]]:
+    if lock_client is None:
+        return await get_services_map(director_client, service_cache), cached_services
+
+    prewarmed_services_map: ServiceMetaDataPublishedDict | None = None
+    try:
+        prewarmed_services_map = await _prewarm_service_cache(
+            lock_client=lock_client,
+            director_client=director_client,
+            service_cache=service_cache,
+        )
+        # NOTE: keeping the snapshot covers the entries whose cache write failed, cached ones are preferred anyway
+        return (
+            prewarmed_services_map or {},
+            cast(list[Any], await service_cache.multi_get(cache_keys)),
+        )
+    except (BaseRedisError, RedisError, TimeoutError):
+        _logger.warning("Failed to coordinate service manifest cache prewarming", exc_info=True)
+        # NOTE: reusing the snapshot fetched under the lock avoids calling the director twice
+        if prewarmed_services_map is None:
+            prewarmed_services_map = await get_services_map(director_client, service_cache)
+        return prewarmed_services_map, cached_services
 
 
 async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
+    service_cache: BaseCache,
+    *,
+    lock_client: RedisClientSDK | None = None,
 ) -> list[ServiceMetaDataPublished | BaseException]:
+    if not selection:
+        return []
+
+    cache_keys = [_build_service_cache_key(key=key, version=version) for key, version in selection]
+    try:
+        cached_services = cast(
+            list[Any],
+            await service_cache.multi_get(cache_keys),
+        )
+        if not cached_services:
+            cached_services = [None] * len(selection)
+    except (RedisError, TimeoutError):
+        _logger.warning("Failed to read a batch from the service manifest cache", exc_info=True)
+        cached_services = [None] * len(selection)
+
+    cache_hits = sum(1 for cached_service in cached_services if cached_service is not None)
+
+    services_map: ServiceMetaDataPublishedDict | None = None
+    # NOTE: only a stale snapshot justifies a full refresh: services dropped from the registry are
+    # never cached, so keying off missing entries would refresh on every request
+    if cache_hits < len(selection):
+        if await _is_snapshot_fresh(service_cache):
+            services_map = await _get_cached_services_map(service_cache)
+        if services_map is None:
+            try:
+                services_map, cached_services = await _refresh_batch_from_registry(
+                    cache_keys=cache_keys,
+                    cached_services=cached_services,
+                    director_client=director_client,
+                    service_cache=service_cache,
+                    lock_client=lock_client,
+                )
+            except HTTPException:
+                _logger.warning("Failed to prewarm the service manifest cache", exc_info=True)
+
+    _logger.debug(
+        "Service manifest batch of %d: %d cache hits, %d after prewarming, %d from the registry snapshot",
+        len(selection),
+        cache_hits,
+        sum(1 for cached_service in cached_services if cached_service is not None),
+        len(services_map or {}),
+    )
+
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
-        *(get_service(key=k, version=v, director_client=director_client) for k, v in selection),
+        *(
+            _resolve_batch_service(
+                key=key,
+                version=version,
+                cached_service=cached_service,
+                services_map=services_map,
+                director_client=director_client,
+                service_cache=service_cache,
+            )
+            for (key, version), cached_service in zip(selection, cached_services, strict=True)
+        ),
         reraise=False,
         log=_logger,
         tasks_group_prefix="manifest.get_batch_services",
@@ -115,6 +378,7 @@ async def get_batch_services(
 
 async def get_service_ports(
     director_client: DirectorClient,
+    service_cache: BaseCache,
     *,
     key: ServiceKey,
     version: ServiceVersion,
@@ -123,6 +387,7 @@ async def get_service_ports(
     ports = []
     service = await get_service(
         director_client=director_client,
+        service_cache=service_cache,
         key=key,
         version=version,
     )
