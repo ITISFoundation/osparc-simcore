@@ -5,6 +5,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from inspect import signature
+from pathlib import Path
 from typing import Any, Final
 from unittest.mock import AsyncMock
 
@@ -44,6 +45,14 @@ from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
+from simcore_service_dynamic_sidecar.services.container_extensions import (
+    _TIMEOUT_PERMISSION_CHANGES,
+    _create_deny_write_access_command,
+    _create_grant_write_access_command,
+    deny_write_access_to_inputs,
+    grant_write_access_to_inputs,
+    writable_inputs,
+)
 from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
@@ -140,6 +149,216 @@ async def test_container_create_outputs_dirs(
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
     assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
+
+
+_SELF_CONTAINER_NAME: Final[str] = "test-self-container"
+
+
+@pytest.fixture
+def self_container_name(monkeypatch: pytest.MonkeyPatch) -> str:
+    monkeypatch.setenv("HOSTNAME", _SELF_CONTAINER_NAME)
+    return _SELF_CONTAINER_NAME
+
+
+@pytest.fixture
+def inputs_path(app: FastAPI) -> Path:
+    return AppState(app).mounted_volumes.disk_inputs_path
+
+
+async def test_deny_write_access_to_inputs(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    self_container_name: str,
+    inputs_path: Path,
+):
+    await deny_write_access_to_inputs(app)
+
+    mock_input_permissions_toggle.assert_awaited_once_with(
+        self_container_name,
+        command=_create_deny_write_access_command(inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def test_grant_write_access_to_inputs(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    self_container_name: str,
+    inputs_path: Path,
+):
+    await grant_write_access_to_inputs(app)
+
+    mock_input_permissions_toggle.assert_awaited_once_with(
+        self_container_name,
+        command=_create_grant_write_access_command(inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def test_writable_inputs_grants_then_restricts(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    self_container_name: str,
+    inputs_path: Path,
+):
+    async with writable_inputs(app):
+        mock_input_permissions_toggle.assert_awaited_once_with(
+            self_container_name,
+            command=_create_grant_write_access_command(inputs_path),
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
+
+    mock_input_permissions_toggle.assert_awaited_with(
+        self_container_name,
+        command=_create_deny_write_access_command(inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def test_writable_inputs_restricts_even_on_error(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    self_container_name: str,
+):
+    class _MyError(Exception):
+        pass
+
+    with pytest.raises(_MyError):
+        async with writable_inputs(app):
+            raise _MyError
+
+    EXPECTED_CALLS = 2  # grant, then restrict
+    assert mock_input_permissions_toggle.await_count == EXPECTED_CALLS
+
+
+async def test_writable_inputs_concurrent_calls_do_not_restrict_too_early(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    self_container_name: str,
+    inputs_path: Path,
+):
+    # regression test: an overlapping second pull must not have the first
+    # one's exit re-lock the folder while it is still writing to it
+    entered_first = asyncio.Event()
+    release_first = asyncio.Event()
+
+    async def _first() -> None:
+        async with writable_inputs(app):
+            entered_first.set()
+            await release_first.wait()
+
+    first_task = asyncio.create_task(_first())
+    await entered_first.wait()
+
+    async with writable_inputs(app):
+        # second caller is still writing: only the initial grant must have happened
+        mock_input_permissions_toggle.assert_awaited_once_with(
+            self_container_name,
+            command=_create_grant_write_access_command(inputs_path),
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
+        release_first.set()
+        await first_task
+
+        # first caller exited but the second is still inside: must stay writable
+        mock_input_permissions_toggle.assert_awaited_once_with(
+            self_container_name,
+            command=_create_grant_write_access_command(inputs_path),
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
+
+    mock_input_permissions_toggle.assert_awaited_with(
+        self_container_name,
+        command=_create_deny_write_access_command(inputs_path),
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
+async def test_writable_inputs_failed_grant_is_retried_by_queued_caller(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    inputs_path: Path,
+):
+    # regression test: when the first caller's grant fails, a queued caller
+    # must retry the grant instead of running with read-only inputs
+    grant_command = _create_grant_write_access_command(inputs_path)
+    restrict_command = _create_deny_write_access_command(inputs_path)
+
+    first_attempt = True
+    first_grant_started = asyncio.Event()
+    release_first_grant = asyncio.Event()
+
+    async def _flaky_exec(*_args: Any, **kwargs: Any) -> None:
+        nonlocal first_attempt
+        if kwargs.get("command") == grant_command and first_attempt:
+            first_attempt = False
+            first_grant_started.set()
+            await release_first_grant.wait()
+            msg = "grant failed"
+            raise RuntimeError(msg)
+
+    mock_input_permissions_toggle.side_effect = _flaky_exec
+
+    entered_second = asyncio.Event()
+
+    async def _enter() -> None:
+        async with writable_inputs(app):
+            entered_second.set()
+
+    first_task = asyncio.create_task(_enter())
+    await first_grant_started.wait()
+
+    second_task = asyncio.create_task(_enter())
+    await asyncio.sleep(0)  # let the second caller queue on the io lock
+
+    release_first_grant.set()
+    with pytest.raises(RuntimeError):
+        await first_task
+
+    await second_task
+    assert entered_second.is_set()
+
+    grant_calls = [c for c in mock_input_permissions_toggle.await_args_list if c.kwargs.get("command") == grant_command]
+    restrict_calls = [
+        c for c in mock_input_permissions_toggle.await_args_list if c.kwargs.get("command") == restrict_command
+    ]
+    assert len(grant_calls) == 2  # first failed, second retried
+    assert len(restrict_calls) == 1  # restricted only after the last caller exited
+
+
+async def test_writable_inputs_registers_without_waiting_for_slow_grant(
+    app: FastAPI,
+    mock_input_permissions_toggle: AsyncMock,
+    inputs_path: Path,
+):
+    # regression test: a new writer must register its reference count
+    # immediately, without queueing behind another caller's in-flight grant
+    grant_started = asyncio.Event()
+    release_grant = asyncio.Event()
+
+    async def _slow_exec(*_args: Any, **kwargs: Any) -> None:
+        if kwargs.get("command") == _create_grant_write_access_command(inputs_path):
+            grant_started.set()
+            await release_grant.wait()
+
+    mock_input_permissions_toggle.side_effect = _slow_exec
+    state = app.state.writable_inputs_state
+
+    async def _enter() -> None:
+        async with writable_inputs(app):
+            pass
+
+    first_task = asyncio.create_task(_enter())
+    await grant_started.wait()
+    assert state.active_count == 1
+
+    second_task = asyncio.create_task(_enter())
+    await asyncio.sleep(0)  # let the second caller run its registration step
+    assert state.active_count == 2  # registered despite the grant still pending
+
+    release_grant.set()
+    await first_task
+    await second_task
 
 
 @pytest.fixture
