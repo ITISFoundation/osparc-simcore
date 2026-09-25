@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import aiodocker
 import docker
@@ -28,11 +29,17 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 
+from .docker_compose import _filter_services_and_dump
+from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
+from .helpers.xdist import SharedResourceRegistry, get_worker_id, get_xdist_root_tmp_path
 
 log = logging.getLogger(__name__)
+
+_DOCKER_STACK_REGISTRY_NAME = "docker_stack"
+_DOCKER_STACK_READY_TIMEOUT = 8 * MINUTE
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -306,17 +313,27 @@ def interactive_services_subnet_docker_network(
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def docker_stack(  # noqa: C901
+async def docker_stack(  # noqa: C901, PLR0912, PLR0915
     osparc_simcore_services_dir: Path,
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
+    simcore_docker_compose: dict,
+    ops_docker_compose: dict,
     keep_docker_up: bool,
     env_vars_for_docker_compose: EnvVarsDict,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> AsyncIterator[dict]:
-    """deploys core and ops stacks and returns as soon as all are running"""
+    """deploys core and ops stacks and returns as soon as all are running
+
+    Under pytest-xdist, every worker process runs this fixture independently, but the
+    underlying stack is a single shared resource: callers coordinate via a cross-process
+    reference-counted registry (see `SharedResourceRegistry`) so exactly one worker deploys
+    it and only the last caller tears it down, regardless of how many workers/modules use it.
+    """
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
@@ -324,58 +341,110 @@ async def docker_stack(  # noqa: C901
 
     assert core_stack_name
     assert core_stack_name.startswith("pytest-")
+
+    def _collected_services_union(attr_name: str) -> list[str]:
+        # NOTE: collection completes before any test runs, so `session.items` already lists
+        # every test this run will execute (the full suite, or a `-k`-filtered subset)
+        seen: set[str] = set()
+        union: list[str] = []
+        for item in request.session.items:
+            for name in getattr(item.module, attr_name, []):
+                if name not in seen:
+                    seen.add(name)
+                    union.append(name)
+        return union
+
+    def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str, selection_attr: str) -> Path:
+        if get_worker_id(request) == "master":
+            # single-process run: unaffected, same per-module filtered selection as before
+            return filtered_path
+        # NOTE: under xdist, different test modules may declare different (smaller)
+        # `core_services_selection`/`ops_services_selection` subsets, but only the FIRST
+        # module to reach this fixture actually deploys (see `owns_stack` below) - deploying
+        # ITS OWN filtered subset would starve later modules of services they need (e.g. a
+        # module selecting only "postgres" would prevent "rabbit"/"redis" from ever being
+        # deployed for other modules). Deploy the UNION of every collected module's selection
+        # instead, so every module's selection is always already satisfied - deploying the
+        # full, unfiltered compose is NOT an option: it includes production services whose
+        # images aren't built/available in a test environment.
+        union_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_union_docker_compose.yml"
+        if not union_path.exists():
+            _filter_services_and_dump(_collected_services_union(selection_attr), unfiltered, union_path)
+        return union_path
+
     stacks = [
         (
             "ops",
             ops_stack_name,
-            ops_docker_compose_file,
+            _compose_file_for(
+                ops_docker_compose, ops_docker_compose_file, "ops", FIXTURE_CONFIG_OPS_SERVICES_SELECTION
+            ),
         ),
         (
             "core",
             core_stack_name,
-            core_docker_compose_file,
+            _compose_file_for(
+                simcore_docker_compose, core_docker_compose_file, "core", FIXTURE_CONFIG_CORE_SERVICES_SELECTION
+            ),
         ),
     ]
 
-    # NOTE: if the migration service was already running prior to this call it must
-    # be force updated so that it does its job. else it remains and tests will fail
-    _force_remove_migration_service(docker_client)
-    _make_dask_sidecar_certificates(osparc_simcore_services_dir)
-    # make up-version
+    registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_STACK_REGISTRY_NAME)
+    token = f"{get_worker_id(request)}-{uuid4().hex}"
+    owns_stack = registry.register(token)
+
     stacks_deployed: dict[str, dict] = {}
-    for key, stack_name, compose_file in stacks:
-        _deploy_stack(compose_file, stack_name)
+    if owns_stack:
+        # NOTE: if the migration service was already running prior to this call it must
+        # be force updated so that it does its job. else it remains and tests will fail
+        _force_remove_migration_service(docker_client)
+        _make_dask_sidecar_certificates(osparc_simcore_services_dir)
+        # make up-version
+        for key, stack_name, compose_file in stacks:
+            _deploy_stack(compose_file, stack_name)
 
-        stacks_deployed[key] = {
-            "name": stack_name,
-            "compose": yaml.safe_load(compose_file.read_text()),
+            stacks_deployed[key] = {
+                "name": stack_name,
+                "compose": yaml.safe_load(compose_file.read_text()),
+            }
+
+        # All SELECTED services ready
+        # - notice that the timeout is set for all services in both stacks
+        # - TODO: the time to deploy will depend on the number of services selected
+        try:
+
+            async def _check_all_services_are_running():
+                done, pending = await asyncio.wait(
+                    [
+                        asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
+                        for service in docker_client.services.list()
+                    ],
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
+                assert done, f"no services ready, they all failed! [{pending}]"
+
+                for future in done:
+                    if exc := future.exception():
+                        raise exc
+
+                assert not pending, f"some service did not start correctly [{pending}]"
+
+            await _check_all_services_are_running()
+
+        finally:
+            _fetch_and_print_services(docker_client, "[BEFORE TEST]")
+
+        registry.mark_ready()
+    else:
+        # another worker owns the deploy: wait until it signals the stack is ready
+        for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(_DOCKER_STACK_READY_TIMEOUT), reraise=True):
+            with attempt:
+                assert registry.is_ready()
+
+        stacks_deployed = {
+            key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
+            for key, stack_name, compose_file in stacks
         }
-
-    # All SELECTED services ready
-    # - notice that the timeout is set for all services in both stacks
-    # - TODO: the time to deploy will depend on the number of services selected
-    try:
-
-        async def _check_all_services_are_running():
-            done, pending = await asyncio.wait(
-                [
-                    asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
-                    for service in docker_client.services.list()
-                ],
-                return_when=asyncio.FIRST_EXCEPTION,
-            )
-            assert done, f"no services ready, they all failed! [{pending}]"
-
-            for future in done:
-                if exc := future.exception():
-                    raise exc
-
-            assert not pending, f"some service did not start correctly [{pending}]"
-
-        await _check_all_services_are_running()
-
-    finally:
-        _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_deployed,
@@ -383,6 +452,10 @@ async def docker_stack(  # noqa: C901
     }
 
     # TEAR DOWN ----------------------
+
+    if not registry.unregister(token):
+        # other workers/modules still use the shared stack
+        return
 
     _fetch_and_print_services(docker_client, "[AFTER TEST]")
 

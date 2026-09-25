@@ -19,6 +19,9 @@ class RabbitSettings(BaseCustomSettings):
     RABBIT_HOST: str
     RABBIT_PORT: PortInt = 5672
     RABBIT_SECURE: bool
+    # NOTE: "/" is RabbitMQ's default vhost; kept as default so existing deployments
+    # (which never set this) produce the exact same DSN as before this field existed
+    RABBIT_VHOST: str = "/"
 
     # auth
     RABBIT_USER: str
@@ -33,6 +36,8 @@ class RabbitSettings(BaseCustomSettings):
                 password=self.RABBIT_PASSWORD.get_secret_value(),
                 host=self.RABBIT_HOST,
                 port=self.RABBIT_PORT,
+                # omitted for the default vhost to keep the DSN unchanged for existing callers
+                path=self.RABBIT_VHOST if self.RABBIT_VHOST != "/" else None,
             )
         )
         return rabbit_dsn

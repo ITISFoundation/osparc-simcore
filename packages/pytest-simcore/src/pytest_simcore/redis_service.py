@@ -4,6 +4,7 @@
 
 import logging
 from collections.abc import AsyncIterator
+from typing import Final
 
 import pytest
 import tenacity
@@ -21,14 +22,31 @@ from yarl import URL
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
+from .helpers.xdist import get_worker_id
 
 log = logging.getLogger(__name__)
+
+# NOTE: keep in sync with the redis/valkey `--databases` count in services/docker-compose.yml
+_NUM_LOGICAL_REDIS_DATABASES: Final[int] = len(RedisDatabase)
+
+
+def _worker_db_offset(request: pytest.FixtureRequest) -> int:
+    # under xdist, each worker reserves its own bank of `_NUM_LOGICAL_REDIS_DATABASES` indices
+    # on the SAME shared redis/valkey container, so the app-under-test's own redis usage
+    # (locks, pubsub, ...) never collides with another worker's
+    worker_id = get_worker_id(request)
+    if worker_id == "master":
+        return 0
+    digits = "".join(ch for ch in worker_id if ch.isdigit())
+    worker_ordinal = int(digits) if digits else 0
+    return (worker_ordinal + 1) * _NUM_LOGICAL_REDIS_DATABASES
 
 
 @pytest.fixture
 async def redis_settings(
     docker_stack: dict,  # stack is up
     env_vars_for_docker_compose: EnvVarsDict,
+    request: pytest.FixtureRequest,
 ) -> RedisSettings:
     """Returns the settings of a redis service that is up and responsive"""
 
@@ -41,6 +59,7 @@ async def redis_settings(
         REDIS_HOST=get_localhost_ip(),
         REDIS_PORT=TypeAdapter(PortInt).validate_python(port),
         REDIS_PASSWORD=env_vars_for_docker_compose["REDIS_PASSWORD"],
+        REDIS_DB_OFFSET=_worker_db_offset(request),
     )
     await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
@@ -61,6 +80,7 @@ def redis_service(
     monkeypatch.setenv(
         "REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else "null"
     )
+    monkeypatch.setenv("REDIS_DB_OFFSET", str(redis_settings.REDIS_DB_OFFSET))
     return redis_settings
 
 
@@ -77,7 +97,8 @@ async def redis_client(
 
     yield client
 
-    await client.flushall()
+    # NOTE: flushdb (not flushall) - only clears the db actually used by this fixture/worker
+    await client.flushdb()
     await client.aclose(close_connection_pool=True)
 
 
@@ -94,7 +115,8 @@ async def redis_locks_client(
 
     yield client
 
-    await client.flushall()
+    # NOTE: flushdb (not flushall) - only clears the db actually used by this fixture/worker
+    await client.flushdb()
     await client.aclose(close_connection_pool=True)
 
 
