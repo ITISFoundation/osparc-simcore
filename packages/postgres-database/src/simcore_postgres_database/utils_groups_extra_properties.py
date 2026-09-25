@@ -104,12 +104,13 @@ class GroupExtraPropertiesRepo:
     ) -> GroupExtraProperties:
         async with pass_or_acquire_connection(engine, connection) as conn:
             query = GroupExtraPropertiesRepo._get_stmt(gid, product_name)
-            result = await conn.stream(query)
+            result = await conn.execute(query)
             assert result  # nosec
-            if row := await result.first():
-                return GroupExtraProperties.from_row(row)
-            msg = f"Properties for group {gid} not found"
-            raise GroupExtraPropertiesNotFoundError(msg)
+            row = result.first()
+            if row is None:
+                msg = "Properties for group {gid} not found"
+                raise GroupExtraPropertiesNotFoundError(msg)
+            return GroupExtraProperties.from_row(row)
 
     @staticmethod
     def _aggregate(rows, user_id, product_name, from_row: Callable) -> GroupExtraProperties:
