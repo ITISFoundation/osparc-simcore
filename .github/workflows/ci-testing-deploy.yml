@@ -721,11 +721,11 @@ jobs:
           flags: unittests #optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  unit-test-autoscaling:
+  unit-test-autoscaling-01:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] autoscaling"
+    name: "[unit] autoscaling 01"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -745,7 +745,45 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/autoscaling.bash typecheck
       - name: test
-        run: ./ci/github/unit-testing/autoscaling.bash test
+        run: ./ci/github/unit-testing/autoscaling.bash test_01
+      - uses: codecov/codecov-action@v7
+        with:
+          flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v7
+        with:
+          report_type: test_results
+          files: services/autoscaling/junit.xml
+          flags: unittests #optional
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-autoscaling-02:
+    needs: changes
+    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] autoscaling 02"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.13"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/autoscaling.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/autoscaling.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/autoscaling.bash test_02
       - uses: codecov/codecov-action@v7
         with:
           flags: unittests #optional
@@ -1672,7 +1710,8 @@ jobs:
         unit-test-agent,
         unit-test-api-server,
         unit-test-api,
-        unit-test-autoscaling,
+        unit-test-autoscaling-01,
+        unit-test-autoscaling-02,
         unit-test-catalog,
         unit-test-clusters-keeper,
         unit-test-dask-sidecar,
