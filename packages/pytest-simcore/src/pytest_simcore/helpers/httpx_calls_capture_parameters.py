@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -30,36 +30,32 @@ class CapturedParameterSchema(BaseModel):
         return val
 
     @model_validator(mode="after")
-    @classmethod
-    def check_compatibility(cls, values):
-        type_ = values.type_
-        pattern = values.pattern
-        format_ = values.format_
-        anyOf = values.anyOf
-        allOf = values.allOf
-        oneOf = values.oneOf
-        if not any([type_, oneOf, anyOf, allOf]):
-            type_ = "str"  # this default is introduced because we have started using json query params in the webserver
-            values.type_ = type_
-        if type_ != "str" and any([pattern, format_]):
-            msg = f"For {type_=} both {pattern=} and {format_=} must be None"
+    def _check_compatibility(self) -> Self:
+        if not any([self.type_, self.oneOf, self.anyOf, self.allOf]):
+            self.type_ = "str"
+
+        if self.type_ != "str" and any([self.pattern, self.format_]):
+            msg = f"For type_={self.type_} both pattern={self.pattern} and format_={self.format_} must be None"
             raise ValueError(msg)
 
-        def _check_no_recursion(v: list["CapturedParameterSchema"]):
+        def _check_no_recursion(v: list["CapturedParameterSchema"] | None):
             if v is not None and not all(elm.anyOf is None and elm.oneOf is None and elm.allOf is None for elm in v):
                 msg = "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
                 raise ValueError(msg)
 
-        _check_no_recursion(anyOf)
-        _check_no_recursion(allOf)
-        _check_no_recursion(oneOf)
-        return values
+        _check_no_recursion(self.anyOf)
+        _check_no_recursion(self.allOf)
+        _check_no_recursion(self.oneOf)
+        return self
 
     @property
     def regex_pattern(self) -> str:
         # first deal with recursive types:
         if self.oneOf:
-            msg = "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
+            msg = (
+                "Current version cannot compute regex patterns in case of oneOf. "
+                "Please go ahead and implement it yourself."
+            )
             raise NotImplementedError(msg)
         if self.anyOf is not None:
             return "|".join(
