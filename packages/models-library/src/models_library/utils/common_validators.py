@@ -18,7 +18,7 @@ SEE https://docs.pydantic.dev/usage/validators/#reuse-validators
 import enum
 import functools
 import operator
-from typing import Any, Final
+from typing import Any, Final, Self
 
 from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
