@@ -39,11 +39,11 @@ from simcore_postgres_database.models.projects import projects
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import upload_path
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
-from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME
 from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
     restore_user_services_state_paths,
     save_user_services_state_paths,
 )
+from simcore_service_dynamic_sidecar.modules.mounted_fs import _HIDDEN_FILE_NAME
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
@@ -62,7 +62,7 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-TO_REMOVE: set[Path] = {Path(HIDDEN_FILE_NAME)}
+_TO_REMOVE: set[Path] = {Path(_HIDDEN_FILE_NAME)}
 
 
 @pytest.fixture
@@ -256,11 +256,11 @@ def _delete_files_in_dir(dir_path: Path) -> None:
 
 
 def _assert_same_directory_content(dir1: Path, dir2: Path) -> None:
-    # NOTE: the HIDDEN_FILE_NAME is added automatically by the dy-sidecar
+    # NOTE: the _HIDDEN_FILE_NAME is added automatically by the dy-sidecar
     # when it initializes, this is added below just for the comparison
 
-    files_in_dir1 = _files_in_dir(dir1, discard=TO_REMOVE)
-    files_in_dir2 = _files_in_dir(dir2, discard=TO_REMOVE)
+    files_in_dir1 = _files_in_dir(dir1, discard=_TO_REMOVE)
+    files_in_dir2 = _files_in_dir(dir2, discard=_TO_REMOVE)
 
     all_files_in_both_dirs = files_in_dir1 & files_in_dir2
 
@@ -425,7 +425,7 @@ async def test_state_open_and_close(
 
     # check that no files are present in the local directories
     for state_dir_path in expected_contents_paths:
-        assert len(_files_in_dir(state_dir_path, discard=TO_REMOVE)) == 0
+        assert len(_files_in_dir(state_dir_path, discard=_TO_REMOVE)) == 0
 
     # copy the content to be generated to the local folder
     for state_dir_path, expected_content_dir_path in expected_contents_paths.items():
@@ -449,7 +449,7 @@ async def test_state_open_and_close(
     # remove and check no file is present any longer
     for state_dir_path in expected_contents_paths:
         _delete_files_in_dir(state_dir_path)
-        assert len(_files_in_dir(state_dir_path, discard=TO_REMOVE)) == 0
+        assert len(_files_in_dir(state_dir_path, discard=_TO_REMOVE)) == 0
 
     # restore them from S3
     for _ in range(repeat_count):
