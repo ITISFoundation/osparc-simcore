@@ -63,7 +63,7 @@ _TASK_NAME = "run_chat_completion"
     response_model=ResponseObject,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "The request was rejected by the chatbot service",
             "model": ErrorGet,
         },

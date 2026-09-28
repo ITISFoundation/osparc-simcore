@@ -93,7 +93,7 @@ async def test_create_response_stream_relays_downstream_client_error(
 ):
     # ARRANGE - the chatbot service rejects the request (e.g. failed its own validation)
     mocked_chatbot_backend.post("/v1/chat/completions").respond(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         json={"detail": [{"loc": ["body", "model"], "msg": "unsupported model", "type": "value_error"}]},
     )
 
@@ -107,7 +107,7 @@ async def test_create_response_stream_relays_downstream_client_error(
     )
 
     # ASSERT - the downstream client error is relayed as-is, not masked as a backend error
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     payload = response.json()
     assert payload["errors"] == [{"loc": ["body", "model"], "msg": "unsupported model", "type": "value_error"}]
 
