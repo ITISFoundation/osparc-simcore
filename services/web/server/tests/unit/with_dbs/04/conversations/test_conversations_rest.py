@@ -63,8 +63,8 @@ async def test_conversations_user_role_access(
     "conversation_type,expected_status",
     [
         ("SUPPORT", status.HTTP_200_OK),
-        ("PROJECT_STATIC", status.HTTP_422_UNPROCESSABLE_ENTITY),
-        ("PROJECT_ANNOTATION", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ("PROJECT_STATIC", status.HTTP_422_UNPROCESSABLE_CONTENT),
+        ("PROJECT_ANNOTATION", status.HTTP_422_UNPROCESSABLE_CONTENT),
     ],
 )
 async def test_list_conversations_type_validation(
@@ -403,12 +403,12 @@ async def test_conversations_error_handling(
 
     # Test creating conversation with missing required fields
     resp = await client.post(f"{base_url}", json={})
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test creating conversation with invalid type
     body = {"name": "Invalid Type Request", "type": "INVALID_TYPE"}
     resp = await client.post(f"{base_url}", json=body)
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test operations on non-existent conversation
     fake_conversation_id = "00000000-0000-0000-0000-000000000000"
@@ -448,7 +448,7 @@ async def test_conversations_without_type_query_param(
     # Test list endpoint without type parameter should fail
     list_url = client.app.router["list_conversations"].url_for()
     resp = await client.get(f"{list_url}")
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # All other endpoints should return 400, because we currently support only SUPPORT type
     get_url = client.app.router["get_conversation"].url_for(conversation_id=conversation_id)

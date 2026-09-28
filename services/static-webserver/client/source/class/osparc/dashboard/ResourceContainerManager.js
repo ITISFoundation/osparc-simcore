@@ -617,7 +617,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             tag.bind("color", groupContainer, "headerColor");
             groupContainer.setHeaderIcon("@FontAwesomeSolid/tag/24");
             this.__groupedContainers.add(groupContainer);
-            this.__groupedContainers.getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
+            this.__groupedContainers.getChildren().sort((a, b) => String(a.getHeaderLabel()).localeCompare(String(b.getHeaderLabel())));
             this.__moveNoGroupToLast();
           }
           const card = this.__createCard(resourceData);

@@ -1,11 +1,9 @@
-import io
 import logging
 from collections.abc import Callable, Iterator
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
-from aiohttp.web_routedef import RouteDef, RouteTableDef
 from common_library.json_serialization import json_dumps
 from common_library.network import is_ip_address
 from models_library.generics import Envelope
@@ -19,20 +17,6 @@ from yarl import URL
 from .constants import INDEX_RESOURCE_NAME
 
 _logger = logging.getLogger(__name__)
-
-
-def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
-    for route in routes:
-        assert isinstance(route, RouteDef)  # nosec
-        route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
-
-
-def get_routes_view(routes: RouteTableDef) -> str:
-    fh = io.StringIO()
-    print(routes, file=fh)
-    for r in routes:
-        print(" ", r, file=fh)
-    return fh.getvalue()
 
 
 def create_url_for_function(app: web.Application, request_url: URL, request_headers: dict[str, str]) -> Callable:

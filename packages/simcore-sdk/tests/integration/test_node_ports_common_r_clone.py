@@ -33,7 +33,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
 ]
 
@@ -118,8 +118,8 @@ async def _create_file_of_size(tmp_path: Path, *, name: str, file_size: ByteSize
         file.parent.mkdir(parents=True, exist_ok=True)
 
     await _create_random_binary_file(file, file_size)
-    assert file.exists()
-    assert file.stat().st_size == file_size
+    assert await aiofiles.os.path.exists(file)
+    assert (await aiofiles.os.stat(file)).st_size == file_size
     return file
 
 

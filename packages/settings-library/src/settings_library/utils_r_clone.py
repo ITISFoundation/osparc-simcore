@@ -21,7 +21,9 @@ _PROVIDER_SETTINGS_OPTIONS: dict[RCloneProvider, dict[str, str]] = {
         "endpoint": "{endpoint}",
     },
     RCloneProvider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
-    RCloneProvider.MINIO: {"provider": "Minio", "endpoint": "{endpoint}"},
+    # RustFS is a generic S3-compatible server (not MinIO): rclone's documented
+    # generic mapping is provider "Other" (path-style by default)
+    RCloneProvider.RUSTFS: {"provider": "Other", "endpoint": "{endpoint}"},
 }
 
 

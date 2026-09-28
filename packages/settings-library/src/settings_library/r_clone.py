@@ -18,7 +18,7 @@ class RCloneProvider(StrEnum):
     AWS = "AWS"
     AWS_MOTO = "AWS_MOTO"
     CEPH = "CEPH"
-    MINIO = "MINIO"
+    RUSTFS = "RUSTFS"
 
 
 type SearchArgument = str
@@ -50,7 +50,7 @@ class RCloneSimcoreSDKMountSettings(BaseCustomSettings):
         Field(
             gt=0.0,
             le=1.0,
-            description="allows to selec how much of the disk where docker is running is dedicated to vfs cache",
+            description="allows to select how much of the disk where docker is running is dedicated to vfs cache",
         ),
     ] = 0.9
 

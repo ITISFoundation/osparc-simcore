@@ -10,16 +10,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from models_library.users import UserID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from settings_library.efs import (
-    NFS_PROTOCOL,
-    NFS_REQUEST_TIMEOUT,
-    NUMBER_OF_RETRANSMISSIONS,
-    PORT_MODE,
-    READ_SIZE,
-    RECOVERY_MODE,
-    WRITE_SIZE,
-    AwsEfsSettings,
-)
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
 _BASE_PATH: Path = Path("/dy-volumes")
@@ -32,28 +22,6 @@ _DY_SIDECAR_SUBFOLDER_TRACES: Final[Path] = Path("/traces")
 # DEFAULT LIMITS
 _LIMIT_SHARED_STORE: Final[str] = "1M"
 _LIMIT_USER_PREFERENCES: Final[str] = "10M"
-
-
-def _get_efs_volume_driver_config(
-    efs_settings: AwsEfsSettings,
-    project_id: ProjectID,
-    node_uuid: NodeID,
-    storage_directory_name: str,
-) -> dict[str, Any]:
-    assert "/" not in storage_directory_name  # nosec
-    driver_config: dict[str, Any] = {
-        "Options": {
-            "type": "nfs",
-            "o": (
-                f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},"
-                f"{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}"
-            ),
-            "device": (
-                f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}"
-            ),
-        },
-    }
-    return driver_config
 
 
 class DynamicSidecarVolumesPathsResolver:
@@ -210,37 +178,3 @@ class DynamicSidecarVolumesPathsResolver:
             user_id=user_id,
             volume_size_limit=None,
         )
-
-    @classmethod
-    def mount_efs(
-        cls,
-        swarm_stack_name: str,
-        path: Path,
-        node_uuid: NodeID,
-        service_run_id: ServiceRunID,
-        project_id: ProjectID,
-        user_id: UserID,
-        efs_settings: AwsEfsSettings,
-        storage_directory_name: str,
-    ) -> dict[str, Any]:
-        return {
-            "Source": cls.source(path, node_uuid, service_run_id),
-            "Target": cls.target(path),
-            "Type": "volume",
-            "VolumeOptions": {
-                "Labels": {
-                    "source": cls.source(path, node_uuid, service_run_id),
-                    "run_id": f"{service_run_id}",
-                    "node_uuid": f"{node_uuid}",
-                    "study_id": f"{project_id}",
-                    "user_id": f"{user_id}",
-                    "swarm_stack_name": swarm_stack_name,
-                },
-                "DriverConfig": _get_efs_volume_driver_config(
-                    efs_settings=efs_settings,
-                    project_id=project_id,
-                    node_uuid=node_uuid,
-                    storage_directory_name=storage_directory_name,
-                ),
-            },
-        }

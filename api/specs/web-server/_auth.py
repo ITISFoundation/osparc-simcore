@@ -21,7 +21,7 @@ from simcore_service_webserver.login._controller.rest.auth_schemas import (
     LoginTwoFactorAuthBody,
     LogoutBody,
 )
-from simcore_service_webserver.login._controller.rest.change import (
+from simcore_service_webserver.login._controller.rest.change_schemas import (
     ChangeEmailBody,
     ChangePasswordBody,
     ResetPasswordBody,
@@ -235,7 +235,7 @@ class PasswordCheckSchema(BaseModel):
             "model": EnvelopedError,
             "description": "mismatch between new and confirmation passwords",
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "model": EnvelopedError,
             "description": "current password is invalid",
         },

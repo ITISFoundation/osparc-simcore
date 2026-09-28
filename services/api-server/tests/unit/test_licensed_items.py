@@ -219,7 +219,7 @@ async def test_get_licensed_items_for_wallet(
         (CanNotCheckoutNotEnoughAvailableSeatsError(), status.HTTP_409_CONFLICT),
         (
             CanNotCheckoutServiceIsNotRunningError(),
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         ),
     ],
 )
@@ -275,7 +275,7 @@ async def test_checkout_licensed_item(
         (LicensedItemCheckoutNotFoundError, None, status.HTTP_404_NOT_FOUND, True),
         (None, LicensedItemCheckoutNotFoundError, status.HTTP_404_NOT_FOUND, True),
         (None, None, status.HTTP_200_OK, True),
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY, False),
+        (None, None, status.HTTP_422_UNPROCESSABLE_CONTENT, False),
     ],
 )
 async def test_release_checked_out_licensed_item(

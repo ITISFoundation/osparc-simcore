@@ -1,4 +1,12 @@
-#! /usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "httpx",
+#     "pydantic[email]",
+#     "typer",
+# ]
+# ///
 
 import asyncio
 import os
@@ -40,8 +48,8 @@ async def import_project(client: AsyncClient, project_file: Path) -> str:
         f"importing project {project_file}",
     )
     path = "/projects%3Aimport"
-    files = {"fileName": open(project_file, mode="rb")}
-    r = await client.post(path, files=files, timeout=20)
+    with project_file.open(mode="rb") as fh:
+        r = await client.post(path, files={"fileName": fh}, timeout=20)
     r.raise_for_status()
     typer.secho(
         f"project {project_file} imported, received uuid is {r.json()['data']}",
@@ -110,7 +118,7 @@ async def import_project_as_template(
     password: SecretStr,
     project_file: Path,
     project_name: str,
-    share_with_gid: int,  # TODO: not used!?
+    _share_with_gid: int,  # not applied yet: kept for CLI compatibility
 ) -> int:
     try:
         async with AsyncClient(base_url=endpoint.join("v0")) as client:

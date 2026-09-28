@@ -2,14 +2,14 @@
 # pylint: disable=protected-access
 
 import asyncio
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
+from multiprocessing.queues import Queue
 from pathlib import Path
+from time import sleep
 from typing import Any, Final
 from unittest.mock import Mock
 
-import aioprocessing
 import pytest
-from aioprocessing.queues import AioQueue
 from pydantic import PositiveFloat
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
@@ -28,6 +28,9 @@ from watchdog.events import (
     FileMovedEvent,
     FileSystemEvent,
 )
+
+_CONCURRENT_CALLS: Final[int] = 10
+_SLOW_KILL_DURATION_S: Final[float] = 0.1
 
 
 @pytest.fixture
@@ -65,19 +68,9 @@ async def outputs_manager(
     await outputs_manager.shutdown()
 
 
-@pytest.fixture
-def health_check_queue() -> AioQueue:
-    return aioprocessing.AioQueue()
-
-
-@pytest.fixture
-def heart_beat_interval_s() -> PositiveFloat:
-    return 0.01
-
-
 async def test_event_handler_process_lifecycle(
     outputs_context: OutputsContext,
-    health_check_queue: AioQueue,
+    health_check_queue: Queue[int | None],
     heart_beat_interval_s: PositiveFloat,
 ):
     observer_process = _EventHandlerProcess(
@@ -89,6 +82,40 @@ async def test_event_handler_process_lifecycle(
     observer_process.start_process()
     await asyncio.sleep(heart_beat_interval_s * 10)
     observer_process.stop_process()
+
+    observer_process.shutdown()
+
+
+def test_event_handler_process_concurrent_stop_does_not_raise(
+    outputs_context: OutputsContext,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _EventHandlerProcess(
+        outputs_context=outputs_context,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+    # a slow kill() keeps `_process` set long enough for a concurrent caller to observe it
+    observer_process._process = Mock(kill=lambda: sleep(_SLOW_KILL_DURATION_S))  # noqa: SLF001
+
+    assert not run_concurrently([observer_process.stop_process] * _CONCURRENT_CALLS)
+
+
+def test_event_handler_process_concurrent_start_and_stop_does_not_raise(
+    outputs_context: OutputsContext,
+    health_check_queue: Queue[int | None],
+    heart_beat_interval_s: PositiveFloat,
+    run_concurrently: Callable[[list[Callable[[], None]]], list[BaseException]],
+):
+    observer_process = _EventHandlerProcess(
+        outputs_context=outputs_context,
+        health_check_queue=health_check_queue,
+        heart_beat_interval_s=heart_beat_interval_s,
+    )
+
+    assert not run_concurrently([observer_process.start_process, observer_process.stop_process] * _CONCURRENT_CALLS)
 
     observer_process.shutdown()
 
@@ -141,7 +168,7 @@ def mock_state_path() -> Path:
     return _STATE_PATH
 
 
-class _MockAioQueue:
+class _MockQueue:
     def __init__(self) -> None:
         self.items: list[Any] = []
 
@@ -228,7 +255,7 @@ class _MockAioQueue:
 def test_port_keys_event_handler_triggers_for_events(
     mock_state_path: Path, event: FileSystemEvent, expected_port_key: str | None
 ) -> None:
-    queue = _MockAioQueue()
+    queue = _MockQueue()
 
     event_handler = _PortKeysEventHandler(mock_state_path, queue)
     event_handler.handle_set_outputs_port_keys(outputs_port_keys={"output_1"})

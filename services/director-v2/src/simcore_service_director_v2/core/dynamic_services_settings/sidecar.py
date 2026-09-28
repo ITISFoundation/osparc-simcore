@@ -25,7 +25,6 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
-from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
@@ -156,10 +155,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         ByteSize,
         Field(description="memory the dynamic-sidecar process itself requires, including usage spikes"),
     ] = TypeAdapter(ByteSize).validate_python("1GiB")
-
-    DYNAMIC_SIDECAR_EFS_SETTINGS: Annotated[
-        AwsEfsSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ] = None
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: Annotated[
         PlacementSettings, Field(json_schema_extra={"auto_default_from_env": True})

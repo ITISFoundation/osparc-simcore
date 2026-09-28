@@ -10,6 +10,7 @@
 [![ruff_badge]](https://github.com/astral-sh/ruff)
 [![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
 [![codecov_badge]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
+[![codspeed_badge]](https://app.codspeed.io/ITISFoundation/osparc-simcore?utm_source=badge)
 [![doc_badge]](https://itisfoundation.github.io/)
 [![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
 [![license_badge]](./LICENSE)
@@ -22,6 +23,7 @@
 [ruff_badge]:https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg
 [codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
+[codspeed_badge]:https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
 [doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [dockerhub_badge]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=docker%20images&up_color=blue
 [license_badge]:https://img.shields.io/badge/license-MIT-green

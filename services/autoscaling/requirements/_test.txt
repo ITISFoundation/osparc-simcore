@@ -6,7 +6,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.11.0
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -62,7 +62,7 @@ click==8.3.1
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.13.5
+coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -77,7 +77,7 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-faker==40.11.0
+faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
@@ -198,13 +198,13 @@ pydantic-core==2.46.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
 pyparsing==3.3.2
     # via moto
-pytest==9.0.2
+pytest==9.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -212,9 +212,9 @@ pytest==9.0.2
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.3.0
+pytest-asyncio==1.4.0
     # via -r requirements/_test.in
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
@@ -228,7 +228,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-python-dotenv==1.2.1
+python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -285,7 +285,6 @@ six==1.17.0
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asgi-lifespan
 sortedcontainers==2.4.0
     # via
@@ -319,9 +318,10 @@ types-awscrt==0.28.4
     #   botocore-stubs
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic
@@ -339,7 +339,7 @@ urllib3==2.7.0
     #   docker
     #   requests
     #   responses
-werkzeug==3.1.6
+werkzeug==3.1.8
     # via
     #   flask
     #   flask-cors

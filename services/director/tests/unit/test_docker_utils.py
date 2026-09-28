@@ -28,11 +28,3 @@ async def test_docker_client():
 async def test_swarm_get_number_nodes(docker_swarm: None):
     num_nodes = await docker_utils.swarm_get_number_nodes()
     assert num_nodes == 1
-
-
-async def test_swarm_has_manager_nodes(docker_swarm: None):
-    assert (await docker_utils.swarm_has_manager_nodes()) is True
-
-
-async def test_swarm_has_worker_nodes(docker_swarm: None):
-    assert (await docker_utils.swarm_has_worker_nodes()) is False

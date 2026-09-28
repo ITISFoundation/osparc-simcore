@@ -131,7 +131,7 @@ def handle_errors_with_error_page(handler: Handler):
             raise _create_simple_error_redirect(
                 request,
                 err,
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             ) from err
 
         except (InvalidRedirectionParamsError, web.HTTPUnprocessableEntity) as err:
@@ -145,7 +145,7 @@ def handle_errors_with_error_page(handler: Handler):
                     "Please check the link and make sure it is correct.",
                     _version=1,
                 ),
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 tip="The link might be corrupted",
             ) from err
 

@@ -15,10 +15,6 @@ def ensure_correct_instance(template_data: BaseModel | None, class_to_check_agai
     return template_data
 
 
-def get_max_array_length(*arrays_of_elements) -> int:
-    return max(len(x) for x in arrays_of_elements)
-
-
 def column_generator(start_from: int, elements: int) -> Iterable[str]:
     """maps columns index to letters"""
     for column_index in range(start_from, start_from + elements):

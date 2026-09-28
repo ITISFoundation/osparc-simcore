@@ -32,17 +32,12 @@ Follow these rules **strictly** when generating Python code:
 from typing import Annotated
 from annotated_types import doc
 
+
 async def process_users(
     engine: AsyncEngine,  # No doc needed - self-explanatory
-    filter_statuses: Annotated[
-        list[Status] | None,
-        doc("Only returns users with these statuses")
-    ] = None,
+    filter_statuses: Annotated[list[Status] | None, doc("Only returns users with these statuses")] = None,
     limit: int = 50,  # No doc needed - obvious
-) -> Annotated[
-    tuple[list[dict], int],
-    doc("(user records, total count)")
-]:
+) -> Annotated[tuple[list[dict], int], doc("(user records, total count)")]:
     """Process users with filtering.
 
     Raises:
@@ -104,6 +99,8 @@ When refactoring, move business logic from controllers to services (e.g., extrac
 * Define domain-specific exception hierarchies rooted in a base error per module:
   ```python
   class UsersBaseError(WebServerBaseError): ...
+
+
   class UserNotFoundError(UsersBaseError):
       msg_template = "User id {user_id} not found"
   ```
@@ -121,6 +118,7 @@ When refactoring, move business logic from controllers to services (e.g., extrac
   - `model_validate()` (not `parse_obj()`)
   - `model_copy(update={...})` (not `.copy(update=...)`)
   - `model_config = ConfigDict(...)` (not inner `class Config`)
+* Secret-bearing Pydantic fields must use `SecretStr` / `SecretBytes` (or another appropriate secret type) instead of plain `str` / `bytes`; unwrap them only at the boundary that requires the raw value.
 * Use `model_dump(exclude_none=True)` or `model_dump(by_alias=True, exclude_none=True)` when serializing for API responses with optional fields.
 * Settings classes should use `create_from_envs()` classmethod pattern for environment-based construction.
 * Organize model exports in `__init__.py` using `__all__: tuple[str, ...]` with sorted entries:
@@ -138,9 +136,7 @@ When refactoring, move business logic from controllers to services (e.g., extrac
   ```python
   access_exists = sa.exists(
       sa.select(sa.literal(1)).where(
-          (acl_table.c.resource_id == main_table.c.id)
-          & (acl_table.c.read)
-          & (acl_table.c.gid.in_(user_group_ids))
+          (acl_table.c.resource_id == main_table.c.id) & (acl_table.c.read) & (acl_table.c.gid.in_(user_group_ids))
       )
   )
   query = sa.select(main_table).where(access_exists)

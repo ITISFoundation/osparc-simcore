@@ -2,8 +2,6 @@ import logging
 
 import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from ....core.errors import ProjectNotFoundError
@@ -35,7 +33,3 @@ class ProjectsRepository(BaseRepository):
             if row is None:
                 raise ProjectNotFoundError(project_id=project_id)
             return ProjectAtDB.model_validate(row)
-
-    async def get_project_id_from_node(self, node_id: NodeID) -> ProjectID:
-        async with pass_or_acquire_connection(self.db_engine) as conn:
-            return await ProjectNodesRepo.get_project_id_from_node_id(conn, node_id=node_id)

@@ -1,6 +1,6 @@
 import logging
-from typing import cast
 
+import sqlalchemy as sa
 from aiohttp import web
 from models_library.conversations import (
     ConversationID,
@@ -75,36 +75,55 @@ async def list_(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationMessageGetDB]]:
-    base_query = (
-        select(*_SELECTION_ARGS)
-        .select_from(conversation_messages)
+    # NOTE: total and page are computed in a SINGLE statement so they share one snapshot.
+    # Two separate statements would each take their own snapshot (READ COMMITTED), and a
+    # concurrent commit in between could make the page show rows the count never saw
+    # (i.e. count > total).
+    #
+    # The statement is driven FROM the single-row total CTE and LEFT JOINs the paged rows,
+    # so the total is also emitted when the page is empty (e.g. offset >= total), keeping
+    # `total` a property of the match set and independent of pagination.
+    total_cte = (
+        select(func.count().label("total_count"))
         .where(conversation_messages.c.conversation_id == conversation_id)
+        .cte("total_count")
     )
 
-    # Select total count from base_query
-    subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
-
-    # Ordering and pagination
+    # Ordering and pagination of the page rows
+    page_query = select(*_SELECTION_ARGS).where(conversation_messages.c.conversation_id == conversation_id)
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(
+        page_query = page_query.order_by(
             asc(getattr(conversation_messages.c, order_by.field)),
             conversation_messages.c.message_id,
         )
     else:
-        list_query = base_query.order_by(
+        page_query = page_query.order_by(
             desc(getattr(conversation_messages.c, order_by.field)),
             conversation_messages.c.message_id,
         )
-    list_query = list_query.offset(offset).limit(limit)
+    page_subquery = page_query.offset(offset).limit(limit).subquery("page")
+
+    list_query = (
+        select(
+            total_cte.c.total_count,
+            *(page_subquery.c[column.name] for column in _SELECTION_ARGS),
+        )
+        .select_from(total_cte)
+        .outerjoin(page_subquery, sa.true())
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        total_count = await conn.scalar(count_query)
+        result = await conn.execute(list_query)
 
-        result = await conn.stream(list_query)
-        items: list[ConversationMessageGetDB] = [ConversationMessageGetDB.model_validate(row) async for row in result]
+        items: list[ConversationMessageGetDB] = []
+        total_count: int = 0
+        for row_mapping in result.mappings():
+            row_dict = dict(row_mapping)
+            total_count = row_dict.pop("total_count")
+            if row_dict["message_id"] is not None:  # empty page: page columns are NULL
+                items.append(ConversationMessageGetDB.model_validate(row_dict))
 
-        return cast(int, total_count), items
+        return total_count, items
 
 
 async def get(

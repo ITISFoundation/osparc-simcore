@@ -4,7 +4,7 @@ annotated-doc==0.0.4
     # via typer
 annotated-types==0.7.0
     # via pydantic
-anyio==4.12.1
+anyio==4.15.1
     # via httpx
 certifi==2026.2.25
     # via
@@ -57,11 +57,11 @@ pydantic-settings==2.14.2
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
-pygments==2.19.2
+pygments==2.21.0
     # via rich
 python-dateutil==2.9.0.post0
     # via osparc-client
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via pydantic-settings
 rich==14.3.3
     # via
@@ -79,8 +79,9 @@ tqdm==4.67.3
     # via osparc
 typer==0.24.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
+    #   anyio
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types

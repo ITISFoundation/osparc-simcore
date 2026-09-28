@@ -68,6 +68,7 @@ I18N_DIRS := \
   services/director-v2 \
   services/api-server \
   services/notifications \
+  services/storage \
   packages/service-library \
   packages/dask-task-models-library \
   packages/common-library

@@ -93,34 +93,6 @@ async def list_workspace_groups(
         return [WorkspaceGroupGetDB.model_validate(row) async for row in result]
 
 
-async def get_workspace_group(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    workspace_id: WorkspaceID,
-    group_id: GroupID,
-) -> WorkspaceGroupGetDB:
-    stmt = (
-        select(
-            workspaces_access_rights.c.gid,
-            workspaces_access_rights.c.read,
-            workspaces_access_rights.c.write,
-            workspaces_access_rights.c.delete,
-            workspaces_access_rights.c.created,
-            workspaces_access_rights.c.modified,
-        )
-        .select_from(workspaces_access_rights)
-        .where((workspaces_access_rights.c.workspace_id == workspace_id) & (workspaces_access_rights.c.gid == group_id))
-    )
-
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(stmt)
-        row = await result.first()
-        if row is None:
-            raise WorkspaceGroupNotFoundError(workspace_id=workspace_id, group_id=group_id)
-        return WorkspaceGroupGetDB.model_validate(row)
-
-
 async def update_workspace_group(
     app: web.Application,
     connection: AsyncConnection | None = None,

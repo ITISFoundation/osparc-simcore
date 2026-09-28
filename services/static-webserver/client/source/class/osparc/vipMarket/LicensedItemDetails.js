@@ -214,6 +214,18 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
         const featuresGrid = new qx.ui.layout.Grid(8, 8);
         const featuresLayout = new qx.ui.container.Composite(featuresGrid);
         let idx = 0;
+        const featureLabels = {
+          Age: this.tr("Age"),
+          Date: this.tr("Date"),
+          Ethnicity: this.tr("Ethnicity"),
+          Functionality: this.tr("Functionality"),
+          Height: this.tr("Height"),
+          Name: this.tr("Name"),
+          Sex: this.tr("Sex"),
+          Species: this.tr("Species"),
+          Version: this.tr("Version"),
+          Weight: this.tr("Weight"),
+        };
         const capitalizeField = [
           "Sex",
           "Species",
@@ -234,7 +246,7 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
         ].forEach(key => {
           if (key.toLowerCase() in features) {
             const titleLabel = new qx.ui.basic.Label().set({
-              value: key,
+              value: featureLabels[key],
               font: "text-14",
               alignX: "right",
             });
@@ -261,7 +273,7 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
 
         if (licensedResource.getDoi()) {
           const doiTitle = new qx.ui.basic.Label().set({
-            value: "DOI",
+            value: this.tr("DOI"),
             font: "text-14",
             alignX: "right",
             marginTop: 10,
@@ -434,9 +446,12 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
 
       licensedItem.getSeats().forEach(purchase => {
         const nSeats = purchase["numOfSeats"];
-        const seatsText = "seat" + (nSeats > 1 ? "s" : "");
+        const expirationDate = osparc.utils.Utils.formatDate(purchase["expireAt"]);
+        const seatsText = nSeats > 1 ?
+          this.tr("%1 seats available until %2", nSeats, expirationDate) :
+          this.tr("%1 seat available until %2", nSeats, expirationDate);
         const entry = new qx.ui.basic.Label().set({
-          value: `${nSeats} ${seatsText} available until ${osparc.utils.Utils.formatDate(purchase["expireAt"])}`,
+          value: seatsText,
           font: "text-14",
         });
         seatsSection.add(entry);

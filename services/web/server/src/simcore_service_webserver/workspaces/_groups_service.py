@@ -87,22 +87,6 @@ async def list_workspace_groups_by_user_and_workspace(
     return workspace_groups_api
 
 
-async def list_workspace_groups_with_read_access_by_workspace(
-    app: web.Application,
-    *,
-    workspace_id: WorkspaceID,
-) -> list[WorkspaceGroupGet]:
-    workspace_groups_db: list[WorkspaceGroupGetDB] = await workspaces_groups_db.list_workspace_groups(
-        app=app, workspace_id=workspace_id
-    )
-
-    workspace_groups_api: list[WorkspaceGroupGet] = [
-        WorkspaceGroupGet.model_validate(group) for group in workspace_groups_db if group.read is True
-    ]
-
-    return workspace_groups_api
-
-
 async def update_workspace_group(
     app: web.Application,
     *,

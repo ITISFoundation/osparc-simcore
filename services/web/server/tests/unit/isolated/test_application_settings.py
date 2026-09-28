@@ -111,6 +111,7 @@ def test_settings_to_client_statics_plugins(
 
     assert "webserverLicenses" not in statics
     assert "webserverDevFeaturesEnabled" in statics
+    assert "webserverLocalizedMessagesEnabled" in statics
 
     assert (
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
@@ -228,8 +229,10 @@ def mock_service_environment(
     service_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    # NOTE: the name of the service in real deploys are not necessarily the ones we have here in the docker-compose
-    # Typically they include prefixes with the deployment name e.g. master-webserver or staging-webserver instead of just webserver
+    # NOTE: the name of the service in real deploys are not necessarily
+    # the ones we have here in the docker-compose
+    # Typically they include prefixes with the deployment name e.g.
+    # master-webserver or staging-webserver instead of just webserver
     _logger.info("Mocking envs for service: %s", service_name)
 
     assert docker_compose_service_environment_dict

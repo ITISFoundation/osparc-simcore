@@ -180,17 +180,17 @@ async def test_list_service_usage_with_order_by_query_param(
     _filter = {"field": "non-supported", "direction": "desc"}
     url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
     assert mock_list_usage_services.called
-    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error["errors"][0]["message"].startswith("Value error, We do not support ordering by provided field")
 
     # with non-parsable field in order by query parameter
     url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=",invalid json")
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
     assert mock_list_usage_services.called
-    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Invalid JSON" in error["errors"][0]["message"]
 
     # with order by without direction
@@ -204,9 +204,9 @@ async def test_list_service_usage_with_order_by_query_param(
     _filter = {"field": "non-supported", "direction": "wrong"}
     url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
     assert mock_list_usage_services.called
-    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     errors = {(e["code"], e["field"]) for e in error["errors"]}
     assert {
@@ -219,9 +219,9 @@ async def test_list_service_usage_with_order_by_query_param(
     _filter = {"direction": "asc"}
     url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
     assert mock_list_usage_services.called
-    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error["errors"][0]["message"].startswith("Field required")
     assert error["errors"][0]["code"] == "missing"
     assert error["errors"][0]["field"] == "order_by.field"
@@ -239,8 +239,8 @@ async def test_list_service_usage_with_filters_query_param(
     # with unable to decode filter query parameter
     url = client.app.router["list_resource_usage_services"].url_for().with_query(filters='{"test"}')
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
-    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert error["errors"][0]["message"].startswith("Invalid JSON")
 
     # with correct filter query parameter

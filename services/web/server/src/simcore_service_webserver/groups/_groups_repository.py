@@ -240,33 +240,12 @@ async def get_ids_of_all_user_groups_with_read_access(
         return [row.gid async for row in result]
 
 
-async def get_all_user_groups(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-) -> list[Group]:
-    """
-    Returns all user's groups
-    """
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
-            sa.select(*_GROUP_COLUMNS)
-            .select_from(
-                user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
-            )
-            .where(user_to_groups.c.uid == user_id)
-        )
-        return [Group.model_validate(row) async for row in result.mappings()]
-
-
 async def get_ids_of_all_user_groups(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
 ) -> list[GroupID]:
-    # thin version of `get_all_user_groups`
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
             sa.select(
@@ -829,9 +808,13 @@ async def auto_add_user_to_groups(
         async for row in result:
             inclusion_rules = row.inclusion_rules
             for prop, rule_pattern in inclusion_rules.items():
-                if prop not in user:
+                value = user.get(prop)
+                if not isinstance(value, str):
+                    # rule targets a column the user lacks or whose value is
+                    # NULL/non-string (e.g. phone): it cannot match, so skip it
+                    # instead of raising from re.search
                     continue
-                if re.search(rule_pattern, user[prop]):
+                if re.search(rule_pattern, value):
                     possible_group_ids.add(row.gid)
 
         # now add the user to these groups if possible
