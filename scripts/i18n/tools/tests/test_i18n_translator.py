@@ -81,18 +81,6 @@ class FakeProvider:
 # ---------------------------------------------------------------------------
 
 
-def test_needs_translation_untranslated_is_true() -> None:
-    assert tr._needs_translation(polib.POEntry(msgid="a", msgstr="")) is True
-
-
-def test_needs_translation_fuzzy_is_true() -> None:
-    assert tr._needs_translation(polib.POEntry(msgid="a", msgstr="b", flags=["fuzzy"])) is True
-
-
-def test_needs_translation_translated_clean_is_false() -> None:
-    assert tr._needs_translation(polib.POEntry(msgid="a", msgstr="b")) is False
-
-
 def test_classify_entry_state_routes_new_updated_skipped() -> None:
     assert isinstance(tr._classify_entry_state(polib.POEntry(msgid="a", msgstr="")), tr.EntryNew)
     assert isinstance(tr._classify_entry_state(polib.POEntry(msgid="a", msgstr="b", flags=["fuzzy"])), tr.EntryUpdated)
