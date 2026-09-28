@@ -1,8 +1,8 @@
+from common_library.pydantic_resources import CpuCores
 from models_library.basic_types import PortInt
 from pydantic import ByteSize, Field, TypeAdapter
 from servicelib.utils_secrets import secure_randint
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import CpuCores
 
 
 class DynamicSidecarProxySettings(BaseCustomSettings):

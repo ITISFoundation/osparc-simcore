@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Annotated, Final
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.pydantic_resources import CpuCores
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, NonNegativeFloat, PositiveInt, TypeAdapter
 
 from .base import BaseCustomSettings
-from .basic_types import CpuCores
 from .s3 import S3Settings
 
 DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")

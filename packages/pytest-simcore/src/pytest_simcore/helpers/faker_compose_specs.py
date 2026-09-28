@@ -1,9 +1,9 @@
 from typing import Any
 
+from common_library.pydantic_resources import CpuCores
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter
 from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
-from settings_library.basic_types import CpuCores
 
 
 def _range(faker: Faker, num_items: int | None = None, min_: int = 1, max_: int = 4) -> range:

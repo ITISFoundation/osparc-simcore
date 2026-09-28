@@ -1,11 +1,11 @@
 from datetime import timedelta
 from typing import Annotated
 
+from common_library.pydantic_resources import CpuCores
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, TypeAdapter
 
 from .base import BaseCustomSettings
-from .basic_types import CpuCores
 
 
 class UserServicesTracingSettings(BaseCustomSettings):

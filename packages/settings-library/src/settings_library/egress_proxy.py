@@ -2,10 +2,10 @@ import enum
 from enum import StrEnum
 from typing import Annotated
 
+from common_library.pydantic_resources import CpuCores
 from pydantic import ByteSize, Field, TypeAdapter
 
 from .base import BaseCustomSettings
-from .basic_types import CpuCores
 
 
 class EnvoyLogLevel(StrEnum):

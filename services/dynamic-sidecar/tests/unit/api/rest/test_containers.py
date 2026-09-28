@@ -19,6 +19,7 @@ import yaml
 from aiodocker.volumes import DockerVolume
 from aiofiles.os import mkdir
 from async_asgi_testclient import TestClient
+from common_library.pydantic_resources import CpuCores
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI, status
@@ -34,7 +35,6 @@ from servicelib.resources import (
     USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY,
     USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY,
 )
-from settings_library.basic_types import CpuCores
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import AppState
