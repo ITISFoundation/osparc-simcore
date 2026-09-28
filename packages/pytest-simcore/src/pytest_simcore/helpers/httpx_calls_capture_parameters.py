@@ -38,7 +38,7 @@ class CapturedParameterSchema(BaseModel):
             msg = f"For type_={self.type_} both pattern={self.pattern} and format_={self.format_} must be None"
             raise ValueError(msg)
 
-        def _check_no_recursion(v: list["CapturedParameterSchema"] | None):
+        def _check_no_recursion(v: list["CapturedParameterSchema"] | None) -> None:
             if v is not None and not all(elm.anyOf is None and elm.oneOf is None and elm.allOf is None for elm in v):
                 msg = "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
                 raise ValueError(msg)

@@ -28,6 +28,8 @@ from pydantic.alias_generators import to_camel
 WILDCARD_CHARS: Final[list[str]] = ["*", "?"]
 MIN_NON_WILDCARD_CHARS: Final[int] = 3
 
+_NULL_NONE: Final[set[str]] = {"null", "none"}
+
 
 def trim_string_before(max_length: int) -> BeforeValidator:
     def _trim(value: str):
@@ -95,7 +97,7 @@ def ensure_unique_dict_values_validator(dict_data: dict) -> dict:
 
 
 def null_or_none_str_to_none_validator(value: Any):
-    if isinstance(value, str) and value.lower() in {"null", "none"}:
+    if isinstance(value, str) and value.lower() in _NULL_NONE:
         return None
     return value
 
@@ -118,7 +120,7 @@ def create__check_only_one_is_set__root_validator(
     SEE test_uid_or_email_are_set for more details
     """
 
-    def _validator(self: BaseModel):
+    def _validator(self: BaseModel) -> Self:
         assert set(mutually_exclusive_field_names).issubset(  # nosec
             self.__class__.model_fields
         ), f"Invalid {mutually_exclusive_field_names=} passed in the factory arguments"
