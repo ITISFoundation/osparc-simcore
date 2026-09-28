@@ -224,7 +224,16 @@ MANDATORY RULES (violating any of these breaks the application):
    capitalisation included. These are the exact strings the GUI shows as options, so
    translating them breaks the tooltip's reference to what the user actually sees
    (this overrides rule 1's translate-ordinary-words instruction for such quoted
-   option names). Translate only the surrounding sentence."""
+   option names). Translate only the surrounding sentence.
+6. Keep the translation close to the length of the source message. A translation should
+   have a similar number of characters as the original, typically no more than about
+   twice as long. NEVER expand a short label, button, menu item, or tool name into an
+   explanatory sentence: translate what is written, and only what is written. Use the
+   context around the string to pick the right concise wording, not to add explanations
+   the source omits. E.g. the tool name "Snap Cylinder" -> "Cilindro adherido" (short,
+   like the source), NOT "Crear cilindro inmediatamente en la posición de clic,
+   ajustándose a la geometría del modelo." (a whole invented sentence). If your
+   translation is much longer than the source, rewrite it shorter."""
 
 
 # Default base URLs per model prefix — prevents env-var bleed across providers.

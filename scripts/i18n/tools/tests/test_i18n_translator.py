@@ -262,6 +262,17 @@ def test_mandatory_rules_protect_quoted_enum_choices() -> None:
     assert "choice" in rule_five.lower()
 
 
+def test_mandatory_rules_forbid_length_explansion() -> None:
+    # Small models tend to expand short UI labels (e.g. the tool name "Snap
+    # Cylinder") into full explanatory sentences, which breaks UI layout. The rules
+    # must call this out explicitly, using the proven bad/good pair as example.
+    rules = tr._MANDATORY_RULES
+    assert "number of characters" in rules.lower()
+    assert "snap cylinder" in rules.lower()
+    assert "cilindro adherido" in rules.lower()
+    assert "explanatory sentence" in rules.lower()
+
+
 def test_normalize_trailing_whitespace_matches_source_intent() -> None:
     assert tr._normalize_trailing_whitespace("Hello ", "Hola") == "Hola "
     assert tr._normalize_trailing_whitespace("Hello", "Hola  ") == "Hola"
