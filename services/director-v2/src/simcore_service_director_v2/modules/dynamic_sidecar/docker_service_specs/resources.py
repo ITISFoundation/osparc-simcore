@@ -7,6 +7,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Final
 
+from common_library.pydantic_resources import CpuCores, TotalCpuCores
 from models_library.basic_types import InstanceCPUCount
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
@@ -25,14 +26,14 @@ from settings_library.r_clone import RCloneSimcoreSDKMountSettings
 from ....core.dynamic_services_settings import DynamicServicesSettings
 
 # below these the user service cannot realistically run
-_MIN_USER_SERVICE_CPUS: Final[float] = 1.0
+_MIN_USER_SERVICE_CPUS: Final[CpuCores] = CpuCores.model_validate(1)
 _MIN_USER_SERVICE_RAM: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
 _MIN_SUB_SERVICE_RAM: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("128MiB")
 
 
 @dataclass(frozen=True)
 class NotEnoughInstanceResourcesError(Exception):
-    cpus: float
+    cpus: TotalCpuCores
     ram: int
 
 
@@ -161,8 +162,12 @@ def scale_service_resources_to_instance_type(
     available_cpus -= helpers_cpus + sidecar_settings.DYNAMIC_SIDECAR_OWN_CPU_LIMIT.cores
     available_ram = int(available_ram - helpers_ram - int(sidecar_settings.DYNAMIC_SIDECAR_OWN_MEMORY_LIMIT))
 
-    if available_cpus < _MIN_USER_SERVICE_CPUS or available_ram < _MIN_USER_SERVICE_RAM:
-        raise NotEnoughInstanceResourcesError(cpus=available_cpus, ram=available_ram)
+    if available_cpus < _MIN_USER_SERVICE_CPUS.cores or available_ram < _MIN_USER_SERVICE_RAM:
+        # clamped to 0: on very small instances the remainder can go negative,
+        # and TotalCpuCores (ge=0) reports "nothing left", not an overshoot
+        raise NotEnoughInstanceResourcesError(
+            cpus=TotalCpuCores.model_validate(max(available_cpus, 0)), ram=available_ram
+        )
 
     scalable = service_resources[scalable_service_name]
     _get_resource(scalable, "CPU", container_name=scalable_service_name).set_value(available_cpus)
