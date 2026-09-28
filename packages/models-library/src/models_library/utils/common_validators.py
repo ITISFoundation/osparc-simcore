@@ -18,7 +18,7 @@ SEE https://docs.pydantic.dev/usage/validators/#reuse-validators
 import enum
 import functools
 import operator
-from typing import Any, Final, Self
+from typing import Any, Final
 
 from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
@@ -120,7 +120,7 @@ def create__check_only_one_is_set__root_validator(
     SEE test_uid_or_email_are_set for more details
     """
 
-    def _validator(self: BaseModel) -> Self:
+    def _validator(self: BaseModel):
         assert set(mutually_exclusive_field_names).issubset(  # nosec
             self.__class__.model_fields
         ), f"Invalid {mutually_exclusive_field_names=} passed in the factory arguments"
