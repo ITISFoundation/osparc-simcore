@@ -41,7 +41,7 @@ def dynamic_services_settings(monkeypatch: pytest.MonkeyPatch) -> DynamicService
         "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:production",
         "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         "DYNAMIC_SIDECAR_SC_BOOT_MODE": "production",
-        "R_CLONE_PROVIDER": "MINIO",
+        "R_CLONE_PROVIDER": "RUSTFS",
         "S3_ACCESS_KEY": "access-key",
         "S3_BUCKET_NAME": "bucket",
         "S3_ENDPOINT": "http://localhost:9000",
