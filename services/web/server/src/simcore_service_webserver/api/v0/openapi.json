@@ -10356,7 +10356,9 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ServiceResourcesDict"
+                "type": "object",
+                "description": "Resources reserved/limited per running container of a service",
+                "title": " New"
               }
             }
           }
@@ -28123,7 +28125,7 @@
       },
       "ServiceResourcesDict": {
         "type": "object",
-        "title": "ServiceResourcesDict"
+        "description": "Resources reserved/limited per running container of a service"
       },
       "ServiceRunGet": {
         "properties": {

@@ -3335,7 +3335,7 @@
       },
       "ServiceResourcesDict": {
         "type": "object",
-        "title": "ServiceResourcesDict"
+        "description": "Resources reserved/limited per running container of a service"
       },
       "ServiceSpec": {
         "properties": {
