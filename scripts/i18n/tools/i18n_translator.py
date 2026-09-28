@@ -158,12 +158,19 @@ def _load_glossary(path: str) -> GlossaryData:
     return GlossaryData(glossaries, lang_names)
 
 
-# Placeholders like {min_size}, %s, %1, or %(count)s must survive translation unchanged.
-# The %(name)s form (Python named percent formatting, used by gettext/Jinja plurals)
-# must come before %[sdif] so the named variant is matched as a whole.
-PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s|%\d+)")
+# Placeholders like {min_size}, {{count}}, %s, %1, or %(count)s must survive translation
+# unchanged. The %(name)s form (Python named percent formatting, used by gettext/Jinja
+# plurals) must come before %[sdif] so the named variant is matched as a whole. The
+# i18next double-brace form {{count}} must come before the single-brace {name} form:
+# without it, \{[^}]+\} matches "{{count}" (one brace too many) and strands the
+# closing "}" as unprotected text in front of the model.
+PLACEHOLDER_RE: Final = re.compile(r"(\{\{[^}]+\}\}|\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s|%\d+)")
 TRAILING_WHITESPACE_RE: Final = re.compile(r"(\s+)$")
 NPLURALS_RE: Final = re.compile(r"nplurals\s*=\s*(\d+)")
+
+# gettext plural catalogs index 0 = singular, 1 = plural; fewer forms means the
+# entry is not a usable two-form plural pair (see _is_identical_to_source).
+_MIN_PLURAL_FORMS: Final = 2
 
 # Sent to the model in every translate prompt. The placeholder tokenisation in
 # _protect() already swaps most markers for ⟨N⟩ tokens, but a model that does not
@@ -176,6 +183,12 @@ MANDATORY RULES (violating any of these breaks the application):
    verbatim in Latin script exactly as written in the source, e.g. oSparc, SimCore,
    CPU, GPU, API, URL, PDF, 2FA, OAuth, SMTP, IP, JSON, HTTP. Do not write them in
    your own script's alphabet and do not add explanatory words around them.
+   This verbatim rule applies ONLY to such fixed names. Ordinary words in the source
+   -- including short, common, or Title-Case UI words such as Add, Export,
+   Zoom, Materials, or Information -- must be translated into the target language.
+   Leaving an ordinary word untranslated (copying the English source verbatim) is an
+   error, not a safe default: if the whole string would come back identical to the
+   English source, you failed to translate it.
 2. NEVER alter, translate, reorder, delete, or invent substitution markers. These are
    program slots filled in at runtime, not text. Copy each one character-for-character
    from the source message and place it where it belongs grammatically:
@@ -348,6 +361,24 @@ def _is_untranslated(entry: polib.POEntry) -> bool:
     return not entry.msgstr or entry.msgstr.strip() == ""
 
 
+def _is_identical_to_source(entry: polib.POEntry) -> bool:
+    """True when the translation is verbatim-equal to the English source.
+
+    A non-empty ``msgstr == msgid`` is what a failed translation looks like (the model
+    echoed the source instead of translating), but it is also what a *correct*
+    translation looks like for acronyms, product names, and formulas (``OK``,
+    ``Python``, ``TARC = sqrt(...)``). Change detection therefore never treats it as
+    stale by default; this predicate only serves the opt-in ``--retranslate-identical``
+    audit so operators can have the model re-decide those entries.
+    """
+    if entry.msgid_plural:
+        plural = entry.msgstr_plural or {}
+        if len(plural) < _MIN_PLURAL_FORMS:
+            return False
+        return plural.get(0, "") == entry.msgid and plural.get(1, "") == entry.msgid_plural
+    return bool(entry.msgstr) and entry.msgstr == entry.msgid
+
+
 def _save_po_atomic(po: polib.POFile, out: Path) -> None:
     """Write a PO file via a temp file and atomic replace."""
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -501,20 +532,23 @@ def _build_translation_job(
     logger: logging.Logger | None = None,
     *,
     force: bool = False,
+    retranslate_identical: bool = False,
 ) -> TranslationJob:
     """Compute a translation job without mutating shared PO state.
 
     Change detection is intentionally minimal: an entry is (re)translated only when
     it is untranslated or flagged ``fuzzy`` (both set by ``msgmerge`` precisely when
     the ``msgid`` changes). ``force`` bypasses this to (re)translate every matched
-    entry. Source snippets come from ``snippet_by_msgid`` (built from the .pot), never
-    from the .po -- the shipped .po stays snippet-free.
+    entry; ``retranslate_identical`` additionally retranslates entries whose
+    translation equals the source verbatim. Source snippets come from
+    ``snippet_by_msgid`` (built from the .pot), never from the .po -- the shipped
+    .po stays snippet-free.
     """
     if force:
         # Bypass change detection: --force / --filter always (re)translate matched entries.
         state: EntryState = EntryNew(entry=entry) if _is_untranslated(entry) else EntryUpdated(entry=entry)
     else:
-        state = _classify_entry_state(entry)
+        state = _classify_entry_state(entry, retranslate_identical=retranslate_identical)
     if isinstance(state, EntrySkipped):
         return TranslationSkipped(entry=entry)
 
@@ -633,11 +667,18 @@ def _needs_translation(entry: polib.POEntry) -> bool:
     return _is_untranslated(entry) or "fuzzy" in entry.flags
 
 
-def _classify_entry_state(entry: polib.POEntry) -> EntryState:
-    """Return explicit new/updated/skipped entry state objects for translation routing."""
+def _classify_entry_state(entry: polib.POEntry, *, retranslate_identical: bool = False) -> EntryState:
+    """Return explicit new/updated/skipped entry state objects for translation routing.
+
+    With ``retranslate_identical``, entries whose translation is verbatim-equal to the
+    source are routed as updates (see ``_is_identical_to_source`` for why this is
+    opt-in only).
+    """
     if _is_untranslated(entry):
         return EntryNew(entry=entry)
     if "fuzzy" in entry.flags:
+        return EntryUpdated(entry=entry)
+    if retranslate_identical and _is_identical_to_source(entry):
         return EntryUpdated(entry=entry)
     return EntrySkipped(entry=entry)
 
@@ -723,6 +764,16 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         False,
         "--force",
         help="Force (re)translation even if entries appear fresh, bypassing the change-detection check.",
+    ),
+    retranslate_identical: bool = typer.Option(
+        False,
+        "--retranslate-identical",
+        help=(
+            "Also (re)translate entries whose translation is verbatim-equal to the English "
+            "source (a common failed-translation shape, but also correct for acronyms/product "
+            "names -- hence opt-in). Note: --filter implies --force, which retranslates every "
+            "matched entry regardless of this flag."
+        ),
     ),
     dry_run: bool = typer.Option(
         False,
@@ -856,7 +907,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         plan_update = len(entries) - plan_new
         plan_skip = 0
     else:
-        plan_states = [_classify_entry_state(e) for e in entries]
+        plan_states = [_classify_entry_state(e, retranslate_identical=retranslate_identical) for e in entries]
         plan_new = sum(1 for s in plan_states if isinstance(s, EntryNew))
         plan_update = sum(1 for s in plan_states if isinstance(s, EntryUpdated))
         plan_skip = sum(1 for s in plan_states if isinstance(s, EntrySkipped))
@@ -890,6 +941,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
                             snippet_by_msgid,
                             logger,
                             force=effective_force,
+                            retranslate_identical=retranslate_identical,
                         )
                         for entry in entries
                     ]
@@ -911,6 +963,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
                         snippet_by_msgid,
                         logger,
                         force=effective_force,
+                        retranslate_identical=retranslate_identical,
                     )
                     apply_job(job)
                     total += 1
@@ -931,6 +984,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
                     snippet_by_msgid,
                     logger,
                     force=effective_force,
+                    retranslate_identical=retranslate_identical,
                 )
                 for entry in entries
             ]
@@ -947,6 +1001,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
                 snippet_by_msgid,
                 logger,
                 force=effective_force,
+                retranslate_identical=retranslate_identical,
             )
             apply_job(job)
             total += 1

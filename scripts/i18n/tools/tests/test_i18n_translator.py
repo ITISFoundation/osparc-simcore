@@ -31,6 +31,7 @@ Run:
 import importlib.util
 import inspect
 import json
+import re
 import sys
 import types
 from pathlib import Path
@@ -56,13 +57,22 @@ runner = CliRunner()
 
 
 class FakeProvider:
-    """Duck-typed stand-in for LiteLLMProvider that records prompts and never calls an LLM."""
+    """Duck-typed stand-in for LiteLLMProvider that records prompts and never calls an LLM.
 
-    def __init__(self) -> None:
+    ``echo=True`` makes it return the prompt's ``String to translate:`` line verbatim,
+    simulating a model that echoes the source instead of translating it.
+    """
+
+    def __init__(self, *, echo: bool = False) -> None:
         self.calls: list[str] = []
+        self._echo = echo
 
     def _generate_json(self, prompt: str) -> dict[str, str]:
         self.calls.append(prompt)
+        if self._echo:
+            match = re.search(r'String to translate:\n"([^"]*)"', prompt)
+            assert match is not None
+            return {"interpretation": "note", "translation": match.group(1)}
         return {"interpretation": "note", "translation": "Hola"}
 
 
@@ -87,6 +97,48 @@ def test_classify_entry_state_routes_new_updated_skipped() -> None:
     assert isinstance(tr._classify_entry_state(polib.POEntry(msgid="a", msgstr="")), tr.EntryNew)
     assert isinstance(tr._classify_entry_state(polib.POEntry(msgid="a", msgstr="b", flags=["fuzzy"])), tr.EntryUpdated)
     assert isinstance(tr._classify_entry_state(polib.POEntry(msgid="a", msgstr="b")), tr.EntrySkipped)
+
+
+# ---------------------------------------------------------------------------
+# Identical-to-source entries (opt-in re-translation, --retranslate-identical)
+# ---------------------------------------------------------------------------
+
+
+def test_is_identical_to_source_singular() -> None:
+    assert tr._is_identical_to_source(polib.POEntry(msgid="Add", msgstr="Add")) is True
+    assert tr._is_identical_to_source(polib.POEntry(msgid="Add", msgstr="Agregar")) is False
+    # untranslated is not "identical" (it is EntryNew territory)
+    assert tr._is_identical_to_source(polib.POEntry(msgid="Add", msgstr="")) is False
+
+
+def test_is_identical_to_source_plural() -> None:
+    identical = polib.POEntry(msgid="{} day", msgid_plural="{} days", msgstr_plural={0: "{} day", 1: "{} days"})
+    partially = polib.POEntry(msgid="{} day", msgid_plural="{} days", msgstr_plural={0: "{} día", 1: "{} days"})
+    assert tr._is_identical_to_source(identical) is True
+    assert tr._is_identical_to_source(partially) is False
+
+
+def test_classify_identical_entry_skipped_by_default() -> None:
+    entry = polib.POEntry(msgid="Add", msgstr="Add")
+    assert isinstance(tr._classify_entry_state(entry), tr.EntrySkipped)
+
+
+def test_classify_identical_entry_updated_with_opt_in() -> None:
+    entry = polib.POEntry(msgid="Add", msgstr="Add")
+    assert isinstance(tr._classify_entry_state(entry, retranslate_identical=True), tr.EntryUpdated)
+
+
+def test_classify_identical_opt_in_does_not_affect_translated_entries() -> None:
+    translated = tr._classify_entry_state(polib.POEntry(msgid="Add", msgstr="Agregar"), retranslate_identical=True)
+    assert isinstance(translated, tr.EntrySkipped)
+    untranslated = tr._classify_entry_state(polib.POEntry(msgid="x", msgstr=""), retranslate_identical=True)
+    assert isinstance(untranslated, tr.EntryNew)
+
+
+def test_classify_identical_plural_entry_updated_with_opt_in() -> None:
+    entry = polib.POEntry(msgid="1 day", msgid_plural="{} days", msgstr_plural={0: "1 day", 1: "{} days"})
+    assert isinstance(tr._classify_entry_state(entry), tr.EntrySkipped)
+    assert isinstance(tr._classify_entry_state(entry, retranslate_identical=True), tr.EntryUpdated)
 
 
 def test_is_untranslated_handles_plural_entries() -> None:
@@ -164,6 +216,47 @@ def test_protect_restore_roundtrip_preserves_placeholders() -> None:
     assert tr._restore(protected.text, protected.mapping) == "Max {n} of %1 (%2 users) and %s items"
 
 
+def test_protect_handles_i18next_double_brace_tokens() -> None:
+    # i18next interpolations use double braces; the whole {{...}} token (closing brace
+    # included) must be swapped for a single token, never leaving a stray '}' behind.
+    protected = tr._protect("{{count}} day ago")
+    assert "{" not in protected.text
+    assert "}" not in protected.text
+    assert protected.text == "\u27e80\u27e9 day ago"
+    assert protected.mapping == {"\u27e80\u27e9": "{{count}}"}
+    assert tr._restore(protected.text, protected.mapping) == "{{count}} day ago"
+
+
+def test_protect_double_brace_multiple_tokens_roundtrip() -> None:
+    src = "Author: {{author}} - {{email}}"
+    protected = tr._protect(src)
+    assert "{" not in protected.text
+    assert "}" not in protected.text
+    assert tr._restore(protected.text, protected.mapping) == src
+
+
+def test_protect_mixes_single_and_double_brace_tokens() -> None:
+    src = "min {size} max {{max_size}}"
+    protected = tr._protect(src)
+    assert "{" not in protected.text
+    assert "}" not in protected.text
+    assert list(protected.mapping.values()) == ["{size}", "{{max_size}}"]
+    assert tr._restore(protected.text, protected.mapping) == src
+
+
+def test_mandatory_rules_keep_verbatim_only_for_fixed_names() -> None:
+    # Rule #1 must NOT read as a blanket "leave English words alone": it has to scope
+    # the verbatim requirement to acronyms/product names/trademarks and state that
+    # ordinary words must be translated (small models otherwise echo UI labels).
+    rules = tr._MANDATORY_RULES
+    assert "ordinary words" in rules.lower()
+    assert "must be translated" in rules.lower()
+    assert "identical to the" in rules.lower()  # echoes flagged as failures
+    # the original protection for real fixed names must remain
+    for name in ("oSparc", "CPU", "API"):
+        assert name in rules
+
+
 def test_normalize_trailing_whitespace_matches_source_intent() -> None:
     assert tr._normalize_trailing_whitespace("Hello ", "Hola") == "Hola "
     assert tr._normalize_trailing_whitespace("Hello", "Hola  ") == "Hola"
@@ -218,6 +311,23 @@ def test_build_translation_job_force_retranslates_clean_entry() -> None:
     job = tr._build_translation_job(entry, fake, "Spanish", {}, {}, force=True)
     assert isinstance(job, tr.TranslationCompleted)
     assert isinstance(job.state, tr.EntryUpdated)
+
+
+def test_build_translation_job_identical_skipped_by_default() -> None:
+    fake = FakeProvider()
+    entry = polib.POEntry(msgid="Add", msgstr="Add")
+    job = tr._build_translation_job(entry, fake, "Spanish", {}, {})
+    assert isinstance(job, tr.TranslationSkipped)
+    assert fake.calls == []
+
+
+def test_build_translation_job_identical_retranslated_with_opt_in() -> None:
+    fake = FakeProvider()
+    entry = polib.POEntry(msgid="Add", msgstr="Add")
+    job = tr._build_translation_job(entry, fake, "Spanish", {}, {}, retranslate_identical=True)
+    assert isinstance(job, tr.TranslationCompleted)
+    assert isinstance(job.state, tr.EntryUpdated)
+    assert len(fake.calls) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -377,6 +487,73 @@ def test_non_ollama_no_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     result = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
     assert result.exit_code == 0, result.output
     assert "Ollama runs one local model instance" not in result.output
+
+
+def _write_pot_and_po_with_identical_entry(tmp_path: Path) -> tuple[Path, Path]:
+    """pot + pre-existing po where one entry's msgstr is verbatim-equal to its msgid."""
+    pot = tmp_path / "messages.pot"
+    po = polib.POFile()
+    po.metadata = {
+        "Project-Id-Version": "osparc-simcore",
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding": "8bit",
+    }
+    po.append(polib.POEntry(msgid="Producers", msgstr=""))
+    po.save(str(pot))
+
+    merged = polib.pofile(str(pot))
+    merged.find("Producers").msgstr = "Producers"  # stuck bad translation
+    out_seed = tmp_path / "seed.po"
+    merged.save(str(out_seed))
+    return pot, out_seed
+
+
+def test_translate_cli_identical_stuck_entry_skipped_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Echo provider: first run "translates" Producers -> "Producers" (msgstr == msgid),
+    # reproducing the stuck shape end-to-end; the rerun must then skip it forever.
+    fake = FakeProvider(echo=True)
+    monkeypatch.setattr(tr, "LiteLLMProvider", lambda *_args, **_kwargs: fake)
+
+    pot, _seed = _write_pot_and_po_with_identical_entry(tmp_path)
+    gloss = _write_glossary(tmp_path)
+    out = tmp_path / "es_ES.po"
+
+    first = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
+    assert first.exit_code == 0, first.output
+    assert polib.pofile(str(out)).find("Producers").msgstr == "Producers"
+
+    fake.calls.clear()
+    result = runner.invoke(
+        tr.app,
+        [*_base_translate_args(pot, gloss, out, "openai/gpt-4o"), "--in-po", str(out)],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+    assert fake.calls == []  # default change-detection cannot see the stuck entry
+    assert polib.pofile(str(out)).find("Producers").msgstr == "Producers"
+
+
+def test_translate_cli_retranslate_identical_flag_fixes_stuck_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = FakeProvider()
+    monkeypatch.setattr(tr, "LiteLLMProvider", lambda *_args, **_kwargs: fake)
+
+    pot, seed = _write_pot_and_po_with_identical_entry(tmp_path)
+    gloss = _write_glossary(tmp_path)
+    out = tmp_path / "es_ES.po"
+
+    result = runner.invoke(
+        tr.app,
+        [*_base_translate_args(pot, gloss, out, "openai/gpt-4o"), "--in-po", str(seed), "--retranslate-identical"],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0, result.output
+    assert len(fake.calls) == 1
+    assert polib.pofile(str(out)).find("Producers").msgstr == "Hola"
+    assert "1 UPDATE" in result.output  # counted as an update in the pre-flight plan
 
 
 def test_translate_cli_stamps_model_and_date_in_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
