@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 14:40+0200\n"
+"POT-Creation-Date: 2026-09-28 16:11+0200\n"
 "PO-Revision-Date: 2026-06-24 16:28+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-08-27T12:52:01Z\n"
+"X-Translation-Date: 2026-09-28T14:19:43Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message is displayed to users when the backend
@@ -329,10 +329,17 @@ msgstr "Los recursos para la tarea {job_id} están ausentes."
 msgid "The chatbot service is not enabled."
 msgstr "El servicio del chatbot no está habilitado."
 
+# CTX-INTERPRETATION: This string appears as an error message within a
+# simulation application, indicating a failure to connect to the chatbot
+# service.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+msgid "An error occurred while contacting the chatbot service."
+msgstr "Ocurrió un error al contactar con el servicio del chatbot."
+
 # CTX-INTERPRETATION: This string appears as an error message when a task with
 # a specific identifier cannot be located. a specific UUID cannot be located
 # in the system.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:208
 #, python-brace-format
 msgid "Task {task_uuid} could not be found."
 msgstr "La tarea {task_uuid} no se pudo encontrar."
@@ -341,7 +348,7 @@ msgstr "La tarea {task_uuid} no se pudo encontrar."
 # tries to access the output of a solver job that hasn't finished
 # successfully. attempts to access the output of a solver job that has not
 # successfully completed in the scientific simulation application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:214
 #, python-brace-format
 msgid ""
 "Cannot retrieve output for solver job '{job_id}' because it has not "
@@ -353,7 +360,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string is an error message displayed when a solver
 # job has not yet stopped. job has not yet stopped, showing the job ID and its
 # current status.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:223
 #, python-brace-format
 msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
 msgstr ""
@@ -364,7 +371,7 @@ msgstr ""
 # tries to access the output of a project job that hasn't finished
 # successfully. attempts to access the output of a project job that has not
 # successfully completed in the scientific simulation application.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:231
 #, python-brace-format
 msgid ""
 "Cannot retrieve output for project job '{job_id}' because it has not "
@@ -664,7 +671,7 @@ msgstr ""
 # CTX-INTERPRETATION: This message is an error notification related to task
 # scheduling in the application. system to notify users of an unexpected issue
 # during the scheduling of tasks.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:865
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:875
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -676,7 +683,7 @@ msgstr ""
 # scheduling a task with variable resolution has exceeded the time limit and
 # will attempt to retry. warning message when a task involving variable
 # resolution fails to complete in time and will be attempted again.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:906
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr ""
 "La resolución de variables excedió el tiempo límite durante la programación "
@@ -686,7 +693,7 @@ msgstr ""
 # cannot allocate the necessary computational resources in time. fails to
 # allocate computational resources for their task, prompting them to retry or
 # seek support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:974
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:984
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -737,7 +744,7 @@ msgstr ""
 
 # CTX-INTERPRETATION: This string is part of an email template used to guide
 # users who have an existing account to log in to a specific product.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:13
 msgid ""
 "Since you already have an account on\n"
 "  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
@@ -749,7 +756,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string is part of an email template used to inform
 # users who have an existing account about adding a new product, prompting
 # them to log in.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:17
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:10
 msgid ""
 "Since you already have an account, please continue logging in to "
@@ -758,12 +765,12 @@ msgstr ""
 "Dado que ya tiene una cuenta, por favor continúe iniciando sesión en "
 "%(product_name)s con la misma dirección de correo electrónico y contraseña."
 
-# CTX-INTERPRETATION: This string appears in an email body template,
-# specifically for an account added to a product, providing a link to access
-# the product.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
-msgid "You can access %(product_name)s here: %(login_link)s"
-msgstr "Puede acceder a %(product_name)s aquí: %(login_link)s"
+# CTX-INTERPRETATION: This string appears in an email body, informing the user
+# that they can access the specified product by clicking a link.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
+msgid "You can access %(product_name)s here: %(login_link)s."
+msgstr "Puede acceder a %(product_name)s aquí: %(login_link)s."
 
 # CTX-INTERPRETATION: This string appears in the user interface of a
 # scientific simulation application, providing contact information for
@@ -844,13 +851,6 @@ msgstr ""
 "Dado que ya tiene una cuenta en %(existing_product)s, por favor continúe "
 "iniciando sesión en %(product_name)s con la misma dirección de correo "
 "electrónico y contraseña."
-
-# CTX-INTERPRETATION: This string is part of an email template used to inform
-# a user that they have been added to a product, providing a link to access
-# the product's homepage.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
-msgid "You can access %(product_name)s here: %(link)s"
-msgstr "Puede acceder a %(product_name)s aquí: %(link)s"
 
 # CTX-INTERPRETATION: This string appears as part of an error message or help,
 # providing contact information for support. section in the application,
@@ -2020,7 +2020,7 @@ msgstr "El inicio de sesión con 2FA no está disponible"
 # CTX-INTERPRETATION: The string appears as a user-facing message within a
 # registration flow, informing the user that a valid invitation code is
 # required for successful registration.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:150
 msgid "Registration requires a valid invitation code."
 msgstr "Se requiere un código de invitación válido para registrarse."
 
@@ -2028,7 +2028,7 @@ msgstr "Se requiere un código de invitación válido para registrarse."
 # does not have a phone number registered in the system. attempts to receive a
 # two-factor authentication code via SMS but does not have a phone number
 # registered in their account.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:71
 msgid "User does not have a phone number registered"
 msgstr "El usuario no tiene un número de teléfono registrado"
 
@@ -2036,7 +2036,7 @@ msgstr "El usuario no tiene un número de teléfono registrado"
 # verification code to a user. verification code to a user's phone number,
 # with placeholders for the user's first name and the code.
 #. @TRANSLATOR SMS message of at most 70 characters
-#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:137
 #, python-brace-format
 msgid "Dear {first_name}, your verification code is {code}"
 msgstr "Estimado {first_name}, su código de verificación es {code}"
@@ -3236,17 +3236,32 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears as an error message when the
 # application fails to create or update user preferences. application fails to
 # create or update user preferences due to a bad request.
-#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:22
 msgid "Could not create or modify preferences"
 msgstr "No se pudieron crear o modificar las preferencias"
 
-# CTX-INTERPRETATION: This string appears as an error message when a user
-# preference is not found. preference specified by the placeholder is not
-# found in the system.
-#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+# CTX-INTERPRETATION: This string appears in a user preferences error message,
+# indicating that a specified setting name is invalid.
+#: services/web/server/src/simcore_service_webserver/user_preferences/errors.py:13
 #, python-brace-format
-msgid "Provided {frontend_preference_name} not found"
-msgstr "No se encontró el {frontend_preference_name} proporcionado"
+msgid ""
+"The setting '{frontend_preference_identifier}' was not found. Please verify "
+"the setting name and try again."
+msgstr ""
+"La configuración '{frontend_preference_identifier}' no se encontró. Por "
+"favor, verifique el nombre de la configuración y vuelva a intentarlo."
+
+# CTX-INTERPRETATION: This string appears in a user interface, likely within a
+# form or dialog, to indicate that an invalid value has been entered for a
+# preference setting.
+#: services/web/server/src/simcore_service_webserver/user_preferences/errors.py:20
+#, python-brace-format
+msgid ""
+"The value {value} is outside the acceptable range for "
+"'{frontend_preference_identifier}'. Please enter a valid value."
+msgstr ""
+"El valor {value} está fuera del rango aceptable para "
+"'{frontend_preference_identifier}'. Por favor, introduzca un valor válido."
 
 # CTX-INTERPRETATION: This string is an error message displayed when the API
 # token for a specific service is missing. application cannot locate the API
@@ -3563,43 +3578,8 @@ msgstr ""
 msgid "Copying files"
 msgstr "Copiando archivos"
 
-# CTX-INTERPRETATION: This string appears in the context of creating an
-# export archive.
+# CTX-INTERPRETATION: This string appears in the context of creating an export
+# archive.
 #: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
 msgid "Creating export archive"
 msgstr "Creando el archivo de exportación"
-
-# CTX-INTERPRETATION: This string appears as a notification message prompting
-# the user to activate their account using a provided link. the user to
-# activate their account using a provided link. users to activate their
-# account via an email link before they can log in.
-#~ msgid "Please activate your account via the link below:"
-#~ msgstr "Por favor, active su cuenta mediante el enlace a continuación:"
-
-# CTX-INTERPRETATION: The string 'Activate' appears as a label for a button or
-# link that initiates an action. link that, when clicked, will perform an
-# action such as enabling a feature or starting a process in the scientific
-# simulation application.
-#~ msgid "Activate"
-#~ msgstr "Activar"
-
-# CTX-INTERPRETATION: This string appears as a confirmation message to users
-# after they have registered successfully. after they have successfully
-# registered for the scientific simulation application, instructing them to
-# verify their account via an email link.
-#, python-brace-format
-#~ msgid ""
-#~ "You are registered successfully! To activate your account, please click on "
-#~ "the verification link in the email we sent you to {email}."
-#~ msgstr ""
-#~ "¡Te has registrado con éxito! Para activar tu cuenta, haz clic en el enlace "
-#~ "de verificación en el correo electrónico que te enviamos a {email}."
-
-# CTX-INTERPRETATION: This error message appears when the application cannot
-# find the project owner in the list of users with access rights to the
-# project. locate the project owner's permissions within the project's access
-# rights settings.
-#~ msgid "The project owner could not be found in the project's access rights."
-#~ msgstr ""
-#~ "No se pudo encontrar al propietario del proyecto en los derechos de acceso "
-#~ "del proyecto."
