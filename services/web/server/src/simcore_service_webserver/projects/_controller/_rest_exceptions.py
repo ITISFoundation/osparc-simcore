@@ -90,7 +90,7 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
 
 _NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
     InvalidEC2TypeInResourcesSpecsError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message(
             "This service cannot start because its pricing plan requests a machine type that is not available."
             " TIP: select another pricing unit or contact support.",
@@ -98,7 +98,7 @@ _NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
         ),
     ),
     MissingServiceResourceKeysError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message(
             "The service '{service_key}:{service_version}' does not define the CPU/RAM it needs and cannot start."
             " TIP: contact support.",
@@ -106,7 +106,7 @@ _NODE_RESOURCES_ERRORS: ExceptionToHttpErrorMap = {
         ),
     ),
     InsufficientInstanceResourcesError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message(
             "The machine selected for this service is too small to run it. TIP: select a pricing unit with a"
             " larger machine.",
