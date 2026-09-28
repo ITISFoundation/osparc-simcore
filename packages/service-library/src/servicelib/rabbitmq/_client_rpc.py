@@ -41,6 +41,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         await client._rpc_initialize()
         return client
 
+    @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
     async def _create_connection(self) -> None:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
