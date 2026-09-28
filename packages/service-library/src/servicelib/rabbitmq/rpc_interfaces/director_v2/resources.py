@@ -4,6 +4,7 @@ from typing import Final
 from models_library.api_schemas_directorv2 import (
     DIRECTOR_V2_RPC_NAMESPACE,
 )
+from models_library.basic_types import InstanceCPUCount
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services_resources import ServiceResourcesDict
@@ -31,7 +32,7 @@ async def scale_service_resources_for_instance_type(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     service_resources: ServiceResourcesDict,
-    instance_cpus: float,
+    instance_cpus: InstanceCPUCount,
     instance_ram: ByteSize,
 ) -> ServiceResourcesDict:
     """Rescales the node's resources to fit the given machine.

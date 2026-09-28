@@ -7,6 +7,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Final
 
+from models_library.basic_types import InstanceCPUCount
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     SIDECAR_HELPERS_RESOURCE_KEY,
@@ -117,7 +118,7 @@ def scale_service_resources_to_instance_type(
     egress_proxy_count: int,
     with_tracing: bool,
     with_rclone: bool,
-    instance_cpus: float,
+    instance_cpus: InstanceCPUCount,
     instance_ram: ByteSize,
 ) -> ServiceResourcesDict:
     """Rescales `service_resources` so the whole node (user services + dynamic-sidecar +
