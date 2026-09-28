@@ -17,7 +17,8 @@ class CpuCores(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
-        # settings arrive via pydantic-settings from env vars, e.g. DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT=0.1
+        # required by the settings models embedding this type
+        # (asserted by settings-library tests/test__models_examples.py)
         populate_by_name=True,
         validate_by_alias=True,
         validate_by_name=True,
@@ -33,14 +34,22 @@ class CpuCores(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _accept_plain_number(cls, value: Any) -> Any:
-        # settings arrive from env vars as scalars, e.g. DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT=0.1
+        # CpuCores is a nested model, so pydantic accepts dicts only by default;
+        # the deployed wire format however is a scalar everywhere: env vars parsed
+        # by pydantic-settings (DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT=0.1) and JSON blobs
+        # director-v2 hands to the dynamic-sidecar (see _serialize_as_number).
+        # Without this, every existing scalar configuration would fail validation.
         if isinstance(value, int | float | str):
             return {"cores": value}
         return value
 
     @model_serializer
     def _serialize_as_number(self) -> float:
-        # keeps env-var/JSON round-trips scalar, e.g. {"..._CPU_LIMIT": 0.1}
+        # by default pydantic serializes a model as its fields ({"cores": 0.1});
+        # overriding keeps the scalar format these settings had as plain floats,
+        # e.g. {"DYNAMIC_SIDECAR_ENVOY_CPU_LIMIT": 0.1}. Required for rolling
+        # deployments: director-v2 dumps these settings into env vars
+        # (model_dump_json) that older dynamic-sidecar images parse as scalars.
         return self.cores
 
     def to_nano_cpus(self) -> int:

@@ -7,7 +7,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from models_library.docker import DockerNodeID
 from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
 from settings_library.base import BaseCustomSettings
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -58,7 +58,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_BUCKET: str
-    AGENT_VOLUMES_CLEANUP_S3_PROVIDER: S3Provider
+    AGENT_VOLUMES_CLEANUP_S3_PROVIDER: RCloneProvider
     AGENT_VOLUMES_CLEANUP_S3_REGION: str = "us-east-1"
     AGENT_VOLUMES_CLEANUP_RETRIES: Annotated[int, Field(description="upload retries in case of error")] = 3
     AGENT_VOLUMES_CLEANUP_PARALLELISM: Annotated[int, Field(description="parallel transfers to s3")] = 5

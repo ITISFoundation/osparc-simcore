@@ -15,7 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
-from settings_library.r_clone import RCloneSettings, S3Provider
+from settings_library.r_clone import RCloneProvider, RCloneSettings
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -50,7 +50,7 @@ def r_clone_settings(faker: Faker) -> RCloneSettings:
                 "S3_SECRET_KEY": faker.pystr(),
                 "S3_BUCKET_NAME": faker.pystr(),
             },
-            "R_CLONE_PROVIDER": S3Provider.MINIO,
+            "R_CLONE_PROVIDER": RCloneProvider.MINIO,
         }
     )
 

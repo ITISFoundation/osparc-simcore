@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import DefaultFromEnvFactoryError
 from settings_library.egress_proxy import EnvoyLogLevel
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
     PlacementSettings,
@@ -20,7 +20,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 
 
 def _get_backend_type_options() -> set[str]:
-    return {x for x in S3Provider if not x.startswith("_")}
+    return {x for x in RCloneProvider if not x.startswith("_")}
 
 
 def test_supported_backends_did_not_change() -> None:

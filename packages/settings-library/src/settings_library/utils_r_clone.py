@@ -2,7 +2,7 @@ import configparser
 from copy import deepcopy
 from io import StringIO
 
-from .r_clone import RCloneSettings, S3Provider
+from .r_clone import RCloneProvider, RCloneSettings
 
 _COMMON_SETTINGS_OPTIONS: dict[str, str] = {
     "type": "s3",
@@ -12,16 +12,16 @@ _COMMON_SETTINGS_OPTIONS: dict[str, str] = {
     "acl": "private",
 }
 
-_PROVIDER_SETTINGS_OPTIONS: dict[S3Provider, dict[str, str]] = {
+_PROVIDER_SETTINGS_OPTIONS: dict[RCloneProvider, dict[str, str]] = {
     # NOTE: # AWS_SESSION_TOKEN should be required for STS
-    S3Provider.AWS: {"provider": "AWS"},
-    S3Provider.AWS_MOTO: {
+    RCloneProvider.AWS: {"provider": "AWS"},
+    RCloneProvider.AWS_MOTO: {
         "provider": "Other",
         "force_path_style": "true",
         "endpoint": "{endpoint}",
     },
-    S3Provider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
-    S3Provider.MINIO: {"provider": "Minio", "endpoint": "{endpoint}"},
+    RCloneProvider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
+    RCloneProvider.MINIO: {"provider": "Minio", "endpoint": "{endpoint}"},
 }
 
 
@@ -59,5 +59,5 @@ def get_s3_r_clone_config(r_clone_settings: RCloneSettings, *, s3_config_key: st
     )
 
 
-def resolve_provider(s3_provider: S3Provider) -> str:
+def resolve_provider(s3_provider: RCloneProvider) -> str:
     return _PROVIDER_SETTINGS_OPTIONS[s3_provider]["provider"]

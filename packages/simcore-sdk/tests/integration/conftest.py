@@ -20,7 +20,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
-from settings_library.r_clone import RCloneSettings, S3Provider
+from settings_library.r_clone import RCloneProvider, RCloneSettings
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
@@ -290,7 +290,7 @@ async def r_clone_settings_factory(
     minio_s3_settings: S3Settings, storage_service: URL
 ) -> Callable[[], Awaitable[RCloneSettings]]:
     async def _factory() -> RCloneSettings:
-        settings = RCloneSettings(R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=S3Provider.MINIO)
+        settings = RCloneSettings(R_CLONE_S3=minio_s3_settings, R_CLONE_PROVIDER=RCloneProvider.MINIO)
         if not await is_r_clone_available(settings):
             pytest.skip("rclone not installed")
 

@@ -14,7 +14,7 @@ from .s3 import S3Settings
 DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
 
 
-class S3Provider(StrEnum):
+class RCloneProvider(StrEnum):
     AWS = "AWS"
     AWS_MOTO = "AWS_MOTO"
     CEPH = "CEPH"
@@ -106,7 +106,7 @@ class RCloneSimcoreSDKMountSettings(BaseCustomSettings):
     ] = DEFAULT_FACTORY
 
 
-class SimcoreSDKSyncSettings(BaseCustomSettings):
+class RCloneSimcoreSDKSyncSettings(BaseCustomSettings):
     R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS: Annotated[
         EditArguments,
         Field(default_factory=dict, description="arguments to be changed or added to the rclone sync command"),
@@ -120,9 +120,11 @@ class SimcoreSDKSyncSettings(BaseCustomSettings):
 
 class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
-    R_CLONE_PROVIDER: S3Provider
+    R_CLONE_PROVIDER: RCloneProvider
 
     R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS: RCloneSimcoreSDKMountSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
-    R_CLONE_SIMCORE_SDK_SYNC_SETTINGS: SimcoreSDKSyncSettings = Field(json_schema_extra={"auto_default_from_env": True})
+    R_CLONE_SIMCORE_SDK_SYNC_SETTINGS: RCloneSimcoreSDKSyncSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )

@@ -1,7 +1,7 @@
 from pathlib import Path
 from subprocess import CompletedProcess, run
 
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 
@@ -33,11 +33,11 @@ def assemble_config_file(
     source_access_key: str,
     source_secret_key: str,
     source_endpoint: str,
-    source_provider: S3Provider,
+    source_provider: RCloneProvider,
     destination_access_key: str,
     destination_secret_key: str,
     destination_endpoint: str = "https://s3.amazonaws.com",
-    destination_provider: S3Provider = S3Provider.AWS,
+    destination_provider: RCloneProvider = RCloneProvider.AWS,
 ) -> Path:
     config_content = CONFIG.format(
         source_access_key=source_access_key,

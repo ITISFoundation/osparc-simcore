@@ -9,7 +9,7 @@ from models_library.docker import DockerNodeID
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
@@ -56,7 +56,7 @@ def mock_environment(
             "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
-            "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
+            "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": RCloneProvider.MINIO,
             "RABBIT_HOST": "test",
             "RABBIT_PASSWORD": "test",
             "RABBIT_SECURE": "false",

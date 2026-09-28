@@ -3,7 +3,7 @@ from pathlib import Path
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 
 
 class DBConfig(BaseModel):
@@ -15,7 +15,7 @@ class DBConfig(BaseModel):
 
 class S3Config(BaseModel):
     endpoint: str = "https://s3.amazonaws.com"
-    provider: S3Provider = Field(
+    provider: RCloneProvider = Field(
         ...,
         description='The S3 implementation / provider. Allowed values: "MINIO","CEPH","AWS"',
     )

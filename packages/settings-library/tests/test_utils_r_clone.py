@@ -2,7 +2,7 @@
 
 import pytest
 from faker import Faker
-from settings_library.r_clone import RCloneSettings, S3Provider
+from settings_library.r_clone import RCloneProvider, RCloneSettings
 from settings_library.utils_r_clone import (
     _COMMON_SETTINGS_OPTIONS,
     get_s3_r_clone_config,
@@ -10,7 +10,7 @@ from settings_library.utils_r_clone import (
 )
 
 
-@pytest.fixture(params=list(S3Provider))
+@pytest.fixture(params=list(RCloneProvider))
 def r_clone_settings(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, faker: Faker) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", request.param)
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
@@ -36,10 +36,10 @@ def test_r_clone_config_template_replacement(r_clone_settings: RCloneSettings) -
 @pytest.mark.parametrize(
     "s3_provider, expected",
     [
-        (S3Provider.AWS, "AWS"),
-        (S3Provider.CEPH, "Ceph"),
-        (S3Provider.MINIO, "Minio"),
+        (RCloneProvider.AWS, "AWS"),
+        (RCloneProvider.CEPH, "Ceph"),
+        (RCloneProvider.MINIO, "Minio"),
     ],
 )
-def test_resolve_provider(s3_provider: S3Provider, expected: str) -> None:
+def test_resolve_provider(s3_provider: RCloneProvider, expected: str) -> None:
     assert resolve_provider(s3_provider) == expected
