@@ -2,8 +2,12 @@ from typing import Annotated, Any, Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-_MIN_INPUT_MESSAGES: Final[int] = 1
-_MAX_INPUT_MESSAGES: Final[int] = 20
+Temperature = Annotated[float, Field(ge=0, le=2)]
+TopP = Annotated[float, Field(ge=0, le=1)]
+
+DEFAULT_TEMPERATURE: Final[Temperature] = 1.0
+# NOTE the api-server does not expose top_p to callers yet, so this is the fixed value relayed downstream
+DEFAULT_TOP_P: Final[TopP] = 1.0
 
 
 class _UserMessage(BaseModel):
@@ -36,17 +40,14 @@ class ChatResponseFormat(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    messages: Annotated[
-        list[ChatCompletionRequestMessage],
-        Field(
-            min_length=_MIN_INPUT_MESSAGES, max_length=_MAX_INPUT_MESSAGES, description="List of messages in the chat"
-        ),
-    ]
+    # NOTE None is used as a sentinel for optional fields, not as an actual value (it will never be sent)
+    messages: list[ChatCompletionRequestMessage]
     model: str
     metadata: dict[str, Any] = {}
     response_format: ChatResponseFormat | None = None
-    temperature: Annotated[float, Field(ge=0, le=1.9)] = 1.0
-    top_p: Annotated[float, Field(ge=0, le=1.0)] = 1.0
+    stream: bool = False
+    temperature: Temperature = DEFAULT_TEMPERATURE
+    top_p: TopP = DEFAULT_TOP_P
 
 
 class ChatCompletionResponseMessage(BaseModel):
