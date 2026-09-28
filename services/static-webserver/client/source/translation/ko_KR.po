@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-09-18T15:20:22Z\n"
+"X-Translation-Date: 2026-09-28T14:20:47Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This string is used within the 'About Product' menu item
@@ -1495,9 +1495,8 @@ msgstr "연락 주시기 바랍니다."
 msgid "Ten Simple Rules"
 msgstr "십 가지 간단한 규칙"
 
-# CTX-INTERPRETATION: The string "TSR:" is used as a label within a user
-# interface element displaying a star rating system, likely indicating the
-# type or category of the rating.
+# CTX-INTERPRETATION: This string labels a star rating component within a
+# card-based dashboard, indicating the 'TSR' (Technical Support Rating) value.
 #: services/static-webserver/client/source/class/osparc/dashboard/CardBase.js:104
 msgid "TSR:"
 msgstr "TSR:"
@@ -4592,9 +4591,8 @@ msgid ""
 "in:"
 msgstr "로그인 시 사용할 선호하는 두 번째 인증 방법을 설정하십시오:"
 
-# CTX-INTERPRETATION: The string "SMS" likely refers to Short Message Service,
-# possibly indicating a feature related to sending or receiving text messages
-# within the application.
+# CTX-INTERPRETATION: The string "SMS" appears as a label for an SMS sending
+# option within a user profile settings page.
 #: services/static-webserver/client/source/class/osparc/desktop/account/ProfilePage.js:477
 msgid "SMS"
 msgstr "SMS"
@@ -7436,9 +7434,9 @@ msgstr "로그"
 msgid "No logs available"
 msgstr "로그가 없습니다"
 
-# CTX-INTERPRETATION: The string "RRID:" is used as a label within the
-# ClassifiersEditor to display and link to an RRID (Remote Resource
-# Identifier) associated with a scientific resource.
+# CTX-INTERPRETATION: This string appears as a label indicating the Research
+# Registry Identifier (RRID) within the ClassifiersEditor, likely used for
+# linking to related resources.
 #: services/static-webserver/client/source/class/osparc/metadata/ClassifiersEditor.js:80
 msgid "RRID:"
 msgstr "RRID:"
@@ -8668,25 +8666,23 @@ msgstr "단가"
 msgid "Specific info"
 msgstr "특정 정보"
 
-# CTX-INTERPRETATION: The string "CPU" is used as a label for a CPU usage
-# input field within a unit editor or pricing unit tier configuration, likely
-# indicating the processor's capabilities.
+# CTX-INTERPRETATION: This string is used as a label for a CPU usage control
+# in the UnitEditor, indicating the CPU used for the simulation.
 #: services/static-webserver/client/source/class/osparc/pricing/UnitEditor.js:218
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:115
 msgid "CPU"
 msgstr "CPU"
 
 # CTX-INTERPRETATION: The string "RAM" is used as a label for a RAM input
-# control within a unit editor or pricing unit tier, likely referring to the
-# amount of RAM available.
+# field within the UnitEditor, likely indicating the amount of RAM available
+# for a simulation unit.
 #: services/static-webserver/client/source/class/osparc/pricing/UnitEditor.js:229
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:119
 msgid "RAM"
 msgstr "RAM"
 
-# CTX-INTERPRETATION: The string "VRAM" is used as a label for a VRAM input
-# field within the UnitEditor and PricingUnitTier components, likely referring
-# to video memory.
+# CTX-INTERPRETATION: This string is used as a label for a VRAM input field
+# within the UnitEditor, indicating the amount of video memory used.
 #: services/static-webserver/client/source/class/osparc/pricing/UnitEditor.js:240
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:123
 msgid "VRAM"
@@ -9257,8 +9253,8 @@ msgstr ""
 "- 로그아웃하기 전에 30분 대기 시간\n"
 "- 하드웨어 리소스 제한      "
 
-# CTX-INTERPRETATION: This string is likely used as a title or identifier for
-# a lightweight version of the Sim4Life application within the S4LLiteUI.
+# CTX-INTERPRETATION: This string represents the name of the Sim4Life.lite
+# application, likely used as a title or label within the user interface.
 #: services/static-webserver/client/source/class/osparc/product/quickStart/s4llite/S4LLiteUI.js:22
 msgid "Sim4Life.lite"
 msgstr "Sim4Life.lite"
@@ -10477,16 +10473,14 @@ msgstr "선택됨"
 msgid "Credits/h: %1"
 msgstr "크레딧/시간: %1"
 
-# CTX-INTERPRETATION: The string "EC2" is used within a function to display
-# EC2-specific pricing information in Korean, likely as part of a user
-# interface for managing AWS resources.
+# CTX-INTERPRETATION: This string is used to display the EC2 instance type in
+# the pricing unit configuration, likely within a web-based user interface.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:103
 msgid "EC2"
 msgstr "EC2"
 
-# CTX-INTERPRETATION: The string "SSD" is used as a tooltip label for an icon
-# representing Solid State Drives (SSDs) within the PricingUnitTier component,
-# likely indicating a storage tier option.
+# CTX-INTERPRETATION: This string is used to display the tooltip text for the
+# SSD option in the PricingUnitTier.js file, indicating the type of storage.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:127
 msgid "SSD"
 msgstr "SSD"
@@ -11538,9 +11532,9 @@ msgstr "종류"
 msgid "Weight"
 msgstr "무게"
 
-# CTX-INTERPRETATION: The string "DOI" is used as a label within the
-# LicensedItemDetails component to display the Digital Object Identifier for a
-# licensed item.
+# CTX-INTERPRETATION: This string is used to display the DOI (Digital Object
+# Identifier) value within the LicensedItemDetails view, likely for
+# identifying a scientific publication or dataset.
 #: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:276
 msgid "DOI"
 msgstr "DOI"
