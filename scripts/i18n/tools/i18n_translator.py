@@ -207,7 +207,17 @@ MANDATORY RULES (violating any of these breaks the application):
    emphasised in the translation: "This IS a sentence" -> "Esta ES una phrase". Do not
    silently normalise "IS" to "es", and do not add emphasis the source does not have.
    Keep the source's capitalisation style for headings, sentence starts, and ALL-CAPS
-   labels."""
+   labels.
+5. When the source names selectable option values inside single or double quotes --
+   the choices of a dropdown, combo box, or enumeration (e.g. "Compute kernel used to
+   run the FDTD solver: 'Software' runs on the CPU; 'aXWare' runs on a GPU via the
+   aXWare acceleration engine; 'CUDA' runs directly on NVIDIA GPUs via CUDA", where
+   the same UI may equally write "Software", "aXWare", "CUDA") -- copy each quoted
+   option name verbatim, character-for-character, and do NOT translate it, quotes and
+   capitalisation included. These are the exact strings the GUI shows as options, so
+   translating them breaks the tooltip's reference to what the user actually sees
+   (this overrides rule 1's translate-ordinary-words instruction for such quoted
+   option names). Translate only the surrounding sentence."""
 
 
 # Default base URLs per model prefix — prevents env-var bleed across providers.

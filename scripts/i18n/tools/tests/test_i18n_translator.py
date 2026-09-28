@@ -257,6 +257,23 @@ def test_mandatory_rules_keep_verbatim_only_for_fixed_names() -> None:
         assert name in rules
 
 
+def test_mandatory_rules_protect_quoted_enum_choices() -> None:
+    # Option/enumeration choices quoted inside a tooltip (e.g. 'Software', 'CUDA'
+    # listing solver backends) are shown verbatim in the GUI, so the rules must keep
+    # them untranslated -- otherwise the sentence stops matching the actual options.
+    # The rule must cover BOTH quoting styles: 'single' and "double" quotes.
+    rules = tr._MANDATORY_RULES
+    rule_five = rules.split("\n5.")[1]
+    assert "'software'" in rule_five.lower()
+    assert "'cuda'" in rule_five.lower()
+    assert "verbatim" in rule_five.lower()
+    assert "single" in rule_five.lower()
+    assert "double" in rule_five.lower()
+    # the rule's scope must be tied to quoted option/choice names, not all quoted text
+    assert "option" in rule_five.lower()
+    assert "choice" in rule_five.lower()
+
+
 def test_normalize_trailing_whitespace_matches_source_intent() -> None:
     assert tr._normalize_trailing_whitespace("Hello ", "Hola") == "Hola "
     assert tr._normalize_trailing_whitespace("Hello", "Hola  ") == "Hola"
