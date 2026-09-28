@@ -1,11 +1,12 @@
 import json
 import sys
 from pathlib import Path
+from typing import Final
 
 import yaml
 
 # Conventions
-CONVERTED_SUFFIX = "-converted.yaml"
+CONVERTED_SUFFIX: Final = "-converted.yaml"
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
