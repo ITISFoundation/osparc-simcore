@@ -88,7 +88,7 @@ class DynamicServiceCreate(ServiceDetails):
     )
 
 
-type DynamicServiceGet = RunningDynamicServiceDetails
+DynamicServiceGet = RunningDynamicServiceDetails
 
 
 class GetProjectInactivityResponse(BaseModel):
