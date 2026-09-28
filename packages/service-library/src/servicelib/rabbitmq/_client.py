@@ -13,7 +13,6 @@ from annotated_types import doc
 from common_library.async_tools import cancel_wait_task
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import NonNegativeInt, PositiveInt
-from tenacity import retry
 
 from ..background_task import create_periodic_task
 from ..logging_utils import log_catch, log_context
@@ -28,7 +27,6 @@ from ._models import (
 )
 from ._utils import (
     RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
-    RabbitMQRetryPolicyUponInitialization,
     declare_queue,
     get_rabbitmq_client_unique_name,
 )
@@ -190,7 +188,6 @@ class RabbitMQClient(RabbitMQClientBase):
         # channels are not thread safe, what about python?
         self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=10)
 
-    @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
     async def _get_connection(self, rabbit_broker: str, connection_name: str) -> aio_pika.abc.AbstractRobustConnection:
         # NOTE: to show the connection name in the rabbitMQ UI see there
         # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
