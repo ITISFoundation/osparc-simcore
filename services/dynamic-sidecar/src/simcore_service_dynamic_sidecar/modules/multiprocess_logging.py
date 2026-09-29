@@ -15,13 +15,18 @@ class _LogRecordTreeHandler(logging.Handler):
         logging.getLogger(record.name).handle(record)
 
 
-def create_log_queue() -> Queue[logging.LogRecord]:
-    return multiprocessing.Queue()
+class _LogForwardingListener(logging.handlers.QueueListener):
+    """listener forwarding the log records created inside worker processes"""
+
+    queue: Queue[logging.LogRecord]
+
+    def __init__(self, log_queue: Queue[logging.LogRecord]) -> None:
+        super().__init__(log_queue, _LogRecordTreeHandler())
 
 
-def create_log_listener(log_queue: Queue[logging.LogRecord]) -> logging.handlers.QueueListener:
+def create_log_listener() -> _LogForwardingListener:
     """creates the parent-side listener forwarding the worker's log records into this process"""
-    return logging.handlers.QueueListener(log_queue, _LogRecordTreeHandler())
+    return _LogForwardingListener(multiprocessing.Queue())
 
 
 def setup_log_forwarding(log_queue: Queue[logging.LogRecord]) -> None:

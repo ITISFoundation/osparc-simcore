@@ -20,8 +20,8 @@ from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
 
 from ..multiprocess_logging import (
+    _LogForwardingListener,
     create_log_listener,
-    create_log_queue,
     setup_log_forwarding,
 )
 from ._watchdog_extensions import ExtendedInotifyObserver, SafeFileSystemEventHandler
@@ -205,13 +205,12 @@ class LoggingEventHandlerObserver:
         self.max_heart_beat_wait_interval_s: PositiveFloat = max_heart_beat_wait_interval_s
 
         self._health_check_queue: Queue[int | None] = multiprocessing.Queue()
-        self._log_queue: Queue[logging.LogRecord] = create_log_queue()
-        self._log_listener: logging.handlers.QueueListener = create_log_listener(self._log_queue)
+        self._log_listener: _LogForwardingListener = create_log_listener()
         self._logging_event_handler_process = _LoggingEventHandlerProcess(
             path_to_observe=self.path_to_observe,
             health_check_queue=self._health_check_queue,
             heart_beat_interval_s=heart_beat_interval_s,
-            log_queue=self._log_queue,
+            log_queue=self._log_listener.queue,
         )
         self._keep_running: bool = False
         self._task_health_worker: Task | None = None

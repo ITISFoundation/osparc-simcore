@@ -19,8 +19,8 @@ from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
 
 from ..multiprocess_logging import (
+    _LogForwardingListener,
     create_log_listener,
-    create_log_queue,
     setup_log_forwarding,
 )
 from ._context import OutputsContext
@@ -300,13 +300,12 @@ class EventHandlerObserver:
         self.max_heart_beat_wait_interval_s: PositiveFloat = max_heart_beat_wait_interval_s
 
         self._health_check_queue: Queue[int | None] = multiprocessing.Queue()
-        self._log_queue: Queue[logging.LogRecord] = create_log_queue()
-        self._log_listener: logging.handlers.QueueListener = create_log_listener(self._log_queue)
+        self._log_listener: _LogForwardingListener = create_log_listener()
         self._event_handler_process: _EventHandlerProcess = _EventHandlerProcess(
             outputs_context=outputs_context,
             health_check_queue=self._health_check_queue,
             heart_beat_interval_s=heart_beat_interval_s,
-            log_queue=self._log_queue,
+            log_queue=self._log_listener.queue,
         )
         self._keep_running: bool = False
         self._task_health_worker: Task | None = None
