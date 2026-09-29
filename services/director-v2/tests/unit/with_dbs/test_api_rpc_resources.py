@@ -15,7 +15,7 @@ from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    create_service_resources_from_single_service,
 )
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -135,7 +135,7 @@ async def test_rpc_scale_service_resources_for_instance_type(
     user = create_registered_user()
     await enable_data_mounting(user["primary_gid"], product_name)
 
-    service_resources = ServiceResourcesDictHelpers.create_from_single_service(
+    service_resources = create_service_resources_from_single_service(
         image="simcore/services/dynamic/sim4life:1.0.0",
         resources=TypeAdapter(ResourcesDict).validate_python(
             {
@@ -177,7 +177,7 @@ async def test_rpc_scale_service_resources_for_instance_type_too_small(
     user = create_registered_user()
     await enable_data_mounting(user["primary_gid"], product_name)
 
-    service_resources = ServiceResourcesDictHelpers.create_from_single_service(
+    service_resources = create_service_resources_from_single_service(
         image="simcore/services/dynamic/sim4life:1.0.0",
         resources=TypeAdapter(ResourcesDict).validate_python(
             {

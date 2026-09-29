@@ -7,7 +7,7 @@ from models_library.services_resources import (
     ImageResources,
     ResourcesDict,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    create_service_resources_from_single_service,
 )
 from pydantic import ByteSize, TypeAdapter
 from servicelib.docker_utils import estimate_dynamic_sidecar_resources_from_ec2_instance
@@ -176,7 +176,7 @@ def test_compute_helper_containers_resources_accumulates_all_helpers(
 
 
 def _single_service_resources(cpu: float, ram: str) -> ServiceResourcesDict:
-    return ServiceResourcesDictHelpers.create_from_single_service(
+    return create_service_resources_from_single_service(
         image="simcore/services/dynamic/jupyter-math:1.0.0",
         resources=TypeAdapter(ResourcesDict).validate_python(
             {
