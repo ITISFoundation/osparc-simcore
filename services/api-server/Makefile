@@ -101,9 +101,12 @@ test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BRO
 
 .PHONY: test-openai-api-compatibility
 test-openai-api-compatibility: openapi-openai-compatible.json ## Tests that the OpenAI-compatible endpoints are indeed compatible with the OpenAI API. Usage: make test-openai-api-compatibility
+	# NOTE: pinned to a commit (instead of `main`) because openai/openai-openapi churns constantly and can
+	# introduce specs that oasdiff's --flatten-allof cannot parse (e.g. 78e0725d added a Type conflict),
+	# breaking this check for every PR regardless of any osparc-simcore change. Bump deliberately.
 	$(SCRIPTS_DIR)/openapi-diff.bash breaking \
 		--strip-prefix-base="/v0" \
 		--fail-on ERR \
 		--flatten-allof \
 		"/specs/openapi-openai-compatible.json" \
-		"https://raw.githubusercontent.com/openai/openai-openapi/main/openapi.yaml"
+		"https://raw.githubusercontent.com/openai/openai-openapi/7a350f69/openapi.yaml"
