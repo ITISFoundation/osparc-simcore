@@ -12,8 +12,7 @@ from pydantic import PositiveInt
 from servicelib.aiohttp import observer
 
 from ..groups import groups_service
-
-_SIGNAL_ON_USER_CONFIRMATION: str = "SIGNAL_ON_USER_CONFIRMATION"
+from ..signals import SIGNAL_ON_USER_CONFIRMATION
 
 
 async def grant_user_access_to_product(
@@ -38,7 +37,7 @@ async def grant_user_access_to_product(
 
     await observer.emit(
         app,
-        _SIGNAL_ON_USER_CONFIRMATION,
+        SIGNAL_ON_USER_CONFIRMATION,
         user_id=user_id,
         product_name=product_name,
         extra_credits_in_usd=extra_credits_in_usd,
