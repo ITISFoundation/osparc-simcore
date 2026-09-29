@@ -199,6 +199,11 @@ class ChatbotNotAvailableError(BaseBackEndError):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
 
+class ChatbotRequestError(BaseBackEndError):
+    msg_template = user_message("An error occurred while contacting the chatbot service.", _version=1)
+    status_code = status.HTTP_502_BAD_GATEWAY
+
+
 class CeleryTaskNotFoundError(BaseBackEndError):
     msg_template = user_message("Task {task_uuid} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
