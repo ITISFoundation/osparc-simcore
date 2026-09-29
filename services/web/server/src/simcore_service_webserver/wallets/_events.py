@@ -9,6 +9,7 @@ from servicelib.aiohttp.observer import register_observer, setup_observer_regist
 
 from ..products import products_service
 from ..resource_usage import resource_usage_service
+from ..signals import SIGNAL_ON_USER_CONFIRMATION
 from ..user_preferences import user_preferences_service
 from ..user_preferences.models import PreferredWalletIdFrontendUserPreference
 from ..users import users_service
@@ -85,5 +86,5 @@ def setup_wallets_events(app: web.Application):
     register_observer(
         app,
         functools.partial(_on_user_confirmation, app=app),
-        event="SIGNAL_ON_USER_CONFIRMATION",
+        event=SIGNAL_ON_USER_CONFIRMATION,
     )
