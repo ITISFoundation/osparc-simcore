@@ -36,7 +36,13 @@ async def test_middleware_restrictions_opentelemetry_is_second_middleware(
     tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.WEBSERVER_TRACING)
 
     app = create_application(tracing_config=tracing_config)
+
+    def _otel_middleware_installed() -> bool:
+        return any(create_aiohttp_middleware.__name__ in f"{middleware}" for middleware in app.middlewares)
+
     # NOTE: tracing instruments when its lifespan (a cleanup_ctx) is entered, not at app creation
+    assert not _otel_middleware_installed(), "OpenTelemetry middleware must not be installed before startup"
+
     tracing_lifespan = next(ctx for ctx in app.cleanup_ctx if ctx.__module__.endswith("servicelib.aiohttp.tracing"))
     async for _ in tracing_lifespan(app):
         assert app.middlewares

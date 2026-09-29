@@ -11,6 +11,7 @@ from aiohttp import web
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
+from pytest_mock import MockerFixture
 from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY, setup_tracing
 from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingConfig, traced
 from settings_library.tracing import TracingSettings
@@ -51,6 +52,33 @@ async def test_valid_tracing_settings(
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=service_name)
     async for _ in setup_tracing(tracing_config=tracing_config)(app):
         pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_tracer_provider_shutdown_on_lifespan_exit(
+    mock_otel_collector: InMemorySpanExporter,
+    tracing_env_vars: None,
+    mocker: MockerFixture,
+):
+    app = web.Application()
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings,
+        service_name="simcore_service_webserver",
+    )
+    assert tracing_config.tracer_provider
+    shutdown_mock = mocker.patch.object(tracing_config.tracer_provider, "shutdown")
+
+    async for _ in setup_tracing(tracing_config=tracing_config)(app):
+        shutdown_mock.assert_not_called()
+
+    shutdown_mock.assert_called_once()
 
 
 @pytest.mark.parametrize(
