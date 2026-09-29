@@ -10,7 +10,8 @@ These labels are the keys of the observer registry (see
 use the *same* string, and the keys also surface in replica logs/reports. The
 tests below lock that contract so a rename or drift is caught here instead of
 silently breaking wallet bootstrap, socket logout or project/wallet
-subscription at runtime.
+subscription at runtime. They also enforce the pure-leaf invariant of
+``signals.py`` documented in ``services/web/server/docs/DESIGN.md``.
 
 They are intentionally DB/socket-free (isolated): they exercise the registration
 and emit seams only, not the (heavier) observers' side effects.
@@ -80,19 +81,34 @@ def test_signal_constants_keep_their_wire_value(constant: str):
     assert _EXPECTED_WIRE_VALUES[constant] == constant
 
 
+# allowlist (not a blocklist): anything outside the standard library fails the
+# guard by default, so a newly-added dependency is caught even if nobody knew
+# to add its package to a forbidden list. Stdlib modules reachable from the
+# repo's own modules are allowed to stay importable, but nothing else is.
+_ALLOWED_IMPORT_ROOTS: frozenset[str] = frozenset({"typing"})
+
+
 def test_signals_module_is_a_pure_leaf():
-    """signals must not import the service graph, so it cannot create cycles"""
+    """signals must stay dependency-free (stdlib-only, allowlisted), so it
+    cannot create cross-domain dependencies or cycles no matter what the
+    service graph later imports"""
     tree = ast.parse(inspect.getsource(signals))
 
-    forbidden_roots = {"simcore_service_webserver", "servicelib", "models_library", "common_library"}
     imported_roots: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imported_roots.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
-            imported_roots.add(node.module.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            # relative imports (node.level > 0) always reach the service package
+            if node.level > 0:
+                imported_roots.add("simcore_service_webserver")
+            elif node.module:
+                imported_roots.add(node.module.split(".")[0])
 
-    assert not imported_roots & forbidden_roots, f"signals must not import {forbidden_roots}, imports {imported_roots}"
+    assert imported_roots <= _ALLOWED_IMPORT_ROOTS, (
+        f"signals.py must remain a pure leaf module (see services/web/server/docs/DESIGN.md);"
+        f" allowed imports are {sorted(_ALLOWED_IMPORT_ROOTS)} but found {sorted(imported_roots)}"
+    )
 
 
 @pytest.mark.parametrize(
