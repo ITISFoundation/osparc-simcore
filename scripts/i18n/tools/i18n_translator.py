@@ -44,6 +44,7 @@ import logging
 import os
 import re
 import threading
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -99,6 +100,12 @@ class Translation(NamedTuple):
     interpretation: str  # one-sentence context note
     text: TranslationStr
     text_plural: TranslationStr | None = None  # set only for plural (msgid_plural) entries
+
+
+class PreparedPrompt(NamedTuple):
+    prompt: str  # full prompt text sent to the model
+    protected: ProtectedText  # protected singular msgid (for token restore)
+    protected_plural: ProtectedText | None = None  # set only for plural entries
 
 
 @dataclass(frozen=True)
@@ -158,12 +165,19 @@ def _load_glossary(path: str) -> GlossaryData:
     return GlossaryData(glossaries, lang_names)
 
 
-# Placeholders like {min_size}, %s, %1, or %(count)s must survive translation unchanged.
-# The %(name)s form (Python named percent formatting, used by gettext/Jinja plurals)
-# must come before %[sdif] so the named variant is matched as a whole.
-PLACEHOLDER_RE: Final = re.compile(r"(\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s|%\d+)")
+# Placeholders like {min_size}, {{count}}, %s, %1, or %(count)s must survive translation
+# unchanged. The %(name)s form (Python named percent formatting, used by gettext/Jinja
+# plurals) must come before %[sdif] so the named variant is matched as a whole. The
+# i18next double-brace form {{count}} must come before the single-brace {name} form:
+# without it, \{[^}]+\} matches "{{count}" (one brace too many) and strands the
+# closing "}" as unprotected text in front of the model.
+PLACEHOLDER_RE: Final = re.compile(r"(\{\{[^}]+\}\}|\{[^}]+\}|%\([^)]+\)[sdif]|%[sdif]|%\d+\$s|%\d+)")
 TRAILING_WHITESPACE_RE: Final = re.compile(r"(\s+)$")
 NPLURALS_RE: Final = re.compile(r"nplurals\s*=\s*(\d+)")
+
+# gettext plural catalogs index 0 = singular, 1 = plural; fewer forms means the
+# entry is not a usable two-form plural pair (see _is_identical_to_source).
+_MIN_PLURAL_FORMS: Final = 2
 
 # Sent to the model in every translate prompt. The placeholder tokenisation in
 # _protect() already swaps most markers for ⟨N⟩ tokens, but a model that does not
@@ -176,6 +190,12 @@ MANDATORY RULES (violating any of these breaks the application):
    verbatim in Latin script exactly as written in the source, e.g. oSparc, SimCore,
    CPU, GPU, API, URL, PDF, 2FA, OAuth, SMTP, IP, JSON, HTTP. Do not write them in
    your own script's alphabet and do not add explanatory words around them.
+   This verbatim rule applies ONLY to such fixed names. Ordinary words in the source
+   -- including short, common, or Title-Case UI words such as Add, Export,
+   Zoom, Materials, or Information -- must be translated into the target language.
+   Leaving an ordinary word untranslated (copying the English source verbatim) is an
+   error, not a safe default: if the whole string would come back identical to the
+   English source, you failed to translate it.
 2. NEVER alter, translate, reorder, delete, or invent substitution markers. These are
    program slots filled in at runtime, not text. Copy each one character-for-character
    from the source message and place it where it belongs grammatically:
@@ -194,7 +214,26 @@ MANDATORY RULES (violating any of these breaks the application):
    emphasised in the translation: "This IS a sentence" -> "Esta ES una phrase". Do not
    silently normalise "IS" to "es", and do not add emphasis the source does not have.
    Keep the source's capitalisation style for headings, sentence starts, and ALL-CAPS
-   labels."""
+   labels.
+5. When the source names selectable option values inside single or double quotes --
+   the choices of a dropdown, combo box, or enumeration (e.g. "Compute kernel used to
+   run the FDTD solver: 'Software' runs on the CPU; 'aXWare' runs on a GPU via the
+   aXWare acceleration engine; 'CUDA' runs directly on NVIDIA GPUs via CUDA", where
+   the same UI may equally write "Software", "aXWare", "CUDA") -- copy each quoted
+   option name verbatim, character-for-character, and do NOT translate it, quotes and
+   capitalisation included. These are the exact strings the GUI shows as options, so
+   translating them breaks the tooltip's reference to what the user actually sees
+   (this overrides rule 1's translate-ordinary-words instruction for such quoted
+   option names). Translate only the surrounding sentence.
+6. Keep the translation close to the length of the source message. A translation should
+   have a similar number of characters as the original, typically no more than about
+   twice as long. NEVER expand a short label, button, menu item, or tool name into an
+   explanatory sentence: translate what is written, and only what is written. Use the
+   context around the string to pick the right concise wording, not to add explanations
+   the source omits. E.g. the tool name "Snap Cylinder" -> "Cilindro adherido" (short,
+   like the source), NOT "Crear cilindro inmediatamente en la posición de clic,
+   ajustándose a la geometría del modelo." (a whole invented sentence). If your
+   translation is much longer than the source, rewrite it shorter."""
 
 
 # Default base URLs per model prefix — prevents env-var bleed across providers.
@@ -348,6 +387,24 @@ def _is_untranslated(entry: polib.POEntry) -> bool:
     return not entry.msgstr or entry.msgstr.strip() == ""
 
 
+def _is_identical_to_source(entry: polib.POEntry) -> bool:
+    """True when the translation is verbatim-equal to the English source.
+
+    A non-empty ``msgstr == msgid`` is what a failed translation looks like (the model
+    echoed the source instead of translating), but it is also what a *correct*
+    translation looks like for acronyms, product names, and formulas (``OK``,
+    ``Python``, ``TARC = sqrt(...)``). Change detection therefore never treats it as
+    stale by default; this predicate only serves the opt-in ``--retranslate-identical``
+    audit so operators can have the model re-decide those entries.
+    """
+    if entry.msgid_plural:
+        plural = entry.msgstr_plural or {}
+        if len(plural) < _MIN_PLURAL_FORMS:
+            return False
+        return plural.get(0, "") == entry.msgid and plural.get(1, "") == entry.msgid_plural
+    return bool(entry.msgstr) and entry.msgstr == entry.msgid
+
+
 def _save_po_atomic(po: polib.POFile, out: Path) -> None:
     """Write a PO file via a temp file and atomic replace."""
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -379,8 +436,8 @@ def _filter_glossary(glossary: TermGlossaryDict, msgid: str, snippet: str) -> Te
     }
 
 
-def _translate_entry(  # noqa: C901
-    provider: LiteLLMProvider | DryRunProvider,
+def _build_prompt(
+    *,
     msgid: str,
     snippet: str,
     translator_notes: str,
@@ -388,25 +445,22 @@ def _translate_entry(  # noqa: C901
     glossary: TermGlossaryDict,
     occurrences: list[tuple[str, str]] | None = None,
     msgid_plural: str = "",
-    logger: logging.Logger | None = None,
-) -> Translation:
-    """Translate one msgid; the context interpretation is always regenerated fresh.
+) -> PreparedPrompt:
+    """Compose the translation prompt and the placeholder-protected source forms.
 
-    When ``msgid_plural`` is set the entry is pluralized: both the singular and the
-    plural English source forms are translated and returned (``Translation.text`` and
-    ``Translation.text_plural``).
+    Returns the prompt plus the protected singular form and, for pluralized entries,
+    the protected plural form, so the caller can restore the ⟨N⟩ tokens after the LLM
+    reply. Sections with nothing to say (no glossary / notes / snippet) are skipped so
+    the model is never given dead instructions.
     """
     protected = _protect(msgid)
-    is_plural = bool(msgid_plural)
-    protected_plural = _protect(msgid_plural) if is_plural else None
+    protected_plural = _protect(msgid_plural) if msgid_plural else None
 
     interp_instruction = (
         "Write a one-sentence context interpretation explaining where/how this string "
         "appears (max ~150 characters, a single sentence, no line breaks)."
     )
 
-    # Assemble the prompt from sections; skip blocks that have nothing to say so
-    # the model isn't given dead instructions (no snippet / no placeholders).
     sections = [
         "You are a technical software localizer for a scientific simulation application.",
         f"TARGET LANGUAGE: **{lang_name}**",
@@ -436,8 +490,7 @@ def _translate_entry(  # noqa: C901
             loc_lines += f"\n  ... and {len(occurrences) - max_shown} more location(s)"
         sections.append(f"File path(s) where this string is used (may hint at its domain/purpose):\n{loc_lines}")
 
-    if is_plural:
-        assert protected_plural is not None  # nosec
+    if protected_plural is not None:
         sections.append(
             "This is a pluralized string. Translate BOTH grammatical forms:\n"
             f'  singular (used when count == 1): "{protected.text}"\n'
@@ -451,7 +504,7 @@ def _translate_entry(  # noqa: C901
 
     sections.append(interp_instruction)
 
-    if is_plural:
+    if protected_plural is not None:
         sections.append(
             "Respond with JSON only, no markdown:\n"
             "{\n"
@@ -469,24 +522,51 @@ def _translate_entry(  # noqa: C901
             "}"
         )
 
-    prompt = "\n\n".join(sections)
+    return PreparedPrompt("\n\n".join(sections), protected, protected_plural)
+
+
+def _translate_entry(
+    provider: LiteLLMProvider | DryRunProvider,
+    msgid: str,
+    snippet: str,
+    translator_notes: str,
+    lang_name: LangNameStr,
+    glossary: TermGlossaryDict,
+    occurrences: list[tuple[str, str]] | None = None,
+    msgid_plural: str = "",
+    logger: logging.Logger | None = None,
+) -> Translation:
+    """Translate one msgid; the context interpretation is always regenerated fresh.
+
+    When ``msgid_plural`` is set the entry is pluralized: both the singular and the
+    plural English source forms are translated and returned (``Translation.text`` and
+    ``Translation.text_plural``).
+    """
+    prepared = _build_prompt(
+        msgid=msgid,
+        snippet=snippet,
+        translator_notes=translator_notes,
+        lang_name=lang_name,
+        glossary=glossary,
+        occurrences=occurrences,
+        msgid_plural=msgid_plural,
+    )
 
     if logger:
-        logger.debug("--- PROMPT [%s] %r ---\n%s", lang_name, msgid, prompt)
+        logger.debug("--- PROMPT [%s] %r ---\n%s", lang_name, msgid, prepared.prompt)
 
-    data = provider._generate_json(prompt)  # noqa: SLF001
+    data = provider._generate_json(prepared.prompt)  # noqa: SLF001
 
     if logger:
         logger.debug("--- RESPONSE ---\n%s", json.dumps(data, ensure_ascii=False, indent=2))
 
-    translated = _restore(data["translation"], protected.mapping)
+    translated = _restore(data["translation"], prepared.protected.mapping)
     text = _normalize_trailing_whitespace(msgid, translated)
 
     text_plural: str | None = None
-    if is_plural:
-        assert protected_plural is not None  # nosec
+    if prepared.protected_plural is not None:
         raw_plural = data.get("translation_plural") or data["translation"]
-        restored_plural = _restore(raw_plural, protected_plural.mapping)
+        restored_plural = _restore(raw_plural, prepared.protected_plural.mapping)
         text_plural = _normalize_trailing_whitespace(msgid_plural, restored_plural)
 
     return Translation(data["interpretation"], text, text_plural)
@@ -501,20 +581,23 @@ def _build_translation_job(
     logger: logging.Logger | None = None,
     *,
     force: bool = False,
+    retranslate_identical: bool = False,
 ) -> TranslationJob:
     """Compute a translation job without mutating shared PO state.
 
     Change detection is intentionally minimal: an entry is (re)translated only when
     it is untranslated or flagged ``fuzzy`` (both set by ``msgmerge`` precisely when
     the ``msgid`` changes). ``force`` bypasses this to (re)translate every matched
-    entry. Source snippets come from ``snippet_by_msgid`` (built from the .pot), never
-    from the .po -- the shipped .po stays snippet-free.
+    entry; ``retranslate_identical`` additionally retranslates entries whose
+    translation equals the source verbatim. Source snippets come from
+    ``snippet_by_msgid`` (built from the .pot), never from the .po -- the shipped
+    .po stays snippet-free.
     """
     if force:
         # Bypass change detection: --force / --filter always (re)translate matched entries.
         state: EntryState = EntryNew(entry=entry) if _is_untranslated(entry) else EntryUpdated(entry=entry)
     else:
-        state = _classify_entry_state(entry)
+        state = _classify_entry_state(entry, retranslate_identical=retranslate_identical)
     if isinstance(state, EntrySkipped):
         return TranslationSkipped(entry=entry)
 
@@ -535,6 +618,57 @@ def _build_translation_job(
         return TranslationFailed(entry=entry, error=str(e))
 
     return TranslationCompleted(entry=entry, state=state, result=result)
+
+
+def _iter_translation_jobs(
+    entries: list[polib.POEntry],
+    provider: LiteLLMProvider | DryRunProvider,
+    lang_name: LangNameStr,
+    glossary: TermGlossaryDict,
+    snippet_by_msgid: dict[str, str],
+    logger: logging.Logger | None = None,
+    *,
+    force: bool = False,
+    retranslate_identical: bool = False,
+    parallel: bool = True,
+    max_workers: int = 4,
+) -> Iterator[TranslationJob]:
+    """Yield one TranslationJob per entry, concurrently when ``parallel`` is set.
+
+    Parallel mode submits every entry up front and yields jobs as they complete;
+    sequential mode yields them in catalog order. The stream is meant to be consumed
+    once (apply + report each job).
+    """
+    if parallel:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(
+                    _build_translation_job,
+                    entry,
+                    provider,
+                    lang_name,
+                    glossary,
+                    snippet_by_msgid,
+                    logger,
+                    force=force,
+                    retranslate_identical=retranslate_identical,
+                )
+                for entry in entries
+            ]
+            for future in as_completed(futures):
+                yield future.result()
+    else:
+        for entry in entries:
+            yield _build_translation_job(
+                entry,
+                provider,
+                lang_name,
+                glossary,
+                snippet_by_msgid,
+                logger,
+                force=force,
+                retranslate_identical=retranslate_identical,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -621,23 +755,24 @@ def _clean_tcomment(comment: str, interp: str | None) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _needs_translation(entry: polib.POEntry) -> bool:
-    """True when an entry must be (re)translated.
+def _classify_entry_state(entry: polib.POEntry, *, retranslate_identical: bool = False) -> EntryState:
+    """Return explicit new/updated/skipped entry state objects for translation routing.
 
-    Only two native gettext signals trigger work, both set by ``msgmerge`` exactly
-    when the source ``msgid`` changes:
-      - untranslated (new/changed msgid with no close match)
-      - ``fuzzy`` flag (changed msgid fuzzy-matched to a prior translation)
-    Line references, comments, and header timestamps are deliberately ignored.
+    Change detection relies on two native gettext signals only, both set by
+    ``msgmerge`` exactly when the source ``msgid`` changes: untranslated (new/changed
+    msgid with no close match) and the ``fuzzy`` flag (changed msgid fuzzy-matched to
+    a prior translation). Line references, comments, and header timestamps are
+    deliberately ignored.
+
+    With ``retranslate_identical``, entries whose translation is verbatim-equal to the
+    source are routed as updates (see ``_is_identical_to_source`` for why this is
+    opt-in only).
     """
-    return _is_untranslated(entry) or "fuzzy" in entry.flags
-
-
-def _classify_entry_state(entry: polib.POEntry) -> EntryState:
-    """Return explicit new/updated/skipped entry state objects for translation routing."""
     if _is_untranslated(entry):
         return EntryNew(entry=entry)
     if "fuzzy" in entry.flags:
+        return EntryUpdated(entry=entry)
+    if retranslate_identical and _is_identical_to_source(entry):
         return EntryUpdated(entry=entry)
     return EntrySkipped(entry=entry)
 
@@ -723,6 +858,16 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         False,
         "--force",
         help="Force (re)translation even if entries appear fresh, bypassing the change-detection check.",
+    ),
+    retranslate_identical: bool = typer.Option(
+        False,
+        "--retranslate-identical",
+        help=(
+            "Also (re)translate entries whose translation is verbatim-equal to the English "
+            "source (a common failed-translation shape, but also correct for acronyms/product "
+            "names -- hence opt-in). Note: --filter implies --force, which retranslates every "
+            "matched entry regardless of this flag."
+        ),
     ),
     dry_run: bool = typer.Option(
         False,
@@ -856,7 +1001,7 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         plan_update = len(entries) - plan_new
         plan_skip = 0
     else:
-        plan_states = [_classify_entry_state(e) for e in entries]
+        plan_states = [_classify_entry_state(e, retranslate_identical=retranslate_identical) for e in entries]
         plan_new = sum(1 for s in plan_states if isinstance(s, EntryNew))
         plan_update = sum(1 for s in plan_states if isinstance(s, EntryUpdated))
         plan_skip = sum(1 for s in plan_states if isinstance(s, EntrySkipped))
@@ -867,6 +1012,18 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         f"[dim]{plan_skip} SKIP[/dim] \u2192 {plan_to_model} to model"
     )
 
+    jobs = _iter_translation_jobs(
+        entries,
+        provider,
+        lang_name,
+        glossary,
+        snippet_by_msgid,
+        logger,
+        force=effective_force,
+        retranslate_identical=retranslate_identical,
+        parallel=parallel,
+        max_workers=max_workers,
+    )
     if progress:
         progress_bar = Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -878,76 +1035,16 @@ def translate(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         )
         with progress_bar:
             task = progress_bar.add_task("Translating", total=len(entries))
-            if parallel:
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    futures = [
-                        executor.submit(
-                            _build_translation_job,
-                            entry,
-                            provider,
-                            lang_name,
-                            glossary,
-                            snippet_by_msgid,
-                            logger,
-                            force=effective_force,
-                        )
-                        for entry in entries
-                    ]
-                    for future in as_completed(futures):
-                        apply_job(future.result())
-                        total += 1
-                        progress_bar.update(
-                            task,
-                            advance=1,
-                            description=f"Translating {translated} done / {skipped} skipped / {errors} errors",
-                        )
-            else:
-                for entry in entries:
-                    job = _build_translation_job(
-                        entry,
-                        provider,
-                        lang_name,
-                        glossary,
-                        snippet_by_msgid,
-                        logger,
-                        force=effective_force,
-                    )
-                    apply_job(job)
-                    total += 1
-                    progress_bar.update(
-                        task,
-                        advance=1,
-                        description=f"Translating {translated} done / {skipped} skipped / {errors} errors",
-                    )
-    elif parallel:
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(
-                    _build_translation_job,
-                    entry,
-                    provider,
-                    lang_name,
-                    glossary,
-                    snippet_by_msgid,
-                    logger,
-                    force=effective_force,
-                )
-                for entry in entries
-            ]
-            for future in as_completed(futures):
-                apply_job(future.result())
+            for job in jobs:
+                apply_job(job)
                 total += 1
+                progress_bar.update(
+                    task,
+                    advance=1,
+                    description=f"Translating {translated} done / {skipped} skipped / {errors} errors",
+                )
     else:
-        for entry in entries:
-            job = _build_translation_job(
-                entry,
-                provider,
-                lang_name,
-                glossary,
-                snippet_by_msgid,
-                logger,
-                force=effective_force,
-            )
+        for job in jobs:
             apply_job(job)
             total += 1
 

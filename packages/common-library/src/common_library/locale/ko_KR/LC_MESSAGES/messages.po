@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: osparc-simcore\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 14:40+0200\n"
+"POT-Creation-Date: 2026-09-28 16:11+0200\n"
 "PO-Revision-Date: 2026-08-27 14:40+0200\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-08-27T12:52:04Z\n"
+"X-Translation-Date: 2026-09-28T14:19:44Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This message indicates that the backend service required
@@ -287,10 +287,16 @@ msgstr "{job_id} 작업에 필요한 자원이 누락되었습니다."
 msgid "The chatbot service is not enabled."
 msgstr "챗봇 서비스가 활성화되지 않았습니다."
 
+# CTX-INTERPRETATION: This string is used to display an error message to the
+# user when the chatbot service is unavailable or encounters an issue.
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+msgid "An error occurred while contacting the chatbot service."
+msgstr "챗봇 서비스와의 연결 중 오류가 발생했습니다."
+
 # CTX-INTERPRETATION: This string is used in the CeleryTaskNotFoundError
 # exception to inform a user that a task with a specific UUID could not be
 # found, likely within a backend service.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:203
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:208
 #, python-brace-format
 msgid "Task {task_uuid} could not be found."
 msgstr "작업 {task_uuid}을 찾을 수 없습니다."
@@ -298,7 +304,7 @@ msgstr "작업 {task_uuid}을 찾을 수 없습니다."
 # CTX-INTERPRETATION: This string appears in the backend API to inform a user
 # that they cannot retrieve output for a solver job due to incomplete
 # execution, providing details about the job's state.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:209
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:214
 #, python-brace-format
 msgid ""
 "Cannot retrieve output for solver job '{job_id}' because it has not "
@@ -309,7 +315,7 @@ msgstr ""
 # CTX-INTERPRETATION: This string is used in the backend API to inform a user
 # that a solver job with a specific ID is still running and displays its
 # current status.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:218
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:223
 #, python-brace-format
 msgid "Solver job '{job_id}' has not stopped yet. Current status: {state}."
 msgstr "솔버 작업 '{job_id}'가 아직 종료되지 않았습니다. 현재 상태: {state}."
@@ -317,7 +323,7 @@ msgstr "솔버 작업 '{job_id}'가 아직 종료되지 않았습니다. 현재 
 # CTX-INTERPRETATION: This string is used in backend error messages to inform
 # users that a simulation job's output cannot be retrieved due to incomplete
 # or unsuccessful execution, providing the job ID and current state.
-#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:226
+#: services/api-server/src/simcore_service_api_server/exceptions/backend_errors.py:231
 #, python-brace-format
 msgid ""
 "Cannot retrieve output for project job '{job_id}' because it has not "
@@ -585,7 +591,7 @@ msgstr "프로젝트 파이프라인 실행이 반복 {iteration}에서 완료�
 # CTX-INTERPRETATION: This message appears in the scheduler module, informing
 # users about a task scheduling error and suggesting they contact oSparc
 # support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:865
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:875
 msgid ""
 "An unexpected error occurred during task scheduling. Please contact oSparc "
 "support if this issue persists."
@@ -594,14 +600,14 @@ msgstr "작업 스케줄링 중에 예기치 않은 오류가 발생했습니다
 # CTX-INTERPRETATION: This message indicates that a variable resolution
 # operation failed while scheduling tasks, and the system will attempt to
 # retry.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:896
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:906
 msgid "Variable resolution timed out during task scheduling, will retry."
 msgstr "작업 스케줄링 중 변수 해결 시간이 초과되었습니다. 다시 시도합니다."
 
 # CTX-INTERPRETATION: This message appears in the comp_scheduler module,
 # indicating a timeout while waiting for computational resources, prompting
 # the user to retry or contact support.
-#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:974
+#: services/director-v2/src/simcore_service_director_v2/modules/comp_scheduler/_scheduler_base.py:984
 msgid ""
 "The system has timed out while waiting for computational resources. Please "
 "try running your project again or contact oSparc support if this issue "
@@ -650,7 +656,7 @@ msgstr "요청이 승인되었으며, 이제 %(product_name)s에 액세스할 �
 # CTX-INTERPRETATION: This email body template is used to inform users who
 # have an existing account on a product about logging in to the same product
 # with their existing credentials.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:14
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:13
 msgid ""
 "Since you already have an account on\n"
 "  %(existing_product)s, please continue logging in to %(product_name)s with the same email and password."
@@ -661,19 +667,19 @@ msgstr ""
 # CTX-INTERPRETATION: This string appears in an email notification sent to a
 # user when they are added to an existing product's account, prompting them to
 # log in using their existing credentials.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:18
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:17
 #: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:10
 msgid ""
 "Since you already have an account, please continue logging in to "
 "%(product_name)s with the same email and password."
 msgstr "이미 계정이 있는 경우, 동일한 이메일과 비밀번호를 사용하여 %(product_name)s에 로그인해 계속 진행해주세요."
 
-# CTX-INTERPRETATION: This string appears in an email body template used when
-# a user's account is added to a product, providing a link to access the
-# product.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:24
-msgid "You can access %(product_name)s here: %(login_link)s"
-msgstr "%(product_name)s는 여기에서 액세스할 수 있습니다: %(login_link)s"
+# CTX-INTERPRETATION: This string appears in an email body, providing a link
+# to access the product after an account has been added.
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_html.j2:25
+#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
+msgid "You can access %(product_name)s here: %(login_link)s."
+msgstr "다음 제품에 액세스할 수 있습니다: %(login_link)s."
 
 # CTX-INTERPRETATION: This string appears in email templates for account
 # addition and new invitations, providing a contact link for support.
@@ -750,13 +756,6 @@ msgid ""
 msgstr ""
 "%(existing_product)s에 이미 계정이 있으므로, 동일한 이메일 및 비밀번호로 %(product_name)s에 로그인하여 "
 "계속 사용하십시오."
-
-# CTX-INTERPRETATION: This string is part of an email template used to inform
-# a user that their account has been added to a product, providing a link to
-# access the product's homepage.
-#: services/notifications/src/simcore_service_notifications/templates/email/account_added_to_product/body_text.j2:14
-msgid "You can access %(product_name)s here: %(link)s"
-msgstr "%(product_name)s는 여기에서 액세스할 수 있습니다: %(link)s"
 
 # CTX-INTERPRETATION: This string appears in email templates for account
 # addition and new invitations, providing a contact email address for support.
@@ -1759,14 +1758,14 @@ msgstr "2FA 로그인 기능은 사용할 수 없습니다."
 # CTX-INTERPRETATION: The string appears as an error message when the user
 # attempts to register without a valid invitation code in the registration
 # process.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:156
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/registration.py:150
 msgid "Registration requires a valid invitation code."
 msgstr "회원 가입에는 유효한 초대 코드가 필요합니다."
 
 # CTX-INTERPRETATION: This string appears in the two-factor authentication
 # (2FA) endpoint of a web server, indicating that a user attempting login does
 # not have a registered phone number.
-#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:72
+#: services/web/server/src/simcore_service_webserver/login/_controller/rest/twofa.py:71
 msgid "User does not have a phone number registered"
 msgstr "사용자에게 등록된 전화번호가 없습니다."
 
@@ -1774,7 +1773,7 @@ msgstr "사용자에게 등록된 전화번호가 없습니다."
 # to the user after they have entered their username and password, requiring
 # two-factor authentication.
 #. @TRANSLATOR SMS message of at most 70 characters
-#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:121
+#: services/web/server/src/simcore_service_webserver/login/_twofa_service.py:137
 #, python-brace-format
 msgid "Dear {first_name}, your verification code is {code}"
 msgstr "안녕하세요 {first_name}, 인증 코드는 {code}입니다."
@@ -2791,17 +2790,29 @@ msgstr "서비스를 중단하기 전에 쓰레기로 이동하는 동안 오류
 # CTX-INTERPRETATION: This message indicates an error occurred while
 # attempting to save or update user preferences within the application's web
 # server.
-#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:19
+#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:22
 msgid "Could not create or modify preferences"
 msgstr "사용자 설정 생성 또는 수정에 실패했습니다."
 
-# CTX-INTERPRETATION: This string is displayed in a REST API error response
-# when the frontend user preference requested by the client is not found in
-# the backend database.
-#: services/web/server/src/simcore_service_webserver/user_preferences/_controller/rest/_rest_exceptions.py:24
+# CTX-INTERPRETATION: This string appears in a user preferences error message,
+# indicating that a specified setting name is invalid.
+#: services/web/server/src/simcore_service_webserver/user_preferences/errors.py:13
 #, python-brace-format
-msgid "Provided {frontend_preference_name} not found"
-msgstr "제공된 {frontend_preference_name}을(를) 찾을 수 없습니다"
+msgid ""
+"The setting '{frontend_preference_identifier}' was not found. Please verify "
+"the setting name and try again."
+msgstr "설정 '{frontend_preference_identifier}'가 없습니다. 설정 이름을 확인하고 다시 시도하십시오."
+
+# CTX-INTERPRETATION: This string appears in a user interface, likely within a
+# form or settings panel, to indicate that an entered value is invalid based
+# on a specified preference.
+#: services/web/server/src/simcore_service_webserver/user_preferences/errors.py:20
+#, python-brace-format
+msgid ""
+"The value {value} is outside the acceptable range for "
+"'{frontend_preference_identifier}'. Please enter a valid value."
+msgstr ""
+"값이 '{frontend_preference_identifier}'에 대한 허용 범위를 벗어납니다. 유효한 값을 입력하십시오."
 
 # CTX-INTERPRETATION: This string is used in the `simcore_service_webserver`
 # to inform a user when an API token for a specific service cannot be located,
@@ -3061,8 +3072,8 @@ msgstr "불편을 드려 죄송합니다. 문제가 기록되었으며, 지속�
 msgid "Copying files"
 msgstr "파일 복사 중"
 
-# CTX-INTERPRETATION: This string appears in the context of creating an
-# export archive.
+# CTX-INTERPRETATION: This string appears in the context of creating an export
+# archive.
 #: services/storage/src/simcore_service_storage/api/_worker_tasks/_simcore_s3.py:37
 msgid "Creating export archive"
 msgstr "내보내기 아카이브 생성"
