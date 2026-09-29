@@ -4,7 +4,7 @@ aio-pika==10.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aiormq==7.0.0
+aiormq==7.2.1
     # via
     #   -c requirements/_base.txt
     #   aio-pika
