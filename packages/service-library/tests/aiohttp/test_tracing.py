@@ -49,7 +49,7 @@ async def test_valid_tracing_settings(
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=service_name)
-    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
+    async for _ in setup_tracing(tracing_config=tracing_config)(app):
         pass
 
 
@@ -104,7 +104,6 @@ async def test_trace_id_in_response_header(
     app.router.add_get("/", partial(handler, handler_data))
 
     async for _ in setup_tracing(
-        app=app,
         tracing_config=tracing_config,
         add_response_trace_id_header=True,
     )(app):
@@ -148,7 +147,7 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
 
     app.router.add_get("/", handler)
 
-    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
+    async for _ in setup_tracing(tracing_config=tracing_config)(app):
         client = await aiohttp_client(app)
 
         await asyncio.gather(*(client.get("/") for _ in range(n_requests)))
@@ -194,7 +193,7 @@ async def test_tracing_finds_project_id_and_node_id_if_available(
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=service_name)
     app[TRACING_CONFIG_KEY] = tracing_config
 
-    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
+    async for _ in setup_tracing(tracing_config=tracing_config)(app):
         client = await aiohttp_client(app)
 
         await client.get("/")

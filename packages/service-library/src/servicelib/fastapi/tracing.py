@@ -188,7 +188,7 @@ def _startup(
     TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
 
 
-def _shutdown() -> None:
+def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         FastAPIInstrumentor().uninstrument()
@@ -220,6 +220,10 @@ def _shutdown() -> None:
 
     with log_catch(_logger, reraise=False):
         TracedFunctionsInstrumentor().uninstrument()
+
+    if tracer_provider is not None:
+        with log_catch(_logger, reraise=False):
+            tracer_provider.shutdown()
 
 
 def initialize_fastapi_app_tracing(
@@ -255,20 +259,23 @@ def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
         raise ValueError(msg)
     assert tracing_config.tracing_settings  # nosec
     assert tracing_config.tracer_provider  # nosec
-    _startup(
-        tracing_settings=tracing_config.tracing_settings,
-        service_name=tracing_config.service_name,
-        tracer_provider=tracing_config.tracer_provider,
-    )
+    tracing_settings = tracing_config.tracing_settings
+    tracer_provider = tracing_config.tracer_provider
 
     async def tracing_instrumentation_lifespan(
         app: FastAPI,
     ) -> AsyncIterator[State]:
         assert app  # nosec
 
+        _startup(
+            tracing_settings=tracing_settings,
+            service_name=tracing_config.service_name,
+            tracer_provider=tracer_provider,
+        )
+
         yield {}
 
-        _shutdown()
+        _shutdown(tracer_provider)
 
     return tracing_instrumentation_lifespan
 
