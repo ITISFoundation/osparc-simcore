@@ -101,12 +101,12 @@ propcache==0.4.1
     #   yarl
 psycopg2-binary==2.9.13
     # via sqlalchemy
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   -r requirements/_test.in
     #   fastapi
     #   pydantic-extra-types
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/_test.in
