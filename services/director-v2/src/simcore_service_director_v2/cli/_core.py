@@ -159,7 +159,7 @@ async def _get_dy_service_state(client: AsyncClient, node_uuid: NodeIDStr) -> Dy
         return None
 
     result_dict = result.json()
-    return DynamicServiceGet(**(result_dict.get("data", result_dict)))
+    return TypeAdapter(DynamicServiceGet).validate_python(result_dict.get("data", result_dict))
 
 
 async def _to_render_data(

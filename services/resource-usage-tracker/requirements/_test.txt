@@ -192,11 +192,11 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via
     #   -c requirements/_base.txt
     #   pydantic

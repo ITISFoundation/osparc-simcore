@@ -3,25 +3,31 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import AsyncIterator
+from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, TypedDict
 from unittest.mock import AsyncMock
 
 import pytest
 from aiohttp.test_utils import TestClient
-from common_library.users_enums import UserRole, UserStatus
+from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.notifications import Channel
 from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
+from pytest_simcore.helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.aiohttp.observer import register_observer
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products import products_service
+from simcore_service_webserver.signals import SIGNAL_ON_USER_CONFIRMATION
+from simcore_service_webserver.users import _accounts_service
+from simcore_service_webserver.users.schemas import UserAccountRestPreRegister
 from simcore_service_webserver.wallets import _api as _wallets_service
 from simcore_service_webserver.wallets import _db as _wallets_repository
 
@@ -29,6 +35,38 @@ from simcore_service_webserver.wallets import _db as _wallets_repository
 @pytest.fixture
 def user_role() -> UserRole:
     return UserRole.PRODUCT_OWNER
+
+
+class ExistingRegisteredUser(TypedDict):
+    """Structured output of `existing_registered_user`: the inserted `users` row
+    (key columns) merged with the `password_hash` of its `users_secrets` row.
+    """
+
+    id: int
+    name: str
+    email: str
+    status: str
+    role: str
+    created: datetime
+    expires_at: datetime | None
+    password_hash: str
+
+
+@pytest.fixture
+async def existing_registered_user(
+    client: TestClient,
+    account_request_form: dict[str, Any],
+) -> AsyncIterator[ExistingRegisteredUser]:
+    """An ACTIVE registered account (`users` + `users_secrets` rows) whose email matches
+    `account_request_form["email"]`, so the same email can be pre-registered and later
+    approved through the "skip invitation" path. Auto-cleaned after the test.
+    """
+    assert client.app
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint: disable=contextmanager-generator-missing-cleanup
+        get_asyncpg_engine(client.app),
+        email=account_request_form["email"],
+    ) as user_row:
+        yield ExistingRegisteredUser(**user_row)
 
 
 async def test_reject_user_account(  # pylint: disable=too-many-statements
@@ -438,6 +476,7 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
+    existing_registered_user: ExistingRegisteredUser,
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
 ):
@@ -472,35 +511,26 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
     pre_reg_data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert pre_reg_data["email"] == test_email
 
-    # 2. Create user + add to product group + link pre-registration
-    # (simulating the real registration flow order: create user, add to group, then link)
+    # 2. Add the (already-created, fixture) user to the product group and link the
+    # pre-registration (simulating the real registration flow order: create user,
+    # add to group, then link)
     from simcore_postgres_database.utils_users import UsersRepo  # noqa: PLC0415
 
-    engine = get_asyncpg_engine(client.app)
-    repo = UsersRepo(engine)
-
-    from simcore_service_webserver.security import security_service  # noqa: PLC0415
-
-    new_user = await repo.new_user(
-        email=test_email,
-        password_hash=security_service.encrypt_password(DEFAULT_TEST_PASSWORD),
-        status=UserStatus.ACTIVE,
-        expires_at=None,
-    )
+    repo = UsersRepo(get_asyncpg_engine(client.app))
 
     # Add user to product group (before link_and_update so reconciliation can trigger)
     from simcore_service_webserver.groups import _groups_repository  # noqa: PLC0415
 
     await _groups_repository.auto_add_user_to_product_group(
         client.app,
-        user_id=new_user.id,
+        user_id=existing_registered_user["id"],
         product_name=product_name,
     )
 
     # 3. Link and reconcile
     await repo.link_and_update_user_from_pre_registration(
-        new_user_id=new_user.id,
-        new_user_email=new_user.email,
+        new_user_id=existing_registered_user["id"],
+        new_user_email=existing_registered_user["email"],
     )
 
     # 4. Verify via API
@@ -535,6 +565,7 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
+    existing_registered_user: ExistingRegisteredUser,
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
     mock_notifications_send_message: AsyncMock,
@@ -568,18 +599,8 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
 
     test_email = account_request_form["email"]
 
-    # 1. Create a registered (ACTIVE) user with that email, NOT yet a member of `product_name`
-    from simcore_postgres_database.utils_users import UsersRepo  # noqa: PLC0415
-    from simcore_service_webserver.security import security_service  # noqa: PLC0415
-
-    engine = get_asyncpg_engine(client.app)
-    repo = UsersRepo(engine)
-    new_user = await repo.new_user(
-        email=test_email,
-        password_hash=security_service.encrypt_password(DEFAULT_TEST_PASSWORD),
-        status=UserStatus.ACTIVE,
-        expires_at=None,
-    )
+    # 1. A registered (ACTIVE) user with that email exists (fixture), and is
+    #    NOT yet a member of `product_name`
 
     # 2. Admin pre-registers that same email for `product_name` (the user has no access yet)
     url = client.app.router["pre_register_user_account"].url_for()
@@ -625,7 +646,7 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     assert len(found) == 1
     user_data = found[0]
     assert user_data["accountRequestStatus"] == "APPROVED"
-    assert user_data["userId"] == new_user.id
+    assert user_data["userId"] == existing_registered_user["id"]
     assert product_name in user_data["products"]
 
     # the PO's credits decision is persisted in the pre-registration extras (audit)
@@ -636,14 +657,16 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
 
     # 7. The user must get a default wallet in the new product (via
     # SIGNAL_ON_USER_CONFIRMATION emitted on approval), just like on registration.
-    wallets = await _wallets_service.list_wallets_for_user(client.app, user_id=new_user.id, product_name=product_name)
+    wallets = await _wallets_service.list_wallets_for_user(
+        client.app, user_id=existing_registered_user["id"], product_name=product_name
+    )
     assert len(wallets) == 1
 
     # 8. and the wallet is topped up with the credits the PO granted
     assert mock_add_credits_to_wallet.called
     credits_kwargs = mock_add_credits_to_wallet.call_args_list[0].kwargs
     assert credits_kwargs["wallet_id"] == wallets[0].wallet_id
-    assert credits_kwargs["user_id"] == new_user.id
+    assert credits_kwargs["user_id"] == existing_registered_user["id"]
     assert credits_kwargs["product_name"] == product_name
     assert credits_kwargs["osparc_credits"] == extra_credits_in_usd * payment_enabled_product.credits_per_usd
     assert credits_kwargs["payment_id"] == "INVITATION"
@@ -653,4 +676,84 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
         client.app,
         wallet_id=wallets[0].wallet_id,
         product_name=product_name,
+    )
+
+
+async def test_approve_user_account_emits_user_confirmation_signal_for_existing_user(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    existing_registered_user: ExistingRegisteredUser,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mocker: MockerFixture,
+):
+    """Regression test (FogBugz #249452): approving the account request of an
+    already-registered user (the "skip invitation" path in
+    users/_accounts_service.py::_approve_existing_user) must emit
+    SIGNAL_ON_USER_CONFIRMATION, just like the self-registration path
+    (login/_controller/rest/registration.py).
+
+    The wallets plugin auto-creates the default wallet and grants the PO's
+    extra credits only as an observer of that signal, so forgetting to emit it
+    left those users without their welcome credits.
+    """
+    assert client.app
+
+    # keep the wallets observer out of the way: this test pins the emission of
+    # the signal itself (its wallet-creation side effects are covered elsewhere)
+    mock_wallet_observer = mocker.patch(
+        "simcore_service_webserver.wallets._events._auto_add_default_wallet",
+        spec=True,
+        return_value=None,
+    )
+
+    # 1. An existing ACTIVE account (e.g. registered in another product) — fixture
+    existing_email = account_request_form["email"]
+    assert existing_registered_user["email"] == existing_email
+
+    # 2. Its PENDING pre-registration for `product_name`, linked to the account
+    #    (pre_register_user links an existing user by email, which is what selects
+    #    the _approve_existing_user path)
+    profile = UserAccountRestPreRegister.model_validate(account_request_form)
+    await _accounts_service.pre_register_user(
+        client.app,
+        profile=profile,
+        creator_user_id=logged_user["id"],
+        product_name=product_name,
+    )
+
+    # 3. Probe observer on the same seam the wallets plugin subscribes to
+    signal_calls: list[dict[str, Any]] = []
+
+    async def _probe(**kwargs: Any) -> None:
+        signal_calls.append(kwargs)
+
+    register_observer(client.app, _probe, SIGNAL_ON_USER_CONFIRMATION)
+
+    # 4. PO approves the request (no invitation needed for an existing account)
+    extra_credits_in_usd = 42
+    await _accounts_service.approve_user_account(
+        client.app,
+        pre_registration_email=existing_email,
+        product_name=product_name,
+        reviewer_id=logged_user["id"],
+        extra_credits_in_usd=extra_credits_in_usd,
+    )
+
+    # 5. SIGNAL_ON_USER_CONFIRMATION emitted exactly once with the right payload
+    assert signal_calls == [
+        {
+            "user_id": existing_registered_user["id"],
+            "product_name": product_name,
+            "extra_credits_in_usd": extra_credits_in_usd,
+        }
+    ]
+
+    # and the wallets observer (default wallet + credits grant) ran on it
+    mock_wallet_observer.assert_awaited_once_with(
+        client.app,
+        user_id=existing_registered_user["id"],
+        product_name=product_name,
+        extra_credits_in_usd=extra_credits_in_usd,
     )

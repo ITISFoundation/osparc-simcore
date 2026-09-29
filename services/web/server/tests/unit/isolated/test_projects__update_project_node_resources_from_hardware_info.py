@@ -11,7 +11,7 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.services_resources import (
     ResourcesDict,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    create_service_resources_from_single_service,
 )
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -48,7 +48,7 @@ def node_resources() -> ServiceResourcesDict:
             "RAM": {"limit": "128MiB", "reservation": "128MiB"},
         }
     )
-    return ServiceResourcesDictHelpers.create_from_single_service(
+    return create_service_resources_from_single_service(
         image="simcore/services/dynamic/some-service:1.0.0",
         resources=resources,
     )
@@ -62,7 +62,7 @@ def scaled_node_resources() -> ServiceResourcesDict:
             "RAM": {"limit": "13GiB", "reservation": "13GiB"},
         }
     )
-    return ServiceResourcesDictHelpers.create_from_single_service(
+    return create_service_resources_from_single_service(
         image="simcore/services/dynamic/some-service:1.0.0",
         resources=resources,
     )
@@ -123,9 +123,9 @@ async def test_persists_the_resources_computed_by_director_v2(
     await _call(mocked_app, hardware_info)
 
     mock_project_db_api.update_project_node.assert_called_once()
-    assert mock_project_db_api.update_project_node.call_args.kwargs[
-        "required_resources"
-    ] == ServiceResourcesDictHelpers.create_jsonable(scaled_node_resources)
+    assert mock_project_db_api.update_project_node.call_args.kwargs["required_resources"] == TypeAdapter[
+        ServiceResourcesDict
+    ](ServiceResourcesDict).dump_python(scaled_node_resources, mode="json")
 
 
 async def test_raises_when_director_v2_reports_machine_too_small(
