@@ -85,7 +85,10 @@ def test_signal_constants_keep_their_wire_value(constant: str):
 # guard by default, so a newly-added dependency is caught even if nobody knew
 # to add its package to a forbidden list. Stdlib modules reachable from the
 # repo's own modules are allowed to stay importable, but nothing else is.
-_ALLOWED_IMPORT_ROOTS: frozenset[str] = frozenset({"typing"})
+# ``annotated_types`` is allowed alongside ``typing``: it is a pure metadata
+# package (PEP 593 metadata classes, no runtime deps) used for ``doc(...)``
+# annotations, so importing it cannot pull in the service graph either.
+_ALLOWED_IMPORT_ROOTS: frozenset[str] = frozenset({"typing", "annotated_types"})
 
 
 def test_signals_module_is_a_pure_leaf():
