@@ -41,6 +41,7 @@ DATAGRAM_PORT: Final[PortInt] = PortInt(DEFAULT_UDP_LOGGING_PORT)
 ENSURE_LOGS_DELIVERED: Final[float] = 0.1
 _CONCURRENT_CALLS: Final[int] = 10
 _SLOW_KILL_DURATION_S: Final[float] = 0.1
+_PROCESS_STARTUP_TIMEOUT_S: Final[float] = 60
 
 
 @pytest.fixture
@@ -120,6 +121,10 @@ async def logging_event_handler_observer(
     configure_attribute_monitor(app_lifespan)
     async with app_lifespan(fake_app):
         assert fake_app.state.attribute_monitor
+        # NOTE: the observer runs in a separate process which, depending on the
+        # multiprocessing start method, may take a while before it is ready
+        started = await fake_app.state.attribute_monitor.wait_for_process_startup(_PROCESS_STARTUP_TIMEOUT_S)
+        assert started
         yield None
 
 

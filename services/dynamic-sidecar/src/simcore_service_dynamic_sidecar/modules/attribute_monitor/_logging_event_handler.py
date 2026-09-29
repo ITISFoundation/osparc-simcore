@@ -7,6 +7,7 @@ from asyncio import sleep as async_sleep
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from multiprocessing.queues import Queue
+from multiprocessing.synchronize import Event
 from pathlib import Path
 from queue import Empty
 from threading import Lock
@@ -58,6 +59,7 @@ def _process_worker(
     health_check_queue: Queue[int | None],
     stop_queue: Queue[None],
     log_queue: Queue[logging.LogRecord] | None,
+    ready_event: Event,
     heart_beat_interval_s: PositiveFloat,
 ) -> None:
     # NOTE: module level and only receives pickleable arguments,
@@ -77,6 +79,7 @@ def _process_worker(
             recursive=True,
         )
         observer.start()
+        ready_event.set()
 
         while stop_queue.qsize() == 0:
             # NOTE: watchdog handles events internally every 1 second.
@@ -114,6 +117,9 @@ class _LoggingEventHandlerProcess:
         # the process itself and is used to stop the process.
         self._stop_queue: Queue[None] | None = None
 
+        # signals that the observer inside the process is up and running
+        self._ready_event: Event = multiprocessing.Event()
+
         self._process_lock: Lock = Lock()
         self._process: multiprocessing.Process | None = None
 
@@ -130,6 +136,7 @@ class _LoggingEventHandlerProcess:
                 logger.debug("Process already started, skipping")
                 return
 
+            self._ready_event.clear()
             self._stop_queue = multiprocessing.Queue()
             self._process = multiprocessing.Process(
                 target=_process_worker,
@@ -138,6 +145,7 @@ class _LoggingEventHandlerProcess:
                     self.health_check_queue,
                     self._stop_queue,
                     self.log_queue,
+                    self._ready_event,
                     self.heart_beat_interval_s,
                 ),
                 daemon=True,
@@ -222,7 +230,13 @@ class LoggingEventHandlerObserver:
                 heart_beats_received = True
                 continue
 
-            if not heart_beats_received and (monotonic() - process_started_at) < _PROCESS_STARTUP_GRACE_S:
+            # pylint: disable-next=protected-access
+            process_is_starting = self._logging_event_handler_process._process is not None  # noqa: SLF001
+            if (
+                not heart_beats_received
+                and process_is_starting
+                and (monotonic() - process_started_at) < _PROCESS_STARTUP_GRACE_S
+            ):
                 # NOTE: the created process still needs to import all the modules
                 # before sending its first heart beat, give it some time
                 continue
@@ -234,6 +248,15 @@ class LoggingEventHandlerObserver:
 
             process_started_at = monotonic()
             heart_beats_received = False
+
+    async def wait_for_process_startup(self, timeout: PositiveFloat) -> bool:
+        # NOTE: with the `spawn`/`forkserver` start methods the created process
+        # has to import all the modules before its observer is running
+        return await to_thread(
+            # pylint: disable-next=protected-access
+            self._logging_event_handler_process._ready_event.wait,  # noqa: SLF001
+            timeout,
+        )
 
     def _start_observer_process(self) -> None:
         self._logging_event_handler_process.start_process()

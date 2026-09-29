@@ -317,7 +317,13 @@ class EventHandlerObserver:
                 heart_beats_received = True
                 continue
 
-            if not heart_beats_received and (monotonic() - process_started_at) < _PROCESS_STARTUP_GRACE_S:
+            # pylint: disable-next=protected-access
+            process_is_starting = self._event_handler_process._process is not None  # noqa: SLF001
+            if (
+                not heart_beats_received
+                and process_is_starting
+                and (monotonic() - process_started_at) < _PROCESS_STARTUP_GRACE_S
+            ):
                 # NOTE: the created process still needs to import all the modules
                 # before sending its first heart beat, give it some time
                 continue

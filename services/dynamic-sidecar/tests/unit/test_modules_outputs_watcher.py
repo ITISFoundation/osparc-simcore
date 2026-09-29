@@ -365,6 +365,7 @@ async def test_port_key_sequential_event_generation(
     port_keys: list[str],
 ):
     await outputs_watcher.enable_event_propagation()
+    await _wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # writing ports sequentially
     wait_interval_for_port: list[float] = []
