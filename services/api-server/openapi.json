@@ -8971,8 +8971,28 @@
               }
             }
           },
+          "403": {
+            "description": "The Chatbox Window Quota or the platform Provider Budget is exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
           "422": {
             "description": "The request was rejected by the chatbot service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The per-API-key Chatbox rate limit was exceeded",
             "content": {
               "application/json": {
                 "schema": {
@@ -8992,7 +9012,7 @@
             }
           },
           "503": {
-            "description": "Chatbot service is not enabled",
+            "description": "Chatbot service is not enabled, or the usage ledger is unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -12901,6 +12921,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/ResponseStatus"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -12929,6 +12959,28 @@
           "queued"
         ],
         "title": "ResponseStatus"
+      },
+      "ResponseUsage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "title": "Total Tokens",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ResponseUsage",
+        "description": "OpenAI-style aggregated token usage of a completion."
       },
       "RootKeyStr": {
         "type": "string",
