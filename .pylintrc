@@ -433,7 +433,16 @@ exclude-too-few-public-methods=
 
 # List of qualified class names to ignore when counting class parents (see
 # R0901)
-ignored-parents=
+#
+# Rationale: osparc domain errors are built as pydantic error mixins
+# (OsparcErrorMixin -> PydanticErrorMixin), so every error hierarchy inherits two
+# extra framework ancestors. Those add no design complexity and only push
+# deep-but-legitimate error trees (e.g. WebServerBaseError ->
+# DirectorV2BaseError -> DirectorV2ServiceError -> ...) over max-parents. Ignoring
+# them keeps `too-many-ancestors` signaling genuine "inherits from many real bases"
+# smells instead of flagging every error class with an inline pragma.
+ignored-parents=common_library.errors_classes.OsparcErrorMixin,
+               pydantic.errors.PydanticErrorMixin
 
 # Maximum number of arguments for function / method.
 max-args=10
