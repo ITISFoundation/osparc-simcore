@@ -27,7 +27,10 @@ class FileLink(BaseFileLink):
     )
 
 
-# TODO: needs to be in sync with project_nodes.InputTypes and project_nodes.OutputTypes
+# NOTE: intentionally *not* identical to project_nodes.InputTypes/OutputTypes:
+# this uses StrictStr (instead of str/Json) and the sdk-local PortLink/FileLink
+# subclasses above. See tests/unit/test_node_ports_v2_links.py for a test that
+# pins these members and warns on drift.
 DataItemValue = (
     StrictBool
     | StrictInt
