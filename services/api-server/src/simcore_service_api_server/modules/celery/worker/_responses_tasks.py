@@ -34,15 +34,20 @@ async def run_chat_completion(
             # Reservation ages out with the window TTL; keep it visible in logs
             _logger.error("Reservation placed but usage limits are disabled on the worker")
         else:
-            # the worker re-checks the Global Budget Guard at task start (it may have
-            # been hit while the job was queued) and debits at task end
-            await ledger.ensure_global_budget_available()
             owner = ApiServerOwnerMetadata.model_validate_key(task_key)
             reservation = Reservation(
                 user_id=owner.user_id,
                 product_name=owner.product_name,
                 amount_usd=reservation_usd,
             )
+            # the worker re-checks the Global Budget Guard at task start (it may have
+            # been hit while the job was queued); refusing here must not leave the
+            # submit-time Reservation hanging against the Window Quota until it ages out
+            try:
+                await ledger.ensure_global_budget_available()
+            except BaseException:
+                await ledger.release(reservation, reason="budget_exhausted")
+                raise
 
     chatbot_api = ChatbotApi.get_instance(app)
     assert isinstance(chatbot_api, ChatbotApi)  # nosec
