@@ -6,7 +6,7 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 from celery_library.worker.app_server import get_app_server
 from models_library.celery import TaskKey
 
-from ....clients.chatbot_usage import Reservation, UsageRecord, get_chatbot_usage_ledger
+from ....clients.chatbox_usage import Reservation, UsageRecord, get_chatbox_usage_ledger
 from ....models.domain.celery_models import ApiServerOwnerMetadata
 from ....models.domain.chatbot import DEFAULT_TOP_P, CreateChatCompletionResponse
 from ....models.schemas.responses import CreateResponseRequest
@@ -26,7 +26,7 @@ async def run_chat_completion(
     app = get_app_server(task.app).app
     chatbot_settings = app.state.settings.API_SERVER_CHATBOT
 
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     reservation: Reservation | None = None
     if reservation_usd is not None:
         if ledger is None:

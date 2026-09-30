@@ -14,7 +14,7 @@ from ..._service_responses import (
     create_streaming_chat_response,
     submit_background_chat_response,
 )
-from ...clients.chatbot_usage import get_chatbot_usage_ledger
+from ...clients.chatbox_usage import get_chatbox_usage_ledger
 from ...core.settings import ApplicationSettings
 from ...exceptions.backend_errors import ChatbotNotAvailableError
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
@@ -103,7 +103,7 @@ async def create_response(
     if settings.API_SERVER_CHATBOT is None:
         raise ChatbotNotAvailableError
 
-    ledger = get_chatbot_usage_ledger(request.app)
+    ledger = get_chatbox_usage_ledger(request.app)
 
     if body.stream:
         return await create_streaming_chat_response(

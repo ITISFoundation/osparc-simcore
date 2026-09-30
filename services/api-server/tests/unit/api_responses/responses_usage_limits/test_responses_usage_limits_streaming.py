@@ -25,7 +25,7 @@ from httpx import AsyncClient, BasicAuth
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.celery import get_task_manager
-from simcore_service_api_server.clients.chatbot_usage import get_chatbot_usage_ledger
+from simcore_service_api_server.clients.chatbox_usage import get_chatbox_usage_ledger
 
 # every test needs an empty Usage Ledger: fake Redis state is shared across tests
 pytestmark = pytest.mark.usefixtures("fresh_usage_ledger")
@@ -91,7 +91,7 @@ async def test_stream_window_quota_exhausted_returns_403_with_reset(
     # ASSERT - non-retryable 403 naming the quota, the reset time, and support
     assert second.status_code == status.HTTP_403_FORBIDDEN
     errors = json.dumps(second.json()["errors"])
-    assert "chatbot_window_quota_exceeded" in errors
+    assert "chatbox_window_quota_exceeded" in errors
     assert "available again" in errors.lower()
     assert "support" in errors.lower()
 
@@ -158,7 +158,7 @@ async def test_stream_rate_limit_returns_429_with_retry_after(
 
     # ASSERT - proper retryable 429 with Retry-After within the minute window
     assert 0 < int(denied[0].headers["Retry-After"]) <= 61
-    assert "chatbot_rate_limited" in json.dumps(denied[0].json()["errors"])
+    assert "chatbox_rate_limited" in json.dumps(denied[0].json()["errors"])
 
 
 @pytest.mark.parametrize(
@@ -179,7 +179,7 @@ async def test_global_budget_hard_stop_403(
     mocked_chatbot_backend.post("/v1/chat/completions").respond(
         200, content=usage_builders.make_sse_with_usage(400, 600), headers={"content-type": "text/event-stream"}
     )
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     assert ledger is not None
     await ledger._client.redis.hset(usage_builders.global_key, "spend", "0.0025")  # noqa: SLF001
 
@@ -214,7 +214,7 @@ async def test_global_budget_hard_stop_counts_in_flight_reservations(
     mocked_chatbot_backend.post("/v1/chat/completions").respond(
         200, content=usage_builders.make_sse_with_usage(400, 600), headers={"content-type": "text/event-stream"}
     )
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     assert ledger is not None
     await ledger._client.redis.hset(usage_builders.global_key, "reservations", "0.0025")  # noqa: SLF001
 
@@ -317,7 +317,7 @@ async def test_stream_concurrent_admission_bounded_by_reservations(
     with respx.mock(base_url=usage_builders.chatbot_base_url, assert_all_mocked=False) as mock:
         mock.post("/v1/chat/completions").mock(side_effect=_slow_stream)
 
-        ledger = get_chatbot_usage_ledger(app)
+        ledger = get_chatbox_usage_ledger(app)
         assert ledger is not None
         redis = ledger._client.redis  # noqa: SLF001
 
@@ -338,7 +338,7 @@ async def test_stream_concurrent_admission_bounded_by_reservations(
 
         # ASSERT
         assert second.status_code == status.HTTP_403_FORBIDDEN
-        assert "chatbot_window_quota_exceeded" in json.dumps(second.json()["errors"])
+        assert "chatbox_window_quota_exceeded" in json.dumps(second.json()["errors"])
 
         release_upstream.set()
         first = await first_task
@@ -367,14 +367,14 @@ async def test_redis_down_window_quota_fails_closed(
     def _broken(*_args: object, **_kwargs: object) -> NoReturn:
         raise aioredis.ConnectionError(_REDIS_DOWN)
 
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     assert ledger is not None
     monkeypatch.setattr(ledger._client.redis, "pipeline", _broken, raising=False)  # noqa: SLF001
 
     # ACT / ASSERT - the Window Quota fails CLOSED (503, retryable), never an uncounted pass
     response = await _post_stream(client, auth, usage_builders.make_stream_body())
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-    assert "chatbot_usage_ledger_unavailable" in json.dumps(response.json()["errors"])
+    assert "chatbox_usage_ledger_unavailable" in json.dumps(response.json()["errors"])
     assert int(response.headers["Retry-After"]) >= 1
 
     # ASSERT - the Rate Limit still counted the request, and it never reached the Chatbox
@@ -410,7 +410,7 @@ async def test_metrics_expose_spend_budget_fraction_and_failures(
     mocked_chatbot_backend.post("/v1/chat/completions").respond(
         200, content=usage_builders.make_sse_with_usage(400, 600), headers={"content-type": "text/event-stream"}
     )
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     assert ledger is not None
 
     # ACT - one successful completion
@@ -456,7 +456,7 @@ async def test_redis_down_rate_limit_fails_open(
     def _broken(*_args: object, **_kwargs: object) -> NoReturn:
         raise aioredis.ConnectionError(_REDIS_DOWN)
 
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     assert ledger is not None
     monkeypatch.setattr(ledger._client.redis, "incr", _broken, raising=False)  # noqa: SLF001
 

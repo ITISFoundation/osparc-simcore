@@ -84,7 +84,7 @@ class ChatbotSettings(BaseCustomSettings):
     # and let the agent call it directly. Tool calls are typically very fast.
 
 
-class ChatbotUsageLimitsSettings(BaseCustomSettings):
+class ChatboxUsageLimitsSettings(BaseCustomSettings):
     """Per-user Chatbox usage limits (Rate Limit, Window Quota, Global Budget Guard).
 
     All enforcement layers are backed by the platform cache Redis (ADR-0001). Money
@@ -221,8 +221,8 @@ class ApplicationSettings(BasicSettings):
         Field(description="URL of the chatbot service", json_schema_extra={"auto_default_from_env": True}),
     ] = None
 
-    API_SERVER_CHATBOT_USAGE_LIMITS: Annotated[
-        ChatbotUsageLimitsSettings | None,
+    API_SERVER_CHATBOX_USAGE_LIMITS: Annotated[
+        ChatboxUsageLimitsSettings | None,
         Field(
             description="Per-user Chatbox usage limits backed by Redis (None disables enforcement)",
             json_schema_extra={"auto_default_from_env": True},

@@ -22,7 +22,7 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.status_codes_utils import is_4xx_client_error
 from starlette.responses import JSONResponse
 
-from .clients.chatbot_usage import ChatbotUsageLedger, Reservation, UsageRecord
+from .clients.chatbox_usage import ChatboxUsageLedger, Reservation, UsageRecord
 from .core.settings import ChatbotSettings
 from .exceptions.backend_errors import ChatbotRequestError
 from .exceptions.handlers._utils import create_error_json_response
@@ -43,7 +43,7 @@ _TASK_NAME = "run_chat_completion"
 
 
 async def _admit_and_reserve(
-    ledger: ChatbotUsageLedger | None,
+    ledger: ChatboxUsageLedger | None,
     *,
     credential_hash: str,
     user_id: UserID,
@@ -119,7 +119,7 @@ def _make_metered_sse_relay(
     *,
     response: httpx.Response,
     request: Request,
-    ledger: ChatbotUsageLedger,
+    ledger: ChatboxUsageLedger,
     reservation: Reservation,
     input_chars: int,
 ) -> AsyncIterator[bytes]:
@@ -178,7 +178,7 @@ async def create_streaming_chat_response(
     credential_hash: str,
     user_id: UserID,
     product_name: ProductName,
-    ledger: ChatbotUsageLedger | None = None,
+    ledger: ChatboxUsageLedger | None = None,
 ) -> SseStreamingResponse | JSONResponse:
     """Opens a streamed chat completion and relays it as server-sent events.
 
@@ -243,7 +243,7 @@ async def submit_background_chat_response(
     credential_hash: str,
     user_id: UserID,
     product_name: ProductName,
-    ledger: ChatbotUsageLedger | None = None,
+    ledger: ChatboxUsageLedger | None = None,
 ) -> ResponseObject:
     """Queues a background chat completion and returns its handle right away.
 

@@ -99,7 +99,7 @@ def app_environment(
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_CHATBOT": '{"CHATBOT_URL": "http://chatbot:8000", "GRAPH_NAME": "simple_rag"}',
-            "API_SERVER_CHATBOT_USAGE_LIMITS": _make_limits_env(**overrides),
+            "API_SERVER_CHATBOX_USAGE_LIMITS": _make_limits_env(**overrides),
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
@@ -108,7 +108,7 @@ def app_environment(
     settings = ApplicationSettings.create_from_envs()
     assert settings.API_SERVER_CELERY is not None
     assert settings.API_SERVER_CHATBOT is not None
-    assert settings.API_SERVER_CHATBOT_USAGE_LIMITS is not None
+    assert settings.API_SERVER_CHATBOX_USAGE_LIMITS is not None
 
     return env_vars_dict
 
