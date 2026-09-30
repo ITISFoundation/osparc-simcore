@@ -22,8 +22,9 @@ import pytest
 from pytest_simcore.helpers.typing_public_api import ServiceInfoDict, ServiceNameStr
 from tenacity import Retrying, TryAgain, retry_if_exception_type, stop_after_delay, wait_fixed
 
-osparc_VERSION = tuple(int(x) for x in osparc.__version__.split(".") if x.isdigit())
-assert osparc_VERSION >= (0, 4, 3)
+OSPARC_VERSION: Final[tuple[int, ...]] = tuple(int(x) for x in osparc.__version__.split(".") if x.isdigit())
+
+assert OSPARC_VERSION >= (0, 4, 3)
 
 
 logger = logging.getLogger(__name__)
@@ -265,7 +266,7 @@ def test_run_job(
     assert float(Path(download_path).read_text()), "contains a random number"
 
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
-    if osparc_VERSION >= (0, 5, 0):
+    if OSPARC_VERSION >= (0, 5, 0):
         print("Testing output logfile ...")
         logfile: str = solvers_api.get_job_output_logfile(solver.id, solver.version, job.id)
 
