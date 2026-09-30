@@ -8,6 +8,7 @@ path hands it over to the worker, which reconciles at task end.
 
 import logging
 from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 from celery_library.async_jobs import submit_job
@@ -58,6 +59,16 @@ async def _admit_and_reserve(
     return await ledger.admit_and_reserve(user_id=user_id, product_name=product_name)
 
 
+async def _release_reservation(
+    ledger: ChatboxUsageLedger | None,
+    reservation: Reservation | None,
+    *,
+    reason: str,
+) -> None:
+    if ledger is not None and reservation is not None:
+        await ledger.release(reservation, reason=reason)
+
+
 async def _relay_sse_response(response: httpx.Response, request: Request) -> AsyncIterator[bytes]:
     try:
         async for chunk in response.aiter_bytes():
@@ -82,9 +93,35 @@ def _relay_downstream_client_error(response: httpx.Response) -> JSONResponse:
     return create_error_json_response(*errors, status_code=response.status_code)
 
 
+def _extract_usage(payload: dict[str, Any]) -> UsageRecord | None:
+    """The OpenAI-style aggregated `usage` object (sent on the final chunk, requested
+    via stream_options), or None when the payload carries none."""
+    if not isinstance(usage_obj := payload.get("usage"), dict):
+        return None
+    if not isinstance(usage_obj.get("total_tokens"), int):
+        return None
+    return UsageRecord(
+        total_tokens=usage_obj["total_tokens"],
+        prompt_tokens=usage_obj.get("prompt_tokens"),
+        completion_tokens=usage_obj.get("completion_tokens"),
+    )
+
+
+def _count_delta_chars(payload: dict[str, Any]) -> int:
+    """Length of the assistant text streamed by one payload's choice deltas."""
+    text_chars = 0
+    for choice in payload.get("choices") or []:
+        if (
+            isinstance(choice, dict)
+            and isinstance(choice.get("delta"), dict)
+            and isinstance(content := choice["delta"].get("content"), str)
+        ):
+            text_chars += len(content)
+    return text_chars
+
+
 def _parse_sse_event(raw_event: bytes) -> tuple[UsageRecord | None, int]:
-    """Extracts the OpenAI-style aggregated `usage` object (sent on the final chunk,
-    requested via stream_options) and the assistant text length from one SSE event."""
+    """Extracts the usage and the assistant text length from one SSE event."""
     usage: UsageRecord | None = None
     text_chars = 0
     for raw_line in raw_event.split(b"\n"):
@@ -98,21 +135,37 @@ def _parse_sse_event(raw_event: bytes) -> tuple[UsageRecord | None, int]:
             continue
         if not isinstance(payload, dict):
             continue
-        usage_obj = payload.get("usage")
-        if isinstance(usage_obj, dict) and isinstance(usage_obj.get("total_tokens"), int):
-            usage = UsageRecord(
-                total_tokens=usage_obj["total_tokens"],
-                prompt_tokens=usage_obj.get("prompt_tokens"),
-                completion_tokens=usage_obj.get("completion_tokens"),
-            )
-        for choice in payload.get("choices") or []:
-            if (
-                isinstance(choice, dict)
-                and isinstance(choice.get("delta"), dict)
-                and isinstance(content := choice["delta"].get("content"), str)
-            ):
-                text_chars += len(content)
+        usage = _extract_usage(payload) or usage
+        text_chars += _count_delta_chars(payload)
     return usage, text_chars
+
+
+class _SseUsageAccumulator:
+    """Accumulates usage and output length across the SSE events of a stream.
+
+    Network chunks can split an SSE event: the tail is kept until its terminator."""
+
+    def __init__(self) -> None:
+        self.usage: UsageRecord | None = None
+        self.output_chars: int = 0
+        self._buffer: bytes = b""
+
+    def feed(self, chunk: bytes) -> None:
+        self._buffer += chunk
+        *complete_events, self._buffer = self._buffer.split(b"\n\n")
+        for raw_event in complete_events:
+            self._consume(raw_event)
+
+    def close(self) -> None:
+        # stream ended normally: parse the trailing bytes as the last event
+        if self._buffer:
+            self._consume(self._buffer)
+            self._buffer = b""
+
+    def _consume(self, raw_event: bytes) -> None:
+        event_usage, text_chars = _parse_sse_event(raw_event)
+        self.usage = event_usage or self.usage
+        self.output_chars += text_chars
 
 
 def _make_metered_sse_relay(
@@ -124,28 +177,16 @@ def _make_metered_sse_relay(
     input_chars: int,
 ) -> AsyncIterator[bytes]:
     async def _relay() -> AsyncIterator[bytes]:
-        usage: UsageRecord | None = None
-        output_chars = 0
+        accumulator = _SseUsageAccumulator()
         completed = False
-        event_buffer = b""
         try:
             async for chunk in response.aiter_bytes():
                 if await request.is_disconnected():
                     break
-                # network chunks can split an SSE event: keep the tail until its terminator
-                event_buffer += chunk
-                *complete_events, event_buffer = event_buffer.split(b"\n\n")
-                for raw_event in complete_events:
-                    event_usage, text_chars = _parse_sse_event(raw_event)
-                    usage = event_usage or usage
-                    output_chars += text_chars
+                accumulator.feed(chunk)
                 yield chunk
             else:
-                # stream ended normally: parse the trailing bytes as the last event
-                if event_buffer:
-                    event_usage, text_chars = _parse_sse_event(event_buffer)
-                    usage = event_usage or usage
-                    output_chars += text_chars
+                accumulator.close()
                 completed = True
         except BaseException:
             # timeout / upstream abort mid-stream: refund the Reservation (the
@@ -160,10 +201,10 @@ def _make_metered_sse_relay(
             await ledger.release(reservation, reason="client_abort")
             return
 
-        if usage is None:
+        if (usage := accumulator.usage) is None:
             # the Chatbox is expected to always report usage; if it did not, estimate
             # from text length and never fail the request over accounting
-            usage = UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=output_chars)
+            usage = UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=accumulator.output_chars)
         await ledger.reconcile(reservation, usage)
 
     return _relay()
@@ -206,19 +247,16 @@ async def create_streaming_chat_response(
             response_format=body.to_chat_response_format(),
         )
     except ValidationError as exc:
-        if reservation and ledger:
-            await ledger.release(reservation, reason="request_rejected")
+        await _release_reservation(ledger, reservation, reason="request_rejected")
         # relay validation errors to caller to provide hints in the UI
         return await http422_error_handler(request, exc)
     except httpx.HTTPStatusError as exc:
-        if reservation and ledger:
-            await ledger.release(reservation, reason="upstream_error")
+        await _release_reservation(ledger, reservation, reason="upstream_error")
         if is_4xx_client_error(exc.response.status_code):
             return _relay_downstream_client_error(exc.response)
         raise ChatbotRequestError from exc
     except httpx.HTTPError as exc:
-        if reservation and ledger:
-            await ledger.release(reservation, reason="upstream_error")
+        await _release_reservation(ledger, reservation, reason="upstream_error")
         raise ChatbotRequestError from exc
 
     if ledger and reservation:
@@ -269,8 +307,7 @@ async def submit_background_chat_response(
             reservation_usd=reservation.amount_usd if reservation else None,
         )
     except BaseException:
-        if reservation and ledger:
-            await ledger.release(reservation, reason="submit_failed")
+        await _release_reservation(ledger, reservation, reason="submit_failed")
         raise
 
     return ResponseObject(

@@ -5,7 +5,7 @@ from ...exceptions.usage_limit_errors import ChatboxUsageBaseError
 from ._utils import create_error_json_response
 
 
-async def usage_limit_error_handler(request: Request, exc: Exception) -> JSONResponse:
+def usage_limit_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert request  # nosec
     assert isinstance(exc, ChatboxUsageBaseError)  # nosec
 
