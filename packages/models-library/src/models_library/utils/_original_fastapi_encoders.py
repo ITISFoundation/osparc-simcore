@@ -1,7 +1,12 @@
 # pylint: disable-all
 
 #
-# wget https://raw.githubusercontent.com/tiangolo/fastapi/master/fastapi/encoders.py \
+# Vendored copy of fastapi's encoders.py, originally fetched from master and
+# since adapted locally (e.g. pydantic v2, common_library encoders), so it is
+# NOT identical to any upstream release. The link below is the closest upstream
+# reference at the time of vendoring (pinned to a tag so it does not drift):
+#
+# wget https://raw.githubusercontent.com/fastapi/fastapi/refs/tags/0.141.1/fastapi/encoders.py \
 #     --output-document=_original_fastapi_encoders
 #
 import dataclasses
