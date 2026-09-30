@@ -288,9 +288,11 @@ async def unarchive_dir(
 
         tqdm_progress = exit_stack.enter_context(
             tqdm.tqdm(
-                desc=f"decompressing {archive_to_extract} -> {destination_folder} "
-                f"[{file_count} file{'' if file_count == 1 else 's'}"
-                f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n",
+                desc=(
+                    f"decompressing {archive_to_extract} -> {destination_folder} "
+                    f"[{file_count} file{'' if file_count == 1 else 's'}"
+                    f"/{human_readable_size(archive_to_extract.stat().st_size)}]\n"
+                ),
                 total=total_bytes,
                 **TQDM_MULTI_FILES_OPTIONS,
             )
