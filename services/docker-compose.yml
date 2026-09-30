@@ -1514,9 +1514,11 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
+        - *tracing_open_telemetry_environments
 
       NOTIFICATIONS_BOOT_SERVER_MODE: AS_CELERY_WORKER
       NOTIFICATIONS_SMTP_SETTINGS: ${SMTP_SETTINGS}
+      NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       HEALTHCHECK_MODE: heartbeat
       # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
