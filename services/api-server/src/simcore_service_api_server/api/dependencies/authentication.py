@@ -1,3 +1,4 @@
+import hashlib
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
@@ -35,7 +36,7 @@ def _create_exception() -> HTTPException:
 async def get_current_identity(
     apikeys_repo: Annotated[ApiKeysRepository, Depends(get_repository(ApiKeysRepository))],
     users_repo: Annotated[UsersRepository, Depends(get_repository(UsersRepository))],
-    credentials: HTTPBasicCredentials = Security(basic_scheme),
+    credentials: Annotated[HTTPBasicCredentials, Security(basic_scheme)],
 ) -> Identity:
     user_and_product: UserAndProductTuple | None = await apikeys_repo.get_user(
         api_key=credentials.username, api_secret=credentials.password
@@ -70,3 +71,11 @@ async def get_active_user_email(
     identity: Annotated[Identity, Depends(get_current_identity)],
 ) -> LowerCaseEmailStr:
     return identity.email
+
+
+async def get_credential_hash(
+    credentials: Annotated[HTTPBasicCredentials, Security(basic_scheme)],
+) -> str:
+    """Non-reversible fingerprint of the API key pair, used to scope the Chatbox Rate
+    Limit per API key without storing or comparing credentials anywhere new."""
+    return hashlib.sha256(f"{credentials.username}:{credentials.password}".encode()).hexdigest()

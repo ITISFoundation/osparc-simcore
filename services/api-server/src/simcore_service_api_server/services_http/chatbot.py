@@ -13,6 +13,7 @@ from ..models.domain.chatbot import (
     ChatCompletionRequestMessage,
     ChatRequest,
     ChatResponseFormat,
+    ChatStreamOptions,
     CreateChatCompletionResponse,
     Temperature,
     TopP,
@@ -45,8 +46,8 @@ class ChatbotSession:
         metadata: dict[str, Any],
         temperature: Temperature,
         top_p: TopP,
-        response_format: ChatResponseFormat | None,
-        stream: bool,
+        response_format: ChatResponseFormat | None = None,
+        stream: bool = False,
     ) -> ChatRequest:
         # ensure the graph specified in settings are used
         _metadata = deepcopy(metadata)
@@ -59,6 +60,8 @@ class ChatbotSession:
             temperature=temperature,
             top_p=top_p,
             stream=stream,
+            # the vendor reports aggregated usage on the final streamed chunk, needed for Spend
+            stream_options=ChatStreamOptions() if stream else None,
         )
 
     def _request_timeout(self) -> httpx.Timeout:
