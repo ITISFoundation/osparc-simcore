@@ -60,4 +60,7 @@ class UsageLedgerUnavailableError(ChatboxUsageBaseError):
         _version=1,
     )
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    retry_after_seconds = 5
+
+    @property
+    def retry_after_seconds(self) -> int:
+        return 5

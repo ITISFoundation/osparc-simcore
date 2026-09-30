@@ -24,7 +24,6 @@ request per window may then be in flight, which closes the cold-start overshoot.
 import logging
 import time
 from collections.abc import AsyncIterator
-from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final
@@ -68,19 +67,27 @@ _TTL_KEY_MISSING: Final[int] = -2  # Redis TTL reply when the key does not exist
 _FLOAT_EPS: Final[float] = 1e-9
 _CHARS_PER_TOKEN: Final[NonNegativeInt] = 4
 
-# connection/timeout/protocol errors mean the ledger is unreachable
-_REDIS_UNAVAILABLE_ERRORS: Final[tuple[type[Exception], ...]] = (redis.exceptions.RedisError, OSError)
+# connection/timeout errors mean the ledger is unreachable; protocol errors (ResponseError)
+# are bugs (e.g. WRONGTYPE) and must surface, not mask themselves as fail-open/fail-closed
+_REDIS_UNAVAILABLE_ERRORS: Final[tuple[type[Exception], ...]] = (
+    redis.exceptions.ConnectionError,
+    redis.exceptions.TimeoutError,
+    OSError,
+)
 
 _FIELD_SPEND: Final[str] = "spend"
 _FIELD_RESERVATIONS: Final[str] = "reservations"
 _FIELD_REQUESTS: Final[str] = "requests"
 
 
-def _field_float(hash_: dict[str, str], field: str) -> float:
-    value = float(hash_.get(field, 0) or 0)
+def _usd(value: str | None) -> float:
     # a Redis flush mid-flight can leave a released Reservation subtracted from a fresh
     # counter; treat negative aggregates as zero so enforcement stays conservative
-    return max(0.0, value)
+    return max(0.0, float(value or 0))
+
+
+def _field_float(hash_: dict[str, str], field: str) -> float:
+    return _usd(hash_.get(field))
 
 
 def _budget_hard_stop_hit(global_stats: dict[str, str], settings: ChatboxUsageLimitsSettings) -> bool:
@@ -155,6 +162,10 @@ class _UsageMetrics:
         )
 
 
+def _window_key(user_id: UserID, product_name: ProductName) -> str:
+    return f"{_WINDOW_KEY_PREFIX}:{user_id}:{product_name}"
+
+
 @dataclass
 class ChatboxUsageLedger:
     """All enforcement layers around the Chatbox, backed by one Redis database.
@@ -171,8 +182,11 @@ class ChatboxUsageLedger:
     def _redis(self) -> aioredis.Redis:
         return self._client.redis
 
-    def _window_key(self, user_id: UserID, product_name: ProductName) -> str:  # pylint: disable=no-self-use
-        return f"{_WINDOW_KEY_PREFIX}:{user_id}:{product_name}"
+    def _window_ttl_or_full(self, window_ttl: int) -> int:
+        # a window hash without a TTL (-1) can only be a write that raced its expiry:
+        # re-arm the full Usage Window; a live window keeps its remaining TTL (the
+        # "available again at" answer must not drift)
+        return window_ttl if window_ttl > 0 else int(self._settings.WINDOW_LENGTH.total_seconds())
 
     # -- Rate Limit (per API key, fail-open) ---------------------------------------
 
@@ -185,9 +199,9 @@ class ChatboxUsageLedger:
         minute_bucket = int(time.time() // 60)
         key = f"{_RATE_KEY_PREFIX}:{credential_hash}:{minute_bucket}"
         try:
+            # SET NX EX first so the counter can never be created without a TTL
+            await self._redis.set(key, 0, nx=True, ex=_RATE_KEY_TTL_SECONDS)
             count: int = await self._redis.incr(key)
-            if count == 1:
-                await self._redis.expire(key, _RATE_KEY_TTL_SECONDS)
         except _REDIS_UNAVAILABLE_ERRORS:
             self._metrics.ledger_failures_total.labels(stage="rate_limit").inc()
             _logger.warning("Rate limit could not be checked (fail-open)", exc_info=True)
@@ -215,7 +229,7 @@ class ChatboxUsageLedger:
             ChatboxWindowQuotaExceededError: the Reservation does not fit the Window Quota.
             UsageLedgerUnavailableError: Redis cannot be trusted (fail-closed).
         """
-        window_key = self._window_key(user_id, product_name)
+        window_key = _window_key(user_id, product_name)
         allowance = float(self._settings.WINDOW_SPEND_USD)
 
         for _ in range(_CAS_MAX_ATTEMPTS):
@@ -229,7 +243,6 @@ class ChatboxUsageLedger:
                     if _budget_hard_stop_hit(global_stats, self._settings):
                         raise ProviderBudgetExhaustedError
 
-                    window_exists = window_ttl != _TTL_KEY_MISSING  # aged out or first request
                     reservation = self._estimate_reservation(global_stats, allowance)
 
                     held = _field_float(window, _FIELD_SPEND) + _field_float(window, _FIELD_RESERVATIONS)
@@ -244,9 +257,9 @@ class ChatboxUsageLedger:
 
                     pipe.multi()
                     pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, reservation)
-                    if not window_exists:
-                        # the Usage Window starts at the holder's first admitted request
-                        pipe.expire(window_key, int(self._settings.WINDOW_LENGTH.total_seconds()))
+                    # every window write re-asserts the TTL: WATCH does not abort when a
+                    # key expires, so hincrbyfloat can recreate a hash that lost it
+                    pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
                     pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, reservation)
                     await pipe.execute()
             except WatchError:
@@ -293,7 +306,7 @@ class ChatboxUsageLedger:
         hands); they are made visible via the failures counter.
         """
         spend = self._spend_usd(usage)
-        window_key = self._window_key(reservation.user_id, reservation.product_name)
+        window_key = _window_key(reservation.user_id, reservation.product_name)
         for _ in range(_CAS_MAX_ATTEMPTS):
             try:
                 async with self._redis.pipeline() as pipe:
@@ -305,6 +318,7 @@ class ChatboxUsageLedger:
                     if window_exists:
                         pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, -reservation.amount_usd)
                         pipe.hincrbyfloat(window_key, _FIELD_SPEND, spend)
+                        pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
                     pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
                     pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_SPEND, spend)
                     pipe.hincrby(_GLOBAL_KEY, _FIELD_REQUESTS, 1)
@@ -327,7 +341,7 @@ class ChatboxUsageLedger:
         that visible.
         """
         self._metrics.released_reservations_total.labels(reason=reason).inc()
-        window_key = self._window_key(reservation.user_id, reservation.product_name)
+        window_key = _window_key(reservation.user_id, reservation.product_name)
         for _ in range(_CAS_MAX_ATTEMPTS):
             try:
                 async with self._redis.pipeline() as pipe:
@@ -338,6 +352,7 @@ class ChatboxUsageLedger:
                     pipe.multi()
                     if window_exists:
                         pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, -reservation.amount_usd)
+                        pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
                     pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
                     await pipe.execute()
             except WatchError:
@@ -363,15 +378,13 @@ class ChatboxUsageLedger:
             "ts": f"{time.time():.6f}",
         }
         try:
-            with suppress(Exception):  # ledger bookkeeping must not break the response path
+            with log_catch(_logger, reraise=False):  # ledger bookkeeping must not break the response path
                 await self._redis.xadd(_LEDGER_STREAM_KEY, entry, maxlen=_LEDGER_STREAM_MAXLEN, approximate=True)
 
             global_spend = await self._redis.hget(_GLOBAL_KEY, _FIELD_SPEND)
             budget = self._settings.PROVIDER_BUDGET_USD
             if budget > 0:
-                self._metrics.provider_budget_fraction.set(
-                    _field_float({_FIELD_SPEND: global_spend or "0"}, _FIELD_SPEND) / budget
-                )
+                self._metrics.provider_budget_fraction.set(_usd(global_spend) / budget)
         except _REDIS_UNAVAILABLE_ERRORS:
             _logger.warning("Could not record the usage ledger entry", exc_info=True)
 
