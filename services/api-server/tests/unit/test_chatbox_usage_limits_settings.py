@@ -13,7 +13,7 @@ def test_usage_limits_disabled_when_not_configured(app_environment: EnvVarsDict)
     settings = ApplicationSettings.create_from_envs()
 
     # ASSERT - enforcement is off: no limits block, no Redis needed
-    assert settings.API_SERVER_CHATBOT_USAGE_LIMITS is None
+    assert settings.API_SERVER_CHATBOX_USAGE_LIMITS is None
 
 
 def test_usage_limits_defaults_from_minimal_env(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict):
@@ -21,14 +21,14 @@ def test_usage_limits_defaults_from_minimal_env(monkeypatch: pytest.MonkeyPatch,
     setenvs_from_dict(
         monkeypatch,
         {
-            "API_SERVER_CHATBOT_USAGE_LIMITS": (
+            "API_SERVER_CHATBOX_USAGE_LIMITS": (
                 '{"REDIS": {"REDIS_HOST": "simcore_redis", "REDIS_PASSWORD": "pass"}, "PROVIDER_BUDGET_USD": 1000}'
             )
         },
     )
 
     # ACT
-    limits = ApplicationSettings.create_from_envs().API_SERVER_CHATBOT_USAGE_LIMITS
+    limits = ApplicationSettings.create_from_envs().API_SERVER_CHATBOX_USAGE_LIMITS
 
     # ASSERT - sensible defaults per spec
     assert limits is not None
@@ -45,7 +45,7 @@ def test_usage_limits_all_values_from_env(monkeypatch: pytest.MonkeyPatch, app_e
     setenvs_from_dict(
         monkeypatch,
         {
-            "API_SERVER_CHATBOT_USAGE_LIMITS": (
+            "API_SERVER_CHATBOX_USAGE_LIMITS": (
                 '{"REDIS": {"REDIS_HOST": "simcore_redis"}, "ENABLED": false, "REQUESTS_PER_MINUTE": 3,'
                 ' "WINDOW_SPEND_USD": 1.5, "WINDOW_LENGTH": "2:00:00", "PROVIDER_BUDGET_USD": 800,'
                 ' "HARD_STOP_FRACTION": 0.95, "BLENDED_RATE_USD_PER_MTOK": 3.25,'
@@ -55,7 +55,7 @@ def test_usage_limits_all_values_from_env(monkeypatch: pytest.MonkeyPatch, app_e
     )
 
     # ACT
-    limits = ApplicationSettings.create_from_envs().API_SERVER_CHATBOT_USAGE_LIMITS
+    limits = ApplicationSettings.create_from_envs().API_SERVER_CHATBOX_USAGE_LIMITS
 
     # ASSERT
     assert limits is not None
@@ -73,7 +73,7 @@ def test_usage_limits_hard_stop_fraction_validated(monkeypatch: pytest.MonkeyPat
     # ARRANGE - out-of-range hard stop
     setenvs_from_dict(
         monkeypatch,
-        {"API_SERVER_CHATBOT_USAGE_LIMITS": '{"REDIS": {}, "HARD_STOP_FRACTION": 1.2}'},
+        {"API_SERVER_CHATBOX_USAGE_LIMITS": '{"REDIS": {}, "HARD_STOP_FRACTION": 1.2}'},
     )
 
     # ACT / ASSERT

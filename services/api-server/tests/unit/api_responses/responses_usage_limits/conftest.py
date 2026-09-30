@@ -19,14 +19,14 @@ from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
-from simcore_service_api_server.clients.chatbot_usage import get_chatbot_usage_ledger
+from simcore_service_api_server.clients.chatbox_usage import get_chatbox_usage_ledger
 
 CHATBOT_BASE_URL = "http://chatbot:8000"
 CHAT_MODEL = "gpt-4o-mini"
 
-GLOBAL_KEY = "api-server:chatbot:usage:global"
-WINDOW_KEY_PATTERN = "api-server:chatbot:usage:window:*"
-RATE_KEY_PREFIX = "api-server:chatbot:rate"
+GLOBAL_KEY = "api-server:chatbox:usage:global"
+WINDOW_KEY_PATTERN = "api-server:chatbox:usage:window:*"
+RATE_KEY_PREFIX = "api-server:chatbox:rate"
 
 
 def _make_sse_with_usage(prompt_tokens: int, completion_tokens: int, *, content: str = "hi") -> bytes:
@@ -98,14 +98,14 @@ def app_environment(
     use_in_memory_redis: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    """Chatbot + usage limits against a fake Redis. Override the limits per test with
+    """Chatbox + usage limits against a fake Redis. Override the limits per test with
     @pytest.mark.parametrize("app_environment", [...], indirect=True)."""
     overrides: dict = getattr(request, "param", None) or {"WINDOW_SPEND_USD": 0.003}
     return setenvs_from_dict(
         monkeypatch,
         {
             "API_SERVER_CHATBOT": '{"CHATBOT_URL": "http://chatbot:8000", "GRAPH_NAME": "simple_rag"}',
-            "API_SERVER_CHATBOT_USAGE_LIMITS": _make_limits_env(**overrides),
+            "API_SERVER_CHATBOX_USAGE_LIMITS": _make_limits_env(**overrides),
         },
     )
 
@@ -122,7 +122,7 @@ async def read_ledger_state(app: FastAPI):
     """Raw reads of the window hashes / global hash for post-assertions."""
 
     async def _read() -> dict:
-        ledger = get_chatbot_usage_ledger(app)
+        ledger = get_chatbox_usage_ledger(app)
         assert ledger is not None
         redis = ledger._client.redis  # noqa: SLF001
         windows: dict[str, dict[str, float]] = {}
@@ -140,6 +140,6 @@ async def fresh_usage_ledger(client, app: FastAPI):
     Usage Windows stay independent. Applied via pytest.mark.usefixtures in each module
     (autouse is banned in conftest.py)."""
     yield
-    ledger = get_chatbot_usage_ledger(app)
+    ledger = get_chatbox_usage_ledger(app)
     assert ledger is not None
     await ledger._client.redis.flushall()  # noqa: SLF001

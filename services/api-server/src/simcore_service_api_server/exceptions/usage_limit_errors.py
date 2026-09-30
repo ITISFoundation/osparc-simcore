@@ -9,7 +9,7 @@ from ._base import ApiServerBaseError
 class ChatboxUsageBaseError(ApiServerBaseError):
     """Errors raised by the Chatbox usage limits enforcement layers.
 
-    The error code (e.g. ``chatbot_window_quota_exceeded``) is part of the user message
+    The error code (e.g. ``chatbox_window_quota_exceeded``) is part of the user message
     so that clients can branch on it without parsing prose.
     """
 
@@ -23,9 +23,9 @@ class ChatboxUsageBaseError(ApiServerBaseError):
         return max(1, math.ceil(float(value)))
 
 
-class ChatbotWindowQuotaExceededError(ChatboxUsageBaseError):
+class ChatboxWindowQuotaExceededError(ChatboxUsageBaseError):
     msg_template = user_message(
-        "chatbot_window_quota_exceeded: You have used your Chatbox allowance of {allowance_usd} "
+        "chatbox_window_quota_exceeded: You have used your Chatbox allowance of {allowance_usd} "
         "for the current usage window. Your allowance will be available again at {reset_at}. "
         "If you need more allowance before then, please contact support.",
         _version=1,
@@ -43,9 +43,9 @@ class ProviderBudgetExhaustedError(ChatboxUsageBaseError):
     status_code = status.HTTP_403_FORBIDDEN
 
 
-class ChatbotRateLimitedError(ChatboxUsageBaseError):
+class ChatboxRateLimitedError(ChatboxUsageBaseError):
     msg_template = user_message(
-        "chatbot_rate_limited: You are sending Chatbox requests too quickly "
+        "chatbox_rate_limited: You are sending Chatbox requests too quickly "
         "(limit {requests_per_minute} per minute). Please wait {retry_after_seconds} seconds and try again.",
         _version=1,
     )
@@ -55,7 +55,7 @@ class ChatbotRateLimitedError(ChatboxUsageBaseError):
 class UsageLedgerUnavailableError(ChatboxUsageBaseError):
     # fail-closed for the spend layers (Window Quota, Global Budget Guard)
     msg_template = user_message(
-        "chatbot_usage_ledger_unavailable: The Chatbox usage service is temporarily unavailable, "
+        "chatbox_usage_ledger_unavailable: The Chatbox usage service is temporarily unavailable, "
         "so your request cannot be safely metered. Please try again shortly.",
         _version=1,
     )

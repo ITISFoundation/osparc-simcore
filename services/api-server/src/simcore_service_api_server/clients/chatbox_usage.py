@@ -1,13 +1,13 @@
 """Chatbox Usage Ledger: Redis-backed enforcement of Chatbox usage limits (ADR-0001).
 
 The whole Usage Ledger lives in the platform cache Redis on a dedicated database:
-- window hash   api-server:chatbot:usage:window:{user_id}:{product_name}
+- window hash   api-server:chatbox:usage:window:{user_id}:{product_name}
     fields spend / reservations (USD); TTL = the fixed Usage Window, started at the
     holder's first admitted request (the TTL is the exact "available again at" answer)
-- global hash   api-server:chatbot:usage:global
+- global hash   api-server:chatbox:usage:global
     fields spend / reservations (USD) and requests — cumulative vs the Provider Budget
-- rate key      api-server:chatbot:rate:{credential_hash}:{minute-bucket}
-- ledger stream api-server:chatbot:usage:ledger — one entry per completion (Usage Ledger)
+- rate key      api-server:chatbox:rate:{credential_hash}:{minute-bucket}
+- ledger stream api-server:chatbox:usage:ledger — one entry per completion (Usage Ledger)
 
 Money layers (Window Quota, Global Budget Guard) are fail-closed: a Redis failure
 rejects the request with a 503. The Rate Limit is fail-open: a Redis failure lets the
@@ -43,10 +43,10 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
 from .._meta import PROJECT_NAME
-from ..core.settings import ChatbotUsageLimitsSettings
+from ..core.settings import ChatboxUsageLimitsSettings
 from ..exceptions.usage_limit_errors import (
-    ChatbotRateLimitedError,
-    ChatbotWindowQuotaExceededError,
+    ChatboxRateLimitedError,
+    ChatboxWindowQuotaExceededError,
     ProviderBudgetExhaustedError,
     UsageLedgerUnavailableError,
 )
@@ -55,7 +55,7 @@ _logger = logging.getLogger(__name__)
 
 _METRICS_NAMESPACE: Final[str] = PROJECT_NAME.replace("-", "_")
 
-_KEY_PREFIX: Final[str] = "api-server:chatbot"
+_KEY_PREFIX: Final[str] = "api-server:chatbox"
 _WINDOW_KEY_PREFIX: Final[str] = f"{_KEY_PREFIX}:usage:window"
 _GLOBAL_KEY: Final[str] = f"{_KEY_PREFIX}:usage:global"
 _LEDGER_STREAM_KEY: Final[str] = f"{_KEY_PREFIX}:usage:ledger"
@@ -83,7 +83,7 @@ def _field_float(hash_: dict[str, str], field: str) -> float:
     return max(0.0, value)
 
 
-def _budget_hard_stop_hit(global_stats: dict[str, str], settings: ChatbotUsageLimitsSettings) -> bool:
+def _budget_hard_stop_hit(global_stats: dict[str, str], settings: ChatboxUsageLimitsSettings) -> bool:
     """True when committed Spend (actual + in-flight Reservations) reached the hard stop.
 
     Counting Reservations is what bounds concurrent and per-request overshoot: a guard on
@@ -121,33 +121,33 @@ class Reservation:
 class _UsageMetrics:
     def __init__(self, registry: CollectorRegistry) -> None:
         self.spend_usd_total = Counter(
-            "chatbot_spend_usd_total",
+            "chatbox_spend_usd_total",
             "Cumulative Chatbox Spend in USD, per product",
             ["product_name"],
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
         self.spend_usd_global_total = Counter(
-            "chatbot_spend_usd_global_total",
+            "chatbox_spend_usd_global_total",
             "Cumulative platform Chatbox Spend in USD, across all products",
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
         self.provider_budget_fraction = Gauge(
-            "chatbot_provider_budget_fraction",
+            "chatbox_provider_budget_fraction",
             "Cumulative platform Chatbox Spend as a fraction of the Provider Budget (50/75 % alerts)",
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
         self.released_reservations_total = Counter(
-            "chatbot_released_reservations_total",
+            "chatbox_released_reservations_total",
             "# Reservations refunded without reconciling to actual Spend (possible Provider Budget under-count)",
             ["reason"],
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
         self.ledger_failures_total = Counter(
-            "chatbot_usage_ledger_failures_total",
+            "chatbox_usage_ledger_failures_total",
             "# Requests a layer could not enforce due to Redis failures (fail-open/fail-closed), per stage",
             ["stage"],
             namespace=_METRICS_NAMESPACE,
@@ -156,7 +156,7 @@ class _UsageMetrics:
 
 
 @dataclass
-class ChatbotUsageLedger:
+class ChatboxUsageLedger:
     """All enforcement layers around the Chatbox, backed by one Redis database.
 
     Both request paths (direct streaming and Celery-worker completions) enforce against
@@ -164,7 +164,7 @@ class ChatbotUsageLedger:
     """
 
     _client: RedisClientSDK
-    _settings: ChatbotUsageLimitsSettings
+    _settings: ChatboxUsageLimitsSettings
     _metrics: _UsageMetrics
 
     @property
@@ -200,7 +200,7 @@ class ChatbotUsageLedger:
                 # fail-open: the counter already proved the request was over the limit and
                 # it stays denied, but the reset time falls back to the bucket's lifetime
                 ttl = _RATE_KEY_TTL_SECONDS
-            raise ChatbotRateLimitedError(
+            raise ChatboxRateLimitedError(
                 requests_per_minute=self._settings.REQUESTS_PER_MINUTE,
                 retry_after_seconds=ttl if ttl > 0 else 60,
             )
@@ -212,7 +212,7 @@ class ChatbotUsageLedger:
 
         Raises:
             ProviderBudgetExhaustedError: Global Budget Guard hard stop is hit.
-            ChatbotWindowQuotaExceededError: the Reservation does not fit the Window Quota.
+            ChatboxWindowQuotaExceededError: the Reservation does not fit the Window Quota.
             UsageLedgerUnavailableError: Redis cannot be trusted (fail-closed).
         """
         window_key = self._window_key(user_id, product_name)
@@ -236,7 +236,7 @@ class ChatbotUsageLedger:
                     if held + reservation > allowance + _FLOAT_EPS:
                         reset_after = window_ttl if window_ttl > 0 else self._settings.WINDOW_LENGTH.total_seconds()
                         reset_at = datetime.fromtimestamp(time.time() + reset_after, tz=UTC)
-                        raise ChatbotWindowQuotaExceededError(
+                        raise ChatboxWindowQuotaExceededError(
                             allowance_usd=f"${allowance:.2f}",
                             reset_at=reset_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
                             retry_after_seconds=reset_after,
@@ -386,11 +386,11 @@ class ChatbotUsageLedger:
 # -- app setup ------------------------------------------------------------------
 
 
-def configure_chatbot_usage_ledger(
+def configure_chatbox_usage_ledger(
     app: FastAPI,
     app_lifespan: LifespanManager[FastAPI],
     *,
-    settings: ChatbotUsageLimitsSettings,
+    settings: ChatboxUsageLimitsSettings,
 ) -> None:
     """Adds the Usage Ledger lifespan: a Redis client on the dedicated DB + the ledger."""
     prometheus_metrics = getattr(app.state, "prometheus_metrics", None)
@@ -398,11 +398,11 @@ def configure_chatbot_usage_ledger(
 
     async def _lifespan(_: FastAPI, _state: State) -> AsyncIterator[State]:
         client = RedisClientSDK(
-            settings.REDIS.build_redis_dsn(RedisDatabase.CHATBOT_USAGE),
-            client_name="api-server-chatbot-usage",
+            settings.REDIS.build_redis_dsn(RedisDatabase.CHATBOX_USAGE),
+            client_name="api-server-chatbox-usage",
         )
         await client.setup()
-        app.state.chatbot_usage_ledger = ChatbotUsageLedger(
+        app.state.chatbox_usage_ledger = ChatboxUsageLedger(
             _client=client,
             _settings=settings,
             _metrics=_UsageMetrics(metrics_registry),
@@ -410,15 +410,15 @@ def configure_chatbot_usage_ledger(
         try:
             yield {}
         finally:
-            app.state.chatbot_usage_ledger = None
+            app.state.chatbox_usage_ledger = None
             with log_catch(_logger, reraise=False):
                 await client.shutdown()
 
     app_lifespan.add(_lifespan)
 
 
-def get_chatbot_usage_ledger(app: FastAPI) -> ChatbotUsageLedger | None:
-    ledger: ChatbotUsageLedger | None = getattr(app.state, "chatbot_usage_ledger", None)
+def get_chatbox_usage_ledger(app: FastAPI) -> ChatboxUsageLedger | None:
+    ledger: ChatboxUsageLedger | None = getattr(app.state, "chatbox_usage_ledger", None)
     if ledger is None or not ledger._settings.ENABLED:  # noqa: SLF001  # pylint: disable=protected-access
         return None
     return ledger
