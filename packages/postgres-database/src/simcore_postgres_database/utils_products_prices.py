@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import NamedTuple, TypeAlias
+from typing import NamedTuple
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -7,11 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .constants import QUANTIZE_EXP_ARG
 from .models.products_prices import products_prices
 
-# NOTE: keep TypeAlias form — StripePriceID(...)/StripeTaxRateID(...) are called
-# as constructors (e.g. in pytest_simcore.faker_products_data fixtures), which
-# PEP 695 `type` aliases do not support.
-StripePriceID: TypeAlias = str  # noqa: UP040
-StripeTaxRateID: TypeAlias = str  # noqa: UP040
+type StripePriceID = str
+type StripeTaxRateID = str
 
 
 class ProductPriceInfo(NamedTuple):
