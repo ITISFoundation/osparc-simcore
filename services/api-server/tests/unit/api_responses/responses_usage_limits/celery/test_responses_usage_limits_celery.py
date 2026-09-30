@@ -183,6 +183,69 @@ async def test_celery_task_failure_releases_reservation(
 
 @pytest.mark.parametrize(
     "app_environment",
+    [
+        {
+            "WINDOW_SPEND_USD": 0.003,
+            "PROVIDER_BUDGET_USD": 0.003,
+            "HARD_STOP_FRACTION": 0.8,
+            "REQUESTS_PER_MINUTE": 100,
+        }
+    ],
+    indirect=True,
+)
+async def test_celery_budget_hard_stop_at_task_start_releases_reservation(
+    client: AsyncClient,
+    auth: BasicAuth,
+    usage_builders,
+    read_ledger_state,
+    with_api_server_celery_worker: TestWorkController,
+    mocked_chatbot_backend: respx.MockRouter,
+):
+    # ARRANGE - the cold-start Reservation (the full $0.003 window) passes admission
+    # because the global counter is still empty at submit, but it alone crosses the
+    # hard stop (0.8 x $0.003): the worker's re-check at task start must refuse the
+    # queued task AND refund its Reservation.
+    mocked_chatbot_backend.post("/v1/chat/completions").respond(
+        200,
+        json={
+            "id": "fake-completion-id",
+            "choices": [{"index": 0, "message": {"content": "hi"}}],
+            "usage": {"prompt_tokens": 400, "completion_tokens": 600, "total_tokens": 1000},
+        },
+    )
+    submit = await client.post(f"/{API_VTAG}/responses", auth=auth, json=usage_builders.make_background_body())
+    assert submit.status_code == status.HTTP_200_OK
+    response_id = _wait_obj(submit).id
+
+    # ACT - wait for the task to end (refused at the task-start re-check)
+    obj = None
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(30),
+        wait=wait_fixed(datetime.timedelta(seconds=0.5)),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            response = await client.get(f"/{API_VTAG}/responses/{response_id}", auth=auth)
+            assert response.status_code == status.HTTP_200_OK
+            obj = ResponseObject.model_validate(response.json())
+            assert obj.status not in (ResponseStatus.QUEUED, ResponseStatus.IN_PROGRESS)
+
+    # ASSERT - refused without touching the Chatbox, and the Reservation was refunded
+    # rather than left to age out against the Window Quota
+    assert obj is not None
+    assert obj.status == ResponseStatus.FAILED
+    assert len(mocked_chatbot_backend.calls) == 0
+    state = await read_ledger_state()
+    assert state["global"].get("reservations", 0.0) == pytest.approx(0.0)
+    assert state["global"].get("spend", 0.0) == pytest.approx(0.0)
+    window = next(iter(state["windows"].values()))
+    assert window.get("reservations", 0.0) == pytest.approx(0.0)
+    assert window.get("spend", 0.0) == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize(
+    "app_environment",
     [{"WINDOW_SPEND_USD": 0.003, "REQUESTS_PER_MINUTE": 100}],
     indirect=True,
 )
