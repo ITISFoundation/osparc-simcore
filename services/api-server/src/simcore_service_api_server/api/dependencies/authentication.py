@@ -73,7 +73,7 @@ async def get_active_user_email(
     return identity.email
 
 
-async def get_credential_hash(
+def get_credential_hash(
     credentials: Annotated[HTTPBasicCredentials, Security(basic_scheme)],
 ) -> str:
     """Non-reversible fingerprint of the API key pair, used to scope the Chatbox Rate
