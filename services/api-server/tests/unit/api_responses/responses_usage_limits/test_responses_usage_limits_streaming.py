@@ -64,6 +64,9 @@ async def test_stream_within_window_quota_allowed(
     # ASSERT - allowed and relayed unchanged
     assert response.status_code == status.HTTP_200_OK
 
+    # ASSERT - the aggregated usage reached the client in the streamed body
+    assert '"usage"' in response.text
+
     # ASSERT - the Chatbox is asked to report usage on the final streamed chunk
     downstream_body = json.loads(mocked_chatbot_backend.calls[0].request.content)
     assert downstream_body["stream_options"] == {"include_usage": True}

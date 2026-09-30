@@ -36,6 +36,7 @@ def test_usage_limits_defaults_from_minimal_env(monkeypatch: pytest.MonkeyPatch,
     assert limits.REQUESTS_PER_MINUTE == 10
     assert limits.WINDOW_SPEND_USD == 0.20
     assert timedelta(hours=5) == limits.WINDOW_LENGTH
+    assert limits.BLENDED_RATE_USD_PER_MTOK == 2.5
     assert limits.HARD_STOP_FRACTION == 0.9
     assert limits.RESERVATION_SAFETY_FACTOR == 1.5
 
