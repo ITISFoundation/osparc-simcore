@@ -23,13 +23,14 @@ request per window may then be in flight, which closes the cold-start overshoot.
 
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Final, Literal
+from typing import Final, NamedTuple
 
 import redis.asyncio as aioredis
 import redis.exceptions
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from models_library.products import ProductName
@@ -76,15 +77,10 @@ _REDIS_UNAVAILABLE_ERRORS: Final[tuple[type[Exception], ...]] = (
     OSError,
 )
 
-# the hash keys stay plain str (hgetall hands back raw strings); the Literal only
-# guards which field names code may pass around
-type HashFieldName = Literal["spend", "reservations", "requests"]
-type HashFieldValue = str  # stringified USD amount or request counter
-type StatsHash = dict[str, HashFieldValue]  # a window/global usage hash
-
-_FIELD_SPEND: Final[HashFieldName] = "spend"
-_FIELD_RESERVATIONS: Final[HashFieldName] = "reservations"
-_FIELD_REQUESTS: Final[HashFieldName] = "requests"
+# Redis hash field names (the wire contract, written with HINCRBYFLOAT/HINCR)
+_FIELD_SPEND: Final[str] = "spend"
+_FIELD_RESERVATIONS: Final[str] = "reservations"
+_FIELD_REQUESTS: Final[str] = "requests"
 
 
 def _usd(value: str | None) -> float:
@@ -93,18 +89,36 @@ def _usd(value: str | None) -> float:
     return max(0.0, float(value or 0))
 
 
-def _field_float(hash_: StatsHash, field: HashFieldName) -> float:
-    return _usd(hash_.get(field))
+class UsageStats(NamedTuple):
+    """Parsed window/global usage hash; fields absent from the HGETALL reply are zero.
+
+    The field names ARE the Redis hash field names (asserted below), USD for the money
+    fields and a request count for ``requests``.
+    """
+
+    spend: float = 0.0  # settled Spend
+    reservations: float = 0.0  # in-flight Reservations
+    requests: float = 0.0  # completed requests, for the Reservation estimate
+
+    @property
+    def committed_usd(self) -> float:
+        """actual Spend plus in-flight Reservations"""
+        return self.spend + self.reservations
+
+    @classmethod
+    def from_hgetall(cls, hash_: Mapping[str, str]) -> "UsageStats":
+        # the attribute names double as the _FIELD_* wire names they are read with
+        assert set(cls._fields) == {_FIELD_SPEND, _FIELD_RESERVATIONS, _FIELD_REQUESTS}  # nosec
+        return cls(**{f: _usd(hash_.get(f)) for f in cls._fields})
 
 
-def _budget_hard_stop_hit(global_stats: StatsHash, settings: ChatboxUsageLimitsSettings) -> bool:
+def _budget_hard_stop_hit(global_stats: UsageStats, settings: ChatboxUsageLimitsSettings) -> bool:
     """True when committed Spend (actual + in-flight Reservations) reached the hard stop.
 
     Counting Reservations is what bounds concurrent and per-request overshoot: a guard on
     settled Spend alone would let every in-flight completion pass unchecked.
     """
-    committed = _field_float(global_stats, _FIELD_SPEND) + _field_float(global_stats, _FIELD_RESERVATIONS)
-    return committed >= settings.HARD_STOP_FRACTION * settings.PROVIDER_BUDGET_USD
+    return global_stats.committed_usd >= settings.HARD_STOP_FRACTION * settings.PROVIDER_BUDGET_USD
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -209,9 +223,17 @@ class ChatboxUsageLedger:
             # SET NX EX first so the counter can never be created without a TTL
             await self._redis.set(key, 0, nx=True, ex=_RATE_KEY_TTL_SECONDS)
             count: int = await self._redis.incr(key)
-        except _REDIS_UNAVAILABLE_ERRORS:
+        except _REDIS_UNAVAILABLE_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="rate_limit").inc()
-            _logger.warning("Rate limit could not be checked (fail-open)", exc_info=True)
+            # this log is the only record: fail-open returns without raising
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Chatbox rate limit could not be checked, request allowed (fail-open)",
+                    error=exc,
+                    error_context={"credential_hash": credential_hash},
+                    tip="Check the api-server connection to the Chatbox usage Redis database.",
+                )
+            )
             return
 
         if count > self._settings.REQUESTS_PER_MINUTE:
@@ -243,17 +265,18 @@ class ChatboxUsageLedger:
             try:
                 async with self._redis.pipeline() as pipe:
                     await pipe.watch(window_key, _GLOBAL_KEY)
-                    window: StatsHash = await handle_redis_returns_union_types(pipe.hgetall(window_key))
+                    window = UsageStats.from_hgetall(await handle_redis_returns_union_types(pipe.hgetall(window_key)))
                     window_ttl: int = await handle_redis_returns_union_types(pipe.ttl(window_key))
-                    global_stats: StatsHash = await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
+                    global_stats = UsageStats.from_hgetall(
+                        await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
+                    )
 
                     if _budget_hard_stop_hit(global_stats, self._settings):
                         raise ProviderBudgetExhaustedError
 
                     reservation = self._estimate_reservation(global_stats, allowance)
 
-                    held = _field_float(window, _FIELD_SPEND) + _field_float(window, _FIELD_RESERVATIONS)
-                    if held + reservation > allowance + _FLOAT_EPS:
+                    if window.committed_usd + reservation > allowance + _FLOAT_EPS:
                         reset_after = window_ttl if window_ttl > 0 else self._settings.WINDOW_LENGTH.total_seconds()
                         reset_at = datetime.fromtimestamp(time.time() + reset_after, tz=UTC)
                         raise ChatboxWindowQuotaExceededError(
@@ -271,10 +294,10 @@ class ChatboxUsageLedger:
                     await pipe.execute()
             except WatchError:
                 continue
-            except _REDIS_UNAVAILABLE_ERRORS:
+            except _REDIS_UNAVAILABLE_ERRORS as exc:
+                # not logged here: the usage-limit error handler logs the 503 with this cause
                 self._metrics.ledger_failures_total.labels(stage="window_quota").inc()
-                _logger.warning("Usage ledger unreachable during admission (fail-closed)", exc_info=True)
-                raise UsageLedgerUnavailableError from None
+                raise UsageLedgerUnavailableError from exc
 
             return Reservation(user_id=user_id, product_name=product_name, amount_usd=reservation)
 
@@ -285,18 +308,19 @@ class ChatboxUsageLedger:
     async def ensure_global_budget_available(self) -> None:
         """Re-check the Global Budget Guard hard stop (Celery worker, at task start)."""
         try:
-            global_stats: StatsHash = await handle_redis_returns_union_types(self._redis.hgetall(_GLOBAL_KEY))
-        except _REDIS_UNAVAILABLE_ERRORS:
+            global_stats = UsageStats.from_hgetall(
+                await handle_redis_returns_union_types(self._redis.hgetall(_GLOBAL_KEY))
+            )
+        except _REDIS_UNAVAILABLE_ERRORS as exc:
+            # not logged here: the usage-limit error handler logs the 503 with this cause
             self._metrics.ledger_failures_total.labels(stage="global_budget").inc()
-            _logger.warning("Usage ledger unreachable during budget re-check (fail-closed)", exc_info=True)
-            raise UsageLedgerUnavailableError from None
+            raise UsageLedgerUnavailableError from exc
 
         if _budget_hard_stop_hit(global_stats, self._settings):
             raise ProviderBudgetExhaustedError
 
-    def _estimate_reservation(self, global_stats: StatsHash, allowance: float) -> NonNegativeFloat:
-        requests = _field_float(global_stats, _FIELD_REQUESTS)
-        spend = _field_float(global_stats, _FIELD_SPEND)
+    def _estimate_reservation(self, global_stats: UsageStats, allowance: float) -> NonNegativeFloat:
+        requests, spend = global_stats.requests, global_stats.spend
         if requests <= 0 or spend <= 0:
             # cold start: no rolling average to size from; reserve the whole allowance so
             # at most one request per window is in flight until the first completion lands
@@ -332,9 +356,20 @@ class ChatboxUsageLedger:
                     await pipe.execute()
             except WatchError:
                 continue
-            except _REDIS_UNAVAILABLE_ERRORS:
+            except _REDIS_UNAVAILABLE_ERRORS as exc:
                 self._metrics.ledger_failures_total.labels(stage="reconcile").inc()
-                _logger.warning("Usage ledger unreachable during reconciliation", exc_info=True)
+                _logger.warning(
+                    **create_troubleshooting_log_kwargs(
+                        "Chatbox usage ledger unreachable during reconciliation: Spend not recorded",
+                        error=exc,
+                        error_context={
+                            "user_id": reservation.user_id,
+                            "product_name": reservation.product_name,
+                            "reservation_usd": reservation.amount_usd,
+                        },
+                        tip="the Reservation may linger against the Window Quota until the window expires",
+                    )
+                )
                 return
 
             await self._record_completion(reservation, usage, spend)
@@ -364,9 +399,21 @@ class ChatboxUsageLedger:
                     await pipe.execute()
             except WatchError:
                 continue
-            except _REDIS_UNAVAILABLE_ERRORS:
+            except _REDIS_UNAVAILABLE_ERRORS as exc:
                 self._metrics.ledger_failures_total.labels(stage="release").inc()
-                _logger.warning("Usage ledger unreachable during reservation release", exc_info=True)
+                _logger.warning(
+                    **create_troubleshooting_log_kwargs(
+                        "Chatbox usage ledger unreachable during reservation release: Refund lost",
+                        error=exc,
+                        error_context={
+                            "user_id": reservation.user_id,
+                            "product_name": reservation.product_name,
+                            "reservation_usd": reservation.amount_usd,
+                            "reason": reason,
+                        },
+                        tip="the Reservation may linger against the Window Quota until the window expires",
+                    )
+                )
                 return
 
             return
@@ -392,8 +439,15 @@ class ChatboxUsageLedger:
             budget = self._settings.PROVIDER_BUDGET_USD
             if budget > 0:
                 self._metrics.provider_budget_fraction.set(_usd(global_spend) / budget)
-        except _REDIS_UNAVAILABLE_ERRORS:
-            _logger.warning("Could not record the usage ledger entry", exc_info=True)
+        except _REDIS_UNAVAILABLE_ERRORS as exc:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Could not record the Chatbox usage ledger entry",
+                    error=exc,
+                    error_context={"user_id": reservation.user_id, "product_name": reservation.product_name},
+                    tip="the ledger stream and budget gauge may lag the actual Spend",
+                )
+            )
 
         self._metrics.spend_usd_total.labels(product_name=reservation.product_name).inc(spend_usd)
         self._metrics.spend_usd_global_total.inc(spend_usd)
