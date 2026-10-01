@@ -26,7 +26,7 @@ import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Final
+from typing import Final, Literal
 
 import redis.asyncio as aioredis
 import redis.exceptions
@@ -76,13 +76,15 @@ _REDIS_UNAVAILABLE_ERRORS: Final[tuple[type[Exception], ...]] = (
     OSError,
 )
 
-_FIELD_SPEND: Final[str] = "spend"
-_FIELD_RESERVATIONS: Final[str] = "reservations"
-_FIELD_REQUESTS: Final[str] = "requests"
-
-type HashFieldName = str  # hash field: "spend" | "reservations" | "requests"
+# the hash keys stay plain str (hgetall hands back raw strings); the Literal only
+# guards which field names code may pass around
+type HashFieldName = Literal["spend", "reservations", "requests"]
 type HashFieldValue = str  # stringified USD amount or request counter
-type StatsHash = dict[HashFieldName, HashFieldValue]  # a window/global usage hash
+type StatsHash = dict[str, HashFieldValue]  # a window/global usage hash
+
+_FIELD_SPEND: Final[HashFieldName] = "spend"
+_FIELD_RESERVATIONS: Final[HashFieldName] = "reservations"
+_FIELD_REQUESTS: Final[HashFieldName] = "requests"
 
 
 def _usd(value: str | None) -> float:
