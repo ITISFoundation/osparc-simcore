@@ -24,7 +24,26 @@ def test_page_response_limit_offset_models(cls_model: BaseModel, examples: list[
         assert model_instance
 
 
-def test_invalid_offset():
+@pytest.mark.parametrize(
+    "total, offset",
+    [
+        pytest.param(0, 0, id="empty collection at offset 0"),
+        pytest.param(0, 100, id="empty collection past the end"),
+        pytest.param(5, 5, id="offset equal to total"),
+        pytest.param(5, 100, id="offset past total"),
+    ],
+)
+def test_offset_past_total_is_valid_empty_page(total: int, offset: int):
+    # a request for a page that does not exist yields an empty page carrying the real total
+    meta = PageMetaInfoLimitOffset(limit=6, total=total, offset=offset, count=0)
+    assert meta.count == 0
+    assert meta.total == total
+    assert meta.offset == offset
+
+
+def test_non_empty_page_past_total_is_invalid():
+    # a non-empty page beyond the end is a server-side inconsistency, not a client asking
+    # too far ahead -- it must keep failing loudly
     with pytest.raises(ValidationError):
         PageMetaInfoLimitOffset(limit=6, total=5, offset=5, count=2)
 

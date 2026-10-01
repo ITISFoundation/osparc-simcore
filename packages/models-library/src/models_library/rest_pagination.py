@@ -75,14 +75,10 @@ class PageMetaInfoLimitOffset(BaseModel):
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 
-    @field_validator("offset")
-    @classmethod
-    def _check_offset(cls, v, info: ValidationInfo):
-        if v > 0 and v >= info.data["total"]:
-            msg = f"offset {v} cannot be equal or bigger than total {info.data['total']}, please check"
-            raise ValueError(msg)
-        return v
-
+    # NOTE: an ``offset`` past the end of the collection (i.e. ``offset >= total``) is a valid
+    # request and yields an empty page carrying the real ``total``. Only a *non-empty* page
+    # reaching beyond the end is inconsistent -- that indicates a server-side defect rather
+    # than a client asking for a page that does not exist (e.g. a stale ``next`` link).
     @field_validator("count")
     @classmethod
     def _check_count(cls, v, info: ValidationInfo):
@@ -92,7 +88,7 @@ class PageMetaInfoLimitOffset(BaseModel):
         if v > info.data["total"]:
             msg = f"count {v} bigger than expected total {info.data['total']}, please check"
             raise ValueError(msg)
-        if "offset" in info.data and (info.data["offset"] + v) > info.data["total"]:
+        if v > 0 and "offset" in info.data and (info.data["offset"] + v) > info.data["total"]:
             msg = f"offset {info.data['offset']} + count {v} is bigger than allowed total {info.data['total']}, please check"
             raise ValueError(msg)
         return v
