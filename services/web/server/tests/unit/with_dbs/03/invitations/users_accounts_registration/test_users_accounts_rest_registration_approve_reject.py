@@ -339,8 +339,8 @@ async def test_approve_user_account_with_full_invitation_details(
     assert invitation_data["extra_credits_in_usd"] == 100.0
     assert invitation_data["product"] == product_name
 
-    # the reviewer's send-mail decision is persisted alongside the invitation (audit)
-    assert user_data["extras"]["approval"] == {"send_mail": bool(message_content)}
+    # the reviewer's send-mail decision is persisted inside the invitation entry (audit)
+    assert invitation_data["send_mail"] == bool(message_content)
 
 
 async def test_approve_user_account_with_trial_days_only(
@@ -414,7 +414,7 @@ async def test_approve_user_account_with_trial_days_only(
     assert invitation_data["extra_credits_in_usd"] is None
 
     # approving without message content still audits the send-mail decision
-    assert user_data["extras"]["approval"] == {"send_mail": False}
+    assert invitation_data["send_mail"] is False
 
 
 async def test_approve_user_account_with_credits_only(

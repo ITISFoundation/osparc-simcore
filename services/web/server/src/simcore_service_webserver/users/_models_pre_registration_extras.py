@@ -2,9 +2,10 @@
 
 Known top-level keys
 --------------------
-- **invitation**: stored when an approval generates an invitation link.
-- **approval**: audit of the approval itself (e.g. ``extra_credits_in_usd`` granted to an
-  already-registered user, whose credits do not travel inside an invitation; and the
+- **invitation**: stored when an approval generates an invitation link; also carries the
+  reviewer's ``send_mail`` decision (for a new user the approval audit lives here).
+- **approval**: audit of an approval that generates no invitation, i.e. granting an
+  already-registered user access to another product (``extra_credits_in_usd`` and the
   ``send_mail`` decision, i.e. whether the reviewer chose to notify the user).
 - **rejection**: audit of the rejection itself (the ``send_mail`` decision, i.e. whether the
   reviewer chose to notify the user).
