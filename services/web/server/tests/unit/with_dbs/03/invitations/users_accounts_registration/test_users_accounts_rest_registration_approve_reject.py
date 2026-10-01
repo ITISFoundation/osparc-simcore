@@ -166,6 +166,9 @@ async def test_reject_user_account(  # pylint: disable=too-many-statements
     assert user_data["accountRequestReviewedBy"] == logged_user["name"]
     assert user_data["accountRequestReviewedAt"] is not None
 
+    # the reviewer's send-mail decision is persisted in the pre-registration extras (audit)
+    assert user_data["extras"]["rejection"] == {"send_mail": True}
+
     # 7. Verify that a rejected user cannot be approved
     url = client.app.router["approve_user_account"].url_for()
     assert url.path == "/v0/admin/user-accounts:approve"
@@ -179,6 +182,58 @@ async def test_reject_user_account(  # pylint: disable=too-many-statements
     )
     # Should fail as the account is already reviewed
     assert resp.status == status.HTTP_400_BAD_REQUEST
+
+
+async def test_reject_user_account_without_message_content_records_no_send_mail(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_send_message: AsyncMock,
+):
+    """Rejecting without message content must still audit the send-mail decision."""
+    assert client.app
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = faker.email()
+
+    url = client.app.router["pre_register_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    pre_registered_email = pre_registered_data["email"]
+
+    # 2. Reject without message content (the reviewer chose not to notify)
+    url = client.app.router["reject_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": pre_registered_email},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 3. No notification was sent
+    mock_notifications_send_message.assert_not_called()
+
+    # 4. The send-mail decision is persisted in the pre-registration extras (audit)
+    url = client.app.router["search_user_accounts"].url_for()
+    resp = await client.get(
+        f"{url}",
+        params={"email": pre_registered_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+    assert found[0]["accountRequestStatus"] == "REJECTED"
+    assert found[0]["extras"]["rejection"] == {"send_mail": False}
 
 
 async def test_approve_user_account_with_full_invitation_details(
@@ -284,6 +339,9 @@ async def test_approve_user_account_with_full_invitation_details(
     assert invitation_data["extra_credits_in_usd"] == 100.0
     assert invitation_data["product"] == product_name
 
+    # the reviewer's send-mail decision is persisted alongside the invitation (audit)
+    assert user_data["extras"]["approval"] == {"send_mail": bool(message_content)}
+
 
 async def test_approve_user_account_with_trial_days_only(
     client: TestClient,
@@ -354,6 +412,9 @@ async def test_approve_user_account_with_trial_days_only(
     invitation_data = user_data["extras"]["invitation"]
     assert invitation_data["trial_account_days"] == 15
     assert invitation_data["extra_credits_in_usd"] is None
+
+    # approving without message content still audits the send-mail decision
+    assert user_data["extras"]["approval"] == {"send_mail": False}
 
 
 async def test_approve_user_account_with_credits_only(
