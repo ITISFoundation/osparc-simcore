@@ -337,9 +337,9 @@ async def _approve_existing_user(
     )
 
     # Persist the approval decisions in the pre-registration extras (AUDIT TRAIL)
-    approval_extras: dict[str, Any] = {"approval": {"send_mail": message_content is not None}}
+    extras: dict[str, Any] = {"approval": {"send_mail": message_content is not None}}
     if extra_credits_in_usd is not None:
-        approval_extras["approval"]["extra_credits_in_usd"] = extra_credits_in_usd
+        extras["approval"]["extra_credits_in_usd"] = extra_credits_in_usd
 
     return await _finalize_pre_registration_approval(
         app,
@@ -348,7 +348,7 @@ async def _approve_existing_user(
         pre_registration_email=pre_registration_email,
         product_name=product_name,
         reviewer_id=reviewer_id,
-        extras=approval_extras,
+        extras=extras,
         message_content=message_content,
         bcc_emails=bcc_emails,
     )
