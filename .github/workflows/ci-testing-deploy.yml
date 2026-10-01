@@ -1306,8 +1306,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.14"]
-        # python: ["3.14", "3.15"] TODO: re-enable when Python 3.15 is officially released
+        python: ["3.14", "3.15"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
