@@ -69,7 +69,7 @@ async def existing_registered_user(
         yield ExistingRegisteredUser(**user_row)
 
 
-async def test_reject_user_account(  # pylint: disable=too-many-statements
+async def test_reject_user_account(  # pylint: disable=too-many-statements  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
@@ -166,6 +166,9 @@ async def test_reject_user_account(  # pylint: disable=too-many-statements
     assert user_data["accountRequestReviewedBy"] == logged_user["name"]
     assert user_data["accountRequestReviewedAt"] is not None
 
+    # the reviewer's send-mail decision is persisted in the pre-registration extras (audit)
+    assert user_data["extras"]["rejection"] == {"send_mail": True}
+
     # 7. Verify that a rejected user cannot be approved
     url = client.app.router["approve_user_account"].url_for()
     assert url.path == "/v0/admin/user-accounts:approve"
@@ -179,6 +182,208 @@ async def test_reject_user_account(  # pylint: disable=too-many-statements
     )
     # Should fail as the account is already reviewed
     assert resp.status == status.HTTP_400_BAD_REQUEST
+
+
+async def test_reject_user_account_without_message_content_records_no_send_mail(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_send_message: AsyncMock,
+):
+    """Rejecting without message content must still audit the send-mail decision."""
+    assert client.app
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = faker.email()
+
+    url = client.app.router["pre_register_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    pre_registered_data, _ = await assert_status(resp, status.HTTP_200_OK)
+    pre_registered_email = pre_registered_data["email"]
+
+    # 2. Reject without message content (the reviewer chose not to notify)
+    url = client.app.router["reject_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json={"email": pre_registered_email},
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 3. No notification was sent
+    mock_notifications_send_message.assert_not_called()
+
+    # 4. The send-mail decision is persisted in the pre-registration extras (audit)
+    url = client.app.router["search_user_accounts"].url_for()
+    resp = await client.get(
+        f"{url}",
+        params={"email": pre_registered_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+    assert found[0]["accountRequestStatus"] == "REJECTED"
+    assert found[0]["extras"]["rejection"] == {"send_mail": False}
+
+
+async def test_reject_user_account_empty_message_content_audits_send_mail_false(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_send_message: AsyncMock,
+):
+    """An empty (but present) message_content must audit send_mail=False.
+
+    The notification dispatch gate is `if message_content`, so an empty dict is
+    treated as "do not notify"; the audit must not claim the mail was selected.
+    Reached through the service layer: the REST schema (EmailMessageContent)
+    requires a subject and a body, so an empty payload cannot arrive via HTTP.
+    """
+    assert client.app
+
+    test_email = faker.email()
+    form_data = account_request_form.copy()
+    form_data["email"] = test_email
+
+    await _accounts_service.pre_register_user(
+        client.app,
+        profile=UserAccountRestPreRegister.model_validate(form_data),
+        creator_user_id=logged_user["id"],
+        product_name=product_name,
+    )
+
+    await _accounts_service.reject_user_account(
+        client.app,
+        pre_registration_email=test_email,
+        product_name=product_name,
+        reviewer_id=logged_user["id"],
+        message_content={},
+    )
+
+    mock_notifications_send_message.assert_not_called()
+
+    url = client.app.router["search_user_accounts"].url_for()
+    resp = await client.get(
+        f"{url}",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+    assert found[0]["extras"]["rejection"] == {"send_mail": False}
+
+
+async def test_approve_existing_user_empty_message_content_audits_send_mail_false(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    existing_registered_user: ExistingRegisteredUser,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_send_message: AsyncMock,
+    mocker: MockerFixture,
+):
+    """An empty (but present) message_content on the existing-user approval must
+    audit send_mail=False, matching the `if message_content` dispatch gate."""
+    assert client.app
+
+    # keep the wallets observer out of the way: not relevant to the audit assertion
+    mocker.patch(
+        "simcore_service_webserver.wallets._events._auto_add_default_wallet",
+        spec=True,
+        return_value=None,
+    )
+
+    test_email = account_request_form["email"]
+    profile = UserAccountRestPreRegister.model_validate(account_request_form)
+    await _accounts_service.pre_register_user(
+        client.app,
+        profile=profile,
+        creator_user_id=logged_user["id"],
+        product_name=product_name,
+    )
+
+    await _accounts_service.approve_user_account(
+        client.app,
+        pre_registration_email=test_email,
+        product_name=product_name,
+        reviewer_id=logged_user["id"],
+        message_content={},
+    )
+
+    mock_notifications_send_message.assert_not_called()
+
+    url = client.app.router["search_user_accounts"].url_for()
+    resp = await client.get(
+        f"{url}",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+    assert found[0]["accountRequestStatus"] == "APPROVED"
+    assert found[0]["extras"]["approval"] == {"send_mail": False}
+
+
+async def test_approve_new_user_empty_message_content_audits_send_mail_false(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_notifications_send_message: AsyncMock,
+    mock_invitations_service_http_api: AioResponsesMock,
+):
+    """An empty (but present) message_content on the new-user approval must audit
+    send_mail=False inside the invitation entry, matching the dispatch gate."""
+    assert client.app
+
+    test_email = faker.email()
+    form_data = account_request_form.copy()
+    form_data["email"] = test_email
+
+    await _accounts_service.pre_register_user(
+        client.app,
+        profile=UserAccountRestPreRegister.model_validate(form_data),
+        creator_user_id=logged_user["id"],
+        product_name=product_name,
+    )
+
+    await _accounts_service.approve_user_account(
+        client.app,
+        pre_registration_email=test_email,
+        product_name=product_name,
+        reviewer_id=logged_user["id"],
+        invitation_url="https://osparc-simcore.test/#/registration?invitation=fake",
+        message_content={},
+    )
+
+    mock_notifications_send_message.assert_not_called()
+
+    url = client.app.router["search_user_accounts"].url_for()
+    resp = await client.get(
+        f"{url}",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+    assert found[0]["accountRequestStatus"] == "APPROVED"
+    assert found[0]["extras"]["invitation"]["send_mail"] is False
 
 
 async def test_approve_user_account_with_full_invitation_details(
@@ -284,6 +489,9 @@ async def test_approve_user_account_with_full_invitation_details(
     assert invitation_data["extra_credits_in_usd"] == 100.0
     assert invitation_data["product"] == product_name
 
+    # the reviewer's send-mail decision is persisted inside the invitation entry (audit)
+    assert invitation_data["send_mail"] == bool(message_content)
+
 
 async def test_approve_user_account_with_trial_days_only(
     client: TestClient,
@@ -354,6 +562,9 @@ async def test_approve_user_account_with_trial_days_only(
     invitation_data = user_data["extras"]["invitation"]
     assert invitation_data["trial_account_days"] == 15
     assert invitation_data["extra_credits_in_usd"] is None
+
+    # approving without message content still audits the send-mail decision
+    assert invitation_data["send_mail"] is False
 
 
 async def test_approve_user_account_with_credits_only(
@@ -650,7 +861,11 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     assert product_name in user_data["products"]
 
     # the PO's credits decision is persisted in the pre-registration extras (audit)
-    assert user_data["extras"]["approval"] == {"extra_credits_in_usd": extra_credits_in_usd}
+    # send_mail=True since the request carried message_content
+    assert user_data["extras"]["approval"] == {
+        "extra_credits_in_usd": extra_credits_in_usd,
+        "send_mail": True,
+    }
 
     # 6. Notification was sent using the "added to product" template, not "approved"
     mock_notifications_send_message.assert_called_once()
