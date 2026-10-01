@@ -6,7 +6,8 @@
 
 
 import datetime
-from collections.abc import AsyncIterator, Awaitable, Callable
+import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any, cast
 
 import arrow
@@ -21,6 +22,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from pydantic.main import BaseModel
+from pytest_simcore.helpers.xdist import ReaderWriterLock, get_worker_id, get_xdist_root_tmp_path
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_run_snapshot_tasks import (
     comp_run_snapshot_tasks,
@@ -37,6 +39,33 @@ from simcore_service_director_v2.models.comp_runs import (
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "docker_exclusive: this test needs exclusive access to the shared docker daemon "
+        "(no other with_dbs test running concurrently in any xdist worker)",
+    )
+
+
+@pytest.fixture(autouse=True)
+def _docker_daemon_access(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Coordinates access to the swarm/docker daemon shared by every xdist worker: most tests
+    take a "read" lock and run concurrently with each other; tests marked
+    `@pytest.mark.docker_exclusive` take a "write" lock and run with NO other with_dbs test
+    running concurrently in any worker - for tests that list/inspect ALL matching swarm
+    services/networks and are sensitive to interference from unrelated, concurrent churn.
+    """
+    lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), "director_v2_docker_daemon")
+    token = f"{get_worker_id(request)}-{uuid.uuid4().hex}"
+    is_exclusive = request.node.get_closest_marker("docker_exclusive") is not None
+    if is_exclusive:
+        with lock.write_lock():
+            yield
+    else:
+        with lock.read_lock(token):
+            yield
 
 
 @pytest.fixture

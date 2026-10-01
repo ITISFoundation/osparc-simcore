@@ -76,6 +76,8 @@ fastapi-lifespan-manager==0.1.4
     # via -r requirements/_test.in
 faststream==0.6.7
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+filelock==4.0.3
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.8.0

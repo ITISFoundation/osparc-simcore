@@ -5,6 +5,7 @@
 import asyncio
 import datetime
 import logging
+import re
 import sys
 from collections.abc import AsyncIterable, AsyncIterator
 from typing import Any
@@ -69,10 +70,12 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def dynamic_services_scheduler_settings(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, simcore_services_network_name: str, faker: Faker
 ) -> DynamicServicesSchedulerSettings:
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
+    # NOTE: unique per test since it's used as a docker label filter to list "this test's own"
+    # dynamic-sidecar services; a fixed value collides across concurrent xdist workers
+    monkeypatch.setenv("SWARM_STACK_NAME", f"test-swarm-{faker.uuid4()}")
     return DynamicServicesSchedulerSettings.create_from_envs()
 
 
@@ -139,7 +142,7 @@ async def cleanup_swarm_network(
 
 @pytest.fixture
 def test_service_name(faker: Faker) -> str:
-    return f"test_service_name_{faker.hostname(0)}"
+    return f"test_service_name_{faker.uuid4()}"
 
 
 @pytest.fixture
@@ -164,8 +167,9 @@ async def cleanup_test_service_name(
 
 
 @pytest.fixture
-def dynamic_sidecar_service_name() -> str:
-    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar"
+def dynamic_sidecar_service_name(faker: Faker) -> str:
+    # NOTE: docker service names are limited to 63 characters
+    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar_{faker.uuid4()[:8]}"
 
 
 @pytest.fixture
@@ -221,11 +225,15 @@ def dynamic_sidecar_stack_specs(
     user_id: UserID,
     project_id: ProjectID,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    faker: Faker,
 ) -> list[dict[str, Any]]:
     swarm_stack_name = f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
+    # NOTE: unique per test (docker service names are limited to 63 characters) so concurrent
+    # xdist workers sharing the swarm don't collide on the same fixed service name
+    unique_suffix = faker.uuid4()[:8]
     return [
         {
-            "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy",
+            "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy_{unique_suffix}",
             "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
             "labels": {
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
@@ -238,7 +246,7 @@ def dynamic_sidecar_stack_specs(
             },
         },
         {
-            "name": f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_fake_sidecar",
+            "name": f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_fake_sidecar_{unique_suffix}",
             "task_template": {"ContainerSpec": {"Image": "joseluisq/static-web-server"}},
             "labels": {
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
@@ -308,8 +316,8 @@ async def existing_network(async_docker_client: aiodocker.Docker, project_id: Pr
 
 
 @pytest.fixture
-def service_name() -> str:
-    return "mock-service-name"
+def service_name(faker: Faker) -> str:
+    return f"mock-service-name-{faker.uuid4()}"
 
 
 @pytest.fixture(
@@ -402,12 +410,13 @@ async def test_get_swarm_network_ok(
 
 async def test_get_swarm_network_missing_network(
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    simcore_services_network_name: str,
     docker_swarm: None,
 ):
     with pytest.raises(
         DynamicSidecarError,
         match=r"Unexpected dynamic sidecar error: "
-        r"Swarm network name \(searching for \'\*test_network_name\*\'\) is not configured."
+        rf"Swarm network name \(searching for \'\*{re.escape(simcore_services_network_name)}\*\'\) is not configured."
         r"Found following networks: \[\]",
     ):
         await docker_api.get_swarm_network(dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME)
@@ -432,6 +441,7 @@ async def test_create_service(
     assert service_id
 
 
+@pytest.mark.docker_exclusive
 async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: dict[str, Any],
@@ -450,6 +460,7 @@ async def test_services_to_observe_exist(
     assert dynamic_services[0].service_name == dynamic_sidecar_service_name
 
 
+@pytest.mark.docker_exclusive
 async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -468,6 +479,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     assert dynamic_sidecar_state == (ServiceState.RUNNING, "")
 
 
+@pytest.mark.docker_exclusive
 async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
     dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -594,6 +606,7 @@ async def test_remove_dynamic_sidecar_network_fails(simcore_services_network_nam
     assert delete_result is False
 
 
+@pytest.mark.docker_exclusive
 async def test_is_sidecar_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,

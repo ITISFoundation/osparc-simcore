@@ -10,6 +10,8 @@ coverage==7.16.0
     #   pytest-cov
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.0.3
+    # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
 iniconfig==2.3.0

@@ -11,7 +11,7 @@ from typing import Any
 import docker
 import yaml
 from docker.models.services import Service
-from tenacity import retry
+from tenacity import retry, retry_if_exception_type
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
@@ -253,11 +253,24 @@ def safe_artifact_name(name: str) -> str:
     return BANNED_CHARS_FOR_ARTIFACTS.sub("_", name)
 
 
+@retry(
+    retry=retry_if_exception_type(docker.errors.NotFound),
+    stop=stop_after_attempt(5),
+    wait=wait_fixed(0.2),
+    reraise=True,
+)
+def _list_all_containers(client: docker.DockerClient) -> list:
+    # NOTE: docker-py's list() inspects each found container; under a shared docker daemon
+    # (e.g. xdist workers sharing one stack) another worker may remove a container between
+    # the listing and its inspection, raising NotFound - retry rather than crash the session
+    return client.containers.list(all=True)
+
+
 def save_docker_infos(destination_dir: Path):  # noqa: C901
     client = docker.from_env()
 
     # Includes stop containers, which might be e.g. failing tasks
-    all_containers = client.containers.list(all=True)
+    all_containers = _list_all_containers(client)
 
     destination_dir = Path(safe_artifact_name(f"{destination_dir}"))
 

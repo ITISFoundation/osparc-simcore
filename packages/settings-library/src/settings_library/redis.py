@@ -33,6 +33,12 @@ class RedisSettings(BaseCustomSettings):
     REDIS_USER: str | None = None
     REDIS_PASSWORD: SecretStr | None = None
 
+    # NOTE: shifts every `RedisDatabase` index by this amount (default 0 = no change, i.e. the
+    # exact same DSNs as before this field existed). Lets multiple otherwise-independent app
+    # instances share ONE physical redis/valkey server without colliding on the same logical
+    # databases (e.g. pytest-xdist workers each reserving their own bank of database indices).
+    REDIS_DB_OFFSET: int = 0
+
     def build_redis_dsn(self, db_index: RedisDatabase) -> str:
         return str(
             RedisDsn.build(  # pylint: disable=no-member
@@ -41,7 +47,7 @@ class RedisSettings(BaseCustomSettings):
                 password=(self.REDIS_PASSWORD.get_secret_value() if self.REDIS_PASSWORD else None),
                 host=self.REDIS_HOST,
                 port=self.REDIS_PORT,
-                path=f"{db_index}",
+                path=f"{db_index + self.REDIS_DB_OFFSET}",
             )
         )
 
