@@ -4,7 +4,7 @@ from uuid import UUID
 
 import typer
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 
 _SETTINGS_EXAMPLE = {
     "source": {
@@ -43,7 +43,7 @@ class DBConfig(BaseModel):
 
 class S3Config(BaseModel):
     endpoint: str = "https://s3.amazonaws.com"
-    provider: S3Provider = Field(
+    provider: RCloneProvider = Field(
         ...,
         description='The S3 implementation / provider. Allowed values: "RUSTFS","CEPH","AWS"',
     )

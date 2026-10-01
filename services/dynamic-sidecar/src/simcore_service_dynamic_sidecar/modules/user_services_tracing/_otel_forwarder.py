@@ -22,9 +22,8 @@ from fastapi import FastAPI, status
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
+from settings_library.user_services_tracing import UserServicesTracingSettings
 from yarl import URL
-
-from ._settings import UserServicesTracingSettings
 
 if TYPE_CHECKING:
     from ...core.settings import ApplicationSettings
@@ -43,8 +42,6 @@ _CONTAINER_NAME_SUFFIX: Final[str] = "otel-trace-forwarder"
 # own namespace ("otc" = octel trace forwarder): keeps the forwarder out of the dy-sidecar
 # container namespace so it is never matched / reaped by dy-sidecar name-prefix lookups
 _CONTAINER_NAME_PREFIX: Final[str] = "otc"
-# Docker Engine API expresses a CPU-core quota as NanoCpus (cores * 1e9)
-_NANO_CPUS_PER_CORE: Final[int] = 10**9
 
 
 @asynccontextmanager
@@ -142,10 +139,7 @@ def _build_forwarder_container_config(
             # same resource caps as the injected collector (Docker Engine API equivalents
             # of compose mem_limit/cpus/cpu_shares)
             "Memory": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_MEMORY_LIMIT,
-            "NanoCpus": int(
-                user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT * _NANO_CPUS_PER_CORE
-            ),
-            "CpuShares": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_SHARES,
+            "NanoCpus": user_services_tracing_settings.USER_SERVICES_TRACING_COLLECTOR_CPU_LIMIT.to_nano_cpus(),
         },
     }
 

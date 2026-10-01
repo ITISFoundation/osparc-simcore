@@ -26,7 +26,7 @@ class DockerServiceNotFoundError(DirectorError):
 
 
 class EntrypointContainerNotFoundError(DynamicSidecarError):
-    """Raised while the entrypoint container was nto yet started"""
+    """Raised while the entrypoint container was not yet started"""
 
 
 class LegacyServiceIsNotSupportedError(DirectorError):

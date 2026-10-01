@@ -7989,16 +7989,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8008,6 +7998,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8215,16 +8215,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8234,6 +8224,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8317,16 +8317,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8336,6 +8326,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8420,16 +8420,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8439,6 +8429,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8524,16 +8524,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8543,6 +8533,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8618,16 +8618,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8637,6 +8627,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8721,16 +8721,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8740,6 +8730,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -8921,16 +8921,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -8940,6 +8930,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -9024,16 +9024,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -9043,6 +9033,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -12881,8 +12881,8 @@
               }
             }
           },
-          "503": {
-            "description": "Service Unavailable",
+          "422": {
+            "description": "Unprocessable Content",
             "content": {
               "application/json": {
                 "schema": {
@@ -12891,8 +12891,8 @@
               }
             }
           },
-          "422": {
-            "description": "Unprocessable Content",
+          "503": {
+            "description": "Service Unavailable",
             "content": {
               "application/json": {
                 "schema": {
@@ -12988,16 +12988,6 @@
               }
             }
           },
-          "503": {
-            "description": "Trash service error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            }
-          },
           "422": {
             "content": {
               "application/json": {
@@ -13007,6 +12997,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "description": "Trash service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           },
           "402": {
             "content": {
@@ -13085,16 +13085,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -13104,6 +13094,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -13178,9 +13178,6 @@
           "409": {
             "description": "One or more projects in the folder are in use and cannot be trashed"
           },
-          "503": {
-            "description": "Trash service error"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -13190,6 +13187,9 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "description": "Trash service error"
           },
           "402": {
             "content": {
@@ -13268,16 +13268,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -13287,6 +13277,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {
@@ -13361,9 +13361,6 @@
           "409": {
             "description": "One or more projects in the workspace are in use and cannot be trashed"
           },
-          "503": {
-            "description": "Trash service error"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -13373,6 +13370,9 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "description": "Trash service error"
           },
           "402": {
             "content": {
@@ -13451,16 +13451,6 @@
             },
             "description": "Conflict"
           },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EnvelopedError"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          },
           "422": {
             "content": {
               "application/json": {
@@ -13470,6 +13460,16 @@
               }
             },
             "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            },
+            "description": "Service Unavailable"
           },
           "402": {
             "content": {

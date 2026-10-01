@@ -22,7 +22,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
+from servicelib.resources import USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY, USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY
 from simcore_service_director_v2.modules.dynamic_sidecar import docker_compose_specs
 
 
@@ -119,8 +119,8 @@ async def test_inject_resource_limits_and_reservations(
             assert spec["deploy"]["resources"]["limits"]["cpus"] == cpu.limit
             assert spec["deploy"]["resources"]["limits"]["memory"] == f"{memory.limit}"
 
-            assert f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit) * 10**9)}" in spec["environment"]
-            assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+            assert f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(float(cpu.limit) * 10**9)}" in spec["environment"]
+            assert f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory.limit}" in spec["environment"]
     else:
         for spec in service_spec["services"].values():
             assert spec["mem_limit"] == f"{memory.limit}"
@@ -128,8 +128,11 @@ async def test_inject_resource_limits_and_reservations(
             assert int(spec["mem_reservation"]) <= int(spec["mem_limit"])
             assert spec["cpus"] == max(cpu.limit, cpu.reservation)
 
-            assert f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}" in spec["environment"]
-            assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
+            assert (
+                f"{USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}"
+                in spec["environment"]
+            )
+            assert f"{USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY}={memory.limit}" in spec["environment"]
 
 
 @pytest.mark.parametrize(
