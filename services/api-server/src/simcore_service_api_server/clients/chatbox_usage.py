@@ -80,6 +80,10 @@ _FIELD_SPEND: Final[str] = "spend"
 _FIELD_RESERVATIONS: Final[str] = "reservations"
 _FIELD_REQUESTS: Final[str] = "requests"
 
+type HashFieldName = str  # hash field: "spend" | "reservations" | "requests"
+type HashFieldValue = str  # stringified USD amount or request counter
+type StatsHash = dict[HashFieldName, HashFieldValue]  # a window/global usage hash
+
 
 def _usd(value: str | None) -> float:
     # a Redis flush mid-flight can leave a released Reservation subtracted from a fresh
@@ -87,11 +91,11 @@ def _usd(value: str | None) -> float:
     return max(0.0, float(value or 0))
 
 
-def _field_float(hash_: dict[str, str], field: str) -> float:
+def _field_float(hash_: StatsHash, field: HashFieldName) -> float:
     return _usd(hash_.get(field))
 
 
-def _budget_hard_stop_hit(global_stats: dict[str, str], settings: ChatboxUsageLimitsSettings) -> bool:
+def _budget_hard_stop_hit(global_stats: StatsHash, settings: ChatboxUsageLimitsSettings) -> bool:
     """True when committed Spend (actual + in-flight Reservations) reached the hard stop.
 
     Counting Reservations is what bounds concurrent and per-request overshoot: a guard on
@@ -237,9 +241,9 @@ class ChatboxUsageLedger:
             try:
                 async with self._redis.pipeline() as pipe:
                     await pipe.watch(window_key, _GLOBAL_KEY)
-                    window: dict[str, str] = await handle_redis_returns_union_types(pipe.hgetall(window_key))
+                    window: StatsHash = await handle_redis_returns_union_types(pipe.hgetall(window_key))
                     window_ttl: int = await handle_redis_returns_union_types(pipe.ttl(window_key))
-                    global_stats: dict[str, str] = await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
+                    global_stats: StatsHash = await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
 
                     if _budget_hard_stop_hit(global_stats, self._settings):
                         raise ProviderBudgetExhaustedError
@@ -279,7 +283,7 @@ class ChatboxUsageLedger:
     async def ensure_global_budget_available(self) -> None:
         """Re-check the Global Budget Guard hard stop (Celery worker, at task start)."""
         try:
-            global_stats: dict[str, str] = await handle_redis_returns_union_types(self._redis.hgetall(_GLOBAL_KEY))
+            global_stats: StatsHash = await handle_redis_returns_union_types(self._redis.hgetall(_GLOBAL_KEY))
         except _REDIS_UNAVAILABLE_ERRORS:
             self._metrics.ledger_failures_total.labels(stage="global_budget").inc()
             _logger.warning("Usage ledger unreachable during budget re-check (fail-closed)", exc_info=True)
@@ -288,7 +292,7 @@ class ChatboxUsageLedger:
         if _budget_hard_stop_hit(global_stats, self._settings):
             raise ProviderBudgetExhaustedError
 
-    def _estimate_reservation(self, global_stats: dict[str, str], allowance: float) -> NonNegativeFloat:
+    def _estimate_reservation(self, global_stats: StatsHash, allowance: float) -> NonNegativeFloat:
         requests = _field_float(global_stats, _FIELD_REQUESTS)
         spend = _field_float(global_stats, _FIELD_SPEND)
         if requests <= 0 or spend <= 0:
