@@ -378,8 +378,6 @@ async def _approve_new_user(
         app,
         invitation_url,
     )
-    # Persist the approval decisions in the pre-registration extras (AUDIT TRAIL):
-    # for a new user the approval audit lives in the invitation entry itself
     extras: dict[str, Any] = {
         "invitation": {**invitation_result.model_dump(mode="json"), "send_mail": message_content is not None}
     }
