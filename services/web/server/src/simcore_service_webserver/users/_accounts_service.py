@@ -337,7 +337,8 @@ async def _approve_existing_user(
     )
 
     # Persist the approval decisions in the pre-registration extras (AUDIT TRAIL)
-    extras: dict[str, Any] = {"approval": {"send_mail": message_content is not None}}
+    # bool(...) mirrors the notification dispatch predicate below (if message_content)
+    extras: dict[str, Any] = {"approval": {"send_mail": bool(message_content)}}
     if extra_credits_in_usd is not None:
         extras["approval"]["extra_credits_in_usd"] = extra_credits_in_usd
 
@@ -379,7 +380,7 @@ async def _approve_new_user(
         invitation_url,
     )
     extras: dict[str, Any] = {
-        "invitation": {**invitation_result.model_dump(mode="json"), "send_mail": message_content is not None}
+        "invitation": {**invitation_result.model_dump(mode="json"), "send_mail": bool(message_content)},
     }
 
     return await _finalize_pre_registration_approval(
@@ -498,13 +499,14 @@ async def reject_user_account(
     pre_registration_id: int = pre_registration["id"]
 
     # Update the pre-registration status to REJECTED using the reviewer's ID,
-    # persisting the reviewer's send-mail decision in the extras (AUDIT TRAIL)
+    # persisting the reviewer's send-mail decision in the extras (AUDIT TRAIL).
+    # bool(...) mirrors the notification dispatch predicate below (if message_content)
     await _accounts_repository.review_user_pre_registration(
         engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.REJECTED,
-        extras={"rejection": {"send_mail": message_content is not None}},
+        extras={"rejection": {"send_mail": bool(message_content)}},
     )
 
     # Send email to user if message content is provided
