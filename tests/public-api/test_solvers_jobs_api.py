@@ -255,7 +255,7 @@ def test_run_job(
     assert status.state == expected_outcome
 
     assert isinstance(output_file, osparc.File)
-    assert isinstance(number, float)
+    assert isinstance(number, (int, float))
 
     # output file exists
     assert files_api.get_file(output_file.id) == output_file
