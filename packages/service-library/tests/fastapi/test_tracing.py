@@ -18,6 +18,7 @@ from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
+from pytest_mock import MockerFixture
 from servicelib.fastapi.tracing import (
     get_tracing_instrumentation_lifespan,
     initialize_fastapi_app_tracing,
@@ -82,6 +83,31 @@ async def test_valid_tracing_settings(
             tracing_config=tracing_config,
         )(app=mocked_app):
             pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_tracer_provider_shutdown_on_lifespan_exit(
+    faker: Faker,
+    mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
+    set_and_clean_settings_env_vars: None,
+    mocker: MockerFixture,
+):
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+    assert tracing_config.tracer_provider
+    shutdown_mock = mocker.patch.object(tracing_config.tracer_provider, "shutdown")
+
+    async for _ in get_tracing_instrumentation_lifespan(tracing_config=tracing_config)(app=mocked_app):
+        shutdown_mock.assert_not_called()
+
+    shutdown_mock.assert_called_once()
 
 
 @pytest.mark.parametrize(
