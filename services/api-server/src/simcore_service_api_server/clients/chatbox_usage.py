@@ -37,8 +37,9 @@ from models_library.users import UserID
 from prometheus_client import CollectorRegistry, Counter, Gauge
 from pydantic import NonNegativeFloat, NonNegativeInt
 from redis.exceptions import WatchError
+from redis.typing import EncodableT, FieldT
 from servicelib.logging_utils import log_catch
-from servicelib.redis import RedisClientSDK
+from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase
 
 from .._meta import PROJECT_NAME
@@ -236,9 +237,9 @@ class ChatboxUsageLedger:
             try:
                 async with self._redis.pipeline() as pipe:
                     await pipe.watch(window_key, _GLOBAL_KEY)
-                    window = await pipe.hgetall(window_key)
-                    window_ttl: int = await pipe.ttl(window_key)
-                    global_stats = await pipe.hgetall(_GLOBAL_KEY)
+                    window: dict[str, str] = await handle_redis_returns_union_types(pipe.hgetall(window_key))
+                    window_ttl: int = await handle_redis_returns_union_types(pipe.ttl(window_key))
+                    global_stats: dict[str, str] = await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
 
                     if _budget_hard_stop_hit(global_stats, self._settings):
                         raise ProviderBudgetExhaustedError
@@ -278,7 +279,7 @@ class ChatboxUsageLedger:
     async def ensure_global_budget_available(self) -> None:
         """Re-check the Global Budget Guard hard stop (Celery worker, at task start)."""
         try:
-            global_stats = await self._redis.hgetall(_GLOBAL_KEY)
+            global_stats: dict[str, str] = await handle_redis_returns_union_types(self._redis.hgetall(_GLOBAL_KEY))
         except _REDIS_UNAVAILABLE_ERRORS:
             self._metrics.ledger_failures_total.labels(stage="global_budget").inc()
             _logger.warning("Usage ledger unreachable during budget re-check (fail-closed)", exc_info=True)
@@ -367,7 +368,7 @@ class ChatboxUsageLedger:
     # -- internals -------------------------------------------------------------------
 
     async def _record_completion(self, reservation: Reservation, usage: UsageRecord, spend_usd: float) -> None:
-        entry = {
+        entry: dict[FieldT, EncodableT] = {
             "user_id": f"{reservation.user_id}",
             "product_name": reservation.product_name,
             "prompt_tokens": "" if usage.prompt_tokens is None else f"{usage.prompt_tokens}",
@@ -381,7 +382,7 @@ class ChatboxUsageLedger:
             with log_catch(_logger, reraise=False):  # ledger bookkeeping must not break the response path
                 await self._redis.xadd(_LEDGER_STREAM_KEY, entry, maxlen=_LEDGER_STREAM_MAXLEN, approximate=True)
 
-            global_spend = await self._redis.hget(_GLOBAL_KEY, _FIELD_SPEND)
+            global_spend = await handle_redis_returns_union_types(self._redis.hget(_GLOBAL_KEY, _FIELD_SPEND))
             budget = self._settings.PROVIDER_BUDGET_USD
             if budget > 0:
                 self._metrics.provider_budget_fraction.set(_usd(global_spend) / budget)
