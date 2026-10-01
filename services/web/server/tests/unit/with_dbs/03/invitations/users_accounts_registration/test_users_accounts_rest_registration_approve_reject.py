@@ -69,7 +69,7 @@ async def existing_registered_user(
         yield ExistingRegisteredUser(**user_row)
 
 
-async def test_reject_user_account(  # pylint: disable=too-many-statements
+async def test_reject_user_account(  # pylint: disable=too-many-statements  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     account_request_form: dict[str, Any],
