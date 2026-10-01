@@ -281,7 +281,7 @@ async def _finalize_pre_registration_approval(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
-    extras: dict[str, Any] | None,
+    extras: dict[str, Any],
     message_content: dict[str, Any] | None,
     bcc_emails: list[LowerCaseEmailStr] | None,
 ) -> int:
@@ -336,10 +336,10 @@ async def _approve_existing_user(
         extra_credits_in_usd=extra_credits_in_usd,
     )
 
-    # Persist some approval decisions in the pre-registration extras (AUDIT TRAIL)
-    approval_extras: dict[str, Any] | None = (
-        {"approval": {"extra_credits_in_usd": extra_credits_in_usd}} if extra_credits_in_usd is not None else None
-    )
+    # Persist the approval decisions in the pre-registration extras (AUDIT TRAIL)
+    approval_extras: dict[str, Any] = {"approval": {"send_mail": message_content is not None}}
+    if extra_credits_in_usd is not None:
+        approval_extras["approval"]["extra_credits_in_usd"] = extra_credits_in_usd
 
     return await _finalize_pre_registration_approval(
         app,
@@ -378,9 +378,9 @@ async def _approve_new_user(
         app,
         invitation_url,
     )
-    invitation_extras: dict[str, Any] | None = (
-        {"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None
-    )
+    extras: dict[str, Any] = {"approval": {"send_mail": message_content is not None}}
+    if invitation_result:
+        extras["invitation"] = invitation_result.model_dump(mode="json")
 
     return await _finalize_pre_registration_approval(
         app,
@@ -389,7 +389,7 @@ async def _approve_new_user(
         pre_registration_email=pre_registration_email,
         product_name=product_name,
         reviewer_id=reviewer_id,
-        extras=invitation_extras,
+        extras=extras,
         message_content=message_content,
         bcc_emails=bcc_emails,
     )
@@ -497,12 +497,14 @@ async def reject_user_account(
     )
     pre_registration_id: int = pre_registration["id"]
 
-    # Update the pre-registration status to REJECTED using the reviewer's ID
+    # Update the pre-registration status to REJECTED using the reviewer's ID,
+    # persisting the reviewer's send-mail decision in the extras (AUDIT TRAIL)
     await _accounts_repository.review_user_pre_registration(
         engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.REJECTED,
+        extras={"rejection": {"send_mail": message_content is not None}},
     )
 
     # Send email to user if message content is provided

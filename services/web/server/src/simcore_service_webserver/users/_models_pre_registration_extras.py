@@ -4,7 +4,10 @@ Known top-level keys
 --------------------
 - **invitation**: stored when an approval generates an invitation link.
 - **approval**: audit of the approval itself (e.g. ``extra_credits_in_usd`` granted to an
-  already-registered user, whose credits do not travel inside an invitation).
+  already-registered user, whose credits do not travel inside an invitation; and the
+  ``send_mail`` decision, i.e. whether the reviewer chose to notify the user).
+- **rejection**: audit of the rejection itself (the ``send_mail`` decision, i.e. whether the
+  reviewer chose to notify the user).
 - **recovery**: written by data-reconciliation / migration scripts.
 - **product_move**: audit trail when a PO moves the request to another product.
 - *form fields*: arbitrary key/value pairs from the original request form.

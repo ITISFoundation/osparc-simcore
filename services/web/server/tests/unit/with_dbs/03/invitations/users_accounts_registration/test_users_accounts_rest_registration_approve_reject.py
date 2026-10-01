@@ -650,7 +650,11 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
     assert product_name in user_data["products"]
 
     # the PO's credits decision is persisted in the pre-registration extras (audit)
-    assert user_data["extras"]["approval"] == {"extra_credits_in_usd": extra_credits_in_usd}
+    # send_mail=True since the request carried message_content
+    assert user_data["extras"]["approval"] == {
+        "extra_credits_in_usd": extra_credits_in_usd,
+        "send_mail": True,
+    }
 
     # 6. Notification was sent using the "added to product" template, not "approved"
     mock_notifications_send_message.assert_called_once()
