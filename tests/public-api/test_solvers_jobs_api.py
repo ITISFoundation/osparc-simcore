@@ -246,7 +246,7 @@ def test_run_job(
     # check solver outputs
     outputs: osparc.JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
     assert isinstance(outputs, osparc.JobOutputs)
-    assert outputs.job_id == job.id
+    assert outputs.job_id == f"{job.id}"
     assert len(outputs.results) == 2
 
     output_file = outputs.results["output_1"]
