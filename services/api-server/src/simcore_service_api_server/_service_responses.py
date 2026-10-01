@@ -51,7 +51,14 @@ async def _admit_and_reserve(
     product_name: ProductName,
 ) -> Reservation | None:
     """Applies the Rate Limit (fail-open) and places a Reservation for the Window Quota
-    and Global Budget Guard (fail-closed). Returns None when limits are not enforced."""
+    and Global Budget Guard (fail-closed). Returns None when limits are not enforced.
+
+    Raises:
+        ChatboxRateLimitedError: the API key is over its per-minute request rate.
+        ProviderBudgetExhaustedError: the Global Budget Guard hard stop is hit.
+        ChatboxWindowQuotaExceededError: the Reservation does not fit the Window Quota.
+        UsageLedgerUnavailableError: Redis cannot be trusted (fail-closed).
+    """
     if ledger is None:
         return None
 
@@ -225,6 +232,13 @@ async def create_streaming_chat_response(
 
     The Reservation placed by the admission control is reconciled against the actual usage
     reported on the stream's final chunk (or released on failure/abort).
+
+    Raises:
+        ChatbotRequestError: the Chatbox could not be reached or failed server-side.
+        ChatboxRateLimitedError: admission rejected the API key's request rate.
+        ProviderBudgetExhaustedError: admission hit the Global Budget Guard hard stop.
+        ChatboxWindowQuotaExceededError: admission found the Window Quota full.
+        UsageLedgerUnavailableError: admission could not trust Redis (fail-closed).
     """
     reservation = await _admit_and_reserve(
         ledger,
@@ -287,6 +301,13 @@ async def submit_background_chat_response(
 
     The Reservation is placed before queueing so a request over quota never reaches the
     worker, and released if queueing itself fails. The worker owns it from there on.
+
+    Raises:
+        ChatboxRateLimitedError: admission rejected the API key's request rate.
+        ProviderBudgetExhaustedError: admission hit the Global Budget Guard hard stop.
+        ChatboxWindowQuotaExceededError: admission found the Window Quota full.
+        UsageLedgerUnavailableError: admission could not trust Redis (fail-closed).
+        Exception: the queueing failure itself, after the Reservation was refunded.
     """
     reservation = await _admit_and_reserve(
         ledger,

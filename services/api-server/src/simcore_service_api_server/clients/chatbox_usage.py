@@ -216,6 +216,10 @@ class ChatboxUsageLedger:
 
         Fail-open on Redis errors: the Rate Limit is only a burst guard, the money
         layers still protect the Provider Budget.
+
+        Raises:
+            ChatboxRateLimitedError: the API key exceeded REQUESTS_PER_MINUTE in the
+                current minute bucket.
         """
         minute_bucket = int(time.time() // 60)
         key = f"{_RATE_KEY_PREFIX}:{credential_hash}:{minute_bucket}"
@@ -306,7 +310,12 @@ class ChatboxUsageLedger:
         raise UsageLedgerUnavailableError
 
     async def ensure_global_budget_available(self) -> None:
-        """Re-check the Global Budget Guard hard stop (Celery worker, at task start)."""
+        """Re-check the Global Budget Guard hard stop (Celery worker, at task start).
+
+        Raises:
+            ProviderBudgetExhaustedError: the hard stop was hit while the job was queued.
+            UsageLedgerUnavailableError: Redis cannot be trusted (fail-closed).
+        """
         try:
             global_stats = UsageStats.from_hgetall(
                 await handle_redis_returns_union_types(self._redis.hgetall(_GLOBAL_KEY))

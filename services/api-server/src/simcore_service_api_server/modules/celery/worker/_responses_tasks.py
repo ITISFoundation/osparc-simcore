@@ -22,6 +22,14 @@ async def run_chat_completion(
     request: CreateResponseRequest,
     reservation_usd: float | None = None,
 ) -> CreateChatCompletionResponse:
+    """Runs a background chat completion and reconciles its Reservation to actual Spend.
+
+    Raises:
+        ProviderBudgetExhaustedError: the Global Budget Guard hard stop was hit while
+            the job was queued (the Reservation is refunded before re-raising).
+        UsageLedgerUnavailableError: the budget re-check could not trust Redis (same).
+        Any Chatbox failure from the completion itself (the Reservation is refunded).
+    """
     assert task_key  # nosec
     app = get_app_server(task.app).app
     chatbot_settings = app.state.settings.API_SERVER_CHATBOT
