@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator, Callable
+from contextlib import suppress
 from typing import Final
 
 from aiohttp import web
@@ -21,7 +22,7 @@ from opentelemetry.trace import get_current_span
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
-from ..logging_utils import log_catch, log_context
+from ..logging_utils import log_catch, log_context, log_exceptions
 from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
 from ..tracing import (
     AIOHTTP_TRACING_CONFIG_KEY,
@@ -263,7 +264,7 @@ def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
         TracedFunctionsInstrumentor().uninstrument()
 
     if tracer_provider is not None:
-        with log_catch(_logger, reraise=False):
+        with suppress(Exception), log_exceptions(_logger, logging.WARNING):
             tracer_provider.shutdown()
 
 

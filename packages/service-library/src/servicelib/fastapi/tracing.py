@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator
+from contextlib import suppress
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import LifespanManager, State
@@ -15,7 +16,7 @@ from settings_library.tracing import TracingSettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
-from ..logging_utils import log_catch, log_context
+from ..logging_utils import log_catch, log_context, log_exceptions
 from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
 from ..tracing import (
     TracingConfig,
@@ -222,7 +223,7 @@ def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
         TracedFunctionsInstrumentor().uninstrument()
 
     if tracer_provider is not None:
-        with log_catch(_logger, reraise=False):
+        with suppress(Exception), log_exceptions(_logger, logging.WARNING):
             tracer_provider.shutdown()
 
 
