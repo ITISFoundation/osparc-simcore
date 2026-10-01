@@ -22,7 +22,6 @@ def setup_app_tracing(app: web.Application):
 
     app.cleanup_ctx.append(
         setup_tracing(
-            app=app,
             tracing_config=app[TRACING_CONFIG_KEY],
             add_response_trace_id_header=True,
         )
