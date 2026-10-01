@@ -12,7 +12,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import func, literal_column
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
@@ -42,23 +42,19 @@ async def insert_project_to_folder(
     private_workspace_user_id_or_none: UserID | None,
 ) -> ProjectToFolderDB:
     async with transaction_context(get_asyncpg_engine(app)) as conn:
-        row = (
-            (
-                await conn.execute(
-                    projects_to_folders.insert()
-                    .values(
-                        project_uuid=f"{project_id}",
-                        folder_id=folder_id,
-                        user_id=private_workspace_user_id_or_none,
-                        created=func.now(),
-                        modified=func.now(),
-                    )
-                    .returning(literal_column("*"))
-                )
+        result = await conn.execute(
+            projects_to_folders.insert()
+            .values(
+                project_uuid=f"{project_id}",
+                folder_id=folder_id,
+                user_id=private_workspace_user_id_or_none,
+                created=func.now(),
+                modified=func.now(),
             )
-            .mappings()
-            .one()
+            .returning(*projects_to_folders.c)
         )
+
+        row = result.mappings().one()
         return ProjectToFolderDB.model_validate(row)
 
 
@@ -113,7 +109,7 @@ async def delete_all_project_to_folder_by_project_id(
     project_id: ProjectID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(projects_to_folders.delete().where(projects_to_folders.c.project_uuid == f"{project_id}"))
+        await conn.execute(projects_to_folders.delete().where(projects_to_folders.c.project_uuid == f"{project_id}"))
 
 
 async def update_project_to_folder(
@@ -122,7 +118,7 @@ async def update_project_to_folder(
     *,
     folders_id_or_ids: FolderID | set[FolderID],
     # updatable columns
-    user_id: UserID | None | Unset = Unset.VALUE,
+    user_id: UserID | Unset | None = Unset.VALUE,
 ) -> None:
     """
     Batch/single patch of project to folders
@@ -142,7 +138,7 @@ async def update_project_to_folder(
         query = query.where(projects_to_folders.c.folder_id == folders_id_or_ids)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(query)
+        await conn.execute(query)
 
 
 async def delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
@@ -168,4 +164,4 @@ async def delete_all_project_to_folder_by_project_ids_not_in_folder_ids(
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(query)
+        await conn.execute(query)

@@ -143,7 +143,7 @@ class TagsRepo:
     ) -> list[TagDict]:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             stmt_list = list_tags_stmt(user_id=user_id)
-            result = await conn.stream(stmt_list)
+            result = await conn.execute(stmt_list)
             return [
                 TagDict(
                     id=row.id,
@@ -154,7 +154,7 @@ class TagsRepo:
                     write=row.write,
                     delete=row.delete,
                 )
-                async for row in result
+                for row in result
             ]
 
     async def get(

@@ -55,21 +55,25 @@ class ProjectRepository(BaseRepository):
         mapping: dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]] = {}
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             # Get project names
-            async for row in await conn.stream(
-                sa.select(projects.c.uuid, projects.c.name).where(
-                    projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
+            for row in (
+                await conn.execute(
+                    sa.select(projects.c.uuid, projects.c.name).where(
+                        projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
+                    )
                 )
-            ):
+            ).all():
                 mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name}
 
             # Get node labels from projects_nodes
-            async for row in await conn.stream(
-                sa.select(
-                    projects_nodes.c.project_uuid,
-                    projects_nodes.c.node_id,
-                    projects_nodes.c.label,
-                ).where(projects_nodes.c.project_uuid.in_(f"{pid}" for pid in project_uuids))
-            ):
+            for row in (
+                await conn.execute(
+                    sa.select(
+                        projects_nodes.c.project_uuid,
+                        projects_nodes.c.node_id,
+                        projects_nodes.c.label,
+                    ).where(projects_nodes.c.project_uuid.in_(f"{pid}" for pid in project_uuids))
+                )
+            ).all():
                 project_id = ProjectID(f"{row.project_uuid}")
                 if project_id in mapping:
                     mapping[project_id][f"{row.node_id}"] = row.label

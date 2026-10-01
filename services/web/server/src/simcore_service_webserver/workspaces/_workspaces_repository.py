@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from typing import cast
 
@@ -14,7 +13,7 @@ from models_library.workspaces import (
     WorkspaceID,
     WorkspaceUpdates,
 )
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_postgres_database.models.workspaces_access_rights import (
@@ -34,9 +33,6 @@ from sqlalchemy.sql import Select, select
 from ..db.plugin import get_asyncpg_engine
 from ._workspaces_models import WorkspaceDBGet
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
-
-_logger = logging.getLogger(__name__)
-
 
 _WORKSPACE_SELECTION_COLS = (
     workspaces.c.workspace_id,
@@ -63,7 +59,7 @@ async def create_workspace(
     thumbnail: str | None,
 ) -> Workspace:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             workspaces.insert()
             .values(
                 name=name,
@@ -76,7 +72,7 @@ async def create_workspace(
             )
             .returning(*_WORKSPACE_SELECTION_COLS)
         )
-        row = await result.first()
+        row = result.first()
         return Workspace.model_validate(row)
 
 
@@ -158,10 +154,8 @@ async def list_workspaces_for_user(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        items: list[UserWorkspaceWithAccessRights] = [
-            UserWorkspaceWithAccessRights.model_validate(row) async for row in result
-        ]
+        result = await conn.execute(list_query)
+        items = TypeAdapter(list[UserWorkspaceWithAccessRights]).validate_python(result.mappings().all())
 
         return cast(int, total_count), items
 
@@ -224,13 +218,13 @@ async def update_workspace(
     }
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             workspaces.update()
             .values(**_updates)
             .where((workspaces.c.workspace_id == workspace_id) & (workspaces.c.product_name == product_name))
             .returning(*_WORKSPACE_SELECTION_COLS)
         )
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise WorkspaceNotFoundError(details=f"Workspace {workspace_id} not found.")
         return Workspace.model_validate(row)
@@ -291,6 +285,6 @@ async def list_workspaces_db_get_as_admin(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
-        result = await conn.stream(list_query)
-        workspaces_list: list[WorkspaceDBGet] = [WorkspaceDBGet.model_validate(row) async for row in result]
+        result = await conn.execute(list_query)
+        workspaces_list = TypeAdapter(list[WorkspaceDBGet]).validate_python(result.mappings().all())
         return cast(int, total_count), workspaces_list
