@@ -7,7 +7,7 @@
 # - https://erdantic.drivendata.org/stable/
 #
 
-ARG PYTHON_VERSION="3.13.9"
+ARG PYTHON_VERSION="3.14.4"
 # NOTE: pinned exactly due to https://github.com/astral-sh/uv/issues/21692 (fixed in uv > 0.12.14)
 ARG UV_VERSION="0.12.13"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build

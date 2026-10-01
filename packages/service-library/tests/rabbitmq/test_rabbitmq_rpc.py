@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import pickle
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from typing import Any, Final
@@ -45,10 +46,10 @@ class CustomClass:  # noqa: PLW1641
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} x={self.x}, y={self.y}>"
 
-    def __eq__(self, other: "CustomClass") -> bool:
+    def __eq__(self, other: CustomClass) -> bool:
         return self.x == other.x and self.y == other.y
 
-    def __add__(self, other: "CustomClass") -> "CustomClass":
+    def __add__(self, other: CustomClass) -> CustomClass:
         return CustomClass(x=self.x + other.x, y=self.y + other.y)
 
 
@@ -233,7 +234,7 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         # the replier will say that it cannot pickle a local object and send it over
         # the server's request will just time out. I would prefer a cleaner interface.
         # There is no change of intercepting this message.
-        with pytest.raises(AttributeError, match=r"Can't get local object .+.<locals>.Custom"):
+        with pytest.raises(pickle.PicklingError, match=r"Can't pickle local object .+<locals>\.Custom"):
             await rpc_client.request(namespace, RPCMethodName("a_name"), x=10, timeout_s=1)
 
     await _replier_scope()

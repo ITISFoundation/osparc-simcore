@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from collections.abc import Awaitable, Coroutine
+from collections.abc import Coroutine
 from typing import Any, cast
 
 import aiodocker
@@ -11,8 +11,8 @@ from pydantic import ByteSize, TypeAdapter
 logger = logging.getLogger(__name__)
 
 
-def _wrap_async_call(fct: Awaitable[Any]) -> Any:
-    return asyncio.get_event_loop().run_until_complete(fct)
+def _wrap_async_call(fct: Coroutine[Any, Any, Any]) -> Any:
+    return asyncio.run(fct)
 
 
 def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:

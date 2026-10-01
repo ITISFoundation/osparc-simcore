@@ -2,7 +2,7 @@
 
 SHELL := /bin/bash
 
-PYTHON_VERSION := $(or $(PYTHON), 3.13)
+PYTHON_VERSION := $(or $(PYTHON), 3.14)
 
 # dask-sidecar pins the dask version that the computational cluster runs.
 # This client MUST talk to the cluster with the very same dask version.
