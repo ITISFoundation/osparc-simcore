@@ -33,6 +33,7 @@ from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
 from ...service import catalog_services
+from ...service.manifest_cache import get_service_manifest_cache, get_service_manifest_lock_client
 from .._dependencies.director import get_director_client
 
 _logger = logging.getLogger(__name__)
@@ -83,6 +84,8 @@ async def list_services_paginated(
     total_count, items = await catalog_services.list_latest_catalog_services(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
+        service_cache=get_service_manifest_cache(app),
+        service_cache_lock_client=get_service_manifest_lock_client(app),
         product_name=product_name,
         user_id=user_id,
         limit=limit,
@@ -126,6 +129,7 @@ async def get_service(
     service = await catalog_services.get_catalog_service(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
+        service_cache=get_service_manifest_cache(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -162,6 +166,7 @@ async def update_service(
     service = await catalog_services.update_catalog_service(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
+        service_cache=get_service_manifest_cache(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -309,6 +314,7 @@ async def get_service_ports(
     service_ports = await catalog_services.get_user_services_ports(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
+        service_cache=get_service_manifest_cache(app),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -374,6 +380,8 @@ async def list_all_services_summaries_paginated(
     total_count, items = await catalog_services.list_all_service_summaries(
         repo=ServicesRepository(app.state.engine),
         director_api=get_director_client(app),
+        service_cache=get_service_manifest_cache(app),
+        service_cache_lock_client=get_service_manifest_lock_client(app),
         product_name=product_name,
         user_id=user_id,
         limit=limit,

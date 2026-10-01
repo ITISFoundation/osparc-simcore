@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 
 from aiocache import cached  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -16,7 +16,6 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette.requests import Request
 
 from ..._constants import (
-    DIRECTOR_CACHING_TTL,
     LIST_SERVICES_CACHING_TTL,
     RESPONSE_MODEL_POLICY,
 )
@@ -24,6 +23,11 @@ from ...clients.director import DirectorClient
 from ...models.services_db import ServiceAccessRightsDB, ServiceMetaDataDBGet
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
+from ...service import manifest
+from ...service.manifest_cache import (
+    get_service_manifest_cache,
+    get_service_manifest_lock_client,
+)
 from .._dependencies.director import get_director_client
 from .._dependencies.repository import get_repository
 from .._dependencies.services import get_service_from_manifest
@@ -133,17 +137,18 @@ async def list_services(
             for key, version in services_in_db
         ]
 
-    # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
-    @cached(ttl=DIRECTOR_CACHING_TTL)
-    async def cached_registry_services() -> dict[str, Any]:
-        return cast(dict[str, Any], await director_client.get("/services"))
-
+    # NOTE: the shared manifest cache prevents every replica from querying director-v0 for the same listing
     (
-        services_in_registry,
+        services_in_manifest,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
-        cached_registry_services(),
+        manifest.get_batch_services(
+            list(services_in_db),
+            director_client,
+            get_service_manifest_cache(request.app),
+            lock_client=get_service_manifest_lock_client(request.app),
+        ),
         services_repo.batch_get_services_access_rights_or_none(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,
@@ -153,10 +158,15 @@ async def list_services(
 
     services_access_rights = services_access_rights or {}
 
+    services_in_registry = [
+        service.model_dump(mode="json", by_alias=True)
+        for service in services_in_manifest
+        if isinstance(service, ServiceMetaDataPublished)
+    ]
+
     # NOTE: for the details of the services:
-    # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
-    # 2. we filter the services using the visible ones from the db
-    # 3. then we compose the final service using as a base the registry service, overriding with the same
+    # 1. we get the published metadata of the visible services from the shared manifest cache
+    # 2. then we compose the final service using as a base the registry service, overriding with the same
     #    service from the database, adding also the access rights and the owner as email address instead of gid
     # NOTE: This step takes the bulk of the time to generate the list
     services_details = await asyncio.gather(
@@ -169,7 +179,7 @@ async def list_services(
                 services_access_rights.get((s["key"], s["version"])) or [],
                 services_owner_emails.get(services_in_db[s["key"], s["version"]].owner or 0),
             )
-            for s in (request.app.state.frontend_services_catalog + services_in_registry)
+            for s in services_in_registry
             if (s.get("key"), s.get("version")) in services_in_db
         ]
     )

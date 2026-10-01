@@ -26,6 +26,7 @@ from ..clients.director import configure_director
 from ..clients.rabbitmq import configure_rabbitmq_client
 from ..repository.events import configure_default_product_name
 from ..service.function_services import configure_function_services
+from ..service.manifest_cache import configure_manifest_cache
 from .background_tasks import configure_background_tasks
 from .settings import ApplicationSettings
 
@@ -47,6 +48,7 @@ def _configure_plugins(
     configure_rabbitmq_client(app_lifespan, settings=settings.CATALOG_RABBITMQ)
     configure_director(app_lifespan)
     configure_function_services(app_lifespan)
+    configure_manifest_cache(app_lifespan, settings=settings.CATALOG_REDIS)
     configure_background_tasks(app_lifespan)
 
     configure_rpc_api(app_lifespan)
@@ -82,7 +84,7 @@ def create_app(
         shutdown_complete_banner=APP_FINISHED_BANNER_MSG,
     ) as app_lifespan:
         app = FastAPI(
-            debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+            debug=settings.SC_BOOT_MODE in {BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL},
             title=PROJECT_NAME,
             description=SUMMARY,
             version=API_VERSION,
