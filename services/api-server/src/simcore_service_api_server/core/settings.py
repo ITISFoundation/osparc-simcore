@@ -12,6 +12,7 @@ from pydantic import (
     Field,
     HttpUrl,
     NonNegativeInt,
+    PositiveFloat,
     PositiveInt,
     SecretStr,
     field_validator,
@@ -22,6 +23,7 @@ from settings_library.director_v2 import DirectorV2Settings
 from settings_library.kms import KMSSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.storage import StorageSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -80,6 +82,74 @@ class ChatbotSettings(BaseCustomSettings):
     # the agent can take a long time to generate code and the failure should not occur
     # in the api-server. To avoid this, expose instead the agent's tools as a mcp server
     # and let the agent call it directly. Tool calls are typically very fast.
+
+
+class ChatboxUsageLimitsSettings(BaseCustomSettings):
+    """Per-user Chatbox usage limits (Rate Limit, Window Quota, Global Budget Guard).
+
+    All enforcement layers are backed by the platform cache Redis (ADR-0001). Money
+    layers (Window Quota, Global Budget Guard) are fail-closed; the Rate Limit is
+    fail-open. See CONTEXT.md (§ AI chatbox usage limits) for the vocabulary.
+    """
+
+    REDIS: Annotated[
+        RedisSettings,
+        Field(description="Redis settings for the usage ledger (platform cache Redis)"),
+    ]
+
+    ENABLED: Annotated[
+        bool,
+        Field(description="Master switch for Chatbox usage limits enforcement"),
+    ] = True
+
+    REQUESTS_PER_MINUTE: Annotated[
+        PositiveInt,
+        Field(description="Rate Limit: requests per minute per API key"),
+    ] = 10
+
+    WINDOW_SPEND_USD: Annotated[
+        float,
+        Field(description="Window Quota: max Spend (USD) per user x product per Usage Window", gt=0),
+    ] = 0.20
+
+    WINDOW_LENGTH: Annotated[
+        timedelta,
+        Field(description="Usage Window length (fixed window starting at the user's first request)"),
+    ] = timedelta(hours=5)
+
+    PROVIDER_BUDGET_USD: Annotated[
+        PositiveFloat,
+        Field(
+            description="Global Budget Guard: the one-time Provider Budget (USD). "
+            "Required when limits are enabled: without it there is no platform-wide guard."
+        ),
+    ]
+
+    HARD_STOP_FRACTION: Annotated[
+        float,
+        Field(
+            description="Global Budget Guard: cumulative-Spend fraction of the Provider Budget "
+            "at which completions hard-stop",
+            gt=0,
+            le=1,
+        ),
+    ] = 0.9
+
+    BLENDED_RATE_USD_PER_MTOK: Annotated[
+        float,
+        Field(
+            description="Blended Rate: single USD price per million tokens used to compute Spend",
+            gt=0,
+        ),
+    ] = 2.5
+
+    RESERVATION_SAFETY_FACTOR: Annotated[
+        float,
+        Field(
+            description="Reservation = rolling global average Spend/request x this safety factor",
+            gt=0,
+        ),
+    ] = 1.5
 
 
 # MAIN SETTINGS --------------------------------------------
@@ -149,6 +219,14 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_CHATBOT: Annotated[
         ChatbotSettings | None,
         Field(description="URL of the chatbot service", json_schema_extra={"auto_default_from_env": True}),
+    ] = None
+
+    API_SERVER_CHATBOX_USAGE_LIMITS: Annotated[
+        ChatboxUsageLimitsSettings | None,
+        Field(
+            description="Per-user Chatbox usage limits backed by Redis (None disables enforcement)",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
     ] = None
 
     API_SERVER_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})] = None
