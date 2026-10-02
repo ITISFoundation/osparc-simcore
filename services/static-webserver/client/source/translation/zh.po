@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-09-28T14:20:57Z\n"
+"X-Translation-Date: 2026-10-02T18:32:35Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
@@ -5745,7 +5745,7 @@ msgstr "自动连接端口"
 # within a user preferences page, likely allowing the user to select their
 # preferred language for the application.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:66
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:97
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:104
 msgid "Language"
 msgstr "语言"
 
@@ -5756,30 +5756,37 @@ msgstr "语言"
 msgid "Translations are AI-generated and may contain errors."
 msgstr "这些翻译由人工智能生成，可能包含错误。"
 
+# CTX-INTERPRETATION: This string appears as a tooltip within the GeneralPage
+# preferences, indicating that the translation is a preview and might have
+# errors.
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:82
+msgid "This translation is a preview and may contain inaccuracies"
+msgstr "此翻译为预览版，可能存在不准确之处"
+
 # CTX-INTERPRETATION: The string "Credits Indicator" is used as a label for a
 # section within the GeneralPage settings, likely indicating a visual or
 # functional setting related to displaying or managing credits.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:105
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:112
 msgid "Credits Indicator"
 msgstr "信用指示器"
 
 # CTX-INTERPRETATION: The string "Always" appears in the GeneralPage.js file,
 # likely within a user interface element that allows the user to persistently
 # enable a specific feature or setting.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:117
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
 msgid "Always"
 msgstr "始终"
 
 # CTX-INTERPRETATION: The string "Warning" is used as a label within a user
 # interface, likely indicating a potential issue or caution to the user.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:120
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:127
 msgid "Warning"
 msgstr "警告"
 
 # CTX-INTERPRETATION: The string "Show indicator" is used as a label for a
 # button or checkbox within a user interface, likely controlling the
 # visibility of a wallet indicator on a preferences page.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:135
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:142
 msgid "Show indicator"
 msgstr "显示指示器"
 
@@ -5787,27 +5794,27 @@ msgstr "显示指示器"
 # within a user interface element that allows the user to set a threshold for
 # displaying a warning message when the user's credit balance falls below a
 # specified value.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:145
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:152
 msgid "Show warning when credits below"
 msgstr "在信用余额低于指定值时显示警告"
 
 # CTX-INTERPRETATION: This string appears in the 'GeneralPage' of the osparc
 # desktop preferences, likely related to configuring automatic shutdown
 # behavior for inactive simulation instances.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:153
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:160
 msgid "Automatic Shutdown of Idle Instances"
 msgstr "自动关闭闲置实例"
 
 # CTX-INTERPRETATION: This string is used in a user interface to specify the
 # inactivity time (in minutes) before the application closes automatically.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:167
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:174
 msgid "Idle time before closing (in minutes)"
 msgstr "在关闭前的闲置时间 (分钟)"
 
 # CTX-INTERPRETATION: The string "Low Disk Space Threshold" appears as a label
 # for a setting within a user interface, likely related to configuring a
 # warning threshold for low disk space availability.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:175
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:182
 msgid "Low Disk Space Threshold"
 msgstr "低磁盘空间阈值"
 
@@ -5815,35 +5822,35 @@ msgstr "低磁盘空间阈值"
 # likely as a tooltip or label associated with a setting that allows the user
 # to define a threshold for low disk space, indicating when a warning should
 # be displayed.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:176
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:183
 msgid "Set the warning Threshold for Low Disk Space availability"
 msgstr "设置低磁盘空间可用性的警告阈值"
 
 # CTX-INTERPRETATION: The string "Threshold (in GB)" is a label for a UI
 # element, likely a slider or input field, that allows the user to set a
 # threshold for disk usage in gigabytes within a preferences dialog.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:190
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:197
 msgid "Threshold (in GB)"
 msgstr "阈值 (以 GB 为单位)"
 
 # CTX-INTERPRETATION: The string "Privacy Settings" appears as the title of a
 # section within the general preferences settings page, allowing users to
 # manage their privacy options.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:196
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:203
 msgid "Privacy Settings"
 msgstr "隐私设置"
 
 # CTX-INTERPRETATION: The string appears within a user preferences page,
 # likely prompting the user to provide feedback or contribute to improving the
 # Sim4Life application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:197
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:204
 msgid "Help us improve Sim4Life user experience"
 msgstr "帮助我们改进 Sim4Life 用户体验"
 
 # CTX-INTERPRETATION: The string "Share usage data" appears as the label for a
 # checkbox within a user preferences settings page, allowing the user to opt-
 # in to sharing their application usage data.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:201
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:208
 msgid "Share usage data"
 msgstr "分享使用数据"
 
@@ -11540,7 +11547,7 @@ msgstr "机构"
 # CTX-INTERPRETATION: This string appears within the LanguageManager class,
 # indicating a failure during a language update operation, likely within a
 # web-based user interface.
-#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:143
+#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:158
 msgid "Unsuccessful language update"
 msgstr "语言更新失败"
 
