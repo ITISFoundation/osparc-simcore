@@ -76,6 +76,13 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       osparc.utils.LanguageManager.getAvailableLocales().forEach(localeCode => {
         const label = osparc.utils.LanguageManager.getLocaleLabel(localeCode);
         const lItem = new qx.ui.form.ListItem(label, null, localeCode);
+        if (osparc.utils.LanguageManager.isLocaleBeta(localeCode)) {
+          const betaChip = new osparc.ui.basic.Chip("Beta").set({
+            padding: [1, 6],
+            toolTipText: this.tr("This translation is a preview and may contain inaccuracies"),
+          });
+          lItem.add(betaChip);
+        }
         languageSB.add(lItem);
       });
 
