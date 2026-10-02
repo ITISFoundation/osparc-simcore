@@ -3,17 +3,24 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 
+from collections.abc import Iterator
 from http import HTTPStatus
 from uuid import UUID
 
+import celery_library.errors_adapters as errors_adapters_module
 import httpx
 import pytest
+from celery_library.errors import decode_celery_transferable_error, encode_celery_transferable_error
 from fastapi import FastAPI, HTTPException, status
 from httpx import HTTPStatusError, Request, Response
 from simcore_service_api_server.exceptions import setup_exception_handlers
 from simcore_service_api_server.exceptions.backend_errors import (
     BaseBackEndError,
     ProfileNotFoundError,
+)
+from simcore_service_api_server.exceptions.celery_transferable_errors import (
+    TransferableHTTPExceptionError,
+    register_celery_transferable_error_adapters,
 )
 from simcore_service_api_server.exceptions.custom_errors import MissingWalletError
 from simcore_service_api_server.exceptions.service_errors_utils import (
@@ -124,3 +131,52 @@ async def test_service_exception_mapper():
 
     with pytest.raises(AssertionError):
         _assert_correct_kwargs(func=coro5, exception_types=set(status_map.values()))
+
+
+@pytest.fixture
+def registered_http_exception_adapters() -> Iterator[None]:
+    # the registry is process-global; snapshot and restore it so tests stay
+    # independent of ordering
+    to_wire_snapshot = dict(errors_adapters_module.to_wire_adapters)
+    from_wire_snapshot = dict(errors_adapters_module.from_wire_adapters)
+    register_celery_transferable_error_adapters()
+    yield
+    errors_adapters_module.to_wire_adapters.clear()
+    errors_adapters_module.to_wire_adapters.update(to_wire_snapshot)
+    errors_adapters_module.from_wire_adapters.clear()
+    errors_adapters_module.from_wire_adapters.update(from_wire_snapshot)
+
+
+async def test_http_exception_round_trips_through_celery(registered_http_exception_adapters: None):
+    # fastapi.HTTPException pickles but never unpickles (empty args), so without an
+    # adapter a failed celery task carrying it degrades to a stand-in error
+    original_error = HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="Received unexpected response from Webserver",
+        headers={"Retry-After": "10"},
+    )
+
+    decoded = decode_celery_transferable_error(encode_celery_transferable_error(original_error))
+
+    assert isinstance(decoded, HTTPException)
+    assert decoded.status_code == status.HTTP_502_BAD_GATEWAY
+    assert decoded.detail == "Received unexpected response from Webserver"
+    assert decoded.headers == {"Retry-After": "10"}
+
+
+async def test_wire_error_reportable_without_consumer_adapters(registered_http_exception_adapters: None):
+    # a consumer without the from_wire adapter (e.g. web-server) still gets a
+    # serializable, reportable wire error instead of a stand-in
+    original_error = HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="bad gateway")
+    encoded = encode_celery_transferable_error(original_error)
+
+    from_wire_snapshot = dict(errors_adapters_module.from_wire_adapters)
+    errors_adapters_module.from_wire_adapters.clear()
+    try:
+        decoded = decode_celery_transferable_error(encoded)
+    finally:
+        errors_adapters_module.from_wire_adapters.update(from_wire_snapshot)
+
+    assert isinstance(decoded, TransferableHTTPExceptionError)
+    assert decoded.status_code == status.HTTP_502_BAD_GATEWAY
+    assert f"{decoded}" == f"{original_error}"
