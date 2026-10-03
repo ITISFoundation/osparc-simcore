@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator, Callable
+from contextlib import suppress
 from typing import Final
 
 from aiohttp import web
@@ -21,7 +22,7 @@ from opentelemetry.trace import get_current_span
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
-from ..logging_utils import log_catch, log_context
+from ..logging_utils import log_catch, log_context, log_exceptions
 from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
 from ..tracing import (
     AIOHTTP_TRACING_CONFIG_KEY,
@@ -236,7 +237,7 @@ async def add_custom_request_attributes_to_span_middleware(request: web.Request,
     return response
 
 
-def _shutdown() -> None:
+def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         AioHttpClientInstrumentor().uninstrument()
@@ -262,10 +263,13 @@ def _shutdown() -> None:
     with log_catch(_logger, reraise=False):
         TracedFunctionsInstrumentor().uninstrument()
 
+    if tracer_provider is not None:
+        with suppress(Exception), log_exceptions(_logger, logging.WARNING):
+            tracer_provider.shutdown()
+
 
 def setup_tracing(
     *,
-    app: web.Application,
     tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
@@ -274,18 +278,21 @@ def setup_tracing(
         raise ValueError(msg)
     assert tracing_config.tracer_provider  # nosec
     assert tracing_config.tracing_settings  # nosec
-
-    _startup(
-        app=app,
-        tracing_settings=tracing_config.tracing_settings,
-        tracer_provider=tracing_config.tracer_provider,
-        service_name=tracing_config.service_name,
-        add_response_trace_id_header=add_response_trace_id_header,
-    )
+    tracing_settings = tracing_config.tracing_settings
+    tracer_provider = tracing_config.tracer_provider
 
     async def tracing_lifespan(app: web.Application):
         assert app  # nosec
+
+        _startup(
+            app=app,
+            tracing_settings=tracing_settings,
+            tracer_provider=tracer_provider,
+            service_name=tracing_config.service_name,
+            add_response_trace_id_header=add_response_trace_id_header,
+        )
+
         yield
-        _shutdown()
+        _shutdown(tracer_provider)
 
     return tracing_lifespan

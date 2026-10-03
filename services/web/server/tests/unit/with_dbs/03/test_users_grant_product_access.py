@@ -19,10 +19,9 @@ from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.signals import SIGNAL_ON_USER_CONFIRMATION
 from simcore_service_webserver.users import users_product_access_service
 from sqlalchemy.ext.asyncio import AsyncEngine
-
-_SIGNAL_ON_USER_CONFIRMATION: str = "SIGNAL_ON_USER_CONFIRMATION"
 
 
 @pytest.fixture
@@ -84,7 +83,7 @@ def signal_calls(client: TestClient) -> list[dict[str, Any]]:
     async def _probe(**kwargs: Any) -> None:
         calls.append(kwargs)
 
-    register_observer(client.app, _probe, _SIGNAL_ON_USER_CONFIRMATION)
+    register_observer(client.app, _probe, SIGNAL_ON_USER_CONFIRMATION)
     return calls
 
 

@@ -28,6 +28,8 @@ from pydantic.alias_generators import to_camel
 WILDCARD_CHARS: Final[list[str]] = ["*", "?"]
 MIN_NON_WILDCARD_CHARS: Final[int] = 3
 
+_NULL_NONE: Final[set[str]] = {"null", "none"}
+
 
 def trim_string_before(max_length: int) -> BeforeValidator:
     def _trim(value: str):
@@ -95,7 +97,7 @@ def ensure_unique_dict_values_validator(dict_data: dict) -> dict:
 
 
 def null_or_none_str_to_none_validator(value: Any):
-    if isinstance(value, str) and value.lower() in ("null", "none"):
+    if isinstance(value, str) and value.lower() in _NULL_NONE:
         return None
     return value
 
@@ -115,19 +117,21 @@ def create__check_only_one_is_set__root_validator(
     NOTE: Alternatevely, the previous example can also be solved using a
     single field as `user: Email | UserID | UserName`
 
-    SEE test_uid_or_email_are_set.py for more details
+    SEE test_uid_or_email_are_set for more details
     """
 
-    def _validator(cls: type[BaseModel], values):
+    def _validator(self: BaseModel):
         assert set(mutually_exclusive_field_names).issubset(  # nosec
-            cls.model_fields
+            self.__class__.model_fields
         ), f"Invalid {mutually_exclusive_field_names=} passed in the factory arguments"
-        got = {field_name: getattr(values, field_name) for field_name in mutually_exclusive_field_names}
+
+        got = {field_name: getattr(self, field_name) for field_name in mutually_exclusive_field_names}
 
         if not functools.reduce(operator.xor, (v is not None for v in got.values())):
             msg = f"Either {' or '.join(got.keys())} must be set, but not both. Got {got}"
             raise ValueError(msg)
-        return values
+
+        return self
 
     return _validator
 

@@ -233,6 +233,19 @@ cycles structurally, not syntactically:
   have no outgoing imports into the service graph. A module with no service imports cannot complete
   a cycle chain. This is an invariant enforced by the design (see "Models and Errors" above).
 
+- **Top-level shared labels go in leaf modules too:** cross-domain constants that must be shared
+  without coupling — e.g. the observer event labels in `signals.py` (`SIGNAL_*` strings used with
+  `servicelib.aiohttp.observer`) — live in a **top-level pure leaf module** (stdlib-only imports,
+  ideally none). Any domain may import the labels without acquiring a dependency on any other
+  domain, so emitters/observers can never form a cycle through them.
+
+- **How leaf purity is kept honest:** a design invariant nobody checks is a rumor.
+  `tests/unit/isolated/test_signals.py::test_signals_module_is_a_pure_leaf` AST-parses `signals.py`
+  and **allowlists** its imports (fail-closed: any new import outside the allowlist breaks the
+  test, including imports of packages that didn't exist when the rule was written). When adding a
+  new top-level leaf module, copy that guard pattern (allowlist, not blocklist) instead of trusting
+  review alone.
+
 - **Example: users ↔ user_preferences cycle is prevented by design:**
   ```python
   # ✅ user_preferences imports only the leaf errors module — no cycle possible
@@ -257,6 +270,16 @@ cycles structurally, not syntactically:
   - Do not suppress with `# pylint: disable=cyclic-import`
   - Immediately restore the purity of `errors.py`/`models.py` (remove the offending service import)
   - If the import is genuinely needed at runtime, use one of the remediation strategies below
+
+- **Example: shared event labels cannot create cycles by construction:**
+  ```python
+  # ✅ wallets, login, socketio, projects and resource_usage all import the same
+  #    leaf module — no domain gains a dependency on any other domain
+  from ..signals import SIGNAL_ON_USER_CONFIRMATION
+
+  # ❌ sharing the label by importing a sibling domain's module instead
+  #    (e.g. wallets importing login to reuse its private constant) couples the domains
+  ```
 
 ---
 
