@@ -3,7 +3,7 @@ import os
 import socket
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, TypeAlias
+from typing import Any
 
 import distributed
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
@@ -12,7 +12,7 @@ from pydantic import AnyUrl
 from ..core.errors import ConfigurationError
 from .dask import wrap_client_async_routine
 
-UnixTimestamp: TypeAlias = float
+type UnixTimestamp = float
 
 
 @dataclass

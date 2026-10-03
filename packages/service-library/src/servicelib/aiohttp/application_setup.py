@@ -121,12 +121,15 @@ def _get_app_settings_and_field_name(
     if app_settings:
         if not settings_field_name:
             # NOTE: hard-coded WEBSERVER_ temporary
-            settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
+            settings_field_name = f"WEBSERVER_{arg_module_name.rsplit('.', maxsplit=1)[-1].upper()}"
 
         logger.debug("Checking addon's %s ", f"{settings_field_name=}")
 
         if not hasattr(app_settings, settings_field_name):
-            msg = f"Invalid option arg_settings_name={arg_settings_name!r} in module's setup {setup_func_name}. It must be a field in {app_settings.__class__}"
+            msg = (
+                f"Invalid option arg_settings_name={arg_settings_name!r} in module's setup {setup_func_name}. "
+                f"It must be a field in {app_settings.__class__}"
+            )
             raise ValueError(msg)
 
     return app_settings, settings_field_name
@@ -264,9 +267,12 @@ def app_module_setup(
 
     :param module_name: typically __name__
     :param depends: list of module_names that must be called first, defaults to None
-    :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
-    :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
-    :param settings_name: field name in the app's settings that corresponds to this module. Defaults to the name of the module with app prefix.
+    :param config_section: explicit configuration section, defaults to None (i.e. the name of the
+        module, or last entry of the name if dotted)
+    :param config_enabled: option in config to enable, defaults to None which is
+        '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
+    :param settings_name: field name in the app's settings that corresponds to this module.
+        Defaults to the name of the module with app prefix.
     :raises DependencyError
     :raises ApplicationSetupError
     :return: True if setup was completed or False if setup was skipped
@@ -340,7 +346,10 @@ def app_module_setup(
             if depends:
                 uninitialized = [dep for dep in depends if not is_setup_completed(dep, app)]
                 if uninitialized:
-                    msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
+                    msg = (
+                        f"Cannot setup app module '{module_name}' because the following "
+                        f"dependencies are still uninitialized: {uninitialized}"
+                    )
                     raise DependencyError(msg)
 
             # execution of setup with module name

@@ -15,6 +15,6 @@ class ActivityInfo(BaseModel):
     )
 
 
-ActivityInfoOrNone: TypeAlias = ActivityInfo | None
+ActivityInfoOrNone: TypeAlias = ActivityInfo | None  # noqa: UP040
 
-DockerComposeYamlStr: TypeAlias = str
+type DockerComposeYamlStr = str

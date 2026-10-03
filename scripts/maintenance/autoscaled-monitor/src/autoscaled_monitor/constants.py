@@ -5,7 +5,7 @@ import parse
 
 
 @parse.with_pattern(r"None|\d+")
-def wallet_id_spec(text) -> None | int:
+def wallet_id_spec(text) -> int | None:
     if text == "None":
         return None
     return int(text)

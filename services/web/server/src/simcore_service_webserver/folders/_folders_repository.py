@@ -350,12 +350,12 @@ async def update(
     product_name: ProductName,
     # updatable columns
     name: str | Unset = Unset.VALUE,
-    parent_folder_id: FolderID | None | Unset = Unset.VALUE,
-    trashed: datetime | None | Unset = Unset.VALUE,
+    parent_folder_id: FolderID | Unset | None = Unset.VALUE,
+    trashed: datetime | Unset | None = Unset.VALUE,
     trashed_explicitly: bool | Unset = Unset.VALUE,
-    trashed_by: UserID | None | Unset = Unset.VALUE,  # who trashed
-    workspace_id: WorkspaceID | None | Unset = Unset.VALUE,
-    user_id: UserID | None | Unset = Unset.VALUE,  # ownership
+    trashed_by: UserID | Unset | None = Unset.VALUE,  # who trashed
+    workspace_id: WorkspaceID | Unset | None = Unset.VALUE,
+    user_id: UserID | Unset | None = Unset.VALUE,  # ownership
 ) -> FolderDB:
     """
     Batch/single patch of folder/s

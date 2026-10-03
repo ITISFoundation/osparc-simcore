@@ -9,9 +9,9 @@ _logger = logging.getLogger(__name__)
 
 TaskId = str
 
-ProgressMessage: TypeAlias = str
+ProgressMessage: TypeAlias = str  # noqa: UP040
 
-ProgressPercent: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]
+ProgressPercent: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]  # noqa: UP040
 
 
 class TaskProgress(BaseModel):

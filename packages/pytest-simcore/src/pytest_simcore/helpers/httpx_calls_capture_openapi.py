@@ -91,7 +91,9 @@ def _get_params(openapi_spec: dict[str, Any], path: str, method: str | None = No
 
 def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDescription:
     def parts(p: str) -> tuple[str, ...]:
-        all_parts: list[str] = sum((elm.split("/") for elm in p.split(":")), start=[])
+        all_parts: list[str] = []
+        for elm in p.split(":"):
+            all_parts.extend(elm.split("/"))
         return tuple(part for part in all_parts if len(part) > 0)
 
     for p in openapi_spec["paths"]:
@@ -108,9 +110,9 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDe
         ):
             continue
         path_param_indices_iter = iter(path_param_indices)
-        for key in path_params:
+        for param in path_params.values():
             ii = next(path_param_indices_iter)
-            path_params[key].response_value = unquote(response_path.parts[ii])
+            param.response_value = unquote(response_path.parts[ii])
         return PathDescription(
             path=p,
             path_parameters=list(path_params.values()),

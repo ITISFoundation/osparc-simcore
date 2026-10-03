@@ -21,4 +21,4 @@ class Activity(BaseModel):
     queued: bool | None = None  # TODO: review since it in NOT filled
 
 
-ActivityStatusDict: TypeAlias = dict[NodeID, Activity]
+ActivityStatusDict: TypeAlias = dict[NodeID, Activity]  # noqa: UP040

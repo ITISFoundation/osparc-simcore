@@ -25,8 +25,7 @@ def produce(guest_email: str):
 
     # WARNING: how to encode the encrypted message
     p = URL("/registration").include_query_params(invitation=base64.urlsafe_b64encode(encrypted).decode())
-    url = URL(scheme="http", hostname="127.0.0.1", port=8000, fragment=f"{p}")
-    return url
+    return URL(scheme="http", hostname="127.0.0.1", port=8000, fragment=f"{p}")
 
 
 def consume(url):
@@ -40,8 +39,7 @@ def consume(url):
         fernet = Fernet(secret_key)
         decripted = fernet.decrypt(invitation_code)
 
-        data = json.loads(decripted.decode())
-        return data
+        return json.loads(decripted.decode())
 
     except json.decoder.JSONDecodeError as err:
         print("Invalid data", err)

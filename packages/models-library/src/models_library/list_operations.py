@@ -7,14 +7,14 @@ SEE ALSO:
     - batch_operations.py
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated, Generic, TypeVar
 
 from annotated_types import doc
 from pydantic import BaseModel
 
 
-class OrderDirection(str, Enum):
+class OrderDirection(StrEnum):
     ASC = "asc"
     DESC = "desc"
 
@@ -32,12 +32,19 @@ else:
     TField = TypeVar("TField", bound=str)
 
 
-class OrderClause(BaseModel, Generic[TField]):
+# NOTE: `OrderClause`/`check_ordering_list` below keep the `Generic[TField]`
+# syntax (see their suppressions) instead of PEP 695 type parameters: PEP 695
+# declares each parameter independently, so it cannot reference the shared
+# `TField` TypeVar whose bound is the `LiteralField` protocol under
+# `TYPE_CHECKING` (falling back to `str` at runtime). Converting them narrows
+# the bound to `str` and breaks mypy at call sites such as
+# `rest_ordering.OrderingQueryParams`.
+class OrderClause(BaseModel, Generic[TField]):  # noqa: UP046
     field: TField
     direction: OrderDirection = OrderDirection.ASC
 
 
-def check_ordering_list(
+def check_ordering_list(  # noqa: UP047
     order_by: list[tuple[TField, OrderDirection]],
 ) -> Annotated[
     list[tuple[TField, OrderDirection]],
@@ -55,7 +62,10 @@ def check_ordering_list(
         if field in seen_fields:
             # Field already seen - check if direction matches
             if seen_fields[field] != direction:
-                msg = f"Field '{field}' appears with conflicting directions: {seen_fields[field].value} and {direction.value}"
+                msg = (
+                    f"Field '{field}' appears with conflicting directions: "
+                    f"{seen_fields[field].value} and {direction.value}"
+                )
                 raise ValueError(msg)
             # Same field and direction - skip duplicate
             continue

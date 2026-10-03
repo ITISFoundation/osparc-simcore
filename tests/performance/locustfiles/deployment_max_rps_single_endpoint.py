@@ -43,7 +43,8 @@ def _(parser: LocustArgumentParser) -> None:
         "--body-json-schema",
         type=str,
         default="",
-        help="Optional JSON schema for the request body. If specified, the request data will be randomly generated from this schema.",
+        help="Optional JSON schema for the request body. If specified, the request data "
+        "will be randomly generated from this schema.",
     )
     parser.add_argument(
         "--headers",

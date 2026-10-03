@@ -2,7 +2,7 @@
 Ownership and access rights
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,7 +14,7 @@ from .users import UserID
 class GroupIDStr(IDStr): ...
 
 
-class AccessEnum(str, Enum):
+class AccessEnum(StrEnum):
     READANDWRITE = "ReadAndWrite"
     INVISIBLE = "Invisible"
     READONLY = "ReadOnly"

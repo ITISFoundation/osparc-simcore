@@ -196,7 +196,8 @@ async def test_gateway_server_timesout_during_payment(
 
     # ConnectTimeout: covers DNS resolution + TCP + TLS handshake.
     # WriteTimeout: covers sending the request body (if any).
-    # ReadTimeout: covers after the request is sent, while waiting for or reading the response (including waiting for the first byte).
+    # ReadTimeout: covers after the request is sent, while waiting for or reading
+    # the response (including waiting for the first byte).
 
     mock_payments_gateway_service_api_base.post(
         path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",

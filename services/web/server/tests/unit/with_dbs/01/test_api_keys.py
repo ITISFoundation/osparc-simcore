@@ -309,7 +309,8 @@ async def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "WEBSERVER_GARBAGE_COLLECTOR": '{"GARBAGE_COLLECTOR_INTERVAL_S": 30, "GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S": 1}'
+            "WEBSERVER_GARBAGE_COLLECTOR": '{"GARBAGE_COLLECTOR_INTERVAL_S": 30, '
+            '"GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S": 1}'
         },
     )
 

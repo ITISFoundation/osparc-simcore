@@ -26,7 +26,7 @@ class WorkerMetrics(BaseModel):
     task_counts: Annotated[TaskCounts, Field(description="task details")]
 
 
-AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
+AvailableResources: TypeAlias = DictModel[str, PositiveFloat]  # noqa: UP040
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
@@ -50,7 +50,7 @@ class Worker(BaseModel):
     metrics: WorkerMetrics
 
 
-WorkersDict: TypeAlias = dict[AnyUrl, Worker]
+WorkersDict: TypeAlias = dict[AnyUrl, Worker]  # noqa: UP040
 
 
 class Scheduler(BaseModel):

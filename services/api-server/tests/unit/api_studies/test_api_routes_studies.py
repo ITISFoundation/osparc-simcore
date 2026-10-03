@@ -266,11 +266,11 @@ async def test_clone_study_with_title(
     mocked_webserver_rest_api_base["project_patch"].side_effect = patch_project_side_effect
     mocked_webserver_rest_api_base["project_get"].side_effect = get_project_side_effect
 
-    query = dict()
+    query = {}
     if hidden is not None:
         query["hidden"] = str(hidden).lower()
 
-    body = dict()
+    body = {}
     if hidden is not None:
         body["hidden"] = hidden
     if title is not None:

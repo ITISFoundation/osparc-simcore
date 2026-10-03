@@ -6,6 +6,8 @@ from pydantic import StringConstraints
 
 VersionStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)]  # noqa: UP040
 
+type FileNameStr = Annotated[str, StringConstraints(strip_whitespace=True)]
+
 
 class LogStreamingResponse(StreamingResponse):
     media_type = "application/x-ndjson"

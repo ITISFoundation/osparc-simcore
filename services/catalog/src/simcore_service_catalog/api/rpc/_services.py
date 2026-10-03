@@ -1,6 +1,5 @@
 import functools
 import logging
-from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
@@ -93,14 +92,11 @@ async def list_services_paginated(
     assert len(items) <= total_count  # nosec
     assert len(items) <= limit  # nosec
 
-    return cast(
-        PageRpcLatestServiceGet,
-        PageRpcLatestServiceGet.create(
-            items,
-            total=total_count,
-            limit=limit,
-            offset=offset,
-        ),
+    return PageRpcLatestServiceGet.create(
+        items,
+        total=total_count,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -276,14 +272,11 @@ async def list_my_service_history_latest_first(
     assert len(items) <= total_count  # nosec
     assert len(items) <= limit  # nosec
 
-    return cast(
-        PageRpcServiceRelease,
-        PageRpcServiceRelease.create(
-            items,
-            total=total_count,
-            limit=limit,
-            offset=offset,
-        ),
+    return PageRpcServiceRelease.create(
+        items,
+        total=total_count,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -384,12 +377,9 @@ async def list_all_services_summaries_paginated(
     assert len(items) <= total_count  # nosec
     assert len(items) <= limit if limit is not None else True  # nosec
 
-    return cast(
-        PageRpcServiceSummary,
-        PageRpcServiceSummary.create(
-            items,
-            total=total_count,
-            limit=limit,
-            offset=offset,
-        ),
+    return PageRpcServiceSummary.create(
+        items,
+        total=total_count,
+        limit=limit,
+        offset=offset,
     )

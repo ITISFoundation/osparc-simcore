@@ -36,11 +36,9 @@ _URLType = _YarlURL | _StarletteURL
 
 def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
     """This helper function ensures query replacement works with both"""
-    new_url: _URLType | _StarletteURL
-    if isinstance(url, _YarlURL):
-        new_url = url.update_query(query)
-    else:
-        new_url = url.replace_query_params(**query)
+    new_url: _URLType | _StarletteURL = (
+        url.update_query(query) if isinstance(url, _YarlURL) else url.replace_query_params(**query)
+    )
 
     new_url_str = f"{new_url}"
     return f"{TypeAdapter(AnyHttpUrl).validate_python(new_url_str)}"
@@ -75,7 +73,9 @@ def paginate_data(
 
     return PageDict(
         _meta=PageMetaInfoLimitOffset(total=total, count=len(data), limit=limit, offset=offset),
-        _links=PageLinks(
+        # NOTE: pylint cannot see that `self` is a pydantic model field (the
+        # `_links.self` pagination contract) and flags the keyword as superseded
+        _links=PageLinks(  # pylint: disable=kwarg-superseded-by-positional-arg
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
             first=_replace_query(request_url, {"offset": 0, "limit": limit}),
             prev=(

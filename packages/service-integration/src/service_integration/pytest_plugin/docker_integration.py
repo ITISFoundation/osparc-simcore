@@ -12,7 +12,7 @@ from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
 from pprint import pformat
-from typing import Any
+from typing import Any, Final
 
 import docker
 import jsonschema
@@ -25,8 +25,7 @@ from docker.models.images import Image
 
 _FOLDER_NAMES = ["input", "output"]
 
-## FIXME: 'Not all images have this home directory. Why impose it? Maybe I am mistaken but I do not understand what this var refers to.' by ANE
-_CONTAINER_FOLDER = Path("/home/scu/data")
+_VOLUMES_ROOT_PATH: Final = Path("/home/scu/data")
 
 
 @pytest.fixture
@@ -116,7 +115,7 @@ def host_folders(temporary_path: Path) -> dict:
 @pytest.fixture
 def container_variables() -> dict:
     # of type INPUT_FOLDER=/home/scu/data/input
-    return {f"{str(folder).upper()}_FOLDER": (_CONTAINER_FOLDER / folder).as_posix() for folder in _FOLDER_NAMES}
+    return {f"{str(folder).upper()}_FOLDER": (_VOLUMES_ROOT_PATH / folder).as_posix() for folder in _FOLDER_NAMES}
 
 
 @pytest.fixture

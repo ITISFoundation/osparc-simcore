@@ -13,7 +13,7 @@ from .wallets import wallets
 
 
 @enum.unique
-class InitPromptAckFlowState(str, enum.Enum):
+class InitPromptAckFlowState(enum.StrEnum):
     PENDING = "PENDING"  # initiated
     SUCCESS = "SUCCESS"  # completed (ack) with success
     FAILED = "FAILED"  # failed

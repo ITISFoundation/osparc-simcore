@@ -1,12 +1,10 @@
 import base64
 import pickle
 from abc import ABC, abstractmethod
-from typing import Any, Final, Generic, TypeVar
-
-T = TypeVar("T")
+from typing import Any, Final
 
 
-class BaseObjectSerializer(ABC, Generic[T]):
+class BaseObjectSerializer[T](ABC):
     @classmethod
     @abstractmethod
     def get_init_kwargs_from_object(cls, obj: T) -> dict:

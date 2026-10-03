@@ -21,7 +21,7 @@ from simcore_service_notifications.services.channel_handlers._email import (
 
 
 def _contact(email: str) -> EmailContact:
-    return EmailContact(name=email.split("@")[0], email=email)
+    return EmailContact(name=email.split("@", maxsplit=1)[0], email=email)
 
 
 @pytest.mark.parametrize(

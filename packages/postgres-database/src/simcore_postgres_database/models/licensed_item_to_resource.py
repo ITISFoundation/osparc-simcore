@@ -49,7 +49,8 @@ licensed_item_to_resource = sa.Table(
         name="pk_licensed_item_to_resource_item_and_resource_id",
     ),
     # NOTE: Currently, there is a constraint that a resource item ID cannot be in multiple licensed items.
-    # The reason is that the license key and license version coming from the internal license server are part of the licensed resource domain.
+    # The reason is that the license key and license version coming from the internal license server are part of the
+    # licensed resource domain.
     # Sim4Life performs a mapping on their side, where the license key and version are mapped to a licensed item.
     # If this constraint is broken, the mapping logic in Sim4Life might break.
     sa.UniqueConstraint(

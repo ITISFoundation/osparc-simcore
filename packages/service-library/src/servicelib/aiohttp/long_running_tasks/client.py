@@ -69,7 +69,10 @@ async def _wait_for_completion(
                 yield task_status.task_progress
                 if not task_status.done:
                     await asyncio.sleep(float(response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)))
-                    msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
+                    msg = (
+                        f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' "
+                        f"{task_status.task_progress.percent}%"
+                    )
                     raise TryAgain(msg)  # noqa: TRY301
 
     except TryAgain as exc:

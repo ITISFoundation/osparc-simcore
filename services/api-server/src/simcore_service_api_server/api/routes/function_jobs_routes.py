@@ -166,10 +166,7 @@ async def register_function_job(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> RegisteredFunctionJob:
-    registered_job = await wb_api_rpc.register_function_job(
-        function_job=function_job, user_id=user_id, product_name=product_name
-    )
-    return registered_job
+    return await wb_api_rpc.register_function_job(function_job=function_job, user_id=user_id, product_name=product_name)
 
 
 @function_job_router.get(

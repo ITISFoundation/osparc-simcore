@@ -22,7 +22,7 @@ from .utils.json_schema import (
     jsonschema_validate_schema,
 )
 
-PropertyTypeStr: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_TYPE_RE)]
+PropertyTypeStr: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_TYPE_RE)]  # noqa: UP040
 
 
 class BaseServiceIOModel(BaseModel):
