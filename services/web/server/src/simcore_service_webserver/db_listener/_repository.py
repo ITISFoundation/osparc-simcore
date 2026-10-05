@@ -28,6 +28,9 @@ from simcore_postgres_database.webserver_models import (
     projects,
 )
 from sqlalchemy import ColumnElement
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DisconnectionError as SQLAlchemyDisconnectionError
+from sqlalchemy.exc import TimeoutError as SQLAlchemyTimeoutError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import func, select, tuple_
 
@@ -55,20 +58,35 @@ LAST_ERROR_MAX_LEN: Final[int] = 500
 RETRY_BACKOFF_BASE_S: Final[int] = 2
 RETRY_BACKOFF_MAX_S: Final[int] = 900
 
+# Exceptions that signal an infrastructure outage rather than an application-level bug:
+# a broken DB/socket connection affects every aggregate alike, unlike a bug tied to
+# specific rows, which must not halt the rest of an otherwise healthy drain.
+# NOTE: sqlalchemy.exc.TimeoutError (pool checkout starvation) subclasses neither the
+# builtin TimeoutError nor DBAPIError, and DisconnectionError (e.g. ConnectionLostError
+# after a server restart) subclasses neither either -- both must be listed explicitly
+# or a database-wide outage is misclassified as application-level.
+INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (
+    DBAPIError,
+    SQLAlchemyDisconnectionError,
+    SQLAlchemyTimeoutError,
+    OSError,
+    TimeoutError,
+)
 
-def _claimable_events_predicate(exclude_aggregates: set[ClaimableAggregate]) -> ColumnElement[bool]:
-    """Predicate selecting events this worker may claim: own kind, not exhausted,
-    backoff elapsed, and not an aggregate the current drain already failed on."""
-    claimable = (
-        (outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC)
-        & (outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER)
-        & (outbox_events.c.next_attempt_at <= func.now())
-    )
+
+def _scanned_events_predicate(exclude_aggregates: set[ClaimableAggregate]) -> ColumnElement[bool]:
+    """Rows considered when scanning for candidate aggregates: own kind, and not an
+    aggregate the current drain already failed on.
+
+    The attempts/backoff gates are deliberately NOT here: they are applied per
+    *aggregate* in list_claimable_aggregates (see why there).
+    """
+    scanned = outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC
     if exclude_aggregates:
-        claimable = claimable & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
+        scanned = scanned & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
             [(a.kind, a.aggregate_id) for a in exclude_aggregates]
         )
-    return claimable
+    return scanned
 
 
 async def list_claimable_aggregates(
@@ -81,14 +99,33 @@ async def list_claimable_aggregates(
     of the batch. The drain reuses this bounded batch across claims and only pays
     the scan cost again once the batch is exhausted, which keeps draining a backlog
     linear in the number of claimed aggregates.
+
+    The retry backoff is gate-checked per *aggregate*, not per row: an aggregate is a
+    candidate only when none of its events is still backing off (bool_and: every row
+    is either exhausted or due). With a per-row gate, one fresh event would make the
+    aggregate instantly claimable while its older failed event is still in backoff,
+    so the fresh event's projection would jump ahead of the older one (out-of-order
+    notifications for the same task) and each wake-up would burn another attempt on
+    the stale event. Waiting for the oldest backed-off event to mature keeps events of
+    one aggregate strictly ordered and lets the whole backlog co-claim at once.
+
+    ORDER BY uses min(...) FILTER (attempts < MAX) so dead-lettered (exhausted) rows
+    neither gate the aggregate nor pull its position in the queue.
     """
-    claimable = _claimable_events_predicate(exclude_aggregates)
+    retryable = outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
+    exhausted_or_due = (outbox_events.c.attempts >= EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER) | (
+        outbox_events.c.next_attempt_at <= func.now()
+    )
+    oldest_retryable = func.min(outbox_events.c.modified).filter(retryable)
     candidate_rows = (
         await conn.execute(
             select(outbox_events.c.kind, outbox_events.c.aggregate_id)
-            .where(claimable)
+            .where(_scanned_events_predicate(exclude_aggregates))
             .group_by(outbox_events.c.kind, outbox_events.c.aggregate_id)
-            .order_by(func.min(outbox_events.c.modified), func.min(outbox_events.c.id))
+            # every non-exhausted event must be due (no row still backing off), and at
+            # least one retryable event must exist (else the aggregate is dead-lettered)
+            .having(func.bool_and(exhausted_or_due) & func.bool_or(retryable))
+            .order_by(oldest_retryable, func.min(outbox_events.c.id).filter(retryable))
             .limit(MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT)
         )
     ).fetchall()
@@ -153,7 +190,7 @@ async def remove_claimed_events(conn: AsyncConnection, event_ids: Sequence[Outbo
 
 
 async def record_failed_attempts(
-    engine: AsyncEngine, event_ids: Sequence[OutboxEventID], error: Exception
+    engine: AsyncEngine, claimed: ClaimedAggregate, error: Exception
 ) -> list[FailedAttempt]:
     """Record a failed processing attempt on every co-claimed event (separate transaction).
 
@@ -162,12 +199,23 @@ async def record_failed_attempts(
     auto-update trigger) refreshes `modified`, which moves the events to the back of
     the oldest-first queue.
     Returns the updated events so the caller can report retries vs. dead-lettering.
+
+    This transaction first takes the *blocking* per-aggregate advisory lock (same key as
+    claim_aggregate): the claim transaction that failed already released its locks when
+    it rolled back, so without this lock a stale candidate scanned before the failure
+    could re-claim the very same events and bump their attempts again before the backoff
+    was even recorded (burning retries with no wait). Claims use pg_try_advisory_xact_lock
+    on the same key, so they never deadlock against this one -- they simply return None
+    and move on to their next candidate while the bookkeeping finishes.
     """
     backoff_secs = func.least(
         RETRY_BACKOFF_BASE_S * func.pow(2, outbox_events.c.attempts + 1),
         RETRY_BACKOFF_MAX_S,
     )
+    lock_key = f"{claimed.kind}:{claimed.aggregate_id}"
     async with transaction_context(engine) as conn:
+        # wait for the aggregate lock any concurrent claim would have taken (see docstring)
+        await conn.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(lock_key, 0))))
         result = await conn.execute(
             outbox_events.update()
             .values(
@@ -175,7 +223,7 @@ async def record_failed_attempts(
                 last_error=str(error)[:LAST_ERROR_MAX_LEN],
                 next_attempt_at=func.now() + func.make_interval(0, 0, 0, 0, 0, 0, backoff_secs),
             )
-            .where(outbox_events.c.id.in_(event_ids))
+            .where(outbox_events.c.id.in_(claimed.event_ids))
             .returning(
                 outbox_events.c.id,
                 outbox_events.c.kind,

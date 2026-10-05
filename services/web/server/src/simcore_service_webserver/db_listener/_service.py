@@ -37,7 +37,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
-from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..projects import exceptions
@@ -49,6 +48,7 @@ from ..projects.api import (
 )
 from ._repository import (
     EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
+    INFRA_EXCEPTION_TYPES,
     claim_aggregate,
     delete_expired_dead_letters,
     get_comp_task,
@@ -85,15 +85,6 @@ _DEAD_LETTER_RETENTION: Final[datetime.timedelta] = datetime.timedelta(days=30)
 # a half-open broker connection can stall a publish indefinitely, which would pin the
 # claim transaction, its locks, and pool connections until the replica restarts
 _PROCESSING_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
-
-# only these count towards _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN: a broken DB/socket
-# connection affects every aggregate alike, unlike an application-level bug tied to
-# specific rows, which must not halt the rest of an otherwise healthy drain
-_INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (
-    DBAPIError,
-    OSError,
-    TimeoutError,
-)
 
 _logger = logging.getLogger(__name__)
 
@@ -250,13 +241,13 @@ async def _claim_and_process_aggregate(
         assert claimed is not None  # nosec
         cause = failed.__cause__
         assert isinstance(cause, Exception)  # nosec
-        updated = await record_failed_attempts(engine, claimed.event_ids, cause)
+        updated = await record_failed_attempts(engine, claimed, cause)
         _log_failed_attempts(updated, cause)
         return ClaimOutcome(
             success=False,
             kind=claimed.kind,
             aggregate_id=claimed.aggregate_id,
-            is_infra_error=isinstance(cause, _INFRA_EXCEPTION_TYPES),
+            is_infra_error=isinstance(cause, INFRA_EXCEPTION_TYPES),
         )
 
     return ClaimOutcome(success=True, kind=candidate.kind, aggregate_id=candidate.aggregate_id)
@@ -352,7 +343,7 @@ async def claim_and_process_outbox_events(app: web.Application, engine: AsyncEng
     the rest of this drain so one poisoned aggregate cannot starve the healthy events
     behind it: the failure is marked on the row (attempt + backoff) and the drain
     moves on to the next aggregate. The drain aborts only after too many aggregates
-    have failed with an infrastructure-like error (_INFRA_EXCEPTION_TYPES) and no
+    have failed with an infrastructure-like error (INFRA_EXCEPTION_TYPES) and no
     success in between -- that pattern points at a broken DB/socketio connection
     rather than a handful of unrelated bad rows, and continuing would just spin.
     An application-level failure never counts towards this abort: the aggregate is
