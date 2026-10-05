@@ -13,23 +13,29 @@ qx.Class.define("osparc.utils.LanguageManager", {
   type: "static",
 
   statics: {
-    // Locale registry keyed by qooxdoo compiler locale
+    // Locale registry keyed by qooxdoo compiler locale.
+    // "beta" marks translations that are not yet considered complete/stable;
+    // the UI uses it to show a "Beta" chip next to the language.
     __locales: {
       "en_US": {
         backend: "en",
         label: "English",
+        beta: false,
       },
       "es_ES": {
         backend: "es_ES",
         label: "Español [Spanish]",
+        beta: true,
       },
       "ko_KR": {
         backend: "ko_KR",
         label: "한국어 [Korean]",
+        beta: true,
       },
       "zh": {
         backend: "zh_CN",
         label: "中文 [Chinese]",
+        beta: true,
       },
     },
 
@@ -95,6 +101,15 @@ qx.Class.define("osparc.utils.LanguageManager", {
     getLocaleLabel: function(localeCode) {
       const locale = this.__locales[localeCode];
       return locale ? locale.label : localeCode;
+    },
+
+    /**
+     * Returns whether a locale's translation is still considered beta.
+     * @return {Boolean} true only if the locale is known and flagged as beta.
+     */
+    isLocaleBeta: function(localeCode) {
+      const locale = this.__locales[localeCode];
+      return locale ? Boolean(locale.beta) : false;
     },
 
     isSwitchUseful: function() {
