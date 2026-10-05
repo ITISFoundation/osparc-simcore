@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Translation-Date: 2026-10-02T18:32:26Z\n"
+"X-Translation-Date: 2026-10-05T15:52:23Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: This string is used within the 'About Product' menu item
@@ -5632,63 +5632,63 @@ msgstr "자동으로 포트 연결"
 # within the GeneralPage preferences settings, likely allowing the user to
 # select their preferred language.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:66
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:104
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:116
 msgid "Language"
 msgstr "언어"
 
-# CTX-INTERPRETATION: This string appears in the GeneralPage.js file, likely
-# within a user interface element that informs users about the AI-generated
-# nature and potential inaccuracies of translations.
+# CTX-INTERPRETATION: This string appears as a disclaimer near a
+# 'Translations' setting, informing the user that the displayed translations
+# are previews and may have errors.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:68
-msgid "Translations are AI-generated and may contain errors."
-msgstr "번역은 AI가 생성한 것이므로 오류를 포함할 수 있습니다."
+msgid "Translations are a preview and may still contain inaccuracies."
+msgstr "번역은 예고이며 여전히 부정확할 수 있습니다."
 
 # CTX-INTERPRETATION: This string appears as a tooltip within the GeneralPage
 # preferences, indicating that the translation is a preview and might have
 # errors.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:82
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:86
 msgid "This translation is a preview and may contain inaccuracies"
 msgstr "이 번역은 미리보기이며 부정확한 내용이 포함될 수 있습니다"
 
 # CTX-INTERPRETATION: This string appears as the title of a section within the
 # General preferences page, likely related to displaying or configuring
 # credit-related indicators.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:112
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
 msgid "Credits Indicator"
 msgstr "크레딧 표시 설정"
 
 # CTX-INTERPRETATION: This string "Always" appears in the GeneralPage.js file,
 # likely as a label for an option that controls whether a specific feature or
 # setting remains active indefinitely.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:136
 msgid "Always"
 msgstr "항상"
 
 # CTX-INTERPRETATION: This string "Warning" appears as a label within the
 # GeneralPage.js file, likely indicating a warning message or alert to the
 # user.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:127
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:139
 msgid "Warning"
 msgstr "경고"
 
 # CTX-INTERPRETATION: The string "Show indicator" is used as a label for a
 # button or form element that controls the visibility of a wallet indicator
 # within the general preferences settings page.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:142
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:154
 msgid "Show indicator"
 msgstr "지표 표시"
 
 # CTX-INTERPRETATION: This string appears in the GeneralPage.js file and is
 # used to label a spinner control that allows the user to set a threshold for
 # displaying a warning when their credits fall below a certain value.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:152
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:164
 msgid "Show warning when credits below"
 msgstr "신용 부족 경고 표시 설정"
 
 # CTX-INTERPRETATION: This string appears in the 'GeneralPage' settings,
 # likely related to configuring automatic shutdown behavior for inactive
 # simulation instances within the Osparc desktop application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:160
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:172
 msgid "Automatic Shutdown of Idle Instances"
 msgstr "비활성 인스턴스의 자동 종료"
 
@@ -5696,49 +5696,49 @@ msgstr "비활성 인스턴스의 자동 종료"
 # used to label a spinner control that allows the user to set the
 # 'userInactivityThreshold' preference, specifying the time (in minutes)
 # before the application closes when the user is inactive.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:174
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:186
 msgid "Idle time before closing (in minutes)"
 msgstr "애플리케이션이 사용자가 비활성 상태일 때 닫기 전에 경과되는 시간 (분)"
 
 # CTX-INTERPRETATION: This string appears in the 'GeneralPage' of the
 # application preferences, likely used to set a threshold for low disk space
 # warnings.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:182
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:194
 msgid "Low Disk Space Threshold"
 msgstr "저장 공간 임계값"
 
 # CTX-INTERPRETATION: This string appears in the GeneralPage.js file, likely
 # within a UI element related to setting low disk space thresholds for
 # warnings.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:183
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:195
 msgid "Set the warning Threshold for Low Disk Space availability"
 msgstr "저장 공간 부족 경고 임계값을 설정합니다."
 
 # CTX-INTERPRETATION: This string appears as a label for a threshold input
 # field in the GeneralPreferences page, indicating the acceptable disk usage
 # level in gigabytes.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:197
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:209
 msgid "Threshold (in GB)"
 msgstr "최소 디스크 공간 임계값 (GB)"
 
 # CTX-INTERPRETATION: This string appears as the title of a section within the
 # general preferences settings page, allowing users to manage their privacy
 # options.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:203
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:215
 msgid "Privacy Settings"
 msgstr "개인 정보 설정"
 
 # CTX-INTERPRETATION: This string appears within the 'GeneralPage' settings,
 # likely prompting users to provide feedback or contribute to improving the
 # Sim4Life application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:204
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:216
 msgid "Help us improve Sim4Life user experience"
 msgstr "Sim4Life 사용자 경험 개선에 도움을 주십시오"
 
 # CTX-INTERPRETATION: This string appears in the GeneralPage.js file and
 # refers to a checkbox that allows users to share their usage data with the
 # application, likely for analytics or improvement purposes.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:208
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:220
 msgid "Share usage data"
 msgstr "사용 데이터 공유 여부"
 

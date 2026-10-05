@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-10-02T18:32:06Z\n"
+"X-Translation-Date: 2026-10-05T15:51:59Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
@@ -5788,83 +5788,84 @@ msgstr "Conectar puertos automáticamente"
 # section box on the GeneralPage, likely indicating a setting related to the
 # user's preferred language.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:66
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:104
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:116
 msgid "Language"
 msgstr "Idioma"
 
-# CTX-INTERPRETATION: The string appears in a user interface element, likely a
-# message or disclaimer, informing users about the potential for errors in AI-
-# generated translations.
+# CTX-INTERPRETATION: This string appears as a disclaimer near a
+# 'Translations' setting, informing the user that the displayed translations
+# are previews and may have errors.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:68
-msgid "Translations are AI-generated and may contain errors."
-msgstr "Las traducciones son generadas por IA y pueden contener errores."
+msgid "Translations are a preview and may still contain inaccuracies."
+msgstr ""
+"Las traducciones son una vista previa y aún pueden contener inexactitudes."
 
 # CTX-INTERPRETATION: This string appears as a tooltip within the general
 # preferences settings, indicating that the translation is a preview and might
 # have errors.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:82
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:86
 msgid "This translation is a preview and may contain inaccuracies"
 msgstr "Esta traducción es una vista previa y puede contener imprecisiones"
 
 # CTX-INTERPRETATION: The string "Credits Indicator" is used within the
 # GeneralPage.js file to label a section box, likely related to configuring
 # the display or behavior of a credits indicator within the application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:112
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
 msgid "Credits Indicator"
 msgstr "Indicador de Créditos"
 
 # CTX-INTERPRETATION: The string "Always" appears in a user interface element
 # related to general preferences, likely indicating a persistent or ongoing
 # setting within the application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:136
 msgid "Always"
 msgstr "Siempre"
 
 # CTX-INTERPRETATION: The string "Warning" is used as a label within a user
 # interface, likely indicating a potential issue or alert to the user.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:127
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:139
 msgid "Warning"
 msgstr "Advertencia"
 
 # CTX-INTERPRETATION: The string "Show indicator" is used within a form to
 # display a wallet indicator, likely related to user preferences or settings
 # within a scientific simulation application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:142
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:154
 msgid "Show indicator"
 msgstr "Mostrar indicador"
 
 # CTX-INTERPRETATION: The string appears as a label within a form, likely
 # related to setting a threshold for displaying a warning message when the
 # user's credit balance falls below a specified value.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:152
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:164
 msgid "Show warning when credits below"
 msgstr "Mostrar advertencia cuando el saldo de créditos es inferior"
 
 # CTX-INTERPRETATION: The string appears in a user interface element related
 # to general preferences, specifically controlling the automatic shutdown of
 # inactive instances within the application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:160
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:172
 msgid "Automatic Shutdown of Idle Instances"
 msgstr "Apagado automático de instancias inactivas"
 
 # CTX-INTERPRETATION: This string appears in a user interface, likely a
 # settings page, where a user can configure the time (in minutes) after which
 # the application should automatically close if the user is inactive.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:174
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:186
 msgid "Idle time before closing (in minutes)"
 msgstr "Tiempo de inactividad antes de cerrar (en minutos)"
 
 # CTX-INTERPRETATION: The string "Low Disk Space Threshold" appears as a label
 # for a setting within a user interface, likely related to configuring a
 # warning threshold for low disk space availability.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:182
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:194
 msgid "Low Disk Space Threshold"
 msgstr "Umbral de espacio en disco bajo"
 
 # CTX-INTERPRETATION: The string appears within a user interface element
 # related to setting a low disk space threshold, likely for a general settings
 # page.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:183
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:195
 msgid "Set the warning Threshold for Low Disk Space availability"
 msgstr ""
 "Establecer el umbral de advertencia para la disponibilidad de espacio en "
@@ -5873,28 +5874,28 @@ msgstr ""
 # CTX-INTERPRETATION: The string "Threshold (in GB)" is a label for a UI
 # element, likely a slider or input field, used to set a disk usage threshold
 # in a user interface, probably within a preferences panel.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:197
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:209
 msgid "Threshold (in GB)"
 msgstr "Umbral (en GB)"
 
 # CTX-INTERPRETATION: The string "Privacy Settings" appears as the title of a
 # section within the general preferences settings page, allowing users to
 # manage their privacy options.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:203
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:215
 msgid "Privacy Settings"
 msgstr "Configuración de privacidad"
 
 # CTX-INTERPRETATION: The string appears within a user preferences page,
 # likely prompting the user to provide feedback to improve the Sim4Life
 # application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:204
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:216
 msgid "Help us improve Sim4Life user experience"
 msgstr "Ayúdenos a mejorar la experiencia del usuario de Sim4Life"
 
 # CTX-INTERPRETATION: The string "Share usage data" appears in a user
 # interface element related to preferences, likely allowing the user to opt-in
 # to sharing usage data for analytics or research purposes.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:208
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:220
 msgid "Share usage data"
 msgstr "Compartir datos de uso"
 
