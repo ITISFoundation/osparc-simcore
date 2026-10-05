@@ -1,57 +1,126 @@
 ---
-applyTo: '**/test*.py,**/conftest.py,**/pytest_simcore/**/*.py'
+applyTo: '**/test*.py,**/conftest.py,**/tests/**/*.py,**/pytest_simcore/**/*.py'
 ---
 
 
-## Coding Instructions for Python Tests in This Repository
+# Python test instructions
 
-This is a multi-project monorepo with two main groups of projects in the folders [`packages`](../../packages/) and in [`services`](../../services/) . Each project has its own folder with a standard structure (`src/`, `tests/`, etc.). Test fixtures and helpers shared across projects live in [`pytest-simcore`](../../packages/pytest-simcore) , a shared pytest plugin.
+This is a multi-project monorepo. Projects live primarily in
+[`packages`](../../packages/) and [`services`](../../services/). Each project
+normally has its own `src/` and `tests/` directories. Shared pytest fixtures,
+helpers, and test-support types live in
+[`pytest-simcore`](../../packages/pytest-simcore).
 
-### General
+Follow `python.instructions.md` as well as these test-specific rules.
 
-- Use `pytest` for all tests.
-- Prefer flat, module-level `test_*` functions over class-based test grouping.
-- Do not use `class Test...` containers for grouping tests.
-- When flattening or adding tests, use descriptive function name prefixes (e.g. `test_ordering_query_params_defaults_*`) to preserve grouping intent.
-- Do not add return type annotations to `test_*` functions. All non-test helpers must be fully annotated.
-- Prefer a weak DRY approach in tests: reduce repetition when it helps readability, but DO NOT ABSTRACT AWAY INTENT.
-  - When multiple tests differ only by inputs/expected outputs, consider `pytest.mark.parametrize` if the case table makes it clearer what behavior is being verified.
-  - Keep separate explicit tests when parametrization would hide the scenario or make failures harder to understand. Prefer clarity over maximal DRY.
+## Test structure
 
-### Fixtures
+- Use `pytest`.
+- Prefer flat, module-level `test_*` functions. Do not introduce `class Test...`
+  containers solely for grouping.
+- Use descriptive test names that state the behavior and scenario, for example:
+  `test_ordering_query_params_defaults_to_created_at()`.
+- Do not add a return type annotation to `test_*` functions.
+- Fully annotate non-test helpers, fixtures, factories, and structured test data
+  where that improves clarity or is required by configured static checks.
+- Test externally observable behavior. Avoid asserting private implementation
+  details unless they are themselves part of a required contract.
+- For a bug fix, add a focused regression test when practical.
 
-- Reuse existing fixtures and helpers before creating new ones. Check `packages/pytest-simcore` first.
-- When the same setup/arrange block is repeated across tests, extract it into a fixture with a descriptive name so intent is clear at the call site.
-- Small inline repetition is acceptable when extracting a fixture would add indirection and make the individual test harder to read. Prefer clarity over maximal DRY.
-- If a fixture is used across multiple files within the same project, move it to the local `conftest.py`.
-- If a fixture is useful across multiple projects, move it to `pytest-simcore` instead.
+## Clarity and parametrization
 
-#### `autouse=True` fixtures
+- Prefer a weak-DRY style: remove repetition only when readability improves;
+  never abstract away the scenario being tested.
+- Use `pytest.mark.parametrize` when the case table makes the input/output
+  matrix clearer and each case has the same test flow.
+- Keep separate explicit tests when cases have distinct setup, intent, expected
+  behavior, or failure diagnosis.
+- Give parametrized cases stable, descriptive IDs when a failure would
+  otherwise be difficult to identify.
 
-- **Banned** in `conftest.py` and in `pytest_simcore` plugins.
-- **Allowed only** when the fixture is defined and used within the same test module. Add a comment above the fixture explaining why `autouse` is necessary and confirming it is scoped to that module to avoid unintended side effects.
+## Fixtures
 
-### File size
+- Reuse existing fixtures and helpers before adding new ones. Check
+  [`pytest-simcore`](../../packages/pytest-simcore) and the local project
+  fixtures first.
+- Extract repeated meaningful setup into a fixture or factory with a descriptive
+  name when doing so improves call-site clarity.
+- Keep small setup blocks inline when a fixture would hide important setup or
+  add indirection.
+- Put fixtures used by multiple test modules in the same project in that
+  project's nearest `conftest.py`.
+- Put fixtures that are genuinely useful across multiple projects in
+  `pytest-simcore`.
+- Fixtures must not leak mutable state, filesystem state, network resources,
+  database records, environment variables, time patches, or monkeypatches into
+  unrelated tests. Ensure cleanup follows the established fixture lifecycle.
 
-- If a test file exceeds 1000 lines, split it into multiple files using descriptive name suffixes (e.g. `test_users_accounts_rest_registration.py` → `test_users_accounts_rest_registration_create.py`, `test_users_accounts_rest_registration_delete.py`, etc.).
-- If the split files share fixtures, move shared fixtures to a `conftest.py`. If the number of files warrants it, group them into a subfolder with its own `conftest.py`.
+## `autouse=True` fixtures
 
-### Shared test data types
+- Do not add `autouse=True` fixtures in `conftest.py` or `pytest_simcore`
+  plugins.
+- An `autouse=True` fixture is allowed only when it is defined and used in the
+  same test module.
+- Add a short comment above every permitted `autouse=True` fixture explaining
+  why explicit injection is impractical and confirming that its effect is
+  restricted to that test module.
 
-- Dataclasses, TypedDicts, and other types used to annotate fixtures or pass structured data between test files **must not** be imported across test modules via relative or `conftest` imports — pytest's default `prepend` import mode makes this unreliable.
-- Instead, place shared test data types in the appropriate `pytest_simcore.helpers.` module (e.g. `webserver_users.py`, `storage_utils.py`). This ensures reliable imports and encourages reuse across projects.
-- Only types that are truly local to a single test file may stay in that file.
 
-### Test file naming
+## Shared test data types
 
-- **Test file names must be unique across the entire project test tree**, regardless of which subfolder they live in. Generic names like `test_list.py`, `test_search.py`, or `test_create.py` are forbidden since they can easily collide with unrelated test files elsewhere. Always keep the full original filename as a prefix for the filename, even inside a dedicated subfolder. **Folder names should be a short version of the original test filename, without the `test_` prefix**:
-  - ✅ `users_accounts_rest_registration/test_users_accounts_rest_registration_search.py`
-  - ❌ `test_users_accounts_rest_registration/test_users_accounts_rest_registration_search.py`
-  - ❌ `users_accounts/test_search.py`
+- Do not import dataclasses, `TypedDict`s, or other test-support types from
+  another test module or from `conftest.py`. Pytest's import behavior makes
+  these imports fragile.
+- Put types shared across test modules in the appropriate
+  `pytest_simcore.helpers` module, using a domain-specific filename such as
+  `webserver_users.py` or `storage_utils.py`.
+- Keep types used by only one test module in that module.
+- Do not promote a type to `pytest-simcore` until it has a real multi-module or
+  multi-project reuse case.
 
-## How to Run Tests
+## File and directory names
 
-See the [`run-python-tests`](../skills/run-python-tests/SKILL.md) skill for the full step-by-step procedure.
+- Test filenames must be unique across the entire project test tree, even when
+  they are in different subdirectories.
+- Do not use generic filenames such as `test_list.py`, `test_search.py`, or
+  `test_create.py`.
+- Preserve the original full test-name prefix after splitting:
+  ```text
+  users_accounts_rest_registration/
+    test_users_accounts_rest_registration_create.py
+    test_users_accounts_rest_registration_delete.py
+    test_users_accounts_rest_registration_search.py
+  ```
+- Directory names should be a short form of the original test filename without
+  the `test_` prefix:
+  ```text
+  users_accounts_rest_registration/
+  ```
+  Do not use:
+  ```text
+  test_users_accounts_rest_registration/
+  ```
 
----
-*Last updated: 2026-08-19*
+## Test-file size
+
+- Keep test modules cohesive and navigable.
+- When a test module approaches or exceeds 1,000 lines, split it by behavior,
+  endpoint family, workflow, or scenario if doing so improves navigation and
+  ownership.
+- Move shared fixtures to the nearest `conftest.py`. When several related test
+  files need shared fixtures, create a focused subdirectory with its own
+  `conftest.py`.
+- Do not split a cohesive test file mechanically if the split would duplicate
+  setup, obscure relationships, or make test discovery harder.
+
+## Running tests
+
+- Follow the
+  [`run-python-tests`](../skills/run-python-tests/SKILL.md) procedure and use
+  the repository-managed Python environment or task runner.
+- Run the narrowest relevant test target first. Broaden validation when the
+  change crosses package, service, database, serialization, or API boundaries.
+- For local Docker-backed iteration, use `--keep-docker-up` only when supported
+  and when reusing containers will not retain stale state. Do not rely on it for
+  clean-state reproduction or CI-equivalent validation.
+- If the relevant tests cannot be run, state which command was not run and why.

@@ -2,175 +2,190 @@
 applyTo: '**/*.py'
 ---
 
-## 🛠️Coding Instructions for Python in This Repository
+# Python instructions
 
-Follow these rules **strictly** when generating Python code:
+Target Python 3.13 as specified by `.python-version`. Follow the closest
+applicable service- or package-level instructions in addition to this file.
+For test files, also follow `python-tests.instructions.md`.
 
-### Python Version
+## Typing and language features
 
-* Use Python 3.13: Ensure all code uses features and syntax compatible with Python 3.13.
-* Use PEP 695 `type` statement for type aliases: `type UserAccountSortableField = Literal["name", "email"]`
-* Use PEP 695 generic class syntax where possible: `class EnvelopeE[ErrorT](BaseModel):`
-* Use `X | None` union syntax (not `Optional[X]`)
-
-### Type Annotations
-
-* Always use full type annotations for all functions and class attributes.
-* ❗ **Exception**: Do **not** add return type annotations in `test_*` functions.
-
-### Documentation with Annotated Types
-
-* Use `annotated_types.doc()` for parameter and return type documentation instead of traditional docstring Args/Returns sections
-* **Apply documentation only for non-obvious parameters/returns**:
-  - Document complex behaviors that can't be deduced from parameter name and type
-  - Document validation rules, side effects, or special handling
-  - Skip documentation for self-explanatory parameters (e.g., `engine: AsyncEngine`, `product_name: ProductName`)
-* **Import**: Always add `from annotated_types import doc` when using documentation annotations
-
-**Examples:**
-```python
-from typing import Annotated
-from annotated_types import doc
-
-
-async def process_users(
-    engine: AsyncEngine,  # No doc needed - self-explanatory
-    filter_statuses: Annotated[list[Status] | None, doc("Only returns users with these statuses")] = None,
-    limit: int = 50,  # No doc needed - obvious
-) -> Annotated[tuple[list[dict], int], doc("(user records, total count)")]:
-    """Process users with filtering.
-
-    Raises:
-        ValueError: If no filters provided
-    """
-```
-
-* **Docstring conventions**:
-  - Keep docstrings **concise**, focusing on overall function purpose
-  - Include `Raises:` section for exceptions
-  - Avoid repeating information already captured in type annotations or in function names
-  - Most information should be deducible from function name, parameter names, types, and annotations
-
-### Code Style & Formatting
-
-* Follow [Python Coding Conventions](../../docs/coding-conventions.md) **strictly**.
-* Format code with `ruff`.
-* Lint code with `ruff` and `pylint`.
-
-### Library Compatibility
-
-Ensure compatibility with the following library versions:
-
-* `sqlalchemy` ≥ 2.x
-* `pydantic` ≥ 2.x
-* `fastapi` ≥ 0.100
-
-### Code Practices
-
-* Use `f-string` formatting for all string interpolation except for logging message strings.
-* Prefer `f"{value}"` over `str(value)` for converting values to strings.
-* Use **relative imports** within the same package/module.
-  - For imports within the same repository/project, always use relative imports (e.g., `from ..constants import APP_SETTINGS_KEY` instead of `from simcore_service_webserver.constants import APP_SETTINGS_KEY`)
-  - Use absolute imports only for external libraries and packages
-* Place **all imports at the top** of the file.
-* Document functions when the code is not self-explanatory or if asked explicitly.
-
-### JSON Serialization
-
-* Prefer `json_dumps` / `json_loads` from `common_library.json_serialization` instead of the built-in `json.dumps` / `json.loads`.
-* When using Pydantic models, prefer methods like `model.model_dump_json()` for serialization.
-
-### Controller-Service-Repository Architecture
-
-This repository follows the **Controller-Service-Repository** layered design pattern. When adding or modifying features, respect these layers:
-
-* **Controller**: Thin HTTP/REST handler. Parses requests, calls the service layer, and formats the response. Keep business logic **out** of controllers.
-  - Controllers should delegate complex logic to the service layer rather than calling repositories or other services directly.
-  - Example: `_controller/rest/accounts_rest.py` calls `_accounts_service.py`, never `_accounts_repository.py` directly.
-* **Service**: Business logic and orchestration. Coordinates repositories, validates business rules, and calls other services.
-  - Service functions accept `app: web.Application` (for aiohttp) or equivalent and use dependency injection to obtain engines/connections.
-* **Repository**: Data access layer. In the case of services which have access to the database, contains all SQLAlchemy queries. Returns raw dicts or simple typed structures, not HTTP-aware types.
-  - Access to other services (e.g., via HTTP clients or RPC clients) is also typically located in the repository layer, or occasionally in the service layer.
-
-When refactoring, move business logic from controllers to services (e.g., extracting preview/notification logic into service functions like `preview_rejection_user_account`).
-
-### Error Handling & Exceptions
-
-* Define domain-specific exception hierarchies rooted in a base error per module:
+- Use Python 3.13-compatible syntax and standard-library APIs.
+- For new type aliases, use PEP 695 syntax:
   ```python
-  class UsersBaseError(WebServerBaseError): ...
-
-
-  class UserNotFoundError(UsersBaseError):
-      msg_template = "User id {user_id} not found"
+  type UserAccountSortableField = Literal["name", "email"]
   ```
-* Use `OsparcErrorMixin` from `common_library.errors_classes` for error classes that need structured context.
-* Include `error_context()` data in exceptions for downstream handlers.
-* Map exceptions to HTTP errors using `ExceptionToHttpErrorMap` dicts and `exception_handling_decorator`.
-* Use `user_message(...)` from `common_library.user_messages` for all user-facing error/status strings. Include `_version=N` for versioning.
-* Use `create_troubleshooting_log_kwargs(...)` from `common_library.logging.logging_errors` for structured error logging.
-* Use `log_context(logger, level, msg)` from `servicelib.logging_utils` for scoped log blocks.
-
-### Pydantic Models
-
-* Use Pydantic v2 API exclusively:
-  - `model_dump()` / `model_dump_json()` (not `.dict()` / `.json()`)
-  - `model_validate()` (not `parse_obj()`)
-  - `model_copy(update={...})` (not `.copy(update=...)`)
-  - `model_config = ConfigDict(...)` (not inner `class Config`)
-* Secret-bearing Pydantic fields must use `SecretStr` / `SecretBytes` (or another appropriate secret type) instead of plain `str` / `bytes`; unwrap them only at the boundary that requires the raw value.
-* Use `model_dump(exclude_none=True)` or `model_dump(by_alias=True, exclude_none=True)` when serializing for API responses with optional fields.
-* Settings classes should use `create_from_envs()` classmethod pattern for environment-based construction.
-* Organize model exports in `__init__.py` using `__all__: tuple[str, ...]` with sorted entries:
+- For new generic classes, prefer PEP 695 syntax when it is clearer and
+  compatible with the repository's type-checking and runtime dependencies:
   ```python
-  __all__: tuple[str, ...] = (
-      "EmailAttachment",
-      "EmailContact",
-      "EmailContent",
-  )
+  class EnvelopeE[ErrorT](BaseModel): ...
   ```
+  Do not rewrite existing generic code solely to modernize syntax.
+- Use `X | None`, not `Optional[X]`.
+- Add explicit annotations to public functions, methods, class attributes, and
+  non-obvious values. Follow existing local conventions for framework hooks,
+  overloads, and dynamically typed boundaries.
+- Test functions named `test_*` must not have a return type annotation. See
+  `python-tests.instructions.md` for other test conventions.
 
-### SQLAlchemy Patterns
+## Documentation
 
-* **Prefer `EXISTS` over `JOIN` + `GROUP BY`** for access-rights and membership checks:
+- Prefer accurate names, types, and small functions over comments that repeat
+  the implementation.
+- Add concise documentation for public or non-obvious behavior, especially
+  externally visible contracts, important side effects, invariants, ownership,
+  concurrency constraints, and caller-relevant exceptions.
+- Use `Annotated[..., doc(...)]` with `from annotated_types import doc` for
+  non-obvious parameter or return semantics when that metadata is meaningful to
+  the affected code or tooling.
+- Do not document information already clear from the function name, parameter
+  name, type, or surrounding code.
+- Use a `Raises:` section only for expected, domain-relevant exceptions that
+  callers need to handle or understand.
+
+## Imports, formatting, and logging
+
+- Follow [Python Coding Conventions](../../docs/coding-conventions.md) and the
+  repository's configured Ruff, Pylint, and type-checking rules.
+- Use repository-provided commands, pre-commit, or task-runner targets rather
+  than assuming global tool configuration matches CI.
+- Let configured tooling order imports. Do not manually fight formatter or
+  import-sorter output.
+- Place ordinary imports at module scope. Use a local import only to avoid a
+  verified import cycle, defer an optional/expensive dependency, or support a
+  runtime-only/platform-specific path. Add a brief rationale when it is not
+  obvious.
+- Follow the import convention used by the containing package. Relative imports
+  are appropriate within a package when they match local code; use absolute
+  imports for third-party packages and across independent package/service
+  boundaries.
+- Use f-strings for non-logging string interpolation.
+- Use parameterized logging messages so formatting is deferred:
   ```python
-  access_exists = sa.exists(
-      sa.select(sa.literal(1)).where(
-          (acl_table.c.resource_id == main_table.c.id) & (acl_table.c.read) & (acl_table.c.gid.in_(user_group_ids))
-      )
-  )
-  query = sa.select(main_table).where(access_exists)
+  logger.info("Processed %d users for project %s", user_count, project_id)
   ```
-  EXISTS lets the planner stop at the first matching row and avoids materialising grouped results.
-* **Prefer `NOT EXISTS` over `LEFT JOIN ... IS NULL`** for anti-join patterns.
-* Comment complex SQL with rationale explaining **why** a particular query shape was chosen.
-* Use `sa.literal(1)` in EXISTS subqueries (not `sa.literal(True)` or column selections).
-* Use helper utilities like `create_ordering_clauses()` from `simcore_postgres_database.utils_ordering` for dynamic sort clauses.
+- Prefer logging over `print()` for runtime output. Mark intentional `print()`
+  calls with `# noqa: T201` where required by Ruff. Add a brief comment explaining why the `print()` is necessary.
 
-### FastAPI Patterns
+## Serialization, configuration, and Pydantic
 
-* Use **lifespan events** (via `LifespanManager` from `fastapi_lifespan_manager`) instead of deprecated `app.add_event_handler("startup"/"shutdown")`.
-* Structure lifespans as `async def _my_lifespan(app: FastAPI) -> AsyncIterator[State]` functions that yield state dicts.
-* Compose lifespans in a `create_app_lifespan(...)` factory function that adds them in order.
-* Use `initialize_prometheus_instrumentation` (not `setup_prometheus_instrumentation`).
+- Use `common_library.json_serialization.json_dumps` and `json_loads` for
+  project-managed JSON payloads when their extended serialization behavior is
+  needed. Do not double-serialize framework responses.
+- For Pydantic v2 models, use `model_dump()` for Python data and
+  `model_dump_json()` only when an actual JSON payload is required.
+- Use Pydantic v2 APIs only:
+  - `model_dump()` / `model_dump_json()`, not `.dict()` / `.json()`
+  - `model_validate()`, not `parse_obj()`
+  - `model_copy(update=...)`, not `.copy(update=...)`
+  - `model_config = ConfigDict(...)`, not an inner `Config` class
+- Represent credentials and other secrets using `SecretStr`, `SecretBytes`, or
+  a more appropriate secret type. Unwrap a secret only at the boundary that
+  requires its raw value; never log or expose it.
+- Follow the endpoint/event contract when deciding whether `None` should be
+  omitted (`exclude_none=True`) or represented as JSON `null`.
+- For environment-backed settings, follow the local
+  `create_from_envs()` construction pattern.
+- When a package deliberately re-exports its public model API, use a typed,
+  alphabetized `__all__: tuple[str, ...]`. Do not create a re-export layer
+  solely for this convention.
 
-### aiohttp Framework
+## HTTP-service architecture
 
-* **Application Keys**: Always use `web.AppKey` for type-safe application storage instead of string keys
-  - Define keys with specific types: `APP_MY_KEY: Final = web.AppKey("APP_MY_KEY", MySpecificType)`
-  - Use precise types instead of generic `object` when the actual type is known
-  - Example: `APP_SETTINGS_KEY: Final = web.AppKey("APP_SETTINGS_KEY", ApplicationSettings)`
-  - Store and retrieve: `app[APP_MY_KEY] = value` and `data = app[APP_MY_KEY]`
-* **Request Keys**: Use `web.AppKey` for request storage as well for consistency and type safety
-* **Middleware**: Follow the repository's middleware patterns for cross-cutting concerns
-* **Error Handling**: Use the established exception handling decorators and patterns
-* **Route Definitions**: Use `web.RouteTableDef()` and organize routes logically within modules
+Apply this section only when modifying application code in an HTTP service.
 
-### Assertions & Safety Comments
+- Keep controllers and request handlers thin: parse/validate transport input,
+  call the service layer, and convert results to transport responses.
+- Put business rules and orchestration in services.
+- Put SQLAlchemy/database access in repositories. Repository outputs must not
+  be HTTP-aware types.
+- Keep outbound HTTP/RPC integration behind the service's established
+  client/gateway/repository abstraction; do not embed it in controllers.
+- Follow the existing service architecture. Do not introduce layers into small
+  local code solely to satisfy this pattern.
 
-* Prefer using logging over `print()` for runtime messages. Use `# noqa: T201` on intentional `print()` calls (e.g., startup/shutdown banners).
-* Use `# type: ignore[assignment]` sparingly for legitimate Pydantic/typing workarounds, with context if non-obvious.
+## Errors and end-user messages
 
-### Running tests
-* Use `--keep-docker-up` flag when testing to keep docker containers up between sessions.
-* Always activate the python virtual environment before running pytest.
+Apply this section only to domain errors or messages exposed to endpoint/API
+clients or end users.
+
+- Extend an existing module-level domain exception hierarchy when one exists;
+  do not introduce a new hierarchy for an isolated implementation error.
+- Use `OsparcErrorMixin` and `error_context()` when the established error
+  handling flow requires structured context.
+- Map endpoint-facing exceptions through the service's existing
+  `ExceptionToHttpErrorMap` and `exception_handling_decorator` conventions.
+- Use `user_message(...)` for localizable display text. Keep stable,
+  machine-readable error codes separate from localized messages.
+- Use `_version` according to nearby `user_message(...)` calls and the
+  translation pipeline; do not invent versioning semantics.
+- Do not localize logs, metrics, tracing attributes, identifiers, internal
+  diagnostics, or developer-oriented exception context.
+- Use `create_troubleshooting_log_kwargs(...)` and `log_context(...)` where
+  the containing service already uses those structured logging conventions.
+
+## SQLAlchemy
+
+Apply this section only when writing or changing SQLAlchemy queries.
+
+- Follow the package's existing session, transaction, and repository patterns.
+- For boolean membership or access-control checks where no related-table
+  columns are needed, prefer `EXISTS`; use `sa.literal(1)` in the subquery.
+- For anti-membership checks, prefer `NOT EXISTS` when it expresses the intent
+  clearly.
+- Use joins when related data is needed, the existing query is clearer, or a
+  measured query plan indicates that shape is preferable. Do not use
+  `JOIN` + `GROUP BY` solely to compensate for duplicate rows from an existence
+  check.
+- Comment non-obvious query shapes with the semantic or performance rationale.
+- Use repository helpers such as `create_ordering_clauses()` for dynamic sort
+  clauses when the affected package already uses them.
+
+## FastAPI
+
+Apply this section only when modifying FastAPI application lifecycle or
+instrumentation code.
+
+- Prefer lifespan management over deprecated startup/shutdown event handlers.
+- Follow the service's existing `LifespanManager` and
+  `create_app_lifespan(...)` composition pattern. Preserve intentional resource
+  acquisition and teardown order.
+- Structure lifecycle functions consistently with local code, typically as
+  `async def _my_lifespan(app: FastAPI) -> AsyncIterator[State]`.
+- Use `initialize_prometheus_instrumentation`, not
+  `setup_prometheus_instrumentation`.
+
+## aiohttp
+
+Apply this section only when modifying aiohttp application, request, middleware,
+or routing code.
+
+- Use typed `web.AppKey` objects rather than string keys for application and
+  request storage:
+  ```python
+  APP_SETTINGS_KEY: Final = web.AppKey("APP_SETTINGS_KEY", ApplicationSettings)
+  ```
+- Use the most precise key type available; avoid `object` when a concrete type
+  is known.
+- Follow the affected service's established middleware, routing, and
+  exception-handling patterns. Use `web.RouteTableDef()` where that is the
+  local route-definition convention.
+
+## Ordering and suppressions
+
+- Keep `__all__` and clearly unordered, hand-maintained Python registries or
+  mappings alphabetized when order has no runtime, API, or readability meaning.
+- Preserve order that represents precedence, fallback, registration,
+  initialization, execution, serialization, migration, dependency, or
+  deliberate domain grouping.
+- Do not make unrelated reorder-only changes.
+- Use `# type: ignore[...]` only for a legitimate, narrow typing limitation.
+  Prefer the most specific error code and explain a non-obvious suppression.
+
+## Localization
+
+- Use `user_message()` for end-user text, following the
+  [translation pipeline guide](../../scripts/i18n/README.md).
+- Keep stable programmatic error codes separate from localized display messages.
+- Do not localize logs, metrics, internal diagnostics, identifiers, or
+  developer-facing exception details unless a service-specific convention requires it.
