@@ -27,6 +27,7 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products import products_service
 from simcore_service_webserver.signals import SIGNAL_ON_USER_CONFIRMATION
 from simcore_service_webserver.users import _accounts_service
+from simcore_service_webserver.users._models_pre_registration_extras import PreRegistrationExtraKey
 from simcore_service_webserver.users.schemas import UserAccountRestPreRegister
 from simcore_service_webserver.wallets import _api as _wallets_service
 from simcore_service_webserver.wallets import _db as _wallets_repository
@@ -167,7 +168,7 @@ async def test_reject_user_account(  # pylint: disable=too-many-statements  # no
     assert user_data["accountRequestReviewedAt"] is not None
 
     # the reviewer's send-mail decision is persisted in the pre-registration extras (audit)
-    assert user_data["extras"]["rejection"] == {"send_mail": True}
+    assert user_data["extras"][PreRegistrationExtraKey.REJECTION] == {"send_mail": True}
 
     # 7. Verify that a rejected user cannot be approved
     url = client.app.router["approve_user_account"].url_for()
@@ -233,7 +234,7 @@ async def test_reject_user_account_without_message_content_records_no_send_mail(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     assert found[0]["accountRequestStatus"] == "REJECTED"
-    assert found[0]["extras"]["rejection"] == {"send_mail": False}
+    assert found[0]["extras"][PreRegistrationExtraKey.REJECTION] == {"send_mail": False}
 
 
 async def test_reject_user_account_empty_message_content_audits_send_mail_false(
@@ -283,7 +284,7 @@ async def test_reject_user_account_empty_message_content_audits_send_mail_false(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    assert found[0]["extras"]["rejection"] == {"send_mail": False}
+    assert found[0]["extras"][PreRegistrationExtraKey.REJECTION] == {"send_mail": False}
 
 
 async def test_approve_existing_user_empty_message_content_audits_send_mail_false(
@@ -335,7 +336,7 @@ async def test_approve_existing_user_empty_message_content_audits_send_mail_fals
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     assert found[0]["accountRequestStatus"] == "APPROVED"
-    assert found[0]["extras"]["approval"] == {"send_mail": False}
+    assert found[0]["extras"][PreRegistrationExtraKey.APPROVAL] == {"send_mail": False}
 
 
 async def test_approve_new_user_empty_message_content_audits_send_mail_false(
@@ -383,7 +384,7 @@ async def test_approve_new_user_empty_message_content_audits_send_mail_false(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     assert found[0]["accountRequestStatus"] == "APPROVED"
-    assert found[0]["extras"]["invitation"]["send_mail"] is False
+    assert found[0]["extras"][PreRegistrationExtraKey.INVITATION]["send_mail"] is False
 
 
 async def test_approve_user_account_with_full_invitation_details(
@@ -481,8 +482,8 @@ async def test_approve_user_account_with_full_invitation_details(
     assert user_data["accountRequestReviewedAt"] is not None
 
     # 5. Verify invitation data is stored in extras
-    assert "invitation" in user_data["extras"]
-    invitation_data = user_data["extras"]["invitation"]
+    assert PreRegistrationExtraKey.INVITATION in user_data["extras"]
+    invitation_data = user_data["extras"][PreRegistrationExtraKey.INVITATION]
     assert invitation_data["guest"] == test_email
     assert invitation_data["issuer"] == str(logged_user["id"])
     assert invitation_data["trial_account_days"] == 30
@@ -558,8 +559,8 @@ async def test_approve_user_account_with_trial_days_only(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     user_data = found[0]
 
-    assert "invitation" in user_data["extras"]
-    invitation_data = user_data["extras"]["invitation"]
+    assert PreRegistrationExtraKey.INVITATION in user_data["extras"]
+    invitation_data = user_data["extras"][PreRegistrationExtraKey.INVITATION]
     assert invitation_data["trial_account_days"] == 15
     assert invitation_data["extra_credits_in_usd"] is None
 
@@ -632,8 +633,8 @@ async def test_approve_user_account_with_credits_only(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     user_data = found[0]
 
-    assert "invitation" in user_data["extras"]
-    invitation_data = user_data["extras"]["invitation"]
+    assert PreRegistrationExtraKey.INVITATION in user_data["extras"]
+    invitation_data = user_data["extras"][PreRegistrationExtraKey.INVITATION]
     assert invitation_data["trial_account_days"] is None
     assert invitation_data["extra_credits_in_usd"] == 50.0
 
@@ -761,8 +762,8 @@ async def test_create_user_auto_approves_pre_registration_with_recovery_metadata
 
     # 5. Verify recovery metadata in extras
     extras = user_data.get("extras", {})
-    assert "recovery" in extras, f"Expected 'recovery' key in extras, got: {extras}"
-    recovery = extras["recovery"]
+    assert PreRegistrationExtraKey.RECOVERY in extras, f"Expected 'recovery' key in extras, got: {extras}"
+    recovery = extras[PreRegistrationExtraKey.RECOVERY]
     assert recovery["source"] == "runtime:link_and_update_user_from_pre_registration"
     assert recovery["confidence"] in ("high", "medium")
     assert recovery["executed_at"] is not None
@@ -862,7 +863,7 @@ async def test_approve_user_account_skips_invitation_for_already_registered_user
 
     # the PO's credits decision is persisted in the pre-registration extras (audit)
     # send_mail=True since the request carried message_content
-    assert user_data["extras"]["approval"] == {
+    assert user_data["extras"][PreRegistrationExtraKey.APPROVAL] == {
         "extra_credits_in_usd": extra_credits_in_usd,
         "send_mail": True,
     }
