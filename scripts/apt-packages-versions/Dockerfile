@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.14.4"
+ARG PYTHON_VERSION="3.14.8"
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 RUN \
