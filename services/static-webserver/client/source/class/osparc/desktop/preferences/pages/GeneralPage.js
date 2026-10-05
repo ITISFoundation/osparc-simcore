@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     __addLanguageSetting: function() {
       const box = new osparc.widget.SectionBox(this.tr("Language"));
 
-      box.addHelper(this.tr("Translations are AI-generated and may contain errors."));
+      box.addHelper(this.tr("Translations are a preview and may still contain inaccuracies."));
 
       const form = new qx.ui.form.Form();
 
