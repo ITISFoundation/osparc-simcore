@@ -449,7 +449,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.8
+tornado==6.5.10
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
@@ -498,7 +498,7 @@ typing-inspection==0.4.2
     #   pydantic-settings
 tzdata==2025.2
     # via arrow
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore

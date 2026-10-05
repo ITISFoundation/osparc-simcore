@@ -362,7 +362,7 @@ typing-inspection==0.4.2
     #   pydantic-settings
 tzdata==2025.3
     # via arrow
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
