@@ -14,7 +14,7 @@ import pytest
 # Unpin (or update the file) once fixed upstream.
 
 UV_VERSION_DOCKER_PATTERN = re.compile(r'ARG UV_VERSION="?([\d][\d\.]*)"?')
-# captures a literal pinned version (e.g. "0.12.13") in the 'version:' input that
+# captures a literal pinned version (e.g. "0.12.23") in the 'version:' input that
 # immediately follows an astral-sh/setup-uv step; expression-based values like
 # ${{ steps.uv-version.outputs.version }} do not match (they resolve from the file)
 SETUP_UV_VERSION_PATTERN = re.compile(
