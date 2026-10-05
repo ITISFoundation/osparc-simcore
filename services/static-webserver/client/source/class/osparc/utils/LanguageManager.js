@@ -105,7 +105,7 @@ qx.Class.define("osparc.utils.LanguageManager", {
 
     /**
      * Returns whether a locale's translation is still considered beta.
-     * @return {Boolean} true if the locale is unknown or flagged as beta.
+     * @return {Boolean} true only if the locale is known and flagged as beta.
      */
     isLocaleBeta: function(localeCode) {
       const locale = this.__locales[localeCode];
