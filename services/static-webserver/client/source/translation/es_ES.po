@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Translation-Date: 2026-10-05T15:51:59Z\n"
+"X-Translation-Date: 2026-10-05T15:58:11Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
@@ -5792,13 +5792,14 @@ msgstr "Conectar puertos automáticamente"
 msgid "Language"
 msgstr "Idioma"
 
-# CTX-INTERPRETATION: This string appears as a disclaimer near a
-# 'Translations' setting, informing the user that the displayed translations
-# are previews and may have errors.
+# CTX-INTERPRETATION: This string appears in the GeneralPage.js file, likely
+# within a user interface element that displays information about preview
+# versions of the software, warning users about potential inaccuracies.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:68
-msgid "Translations are a preview and may still contain inaccuracies."
+msgid "Languages marked (Beta) are previews that may contain inaccuracies."
 msgstr ""
-"Las traducciones son una vista previa y aún pueden contener inexactitudes."
+"Los idiomas marcados (Beta) son versiones de prueba que pueden contener "
+"inexactitudes."
 
 # CTX-INTERPRETATION: This string appears as a tooltip within the general
 # preferences settings, indicating that the translation is a preview and might
