@@ -7,7 +7,7 @@ from collections import deque
 from collections.abc import AsyncGenerator, AsyncIterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, Literal, Protocol, cast
+from typing import Any, Final, Literal, Protocol, Self, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -80,7 +80,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
     transfer_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
 
     @classmethod
-    async def create(cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT) -> SimcoreS3API:
+    async def create(cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT) -> Self:
         session = aioboto3.Session()
         session_client = None
         exit_stack = contextlib.AsyncExitStack()
