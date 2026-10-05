@@ -37,8 +37,6 @@ class PreRegistrationExtraKey(StrEnum):
 
 
 class ApprovalExtrasEntry(BaseModel):
-    """Audit of an approval that generates no invitation (existing user granted product access)"""
-
     model_config = ConfigDict(frozen=True)
 
     send_mail: bool
@@ -46,16 +44,12 @@ class ApprovalExtrasEntry(BaseModel):
 
 
 class RejectionExtrasEntry(BaseModel):
-    """Audit of the rejection itself"""
-
     model_config = ConfigDict(frozen=True)
 
     send_mail: bool
 
 
 class InvitationExtrasEntry(ApiInvitationContent):
-    """Extracted invitation data plus the reviewer's ``send_mail`` decision (new-user approval)"""
-
     model_config = ConfigDict(extra="forbid")
 
     send_mail: bool
@@ -69,10 +63,6 @@ def create_approval_extras(
     send_mail: bool,
     extra_credits_in_usd: PositiveInt | None = None,
 ) -> PreRegistrationExtrasPatch:
-    """Extras patch auditing an approval without invitation.
-
-    ``send_mail`` must mirror the notification dispatch predicate (``if message_content``).
-    """
     entry = ApprovalExtrasEntry(send_mail=send_mail, extra_credits_in_usd=extra_credits_in_usd)
     return {PreRegistrationExtraKey.APPROVAL: entry.model_dump(mode="json", exclude_none=True)}
 
@@ -82,19 +72,11 @@ def create_invitation_extras(
     *,
     send_mail: bool,
 ) -> PreRegistrationExtrasPatch:
-    """Extras patch auditing a new-user approval through an invitation.
-
-    ``send_mail`` must mirror the notification dispatch predicate (``if message_content``).
-    """
     entry = InvitationExtrasEntry.model_validate({**invitation.model_dump(mode="json"), "send_mail": send_mail})
     return {PreRegistrationExtraKey.INVITATION: entry.model_dump(mode="json")}
 
 
 def create_rejection_extras(*, send_mail: bool) -> PreRegistrationExtrasPatch:
-    """Extras patch auditing a rejection.
-
-    ``send_mail`` must mirror the notification dispatch predicate (``if message_content``).
-    """
     return {PreRegistrationExtraKey.REJECTION: RejectionExtrasEntry(send_mail=send_mail).model_dump(mode="json")}
 
 
