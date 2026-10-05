@@ -47,7 +47,7 @@ class ClaimOutcome(_BaseFrozenModel):
     success: bool
     kind: AggregateType
     aggregate_id: AggregateID
-    # only meaningful when not success; see _service._INFRA_EXCEPTION_TYPES
+    # only meaningful when not success; see _repository.INFRA_EXCEPTION_TYPES
     is_infra_error: bool = False
 
 

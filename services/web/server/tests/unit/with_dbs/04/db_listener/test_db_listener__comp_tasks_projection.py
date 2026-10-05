@@ -22,6 +22,7 @@ import simcore_service_webserver
 import simcore_service_webserver.db_listener
 import simcore_service_webserver.db_listener._service
 import sqlalchemy as sa
+import sqlalchemy.exc as sa_exc
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
@@ -41,6 +42,7 @@ from simcore_service_webserver.db_listener._repository import (
     MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
     get_comp_task,
     get_project_owner,
+    record_failed_attempts,
 )
 from simcore_service_webserver.db_listener._service import (
     _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN,
@@ -53,7 +55,11 @@ from simcore_service_webserver.db_listener._task import (
     with_outbox_wakeup_listener,
 )
 from simcore_service_webserver.db_listener.errors import CompTaskNotFoundError
-from simcore_service_webserver.db_listener.models import ClaimOutcome
+from simcore_service_webserver.db_listener.models import (
+    ClaimedAggregate,
+    ClaimOutcome,
+    OutboxEventID,
+)
 from simcore_service_webserver.db_listener.plugin import (
     create_comp_tasks_listening_task,
 )
@@ -918,6 +924,23 @@ async def test_drain_skips_failed_aggregate_and_processes_the_rest(
     assert "poisoned aggregate" in poison_rows[0]["last_error"]
 
 
+@pytest.mark.parametrize(
+    "infra_error",
+    [
+        pytest.param(TimeoutError("infrastructure is down"), id="builtin-timeout"),
+        # pool checkout starvation: sqlalchemy.exc.TimeoutError subclasses neither the
+        # builtin TimeoutError nor DBAPIError, so it must be classified explicitly
+        pytest.param(
+            sa_exc.TimeoutError("QueuePool limit of size exceeded, connection timed out", None, None),
+            id="sqlalchemy-pool-timeout",
+        ),
+        # e.g. the pool lost its connections after a database restart
+        pytest.param(
+            sa_exc.DisconnectionError("connection already closed"),
+            id="sqlalchemy-disconnection",
+        ),
+    ],
+)
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_drain_aborts_after_too_many_failing_aggregates(
     sqlalchemy_async_engine: AsyncEngine,
@@ -928,11 +951,17 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
     create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
+    infra_error: Exception,
 ):
     """When *every* aggregate fails with an infrastructure-like error (broken
     DB/socketio, not one bad event), the drain must stop after
     _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN distinct aggregates and leave the rest of the
-    queue untouched for the next cycle."""
+    queue untouched for the next cycle.
+
+    Infra-like classification must cover the SQLAlchemy pool exceptions too: a pool
+    checkout timeout (sqlalchemy.exc.TimeoutError) is *not* a builtin TimeoutError nor a
+    DBAPIError, and must still abort the drain instead of walking the whole backlog.
+    """
     assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
@@ -954,7 +983,7 @@ async def test_drain_aborts_after_too_many_failing_aggregates(
     mocker.patch(
         "simcore_service_webserver.db_listener._service._process_outbox_event",
         autospec=True,
-        side_effect=TimeoutError("infrastructure is down"),
+        side_effect=infra_error,
     )
 
     await asyncio.wait_for(claim_and_process_outbox_events(client.app, sqlalchemy_async_engine), 10)
@@ -1422,3 +1451,136 @@ async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
     assert mock_project_subsystem["update_node_outputs"].call_count == 1
     assert len(await _get_outbox_events_for_task(sqlalchemy_async_engine, hot_task["task_id"])) == num_hot_events
     assert await _get_outbox_events_for_task(sqlalchemy_async_engine, healthy_task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_backed_off_event_delays_whole_aggregate_until_due(
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_project_subsystem: dict[str, mock.Mock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Backoff is gate-checked per aggregate, not per row: a *fresh* event must not
+    let an aggregate jump ahead while its older event is still backing off (that would
+    notify the newer state before the older one and keep burning attempts on the stale
+    row). Once the older event matures, the whole backlog co-claims in one projection."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs={},
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    # older event, failed once and still inside its backoff window
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"old": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+        await conn.execute(
+            outbox_events.update().values(attempts=1, next_attempt_at=sa.text("now() + interval '1 hour'"))
+        )
+
+    # newer, fresh event on the same aggregate (due immediately)
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 2
+
+    # the fresh event alone must not wake the aggregate: the backed-off older event
+    # gates it, so nothing is claimable and the backlog stays untouched
+    assert await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set()) is None
+    mock_project_subsystem["update_node_outputs"].assert_not_called()
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 2
+    assert {row["attempts"] for row in rows} == {0, 1}, "no attempts burned while backed off"
+
+    # once the older event's backoff has matured, both events are due and co-claim in
+    # a single projection (older projected first, no out-of-order notification)
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(outbox_events.update().values(next_attempt_at=sa.text("now() - interval '1 hour'")))
+
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+    assert outcome is not None
+    assert outcome.success is True
+    mock_project_subsystem["update_node_outputs"].assert_called_once()
+    assert await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"]) == []
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_bookkeeping_waits_for_the_aggregate_lock_before_burning_attempts(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    faker: Faker,
+):
+    """Failure bookkeeping must not race a concurrent claim.
+
+    record_failed_attempts runs in its own transaction, *after* the failed claim
+    already released its locks. Without taking the per-aggregate advisory lock first,
+    a second worker holding a stale candidate could re-claim the same events and bump
+    their attempts again before the backoff was recorded, burning retries with no
+    wait. Holding the blocking pg_advisory_xact_lock while the bookkeeping UPDATE runs
+    serializes it against claims (which use pg_try_advisory_xact_lock on the same key):
+    here a blocker holds the lock, so the bookkeeping must wait for it rather than
+    update the rows, and only apply the attempt once the lock is released.
+    """
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs={},
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows_before) == 1
+
+    claimed = ClaimedAggregate(
+        kind=DB_OUTBOX_KIND_COMP_TASK_SYNC,
+        aggregate_id=f"{task['task_id']}",
+        event_ids=[OutboxEventID(rows_before[0]["id"])],
+        changed_columns=frozenset({"outputs"}),
+    )
+    lock_key = f"{claimed.kind}:{claimed.aggregate_id}"
+
+    async with sqlalchemy_async_engine.connect() as blocker:
+        got = (
+            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(lock_key, 0))))
+        ).scalar_one()
+        assert got, "blocking advisory lock must be acquirable on the aggregate's key"
+
+        bookkeeping = asyncio.create_task(
+            record_failed_attempts(sqlalchemy_async_engine, claimed, RuntimeError("boom"))
+        )
+        # while the aggregate lock is held elsewhere, the bookkeeping transaction is
+        # still waiting for it: no attempt may have been recorded yet
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(bookkeeping), 0.5)
+        rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+        assert rows[0]["attempts"] == 0, "bookkeeping must wait for the aggregate lock before recording"
+
+        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(lock_key, 0))))
+
+        # once the lock is free the bookkeeping completes and records exactly one attempt
+        updated = await asyncio.wait_for(bookkeeping, 5)
+    assert len(updated) == 1
+    assert updated[0].attempts == 1
+    rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert rows[0]["attempts"] == 1
+    assert "boom" in rows[0]["last_error"]
