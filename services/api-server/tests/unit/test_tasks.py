@@ -12,11 +12,8 @@ from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.celery import TaskState, TaskUUID
 from models_library.celery import TaskStatus as CeleryTaskStatus
-from models_library.progress_bar import (
-    PROGRESS_STRUCTURED_MESSAGE_EXAMPLES,
-    ProgressReport,
-    ProgressStructuredMessage,
-)
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
+from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from simcore_service_api_server.api.routes import tasks as task_routes
@@ -143,7 +140,11 @@ async def test_get_task_result(
                     actual_value=0.5,
                     total=1.0,
                     unit="Byte",
-                    message=ProgressStructuredMessage.model_validate(PROGRESS_STRUCTURED_MESSAGE_EXAMPLES[0]),
+                    message=ProgressStructuredMessage.model_validate(
+                        ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
+                            "examples"
+                        ][0]
+                    ),
                 ),
             ),
             None,
