@@ -45,7 +45,7 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   alembic
     #   sqlalchemy
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_migration.in
