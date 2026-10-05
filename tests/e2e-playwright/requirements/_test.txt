@@ -142,5 +142,5 @@ tzdata==2026.2
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   arrow
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests
