@@ -8,6 +8,19 @@ Target Python 3.13 as specified by `.python-version`. Follow the closest
 applicable service- or package-level instructions in addition to this file.
 For test files, also follow `python-tests.instructions.md`.
 
+## Environment and dependency tooling
+
+- Use `uv` for Python environment and dependency operations, not bare `pip`
+  or `pip-tools`:
+  - Install requirements with `uv pip install -r requirements/<file>.txt`
+    (prefer installing a library with `uv pip install .`).
+  - Compile `*.in` to `*.txt` with `uv pip compile`, via the repository
+    workflow (`make reqs`), not `pip-compile`.
+  - Run one-off tools with `uv run` (e.g. `uv run --with <pkg> <tool>`).
+- Follow [Python Dependencies](../../requirements/python-dependencies.md) for
+  the full workflow and [Environment Variables Guide](../../docs/env-vars.md)
+  for configuration.
+
 ## Typing and language features
 
 - Use Python 3.13-compatible syntax and standard-library APIs.
@@ -15,6 +28,13 @@ For test files, also follow `python-tests.instructions.md`.
   ```python
   type UserAccountSortableField = Literal["name", "email"]
   ```
+  Exceptions: keep assignment-based aliases (`TypeAlias` or `NewType`-style)
+  when the alias must remain callable at runtime (e.g. `ProductName(...)` in
+  `packages/pytest-simcore/src/pytest_simcore/faker_products_data.py`) or when
+  it carries runtime metadata that a conversion would change (e.g. the
+  Pydantic-annotated `DownloadLink` alias in
+  `services/api-server/src/simcore_service_api_server/models/schemas/studies.py`).
+  A PEP 695 `type` statement is not callable and can alter generated schemas.
 - For new generic classes, prefer PEP 695 syntax when it is clearer and
   compatible with the repository's type-checking and runtime dependencies:
   ```python
