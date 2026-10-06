@@ -1,7 +1,7 @@
 """Background-task lifecycle of the db_listener domain.
 
-Wires the outbox drain (`_service.claim_and_process_outbox_events`) into the app's
-cleanup_ctx as a periodic task, plus a dedicated LISTEN connection on the outbox
+Wires the outbox drain (`_service.claim_and_process_outbox_events`) into the app
+as a periodic task, plus a dedicated LISTEN connection on the outbox
 wake-up channel so a pg_notify drains the outbox immediately instead of waiting for
 the next poll interval. Losing this connection only loses wake-ups — the table
 remains the source of truth and the periodic poll picks up anything missed.
@@ -29,15 +29,13 @@ _OUTBOX_POLL_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=30
 
 _DEAD_LETTER_PURGE_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(hours=1)
 
-# shown as pg_stat_activity.application_name for the dedicated LISTEN connection,
-# so it can be told apart from the app's pooled connections in e.g. Adminer
-OUTBOX_LISTENER_APPLICATION_NAME: Final[str] = f"{APP_NAME}-db-listener-outbox"
+_OUTBOX_LISTENER_APPLICATION_NAME: Final[str] = f"{APP_NAME}-db-listener-outbox"
 
 _logger = logging.getLogger(__name__)
 
 
 @contextlib.asynccontextmanager
-async def with_outbox_wakeup_listener(
+async def _with_outbox_wakeup_listener(
     app: web.Application,
 ) -> AsyncGenerator[asyncio.Event]:
     """Holds one dedicated connection open to LISTEN on the outbox wake-up channel.
@@ -47,18 +45,9 @@ async def with_outbox_wakeup_listener(
     connection open for the listener's lifetime, and a permanent check-out from
     the shared pool would steal capacity from request-handling code (projections
     also need pool connections while the LISTEN one is held).
-    It is therefore named via `OUTBOX_LISTENER_APPLICATION_NAME` so it is easy to
-    identify in pg_stat_activity (e.g. in the Adminer dashboard).
 
     With several web-server replicas, each holds its own LISTEN connection and
-    pg_notify is broadcast, so every replica wakes up on every event. That is
-    harmless: the claims in _repository deduplicate the work (per-aggregate
-    advisory lock + FOR UPDATE SKIP LOCKED), so each event is processed by
-    exactly one replica while the others simply find nothing to claim.
-
-    Yields the event that pg_notify('outbox_wakeup') sets: pass it as the
-    `early_wake_up_event` of a periodic drain task, so events are picked up as
-    soon as they land instead of waiting for the next poll interval.
+    pg_notify is broadcast, so every replica wakes up on every event.
     """
     settings = get_plugin_settings(app)
     wakeup_event: asyncio.Event = asyncio.Event()
@@ -75,7 +64,7 @@ async def with_outbox_wakeup_listener(
         dsn=settings.dsn,
         server_settings={
             "jit": "off",  # same as the app's pooled engine connections
-            "application_name": settings.client_name(OUTBOX_LISTENER_APPLICATION_NAME, suffix="asyncpg"),
+            "application_name": settings.client_name(_OUTBOX_LISTENER_APPLICATION_NAME, suffix="asyncpg"),
         },
     )
     try:
@@ -100,7 +89,7 @@ async def create_comp_tasks_listening_task(app: web.Application) -> AsyncIterato
     # the shared pool) and a pg_notify wake-up drains the outbox immediately,
     # instead of waiting for the poll interval
     async with (
-        with_outbox_wakeup_listener(app) as wakeup_event,
+        _with_outbox_wakeup_listener(app) as wakeup_event,
         periodic_task(
             claim_and_process_outbox_events,
             interval=_OUTBOX_POLL_INTERVAL,

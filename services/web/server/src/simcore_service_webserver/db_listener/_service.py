@@ -2,8 +2,7 @@
 
 The comp_tasks DB trigger inserts into outbox_events on every meaningful change
 (transactional outbox). This module claims, processes, and deletes those events in
-short transactions, tolerating horizontal scaling (the claim/lock mechanics live in
-`_repository.py`).
+short transactions, tolerating horizontal scaling (see "Claiming" below).
 
 Delivery is at-least-once: the event rows are deleted only after successful
 processing, and both the advisory lock and the row locks are held for the whole
@@ -23,6 +22,44 @@ produces one socketio notification instead of one per event.
 Failed attempts are counted on the row itself; events that exceed the maximum
 number of attempts are dead-lettered (skipped by claims, kept for post-mortem
 until a periodic purge removes them once they age out).
+
+Claiming (why it is safe to run several web-server replicas):
+a per-aggregate advisory lock (pg_try_advisory_xact_lock, keyed on kind +
+aggregate_id) elects the replica that works on an aggregate, and its event rows are
+locked (FOR UPDATE SKIP LOCKED) only after the aggregate was won. No two replicas
+process events of the same aggregate concurrently, so socketio notifications of one
+aggregate are never emitted out of order across replicas, while different aggregates
+remain fully parallel. Including the kind in the lock key keeps this worker's lock
+namespace separate from other (future) producers reusing the same id space. If the
+events were claimed and deleted by another replica between the scan and the lock
+being granted, the claim yields nothing and the drain moves on to the next candidate.
+
+Candidate scan: one entry per *distinct* aggregate, oldest first, so a burst of events
+on one aggregate locked elsewhere cannot crowd healthy aggregates out of the batch.
+The drain reuses this bounded batch across claims and rescans only once it is
+exhausted, keeping a backlog drain linear in the number of claimed aggregates.
+Dead-lettered rows neither gate an aggregate nor affect its position in the queue.
+
+Retry backoff: after attempt N an event is unclaimable until an exponentially growing
+delay has elapsed. Without it, every unrelated outbox insert wakes the drain and a
+transient outage could burn all attempts (dead-lettering everything) within seconds.
+The backoff is gated per *aggregate*, not per row: with a per-row gate, a fresh event
+would make the aggregate claimable while its older failed event is still backing off,
+so the fresh projection would jump ahead of the older one (out-of-order notifications)
+and each wake-up would burn another attempt on the stale event. Waiting for the oldest
+backed-off event to mature keeps the events of an aggregate strictly ordered and lets
+the whole backlog co-claim at once. Failures are recorded on the claim's own
+connection, where the locks are still held, so no replica can re-claim the events
+before their backoff is in place.
+
+Infrastructure vs. application errors: a broken DB/socket connection affects every
+aggregate alike, unlike a bug tied to specific rows, which must not halt the rest of
+an otherwise healthy drain (see INFRA_EXCEPTION_TYPES).
+
+Dead-letter purge: dead-lettered events are kept for post-mortem, but without a bound
+they accumulate forever and the candidate scan still reads them on every drain.
+Deleting them once older than the retention bounds that scan while keeping recent
+failures investigable.
 """
 
 import asyncio

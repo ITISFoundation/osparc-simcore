@@ -1,17 +1,4 @@
-"""Data access of the db_listener domain (outbox_events, comp_tasks, projects).
-
-Pure persistence I/O for the transactional outbox that the comp_tasks DB trigger
-feeds: claiming, deleting, and failure-recording on `outbox_events`, plus the
-read-only lookups the projection needs. No business logic here -- orchestration
-lives in `_service.py`.
-
-Claiming mechanics (why it is safe to run several web-server replicas):
-a per-aggregate advisory lock (pg_try_advisory_xact_lock, keyed on
-kind + aggregate_id) elects the replica that works on an aggregate, and event
-rows are locked (FOR UPDATE SKIP LOCKED) only after the aggregate was selected.
-No two replicas can ever process events for the same aggregate concurrently,
-while different aggregates remain fully parallel.
-"""
+"""Data access of the db_listener domain (outbox_events, comp_tasks, projects)."""
 
 import datetime as dt
 from collections.abc import Sequence
@@ -51,20 +38,11 @@ MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT: Final[int] = 10
 MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE: Final[int] = 100
 LAST_ERROR_MAX_LEN: Final[int] = 500
 
-# exponential retry backoff: after attempt N an event is unclaimable for
-# min(RETRY_BACKOFF_BASE_S * 2**N, RETRY_BACKOFF_MAX_S) seconds. Without this gate,
-# every unrelated outbox insert wakes the drain and a transient outage could burn all
-# attempts (and dead-letter everything) within seconds of wake-up storms.
 RETRY_BACKOFF_BASE_S: Final[int] = 2
 RETRY_BACKOFF_MAX_S: Final[int] = 900
 
-# Exceptions that signal an infrastructure outage rather than an application-level bug:
-# a broken DB/socket connection affects every aggregate alike, unlike a bug tied to
-# specific rows, which must not halt the rest of an otherwise healthy drain.
-# NOTE: sqlalchemy.exc.TimeoutError (pool checkout starvation) subclasses neither the
-# builtin TimeoutError nor DBAPIError, and DisconnectionError (e.g. ConnectionLostError
-# after a server restart) subclasses neither either -- both must be listed explicitly
-# or a database-wide outage is misclassified as application-level.
+# NOTE: sqlalchemy's TimeoutError and DisconnectionError subclass neither the builtin
+# TimeoutError nor DBAPIError, so they must be listed explicitly.
 INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (
     DBAPIError,
     SQLAlchemyDisconnectionError,
@@ -75,12 +53,7 @@ INFRA_EXCEPTION_TYPES: Final[tuple[type[Exception], ...]] = (
 
 
 def _scanned_events_predicate(exclude_aggregates: set[ClaimableAggregate]) -> ColumnElement[bool]:
-    """Rows considered when scanning for candidate aggregates: own kind, and not an
-    aggregate the current drain already failed on.
-
-    The attempts/backoff gates are deliberately NOT here: they are applied per
-    *aggregate* in list_claimable_aggregates (see why there).
-    """
+    """Rows scanned for candidate aggregates: own kind, minus the excluded aggregates."""
     scanned = outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC
     if exclude_aggregates:
         scanned = scanned & ~tuple_(outbox_events.c.kind, outbox_events.c.aggregate_id).in_(
@@ -92,25 +65,10 @@ def _scanned_events_predicate(exclude_aggregates: set[ClaimableAggregate]) -> Co
 async def list_claimable_aggregates(
     conn: AsyncConnection, exclude_aggregates: set[ClaimableAggregate]
 ) -> list[ClaimableAggregate]:
-    """List the oldest claimable aggregates (read-only: no locking at all).
+    """List up to MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT distinct aggregates, oldest first (no locking).
 
-    One row per *distinct* aggregate (GROUP BY), oldest aggregate first, so a burst
-    of events on one aggregate locked elsewhere cannot crowd healthy aggregates out
-    of the batch. The drain reuses this bounded batch across claims and only pays
-    the scan cost again once the batch is exhausted, which keeps draining a backlog
-    linear in the number of claimed aggregates.
-
-    The retry backoff is gate-checked per *aggregate*, not per row: an aggregate is a
-    candidate only when none of its events is still backing off (bool_and: every row
-    is either exhausted or due). With a per-row gate, one fresh event would make the
-    aggregate instantly claimable while its older failed event is still in backoff,
-    so the fresh event's projection would jump ahead of the older one (out-of-order
-    notifications for the same task) and each wake-up would burn another attempt on
-    the stale event. Waiting for the oldest backed-off event to mature keeps events of
-    one aggregate strictly ordered and lets the whole backlog co-claim at once.
-
-    ORDER BY uses min(...) FILTER (attempts < MAX) so dead-lettered (exhausted) rows
-    neither gate the aggregate nor pull its position in the queue.
+    An aggregate is listed only if none of its events is still backing off and at
+    least one is retryable (attempts below the maximum).
     """
     retryable = outbox_events.c.attempts < EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER
     exhausted_or_due = (outbox_events.c.attempts >= EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER) | (
@@ -133,26 +91,10 @@ async def list_claimable_aggregates(
 
 
 async def claim_aggregate(conn: AsyncConnection, candidate: ClaimableAggregate) -> ClaimedAggregate | None:
-    """Advisory-lock and row-lock a known aggregate, co-claiming its pending events.
+    """Take the transaction-scoped advisory lock of the aggregate, then row-lock its due events.
 
-    The per-aggregate advisory lock (pg_try_advisory_xact_lock, keyed on kind +
-    aggregate_id) is taken first: an aggregate already processed by another replica
-    is skipped and stays fully parallel to it. Including kind in the lock key keeps
-    this worker's lock namespace separate from other (future) producers that may
-    reuse the same id space.
-
-    Once the lock is won, the events are re-checked with FOR UPDATE SKIP LOCKED: if
-    they were claimed and deleted by another replica between the read-only scan and
-    the lock being granted, this returns None (the harmless advisory lock is kept
-    until commit) and the caller moves on to the next candidate.
-
-    Holding the row lock until commit guarantees events of the same aggregate are
-    never processed concurrently, so socketio notifications for one aggregate can't
-    be emitted out of order across replicas.
-
-    Returns the ClaimedAggregate (the locked event ids plus the union of their
-    changed_columns), or None when the aggregate is locked elsewhere or has no
-    claimable event left.
+    Returns the locked event ids with the union of their changed_columns, or None when
+    the advisory lock is held elsewhere or no claimable event is left.
     """
     lock_key = f"{candidate.kind}:{candidate.aggregate_id}"
     acquired = (
@@ -192,18 +134,7 @@ async def remove_claimed_events(conn: AsyncConnection, event_ids: Sequence[Outbo
 async def record_failed_attempts(
     conn: AsyncConnection, claimed: ClaimedAggregate, error: Exception
 ) -> list[FailedAttempt]:
-    """Record a failed processing attempt on every co-claimed event.
-
-    Must run on the claim's own connection: the aggregate's advisory and row locks
-    are still held, so no other replica can re-claim the events before the backoff
-    is recorded.
-
-    The UPDATE bumps `attempts`/`last_error`, pushes `next_attempt_at` forward with an
-    exponential backoff (the event stays unclaimable until then), and (via the
-    auto-update trigger) refreshes `modified`, which moves the events to the back of
-    the oldest-first queue.
-    Returns the updated events so the caller can report retries vs. dead-lettering.
-    """
+    """Bump `attempts`, set `last_error` and push `next_attempt_at` (exponential backoff) on the claimed events."""
     backoff_secs = func.least(
         RETRY_BACKOFF_BASE_S * func.pow(2, outbox_events.c.attempts + 1),
         RETRY_BACKOFF_MAX_S,
@@ -235,13 +166,7 @@ async def record_failed_attempts(
 
 
 async def delete_expired_dead_letters(engine: AsyncEngine, retention: dt.timedelta) -> int:
-    """Delete dead-lettered events older than the retention period, returning the number of rows removed.
-
-    Dead-lettered events (attempts exhausted) are kept for post-mortem, but without a
-    bound they accumulate forever: claims skip them via the attempts filter, yet the
-    candidate scan still reads them on every drain. Deleting them once they are older
-    than ``retention`` bounds that scan while keeping recent failures investigable.
-    """
+    """Delete events with exhausted attempts not modified within ``retention``; returns the rows removed."""
     async with transaction_context(engine) as conn:
         result = await conn.execute(
             outbox_events.delete().where(
