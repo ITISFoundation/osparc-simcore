@@ -16,7 +16,7 @@ cryptography==50.0.0
     #   types-paramiko
 faker==40.39.0
     # via -r requirements/_test.in
-filelock==4.0.3
+filelock==4.0.12
     # via -r requirements/_test.in
 iniconfig==2.3.0
     # via

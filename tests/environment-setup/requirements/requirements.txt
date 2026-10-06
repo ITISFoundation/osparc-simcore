@@ -4,7 +4,7 @@ annotated-types==0.7.0
     # via pydantic
 faker==40.39.0
     # via -r requirements/requirements.in
-filelock==4.0.3
+filelock==4.0.12
     # via -r requirements/requirements.in
 iniconfig==2.3.0
     # via pytest
