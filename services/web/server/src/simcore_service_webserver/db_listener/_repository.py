@@ -34,12 +34,12 @@ from .models import (
 )
 
 EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER: Final[int] = 10
-MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT: Final[int] = 10
-MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE: Final[int] = 100
-LAST_ERROR_MAX_LEN: Final[int] = 500
+_MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT: Final[int] = 10
+_MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE: Final[int] = 100
+_LAST_ERROR_MAX_LEN: Final[int] = 500
 
-RETRY_BACKOFF_BASE_S: Final[int] = 2
-RETRY_BACKOFF_MAX_S: Final[int] = 900
+_RETRY_BACKOFF_BASE_S: Final[int] = 2
+_RETRY_BACKOFF_MAX_S: Final[int] = 900
 
 # NOTE: sqlalchemy's TimeoutError and DisconnectionError subclass neither the builtin
 # TimeoutError nor DBAPIError, so they must be listed explicitly.
@@ -84,7 +84,7 @@ async def list_claimable_aggregates(
             # least one retryable event must exist (else the aggregate is dead-lettered)
             .having(func.bool_and(exhausted_or_due) & func.bool_or(retryable))
             .order_by(oldest_retryable, func.min(outbox_events.c.id).filter(retryable))
-            .limit(MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT)
+            .limit(_MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT)
         )
     ).fetchall()
     return [ClaimableAggregate(kind=r.kind, aggregate_id=r.aggregate_id) for r in candidate_rows]
@@ -113,7 +113,7 @@ async def claim_aggregate(conn: AsyncConnection, candidate: ClaimableAggregate) 
                 outbox_events.c.next_attempt_at <= func.now(),
             )
             .order_by(outbox_events.c.modified, outbox_events.c.id)
-            .limit(MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE)
+            .limit(_MAX_CO_CLAIMED_EVENTS_PER_AGGREGATE)
             .with_for_update(skip_locked=True)
         )
     ).fetchall()
@@ -136,14 +136,14 @@ async def record_failed_attempts(
 ) -> list[FailedAttempt]:
     """Bump `attempts`, set `last_error` and push `next_attempt_at` (exponential backoff) on the claimed events."""
     backoff_secs = func.least(
-        RETRY_BACKOFF_BASE_S * func.pow(2, outbox_events.c.attempts + 1),
-        RETRY_BACKOFF_MAX_S,
+        _RETRY_BACKOFF_BASE_S * func.pow(2, outbox_events.c.attempts + 1),
+        _RETRY_BACKOFF_MAX_S,
     )
     result = await conn.execute(
         outbox_events.update()
         .values(
             attempts=outbox_events.c.attempts + 1,
-            last_error=str(error)[:LAST_ERROR_MAX_LEN],
+            last_error=str(error)[:_LAST_ERROR_MAX_LEN],
             next_attempt_at=func.now() + func.make_interval(0, 0, 0, 0, 0, 0, backoff_secs),
         )
         .where(outbox_events.c.id.in_(claimed.event_ids))

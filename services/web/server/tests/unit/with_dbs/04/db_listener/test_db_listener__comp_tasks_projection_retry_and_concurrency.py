@@ -24,7 +24,7 @@ from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
 from simcore_service_webserver.db_listener._repository import (
-    MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
+    _MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
 )
 from simcore_service_webserver.db_listener._service import (
     _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN,
@@ -637,7 +637,7 @@ async def test_locked_hot_aggregate_does_not_block_younger_healthy_aggregate(
 
     # the hot aggregate has more pending events than the candidate batch size, so
     # pre-fix (LIMIT over raw event rows) every candidate would belong to it
-    num_hot_events = MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT + 2
+    num_hot_events = _MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT + 2
     backdated = dt.datetime.now(dt.UTC) - dt.timedelta(minutes=5)
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
