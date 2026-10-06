@@ -192,7 +192,7 @@ msgpack==1.2.2
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-multidict==6.7.0
+multidict==6.9.1
     # via
     #   aiobotocore
     #   aiohttp

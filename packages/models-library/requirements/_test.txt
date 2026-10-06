@@ -22,7 +22,7 @@ idna==3.19
     #   yarl
 iniconfig==2.3.0
     # via pytest
-multidict==6.7.1
+multidict==7.0.0
     # via yarl
 packaging==26.0
     # via pytest

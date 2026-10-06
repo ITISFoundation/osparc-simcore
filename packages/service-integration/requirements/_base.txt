@@ -62,7 +62,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-multidict==6.7.1
+multidict==7.0.0
     # via yarl
 orjson==3.11.9
     # via
