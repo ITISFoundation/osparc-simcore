@@ -29,6 +29,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
+from models_library.groups import GroupID
 from models_library.projects import ProjectAtDB
 from models_library.socketio import SocketMessageDict
 from pytest_mock import MockerFixture, MockType
@@ -76,9 +77,18 @@ def mocked_socketio_emit(mocker: MockerFixture) -> MockType:
 
 
 @pytest.fixture
+def mocked_post_trigger_connected_service_retrieve(mocker: MockerFixture) -> MockType:
+    return mocker.patch(
+        "simcore_service_webserver.projects._projects_service.post_trigger_connected_service_retrieve",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 async def mock_project_writes(
     mocker: MockerFixture,
-) -> AsyncIterator[Callable[[dict[str, Any]], None]]:
+    mocked_post_trigger_connected_service_retrieve: MockType,
+) -> Callable[[dict[str, Any]], None]:
     """Keep the real notification chain (notify_project_node_update -> socket.io emit)
     but stub the DB writes / service RPCs it wraps, and let the test provide the
     project dict the notifications are built from."""
@@ -87,10 +97,6 @@ async def mock_project_writes(
         "simcore_service_webserver.projects._projects_service.update_project_node_outputs",
         autospec=True,
         side_effect=lambda *_args, **_kw: (fake_project, ["new"]),
-    )
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service.post_trigger_connected_service_retrieve",
-        autospec=True,
     )
 
     def _set_project(project: dict[str, Any]) -> None:
@@ -344,6 +350,7 @@ async def test_failed_strict_notification_still_triggers_connected_service_retri
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     mock_project_writes: Callable[[dict[str, Any]], None],
     mocked_socketio_emit: MockType,
+    mocked_post_trigger_connected_service_retrieve: MockType,
     faker: Faker,
 ):
     """The outputs are already stored when a strict notification fails, so the retry
@@ -368,7 +375,7 @@ async def test_failed_strict_notification_still_triggers_connected_service_retri
 
     assert outcome is not None
     assert outcome.success is False
-    _projects_service.post_trigger_connected_service_retrieve.assert_called_once()  # type: ignore[attr-defined]
+    mocked_post_trigger_connected_service_retrieve.assert_called_once()
 
 
 async def test_strict_room_fan_out_settles_all_emits_before_raising(
@@ -377,7 +384,7 @@ async def test_strict_room_fan_out_settles_all_emits_before_raising(
 ):
     """A retry must not overlap emits still in flight from the failed attempt."""
     assert client.app
-    failing_room = SocketIORoomStr.from_group_id(1)
+    failing_room = SocketIORoomStr.from_group_id(GroupID(1))
     settled: list[str] = []
 
     async def _emit(*, room: str, **_kwargs) -> None:
@@ -392,7 +399,7 @@ async def test_strict_room_fan_out_settles_all_emits_before_raising(
     with pytest.raises(ConnectionResetError):
         await _projects_service._send_message_to_rooms(  # noqa: SLF001
             client.app,
-            [1, 2, 3],
+            [GroupID(1), GroupID(2), GroupID(3)],
             SocketMessageDict(event_type="test", data={}),
             strict=True,
         )
