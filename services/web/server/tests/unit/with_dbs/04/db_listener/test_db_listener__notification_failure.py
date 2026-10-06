@@ -28,7 +28,9 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects import ProjectAtDB
+from models_library.socketio import SocketMessageDict
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
@@ -36,6 +38,7 @@ from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db_listener._service import _claim_and_process_one_outbox_event
 from simcore_service_webserver.db_listener.models import ClaimOutcome
+from simcore_service_webserver.projects import _projects_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -329,6 +332,72 @@ async def test_genuine_cancellation_still_propagates(
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
     assert len(rows) == 1, "a genuinely cancelled claim must roll back, keeping the event"
     assert rows[0]["attempts"] == 0
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_failed_strict_notification_still_triggers_connected_service_retrieve(
+    sqlalchemy_async_engine: AsyncEngine,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+    mock_project_writes: Callable[[dict[str, Any]], None],
+    mocked_socketio_emit: MockType,
+    faker: Faker,
+):
+    """The outputs are already stored when a strict notification fails, so the retry
+    would see no changed keys: the retrieval of linked services must not be skipped."""
+    assert client.app
+    project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{project.uuid}")
+    task = await create_comp_task(
+        project_id=f"{project.uuid}",
+        node_id=faker.uuid4(),
+        outputs={},
+        node_class=NodeClass.COMPUTATIONAL,
+    )
+    mock_project_writes(_outbox_test_project(project, task["node_id"]))
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
+        )
+    mocked_socketio_emit.side_effect = ConnectionResetError("broker connection closed")
+
+    outcome = await _claim_and_process_one_outbox_event(client.app, sqlalchemy_async_engine, set())
+
+    assert outcome is not None
+    assert outcome.success is False
+    _projects_service.post_trigger_connected_service_retrieve.assert_awaited_once()  # type: ignore[attr-defined]
+
+
+async def test_strict_room_fan_out_settles_all_emits_before_raising(
+    client: TestClient,
+    mocked_socketio_emit: MockType,
+):
+    """A retry must not overlap emits still in flight from the failed attempt."""
+    assert client.app
+    failing_room = SocketIORoomStr.from_group_id(1)
+    settled: list[str] = []
+
+    async def _emit(*, room: str, **_kwargs) -> None:
+        if room == failing_room:
+            msg = "broker connection closed"
+            raise ConnectionResetError(msg)
+        await asyncio.sleep(0.2)
+        settled.append(room)
+
+    mocked_socketio_emit.side_effect = _emit
+
+    with pytest.raises(ConnectionResetError):
+        await _projects_service._send_message_to_rooms(  # noqa: SLF001
+            client.app,
+            [1, 2, 3],
+            SocketMessageDict(event_type="test", data={}),
+            strict=True,
+        )
+
+    assert len(settled) == 2, "the other room emits must have settled before the failure is raised"
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

@@ -58,12 +58,11 @@ from ._repository import (
     remove_claimed_events,
 )
 from ._utils import convert_state_from_db
-from .errors import CompTaskNotFoundError, OutboxProcessingError
+from .errors import CompTaskNotFoundError
 from .models import (
     DB_OUTBOX_CHANGED_COLUMN_STATE,
     DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS,
     ClaimableAggregate,
-    ClaimedAggregate,
     ClaimOutcome,
     FailedAttempt,
 )
@@ -196,8 +195,9 @@ async def _claim_and_process_aggregate(
 
     The claim-process-delete cycle runs in a single transaction: the advisory lock
     and the winner's row locks are held while the events are processed, and released
-    automatically on commit or rollback. A failed projection rolls back only the
-    *claim* (locks + pending delete): the projection itself writes through the app's
+    on commit. A failed projection is recorded on the events (attempt + backoff)
+    in that same transaction, so no other replica can re-claim them before the
+    backoff is in place. The projection itself writes through the app's
     repositories and socket.io -- outside this transaction -- so those writes are
     not undone and the retried attempt converges by re-reading the current row
     (at-least-once delivery).
@@ -210,46 +210,34 @@ async def _claim_and_process_aggregate(
     capped by _PROCESSING_TIMEOUT (DB updates + socketio notifications only); a stalled
     publish aborts the claim as an infrastructure failure instead of pinning the locks.
     """
-    claimed: ClaimedAggregate | None = None
-    try:
-        async with transaction_context(engine) as conn:
-            # win the aggregate (advisory lock + row lock) before processing
-            claimed = await claim_aggregate(conn, candidate)
-            if claimed is None:
-                # locked by another replica, or its events were claimed in-between
-                return None
+    async with transaction_context(engine) as conn:
+        # win the aggregate (advisory lock + row lock) before processing
+        claimed = await claim_aggregate(conn, candidate)
+        if claimed is None:
+            # locked by another replica, or its events were claimed in-between
+            return None
 
-            _logger.debug(
-                "Claimed %d outbox event(s) (kind=%s aggregate_id=%s)",
-                len(claimed.event_ids),
-                claimed.kind,
-                claimed.aggregate_id,
-            )
-            try:
-                async with asyncio.timeout(_PROCESSING_TIMEOUT.total_seconds()):
-                    await _process_outbox_event(app, conn, int(claimed.aggregate_id), claimed.changed_columns)
-            except Exception as exc:
-                # abort the claim transaction (locks released, pending delete undone):
-                # the claim is kept in this scope and the cause rides on the exception
-                # chain, so the marker below only has to signal the rollback (its
-                # aggregate context is message-only)
-                raise OutboxProcessingError(kind=claimed.kind, aggregate_id=claimed.aggregate_id) from exc
-
-            await remove_claimed_events(conn, claimed.event_ids)
-    except OutboxProcessingError as failed:
-        # only raised from within the block above, where both are always set
-        assert claimed is not None  # nosec
-        cause = failed.__cause__
-        assert isinstance(cause, Exception)  # nosec
-        updated = await record_failed_attempts(engine, claimed, cause)
-        _log_failed_attempts(updated, cause)
-        return ClaimOutcome(
-            success=False,
-            kind=claimed.kind,
-            aggregate_id=claimed.aggregate_id,
-            is_infra_error=isinstance(cause, INFRA_EXCEPTION_TYPES),
+        _logger.debug(
+            "Claimed %d outbox event(s) (kind=%s aggregate_id=%s)",
+            len(claimed.event_ids),
+            claimed.kind,
+            claimed.aggregate_id,
         )
+        try:
+            # the savepoint keeps the claim transaction usable if a read inside it fails
+            async with conn.begin_nested(), asyncio.timeout(_PROCESSING_TIMEOUT.total_seconds()):
+                await _process_outbox_event(app, conn, int(claimed.aggregate_id), claimed.changed_columns)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            updated = await record_failed_attempts(conn, claimed, exc)
+            _log_failed_attempts(updated, exc)
+            return ClaimOutcome(
+                success=False,
+                kind=claimed.kind,
+                aggregate_id=claimed.aggregate_id,
+                is_infra_error=isinstance(exc, INFRA_EXCEPTION_TYPES),
+            )
 
+        await remove_claimed_events(conn, claimed.event_ids)
     return ClaimOutcome(success=True, kind=candidate.kind, aggregate_id=candidate.aggregate_id)
 
 

@@ -2464,11 +2464,17 @@ async def _send_message_to_rooms(
     *,
     strict: bool,
 ) -> None:
-    await limited_gather(
+    # all emits settle before the first failure is raised, so a retry never overlaps
+    # emits still in flight from the failed attempt
+    results = await limited_gather(
         *(socketio_service.send_message_to_standard_group(app, room, message, strict=strict) for room in rooms),
+        reraise=False,
         log=_logger,
         limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
     )
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
 
 async def _send_message_to_project_groups(

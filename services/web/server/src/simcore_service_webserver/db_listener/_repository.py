@@ -38,10 +38,10 @@ from ..projects import exceptions
 from .errors import CompTaskNotFoundError
 from .models import (
     AggregateID,
-    AggregateType,
     ClaimableAggregate,
     ClaimedAggregate,
     CompTask,
+    EventKind,
     FailedAttempt,
     OutboxEventID,
 )
@@ -190,56 +190,48 @@ async def remove_claimed_events(conn: AsyncConnection, event_ids: Sequence[Outbo
 
 
 async def record_failed_attempts(
-    engine: AsyncEngine, claimed: ClaimedAggregate, error: Exception
+    conn: AsyncConnection, claimed: ClaimedAggregate, error: Exception
 ) -> list[FailedAttempt]:
-    """Record a failed processing attempt on every co-claimed event (separate transaction).
+    """Record a failed processing attempt on every co-claimed event.
+
+    Must run on the claim's own connection: the aggregate's advisory and row locks
+    are still held, so no other replica can re-claim the events before the backoff
+    is recorded.
 
     The UPDATE bumps `attempts`/`last_error`, pushes `next_attempt_at` forward with an
     exponential backoff (the event stays unclaimable until then), and (via the
     auto-update trigger) refreshes `modified`, which moves the events to the back of
     the oldest-first queue.
     Returns the updated events so the caller can report retries vs. dead-lettering.
-
-    This transaction first takes the *blocking* per-aggregate advisory lock (same key as
-    claim_aggregate): the claim transaction that failed already released its locks when
-    it rolled back, so without this lock a stale candidate scanned before the failure
-    could re-claim the very same events and bump their attempts again before the backoff
-    was even recorded (burning retries with no wait). Claims use pg_try_advisory_xact_lock
-    on the same key, so they never deadlock against this one -- they simply return None
-    and move on to their next candidate while the bookkeeping finishes.
     """
     backoff_secs = func.least(
         RETRY_BACKOFF_BASE_S * func.pow(2, outbox_events.c.attempts + 1),
         RETRY_BACKOFF_MAX_S,
     )
-    lock_key = f"{claimed.kind}:{claimed.aggregate_id}"
-    async with transaction_context(engine) as conn:
-        # wait for the aggregate lock any concurrent claim would have taken (see docstring)
-        await conn.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(lock_key, 0))))
-        result = await conn.execute(
-            outbox_events.update()
-            .values(
-                attempts=outbox_events.c.attempts + 1,
-                last_error=str(error)[:LAST_ERROR_MAX_LEN],
-                next_attempt_at=func.now() + func.make_interval(0, 0, 0, 0, 0, 0, backoff_secs),
-            )
-            .where(outbox_events.c.id.in_(claimed.event_ids))
-            .returning(
-                outbox_events.c.id,
-                outbox_events.c.kind,
-                outbox_events.c.aggregate_id,
-                outbox_events.c.attempts,
-            )
+    result = await conn.execute(
+        outbox_events.update()
+        .values(
+            attempts=outbox_events.c.attempts + 1,
+            last_error=str(error)[:LAST_ERROR_MAX_LEN],
+            next_attempt_at=func.now() + func.make_interval(0, 0, 0, 0, 0, 0, backoff_secs),
         )
-        return [
-            FailedAttempt(
-                event_id=OutboxEventID(r.id),
-                kind=AggregateType(r.kind),
-                aggregate_id=AggregateID(r.aggregate_id),
-                attempts=r.attempts,
-            )
-            for r in result.fetchall()
-        ]
+        .where(outbox_events.c.id.in_(claimed.event_ids))
+        .returning(
+            outbox_events.c.id,
+            outbox_events.c.kind,
+            outbox_events.c.aggregate_id,
+            outbox_events.c.attempts,
+        )
+    )
+    return [
+        FailedAttempt(
+            event_id=OutboxEventID(r.id),
+            kind=EventKind(r.kind),
+            aggregate_id=AggregateID(r.aggregate_id),
+            attempts=r.attempts,
+        )
+        for r in result.fetchall()
+    ]
 
 
 async def delete_expired_dead_letters(engine: AsyncEngine, retention: dt.timedelta) -> int:
@@ -255,7 +247,7 @@ async def delete_expired_dead_letters(engine: AsyncEngine, retention: dt.timedel
             outbox_events.delete().where(
                 outbox_events.c.kind == DB_OUTBOX_KIND_COMP_TASK_SYNC,
                 outbox_events.c.attempts >= EVENTS_MAX_ATTEMPTS_BEFORE_DEAD_LETTER,
-                outbox_events.c.modified < dt.datetime.now(dt.UTC) - retention,
+                outbox_events.c.modified < func.now() - retention,
             )
         )
         return result.rowcount if result.rowcount is not None else 0

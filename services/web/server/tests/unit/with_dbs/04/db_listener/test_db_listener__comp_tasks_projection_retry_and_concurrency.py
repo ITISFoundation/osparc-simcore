@@ -7,35 +7,28 @@
 
 import asyncio
 import datetime as dt
-import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
-from dataclasses import dataclass
 from typing import Any
 from unittest import mock
 
 import pytest
-import simcore_service_webserver
-import simcore_service_webserver.db_listener
-import simcore_service_webserver.db_listener._service
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectAtDB
-from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.outbox_events import outbox_events
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import DB_OUTBOX_KIND_COMP_TASK_SYNC
 from simcore_service_webserver.db_listener._repository import (
     MAX_CONSIDERED_AGGREGATES_PER_CLAIM_ATTEMPT,
-    record_failed_attempts,
 )
 from simcore_service_webserver.db_listener._service import (
     _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN,
+    _claim_and_process_aggregate,
     _claim_and_process_one_outbox_event,
     claim_and_process_outbox_events,
 )
@@ -43,22 +36,9 @@ from simcore_service_webserver.db_listener._task import (
     OUTBOX_LISTENER_APPLICATION_NAME,
     with_outbox_wakeup_listener,
 )
-from simcore_service_webserver.db_listener.models import (
-    ClaimedAggregate,
-    OutboxEventID,
-)
-from simcore_service_webserver.db_listener.plugin import (
-    create_comp_tasks_listening_task,
-)
+from simcore_service_webserver.db_listener.models import ClaimableAggregate
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import func
-from tenacity.asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
-
-logger = logging.getLogger(__name__)
 
 _COUNT_LISTENER_CONNECTIONS_SQL = (
     "select count(*) from pg_stat_activity where application_name like :pattern and pid != pg_backend_pid()"
@@ -92,93 +72,6 @@ async def mock_project_subsystem(mocker: MockerFixture) -> dict[str, mock.Mock]:
     return mocked_project_calls
 
 
-@pytest.fixture
-async def with_started_listening_task(client: TestClient) -> AsyncIterator:
-    assert client.app
-    async for _comp_task in create_comp_tasks_listening_task(client.app):
-        # first call creates the task, second call cleans it
-        yield
-
-
-@pytest.fixture
-async def spied_get_comp_task(
-    mocker: MockerFixture,
-) -> MockType:
-    return mocker.spy(
-        simcore_service_webserver.db_listener._service,  # noqa: SLF001
-        "get_comp_task",
-    )
-
-
-@dataclass(frozen=True, slots=True)
-class _CompTaskChangeParams:
-    update_values: dict[str, Any]
-    expected_calls: list[str]
-
-
-async def _assert_listener_triggers(mock_project_subsystem: dict[str, mock.Mock], expected_calls: list[str]) -> None:
-    for call_name, mocked_call in mock_project_subsystem.items():
-        if call_name in expected_calls:
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(1),
-                stop=stop_after_delay(10),
-                retry=retry_if_exception_type(AssertionError),
-                before_sleep=before_sleep_log(logger, logging.INFO),
-                reraise=True,
-            ):
-                with attempt:
-                    mocked_call.assert_called_once()
-
-        else:
-            mocked_call.assert_not_called()
-
-
-@pytest.mark.parametrize("task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND])
-@pytest.mark.parametrize(
-    "params",
-    [
-        pytest.param(
-            _CompTaskChangeParams(
-                {
-                    "outputs": {"some new stuff": "it is new"},
-                },
-                ["update_node_outputs"],
-            ),
-            id="new output shall trigger",
-        ),
-        pytest.param(
-            _CompTaskChangeParams(
-                {"state": StateType.ABORTED},
-                [
-                    "_update_project_state.update_project_node_state",
-                    "_update_project_state.notify_project_node_update",
-                    "_update_project_state.notify_project_state_update",
-                ],
-            ),
-            id="new state shall trigger",
-        ),
-        pytest.param(
-            _CompTaskChangeParams(
-                {
-                    "outputs": {"some new stuff": "it is new"},
-                    "state": StateType.ABORTED,
-                },
-                [
-                    "update_node_outputs",
-                    "_update_project_state.update_project_node_state",
-                    "_update_project_state.notify_project_node_update",
-                    "_update_project_state.notify_project_state_update",
-                ],
-            ),
-            id="new output and state shall double trigger",
-        ),
-        pytest.param(
-            _CompTaskChangeParams({"inputs": {"should not trigger": "right?"}}, []),
-            id="no new output or state shall not trigger",
-        ),
-    ],
-)
-@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def _get_outbox_events_for_task(engine: AsyncEngine, task_id: int) -> list[dict]:
     async with engine.connect() as conn:
         result = await conn.execute(outbox_events.select().where(outbox_events.c.aggregate_id == f"{task_id}"))
@@ -858,8 +751,9 @@ async def test_backed_off_event_delays_whole_aggregate_until_due(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_bookkeeping_waits_for_the_aggregate_lock_before_burning_attempts(
+async def test_failed_claim_records_attempt_before_releasing_the_aggregate(
     sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
     client: TestClient,
     logged_user: UserInfoDict,
     create_project: Callable[..., Awaitable[ProjectAtDB]],
@@ -867,17 +761,9 @@ async def test_bookkeeping_waits_for_the_aggregate_lock_before_burning_attempts(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
 ):
-    """Failure bookkeeping must not race a concurrent claim.
-
-    record_failed_attempts runs in its own transaction, *after* the failed claim
-    already released its locks. Without taking the per-aggregate advisory lock first,
-    a second worker holding a stale candidate could re-claim the same events and bump
-    their attempts again before the backoff was recorded, burning retries with no
-    wait. Holding the blocking pg_advisory_xact_lock while the bookkeeping UPDATE runs
-    serializes it against claims (which use pg_try_advisory_xact_lock on the same key):
-    here a blocker holds the lock, so the bookkeeping must wait for it rather than
-    update the rows, and only apply the attempt once the lock is released.
-    """
+    """Replicas holding a stale candidate must not re-process an aggregate whose
+    claim just failed: the failure is recorded (attempt + backoff) in the claim
+    transaction, so the aggregate is never claimable in between."""
     assert client.app
     project = await create_project(logged_user)
     await create_pipeline(project_id=f"{project.uuid}")
@@ -891,39 +777,34 @@ async def test_bookkeeping_waits_for_the_aggregate_lock_before_burning_attempts(
         await conn.execute(
             comp_tasks.update().values(outputs={"new": "data"}).where(comp_tasks.c.task_id == task["task_id"])
         )
-    rows_before = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
-    assert len(rows_before) == 1
 
-    claimed = ClaimedAggregate(
-        kind=DB_OUTBOX_KIND_COMP_TASK_SYNC,
-        aggregate_id=f"{task['task_id']}",
-        event_ids=[OutboxEventID(rows_before[0]["id"])],
-        changed_columns=frozenset({"outputs"}),
+    async def _failing_projection(*args: Any, **kwargs: Any) -> None:
+        await asyncio.sleep(0.1)
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    mocker.patch(
+        "simcore_service_webserver.db_listener._service._process_outbox_event",
+        autospec=True,
+        side_effect=_failing_projection,
     )
-    lock_key = f"{claimed.kind}:{claimed.aggregate_id}"
 
-    async with sqlalchemy_async_engine.connect() as blocker:
-        got = (
-            await blocker.execute(sa.select(func.pg_try_advisory_lock(func.hashtextextended(lock_key, 0))))
-        ).scalar_one()
-        assert got, "blocking advisory lock must be acquirable on the aggregate's key"
+    candidate = ClaimableAggregate(kind=DB_OUTBOX_KIND_COMP_TASK_SYNC, aggregate_id=f"{task['task_id']}")
 
-        bookkeeping = asyncio.create_task(
-            record_failed_attempts(sqlalchemy_async_engine, claimed, RuntimeError("boom"))
-        )
-        # while the aggregate lock is held elsewhere, the bookkeeping transaction is
-        # still waiting for it: no attempt may have been recorded yet
-        with pytest.raises(asyncio.TimeoutError):
-            await asyncio.wait_for(asyncio.shield(bookkeeping), 0.5)
-        rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
-        assert rows[0]["attempts"] == 0, "bookkeeping must wait for the aggregate lock before recording"
+    async def _stale_claimer(delay: float):
+        await asyncio.sleep(delay)
+        return await _claim_and_process_aggregate(client.app, sqlalchemy_async_engine, candidate)
 
-        await blocker.execute(sa.select(func.pg_advisory_unlock(func.hashtextextended(lock_key, 0))))
+    # claimers start before, during and right after the first one fails
+    results = await asyncio.gather(*(_stale_claimer(i * 0.02) for i in range(12)))
 
-        # once the lock is free the bookkeeping completes and records exactly one attempt
-        updated = await asyncio.wait_for(bookkeeping, 5)
-    assert len(updated) == 1
-    assert updated[0].attempts == 1
+    assert len([r for r in results if r is not None]) == 1
     rows = await _get_outbox_events_for_task(sqlalchemy_async_engine, task["task_id"])
+    assert len(rows) == 1
     assert rows[0]["attempts"] == 1
     assert "boom" in rows[0]["last_error"]
+    async with sqlalchemy_async_engine.connect() as conn:
+        backoff_pending = (
+            await conn.execute(sa.select(outbox_events.c.next_attempt_at > func.now()).select_from(outbox_events))
+        ).scalar_one()
+    assert backoff_pending
