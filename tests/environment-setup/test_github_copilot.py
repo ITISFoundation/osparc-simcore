@@ -35,7 +35,14 @@ def markdown_file(request: pytest.FixtureRequest) -> Path:
 )
 def test_reference_links_exist(markdown_file: Path):
     broken: list[str] = []
+    inside_code_fence = False
     for lineno, line in enumerate(markdown_file.read_text(encoding="utf-8").splitlines(), start=1):
+        # skip fenced code blocks (content there is not link-parsed in markdown)
+        if line.lstrip().startswith("```"):
+            inside_code_fence = not inside_code_fence
+            continue
+        if inside_code_fence:
+            continue
         # strip inline code spans to avoid false positives (e.g. `[T](Class):`)
         scanned = _INLINE_CODE_RE.sub("", line)
         for href in _MD_LINK_RE.findall(scanned):
