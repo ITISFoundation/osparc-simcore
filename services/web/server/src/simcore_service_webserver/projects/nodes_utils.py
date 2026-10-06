@@ -66,9 +66,8 @@ async def update_node_outputs(
     keys: list[str] = keys_changed if ui_changed_keys is None else list(ui_changed_keys | set(keys_changed))
 
     # notify connected nodes to retrieve its inputs **if necessary**
-    # NOTE: before the notifications, which raise when strict: the outputs are already
-    # stored, so a retry would see no changed keys and never trigger the retrieve
-    await _projects_service.trigger_connected_service_retrieve(
+    # NOTE: scheduled before the strict notifications, which may raise: a retry would see no changed keys
+    _projects_service.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
     )
 

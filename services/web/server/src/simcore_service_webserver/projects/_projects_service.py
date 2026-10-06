@@ -1664,11 +1664,12 @@ async def _get_node_share_state(
     return NodeShareState(locked=False)
 
 
-async def trigger_connected_service_retrieve(
+async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
     project_id = project["uuid"]
     if await is_project_locked(get_redis_lock_manager_client_sdk(app), project_id):
+        # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
         _logger.warning(
             "Skipping service retrieval because project with %s is currently locked.Operation triggered by %s",
             f"{project_id=}",
@@ -1709,6 +1710,25 @@ async def trigger_connected_service_retrieve(
         for node_id, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks, reraise=False)
+
+
+def post_trigger_connected_service_retrieve(
+    app: web.Application,
+    *,
+    project: dict,
+    updated_node_uuid: str,
+    changed_keys: list[str],
+) -> None:
+    fire_and_forget_task(
+        _trigger_connected_service_retrieve(
+            app,
+            project=project,
+            updated_node_uuid=updated_node_uuid,
+            changed_keys=changed_keys,
+        ),
+        task_suffix_name="trigger_connected_service_retrieve",
+        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    )
 
 
 async def _user_has_another_active_session(users_sessions_ids: list[UserSession], app: web.Application) -> bool:
