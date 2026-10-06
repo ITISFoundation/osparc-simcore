@@ -1,6 +1,7 @@
 """Computational Tasks Table"""
 
 import enum
+from typing import Final
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -115,14 +116,10 @@ comp_tasks = sa.Table(
 
 register_modified_datetime_auto_update_trigger(comp_tasks)
 
-DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
-DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
-DB_CHANNEL_NAME: str = "outbox_wakeup"
-
-# outbox event kind produced by the trigger below: the producer (this trigger) and the
-# consumer (webserver db_listener claims) must agree on it, so it is defined once here
-# and exported through the model facades
-DB_OUTBOX_KIND_COMP_TASK_SYNC: str = "comp_task.sync.v1"
+DB_PROCEDURE_NAME: Final[str] = "notify_comp_tasks_changed"
+DB_TRIGGER_NAME: Final[str] = f"{DB_PROCEDURE_NAME}_event"
+DB_CHANNEL_NAME: Final[str] = "outbox_wakeup"
+DB_OUTBOX_KIND_COMP_TASK_SYNC: Final[str] = "comp_task.sync.v1"
 
 # ------------------------ TRIGGERS
 
