@@ -33,8 +33,8 @@ from simcore_service_webserver.db_listener._service import (
     claim_and_process_outbox_events,
 )
 from simcore_service_webserver.db_listener._task import (
-    OUTBOX_LISTENER_APPLICATION_NAME,
-    with_outbox_wakeup_listener,
+    _OUTBOX_LISTENER_APPLICATION_NAME,
+    _with_outbox_wakeup_listener,
 )
 from simcore_service_webserver.db_listener.models import ClaimableAggregate
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -575,7 +575,7 @@ async def test_listen_notify_uses_dedicated_named_connection_and_wakes_up(
         node_class=NodeClass.COMPUTATIONAL,
     )
 
-    async with with_outbox_wakeup_listener(client.app) as wakeup_event:
+    async with _with_outbox_wakeup_listener(client.app) as wakeup_event:
         assert not wakeup_event.is_set()
 
         # the dedicated connection is visible in pg_stat_activity under its own
@@ -583,10 +583,10 @@ async def test_listen_notify_uses_dedicated_named_connection_and_wakes_up(
         async with sqlalchemy_async_engine.connect() as conn:
             found = (
                 await conn.execute(
-                    sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{OUTBOX_LISTENER_APPLICATION_NAME}%")
+                    sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{_OUTBOX_LISTENER_APPLICATION_NAME}%")
                 )
             ).scalar_one()
-        assert found >= 1, f"no pg_stat_activity entry for {OUTBOX_LISTENER_APPLICATION_NAME!r}"
+        assert found >= 1, f"no pg_stat_activity entry for {_OUTBOX_LISTENER_APPLICATION_NAME!r}"
 
         # a comp_tasks change must wake the listener through the dedicated connection
         async with sqlalchemy_async_engine.begin() as write_conn:
@@ -601,7 +601,7 @@ async def test_listen_notify_uses_dedicated_named_connection_and_wakes_up(
     async with sqlalchemy_async_engine.connect() as conn:
         found = (
             await conn.execute(
-                sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{OUTBOX_LISTENER_APPLICATION_NAME}%")
+                sa.text(_COUNT_LISTENER_CONNECTIONS_SQL).bindparams(pattern=f"{_OUTBOX_LISTENER_APPLICATION_NAME}%")
             )
         ).scalar_one()
     assert found == 0, "the dedicated LISTEN connection must be closed on exit"
