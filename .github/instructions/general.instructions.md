@@ -43,7 +43,12 @@ applicable scoped instruction file in addition to these repository-wide rules.
 
 ## Ordering
 
+- Keep hand-maintained unordered lists in alphabetical order unless the order
+  carries semantic meaning (e.g. dependency ordering, priority, registration,
+  initialization).
 - Preserve intentional ordering and grouping. Do not reorder unrelated entries as
   cleanup. When a file has an established formatter, linter, generator, or
   repository convention for sorting, use that mechanism rather than sorting
   manually.
+- File-type-specific ordering conventions live in the applicable scoped
+  instruction file.
