@@ -145,6 +145,10 @@ async def rabbit_service(rabbit_settings: RabbitSettings, monkeypatch: pytest.Mo
     monkeypatch.setenv("RABBIT_USER", rabbit_settings.RABBIT_USER)
     monkeypatch.setenv("RABBIT_SECURE", f"{rabbit_settings.RABBIT_SECURE}")
     monkeypatch.setenv("RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value())
+    # NOTE: must propagate the per-worker vhost, otherwise apps configured from these envs
+    # connect to the default vhost "/" where every xdist worker registers the same fixed
+    # auto_delete RPC queue names and races with the other workers' teardown
+    monkeypatch.setenv("RABBIT_VHOST", rabbit_settings.RABBIT_VHOST)
 
     return rabbit_settings
 
