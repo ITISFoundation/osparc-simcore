@@ -50,7 +50,7 @@ jobs:
       - name: install
         run: ./ci/github/benchmarks/codspeed.bash install
       - name: benchmark
-        uses: CodSpeedHQ/action@v5.2.1
+        uses: CodSpeedHQ/action@v5.4.0
         with:
           mode: simulation
           run: ./ci/github/benchmarks/codspeed.bash benchmark
