@@ -20,18 +20,18 @@ DB_OUTBOX_CHANGED_COLUMN_STATE: Final[str] = "state"
 
 # identity types of the outbox_events table columns (see models/outbox_events.py)
 OutboxEventID = NewType("OutboxEventID", int)
-AggregateType = NewType("AggregateType", str)
+EventKind = NewType("EventKind", str)
 AggregateID = NewType("AggregateID", str)
 
 __all__ = (
     "DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS",
     "DB_OUTBOX_CHANGED_COLUMN_STATE",
     "AggregateID",
-    "AggregateType",
     "ClaimOutcome",
     "ClaimableAggregate",
     "ClaimedAggregate",
     "CompTask",
+    "EventKind",
     "FailedAttempt",
     "OutboxEventID",
 )
@@ -45,7 +45,7 @@ class ClaimOutcome(_BaseFrozenModel):
     """Result of one claim-and-process iteration of the outbox drain."""
 
     success: bool
-    kind: AggregateType
+    kind: EventKind
     aggregate_id: AggregateID
     # only meaningful when not success; see _repository.INFRA_EXCEPTION_TYPES
     is_infra_error: bool = False
@@ -54,7 +54,7 @@ class ClaimOutcome(_BaseFrozenModel):
 class ClaimableAggregate(_BaseFrozenModel):
     """Aggregate with at least one claimable outbox event, as listed by a candidate scan."""
 
-    kind: AggregateType
+    kind: EventKind
     aggregate_id: AggregateID
 
 
@@ -81,6 +81,6 @@ class FailedAttempt(_BaseFrozenModel):
     """One outbox event whose processing attempt was just recorded as failed."""
 
     event_id: OutboxEventID
-    kind: AggregateType
+    kind: EventKind
     aggregate_id: AggregateID
     attempts: int

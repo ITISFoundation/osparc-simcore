@@ -51,16 +51,6 @@ async def update_node_outputs(
         client_session_id=client_session_id,
     )
 
-    await _projects_service.notify_project_node_update(app, project, node_uuid, strict=strict_notification)
-    # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
-    await logged_gather(
-        *[
-            _projects_service.notify_project_node_update(app, project, nid, strict=strict_notification)
-            for nid in depending_node_uuids
-        ]
-    )
-
     # changed keys are coming from two sources:
     # 1. updates to ports done by UI services
     # 2. updates to ports done other services
@@ -76,6 +66,18 @@ async def update_node_outputs(
     keys: list[str] = keys_changed if ui_changed_keys is None else list(ui_changed_keys | set(keys_changed))
 
     # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
+    # NOTE: before the notifications, which raise when strict: the outputs are already
+    # stored, so a retry would see no changed keys and never trigger the retrieve
     await _projects_service.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
+    )
+
+    await _projects_service.notify_project_node_update(app, project, node_uuid, strict=strict_notification)
+    # get depending node and notify for these ones as well
+    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    await logged_gather(
+        *[
+            _projects_service.notify_project_node_update(app, project, nid, strict=strict_notification)
+            for nid in depending_node_uuids
+        ]
     )
