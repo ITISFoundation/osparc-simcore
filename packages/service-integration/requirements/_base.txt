@@ -62,7 +62,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-multidict==6.7.1
+multidict==7.0.0
     # via yarl
 orjson==3.11.9
     # via
@@ -142,7 +142,7 @@ typing-inspection==0.4.2
     #   pydantic-settings
 tzdata==2025.3
     # via arrow
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

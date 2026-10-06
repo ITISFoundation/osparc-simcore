@@ -37,9 +37,7 @@ certifi==2024.8.30
     #   httpx
     #   requests
 charset-normalizer==3.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
@@ -88,7 +86,7 @@ jsonref==1.1.0
     #   -r requirements/_test.in
 librt==0.8.1
     # via mypy
-multidict==6.1.0
+multidict==6.9.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -151,9 +149,7 @@ python-socketio==5.16.4
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 requests==2.34.2
-    # via
-    #   -c requirements/_base.txt
-    #   docker
+    # via docker
 respx==0.22.0
     # via -r requirements/_test.in
 simple-websocket==1.1.0
@@ -185,7 +181,7 @@ typing-extensions==4.16.0
     #   anyio
     #   mypy
     #   sqlalchemy
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

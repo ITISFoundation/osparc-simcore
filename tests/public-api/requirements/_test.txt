@@ -54,7 +54,7 @@ jsonschema==4.26.0
     # via -r requirements/_test.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-multidict==6.7.1
+multidict==6.9.1
     # via
     #   aiohttp
     #   yarl
@@ -94,7 +94,7 @@ tenacity==9.1.4
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via anyio
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
