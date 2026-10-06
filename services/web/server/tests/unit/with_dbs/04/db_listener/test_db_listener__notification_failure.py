@@ -89,7 +89,7 @@ async def mock_project_writes(
         side_effect=lambda *_args, **_kw: (fake_project, ["new"]),
     )
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service.trigger_connected_service_retrieve",
+        "simcore_service_webserver.projects._projects_service.post_trigger_connected_service_retrieve",
         autospec=True,
     )
 
@@ -368,7 +368,7 @@ async def test_failed_strict_notification_still_triggers_connected_service_retri
 
     assert outcome is not None
     assert outcome.success is False
-    _projects_service.trigger_connected_service_retrieve.assert_awaited_once()  # type: ignore[attr-defined]
+    _projects_service.post_trigger_connected_service_retrieve.assert_called_once()  # type: ignore[attr-defined]
 
 
 async def test_strict_room_fan_out_settles_all_emits_before_raising(
