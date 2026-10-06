@@ -56,7 +56,7 @@ async def test_trigger_connected_service_retrieve_uses_camelcase_alias(
         },
     }
 
-    await _projects_service._trigger_connected_service_retrieve(  # noqa: SLF001
+    await _projects_service.trigger_connected_service_retrieve(
         app=Mock(),
         project={"uuid": project_id, "workbench": workbench},
         updated_node_uuid=updated_node_id,
@@ -76,7 +76,7 @@ async def test_trigger_connected_service_retrieve_skips_when_locked(
     mocker.patch.object(_projects_service, "get_redis_lock_manager_client_sdk", return_value=Mock())
     mocker.patch.object(_projects_service, "is_project_locked", AsyncMock(return_value=True))
 
-    await _projects_service._trigger_connected_service_retrieve(  # noqa: SLF001
+    await _projects_service.trigger_connected_service_retrieve(
         app=Mock(),
         project={"uuid": str(uuid4()), "workbench": {}},
         updated_node_uuid=str(uuid4()),
