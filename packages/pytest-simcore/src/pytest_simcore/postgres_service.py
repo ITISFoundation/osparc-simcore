@@ -101,14 +101,19 @@ def _postgres_migrated_template_state(
     # NOTE: the template database itself is built lazily by postgres_db because resolving
     # the DSN can require module-scoped fixtures (e.g. docker_stack published ports). This
     # holder only tracks state and drops the template at session end.
-    state: PgTemplateState = {"built": False, "dsn": None, "registered": False, "owns_build": False}
+    state: PgTemplateState = {
+        "built": False,
+        "dsn": None,
+        "xdist_coordination_started": False,
+        "xdist_owns_template_build": False,
+    }
     yield state
 
     dsn = state["dsn"]
     if dsn is None:
         return
 
-    if is_xdist_worker(request) and state["registered"]:
+    if is_xdist_worker(request) and state["xdist_coordination_started"]:
         # under xdist: only the worker that empties the shared registry drops the template,
         # since other workers may still be building/reading it
         registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
@@ -150,13 +155,13 @@ def _ensure_migrated_template(
         return
 
     token = f"{get_worker_id(request)}-session"
-    if not state["registered"]:
+    if not state["xdist_coordination_started"]:
         # first time THIS worker needs the template: register once per worker-session
         registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
-        state["owns_build"] = registry.register(token)
-        state["registered"] = True
+        state["xdist_owns_template_build"] = registry.register(token)
+        state["xdist_coordination_started"] = True
 
-        if state["owns_build"]:
+        if state["xdist_owns_template_build"]:
             try:
                 _build_or_verify_template(postgres_dsn, state)
             except BaseException:
@@ -164,8 +169,8 @@ def _ensure_migrated_template(
                 # NEVER be built: signal them to fail fast and give up ownership
                 registry.mark_failed()
                 registry.unregister(token)
-                state["owns_build"] = False
-                state["registered"] = False
+                state["xdist_owns_template_build"] = False
+                state["xdist_coordination_started"] = False
                 raise
             registry.mark_ready()
         else:

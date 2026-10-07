@@ -49,10 +49,8 @@ class PgTemplateState(TypedDict):
 
     built: bool
     dsn: PostgresTestConfig | None
-    # xdist-ONLY (never consulted on the master/non-xdist path): whether this worker already
-    # registered for / waited on the shared template once, and whether it owns the shared build
-    registered: NotRequired[bool]
-    owns_build: NotRequired[bool]
+    xdist_coordination_started: NotRequired[bool]
+    xdist_owns_template_build: NotRequired[bool]
 
 
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
