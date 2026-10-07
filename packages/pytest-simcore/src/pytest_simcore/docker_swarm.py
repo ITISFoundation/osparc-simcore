@@ -10,7 +10,7 @@ import subprocess
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 from uuid import uuid4
 
 import aiodocker
@@ -23,6 +23,7 @@ import yaml
 from common_library.dict_tools import copy_from_dict
 from docker.errors import APIError
 from faker import Faker
+from filelock import FileLock
 from tenacity import AsyncRetrying, Retrying, TryAgain, retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
@@ -34,12 +35,20 @@ from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
-from .helpers.xdist import SharedResourceRegistry, get_worker_id, get_xdist_root_tmp_path
+from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
+from .helpers.xdist import (
+    SharedResourceRegistry,
+    get_max_xdist_workers,
+    get_worker_id,
+    get_xdist_root_tmp_path,
+    is_xdist_worker,
+)
 
 log = logging.getLogger(__name__)
 
-_DOCKER_STACK_REGISTRY_NAME = "docker_stack"
-_DOCKER_STACK_READY_TIMEOUT = 8 * MINUTE
+_DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
+_DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
+_DOCKER_STACK_READY_TIMEOUT: Final[float] = 8 * MINUTE  # seconds
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -154,10 +163,7 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
     client.close()
 
 
-@pytest.fixture(scope="module")
-def docker_swarm(docker_client: docker.client.DockerClient, keep_docker_up: bool) -> Iterator[None]:
-    """inits docker swarm"""
-
+def _ensure_swarm_init(docker_client: docker.client.DockerClient) -> None:
     for attempt in Retrying(wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True):
         with attempt:
             if not _is_docker_swarm_init(docker_client):
@@ -168,7 +174,46 @@ def docker_swarm(docker_client: docker.client.DockerClient, keep_docker_up: bool
             # if still not in swarm, raise an error to try and initialize again
             assert _is_docker_swarm_init(docker_client)
 
+
+@pytest.fixture(scope="module")
+def docker_swarm(
+    docker_client: docker.client.DockerClient,
+    keep_docker_up: bool,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[None]:
+    """inits docker swarm
+
+    The swarm is a daemon-wide resource shared by every xdist worker: under xdist it is
+    ref-counted via `SharedResourceRegistry` so the first holder initializes it and ONLY the
+    last holder leaves it (a module-scoped `swarm.leave` in one worker would otherwise strip
+    swarm-manager state from the daemon while other workers are still running, making their
+    docker API calls fail with 503 "this node is not a swarm manager").
+    """
+    registry: SharedResourceRegistry | None = (
+        SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_SWARM_REGISTRY_NAME)
+        if is_xdist_worker(request)
+        else None
+    )
+    token = f"{get_worker_id(request)}-{uuid4().hex}"
+    if registry is None:
+        _ensure_swarm_init(docker_client)
+    elif registry.register(token):
+        try:
+            _ensure_swarm_init(docker_client)
+        except BaseException:
+            registry.mark_failed()
+            registry.unregister(token)
+            raise
+        registry.mark_ready()
+    else:
+        registry.wait_ready(timeout=2 * MINUTE)
+
     yield
+
+    if registry is not None and not registry.unregister(token):
+        # other workers still use the swarm
+        return
 
     if not keep_docker_up:
         print("<-- leaving docker swarm...")
@@ -354,8 +399,20 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
                     union.append(name)
         return union
 
+    def _widen_valkey_databases(compose_path: Path) -> None:
+        # valkey/redis `--databases` is a BOOT-TIME argument (NOT CONFIG SET-able), so the widened
+        # count must be baked into the compose BEFORE deploy: reserve one bank of logical
+        # databases per potential xdist worker (+1 bank for the master/default one) on the shared
+        # container, read from the base count the compose itself declares (never hardcoded here)
+        content = yaml.safe_load(compose_path.read_text())
+        base_count = get_valkey_databases_count(content)
+        if base_count is None:
+            return
+        set_valkey_databases_count(content, (get_max_xdist_workers(request.config) + 1) * base_count)
+        compose_path.write_text(yaml.dump(content, default_flow_style=False))
+
     def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str, selection_attr: str) -> Path:
-        if get_worker_id(request) == "master":
+        if not is_xdist_worker(request):
             # single-process run: unaffected, same per-module filtered selection as before
             return filtered_path
         # NOTE: under xdist, different test modules may declare different (smaller)
@@ -368,8 +425,15 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
         # full, unfiltered compose is NOT an option: it includes production services whose
         # images aren't built/available in a test environment.
         union_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_union_docker_compose.yml"
-        if not union_path.exists():
-            _filter_services_and_dump(_collected_services_union(selection_attr), unfiltered, union_path)
+        with FileLock(f"{union_path}.lock"):
+            # NOTE: the check+dump must happen under a cross-process lock and the file must
+            # appear atomically (write to .tmp + atomic rename): a worker deploying the stack
+            # must never read a half-written compose produced concurrently by another worker
+            if not union_path.exists():
+                tmp_path = union_path.with_name(f"{union_path.name}.tmp")
+                _filter_services_and_dump(_collected_services_union(selection_attr), unfiltered, tmp_path)
+                _widen_valkey_databases(tmp_path)
+                tmp_path.replace(union_path)  # atomic on the same filesystem
         return union_path
 
     stacks = [
@@ -389,30 +453,33 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
         ),
     ]
 
-    registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_STACK_REGISTRY_NAME)
+    registry: SharedResourceRegistry | None = (
+        SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_STACK_REGISTRY_NAME)
+        if is_xdist_worker(request)
+        else None
+    )
     token = f"{get_worker_id(request)}-{uuid4().hex}"
-    owns_stack = registry.register(token)
+    owns_stack = True if registry is None else registry.register(token)
 
     stacks_deployed: dict[str, dict] = {}
     if owns_stack:
-        # NOTE: if the migration service was already running prior to this call it must
-        # be force updated so that it does its job. else it remains and tests will fail
-        _force_remove_migration_service(docker_client)
-        _make_dask_sidecar_certificates(osparc_simcore_services_dir)
-        # make up-version
-        for key, stack_name, compose_file in stacks:
-            _deploy_stack(compose_file, stack_name)
-
-            stacks_deployed[key] = {
-                "name": stack_name,
-                "compose": yaml.safe_load(compose_file.read_text()),
-            }
-
-        # All SELECTED services ready
-        # - notice that the timeout is set for all services in both stacks
-        # - TODO: the time to deploy will depend on the number of services selected
         try:
+            # NOTE: if the migration service was already running prior to this call it must
+            # be force updated so that it does its job. else it remains and tests will fail
+            _force_remove_migration_service(docker_client)
+            _make_dask_sidecar_certificates(osparc_simcore_services_dir)
+            # make up-version
+            for key, stack_name, compose_file in stacks:
+                _deploy_stack(compose_file, stack_name)
 
+                stacks_deployed[key] = {
+                    "name": stack_name,
+                    "compose": yaml.safe_load(compose_file.read_text()),
+                }
+
+            # All SELECTED services ready
+            # - notice that the timeout is set for all services in both stacks
+            # - TODO: the time to deploy will depend on the number of services selected
             async def _check_all_services_are_running():
                 done, pending = await asyncio.wait(
                     [
@@ -425,21 +492,28 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
 
                 for future in done:
                     if exc := future.exception():
-                        raise exc
+                        raise exc  # noqa: TRY301
 
                 assert not pending, f"some service did not start correctly [{pending}]"
 
-            await _check_all_services_are_running()
+            try:
+                await _check_all_services_are_running()
+            finally:
+                _fetch_and_print_services(docker_client, "[BEFORE TEST]")
+        except BaseException:
+            # the other workers would wait for a stack that will NEVER become ready: signal
+            # them to fail fast and give up ownership, so the deploy is retried elsewhere
+            if registry is not None:
+                registry.mark_failed()
+                registry.unregister(token)
+            raise
 
-        finally:
-            _fetch_and_print_services(docker_client, "[BEFORE TEST]")
-
-        registry.mark_ready()
+        if registry is not None:
+            registry.mark_ready()
     else:
-        # another worker owns the deploy: wait until it signals the stack is ready
-        for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(_DOCKER_STACK_READY_TIMEOUT), reraise=True):
-            with attempt:
-                assert registry.is_ready()
+        # another worker owns the deploy: wait until it signals the stack is ready (or failed)
+        assert registry is not None
+        registry.wait_ready(timeout=_DOCKER_STACK_READY_TIMEOUT)
 
         stacks_deployed = {
             key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
@@ -453,7 +527,7 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
 
     # TEAR DOWN ----------------------
 
-    if not registry.unregister(token):
+    if registry is not None and not registry.unregister(token):
         # other workers/modules still use the shared stack
         return
 

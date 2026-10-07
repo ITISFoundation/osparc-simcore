@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import docker
+import docker.errors
 import yaml
 from docker.models.services import Service
 from tenacity import retry, retry_if_exception_type
