@@ -8,7 +8,7 @@ import logging
 import re
 import sys
 from collections.abc import AsyncIterable, AsyncIterator
-from typing import Any
+from typing import Any, Final
 from uuid import UUID, uuid4
 
 import aiodocker
@@ -57,7 +57,18 @@ from tenacity.wait import wait_fixed
 
 MAX_INT64 = sys.maxsize
 
+_DOCKER_SERVICE_NAME_MAX_LEN: Final[int] = 63  # docker swarm limit for service names
+
 logger = logging.getLogger(__name__)
+
+
+def _unique_docker_service_name(fixed_part: str, faker: Faker) -> str:
+    # NOTE: docker service names are limited to 63 characters. The random-suffix budget is
+    # DERIVED from the length of the fixed part, so extending a name can never silently
+    # overflow the limit (it shrinks the suffix first, and fails loudly once room runs out)
+    suffix_len = _DOCKER_SERVICE_NAME_MAX_LEN - len(fixed_part)
+    assert suffix_len > 0, f"'{fixed_part}' alone exceeds the {_DOCKER_SERVICE_NAME_MAX_LEN}-char limit"
+    return f"{fixed_part}{faker.uuid4().replace('-', '')[:suffix_len]}"
 
 
 pytest_simcore_core_services_selection = [
@@ -168,8 +179,7 @@ async def cleanup_test_service_name(
 
 @pytest.fixture
 def dynamic_sidecar_service_name(faker: Faker) -> str:
-    # NOTE: docker service names are limited to 63 characters
-    return f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar_{faker.uuid4()[:8]}"
+    return _unique_docker_service_name(f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_some-dynamic-fake-sidecar_", faker)
 
 
 @pytest.fixture
@@ -228,9 +238,13 @@ def dynamic_sidecar_stack_specs(
     faker: Faker,
 ) -> list[dict[str, Any]]:
     swarm_stack_name = f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
-    # NOTE: unique per test (docker service names are limited to 63 characters) so concurrent
-    # xdist workers sharing the swarm don't collide on the same fixed service name
-    unique_suffix = faker.uuid4()[:8]
+    # NOTE: unique per test so concurrent xdist workers sharing the swarm don't collide on the
+    # same fixed service name. Both names share one suffix, whose length is DERIVED from the
+    # longer fixed part, so they always fit docker's 63-char service-name limit
+    fixed_parts = [f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy_", f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_fake_sidecar_"]
+    suffix_len = _DOCKER_SERVICE_NAME_MAX_LEN - max(len(fp) for fp in fixed_parts)
+    assert suffix_len > 0, f"fixed parts {fixed_parts} exceed the {_DOCKER_SERVICE_NAME_MAX_LEN}-char limit"
+    unique_suffix = faker.uuid4().replace("-", "")[:suffix_len]
     return [
         {
             "name": f"{DYNAMIC_PROXY_SERVICE_PREFIX}_fake_proxy_{unique_suffix}",

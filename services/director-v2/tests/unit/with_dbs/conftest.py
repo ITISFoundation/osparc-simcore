@@ -22,7 +22,12 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from pydantic.main import BaseModel
-from pytest_simcore.helpers.xdist import ReaderWriterLock, get_worker_id, get_xdist_root_tmp_path
+from pytest_simcore.helpers.xdist import (
+    ReaderWriterLock,
+    get_worker_id,
+    get_xdist_root_tmp_path,
+    is_xdist_worker,
+)
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_run_snapshot_tasks import (
     comp_run_snapshot_tasks,
@@ -56,12 +61,21 @@ def _docker_daemon_access(request: pytest.FixtureRequest, tmp_path_factory: pyte
     `@pytest.mark.docker_exclusive` take a "write" lock and run with NO other with_dbs test
     running concurrently in any worker - for tests that list/inspect ALL matching swarm
     services/networks and are sensitive to interference from unrelated, concurrent churn.
+
+    No-op when not running under xdist (single process cannot race itself): this also keeps
+    non-xdist runs from attaching to - or being blocked by - lock marker files a crashed xdist
+    session may have left behind in the shared base temp dir.
     """
+    if not is_xdist_worker(request):
+        yield
+        return
+
+    worker_id = get_worker_id(request)
     lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), "director_v2_docker_daemon")
-    token = f"{get_worker_id(request)}-{uuid.uuid4().hex}"
+    token = f"{worker_id}-{uuid.uuid4().hex}"
     is_exclusive = request.node.get_closest_marker("docker_exclusive") is not None
     if is_exclusive:
-        with lock.write_lock():
+        with lock.write_lock(token=token):
             yield
     else:
         with lock.read_lock(token):
