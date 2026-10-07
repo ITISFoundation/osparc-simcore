@@ -6,6 +6,7 @@
 
 import time
 from pathlib import Path
+from uuid import UUID
 
 import osparc
 import pytest
@@ -18,6 +19,7 @@ def test_upload_file(files_api: osparc.FilesApi, tmp_path: Path):
 
     input_file: osparc.File = files_api.upload_file(file=input_path)
     assert isinstance(input_file, osparc.File)
+    assert isinstance(input_file.id, UUID), "valid UUID required"
     time.sleep(2)  # let time to upload to S3
 
     assert input_file.filename == input_path.name

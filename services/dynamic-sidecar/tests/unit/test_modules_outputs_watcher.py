@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterator
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
@@ -56,7 +56,6 @@ _TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
 _TICK_INTERVAL: Final[PositiveFloat] = 0.001
 _WAIT_INTERVAL: Final[PositiveFloat] = _TICK_INTERVAL * 10
 _UPLOAD_DURATION: Final[PositiveFloat] = _TICK_INTERVAL * 10
-_COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
 
 
 # FIXTURES
@@ -283,20 +282,6 @@ async def _wait_for_events_to_trigger() -> None:
     await asyncio.sleep(event_wait_interval)
 
 
-async def _wait_for_command_delivered(outputs_context: OutputsContext) -> None:
-    # NOTE: commands (port keys registration / propagation toggles) are applied
-    # by a thread running inside a separate process. Filesystem writes must wait
-    # until the last command was consumed there, otherwise the generated events
-    # are silently discarded by the watchdog handler
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-        with attempt:
-            assert outputs_context.file_system_event_handler_queue.qsize() == 0
-
-    # NOTE: the consumer thread dequeues the message just a moment before
-    # applying it, let it land before generating filesystem events
-    await asyncio.sleep(_COMMAND_DELIVERY_SETTLEMENT_S)
-
-
 # TESTS
 
 
@@ -304,10 +289,11 @@ async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ) -> None:
     await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
-    await _wait_for_command_delivered(outputs_watcher.outputs_context)
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # generates the first event chain
     await _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[0])
@@ -330,10 +316,11 @@ async def test_does_not_trigger_on_attribute_change(
     mounted_volumes: MountedVolumes,
     port_keys: list[str],
     outputs_watcher: OutputsWatcher,
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
-    await _wait_for_command_delivered(outputs_watcher.outputs_context)
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
@@ -363,9 +350,10 @@ async def test_port_key_sequential_event_generation(
     files_per_port_key: NonNegativeInt,
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     await outputs_watcher.enable_event_propagation()
-    await _wait_for_command_delivered(outputs_watcher.outputs_context)
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # writing ports sequentially
     wait_interval_for_port: list[float] = []

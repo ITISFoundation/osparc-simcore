@@ -6,13 +6,6 @@ from pathlib import Path
 
 import pytest
 
-# Single source of truth for the uv version: requirements/UV_VERSION
-#
-# The version is pinned exactly due to https://github.com/astral-sh/uv/issues/21692
-# (uv 0.12.14 rejects wheels carrying a .data payload when the install destination
-# is a symlink, e.g. /usr/local/man in python:* images -> blosc fails to install).
-# Unpin (or update the file) once fixed upstream.
-
 UV_VERSION_DOCKER_PATTERN = re.compile(r'ARG UV_VERSION="?([\d][\d\.]*)"?')
 # captures a literal pinned version (e.g. "0.12.23") in the 'version:' input that
 # immediately follows an astral-sh/setup-uv step; expression-based values like
