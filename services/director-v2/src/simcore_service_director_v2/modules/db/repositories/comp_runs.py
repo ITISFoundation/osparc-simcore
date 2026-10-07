@@ -498,10 +498,9 @@ class CompRunsRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(count_query)
-            result = await conn.execute(list_query)
 
             items = []
-            for row in result:
+            for row in await conn.execute(list_query):
                 db_states = [DB_TO_RUNNING_STATE[s] for s in row.states]
                 resolved_state = _resolve_grouped_state(db_states)
                 items.append(
