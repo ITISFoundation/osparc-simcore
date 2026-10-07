@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 from pydantic.networks import RedisDsn
-from pydantic.types import SecretStr
+from pydantic.types import NonNegativeInt, SecretStr
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -37,7 +37,7 @@ class RedisSettings(BaseCustomSettings):
     # exact same DSNs as before this field existed). Lets multiple otherwise-independent app
     # instances share ONE physical redis/valkey server without colliding on the same logical
     # databases (e.g. pytest-xdist workers each reserving their own bank of database indices).
-    REDIS_DB_OFFSET: int = 0
+    REDIS_DB_OFFSET: NonNegativeInt = 0
 
     def build_redis_dsn(self, db_index: RedisDatabase) -> str:
         return str(
