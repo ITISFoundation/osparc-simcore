@@ -317,10 +317,18 @@ def test_parse_ctx_comment_splits_fields_and_snippet() -> None:
     assert passthrough == []
 
 
-def test_snippet_bounds_covers_target_line() -> None:
-    lines = ["def f():", "    a = 1", "    user_message('x')", "    b = 2", "    return b"]
-    start, end = ix._snippet_bounds(lines, 3)
-    assert start <= 2 <= end
+def test_snippet_bounds_expands_to_enclosing_block_and_stops_at_boundaries() -> None:
+    # expands upward through the sibling header, stops at the shallower-indented line
+    lines = ["def f():", "    if x:", "        user_message('x')", "    y = 1"]
+    assert ix._snippet_bounds(lines, 3) == (1, 2)
+
+    # blank lines are block boundaries (the blank line itself is still included)
+    lines = ["", "    user_message('x')", "    b = 2", ""]
+    assert ix._snippet_bounds(lines, 2) == (0, 2)
+
+    # max_context clamps expansion in both directions
+    lines = ["    a = 1", "    b = 2", "    user_message('x')", "    c = 3", "    d = 4"]
+    assert ix._snippet_bounds(lines, 3, max_context=1) == (1, 3)
 
 
 if __name__ == "__main__":

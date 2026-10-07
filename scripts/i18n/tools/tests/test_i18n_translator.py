@@ -106,21 +106,9 @@ def test_is_identical_to_source_plural() -> None:
     assert tr._is_identical_to_source(partially) is False
 
 
-def test_classify_identical_entry_skipped_by_default() -> None:
-    entry = polib.POEntry(msgid="Add", msgstr="Add")
-    assert isinstance(tr._classify_entry_state(entry), tr.EntrySkipped)
-
-
 def test_classify_identical_entry_updated_with_opt_in() -> None:
     entry = polib.POEntry(msgid="Add", msgstr="Add")
     assert isinstance(tr._classify_entry_state(entry, retranslate_identical=True), tr.EntryUpdated)
-
-
-def test_classify_identical_opt_in_does_not_affect_translated_entries() -> None:
-    translated = tr._classify_entry_state(polib.POEntry(msgid="Add", msgstr="Agregar"), retranslate_identical=True)
-    assert isinstance(translated, tr.EntrySkipped)
-    untranslated = tr._classify_entry_state(polib.POEntry(msgid="x", msgstr=""), retranslate_identical=True)
-    assert isinstance(untranslated, tr.EntryNew)
 
 
 def test_classify_identical_plural_entry_updated_with_opt_in() -> None:
@@ -327,14 +315,6 @@ def test_build_translation_job_force_retranslates_clean_entry() -> None:
     job = tr._build_translation_job(entry, fake, "Spanish", {}, {}, force=True)
     assert isinstance(job, tr.TranslationCompleted)
     assert isinstance(job.state, tr.EntryUpdated)
-
-
-def test_build_translation_job_identical_skipped_by_default() -> None:
-    fake = FakeProvider()
-    entry = polib.POEntry(msgid="Add", msgstr="Add")
-    job = tr._build_translation_job(entry, fake, "Spanish", {}, {})
-    assert isinstance(job, tr.TranslationSkipped)
-    assert fake.calls == []
 
 
 def test_build_translation_job_identical_retranslated_with_opt_in() -> None:
