@@ -40,7 +40,6 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
-    SerializationInfo,
     StringConstraints,
     TypeAdapter,
     field_serializer,
@@ -536,18 +535,19 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         labels = service_inspect["Spec"]["Labels"]
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 
-    @field_serializer("compose_spec")
+    @field_serializer("compose_spec", return_type=ComposeSpecLabelDict | None)
     @staticmethod
-    def _serialize_compose_spec_for_label(
-        value: ComposeSpecLabelDict | None, info: SerializationInfo
-    ) -> ComposeSpecLabelDict | str | None:
-        # `Json[...]` fields expect a JSON-encoded string on the way in, but
-        # only `as_label_data` needs that encoding on the way out.
-        if info.context and info.context.get("as_label"):
-            return json_dumps(value)
+    def _serialize_compose_spec(value: ComposeSpecLabelDict | None) -> ComposeSpecLabelDict | None:
+        # pins the serialization schema to `ComposeSpecLabelDict | None` (otherwise
+        # the `Json[...]` field produces a JSON-encoded string schema)
         return value
 
     def as_label_data(self) -> str:
-        return self.model_dump_json(context={"as_label": True})
+        # `simcore.service.compose-spec` is `Json[...]`: the label payload needs it
+        # double-encoded (a JSON string within the outer JSON). Doing it here keeps
+        # the encoding internal to the label and out of the HTTP response schema.
+        data = self.model_dump(mode="json")
+        data["compose_spec"] = json_dumps(data["compose_spec"])
+        return json_dumps(data)
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
