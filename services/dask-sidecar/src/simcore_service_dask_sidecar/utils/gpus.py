@@ -11,8 +11,8 @@ from pydantic import ByteSize, TypeAdapter
 logger = logging.getLogger(__name__)
 
 
-def _wrap_async_call(fct: Coroutine[Any, Any, Any]) -> Any:
-    return asyncio.run(fct)
+def _wrap_async_call(coro: Coroutine[Any, Any, Any]) -> Any:
+    return asyncio.run(coro)
 
 
 def _nvidia_smi_docker_config(cmd: list[str]) -> dict[str, Any]:
