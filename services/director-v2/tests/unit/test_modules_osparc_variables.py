@@ -10,7 +10,7 @@ import json
 from collections.abc import AsyncIterable
 from copy import deepcopy
 from typing import Final
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -119,9 +119,12 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     mocked_conn = AsyncMock()
     mocked_conn.closed = False
 
+    mocked_conn_ctx = AsyncMock()
+    mocked_conn_ctx.__aenter__.return_value = mocked_conn
+    mocked_conn_ctx.__aexit__.return_value = None
+
     mocked_engine = AsyncMock()
-    # NOTE: AsyncEngine.connect() is awaitable (not an async context manager factory)
-    mocked_engine.connect = AsyncMock(return_value=mocked_conn)
+    mocked_engine.connect = MagicMock(return_value=mocked_conn_ctx)
 
     def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
