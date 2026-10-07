@@ -421,7 +421,6 @@ async def create_or_update_or_start_computation(
         f"{computation.project_id=}",
     )
 
-    # NOTE: this is not the place where these should live
     projects_nodes_repo = ProjectsNodesRepository(db_engine)
     projects_repo = ProjectsRepository(db_engine)
     comp_pipelines_repo = CompPipelinesRepository(db_engine)
