@@ -123,6 +123,12 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     # NOTE: SQLAlchemy 2.0 `AsyncEngine.connect()` is awaited and returns an
     # AsyncConnection usable as async context manager
     mocked_engine.connect = AsyncMock(return_value=mocked_conn)
+    # NOTE: emulate a real SQLAlchemy pool (int-returning introspection methods);
+    # an AsyncMock pool would return coroutines from `checkedout()`/`size()`,
+    # which `BaseRepository.__post_init__` pool-utilization checks cannot consume
+    mocked_engine.pool = Mock(_max_overflow=0)
+    mocked_engine.pool.checkedout.return_value = 0
+    mocked_engine.pool.size.return_value = 5
 
     def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
