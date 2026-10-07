@@ -10,7 +10,7 @@ import json
 from collections.abc import AsyncIterable
 from copy import deepcopy
 from typing import Final
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -119,12 +119,10 @@ def mock_repo_db_engine(mocker: MockerFixture) -> None:
     mocked_conn = AsyncMock()
     mocked_conn.closed = False
 
-    mocked_conn_ctx = AsyncMock()
-    mocked_conn_ctx.__aenter__.return_value = mocked_conn
-    mocked_conn_ctx.__aexit__.return_value = None
-
     mocked_engine = AsyncMock()
-    mocked_engine.connect = MagicMock(return_value=mocked_conn_ctx)
+    # NOTE: SQLAlchemy 2.0 `AsyncEngine.connect()` is awaited and returns an
+    # AsyncConnection usable as async context manager
+    mocked_engine.connect = AsyncMock(return_value=mocked_conn)
 
     def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
