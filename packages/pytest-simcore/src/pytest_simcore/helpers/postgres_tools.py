@@ -49,7 +49,8 @@ class PgTemplateState(TypedDict):
 
     built: bool
     dsn: PostgresTestConfig | None
-    # under xdist: whether this worker already registered/waited for the shared template once
+    # xdist-ONLY (never consulted on the master/non-xdist path): whether this worker already
+    # registered for / waited on the shared template once, and whether it owns the shared build
     registered: NotRequired[bool]
     owns_build: NotRequired[bool]
 
