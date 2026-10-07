@@ -264,7 +264,7 @@ class _EventHandlerProcess:
         return self._process is not None
 
 
-class EventHandlerObserver:
+class EventHandlerObserver:  # pylint: disable=too-many-instance-attributes
     """
     Ensures watchdog is not blocking.
     When blocking, it will restart the process handling the watchdog.
