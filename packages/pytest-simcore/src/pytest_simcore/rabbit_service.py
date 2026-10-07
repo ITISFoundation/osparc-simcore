@@ -11,7 +11,6 @@ import urllib.error
 import urllib.request
 from base64 import b64encode
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Final
 from urllib.parse import quote
 
 import aio_pika
@@ -25,23 +24,23 @@ from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
 from .helpers.xdist import get_worker_id, is_xdist_worker
 
 _logger = logging.getLogger(__name__)
 
-# NOTE: fallback fixed host port mapping for the management API/UI, see
-# services/docker-compose.local.yml (keep both in sync if the mapping ever changes)
-_MANAGEMENT_PORT: Final[int] = 15672
-
 
 def _get_management_port() -> int:
-    try:
-        # prefer the port actually published by the deployed rabbit service (it may differ from
-        # the fixed mapping below, e.g. when several stacks share the host)
-        return int(get_service_published_port("rabbit", target_ports=15672))
-    except (RuntimeError, KeyError, ValueError):
-        return _MANAGEMENT_PORT
+    # NOTE: no fallback port here: if the published management port cannot be resolved the
+    # stack is broken and the run would fail confusingly later on, so fail loudly right here
+    published = get_service_published_port("rabbit", target_ports=15672)
+    assert published.isdigit(), (
+        f"RabbitMQ management API port is not published (got '{published}'): the deployed "
+        "'rabbit' service must publish 15672 (see services/docker-compose.yml) — the per-worker "
+        "vhost isolation cannot work without it"
+    )
+    return int(published)
 
 
 @tenacity.retry(
@@ -70,19 +69,21 @@ def _management_api_request(method: str, url: str, user: str, password: str, bod
 
 
 def _create_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
-    quoted_vhost = quote(vhost, safe="")
-    _management_api_request("PUT", f"{management_url}/api/vhosts/{quoted_vhost}", user, password)
-    _management_api_request(
-        "PUT",
-        f"{management_url}/api/permissions/{quoted_vhost}/{user}",
-        user,
-        password,
-        body={"configure": ".*", "write": ".*", "read": ".*"},
-    )
+    with log_context(logging.INFO, f"creating RabbitMQ vhost '{vhost}' on {management_url}", logger=_logger):
+        quoted_vhost = quote(vhost, safe="")
+        _management_api_request("PUT", f"{management_url}/api/vhosts/{quoted_vhost}", user, password)
+        _management_api_request(
+            "PUT",
+            f"{management_url}/api/permissions/{quoted_vhost}/{user}",
+            user,
+            password,
+            body={"configure": ".*", "write": ".*", "read": ".*"},
+        )
 
 
 def _delete_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
-    _management_api_request("DELETE", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
+    with log_context(logging.INFO, f"deleting RabbitMQ vhost '{vhost}' on {management_url}", logger=_logger):
+        _management_api_request("DELETE", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
 
 
 @pytest.fixture(scope="module")
@@ -140,7 +141,10 @@ async def rabbit_settings(rabbit_env_vars_dict: EnvVarsDict) -> RabbitSettings:
     """Returns the settings of a rabbit service that is up and responsive"""
 
     settings = RabbitSettings.model_validate(rabbit_env_vars_dict)
-    await wait_till_rabbit_responsive(settings.dsn)
+    with log_context(
+        logging.INFO, f"waiting for RabbitMQ on vhost '{settings.RABBIT_VHOST}' to be responsive", logger=_logger
+    ):
+        await wait_till_rabbit_responsive(settings.dsn)
     return settings
 
 
