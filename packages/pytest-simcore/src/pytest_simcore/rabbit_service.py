@@ -26,12 +26,22 @@ from tenacity.wait import wait_fixed
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
-from .helpers.xdist import get_worker_id
+from .helpers.xdist import get_worker_id, is_xdist_worker
 
 _logger = logging.getLogger(__name__)
 
-# NOTE: fixed host port mapping for the management API/UI, see services/docker-compose.local.yml
+# NOTE: fallback fixed host port mapping for the management API/UI, see
+# services/docker-compose.local.yml (keep both in sync if the mapping ever changes)
 _MANAGEMENT_PORT: Final[int] = 15672
+
+
+def _get_management_port() -> int:
+    try:
+        # prefer the port actually published by the deployed rabbit service (it may differ from
+        # the fixed mapping below, e.g. when several stacks share the host)
+        return int(get_service_published_port("rabbit", target_ports=15672))
+    except (RuntimeError, KeyError, ValueError):
+        return _MANAGEMENT_PORT
 
 
 @tenacity.retry(
@@ -87,14 +97,14 @@ def _rabbit_worker_vhost(
     NOTE: module-scoped (not session-scoped) to match `docker_stack`'s scope: a fixture cannot
     depend on one with a narrower scope.
     """
-    worker_id = get_worker_id(request)
-    if worker_id == "master":
+    if not is_xdist_worker(request):
         yield "/"
         return
 
+    worker_id = get_worker_id(request)
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
-    management_url = f"http://{get_localhost_ip()}:{_MANAGEMENT_PORT}"
+    management_url = f"http://{get_localhost_ip()}:{_get_management_port()}"
     user = env_vars_for_docker_compose["RABBIT_USER"]
     password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
     vhost = f"pytest_{worker_id}"

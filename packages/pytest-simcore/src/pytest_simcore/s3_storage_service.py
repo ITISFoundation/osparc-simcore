@@ -12,7 +12,7 @@ from pytest_simcore.helpers.docker import get_service_published_port
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.xdist import get_worker_id
+from pytest_simcore.helpers.xdist import get_worker_id, is_xdist_worker
 
 
 @pytest.fixture
@@ -23,9 +23,8 @@ def s3_storage_settings(
 
     # under xdist, each worker gets its own bucket on the SAME shared S3/rustfs container
     bucket_name = env_vars_for_docker_compose["S3_BUCKET_NAME"]
-    worker_id = get_worker_id(request)
-    if worker_id != "master":
-        bucket_name = f"{bucket_name}_{worker_id}"
+    if is_xdist_worker(request):
+        bucket_name = f"{bucket_name}_{get_worker_id(request)}"
 
     return S3Settings(
         S3_ACCESS_KEY=SecretStr(env_vars_for_docker_compose["S3_ACCESS_KEY"]),

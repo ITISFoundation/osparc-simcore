@@ -4,7 +4,7 @@ from importlib.metadata import version
 import pytest
 from faker import Faker
 
-from .helpers.xdist import get_worker_id
+from .helpers.xdist import get_worker_id, is_xdist_worker
 
 # NOTE: this ensures that assertion printouts are nicely formatted and complete see https://lorepirri.com/pytest-register-assert-rewrite.html
 pytest.register_assert_rewrite("pytest_simcore.helpers")
@@ -38,9 +38,9 @@ def _xdist_reseed_faker(request: pytest.FixtureRequest) -> None:
     No-op when not running under xdist (`faker` isn't even instantiated in that case, so this
     adds no overhead to the common, non-xdist test run).
     """
-    worker_id = get_worker_id(request)
-    if worker_id == "master":
+    if not is_xdist_worker(request):
         return
+    worker_id = get_worker_id(request)
     faker: Faker = request.getfixturevalue("faker")
     digits = "".join(ch for ch in worker_id if ch.isdigit())
     worker_ordinal = int(digits) if digits else 0

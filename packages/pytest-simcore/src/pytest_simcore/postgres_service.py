@@ -4,15 +4,13 @@
 
 import logging
 from collections.abc import AsyncIterator, Iterator
+from datetime import timedelta
 from typing import Any, Final, cast
 
 import pytest
 import sqlalchemy as sa
 from pydantic import PostgresDsn
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from tenacity import Retrying
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
@@ -28,13 +26,13 @@ from .helpers.postgres_tools import (
     wait_engine_ready,
 )
 from .helpers.typing_env import EnvVarsDict
-from .helpers.xdist import SharedResourceRegistry, get_worker_id, get_xdist_root_tmp_path
+from .helpers.xdist import SharedResourceRegistry, get_worker_id, get_xdist_root_tmp_path, is_xdist_worker
 
 _logger = logging.getLogger(__name__)
 
 _TEMPLATE_DB_TO_RESTORE: Final[str] = "template_simcore_db"
 _TEMPLATE_REGISTRY_NAME: Final[str] = "postgres_template_simcore_db"
-_TEMPLATE_READY_TIMEOUT: Final[float] = 5 * 60  # seconds
+_TEMPLATE_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
 
 _PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
 
@@ -54,9 +52,8 @@ def postgres_dsn(
     # under xdist, each worker gets its own database clone name on the SAME postgres
     # container, so concurrent workers never DROP/CREATE the same database
     database = env_vars_for_docker_compose["POSTGRES_DB"]
-    worker_id = get_worker_id(request)
-    if worker_id != "master":
-        database = f"{database}_{worker_id}"
+    if is_xdist_worker(request):
+        database = f"{database}_{get_worker_id(request)}"
 
     pg_config: PostgresTestConfig = {
         "user": env_vars_for_docker_compose["POSTGRES_USER"],
@@ -111,12 +108,11 @@ def _postgres_migrated_template_state(
     if dsn is None:
         return
 
-    worker_id = get_worker_id(request)
-    if worker_id != "master" and state["registered"]:
+    if is_xdist_worker(request) and state["registered"]:
         # under xdist: only the worker that empties the shared registry drops the template,
         # since other workers may still be building/reading it
         registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
-        if not registry.unregister(f"{worker_id}-session"):
+        if not registry.unregister(f"{get_worker_id(request)}-session"):
             return
 
     try:
@@ -147,27 +143,34 @@ def _ensure_migrated_template(
     request: pytest.FixtureRequest,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> None:
-    worker_id = get_worker_id(request)
-    if worker_id == "master":
+    if not is_xdist_worker(request):
         # single-process run: no cross-worker coordination needed
         _build_or_verify_template(postgres_dsn, state)
         state["dsn"] = postgres_dsn
         return
 
+    token = f"{get_worker_id(request)}-session"
     if not state["registered"]:
         # first time THIS worker needs the template: register once per worker-session
         registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
-        state["owns_build"] = registry.register(f"{worker_id}-session")
+        state["owns_build"] = registry.register(token)
         state["registered"] = True
 
         if state["owns_build"]:
-            _build_or_verify_template(postgres_dsn, state)
+            try:
+                _build_or_verify_template(postgres_dsn, state)
+            except BaseException:
+                # waiters would block for `_TEMPLATE_READY_TIMEOUT` on a template that will
+                # NEVER be built: signal them to fail fast and give up ownership
+                registry.mark_failed()
+                registry.unregister(token)
+                state["owns_build"] = False
+                state["registered"] = False
+                raise
             registry.mark_ready()
         else:
-            # another worker owns the build: wait until it signals the template is ready
-            for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(_TEMPLATE_READY_TIMEOUT), reraise=True):
-                with attempt:
-                    assert registry.is_ready()
+            # another worker owns the build: wait until it signals the template is ready (or failed)
+            registry.wait_ready(timeout=_TEMPLATE_READY_TIMEOUT.total_seconds())
             state["built"] = True
 
     state["dsn"] = postgres_dsn
