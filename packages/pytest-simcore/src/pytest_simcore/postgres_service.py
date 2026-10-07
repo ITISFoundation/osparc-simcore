@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import logging
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterator, Mapping
 from datetime import timedelta
 from typing import Any, Final, cast
 
@@ -37,7 +37,7 @@ _TEMPLATE_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
 _PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
 
 
-def _as_pg_config(postgres_dsn: dict[str, Any]) -> PostgresTestConfig:
+def _as_pg_config(postgres_dsn: Mapping[str, Any]) -> PostgresTestConfig:
     # suites may pass richer dicts (e.g. with a prebuilt "dsn"), keep only the keys
     # understood by simcore_postgres_database.cli
     return cast(PostgresTestConfig, {k: postgres_dsn[k] for k in _PG_CONFIG_KEYS})
@@ -113,7 +113,7 @@ def _postgres_migrated_template_state(
     if dsn is None:
         return
 
-    if is_xdist_worker(request) and state["xdist_coordination_started"]:
+    if is_xdist_worker(request) and state.get("xdist_coordination_started", False):
         # under xdist: only the worker that empties the shared registry drops the template,
         # since other workers may still be building/reading it
         registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
@@ -155,13 +155,13 @@ def _ensure_migrated_template(
         return
 
     token = f"{get_worker_id(request)}-session"
-    if not state["xdist_coordination_started"]:
+    if not state.get("xdist_coordination_started", False):
         # first time THIS worker needs the template: register once per worker-session
         registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
         state["xdist_owns_template_build"] = registry.register(token)
         state["xdist_coordination_started"] = True
 
-        if state["xdist_owns_template_build"]:
+        if state.get("xdist_owns_template_build", False):
             try:
                 _build_or_verify_template(postgres_dsn, state)
             except BaseException:
