@@ -17,8 +17,11 @@ class ChatboxUsageBaseError(ApiServerBaseError):
     status_code = status.HTTP_403_FORBIDDEN
 
     # stable machine-readable code on the wire (UsageLimitErrorGet.code),
-    # matching the token prefixed to msg_template
-    code: str
+    # matching the token prefixed to msg_template. Re-declaring it here as str
+    # (same suppression as OsparcErrorMixin) is what lets the subclasses assign
+    # their code without mypy flagging each one against pydantic's
+    # PydanticErrorMixin.code Literal.
+    code: str  # type: ignore[assignment]
 
     @property
     def retry_after_seconds(self) -> int | None:
