@@ -12,9 +12,10 @@ so Window Quotas in these tests are in the fractions of a cent.
 import asyncio
 import json
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
+from datetime import UTC, datetime
 from typing import Any, NoReturn
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -24,8 +25,12 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server._service_responses import _make_metered_sse_relay
 from simcore_service_api_server.api.dependencies.celery import get_task_manager
-from simcore_service_api_server.clients.chatbox_usage import get_chatbox_usage_ledger
+from simcore_service_api_server.clients.chatbox_usage import (
+    _LEDGER_STREAM_KEY,
+    get_chatbox_usage_ledger,
+)
 
 # every test needs an empty Usage Ledger: fake Redis state is shared across tests
 pytestmark = pytest.mark.usefixtures("fresh_usage_ledger")
@@ -93,15 +98,23 @@ async def test_stream_window_quota_exhausted_returns_403_with_reset(
 
     # ASSERT - non-retryable 403 naming the quota, the reset time, and support
     assert second.status_code == status.HTTP_403_FORBIDDEN
-    errors = json.dumps(second.json()["errors"])
+    body = second.json()
+    errors = json.dumps(body["errors"])
     assert "chatbox_window_quota_exceeded" in errors
     assert "available again" in errors.lower()
     assert "support" in errors.lower()
 
-    # ASSERT - Retry-After with the remaining window (<= the full window length)
+    # ASSERT - structured fields agree with the prose and the header
+    assert body["code"] == "chatbox_window_quota_exceeded"
+    assert body["reset_at"] is not None
+    parsed_reset = datetime.fromisoformat(body["reset_at"])
+    assert parsed_reset.tzinfo is not None
     retry_after = second.headers.get("Retry-After")
     assert retry_after is not None
     assert 0 < int(retry_after) <= 5 * 3600
+    # reset_at is the window expiry, so it must sit about a Retry-After away
+    delta = (parsed_reset - datetime.now(UTC)).total_seconds()
+    assert abs(delta - int(retry_after)) < 30
 
 
 @pytest.mark.parametrize(
@@ -161,7 +174,12 @@ async def test_stream_rate_limit_returns_429_with_retry_after(
 
     # ASSERT - proper retryable 429 with Retry-After within the minute window
     assert 0 < int(denied[0].headers["Retry-After"]) <= 61
-    assert "chatbox_rate_limited" in json.dumps(denied[0].json()["errors"])
+    body = denied[0].json()
+    assert "chatbox_rate_limited" in json.dumps(body["errors"])
+    # the structured fields must agree with the header and the prose
+    assert body["code"] == "chatbox_rate_limited"
+    assert body["retry_after_seconds"] == int(denied[0].headers["Retry-After"])
+    assert body["reset_at"] is None
 
 
 @pytest.mark.parametrize(
@@ -192,10 +210,14 @@ async def test_global_budget_hard_stop_403(
     # ASSERT - platform budget exhausted: distinct code, not user-fault, no reset time,
     # and the Chatbox was never called
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    errors = json.dumps(response.json()["errors"])
+    body = response.json()
+    errors = json.dumps(body["errors"])
     assert "provider_budget_exhausted" in errors
     assert "not caused by your usage" in errors.lower()
     assert "Retry-After" not in response.headers
+    assert body["code"] == "provider_budget_exhausted"
+    assert body["retry_after_seconds"] is None
+    assert body["reset_at"] is None
     assert len(mocked_chatbot_backend.calls) == 0
 
 
@@ -377,8 +399,13 @@ async def test_redis_down_window_quota_fails_closed(
     # ACT / ASSERT - the Window Quota fails CLOSED (503, retryable), never an uncounted pass
     response = await _post_stream(client, auth, usage_builders.make_stream_body())
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-    assert "chatbox_usage_ledger_unavailable" in json.dumps(response.json()["errors"])
+    body = response.json()
+    assert "chatbox_usage_ledger_unavailable" in json.dumps(body["errors"])
     assert int(response.headers["Retry-After"]) >= 1
+    assert body["code"] == "chatbox_usage_ledger_unavailable"
+    assert body["retry_after_seconds"] == int(response.headers["Retry-After"])
+    # a server-side rejection carries a support_id for tracing
+    assert body["support_id"]
 
     # ASSERT - the Rate Limit still counted the request, and it never reached the Chatbox
     redis = ledger._client.redis  # noqa: SLF001
@@ -474,3 +501,102 @@ async def test_redis_down_rate_limit_fails_open(
     window = next(iter(state["windows"].values()))
     assert window["reservations"] == pytest.approx(0.0)
     assert window["spend"] > 0
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 0.003, "REQUESTS_PER_MINUTE": 100}],
+    indirect=True,
+)
+async def test_stream_usage_lands_in_ledger_entry_as_actual(
+    client: AsyncClient,
+    auth: BasicAuth,
+    app: FastAPI,
+    usage_builders,
+    mocked_chatbot_backend: respx.MockRouter,
+):
+    # ARRANGE - one completion reporting exactly 1000 real tokens
+    mocked_chatbot_backend.post("/v1/chat/completions").respond(
+        200, content=usage_builders.make_sse_with_usage(400, 600), headers={"content-type": "text/event-stream"}
+    )
+
+    # ACT
+    response = await _post_stream(client, auth, usage_builders.make_stream_body())
+    assert response.status_code == status.HTTP_200_OK
+
+    # ASSERT - the ledger stream entry carries the ACTUAL tokens, not an estimate
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    redis = ledger._client.redis  # noqa: SLF001
+    entries = await redis.xrange(_LEDGER_STREAM_KEY)
+    assert len(entries) == 1
+    fields = entries[0][1]
+    assert fields["estimated"] == "0"
+    assert fields["total_tokens"] == "1000"
+    assert fields["prompt_tokens"] == "400"
+    assert fields["completion_tokens"] == "600"
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 0.003, "REQUESTS_PER_MINUTE": 100}],
+    indirect=True,
+)
+async def test_client_abort_bills_estimate_instead_of_refund(
+    app: FastAPI,
+    read_ledger_state,
+):
+    # The HTTP test transport cannot simulate a mid-stream client disconnect, so the
+    # relay is driven directly with a fake upstream response and a request that
+    # reports a disconnect after the first chunk.
+
+    # ARRANGE - a real Reservation in flight, and a two-chunk stream where the
+    # client drops before the second chunk is relayed
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    reservation = await ledger.admit_and_reserve(user_id=1, product_name="osparc")
+
+    first_event = b'data: {"id": "r", "choices": [{"index": 0, "delta": {"content": "hello world"}}]}\n\n'
+    abandoned_event = b'data: {"id": "r", "choices": [{"index": 0, "delta": {"content": "more text"}}]}\n\n'
+
+    response = MagicMock(spec=httpx.Response)
+
+    async def _aiter_bytes() -> AsyncIterator[bytes]:
+        yield first_event
+        yield abandoned_event
+
+    response.aiter_bytes = _aiter_bytes
+    response.aclose = AsyncMock()
+
+    request = MagicMock()
+    request.is_disconnected = AsyncMock(side_effect=[False, True])
+
+    input_chars = 100
+
+    # ACT - drain the relay: it stops at the disconnect
+    relayed = [
+        chunk
+        async for chunk in _make_metered_sse_relay(
+            response=response,
+            request=request,
+            ledger=ledger,
+            reservation=reservation,
+            input_chars=input_chars,
+        )
+    ]
+    assert relayed == [first_event]
+
+    # ASSERT - the tokens streamed so far were billed as an estimate instead of the
+    # Reservation being refunded: (100 + len("hello world")) // 4 = 27 tokens
+    estimated_tokens = (input_chars + len("hello world")) // 4
+    state = await read_ledger_state()
+    window = next(iter(state["windows"].values()))
+    assert window["reservations"] == pytest.approx(0.0)
+    assert window["spend"] == pytest.approx(estimated_tokens / 1e6 * 2.5)
+
+    # ASSERT - the ledger entry is flagged as estimated
+    redis = ledger._client.redis  # noqa: SLF001
+    entries = await redis.xrange(_LEDGER_STREAM_KEY)
+    assert len(entries) == 1
+    assert entries[0][1]["estimated"] == "1"
+    assert entries[0][1]["total_tokens"] == f"{estimated_tokens}"

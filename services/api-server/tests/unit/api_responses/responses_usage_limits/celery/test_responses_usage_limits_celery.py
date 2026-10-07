@@ -276,6 +276,7 @@ async def test_celery_window_quota_exhausted_rejects_at_submit(
     # ASSERT - rejected at submit, before any queueing
     assert second.status_code == status.HTTP_403_FORBIDDEN
     assert "chatbox_window_quota_exceeded" in json.dumps(second.json()["errors"])
+    assert second.json()["code"] == "chatbox_window_quota_exceeded"
 
 
 def _wait_obj(submit_response: httpx.Response) -> ResponseObject:

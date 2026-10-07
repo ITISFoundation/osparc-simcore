@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeAlias
+from typing import Any
 
 from common_library.error_codes import ErrorCodeStr
 from fastapi.encoders import jsonable_encoder
@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from ...models.schemas.errors import ErrorGet
 
-ExceptionHandler: TypeAlias = Callable[[Request, BaseException], Awaitable[JSONResponse]]
+type ExceptionHandler = Callable[[Request, BaseException], Awaitable[JSONResponse]]
 
 
 def _make_json_safe(value: Any) -> Any:
@@ -23,11 +23,24 @@ def _make_json_safe(value: Any) -> Any:
 
 
 def create_error_json_response(
-    *errors: Any, status_code: int, support_id: ErrorCodeStr | None = None, **kwargs
+    *errors: Any,
+    status_code: int,
+    support_id: ErrorCodeStr | None = None,
+    error_model: ErrorGet | None = None,
+    **kwargs,
 ) -> JSONResponse:
     """
     Converts errors to Error response model defined in the OAS
+
+    Pass a pre-built ``error_model`` (e.g. a ``UsageLimitErrorGet`` carrying
+    structured fields) instead of ``errors`` to control the response body.
     """
+    if error_model is not None:
+        return JSONResponse(
+            content=jsonable_encoder(error_model),
+            status_code=status_code,
+            **kwargs,
+        )
 
     error_model = ErrorGet(errors=_make_json_safe(list(errors)), support_id=support_id, **kwargs)
     return JSONResponse(

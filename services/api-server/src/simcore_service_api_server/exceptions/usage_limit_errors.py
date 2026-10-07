@@ -16,14 +16,23 @@ class ChatboxUsageBaseError(ApiServerBaseError):
     msg_template = user_message("The Chatbox usage limit was exceeded.", _version=1)
     status_code = status.HTTP_403_FORBIDDEN
 
+    # stable machine-readable code on the wire (UsageLimitErrorGet.code),
+    # matching the token prefixed to msg_template
+    code: str
+
     @property
     def retry_after_seconds(self) -> int | None:
         if (value := self.error_context().get("retry_after_seconds")) is None:
             return None
         return max(1, math.ceil(float(value)))
 
+    @property
+    def reset_at_iso(self) -> str | None:
+        return self.error_context().get("reset_at_iso")
+
 
 class ChatboxWindowQuotaExceededError(ChatboxUsageBaseError):
+    code = "chatbox_window_quota_exceeded"
     msg_template = user_message(
         "chatbox_window_quota_exceeded: You have used your Chatbox allowance of {allowance_usd} "
         "for the current usage window. Your allowance will be available again at {reset_at}. "
@@ -34,6 +43,7 @@ class ChatboxWindowQuotaExceededError(ChatboxUsageBaseError):
 
 
 class ProviderBudgetExhaustedError(ChatboxUsageBaseError):
+    code = "provider_budget_exhausted"
     msg_template = user_message(
         "provider_budget_exhausted: The platform's AI provider budget has been exhausted. "
         "This is not caused by your usage. The Chatbox is unavailable for all users until the "
@@ -44,6 +54,7 @@ class ProviderBudgetExhaustedError(ChatboxUsageBaseError):
 
 
 class ChatboxRateLimitedError(ChatboxUsageBaseError):
+    code = "chatbox_rate_limited"
     msg_template = user_message(
         "chatbox_rate_limited: You are sending Chatbox requests too quickly "
         "(limit {requests_per_minute} per minute). Please wait {retry_after_seconds} seconds and try again.",
@@ -54,6 +65,7 @@ class ChatboxRateLimitedError(ChatboxUsageBaseError):
 
 class UsageLedgerUnavailableError(ChatboxUsageBaseError):
     # fail-closed for the spend layers (Window Quota, Global Budget Guard)
+    code = "chatbox_usage_ledger_unavailable"
     msg_template = user_message(
         "chatbox_usage_ledger_unavailable: The Chatbox usage service is temporarily unavailable, "
         "so your request cannot be safely metered. Please try again shortly.",

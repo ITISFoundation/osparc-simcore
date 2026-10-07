@@ -286,6 +286,7 @@ class ChatboxUsageLedger:
                         raise ChatboxWindowQuotaExceededError(
                             allowance_usd=f"${allowance:.2f}",
                             reset_at=reset_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                            reset_at_iso=reset_at.isoformat(),
                             retry_after_seconds=reset_after,
                         )
 

@@ -20,7 +20,7 @@ from ...exceptions.backend_errors import ChatbotNotAvailableError
 from ...exceptions.task_errors import TaskCancelledError, TaskError, TaskResultMissingError
 from ...models.basic_types import SseStreamingResponse
 from ...models.domain.celery_models import ApiServerOwnerMetadata
-from ...models.schemas.errors import ErrorGet
+from ...models.schemas.errors import ErrorGet, UsageLimitErrorGet
 from ...models.schemas.responses import (
     CreateResponseRequest,
     OutputMessage,
@@ -69,7 +69,7 @@ router = APIRouter()
     responses={
         status.HTTP_403_FORBIDDEN: {
             "description": "The Chatbox Window Quota or the platform Provider Budget is exhausted",
-            "model": ErrorGet,
+            "model": UsageLimitErrorGet,
         },
         status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "The request was rejected by the chatbot service",
@@ -77,7 +77,7 @@ router = APIRouter()
         },
         status.HTTP_429_TOO_MANY_REQUESTS: {
             "description": "The per-API-key Chatbox rate limit was exceeded",
-            "model": ErrorGet,
+            "model": UsageLimitErrorGet,
         },
         status.HTTP_502_BAD_GATEWAY: {
             "description": "The chatbot service could not be reached or failed",

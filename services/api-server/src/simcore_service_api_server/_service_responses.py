@@ -204,8 +204,14 @@ def _make_metered_sse_relay(
             await response.aclose()
 
         if not completed:
-            # client disconnected before the completion finished
-            await ledger.release(reservation, reason="client_abort")
+            # client disconnected before the completion finished: the tokens
+            # streamed so far were really burned upstream, so bill an estimate
+            # instead of refunding the whole Reservation (a refund would let a
+            # client abort repeatedly to consume for free)
+            await ledger.reconcile(
+                reservation,
+                UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=accumulator.output_chars),
+            )
             return
 
         if (usage := accumulator.usage) is None:

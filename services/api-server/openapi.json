@@ -8976,7 +8976,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
+                  "$ref": "#/components/schemas/UsageLimitErrorGet"
                 }
               }
             }
@@ -8996,7 +8996,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
+                  "$ref": "#/components/schemas/UsageLimitErrorGet"
                 }
               }
             }
@@ -13703,6 +13703,71 @@
           "e_tag"
         ],
         "title": "UploadedPart"
+      },
+      "UsageLimitErrorGet": {
+        "properties": {
+          "errors": {
+            "items": {},
+            "type": "array",
+            "title": "Errors"
+          },
+          "support_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "OEC:([a-fA-F0-9]{12})-(\\d{13,14})"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Stable machine-readable code identifying the usage-limit rejection"
+          },
+          "retry_after_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry After Seconds",
+            "description": "Seconds to wait before the request can be retried, when known"
+          },
+          "reset_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reset At",
+            "description": "ISO-8601 UTC instant when the allowance becomes available again (usage window quota), when known"
+          }
+        },
+        "type": "object",
+        "required": [
+          "errors",
+          "code"
+        ],
+        "title": "UsageLimitErrorGet",
+        "description": "ErrorGet with structured fields for Chatbox usage-limit rejections.\n\nClients can branch on ``code`` and surface ``retry_after_seconds``/``reset_at``\nwithout parsing the prose in ``errors``.",
+        "example": {
+          "code": "chatbox_window_quota_exceeded",
+          "errors": [
+            "chatbox_window_quota_exceeded: You have used your Chatbox allowance ..."
+          ],
+          "reset_at": "2026-01-01T12:00:00+00:00",
+          "retry_after_seconds": 1800
+        }
       },
       "UserFile": {
         "properties": {
