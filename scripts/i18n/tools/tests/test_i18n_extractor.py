@@ -192,6 +192,93 @@ def test_xgettext_extractor_reads_user_message(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# xgettext wide-literal truncation workaround (_fold_wide_literal_runs)
+# ---------------------------------------------------------------------------
+
+
+def test_fold_strips_wide_from_continuations() -> None:
+    text = 'tr(L"aaa " L"bbb " L"ccc");\n'
+    folded, n = ix._fold_wide_literal_runs(text)
+    assert n == 1
+    assert folded == 'tr(L"aaa " "bbb " "ccc");\n'
+
+
+def test_fold_moves_wide_prefix_to_first_fragment() -> None:
+    text = 'tr("aaa " L"bbb");\n'
+    folded, n = ix._fold_wide_literal_runs(text)
+    assert n == 1
+    assert folded == 'tr(L"aaa " "bbb");\n'
+
+
+def test_fold_preserves_line_count() -> None:
+    text = 'line0\nfoo(tr(L"a "\n    L"b "\n    L"c"));\nlast\n'
+    folded, n = ix._fold_wide_literal_runs(text)
+    assert n == 1
+    assert folded.count("\n") == text.count("\n")
+    assert folded == ('line0\nfoo(tr(L"a "\n    "b "\n    "c"));\nlast\n')
+
+
+def test_fold_skips_mergeable_and_commented_runs() -> None:
+    text = (
+        'tr("n1 " "n2");\n'  # all-narrow: mergeable, leave alone
+        'tr(L"w1 " "w2");\n'  # wide-first narrow-cont: mergeable, leave alone
+        '// tr(L"c1 " L"c2")\n'  # inside a comment: not code
+        '/* tr(L"d1 " L"d2") */\n'  # inside a block comment: not code
+        'QT_TR_NOOP(L"q1 " L"q2");\n'  # flagged keyword: folds
+    )
+    folded, n = ix._fold_wide_literal_runs(text)
+    assert n == 1
+    assert 'tr("n1 " "n2")' in folded
+    assert 'tr(L"w1 " "w2")' in folded
+    assert 'tr(L"c1 " L"c2")' in folded  # comment untouched
+    assert '/* tr(L"d1 " L"d2") */' in folded  # block comment untouched
+    assert 'QT_TR_NOOP(L"q1 " "q2")' in folded
+
+
+def test_fold_skips_non_l_wide_kinds() -> None:
+    # u8/u/U runs cannot bind the tr() overloads; folding them could change the
+    # literal TYPE, so they must be left unfolded (warn path).
+    text = 'tr(L"a " u8"b");\n'
+    folded, n = ix._fold_wide_literal_runs(text)
+    assert n == 0
+    assert folded == text
+
+
+def test_fold_ignores_identifier_suffixed_literals() -> None:
+    # the L of SOMETHING_L"..." is an identifier char, not a wide prefix
+    text = 'auto s = SOMETHING_L"x"; tr(L"a " "b");\n'
+    folded, n = ix._fold_wide_literal_runs(text)
+    assert n == 0
+    assert folded == text
+
+
+@requires_xgettext
+def test_xgettext_extractor_recovers_wide_split_message(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A tr() whose message is split across wide literals must extract as ONE
+    complete msgid (xgettext alone truncates it at the first wide continuation),
+    and the #: reference must still point at the real file and line."""
+    src_dir = tmp_path / "proj"
+    src_dir.mkdir()
+    src = src_dir / "wide.cpp"
+    src.write_text(
+        'void f() {\n    tr(L"part one " L"part two " L"part three");\n}\n',
+        encoding="utf-8",
+    )
+    out_pot = tmp_path / "wide.pot"
+    monkeypatch.chdir(tmp_path)
+
+    ok = ix.XgetextExtractor().run([Path("proj/wide.cpp")], out_pot)
+    assert ok is True
+
+    entries = polib.pofile(str(out_pot))
+    msgids = {e.msgid for e in entries}
+    assert "part one part two part three" in msgids
+    assert "part one " not in msgids  # the truncated shape must be gone
+    entry = next(e for e in entries if e.msgid == "part one part two part three")
+    assert ("proj/wide.cpp", "2") in entry.occurrences
+
+
+# ---------------------------------------------------------------------------
 # enrich — CTX-SNIPPET present, CTX-SNIPPET-VERSION removed
 # ---------------------------------------------------------------------------
 
