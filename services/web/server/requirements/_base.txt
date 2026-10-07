@@ -499,7 +499,7 @@ vine==5.1.0
     #   kombu
 wcwidth==0.2.13
     # via prompt-toolkit
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 wrapt==1.16.0
     # via
