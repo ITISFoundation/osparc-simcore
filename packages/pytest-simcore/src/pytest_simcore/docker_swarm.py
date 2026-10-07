@@ -35,6 +35,7 @@ from .docker_compose import _filter_services_and_dump
 from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
+from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
 from .helpers.xdist import (
@@ -45,7 +46,7 @@ from .helpers.xdist import (
     is_xdist_worker,
 )
 
-log = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
 
 _DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
 _DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
@@ -69,7 +70,7 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 @retry(
     wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
-    before_sleep=before_sleep_log(log, logging.INFO),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
     reraise=True,
 )
 def assert_service_is_running(service) -> None:
@@ -85,7 +86,7 @@ def assert_service_is_running(service) -> None:
     service_name = service.name
     num_replicas_specified = _get(service.attrs, "Spec.Mode.Replicated.Replicas", default=1)
 
-    log.info(
+    _logger.info(
         "Waiting for service_name='%s' to have num_replicas_specified=%s ...",
         service_name,
         num_replicas_specified,
@@ -164,16 +165,18 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
     client.close()
 
 
+@retry(
+    wait=wait_fixed(2),
+    stop=stop_after_delay(15),
+    reraise=True,
+)
 def _ensure_swarm_init(docker_client: docker.client.DockerClient) -> None:
-    for attempt in Retrying(wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True):
-        with attempt:
-            if not _is_docker_swarm_init(docker_client):
-                print("--> initializing docker swarm...")
-                docker_client.swarm.init(advertise_addr=get_localhost_ip())
-                print("--> docker swarm initialized.")
+    if not _is_docker_swarm_init(docker_client):
+        with log_context(logging.INFO, "initializing docker swarm", logger=_logger):
+            docker_client.swarm.init(advertise_addr=get_localhost_ip())
 
-            # if still not in swarm, raise an error to try and initialize again
-            assert _is_docker_swarm_init(docker_client)
+    # if still not in swarm, raise an error to try and initialize again
+    assert _is_docker_swarm_init(docker_client)
 
 
 @pytest.fixture(scope="module")
@@ -562,7 +565,7 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
                 capture_output=True,
             )
         except subprocess.CalledProcessError as err:
-            log.warning(
+            _logger.warning(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
@@ -581,7 +584,7 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
             for attempt in Retrying(
                 wait=wait_fixed(2),
                 stop=stop_after_delay(3 * MINUTE),
-                before_sleep=before_sleep_log(log, logging.INFO),
+                before_sleep=before_sleep_log(_logger, logging.INFO),
                 reraise=True,
             ):
                 with attempt:
