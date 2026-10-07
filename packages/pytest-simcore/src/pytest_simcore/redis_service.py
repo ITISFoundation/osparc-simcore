@@ -9,9 +9,10 @@ from typing import Final
 import pytest
 import tenacity
 from fakeredis import FakeAsyncRedis
-from pydantic import TypeAdapter
+from pydantic import SecretStr, TypeAdapter
 from pytest_mock import MockerFixture
 from redis.asyncio import Redis, from_url
+from servicelib.redis import handle_redis_returns_union_types
 from settings_library.basic_types import PortInt
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity.before_sleep import before_sleep_log
@@ -21,6 +22,7 @@ from yarl import URL
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count
 from .helpers.xdist import get_worker_id, is_xdist_worker
@@ -76,10 +78,16 @@ async def redis_settings(
     settings = RedisSettings(
         REDIS_HOST=get_localhost_ip(),
         REDIS_PORT=TypeAdapter(PortInt).validate_python(port),
-        REDIS_PASSWORD=env_vars_for_docker_compose["REDIS_PASSWORD"],
+        REDIS_PASSWORD=SecretStr(env_vars_for_docker_compose["REDIS_PASSWORD"]),
         REDIS_DB_OFFSET=_worker_db_offset(request, deployed_databases_count),
     )
-    await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
+    with log_context(
+        logging.INFO,
+        f"waiting for redis at {settings.REDIS_HOST}:{settings.REDIS_PORT} "
+        f"(db offset {settings.REDIS_DB_OFFSET}) to be responsive",
+        logger=log,
+    ):
+        await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
 
     return settings
 
@@ -147,7 +155,9 @@ async def redis_locks_client(
 async def wait_till_redis_responsive(redis_url: URL | str) -> None:
     client = from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
     try:
-        if not await client.ping():
+        # NOTE: redis' sync/async shared command typings return `bool | Awaitable[bool]`,
+        # hence the helper (same as servicelib.redis.RedisClientSDK.ping)
+        if not await handle_redis_returns_union_types(client.ping()):
             msg = f"{redis_url=} not available"
             raise ConnectionError(msg)
     finally:
