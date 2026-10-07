@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator
+from contextlib import suppress
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import LifespanManager, State
@@ -15,11 +16,12 @@ from settings_library.tracing import TracingSettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
-from ..logging_utils import log_catch, log_context
+from ..logging_utils import log_catch, log_context, log_exceptions
 from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
 from ..tracing import (
     TracingConfig,
     get_trace_info_headers,
+    setup_meter_provider,
 )
 
 _logger = logging.getLogger(__name__)
@@ -121,6 +123,8 @@ def _startup(
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
 
+    setup_meter_provider()
+
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_context(
             _logger,
@@ -185,7 +189,7 @@ def _startup(
     TracedFunctionsInstrumentor().instrument(tracing_settings=tracing_settings, tracer_provider=tracer_provider)
 
 
-def _shutdown() -> None:
+def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         FastAPIInstrumentor().uninstrument()
@@ -217,6 +221,10 @@ def _shutdown() -> None:
 
     with log_catch(_logger, reraise=False):
         TracedFunctionsInstrumentor().uninstrument()
+
+    if tracer_provider is not None:
+        with suppress(Exception), log_exceptions(_logger, logging.WARNING):
+            tracer_provider.shutdown()
 
 
 def initialize_fastapi_app_tracing(
@@ -252,20 +260,23 @@ def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
         raise ValueError(msg)
     assert tracing_config.tracing_settings  # nosec
     assert tracing_config.tracer_provider  # nosec
-    _startup(
-        tracing_settings=tracing_config.tracing_settings,
-        service_name=tracing_config.service_name,
-        tracer_provider=tracing_config.tracer_provider,
-    )
+    tracing_settings = tracing_config.tracing_settings
+    tracer_provider = tracing_config.tracer_provider
 
     async def tracing_instrumentation_lifespan(
         app: FastAPI,
     ) -> AsyncIterator[State]:
         assert app  # nosec
 
+        _startup(
+            tracing_settings=tracing_settings,
+            service_name=tracing_config.service_name,
+            tracer_provider=tracer_provider,
+        )
+
         yield {}
 
-        _shutdown()
+        _shutdown(tracer_provider)
 
     return tracing_instrumentation_lifespan
 

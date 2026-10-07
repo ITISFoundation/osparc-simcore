@@ -13,7 +13,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.6.2.post1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -37,9 +37,7 @@ certifi==2024.8.30
     #   httpx
     #   requests
 charset-normalizer==3.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
@@ -53,6 +51,10 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.2.4
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -84,7 +86,7 @@ jsonref==1.1.0
     #   -r requirements/_test.in
 librt==0.8.1
     # via mypy
-multidict==6.1.0
+multidict==6.9.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -147,9 +149,7 @@ python-socketio==5.16.4
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 requests==2.34.2
-    # via
-    #   -c requirements/_base.txt
-    #   docker
+    # via docker
 respx==0.22.0
     # via -r requirements/_test.in
 simple-websocket==1.1.0
@@ -159,7 +159,6 @@ simple-websocket==1.1.0
 sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asgi-lifespan
 sqlalchemy==2.0.51
     # via
@@ -176,12 +175,13 @@ types-python-jose==3.5.0.20250531
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.14.1
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   mypy
     #   sqlalchemy
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

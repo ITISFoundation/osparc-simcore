@@ -20,4 +20,5 @@ def register_worker_tasks(app: Celery) -> None:
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):
         register_task(app, run_function)
-        register_task(app, run_chat_completion)
+        # never retry: avoid duplicate/expensive AI calls on failure
+        register_task(app, run_chat_completion, max_retries=0)

@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translation-Date: 2026-09-09T09:06:52Z\n"
+"X-Translation-Date: 2026-10-05T15:58:45Z\n"
 "X-Translation-Model: ollama/translategemma:4b\n"
 
 # CTX-INTERPRETATION: The string "About %1" is used within the 'About Product'
@@ -972,7 +972,7 @@ msgstr "应用程序"
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:176
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:296
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:317
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:470
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:469
 msgid "Other"
 msgstr "其他"
 
@@ -994,7 +994,7 @@ msgstr "数据分析"
 # interface related to account management or product selection, likely within
 # a context of personalized medicine options.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:185
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:500
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:499
 msgid "Personalized Medicine"
 msgstr "个性化医疗"
 
@@ -1003,7 +1003,7 @@ msgstr "个性化医疗"
 # a scientific simulation application, where it refers to a specific type of
 # neurostimulation.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:188
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:497
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:496
 msgid "Neurostimulation"
 msgstr "神经刺激"
 
@@ -1012,7 +1012,7 @@ msgstr "神经刺激"
 # scientific simulation application, where users can evaluate the safety and
 # effectiveness of a product or account.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:191
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:479
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:478
 msgid "Safety & Efficacy Assessment"
 msgstr "安全与有效性评估"
 
@@ -1028,7 +1028,7 @@ msgstr "设备设计与优化"
 # account management, likely displaying the name of a magnetic resonance
 # imaging (MRI) related feature or service.
 #: services/static-webserver/client/source/class/osparc/auth/ui/RequestAccount.js:197
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:494
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:493
 msgid "Magnetic Resonance Imaging"
 msgstr "磁共振成像"
 
@@ -1516,9 +1516,9 @@ msgstr "请联系我们："
 msgid "Ten Simple Rules"
 msgstr "十条简单规则"
 
-# CTX-INTERPRETATION: The string "TSR:" is likely a label indicating a 'Ten
-# Simple Rules' rating or score, as part of a user interface element for a
-# scientific simulation application.
+# CTX-INTERPRETATION: This string labels a star rating component within a
+# card-based dashboard, likely indicating the quality or performance of a
+# simulation result.
 #: services/static-webserver/client/source/class/osparc/dashboard/CardBase.js:104
 msgid "TSR:"
 msgstr "TSR:"
@@ -3295,7 +3295,7 @@ msgstr "请注册以使用此功能"
 # CTX-INTERPRETATION: This string appears within a `PollTask` class, likely
 # indicating an error or failure during a polling operation, providing a user-
 # friendly message.
-#: services/static-webserver/client/source/class/osparc/data/PollTask.js:142
+#: services/static-webserver/client/source/class/osparc/data/PollTask.js:146
 msgid "Unsuccessful polling status"
 msgstr "未成功的 polling 状态"
 
@@ -4855,19 +4855,38 @@ msgstr "请求删除您的帐户。"
 msgid "Update Phone Number"
 msgstr "更新电话号码"
 
-# CTX-INTERPRETATION: The string appears in the 'TransferProjects' component,
-# guiding the user through the process of transferring their projects to
-# another user, outlining the two available options.
-#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:48
-msgid ""
-"            You are about to transfer all your projects to another user.<br>\n"
-"            There are two ways to do so:<br>\n"
-"            - Share all your projects with the target user and keep the co-ownership. <br>\n"
-"            - Share all your projects with the target user and remove yourself as co-owner. <br>\n"
-"          "
+# CTX-INTERPRETATION: This string appears in the 'TransferProjects' class
+# within the oSparc desktop application, informing the user about transferring
+# their projects to another user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:49
+msgid "You are about to transfer all your projects to another user."
+msgstr "您即将将所有项目转移给另一用户。"
+
+# CTX-INTERPRETATION: This string appears in the 'TransferProjects' class,
+# explaining two methods for transferring projects to another user.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:50
+msgid "There are two ways to do so:"
 msgstr ""
-"您即将将所有项目转移给另一位用户。<br> 共有两种方式：<br> - 与目标用户共享所有项目，同时保持共同所有权。<br> - 与目标用户共享所有项目，同时解除自己的所有权。<br>\n"
-"          "
+"有以下两种方法：\n"
+"- 与目标用户共享所有项目，同时保持共同所有权。\n"
+"- 与目标用户共享所有项目，并移除自己作为共同所有者。"
+
+# CTX-INTERPRETATION: This string appears in the context of transferring
+# projects to another user, explaining two options for sharing projects while
+# maintaining or removing co-ownership.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:51
+msgid ""
+"- Share all your projects with the target user and keep the co-ownership."
+msgstr "- 与目标用户共享所有项目，并保持共同所有权。"
+
+# CTX-INTERPRETATION: This string appears in the context of transferring
+# projects to another user, specifically removing the current user's co-
+# ownership.
+#: services/static-webserver/client/source/class/osparc/desktop/account/TransferProjects.js:52
+msgid ""
+"- Share all your projects with the target user and remove yourself as co-"
+"owner."
+msgstr "- 与目标用户共享所有项目，同时移除自己作为共同所有者的。"
 
 # CTX-INTERPRETATION: The string "Target user:" is a label used in a user
 # interface to indicate the target user for a project transfer operation.
@@ -5726,41 +5745,48 @@ msgstr "自动连接端口"
 # within a user preferences page, likely allowing the user to select their
 # preferred language for the application.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:66
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:97
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:116
 msgid "Language"
 msgstr "语言"
 
 # CTX-INTERPRETATION: This string appears in the GeneralPage.js file, likely
-# within a user interface element that informs users about the AI-generated
-# nature of translations and potential inaccuracies.
+# within a settings panel, informing the user about beta versions and
+# potential inaccuracies.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:68
-msgid "Translations are AI-generated and may contain errors."
-msgstr "这些翻译由人工智能生成，可能包含错误。"
+msgid "Languages marked (Beta) are previews that may contain inaccuracies."
+msgstr "标记为（β）的语言是预览版本，可能包含不准确之处。"
+
+# CTX-INTERPRETATION: This string appears as a tooltip within the GeneralPage
+# preferences, indicating that the translation is a preview and might have
+# errors.
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:86
+msgid "This translation is a preview and may contain inaccuracies"
+msgstr "此翻译为预览版，可能存在不准确之处"
 
 # CTX-INTERPRETATION: The string "Credits Indicator" is used as a label for a
 # section within the GeneralPage settings, likely indicating a visual or
 # functional setting related to displaying or managing credits.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:105
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:124
 msgid "Credits Indicator"
 msgstr "信用指示器"
 
 # CTX-INTERPRETATION: The string "Always" appears in the GeneralPage.js file,
 # likely within a user interface element that allows the user to persistently
 # enable a specific feature or setting.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:117
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:136
 msgid "Always"
 msgstr "始终"
 
 # CTX-INTERPRETATION: The string "Warning" is used as a label within a user
 # interface, likely indicating a potential issue or caution to the user.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:120
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:139
 msgid "Warning"
 msgstr "警告"
 
 # CTX-INTERPRETATION: The string "Show indicator" is used as a label for a
 # button or checkbox within a user interface, likely controlling the
 # visibility of a wallet indicator on a preferences page.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:135
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:154
 msgid "Show indicator"
 msgstr "显示指示器"
 
@@ -5768,27 +5794,27 @@ msgstr "显示指示器"
 # within a user interface element that allows the user to set a threshold for
 # displaying a warning message when the user's credit balance falls below a
 # specified value.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:145
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:164
 msgid "Show warning when credits below"
 msgstr "在信用余额低于指定值时显示警告"
 
 # CTX-INTERPRETATION: This string appears in the 'GeneralPage' of the osparc
 # desktop preferences, likely related to configuring automatic shutdown
 # behavior for inactive simulation instances.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:153
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:172
 msgid "Automatic Shutdown of Idle Instances"
 msgstr "自动关闭闲置实例"
 
 # CTX-INTERPRETATION: This string is used in a user interface to specify the
 # inactivity time (in minutes) before the application closes automatically.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:167
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:186
 msgid "Idle time before closing (in minutes)"
 msgstr "在关闭前的闲置时间 (分钟)"
 
 # CTX-INTERPRETATION: The string "Low Disk Space Threshold" appears as a label
 # for a setting within a user interface, likely related to configuring a
 # warning threshold for low disk space availability.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:175
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:194
 msgid "Low Disk Space Threshold"
 msgstr "低磁盘空间阈值"
 
@@ -5796,35 +5822,35 @@ msgstr "低磁盘空间阈值"
 # likely as a tooltip or label associated with a setting that allows the user
 # to define a threshold for low disk space, indicating when a warning should
 # be displayed.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:176
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:195
 msgid "Set the warning Threshold for Low Disk Space availability"
 msgstr "设置低磁盘空间可用性的警告阈值"
 
 # CTX-INTERPRETATION: The string "Threshold (in GB)" is a label for a UI
 # element, likely a slider or input field, that allows the user to set a
 # threshold for disk usage in gigabytes within a preferences dialog.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:190
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:209
 msgid "Threshold (in GB)"
 msgstr "阈值 (以 GB 为单位)"
 
 # CTX-INTERPRETATION: The string "Privacy Settings" appears as the title of a
 # section within the general preferences settings page, allowing users to
 # manage their privacy options.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:196
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:215
 msgid "Privacy Settings"
 msgstr "隐私设置"
 
 # CTX-INTERPRETATION: The string appears within a user preferences page,
 # likely prompting the user to provide feedback or contribute to improving the
 # Sim4Life application.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:197
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:216
 msgid "Help us improve Sim4Life user experience"
 msgstr "帮助我们改进 Sim4Life 用户体验"
 
 # CTX-INTERPRETATION: The string "Share usage data" appears as the label for a
 # checkbox within a user preferences settings page, allowing the user to opt-
 # in to sharing their application usage data.
-#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:201
+#: services/static-webserver/client/source/class/osparc/desktop/preferences/pages/GeneralPage.js:220
 msgid "Share usage data"
 msgstr "分享使用数据"
 
@@ -6036,9 +6062,8 @@ msgid ""
 "access them again after closing this window."
 msgstr "为了您的安全，请妥善保管您的访问密钥。关闭此窗口后，您将无法再次访问它们。"
 
-# CTX-INTERPRETATION: The string is used to label the 'Key' field in a user
-# interface, likely within a preferences or settings window, where the user
-# can input or view an API key.
+# CTX-INTERPRETATION: This string appears within a UI element that displays
+# the API key, likely within the application's preferences or settings.
 #: services/static-webserver/client/source/class/osparc/desktop/preferences/window/ShowAPIKey.js:33
 msgid "<b>Key:</b>"
 msgstr "<b>Key:</b>"
@@ -7551,9 +7576,8 @@ msgstr "日志"
 msgid "No logs available"
 msgstr "没有可用的日志"
 
-# CTX-INTERPRETATION: The string "RRID:" is likely used as a label or title
-# for a link that points to a resource identified by an RRID (Remote Resource
-# Identifier), within a metadata editor interface.
+# CTX-INTERPRETATION: This string appears within a UI element, likely a label
+# or identifier, displaying a Research Registry Identifier (RRID).
 #: services/static-webserver/client/source/class/osparc/metadata/ClassifiersEditor.js:80
 msgid "RRID:"
 msgstr "RRID:"
@@ -8812,9 +8836,8 @@ msgstr "单位成本"
 msgid "Specific info"
 msgstr "特定信息"
 
-# CTX-INTERPRETATION: The string "CPU" is used as a label for a numeric input
-# field within a unit editor, likely representing the CPU usage or capacity of
-# a simulated unit.
+# CTX-INTERPRETATION: This string is used as a label for a CPU usage control
+# in the UnitEditor, indicating the CPU used for the simulation.
 #: services/static-webserver/client/source/class/osparc/pricing/UnitEditor.js:218
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:115
 msgid "CPU"
@@ -8968,6 +8991,63 @@ msgstr "有关 Sim4Life.lite 的更多信息，请访问 %1。"
 msgid "For more information about TIP, please visit %1."
 msgstr "有关TIP的更多信息，请访问 %1。"
 
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to unlock the full potential of TI Research and
+# potentially join the EAP program.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:58
+msgid "Unlock the Full Potential of TI Research!"
+msgstr "释放TI研究的全部潜力！"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, prompting
+# users to join the TI Solutions Early Adopter Program (EAP) if they are
+# already members.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:60
+msgid "Are you part of the TI Solutions Early Adopter Program (EAP)?"
+msgstr "您是否是 TI Solutions 的早期采用者计划 (EAP) 成员？"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, offering a
+# benefit to TI Solutions Early Adopter Program (EAP) members who have free
+# access to the complete TIP platform.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:62
+msgid ""
+"If yes, you have free access to our complete TIP platform with advanced "
+"features for TI planning and simulations. Click here to request access."
+msgstr "如果您的答案是肯定的，您将获得我们全面的 TIP 平台免费访问权限，该平台具有高级功能，用于 TI 规划和模拟。请点击此处申请访问。"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file, inviting
+# users who are not EAP members to join a research community and use
+# investigational TIBS-R devices.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:64
+msgid "Not an EAP member yet? Join our cutting-edge research community:"
+msgstr "您还没有加入 EAP 计划？请加入我们先进的研究社区："
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to participate in research using investigational TIBS-R
+# devices as part of the EAP program.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:66
+msgid "• Use our investigational TIBS-R devices in your projects"
+msgstr "• 使用我们用于研究的 TIBS-R 设备在您的项目中。"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to join the TI research community and contribute to
+# advancing TI knowledge.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:68
+msgid "• Contribute to advancing TI knowledge"
+msgstr "• 积极参与推进 TI 知识的贡献"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to join the EAP program and contribute to advancing TI
+# knowledge.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:70
+msgid "• Shape the future of neurostimulation technology"
+msgstr "• 塑造神经刺激技术的未来"
+
+# CTX-INTERPRETATION: This string appears in the TIPTeaser.js file,
+# encouraging users to learn more about EAP and apply for membership.
+#: services/static-webserver/client/source/class/osparc/product/TIPTeaser.js:72
+msgid "Click here to learn more about EAP and apply today!"
+msgstr "点击此处了解更多关于EAP的信息并立即申请！"
+
 # CTX-INTERPRETATION: This string likely represents the name or identifier of
 # a project within the application, used for display or selection purposes.
 #: services/static-webserver/client/source/class/osparc/product/Utils.js:52
@@ -9078,7 +9158,7 @@ msgstr "研究小组/组织"
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface, possibly related to antenna design or wireless communication
 # settings within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:473
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:472
 msgid "Antenna Design for Wireless Communication"
 msgstr "无线通信的天线设计"
 
@@ -9086,56 +9166,56 @@ msgstr "无线通信的天线设计"
 # section related to bioelectronics, electroceuticals, and neuroprosthetics
 # within a scientific simulation application, possibly displayed in a user
 # interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:476
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:475
 msgid "Bioelectronics, Electroceuticals & Neuroprosthetics"
 msgstr "生物电子学、电疗和神经假肢"
 
 # CTX-INTERPRETATION: This string likely represents a category or section
 # title within a user interface, possibly related to managing exposure and
 # compliance settings within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:482
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:481
 msgid "Exposure & Compliance"
 msgstr "暴露与合规"
 
 # CTX-INTERPRETATION: The string "Focused Ultrasound" is likely a label or
 # identifier for a feature or setting related to focused ultrasound within the
 # application, possibly displayed in a user interface.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:485
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:484
 msgid "Focused Ultrasound"
 msgstr "聚焦超声"
 
 # CTX-INTERPRETATION: This string is used within a user interface element,
 # likely a button or link, to refer to a section or feature related to 'In
 # Silico Trials' within the application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:488
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:487
 msgid "In <i>Silico</i> Trials"
 msgstr "在<i>体外</i>试验"
 
 # CTX-INTERPRETATION: The string "Implant Design" is likely a label or title
 # used within a user interface, possibly related to designing or configuring
 # medical implants, as indicated by the file path and surrounding code.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:491
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:490
 msgid "Implant Design"
 msgstr "植入物设计"
 
 # CTX-INTERPRETATION: This string is likely a label or title used within a
 # user interface, possibly related to thermal therapies or treatments, within
 # the Osparc product.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:503
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:502
 msgid "Thermal Therapies"
 msgstr "热疗法"
 
 # CTX-INTERPRETATION: This string is likely used as a label or title within a
 # user interface, possibly related to a section or feature describing wireless
 # power transfer systems, as indicated by the file path and surrounding code.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:506
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:505
 msgid "Wireless Power Transfer Systems"
 msgstr "无线电源传输系统"
 
 # CTX-INTERPRETATION: This string appears in a user interface element, likely
 # a label or title, related to vascular flow and perfusion analysis within a
 # scientific simulation application.
-#: services/static-webserver/client/source/class/osparc/product/Utils.js:509
+#: services/static-webserver/client/source/class/osparc/product/Utils.js:508
 msgid "Vascular Flow & Perfusion"
 msgstr "血管流量与灌注"
 
@@ -9335,9 +9415,8 @@ msgstr ""
 "不支持第三方工具（例如 MUSAIK、SYSSIM、IMAnalytics 等）；- 无法添加额外的 ViP 模型；- 登出前需 30 分钟空闲时间；-"
 " 硬件资源限制。      "
 
-# CTX-INTERPRETATION: This string likely represents the name or title of a
-# simplified version of the Sim4Life application, possibly for a quick start
-# or demo.
+# CTX-INTERPRETATION: This string represents the title of the Sim4Life.lite
+# application, likely displayed in a user interface.
 #: services/static-webserver/client/source/class/osparc/product/quickStart/s4llite/S4LLiteUI.js:22
 msgid "Sim4Life.lite"
 msgstr "Sim4Life.lite"
@@ -10417,24 +10496,35 @@ msgstr "%1 条消息"
 msgid "Add new conversation"
 msgstr "添加新对话"
 
-# CTX-INTERPRETATION: This string appears in the CreateFunction.js file,
-# explaining the requirements for creating a function within the application,
-# specifically related to parameters, probes, and app types.
-#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:36
-msgid ""
-"\n"
-"      In order to Create a Function, the pipeline needs:\n"
-"      - at least one parameter and one probe (numbers)\n"
-"      - at least one computational app\n"
-"      - no dynamic apps\n"
-"    "
+# CTX-INTERPRETATION: The string appears in the CreateFunction.js file,
+# specifically within a function that defines the requirements for creating a
+# function pipeline.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:37
+msgid "In order to Create a Function, the pipeline needs:"
 msgstr ""
-"\n"
-"为了创建函数，流程需要：\n"
-"- 至少有一个参数和一个探测器（数字）\n"
-"- 至少有一个计算应用程序\n"
-"- 没有动态应用程序\n"
-"    "
+"为了创建函数，该流程需要：\n"
+"- 至少一个参数和一个探针（数字）\n"
+"- 至少一个计算应用程序\n"
+"- 没有动态应用程序"
+
+# CTX-INTERPRETATION: This string appears in the CreateFunction.js file,
+# specifically within a section that lists requirements for creating a
+# function pipeline.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:38
+msgid "- at least one parameter and one probe (numbers)"
+msgstr "- 至少一个参数和一个探针（数字）"
+
+# CTX-INTERPRETATION: This string appears within the CreateFunction.js file,
+# specifying requirements for creating a function in the application.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:39
+msgid "- at least one computational app"
+msgstr "- 至少一个计算应用程序"
+
+# CTX-INTERPRETATION: The string appears in the CreateFunction.js file,
+# specifying that a function pipeline requires no dynamic applications.
+#: services/static-webserver/client/source/class/osparc/study/CreateFunction.js:40
+msgid "- no dynamic apps"
+msgstr "- 没有动态应用"
 
 # CTX-INTERPRETATION: The string "Exposed" is used in a UI component for a
 # scientific simulation application, likely indicating whether a specific
@@ -10547,16 +10637,14 @@ msgstr "已选择"
 msgid "Credits/h: %1"
 msgstr "积分/小时：%1"
 
-# CTX-INTERPRETATION: The string "EC2" is used within a function to format and
-# display EC2-related pricing information, likely as part of a user interface
-# for a pricing calculation or configuration tool.
+# CTX-INTERPRETATION: This string is used to display the EC2 instance type in
+# the pricing unit configuration, likely related to AWS pricing.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:103
 msgid "EC2"
 msgstr "EC2"
 
-# CTX-INTERPRETATION: The string "SSD" is used as a tooltip label, likely
-# indicating a storage device type within a pricing unit tier selection
-# interface.
+# CTX-INTERPRETATION: The string "SSD" appears as a tooltip label, likely
+# indicating a storage device type within a pricing or tier selection context.
 #: services/static-webserver/client/source/class/osparc/study/PricingUnitTier.js:127
 msgid "SSD"
 msgstr "SSD"
@@ -10734,43 +10822,40 @@ msgstr "与支持人员共享项目"
 msgid "Book a Call"
 msgstr "预约电话"
 
-# CTX-INTERPRETATION: This string is used within the Conversation.js file to
-# display the 'topic' field from a bookACallInfo object, likely in a user
-# interface for displaying conversation details.
+# CTX-INTERPRETATION: The string appears in the Conversation.js file,
+# specifically within a function that constructs a message related to a call
+# topic and any additional information associated with that topic.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:132
-msgid ""
-"\n"
-"- Topic: %1"
-msgstr ""
-"\n"
-"- 主题: %1"
+msgid "- Topic: %1"
+msgstr "- 主题: %1"
 
-# CTX-INTERPRETATION: This string is used within the Conversation.js file to
-# display additional information related to a call, specifically when
-# 'extraInfo' exists in the bookACallInfo object.
+# CTX-INTERPRETATION: The string is part of a message displaying additional
+# information related to a call or booking, specifically the 'Extra Info'
+# field.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:134
-msgid ""
-"\n"
-"- Extra Info: %1"
-msgstr ""
-"\n"
-"- 额外信息：%1"
+msgid "- Extra Info: %1"
+msgstr "- 额外信息: %1"
 
-# CTX-INTERPRETATION: This string is part of a greeting message used in a
-# conversational interface within the osparc application, likely to initiate a
-# conversation with the user.
+# CTX-INTERPRETATION: This string is part of a greeting message within the
+# oSparc application, specifically used to initiate a conversation with the
+# user.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:328
-msgid "Hi %1,\n"
-msgstr "您好，%1，\n"
+msgid "Hi %1,"
+msgstr "您好，%1，"
 
-# CTX-INTERPRETATION: This string appears within the 'osparc' application,
-# specifically in a conversation or feedback section, offering users
-# assistance.
+# CTX-INTERPRETATION: This string appears in the Conversation class of osparc,
+# specifically within a function that handles user interaction and provides
+# support.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
-msgid ""
-"Have a question or feedback?\n"
-"We are happy to assist!"
-msgstr "您有任何问题或反馈吗？我们很乐意为您提供帮助！"
+msgid "Have a question or feedback?"
+msgstr "您有任何问题或反馈吗？"
+
+# CTX-INTERPRETATION: This string appears in the CONVERSATION class of
+# osparc.support, specifically within a case that handles user interaction and
+# provides assistance.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:331
+msgid "We are happy to assist!"
+msgstr "我们很乐意提供帮助！"
 
 # CTX-INTERPRETATION: This string appears within the
 # 'osparc.support.Conversation' class, likely used to prompt a user for their
@@ -10790,16 +10875,19 @@ msgid ""
 "question below to get started."
 msgstr "我们的支持团队会接手处理 — 请在下方确认或编辑您的问题以开始。"
 
-# CTX-INTERPRETATION: This message appears within the oSPARC support system,
-# informing users that a support ticket has been created and their request
-# will be reviewed.
+# CTX-INTERPRETATION: This string appears in the oSparc application,
+# specifically within a Conversation class, indicating that a support ticket
+# has been successfully created and the user will be contacted soon.
 #: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
-msgid ""
-"A support ticket has been created.\n"
-"Our team will review your request and contact you soon."
-msgstr ""
-"一个支持工单已创建。\n"
-"我们的团队将审核您的请求并尽快与您联系。"
+msgid "A support ticket has been created."
+msgstr "一个支持工单已创建。"
+
+# CTX-INTERPRETATION: This string appears in the oSparc support system,
+# indicating that a support ticket has been created and the team will review
+# and contact the user.
+#: services/static-webserver/client/source/class/osparc/support/Conversation.js:340
+msgid "Our team will review your request and contact you soon."
+msgstr "我们的团队将审核您的请求并尽快与您联系。"
 
 # CTX-INTERPRETATION: The string "Unread" is used to label a badge indicating
 # unread messages within a conversation list, likely for a chat or messaging
@@ -11459,7 +11547,7 @@ msgstr "机构"
 # CTX-INTERPRETATION: This string appears within the LanguageManager class,
 # indicating a failure during a language update operation, likely within a
 # web-based user interface.
-#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:140
+#: services/static-webserver/client/source/class/osparc/utils/LanguageManager.js:158
 msgid "Unsuccessful language update"
 msgstr "语言更新失败"
 
@@ -11621,8 +11709,8 @@ msgstr "物种"
 msgid "Weight"
 msgstr "体重"
 
-# CTX-INTERPRETATION: The string "DOI" is used as a label within the
-# LicensedItemDetails component to display the Digital Object Identifier of a
+# CTX-INTERPRETATION: This string "DOI" is used within the
+# LicensedItemDetails.js file to display the Digital Object Identifier for a
 # licensed item.
 #: services/static-webserver/client/source/class/osparc/vipMarket/LicensedItemDetails.js:276
 msgid "DOI"
@@ -12722,47 +12810,3 @@ msgid ""
 "Once the payment is validated, the Credits will be added to your Credit "
 "Account and they will be ready to be used."
 msgstr "一旦付款验证成功，信用额将添加到您的信用账户中，并可立即使用。"
-
-# CTX-INTERPRETATION: This string appears within a UI element that describes
-# the ability for a user to access a resource, specifically indicating that
-# any logged-in user with access to the specified study alias can open it.
-#~ msgid " can open it"
-#~ msgstr "可以打开它"
-
-# CTX-INTERPRETATION: This string is part of a function that constructs a
-# message informing the user about the availability of a rental unit,
-# specifically the expiration date of the license.
-#~ msgid "will be available until "
-#~ msgstr "将在...可用 "
-
-# CTX-INTERPRETATION: The string " Messages" is used within the
-# ConversationPage.js file to dynamically update a label indicating the number
-# of messages in a conversation, likely for a user interface element.
-#~ msgid " Messages"
-#~ msgstr "条信息"
-
-# CTX-INTERPRETATION: The string appears within the OrganizationsList
-# component, explaining the concept of an organization and its features to the
-# user.
-#~ msgid "    An organization is a group of users who can share "
-#~ msgstr "一个组织是由可以共享的用户组成的团体。 "
-
-# CTX-INTERPRETATION: The string appears within a UI element on a TagsPage,
-# explaining how tags help organize studies and improve searchability within
-# the application.
-#~ msgid "    Tags help you organize the "
-#~ msgstr ""
-#~ "标签有助于您组织研究，并在仪表板中按主题进行分类，从而更轻松地搜索和过滤。 一旦创建了标签，就可以将它们分配给研究，方法是使用 '更多选项...' "
-#~ "在研究卡上进行操作。 "
-
-# CTX-INTERPRETATION: The string appears within a UI element explaining how to
-# assign tags to studies, specifically referring to the 'More options...'
-# button on study cards.
-#~ msgid "  via 'More options...' on the "
-#~ msgstr "通过“更多选项...”按钮将标签分配给 "
-
-# CTX-INTERPRETATION: The string appears within a UI element explaining how
-# tags are used to categorize and assign tags to studies, specifically within
-# the 'More options...' on the study cards.
-#~ msgid " cards."
-#~ msgstr "卡片。"

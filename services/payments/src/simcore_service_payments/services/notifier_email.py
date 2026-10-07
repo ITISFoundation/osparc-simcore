@@ -10,24 +10,13 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from fastapi import status
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.notifications import Channel
-from models_library.notifications.rpc import (
-    EmailAddressing,
-    EmailAttachment,
-    EmailContact,
-    TemplateRef,
-)
+from models_library.notifications.rpc import EmailAddressing, EmailAttachment, EmailContact, TemplateRef
 from models_library.users import UserID
 from pydantic import EmailStr
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.notifications import (
-    send_message_from_template,
-)
-from tenacity import (
-    retry,
-    retry_if_exception,
-    stop_after_attempt,
-    wait_exponential,
-)
+from servicelib.rabbitmq.rpc_interfaces.notifications import send_message_from_template
+from servicelib.ssl_context import get_shared_ssl_context
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from ..db.payment_users_repo import PaymentsUsersRepo
 from ..models.db import PaymentsTransactionsDB
@@ -74,7 +63,9 @@ _INVOICE_PDF_TIMEOUT: Final = httpx.Timeout(_INVOICE_PDF_TIMEOUT_SECONDS)
     reraise=True,
 )
 async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
-    async with httpx.AsyncClient(follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT) as client:
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=_INVOICE_PDF_TIMEOUT, verify=get_shared_ssl_context()
+    ) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
     return _response

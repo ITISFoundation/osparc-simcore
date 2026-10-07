@@ -18,9 +18,10 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
-from opentelemetry import trace
+from opentelemetry import metrics, trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.metrics import NoOpMeterProvider
 from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -107,6 +108,20 @@ class TracingConfig(BaseModel):
 
 def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
     HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
+
+
+def setup_meter_provider() -> None:
+    """Installs a no-op global `MeterProvider` to stop unbounded meter retention.
+
+    Instrumentors call `get_meter()` on every client construction (e.g.
+    `aiohttp.ClientSession.__init__`). While the global provider is the default
+    proxy, each call appends to `_ProxyMeterProvider._meters`, which is never
+    pruned, so every client ever built stays referenced for the process lifetime.
+    OpenTelemetry metrics are unused here: metrics are exposed via prometheus_client.
+    """
+    if isinstance(metrics.get_meter_provider(), NoOpMeterProvider):
+        return
+    metrics.set_meter_provider(NoOpMeterProvider())
 
 
 def get_current_tracing_config() -> TracingConfig | None:

@@ -40,6 +40,7 @@ from ...core.errors import (
     ComputationalBackendOnDemandNotReadyError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
+    ComputationalTaskJobIdAlreadySetError,
     PortsValidationError,
 )
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunID, RunMetadataDict
@@ -761,9 +762,30 @@ class DaskScheduler(BaseCompScheduler):
             comp_runs_repo = CompRunsRepository(self.db_engine)
             async with pass_or_acquire_connection(self.db_engine) as conn:
                 task = await comp_tasks_repo.get_task(conn, project_id=project_id, node_id=node_id)
+                if task.job_id is not None and task.job_id != task_progress_event.job_id:
+                    # NOTE: stale/duplicate event for a job_id this task no longer owns (e.g. it was
+                    # resubmitted or reset for retry since) - applying it would corrupt the task state
+                    _logger.warning(
+                        "ignoring task progress event for %s: event job_id %s does not match current task job_id %s",
+                        node_id,
+                        task_progress_event.job_id,
+                        task.job_id,
+                    )
+                    return
                 run = await comp_runs_repo.get(conn, user_id=user_id, project_id=project_id)
 
             if task.state in WAITING_FOR_START_STATES:
+                if task.job_id is None:
+                    # NOTE: reconcile a job_id dask already has but whose DB write never committed
+                    # (see https://github.com/ITISFoundation/private-issues/issues/648)
+                    try:
+                        await comp_tasks_repo.set_task_job_id(
+                            project_id, node_id, run.run_id, task_progress_event.job_id
+                        )
+                    except ComputationalTaskJobIdAlreadySetError:
+                        _logger.info("job_id for %s was set concurrently, skipping this progress event", node_id)
+                        return
+                    task.job_id = task_progress_event.job_id
                 task.state = RunningState.STARTED
                 task.progress = task_progress_event.progress
                 await self._process_started_tasks(

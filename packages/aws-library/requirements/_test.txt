@@ -10,7 +10,7 @@ annotated-types==0.7.0
     #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -58,9 +58,7 @@ cffi==2.0.0
 cfn-lint==1.41.0
     # via moto
 charset-normalizer==3.4.6
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 click==8.3.1
     # via
     #   -c requirements/_base.txt
@@ -193,12 +191,12 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.13.4
+pydantic==2.13.5
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   fastapi
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -261,7 +259,6 @@ regex==2026.2.28
     # via cfn-lint
 requests==2.34.2
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -313,9 +310,10 @@ types-s3transfer==0.16.0
     # via
     #   types-aioboto3
     #   types-boto3
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   fastapi
@@ -330,7 +328,7 @@ typing-inspection==0.4.2
     #   -c requirements/_base.txt
     #   fastapi
     #   pydantic
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

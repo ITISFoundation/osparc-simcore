@@ -4,7 +4,7 @@ annotated-types==0.7.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pydantic
-anyio==4.13.0
+anyio==4.15.1
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   httpx
@@ -67,9 +67,9 @@ pluggy==1.6.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest
-pydantic==2.13.4
+pydantic==2.13.5
     # via -r requirements/_test_wo_playwright.txt
-pydantic-core==2.46.4
+pydantic-core==2.46.5
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pydantic
@@ -126,9 +126,10 @@ termcolor==3.3.0
     #   pytest-sugar
 text-unidecode==1.3
     # via python-slugify
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -r requirements/_test_wo_playwright.txt
+    #   anyio
     #   pydantic
     #   pydantic-core
     #   pyee
@@ -141,5 +142,5 @@ tzdata==2026.2
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   arrow
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests

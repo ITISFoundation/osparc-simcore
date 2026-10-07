@@ -17,6 +17,7 @@ from simcore_postgres_database.models.users_details import (
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _accounts_repository
+from simcore_service_webserver.users._models_pre_registration_extras import PreRegistrationExtraKey
 
 
 async def test_create_user_pre_registration(
@@ -156,7 +157,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     pre_registration_details_db_cleanup.append(pre_registration_id)
 
     extras = {
-        "invitation": {
+        PreRegistrationExtraKey.INVITATION: {
             "issuer": str(reviewer_id),
             "guest": test_email,
             "trial_account_days": 30,
@@ -197,8 +198,8 @@ async def test_review_user_pre_registration_with_invitation_extras(
     assert reg["account_request_reviewed_at"] is not None
 
     assert reg["extras"] is not None
-    assert "invitation" in reg["extras"]
-    invitation_data = reg["extras"]["invitation"]
+    assert PreRegistrationExtraKey.INVITATION in reg["extras"]
+    invitation_data = reg["extras"][PreRegistrationExtraKey.INVITATION]
     assert invitation_data["issuer"] == str(reviewer_id)
     assert invitation_data["guest"] == test_email
     assert invitation_data["trial_account_days"] == 30

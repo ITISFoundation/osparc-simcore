@@ -16,7 +16,7 @@ aiosignal==1.4.0
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.12.1
+anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
@@ -31,7 +31,6 @@ attrs==26.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
-    #   pytest-docker
     #   referencing
 botocore==1.42.70
     # via -r requirements/_test.in
@@ -44,9 +43,7 @@ certifi==2026.2.25
     #   httpx
     #   requests
 charset-normalizer==3.4.6
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
@@ -69,6 +66,8 @@ frozenlist==1.8.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==3.5.6
+    # via sqlalchemy
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -120,7 +119,7 @@ librt==0.8.1
     # via mypy
 lupa==2.6
     # via fakeredis
-multidict==6.7.1
+multidict==6.9.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -176,7 +175,6 @@ pytest==9.1.1
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
-    #   pytest-docker
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
@@ -191,8 +189,6 @@ pytest-asyncio==1.4.0
 pytest-benchmark==5.3.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
-    # via -r requirements/_test.in
-pytest-docker==3.2.5
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
@@ -235,7 +231,6 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.34.2
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
 respx==0.22.0
@@ -276,14 +271,15 @@ types-requests==2.32.4.20260107
     # via types-tqdm
 types-tqdm==4.67.3.20260303
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
+    #   anyio
     #   mypy
     #   sqlalchemy
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

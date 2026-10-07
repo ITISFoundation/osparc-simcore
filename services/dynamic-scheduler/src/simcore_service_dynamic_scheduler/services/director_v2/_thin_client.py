@@ -10,10 +10,10 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -60,7 +60,9 @@ class DirectorV2ThinClient(BaseThinClient):
             "version": dynamic_service_start.version,
             "node_uuid": dynamic_service_start.node_uuid,
             "basepath": f"/x/{dynamic_service_start.node_uuid}",
-            "service_resources": ServiceResourcesDictHelpers.create_jsonable(dynamic_service_start.service_resources),
+            "service_resources": TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                dynamic_service_start.service_resources, mode="json"
+            ),
             "wallet_info": dynamic_service_start.wallet_info,
             "pricing_info": dynamic_service_start.pricing_info,
             "hardware_info": dynamic_service_start.hardware_info,

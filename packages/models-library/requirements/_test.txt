@@ -22,7 +22,7 @@ idna==3.19
     #   yarl
 iniconfig==2.3.0
     # via pytest
-multidict==6.7.1
+multidict==7.0.0
     # via yarl
 packaging==26.0
     # via pytest
@@ -87,7 +87,7 @@ types-jsonschema==4.26.0.20260202
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   flexcache
