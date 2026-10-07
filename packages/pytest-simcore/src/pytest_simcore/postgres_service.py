@@ -175,7 +175,7 @@ def _ensure_migrated_template(
             registry.mark_ready()
         else:
             # another worker owns the build: wait until it signals the template is ready (or failed)
-            registry.wait_ready(timeout=_TEMPLATE_READY_TIMEOUT.total_seconds())
+            registry.wait_ready(timeout=_TEMPLATE_READY_TIMEOUT)
             state["built"] = True
 
     state["dsn"] = postgres_dsn

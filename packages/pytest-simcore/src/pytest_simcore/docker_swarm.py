@@ -9,6 +9,7 @@ import logging
 import subprocess
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final
 from uuid import uuid4
@@ -48,7 +49,7 @@ log = logging.getLogger(__name__)
 
 _DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
 _DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
-_DOCKER_STACK_READY_TIMEOUT: Final[float] = 8 * MINUTE  # seconds
+_DOCKER_STACK_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -207,7 +208,7 @@ def docker_swarm(
             raise
         registry.mark_ready()
     else:
-        registry.wait_ready(timeout=2 * MINUTE)
+        registry.wait_ready(timeout=timedelta(minutes=2))
 
     yield
 

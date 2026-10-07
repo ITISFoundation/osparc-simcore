@@ -9,18 +9,29 @@ that MUST be shared (e.g. one docker stack) via a cross-process file lock + refe
 registry, so exactly one worker performs the real setup/teardown while the others attach to it.
 """
 
+import logging
 import os
-import time
 from collections.abc import Generator
 from contextlib import contextmanager
+from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
 import pytest
 from filelock import FileLock
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
+
+from .logging_tools import ContextMessages, log_context
+
+log = logging.getLogger(__name__)
 
 # pytest-xdist's standard id for the controller process (i.e. any NON-xdist run)
-_WORKER_ID_MASTER: Final[str] = "master"
+WORKER_ID_MASTER: Final[str] = "master"
+
+# marker-file polls are cheap; coordination polls fast enough to keep tests snappy, while
+# readiness of a full resource setup (container boot, DB template restore) polls slower
+_POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=200)
+_READY_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 
 
 class SharedResourceSetupError(RuntimeError):
@@ -44,7 +55,7 @@ def get_worker_id(request: pytest.FixtureRequest) -> str:
     worker-unique resource names, only after `is_xdist_worker()` confirmed the worker context
     """
     workerinput = getattr(request.config, "workerinput", None)
-    return _WORKER_ID_MASTER if workerinput is None else workerinput["workerid"]
+    return WORKER_ID_MASTER if workerinput is None else workerinput["workerid"]
 
 
 def get_max_xdist_workers(config: pytest.Config) -> int:
@@ -87,6 +98,7 @@ class SharedResourceRegistry:
     """
 
     def __init__(self, root_tmp_path: Path, name: str) -> None:
+        self.name = name
         self._lock_path = root_tmp_path / f"{name}.lock"
         self._registry_dir = root_tmp_path / f"{name}.registry"
         self._ready_marker = root_tmp_path / f"{name}.ready"
@@ -103,7 +115,19 @@ class SharedResourceRegistry:
         so NO live waiters) also clears stale "ready"/"failed" markers left over by a previous,
         crashed session before handing out ownership.
         """
-        with FileLock(str(self._lock_path)):
+        with (
+            log_context(
+                logging.INFO,
+                ContextMessages(
+                    starting=f"registering {token} for shared resource {self.name}",
+                    done=lambda: (
+                        f"{token} OWNS setup of {self.name}" if owns_setup else f"{token} attached to {self.name}"
+                    ),
+                ),
+                logger=log,
+            ),
+            FileLock(str(self._lock_path)),
+        ):
             owns_setup = not self._tokens()
             if owns_setup:
                 self._ready_marker.unlink(missing_ok=True)
@@ -117,7 +141,19 @@ class SharedResourceRegistry:
         NOTE: intentionally does NOT clear the "failed" marker, so late waiters keep failing
         fast: only a subsequent setup-owner clears it in `register()` (see above).
         """
-        with FileLock(str(self._lock_path)):
+        with (
+            log_context(
+                logging.INFO,
+                ContextMessages(
+                    starting=f"unregistering {token} from shared resource {self.name}",
+                    done=lambda: (
+                        f"{token} OWNS teardown of {self.name}" if owns_teardown else f"{token} left {self.name}"
+                    ),
+                ),
+                logger=log,
+            ),
+            FileLock(str(self._lock_path)),
+        ):
             (self._registry_dir / f"{token}.token").unlink(missing_ok=True)
             owns_teardown = not self._tokens()
             if owns_teardown:
@@ -125,13 +161,15 @@ class SharedResourceRegistry:
             return owns_teardown
 
     def mark_ready(self) -> None:
-        self._ready_marker.touch()
+        with log_context(logging.INFO, f"shared resource {self.name} marked ready", logger=log):
+            self._ready_marker.touch()
 
     def mark_failed(self) -> None:
         """Signals waiters that the owner's setup failed and the resource will never be ready"""
-        self._failed_marker.touch()
+        with log_context(logging.WARNING, f"shared resource {self.name} marked FAILED", logger=log):
+            self._failed_marker.touch()
 
-    def wait_ready(self, *, timeout: float, poll_interval: float = 1.0) -> None:
+    def wait_ready(self, *, timeout: timedelta) -> None:
         """Blocks until the owner signals readiness, failing fast if it signals failure
 
         Raises:
@@ -139,20 +177,38 @@ class SharedResourceRegistry:
             TimeoutError: neither ready nor failed within `timeout` (e.g. the owner was
                 hard-killed and leaked its token: the message points at the leftover files)
         """
-        deadline = time.monotonic() + timeout
-        while not self._ready_marker.exists():
+
+        @retry(
+            stop=stop_after_delay(timeout),
+            wait=wait_fixed(_READY_POLL_INTERVAL),
+            retry=retry_if_exception_type(AssertionError),  # only "not ready YET" is retried
+            reraise=True,
+        )
+        def _check_ready() -> None:
             if self._failed_marker.exists():
                 msg = f"Setup of shared resource failed (owner reported {self._failed_marker})"
                 raise SharedResourceSetupError(msg)
-            if time.monotonic() > deadline:
+            assert self._ready_marker.exists(), f"shared resource not ready yet: {self._ready_marker}"
+
+        with log_context(
+            logging.INFO,
+            ContextMessages(
+                starting=f"waiting (up to {timeout}) for shared resource {self.name} to become ready",
+                done=f"{self.name} is ready",
+                raised=f"{self.name} NEVER became ready",
+            ),
+            logger=log,
+        ):
+            try:
+                _check_ready()
+            except AssertionError as err:
                 msg = (
                     f"Timed out waiting for shared resource (marker {self._ready_marker}). "
                     f"If no test session is currently running, leftover token files from a "
                     f"crashed session are poisoning it: remove {self._registry_dir} "
                     f"(and {self._ready_marker}, {self._failed_marker}) and retry."
                 )
-                raise TimeoutError(msg)
-            time.sleep(poll_interval)
+                raise TimeoutError(msg) from err
 
 
 class ReaderWriterLock:
@@ -164,6 +220,7 @@ class ReaderWriterLock:
     """
 
     def __init__(self, root_tmp_path: Path, name: str) -> None:
+        self.name = name
         self._control_lock_path = root_tmp_path / f"{name}.rw.lock"
         self._readers_dir = root_tmp_path / f"{name}.rw.readers"
         self._writer_marker = root_tmp_path / f"{name}.rw.writer"
@@ -173,58 +230,95 @@ class ReaderWriterLock:
         return any(self._readers_dir.iterdir())
 
     @contextmanager
-    def read_lock(self, token: str, *, timeout: float = 5 * 60, poll_interval: float = 0.2) -> Generator[None]:
+    def read_lock(self, token: str, *, timeout: timedelta = timedelta(minutes=5)) -> Generator[None]:
         """Waits for any in-progress writer to finish, then registers as a reader."""
-        deadline = time.monotonic() + timeout
-        while True:
+
+        @retry(
+            stop=stop_after_delay(timeout),
+            wait=wait_fixed(_POLL_INTERVAL),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        )
+        def _register_reader() -> None:
             with FileLock(str(self._control_lock_path)):
-                if not self._writer_marker.exists():
-                    (self._readers_dir / f"{token}.reader").touch()
-                    break
-            if time.monotonic() > deadline:
-                msg = f"Timed out waiting for an active writer to release {self._writer_marker}"
-                raise TimeoutError(msg)
-            time.sleep(poll_interval)
+                assert not self._writer_marker.exists(), "a writer holds the lock"
+                (self._readers_dir / f"{token}.reader").touch()
+
+        try:
+            _register_reader()
+        except AssertionError as err:
+            msg = f"Timed out waiting for an active writer to release {self._writer_marker}"
+            raise TimeoutError(msg) from err
+        log.info("reader %s entered %s", token, self.name)
         try:
             yield
         finally:
             with FileLock(str(self._control_lock_path)):
                 (self._readers_dir / f"{token}.reader").unlink(missing_ok=True)
+            log.info("reader %s left %s", token, self.name)
 
     @contextmanager
-    def write_lock(
-        self, *, token: str | None = None, timeout: float = 5 * 60, poll_interval: float = 0.2
-    ) -> Generator[None]:
+    def write_lock(self, *, token: str | None = None, timeout: timedelta = timedelta(minutes=5)) -> Generator[None]:
         """Waits to become the sole writer, then waits for all current readers to finish,
         blocking new readers/writers in the meantime; releases both on exit.
 
         `token` is optional and purely diagnostic: written inside the writer marker to make it
         obvious WHICH worker holds the lock when inspecting the marker files by hand.
         """
-        # phase 1: acquire the writer slot (`timeout` budget of its own)
-        deadline = time.monotonic() + timeout
-        while True:
+
+        @retry(
+            stop=stop_after_delay(timeout),
+            wait=wait_fixed(_POLL_INTERVAL),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        )
+        def _acquire_writer_slot() -> None:
             with FileLock(str(self._control_lock_path)):
-                if not self._writer_marker.exists():
-                    self._writer_marker.write_text(token or "writer")
-                    break
-            if time.monotonic() > deadline:
+                assert not self._writer_marker.exists(), "another writer holds the lock"
+                self._writer_marker.write_text(token or "writer")
+
+        @retry(
+            stop=stop_after_delay(timeout),
+            wait=wait_fixed(_POLL_INTERVAL),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        )
+        def _drain_readers() -> None:
+            with FileLock(str(self._control_lock_path)):
+                assert not self._has_readers(), "readers are still active"
+
+        # phase 1: acquire the writer slot (`timeout` budget of its own)
+        with log_context(
+            logging.INFO,
+            (
+                f"writer {token or 'writer'} waiting to start on {self.name}",
+                lambda: f"writer got exclusive slot on {self.name}",
+            ),
+            logger=log,
+        ):
+            try:
+                _acquire_writer_slot()
+            except AssertionError as err:
                 msg = f"Timed out waiting to become the writer for {self._writer_marker}"
-                raise TimeoutError(msg)
-            time.sleep(poll_interval)
+                raise TimeoutError(msg) from err
+        # phase 2: drain the readers already in the section (fresh `timeout` budget, so a
+        # slow phase 1 cannot starve the drain phase)
+        with log_context(
+            logging.INFO,
+            (
+                f"writer {token or 'writer'} waiting for readers to drain on {self.name}",
+                lambda: f"writer section STARTED on {self.name}",
+            ),
+            logger=log,
+        ):
+            try:
+                _drain_readers()
+            except AssertionError as err:
+                msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
+                raise TimeoutError(msg) from err
         try:
-            # phase 2: drain the readers already in the section (fresh `timeout` budget, so a
-            # slow phase 1 cannot starve the drain phase)
-            deadline = time.monotonic() + timeout
-            while True:
-                with FileLock(str(self._control_lock_path)):
-                    if not self._has_readers():
-                        break
-                if time.monotonic() > deadline:
-                    msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
-                    raise TimeoutError(msg)
-                time.sleep(poll_interval)
             yield
         finally:
             with FileLock(str(self._control_lock_path)):
                 self._writer_marker.unlink(missing_ok=True)
+            log.info("writer %s left %s", token or "writer", self.name)
