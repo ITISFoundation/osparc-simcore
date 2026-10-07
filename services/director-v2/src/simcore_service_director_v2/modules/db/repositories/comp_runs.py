@@ -179,14 +179,12 @@ class CompRunsRepository(BaseRepository):
         )
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            result = await conn.execute(query)
-
             return [
                 ComputationRunStateRpcGet(
                     project_uuid=row.project_uuid,
                     state=DB_TO_RUNNING_STATE[row.state],
                 )
-                for row in result
+                for row in await conn.execute(query)
             ]
 
     async def batch_get_latest_run_iteration_by_projects(
@@ -446,8 +444,7 @@ class CompRunsRepository(BaseRepository):
         )
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            result = await conn.execute(list_query)
-            return [CollectionRunID(row[0]) for row in result]
+            return [CollectionRunID(row[0]) for row in await conn.execute(list_query)]
 
     async def list_group_by_collection_run_id(
         self,
