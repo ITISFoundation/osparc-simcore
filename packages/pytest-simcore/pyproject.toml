@@ -8,6 +8,7 @@ dependencies = [
     "faker",
     "filelock",
     "pytest>=8.4.2",
+    "tenacity",
 ]
 classifiers = [
   "Development Status :: 4 - Beta",

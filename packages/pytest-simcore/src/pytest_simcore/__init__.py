@@ -1,10 +1,12 @@
 # Collection of tests fixtures for integration testing
+# NOTE: keep this module import-light (no third-party imports at module level): it is
+# auto-imported as a pytest11 plugin in EVERY environment installing pytest-simcore,
+# including minimal test suites that never use its docker/xdist fixtures. Import
+# optional dependencies lazily inside the fixtures that need them.
+import os
 from importlib.metadata import version
 
 import pytest
-from faker import Faker
-
-from .helpers.xdist import get_worker_id, is_xdist_worker
 
 # NOTE: this ensures that assertion printouts are nicely formatted and complete see https://lorepirri.com/pytest-register-assert-rewrite.html
 pytest.register_assert_rewrite("pytest_simcore.helpers")
@@ -38,8 +40,13 @@ def _xdist_reseed_faker(request: pytest.FixtureRequest) -> None:
     No-op when not running under xdist (`faker` isn't even instantiated in that case, so this
     adds no overhead to the common, non-xdist test run).
     """
-    if not is_xdist_worker(request):
+    if "PYTEST_XDIST_WORKER" not in os.environ:
         return
+
+    from faker import Faker  # noqa: PLC0415
+
+    from .helpers.xdist import get_worker_id  # noqa: PLC0415
+
     worker_id = get_worker_id(request)
     faker: Faker = request.getfixturevalue("faker")
     digits = "".join(ch for ch in worker_id if ch.isdigit())
