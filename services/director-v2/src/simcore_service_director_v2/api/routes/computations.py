@@ -605,11 +605,8 @@ async def stop_computation(
     comp_runs_repo = CompRunsRepository(db_engine)
 
     async with pass_or_acquire_connection(db_engine) as conn:
-        # get the project pipeline
         pipeline_at_db = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
-        # get the project task states
         tasks = await comp_tasks_repo.list_tasks(conn, project_id=project_id)
-        # get the last run details if any
         last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get_latest_run_by_project(conn, project_id=project_id)
