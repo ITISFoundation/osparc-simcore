@@ -48,6 +48,8 @@ coverage==7.16.0
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
+execnet==2.1.2
+    # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
 frozenlist==1.5.0
@@ -140,6 +142,7 @@ pytest==9.1.1
     #   pytest-benchmark
     #   pytest-cov
     #   pytest-mock
+    #   pytest-xdist
 pytest-aiohttp==1.1.1
     # via -r requirements/_test.in
 pytest-asyncio==1.4.0
@@ -151,6 +154,8 @@ pytest-cov==7.1.0
 pytest-mock==3.15.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
+    # via -r requirements/_test.in
+pytest-xdist==3.8.0
     # via -r requirements/_test.in
 referencing==0.35.1
     # via
