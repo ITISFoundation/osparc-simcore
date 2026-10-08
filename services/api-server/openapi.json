@@ -9022,7 +9022,7 @@
             }
           },
           "503": {
-            "description": "Chatbot service is not enabled, or the usage ledger is unavailable",
+            "description": "The chatbot service is not reachable",
             "content": {
               "application/json": {
                 "schema": {

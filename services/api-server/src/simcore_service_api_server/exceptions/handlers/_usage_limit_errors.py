@@ -41,7 +41,7 @@ async def usage_limit_error_handler(request: Request, exc: Exception) -> JSONRes
         support_id=support_id,
         code=exc.code,
         retry_after_seconds=retry_after_seconds,
-        reset_at=exc.reset_at_iso,
+        reset_at=exc.reset_at_iso8601,
     )
     return create_error_json_response(
         status_code=exc.status_code, support_id=support_id, error_model=error_model, headers=headers

@@ -1,17 +1,16 @@
 """Chatbox Usage Ledger: Redis-backed enforcement of Chatbox usage limits (ADR-0001).
 
-The whole Usage Ledger lives in the platform cache Redis on a dedicated database:
+The whole Usage Ledger lives in Redis on a dedicated database:
 - window hash   api-server:chatbox:usage:window:{user_id}:{product_name}
     fields spend / reservations (USD); TTL = the fixed Usage Window, started at the
     holder's first admitted request (the TTL is the exact "available again at" answer)
 - global hash   api-server:chatbox:usage:global
     fields spend / reservations (USD) and requests — cumulative vs the Provider Budget
-- rate key      api-server:chatbox:rate:{credential_hash}:{minute-bucket}
+- rate key      api-server:chatbox:rate:{credentials_hash}:{minute-bucket}
 - ledger stream api-server:chatbox:usage:ledger — one entry per completion (Usage Ledger)
 
-Money layers (Window Quota, Global Budget Guard) are fail-closed: a Redis failure
-rejects the request with a 503. The Rate Limit is fail-open: a Redis failure lets the
-request through.
+Window Quota and Global Budget Guard reject the request with a 503 when Redis fails;
+the Rate Limit lets the request through instead.
 
 Admission is a compare-and-swap against Spend + in-flight Reservations, so concurrent
 requests cannot overshoot the Window Quota by more than the Reservations they hold. The
@@ -42,6 +41,7 @@ from redis.typing import EncodableT, FieldT
 from servicelib.logging_utils import log_catch
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_random
 
 from .._meta import PROJECT_NAME
 from ..core.settings import ChatboxUsageLimitsSettings
@@ -68,6 +68,16 @@ _CAS_MAX_ATTEMPTS: Final[NonNegativeInt] = 5
 _TTL_KEY_MISSING: Final[int] = -2  # Redis TTL reply when the key does not exist
 _FLOAT_EPS: Final[float] = 1e-9
 _CHARS_PER_TOKEN: Final[NonNegativeInt] = 4
+
+
+def _cas_retrying() -> AsyncRetrying:
+    return AsyncRetrying(
+        retry=retry_if_exception_type(WatchError),
+        stop=stop_after_attempt(_CAS_MAX_ATTEMPTS),
+        wait=wait_random(0.005, 0.05),
+        reraise=True,
+    )
+
 
 # connection/timeout errors mean the ledger is unreachable; protocol errors (ResponseError)
 # are bugs (e.g. WRONGTYPE) and must surface, not mask themselves as fail-open/fail-closed
@@ -211,7 +221,7 @@ class ChatboxUsageLedger:
 
     # -- Rate Limit (per API key, fail-open) ---------------------------------------
 
-    async def acquire_rate_limit(self, credential_hash: str) -> None:
+    async def acquire_rate_limit(self, credentials_hash: str) -> None:
         """Rate Limit: ``REQUESTS_PER_MINUTE`` per (hash of an) API key.
 
         Fail-open on Redis errors: the Rate Limit is only a burst guard, the money
@@ -222,7 +232,7 @@ class ChatboxUsageLedger:
                 current minute bucket.
         """
         minute_bucket = int(time.time() // 60)
-        key = f"{_RATE_KEY_PREFIX}:{credential_hash}:{minute_bucket}"
+        key = f"{_RATE_KEY_PREFIX}:{credentials_hash}:{minute_bucket}"
         try:
             # SET NX EX first so the counter can never be created without a TTL
             await self._redis.set(key, 0, nx=True, ex=_RATE_KEY_TTL_SECONDS)
@@ -234,7 +244,7 @@ class ChatboxUsageLedger:
                 **create_troubleshooting_log_kwargs(
                     "Chatbox rate limit could not be checked, request allowed (fail-open)",
                     error=exc,
-                    error_context={"credential_hash": credential_hash},
+                    error_context={"credentials_hash": credentials_hash},
                     tip="Check the api-server connection to the Chatbox usage Redis database.",
                 )
             )
@@ -265,50 +275,51 @@ class ChatboxUsageLedger:
         window_key = _window_key(user_id, product_name)
         allowance = float(self._settings.WINDOW_SPEND_USD)
 
-        for _ in range(_CAS_MAX_ATTEMPTS):
-            try:
-                async with self._redis.pipeline() as pipe:
-                    await pipe.watch(window_key, _GLOBAL_KEY)
-                    window = UsageStats.from_hgetall(await handle_redis_returns_union_types(pipe.hgetall(window_key)))
-                    window_ttl: int = await handle_redis_returns_union_types(pipe.ttl(window_key))
-                    global_stats = UsageStats.from_hgetall(
-                        await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
-                    )
-
-                    if _budget_hard_stop_hit(global_stats, self._settings):
-                        raise ProviderBudgetExhaustedError
-
-                    reservation = self._estimate_reservation(global_stats, allowance)
-
-                    if window.committed_usd + reservation > allowance + _FLOAT_EPS:
-                        reset_after = window_ttl if window_ttl > 0 else self._settings.WINDOW_LENGTH.total_seconds()
-                        reset_at = datetime.fromtimestamp(time.time() + reset_after, tz=UTC)
-                        raise ChatboxWindowQuotaExceededError(
-                            allowance_usd=f"${allowance:.2f}",
-                            reset_at=reset_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
-                            reset_at_iso=reset_at.isoformat(),
-                            retry_after_seconds=reset_after,
+        try:
+            async for attempt in _cas_retrying():
+                with attempt:
+                    async with self._redis.pipeline() as pipe:
+                        await pipe.watch(window_key, _GLOBAL_KEY)
+                        window = UsageStats.from_hgetall(
+                            await handle_redis_returns_union_types(pipe.hgetall(window_key))
+                        )
+                        window_ttl: int = await handle_redis_returns_union_types(pipe.ttl(window_key))
+                        global_stats = UsageStats.from_hgetall(
+                            await handle_redis_returns_union_types(pipe.hgetall(_GLOBAL_KEY))
                         )
 
-                    pipe.multi()
-                    pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, reservation)
-                    # every window write re-asserts the TTL: WATCH does not abort when a
-                    # key expires, so hincrbyfloat can recreate a hash that lost it
-                    pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
-                    pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, reservation)
-                    await pipe.execute()
-            except WatchError:
-                continue
-            except _REDIS_UNAVAILABLE_ERRORS as exc:
-                # not logged here: the usage-limit error handler logs the 503 with this cause
-                self._metrics.ledger_failures_total.labels(stage="window_quota").inc()
-                raise UsageLedgerUnavailableError from exc
+                        if _budget_hard_stop_hit(global_stats, self._settings):
+                            raise ProviderBudgetExhaustedError
 
-            return Reservation(user_id=user_id, product_name=product_name, amount_usd=reservation)
+                        reservation = self._estimate_reservation(global_stats, allowance)
 
-        # pathological contention: fail-closed rather than admit unchecked
-        self._metrics.ledger_failures_total.labels(stage="window_quota").inc()
-        raise UsageLedgerUnavailableError
+                        if window.committed_usd + reservation > allowance + _FLOAT_EPS:
+                            reset_after = window_ttl if window_ttl > 0 else self._settings.WINDOW_LENGTH.total_seconds()
+                            reset_at = datetime.fromtimestamp(time.time() + reset_after, tz=UTC)
+                            raise ChatboxWindowQuotaExceededError(
+                                allowance_usd=f"${allowance:.2f}",
+                                reset_at=reset_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                                reset_at_iso8601=reset_at.isoformat(),
+                                retry_after_seconds=reset_after,
+                            )
+
+                        pipe.multi()
+                        pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, reservation)
+                        # every window write re-asserts the TTL: WATCH does not abort when a
+                        # key expires, so hincrbyfloat can recreate a hash that lost it
+                        pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
+                        pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, reservation)
+                        await pipe.execute()
+        except WatchError as exc:
+            # pathological contention: fail-closed rather than admit unchecked
+            self._metrics.ledger_failures_total.labels(stage="window_quota").inc()
+            raise UsageLedgerUnavailableError from exc
+        except _REDIS_UNAVAILABLE_ERRORS as exc:
+            # not logged here: the usage-limit error handler logs the 503 with this cause
+            self._metrics.ledger_failures_total.labels(stage="window_quota").inc()
+            raise UsageLedgerUnavailableError from exc
+
+        return Reservation(user_id=user_id, product_name=product_name, amount_usd=reservation)
 
     async def ensure_global_budget_available(self) -> None:
         """Re-check the Global Budget Guard hard stop (Celery worker, at task start).
@@ -348,42 +359,40 @@ class ChatboxUsageLedger:
         """
         spend = self._spend_usd(usage)
         window_key = _window_key(reservation.user_id, reservation.product_name)
-        for _ in range(_CAS_MAX_ATTEMPTS):
-            try:
-                async with self._redis.pipeline() as pipe:
-                    await pipe.watch(window_key, _GLOBAL_KEY)
-                    window_ttl: int = await pipe.ttl(window_key)
-                    window_exists = window_ttl != _TTL_KEY_MISSING  # aged out mid-completion: skip it
+        try:
+            async for attempt in _cas_retrying():
+                with attempt:
+                    async with self._redis.pipeline() as pipe:
+                        await pipe.watch(window_key, _GLOBAL_KEY)
+                        window_ttl: int = await pipe.ttl(window_key)
+                        window_exists = window_ttl != _TTL_KEY_MISSING  # aged out mid-completion: skip it
 
-                    pipe.multi()
-                    if window_exists:
-                        pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, -reservation.amount_usd)
-                        pipe.hincrbyfloat(window_key, _FIELD_SPEND, spend)
-                        pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
-                    pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
-                    pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_SPEND, spend)
-                    pipe.hincrby(_GLOBAL_KEY, _FIELD_REQUESTS, 1)
-                    await pipe.execute()
-            except WatchError:
-                continue
-            except _REDIS_UNAVAILABLE_ERRORS as exc:
-                self._metrics.ledger_failures_total.labels(stage="reconcile").inc()
-                _logger.warning(
-                    **create_troubleshooting_log_kwargs(
-                        "Chatbox usage ledger unreachable during reconciliation: Spend not recorded",
-                        error=exc,
-                        error_context={
-                            "user_id": reservation.user_id,
-                            "product_name": reservation.product_name,
-                            "reservation_usd": reservation.amount_usd,
-                        },
-                        tip="the Reservation may linger against the Window Quota until the window expires",
-                    )
+                        pipe.multi()
+                        if window_exists:
+                            pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, -reservation.amount_usd)
+                            pipe.hincrbyfloat(window_key, _FIELD_SPEND, spend)
+                            pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
+                        pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
+                        pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_SPEND, spend)
+                        pipe.hincrby(_GLOBAL_KEY, _FIELD_REQUESTS, 1)
+                        await pipe.execute()
+        except (WatchError, *_REDIS_UNAVAILABLE_ERRORS) as exc:
+            self._metrics.ledger_failures_total.labels(stage="reconcile").inc()
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Chatbox usage ledger unreachable during reconciliation: Spend not recorded",
+                    error=exc,
+                    error_context={
+                        "user_id": reservation.user_id,
+                        "product_name": reservation.product_name,
+                        "reservation_usd": reservation.amount_usd,
+                    },
+                    tip="the Reservation may linger against the Window Quota until the window expires",
                 )
-                return
-
-            await self._record_completion(reservation, usage, spend)
+            )
             return
+
+        await self._record_completion(reservation, usage, spend)
 
     async def release(self, reservation: Reservation, *, reason: str) -> None:
         """Refund a Reservation (timeout / client abort / submit or task failure).
@@ -394,39 +403,35 @@ class ChatboxUsageLedger:
         """
         self._metrics.released_reservations_total.labels(reason=reason).inc()
         window_key = _window_key(reservation.user_id, reservation.product_name)
-        for _ in range(_CAS_MAX_ATTEMPTS):
-            try:
-                async with self._redis.pipeline() as pipe:
-                    await pipe.watch(window_key, _GLOBAL_KEY)
-                    window_ttl: int = await pipe.ttl(window_key)
-                    window_exists = window_ttl != _TTL_KEY_MISSING
+        try:
+            async for attempt in _cas_retrying():
+                with attempt:
+                    async with self._redis.pipeline() as pipe:
+                        await pipe.watch(window_key, _GLOBAL_KEY)
+                        window_ttl: int = await pipe.ttl(window_key)
+                        window_exists = window_ttl != _TTL_KEY_MISSING
 
-                    pipe.multi()
-                    if window_exists:
-                        pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, -reservation.amount_usd)
-                        pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
-                    pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
-                    await pipe.execute()
-            except WatchError:
-                continue
-            except _REDIS_UNAVAILABLE_ERRORS as exc:
-                self._metrics.ledger_failures_total.labels(stage="release").inc()
-                _logger.warning(
-                    **create_troubleshooting_log_kwargs(
-                        "Chatbox usage ledger unreachable during reservation release: Refund lost",
-                        error=exc,
-                        error_context={
-                            "user_id": reservation.user_id,
-                            "product_name": reservation.product_name,
-                            "reservation_usd": reservation.amount_usd,
-                            "reason": reason,
-                        },
-                        tip="the Reservation may linger against the Window Quota until the window expires",
-                    )
+                        pipe.multi()
+                        if window_exists:
+                            pipe.hincrbyfloat(window_key, _FIELD_RESERVATIONS, -reservation.amount_usd)
+                            pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
+                        pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
+                        await pipe.execute()
+        except (WatchError, *_REDIS_UNAVAILABLE_ERRORS) as exc:
+            self._metrics.ledger_failures_total.labels(stage="release").inc()
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    "Chatbox usage ledger unreachable during reservation release: Refund lost",
+                    error=exc,
+                    error_context={
+                        "user_id": reservation.user_id,
+                        "product_name": reservation.product_name,
+                        "reservation_usd": reservation.amount_usd,
+                        "reason": reason,
+                    },
+                    tip="the Reservation may linger against the Window Quota until the window expires",
                 )
-                return
-
-            return
+            )
 
     # -- internals -------------------------------------------------------------------
 

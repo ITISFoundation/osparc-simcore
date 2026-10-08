@@ -73,9 +73,7 @@ async def get_active_user_email(
     return identity.email
 
 
-def get_credential_hash(
+def get_credentials_hash(
     credentials: Annotated[HTTPBasicCredentials, Security(basic_scheme)],
 ) -> str:
-    """Non-reversible fingerprint of the API key pair, used to scope the Chatbox Rate
-    Limit per API key without storing or comparing credentials anywhere new."""
     return hashlib.sha256(f"{credentials.username}:{credentials.password}".encode()).hexdigest()

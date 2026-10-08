@@ -33,7 +33,7 @@ from ...services_http.chatbot import ChatbotApi
 from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.application import get_settings
 from ..dependencies.authentication import (
-    get_credential_hash,
+    get_credentials_hash,
     get_current_user_id,
     get_product_name,
 )
@@ -84,7 +84,7 @@ router = APIRouter()
             "model": ErrorGet,
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": "Chatbot service is not enabled, or the usage ledger is unavailable",
+            "description": "The chatbot service is not reachable",
             "model": ErrorGet,
         },
     },
@@ -95,7 +95,7 @@ async def create_response(
     body: CreateResponseRequest,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    credential_hash: Annotated[str, Depends(get_credential_hash)],
+    credentials_hash: Annotated[str, Depends(get_credentials_hash)],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     task_manager: Annotated[TaskManager, Depends(get_task_manager)],
     chatbot_api: Annotated[ChatbotApi, Depends(get_api_client(ChatbotApi))],
@@ -111,7 +111,7 @@ async def create_response(
             chatbot_api=chatbot_api,
             body=body,
             request=request,
-            credential_hash=credential_hash,
+            credentials_hash=credentials_hash,
             user_id=user_id,
             product_name=product_name,
             ledger=ledger,
@@ -120,7 +120,7 @@ async def create_response(
     return await submit_background_chat_response(
         task_manager=task_manager,
         body=body,
-        credential_hash=credential_hash,
+        credentials_hash=credentials_hash,
         user_id=user_id,
         product_name=product_name,
         ledger=ledger,

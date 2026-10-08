@@ -47,7 +47,7 @@ _TASK_NAME = "run_chat_completion"
 async def _admit_and_reserve(
     ledger: ChatboxUsageLedger | None,
     *,
-    credential_hash: str,
+    credentials_hash: str,
     user_id: UserID,
     product_name: ProductName,
 ) -> Reservation | None:
@@ -63,7 +63,7 @@ async def _admit_and_reserve(
     if ledger is None:
         return None
 
-    await ledger.acquire_rate_limit(credential_hash)
+    await ledger.acquire_rate_limit(credentials_hash)
     return await ledger.admit_and_reserve(user_id=user_id, product_name=product_name)
 
 
@@ -248,7 +248,7 @@ async def create_streaming_chat_response(
     chatbot_api: ChatbotApi,
     body: CreateResponseRequest,
     request: Request,
-    credential_hash: str,
+    credentials_hash: str,
     user_id: UserID,
     product_name: ProductName,
     ledger: ChatboxUsageLedger | None = None,
@@ -267,7 +267,7 @@ async def create_streaming_chat_response(
     """
     reservation = await _admit_and_reserve(
         ledger,
-        credential_hash=credential_hash,
+        credentials_hash=credentials_hash,
         user_id=user_id,
         product_name=product_name,
     )
@@ -290,12 +290,12 @@ async def create_streaming_chat_response(
         # relay validation errors to caller to provide hints in the UI
         return await http422_error_handler(request, exc)
     except httpx.HTTPStatusError as exc:
-        await _release_reservation(ledger, reservation, reason="upstream_error")
+        await _release_reservation(ledger, reservation, reason="chatbox_error")
         if is_4xx_client_error(exc.response.status_code):
             return _relay_downstream_client_error(exc.response)
         raise ChatbotRequestError from exc
     except httpx.HTTPError as exc:
-        await _release_reservation(ledger, reservation, reason="upstream_error")
+        await _release_reservation(ledger, reservation, reason="chatbox_error")
         raise ChatbotRequestError from exc
     except BaseException:
         # client disconnect / shutdown while opening the stream: the metered relay below
@@ -322,7 +322,7 @@ async def submit_background_chat_response(
     *,
     task_manager: TaskManager,
     body: CreateResponseRequest,
-    credential_hash: str,
+    credentials_hash: str,
     user_id: UserID,
     product_name: ProductName,
     ledger: ChatboxUsageLedger | None = None,
@@ -341,7 +341,7 @@ async def submit_background_chat_response(
     """
     reservation = await _admit_and_reserve(
         ledger,
-        credential_hash=credential_hash,
+        credentials_hash=credentials_hash,
         user_id=user_id,
         product_name=product_name,
     )

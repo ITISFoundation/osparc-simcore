@@ -16,12 +16,7 @@ class ChatboxUsageBaseError(ApiServerBaseError):
     msg_template = user_message("The Chatbox usage limit was exceeded.", _version=1)
     status_code = status.HTTP_403_FORBIDDEN
 
-    # stable machine-readable code on the wire (UsageLimitErrorGet.code),
-    # matching the token prefixed to msg_template. Re-declaring it here as str
-    # (same suppression as OsparcErrorMixin) is what lets the subclasses assign
-    # their code without mypy flagging each one against pydantic's
-    # PydanticErrorMixin.code Literal.
-    code: str  # type: ignore[assignment]
+    code: str  # type: ignore[assignment] # required by mypy
 
     @property
     def retry_after_seconds(self) -> int | None:
@@ -30,8 +25,8 @@ class ChatboxUsageBaseError(ApiServerBaseError):
         return max(1, math.ceil(float(value)))
 
     @property
-    def reset_at_iso(self) -> str | None:
-        return self.error_context().get("reset_at_iso")
+    def reset_at_iso8601(self) -> str | None:
+        return self.error_context().get("reset_at_iso8601")
 
 
 class ChatboxWindowQuotaExceededError(ChatboxUsageBaseError):

@@ -40,6 +40,7 @@ class ChatResponseFormat(BaseModel):
 
 
 class ChatStreamOptions(BaseModel):
+    # the vendor then reports aggregated usage on the final streamed chunk
     include_usage: bool = True
 
 

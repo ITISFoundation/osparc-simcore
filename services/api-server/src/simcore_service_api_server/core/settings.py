@@ -85,16 +85,11 @@ class ChatbotSettings(BaseCustomSettings):
 
 
 class ChatboxUsageLimitsSettings(BaseCustomSettings):
-    """Per-user Chatbox usage limits (Rate Limit, Window Quota, Global Budget Guard).
-
-    All enforcement layers are backed by the platform cache Redis (ADR-0001). Money
-    layers (Window Quota, Global Budget Guard) are fail-closed; the Rate Limit is
-    fail-open. See CONTEXT.md (§ AI chatbox usage limits) for the vocabulary.
-    """
+    """Per-user Chatbox usage limits (Rate Limit, Window Quota, Global Budget Guard)."""
 
     REDIS: Annotated[
         RedisSettings,
-        Field(description="Redis settings for the usage ledger (platform cache Redis)"),
+        Field(description="Redis settings for the usage ledger"),
     ]
 
     ENABLED: Annotated[

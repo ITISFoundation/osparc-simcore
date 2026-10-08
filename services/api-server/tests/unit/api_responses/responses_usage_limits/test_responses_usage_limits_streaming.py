@@ -377,6 +377,53 @@ async def test_stream_concurrent_admission_bounded_by_reservations(
         assert first.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.parametrize("concurrent_requests", [10, 50])
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 0.003, "REQUESTS_PER_MINUTE": 1000}],
+    indirect=True,
+)
+async def test_stream_many_concurrent_requests_admit_exactly_one(
+    client: AsyncClient,
+    auth: BasicAuth,
+    usage_builders,
+    concurrent_requests: int,
+):
+    # ARRANGE - cold start: each Reservation covers the whole window, so only one fits
+    release_upstream = asyncio.Event()
+
+    async def _slow_stream(_request: httpx.Request) -> httpx.Response:
+        await release_upstream.wait()
+        return httpx.Response(
+            200,
+            content=usage_builders.make_sse_with_usage(400, 600),
+            headers={"content-type": "text/event-stream"},
+        )
+
+    with respx.mock(base_url=usage_builders.chatbot_base_url, assert_all_mocked=False) as mock:
+        mock.post("/v1/chat/completions").mock(side_effect=_slow_stream)
+
+        # ACT
+        tasks = [
+            asyncio.create_task(_post_stream(client, auth, usage_builders.make_stream_body()))
+            for _ in range(concurrent_requests)
+        ]
+        done: set[asyncio.Task] = set()
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + 10
+        while len(done) < concurrent_requests - 1:
+            assert loop.time() < deadline, "rejected requests did not complete"
+            done = {t for t in tasks if t.done()}
+            await asyncio.sleep(0.02)
+
+        release_upstream.set()
+        responses = await asyncio.gather(*tasks)
+
+    # ASSERT - exactly one admitted, everyone else got the quota error
+    statuses = sorted(r.status_code for r in responses)
+    assert statuses == [status.HTTP_200_OK] + [status.HTTP_403_FORBIDDEN] * (concurrent_requests - 1)
+
+
 @pytest.mark.parametrize(
     "app_environment",
     [{"WINDOW_SPEND_USD": 10, "REQUESTS_PER_MINUTE": 100}],
@@ -706,7 +753,7 @@ async def test_disconnect_while_opening_stream_refunds_reservation(
             chatbot_api=MagicMock(spec=ChatbotApi),
             body=body,
             request=MagicMock(),
-            credential_hash="hash",
+            credentials_hash="hash",
             user_id=1,
             product_name="osparc",
             ledger=get_chatbox_usage_ledger(app),
