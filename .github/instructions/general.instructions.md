@@ -34,21 +34,15 @@ applicable scoped instruction file in addition to these repository-wide rules.
 
 ## Documentation
 
-- Prefer clear code over comments that repeat the implementation.
-- Update documentation when behavior changes affect public APIs, configuration,
-  developer workflows, deployment, user-visible behavior, or non-obvious
-  invariants.
-- Keep documentation concise; do not duplicate content or add commentary that
-  does not help users or maintainers.
+- Prefer clear code over comments that repeat it.
+- Update docs when a change affects public APIs, configuration, developer
+  workflows, deployment, or user-visible behavior. Keep them concise and do not
+  duplicate content.
 
 ## Ordering
 
-- Keep hand-maintained unordered lists in alphabetical order unless the order
-  carries semantic meaning (e.g. dependency ordering, priority, registration,
-  initialization).
-- Preserve intentional ordering and grouping. Do not reorder unrelated entries as
-  cleanup. When a file has an established formatter, linter, generator, or
-  repository convention for sorting, use that mechanism rather than sorting
-  manually.
-- File-type-specific ordering conventions live in the applicable scoped
-  instruction file.
+- Keep hand-maintained unordered lists alphabetical. Preserve order that carries
+  meaning (precedence, dependency, registration, initialization) and do not
+  reorder unrelated entries.
+- Where a formatter, linter, or generator owns sorting, use it instead of
+  sorting manually.
