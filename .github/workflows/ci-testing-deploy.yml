@@ -763,14 +763,14 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    # TEMP matrix experiment: runner arch x xdist worker count -> pick winner, then collapse
-    name: "[unit] catalog (${{ matrix.os }}, ${{ matrix.xdist }})"
+    name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.13"]
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
-        xdist: ["--numprocesses=auto", "--numprocesses=4"]
+        # ARM runners have 4 vCPUs (vs 2 on x64), which doubles the xdist workers
+        # for free; the test-stack images (postgres/rabbit/valkey/adminer) are multi-arch
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -785,12 +785,12 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/catalog.bash typecheck
       - name: test
-        run: ./ci/github/unit-testing/catalog.bash test "${{ matrix.xdist }}"
+        run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ github.job }}_${{ matrix.os }}_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v7
         with:
@@ -951,7 +951,8 @@ jobs:
     strategy:
       matrix:
         python: ["3.13"]
-        os: [ubuntu-24.04]
+        # ARM runners have 4 vCPUs (vs 2 on x64), doubling the xdist workers for free
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
