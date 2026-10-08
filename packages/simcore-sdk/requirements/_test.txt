@@ -159,7 +159,7 @@ lazy-object-proxy==1.12.0
     # via openapi-spec-validator
 librt==0.8.1
     # via mypy
-mako==1.3.12
+mako==1.4.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -351,7 +351,7 @@ urllib3==2.8.0
     #   requests
     #   responses
     #   types-requests
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via
     #   flask
     #   flask-cors
