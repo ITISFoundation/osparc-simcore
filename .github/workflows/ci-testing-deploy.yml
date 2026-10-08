@@ -763,12 +763,14 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] catalog"
+    # TEMP matrix experiment: runner arch x xdist worker count -> pick winner, then collapse
+    name: "[unit] catalog (${{ matrix.os }}, ${{ matrix.xdist }})"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python: ["3.13"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        xdist: ["--numprocesses=auto", "--numprocesses=4"]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -783,12 +785,12 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/catalog.bash typecheck
       - name: test
-        run: ./ci/github/unit-testing/catalog.bash test
+        run: ./ci/github/unit-testing/catalog.bash test "${{ matrix.xdist }}"
       - name: upload failed tests logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ github.job }}_docker_logs
+          name: ${{ github.job }}_${{ matrix.os }}_docker_logs
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v7
         with:
