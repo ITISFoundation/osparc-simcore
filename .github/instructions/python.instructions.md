@@ -61,13 +61,15 @@ Target the Python version in `.python-version`.
 ## Pydantic, serialization, and configuration
 
 - Use Pydantic v2 APIs only (`model_dump`, `model_validate`, `model_copy`,
-  `ConfigDict`). Use `model_dump_json()` only when a JSON payload is required.
-- Use `common_library.json_serialization.json_dumps`/`json_loads` for project
-  JSON payloads; never double-serialize framework responses.
+  `ConfigDict`).
+- For JSON payloads, use `model_dump_json()` when serializing a Pydantic model,
+  and `common_library.json_serialization.json_dumps`/`json_loads` for all other
+  data; never double-serialize framework responses.
 - Keep credentials in `SecretStr`/`SecretBytes`; unwrap only at the boundary
   that needs the raw value and never log them.
-- Follow the endpoint/event contract for omitting `None` (`exclude_none=True`)
-  vs emitting `null`.
+- Omit `None` fields (`exclude_none=True`) only where the endpoint's OpenAPI
+  schema or event schema marks the field as optional; otherwise emit `null`. If
+  the schema is unclear, ask before choosing.
 - Build env-backed settings with the local `create_from_envs()` pattern.
 - Re-exported public model APIs use a typed, alphabetized
   `__all__: tuple[str, ...]`; do not add a re-export layer solely for this.
