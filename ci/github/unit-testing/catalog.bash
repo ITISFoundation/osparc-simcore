@@ -25,8 +25,7 @@ test() {
   # exclusive access to the shared docker daemon take a cross-worker read/write lock instead
   # (@pytest.mark.docker_exclusive, see the docker_daemon_access fixture in
   # packages/pytest-simcore/src/pytest_simcore/docker_swarm.py).
-  # TEMP (matrix experiment): allow overriding the xdist args from CI
-  make test-ci-unit pytest-parameters="${1:---numprocesses=auto}"
+  make test-ci-unit pytest-parameters="--numprocesses=auto"
   popd
 }
 
