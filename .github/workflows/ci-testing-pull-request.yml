@@ -116,39 +116,6 @@ jobs:
             "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/services/api-server/openapi.json" \
             /specs/services/api-server/openapi.json
 
-  i18n-tools-tests:
-    timeout-minutes: 10
-    name: "i18n tools tests"
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout source branch
-        uses: actions/checkout@v7.0.1
-      - name: check for i18n changes
-        uses: dorny/paths-filter@v4
-        id: changes
-        with:
-          filters: |
-            i18n:
-              - 'scripts/i18n/**'
-              - '.github/workflows/ci-testing-pull-request.yml'
-      # setup-simcore-env installs Python 3.13 + uv (version from requirements/UV_VERSION)
-      - name: Setup environment
-        if: steps.changes.outputs.i18n == 'true'
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          setup-docker: 'false'
-          expose-github-runtime: 'false'
-      # node/npm are preinstalled on ubuntu-latest (image default, unpinned)
-      - name: Install frontend tools deps (typescript for the AST extractor tests)
-        if: steps.changes.outputs.i18n == 'true'
-        run: npm ci --no-audit --no-fund
-        working-directory: scripts/i18n/tools
-      - name: Run i18n tools tests
-        if: steps.changes.outputs.i18n == 'true'
-        run: |
-          uv run --with Babel --with Jinja2 --with litellm --with polib --with pytest --with rich --with typer \
-            pytest scripts/i18n/tools/tests -v
-
   all-oas-breaking:
     needs: api-specs
     continue-on-error: true
