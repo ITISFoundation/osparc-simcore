@@ -1,5 +1,6 @@
 # pylint:disable = redefined-outer-name
 
+import warnings
 from pathlib import Path
 
 import pytest
@@ -19,13 +20,18 @@ def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
     # golden reference format: the model's JSON payload with `compose_spec` kept as
     # a JSON-encoded string (see PR #3610); the old implementation obtained it by
     # assigning the string into the `Json[...]` field, which pydantic serialized
-    # with a warning — here the payload is built directly instead
+    # while emitting a `PydanticSerializationUnexpectedValue` warning
     legacy_payload = scheduler_data.model_dump(mode="json")
     legacy_payload["compose_spec"] = json_dumps(legacy_payload["compose_spec"])
     json_encoded = json_dumps(legacy_payload)
 
-    # using pydantic's internals
-    label_data = scheduler_data.as_label_data()
+    # using pydantic's internals: serialization must not emit any warning (the
+    # old implementation produced the same payload but with a
+    # `PydanticSerializationUnexpectedValue` warning)
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        label_data = scheduler_data.as_label_data()
+    assert not caught_warnings, "as_label_data() must serialize warning-free"
 
     # the label must keep `compose_spec` double-encoded (string within JSON)
     assert json_loads(json_loads(label_data)["compose_spec"]) == scheduler_data.compose_spec
