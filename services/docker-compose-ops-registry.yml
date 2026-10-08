@@ -4,7 +4,7 @@
 version: "3.7"
 services:
   registry:
-    image: registry:3
+    image: registry:3.1.2
     container_name: registry
     init: true
     environment:

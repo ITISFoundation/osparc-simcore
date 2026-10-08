@@ -827,7 +827,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 							--publish 5000:5000 \
 							--volume $(LOCAL_REGISTRY_VOLUME):/var/lib/registry \
 							--name $(LOCAL_REGISTRY_HOSTNAME) \
-							registry:3)
+							registry:3.1.2)
 
 	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
 	@grep -qxF 'REGISTRY_AUTH=False' .env || echo REGISTRY_AUTH=False >> .env
