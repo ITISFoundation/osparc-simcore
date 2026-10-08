@@ -6,9 +6,9 @@ consistent.
 
 ## The one invariant
 
-| Extension | Role | Invoked how | Lives where |
-|---|---|---|---|
-| `*.mk` | **library** | `include`-only, never called directly | `scripts/makefiles/` |
+| Extension  | Role            | Invoked how                               | Lives where                   |
+|------------|-----------------|-------------------------------------------|-------------------------------|
+| `*.mk`     | **library**     | `include`-only, never called directly     | `scripts/makefiles/`          |
 | `Makefile` | **entry point** | `cd <dir> && make <target>` (human or CI) | each project root + repo root |
 
 If you find yourself running `make -f something.mk`, it should have been a
