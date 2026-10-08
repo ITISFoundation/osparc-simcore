@@ -67,7 +67,7 @@ iniconfig==2.3.0
     # via pytest
 librt==0.8.1
     # via mypy
-mako==1.4.1
+mako==1.4.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
