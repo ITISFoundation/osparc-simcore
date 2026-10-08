@@ -42,16 +42,9 @@ from servicelib.common_headers import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.api.dependencies import database as database_module
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
     UserExtraProperties,
-)
-from simcore_service_director_v2.modules.db.repositories.projects import (
-    ProjectsRepository,
-)
-from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
-    ProjectsNodesRepository,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
@@ -632,19 +625,6 @@ def mock_internals_inactivity(
         async def list_nodes_ids(self, *args, **kwargs) -> list[NodeID]:
             return [NodeID(node_id) for node_id in service_inactivity_map]
 
-    def _get_base_repository(engine, repo_type):
-        if repo_type is ProjectsRepository:
-            return MockProjectsRepo()
-        if repo_type is ProjectsNodesRepository:
-            return MockProjectsNodesRepo()
-        msg = f"Unexpected repository type requested: {repo_type}"
-        raise AssertionError(msg)
-
-    # patch repositories
-    mocker.patch(
-        f"{database_module.__name__}.get_base_repository",
-        side_effect=_get_base_repository,
-    )
     # the route constructs the repositories directly: patch them where used
     routes_module = "simcore_service_director_v2.api.routes.dynamic_services"
     mocker.patch(f"{routes_module}.ProjectsRepository", return_value=MockProjectsRepo())
