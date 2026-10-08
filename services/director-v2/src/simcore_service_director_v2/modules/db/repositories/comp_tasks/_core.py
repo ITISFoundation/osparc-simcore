@@ -39,8 +39,8 @@ _logger = logging.getLogger(__name__)
 class CompTasksRepository(BaseRepository):
     async def get_task(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
         node_id: NodeID,
     ) -> CompTaskAtDB:
@@ -57,8 +57,8 @@ class CompTasksRepository(BaseRepository):
 
     async def list_tasks(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -67,8 +67,8 @@ class CompTasksRepository(BaseRepository):
 
     async def list_computational_tasks(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> list[CompTaskAtDB]:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -81,8 +81,8 @@ class CompTasksRepository(BaseRepository):
 
     async def list_computational_tasks_rpc_domain(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_ids: list[ProjectID],
         # pagination
         offset: int = 0,
@@ -227,6 +227,7 @@ class CompTasksRepository(BaseRepository):
         project_id: ProjectID,
         task: NodeID,
         run_id: RunID,
+        *,
         connection: AsyncConnection | None = None,
         **task_kwargs,
     ) -> CompTaskAtDB:
@@ -317,7 +318,7 @@ class CompTasksRepository(BaseRepository):
             project_id,
             task,
             run_id,
-            connection,
+            connection=connection,
             state=RUNNING_STATE_TO_DB[RunningState.WAITING_FOR_CLUSTER],
             job_id=None,
             progress=None,
@@ -333,8 +334,8 @@ class CompTasksRepository(BaseRepository):
         tasks: list[NodeID],
         state: RunningState,
         errors: list[ErrorDict] | None = None,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         clear_errors: bool = True,
         optional_progress: float | None = None,
         optional_started: datetime | None = None,
@@ -396,7 +397,7 @@ class CompTasksRepository(BaseRepository):
         *,
         connection: AsyncConnection | None = None,
     ) -> None:
-        await self._update_task(project_id, node_id, run_id, connection, progress=progress)
+        await self._update_task(project_id, node_id, run_id, connection=connection, progress=progress)
 
     async def update_project_task_last_heartbeat(
         self,
@@ -407,12 +408,12 @@ class CompTasksRepository(BaseRepository):
         *,
         connection: AsyncConnection | None = None,
     ) -> None:
-        await self._update_task(project_id, node_id, run_id, connection, last_heartbeat=heartbeat_time)
+        await self._update_task(project_id, node_id, run_id, connection=connection, last_heartbeat=heartbeat_time)
 
     async def delete_tasks_from_project(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> None:
         async with transaction_context(self.db_engine, connection) as conn:
@@ -420,8 +421,8 @@ class CompTasksRepository(BaseRepository):
 
     async def get_outputs_from_tasks(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
         node_ids: set[NodeID],
     ) -> dict[NodeID, dict[IDStr, Any]]:

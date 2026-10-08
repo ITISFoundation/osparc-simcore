@@ -243,7 +243,9 @@ async def update_from_workbench(
 
     async with pass_or_acquire_connection(db_engine) as conn:
         try:
-            existing_projects_networks = await projects_networks_repo.get_projects_networks(conn, project_id=project_id)
+            existing_projects_networks = await projects_networks_repo.get_projects_networks(
+                connection=conn, project_id=project_id
+            )
         except ProjectNetworkNotFoundError:
             existing_projects_networks = ProjectsNetworks.model_validate(
                 {
@@ -254,9 +256,9 @@ async def update_from_workbench(
 
         # NOTE: when UI is in place this is no longer required
         # for now all services are placed on the same default network
-        project = await projects_repo.get(conn, project_id=project_id)
+        project = await projects_repo.get(connection=conn, project_id=project_id)
         assert project.prj_owner  # nosec
-        new_workbench = await projects_nodes_repo.get_all(conn, project_id=project_id)
+        new_workbench = await projects_nodes_repo.get_all(connection=conn, project_id=project_id)
 
     existing_networks_with_aliases = existing_projects_networks.networks_with_aliases
 

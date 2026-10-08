@@ -137,12 +137,12 @@ async def create_user_services(  # pylint: disable=too-many-statements
     # the adjacent project/node/user reads below share a single connection
     async with pass_or_acquire_connection(get_db_engine(app)) as conn:
         projects_repository = get_repository(app, ProjectsRepository)
-        project = await projects_repository.get(conn, project_id=scheduler_data.project_id)
+        project = await projects_repository.get(connection=conn, project_id=scheduler_data.project_id)
         project_name = project.name
 
         projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
         node = await projects_nodes_repository.get(
-            conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
+            connection=conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
         )
         node_name = node.label
 

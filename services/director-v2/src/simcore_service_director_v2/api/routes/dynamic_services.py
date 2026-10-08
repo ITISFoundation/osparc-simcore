@@ -324,9 +324,9 @@ async def get_project_inactivity(
     projects_nodes_repo = ProjectsNodesRepository(db_engine)
 
     async with pass_or_acquire_connection(db_engine) as conn:
-        if not await projects_repo.exists(conn, project_id=project_id):
+        if not await projects_repo.exists(connection=conn, project_id=project_id):
             raise ProjectNotFoundError(project_id=project_id)
-        node_ids = await projects_nodes_repo.list_nodes_ids(conn, project_id=project_id)
+        node_ids = await projects_nodes_repo.list_nodes_ids(connection=conn, project_id=project_id)
 
     inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(
         *[

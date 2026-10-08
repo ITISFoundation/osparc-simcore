@@ -472,7 +472,7 @@ class BaseCompScheduler(ABC):
                     connection=conn,
                 )
             await comp_runs_repo.mark_as_started(
-                conn,
+                connection=conn,
                 user_id=user_id,
                 project_id=project_id,
                 iteration=iteration,

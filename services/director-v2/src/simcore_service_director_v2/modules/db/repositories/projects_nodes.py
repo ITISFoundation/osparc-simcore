@@ -31,8 +31,8 @@ _NODE_COLUMNS: Final = (
 class ProjectsNodesRepository(BaseRepository):
     async def exists(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
         node_id: NodeID,
     ) -> bool:
@@ -48,8 +48,8 @@ class ProjectsNodesRepository(BaseRepository):
 
     async def get(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
         node_id: NodeID,
     ) -> Node:
@@ -66,8 +66,8 @@ class ProjectsNodesRepository(BaseRepository):
 
     async def get_all(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> NodesDict:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -85,8 +85,8 @@ class ProjectsNodesRepository(BaseRepository):
 
     async def list_nodes_ids(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> list[NodeID]:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:

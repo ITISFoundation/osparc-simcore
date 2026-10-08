@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 class CompRunsSnapshotTasksRepository(BaseRepository):
     async def batch_create(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         data: list[dict],
     ) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
         if not data:
@@ -46,8 +46,8 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
 
     async def list_computation_collection_run_tasks(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         product_name: ProductName,
         user_id: int,
         collection_run_id: CollectionRunID,

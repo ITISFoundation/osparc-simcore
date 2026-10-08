@@ -14,8 +14,8 @@ from ._base import BaseRepository
 class ProjectsNetworksRepository(BaseRepository):
     async def get_projects_networks(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> ProjectsNetworks:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -30,8 +30,8 @@ class ProjectsNetworksRepository(BaseRepository):
 
     async def upsert_projects_networks(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
         networks_with_aliases: NetworksWithAliases,
     ) -> None:

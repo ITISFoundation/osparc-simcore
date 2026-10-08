@@ -165,12 +165,12 @@ class CreateSidecars(DynamicSchedulerEvent):
         async with pass_or_acquire_connection(get_db_engine(app)) as conn:
             projects_repository = get_repository(app, ProjectsRepository)
 
-            if not await projects_repository.exists(conn, project_id=scheduler_data.project_id):
+            if not await projects_repository.exists(connection=conn, project_id=scheduler_data.project_id):
                 raise ProjectNotFoundError(project_id=scheduler_data.project_id)
 
             projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
             node = await projects_nodes_repository.get(
-                conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
+                connection=conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
             )
         boot_options = node.boot_options if node is not None and node.boot_options is not None else {}
         _logger.info("%s", f"{boot_options=}")

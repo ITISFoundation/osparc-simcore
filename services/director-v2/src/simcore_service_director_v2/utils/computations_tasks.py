@@ -20,8 +20,8 @@ class PipelineInfo(NamedTuple):
 
 async def _get_pipeline_info(
     db_engine: AsyncEngine,
-    connection: AsyncConnection | None = None,
     *,
+    connection: AsyncConnection | None = None,
     project_id: ProjectID,
 ) -> PipelineInfo:
     # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
@@ -29,8 +29,10 @@ async def _get_pipeline_info(
     comp_tasks_repo = CompTasksRepository(db_engine)
 
     async with pass_or_acquire_connection(db_engine, connection) as conn:
-        pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
-        all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(conn, project_id=project_id)
+        pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(
+            connection=conn, project_id=project_id
+        )
+        all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(connection=conn, project_id=project_id)
 
     pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
@@ -42,8 +44,8 @@ async def _get_pipeline_info(
 
 async def validate_pipeline(
     db_engine: AsyncEngine,
-    connection: AsyncConnection | None = None,
     *,
+    connection: AsyncConnection | None = None,
     project_id: ProjectID,
 ) -> PipelineInfo:
     """
@@ -53,7 +55,7 @@ async def validate_pipeline(
     raises PipelineTaskMissingError
     """
 
-    pipeline_info = await _get_pipeline_info(db_engine, connection, project_id=project_id)
+    pipeline_info = await _get_pipeline_info(db_engine, connection=connection, project_id=project_id)
 
     # check that we have the expected tasks
     if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):

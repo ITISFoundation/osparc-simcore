@@ -139,8 +139,8 @@ _UNKNOWN_NODE: Final[str] = "unknown node"
 @log_decorator(_logger)
 async def _get_project_metadata(
     db_engine: AsyncEngine,
-    connection: AsyncConnection | None = None,
     *,
+    connection: AsyncConnection | None = None,
     project_id: ProjectID,
 ) -> ProjectMetadataDict:
     try:
@@ -150,7 +150,9 @@ async def _get_project_metadata(
 
         # all reads below share a single connection (no external I/O in this block)
         async with pass_or_acquire_connection(db_engine, connection) as conn:
-            project_ancestors = await projects_metadata_repo.get_project_ancestors(conn, project_id=project_id)
+            project_ancestors = await projects_metadata_repo.get_project_ancestors(
+                connection=conn, project_id=project_id
+            )
             if project_ancestors.parent_project_uuid is None:
                 _logger.debug("no parent found for project %s", project_id)
                 return {}
@@ -160,10 +162,10 @@ async def _get_project_metadata(
             assert project_ancestors.root_node_id is not None  # nosec
 
             async def _get_project_node_names(project_uuid: ProjectID, node_id: NodeID) -> tuple[str, str]:
-                project = await projects_repo.get(conn, project_id=project_uuid)
+                project = await projects_repo.get(connection=conn, project_id=project_uuid)
 
                 try:
-                    node = await projects_nodes_repo.get(conn, project_id=project_uuid, node_id=node_id)
+                    node = await projects_nodes_repo.get(connection=conn, project_id=project_uuid, node_id=node_id)
                 except ProjectNodeNotFoundError as exc:
                     _logger.exception(
                         **create_troubleshooting_log_kwargs(
@@ -255,7 +257,7 @@ async def _try_start_pipeline(
     async with pass_or_acquire_connection(db_engine) as conn:
         projects_metadata = await _get_project_metadata(
             db_engine,
-            conn,
+            connection=conn,
             project_id=computation.project_id,
         )
         user_email = await users_repo.get_user_email(computation.user_id, connection=conn)
@@ -430,8 +432,8 @@ async def create_or_update_or_start_computation(
 
     try:
         async with pass_or_acquire_connection(db_engine) as conn:
-            project = await projects_repo.get(conn, project_id=computation.project_id)
-            project_nodes = await projects_nodes_repo.get_all(conn, project_id=computation.project_id)
+            project = await projects_repo.get(connection=conn, project_id=computation.project_id)
+            project_nodes = await projects_nodes_repo.get_all(connection=conn, project_id=computation.project_id)
 
         await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
@@ -530,13 +532,13 @@ async def get_computation(
     comp_runs_repo = CompRunsRepository(db_engine)
 
     async with pass_or_acquire_connection(db_engine) as conn:
-        if not await projects_repo.exists(conn, project_id=project_id):
+        if not await projects_repo.exists(connection=conn, project_id=project_id):
             raise ProjectNotFoundError(project_id=project_id)
 
         try:
             pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
                 db_engine,
-                conn,
+                connection=conn,
                 project_id=project_id,
             )
         except PipelineTaskMissingError as exc:
@@ -549,7 +551,7 @@ async def get_computation(
         last_run: CompRunsAtDB | None = None
         pipeline_state = RunningState.NOT_STARTED
         with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(conn, project_id=project_id)
+            last_run = await comp_runs_repo.get_latest_run_by_project(connection=conn, project_id=project_id)
             pipeline_state = last_run.result
 
     # create the complete DAG graph
@@ -605,11 +607,11 @@ async def stop_computation(
     comp_runs_repo = CompRunsRepository(db_engine)
 
     async with pass_or_acquire_connection(db_engine) as conn:
-        pipeline_at_db = await comp_pipelines_repo.get_pipeline(conn, project_id=project_id)
-        tasks = await comp_tasks_repo.list_tasks(conn, project_id=project_id)
+        pipeline_at_db = await comp_pipelines_repo.get_pipeline(connection=conn, project_id=project_id)
+        tasks = await comp_tasks_repo.list_tasks(connection=conn, project_id=project_id)
         last_run: CompRunsAtDB | None = None
         with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get_latest_run_by_project(conn, project_id=project_id)
+            last_run = await comp_runs_repo.get_latest_run_by_project(connection=conn, project_id=project_id)
 
     pipeline_dag = pipeline_at_db.get_graph()
     # create the complete DAG graph
@@ -700,5 +702,5 @@ async def delete_computation(
 
     # delete the pipeline now
     async with transaction_context(db_engine) as conn:
-        await comp_tasks_repo.delete_tasks_from_project(conn, project_id=project_id)
-        await comp_pipelines_repo.delete_pipeline(conn, project_id=project_id)
+        await comp_tasks_repo.delete_tasks_from_project(connection=conn, project_id=project_id)
+        await comp_pipelines_repo.delete_pipeline(connection=conn, project_id=project_id)

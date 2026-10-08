@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 class CompPipelinesRepository(BaseRepository):
     async def get_pipeline(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> CompPipelineAtDB:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -32,8 +32,8 @@ class CompPipelinesRepository(BaseRepository):
 
     async def upsert_pipeline(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
         dag_graph: nx.DiGraph,
         publish: bool,
@@ -57,8 +57,8 @@ class CompPipelinesRepository(BaseRepository):
 
     async def delete_pipeline(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> None:
         async with transaction_context(self.db_engine, connection) as conn:

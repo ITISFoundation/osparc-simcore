@@ -79,7 +79,7 @@ async def run_new_pipeline(
 
         with contextlib.suppress(ComputationalRunNotFoundError):
             # if the run already exists and is scheduled, do not schedule again.
-            last_run = await comp_runs_repo.get(conn, user_id=user_id, project_id=project_id)
+            last_run = await comp_runs_repo.get(connection=conn, user_id=user_id, project_id=project_id)
             if last_run.result.is_running():
                 _logger.warning(
                     "run for project %s is already running. not scheduling it again.",
@@ -88,7 +88,7 @@ async def run_new_pipeline(
                 return
 
         new_run = await comp_runs_repo.create(
-            conn,
+            connection=conn,
             user_id=user_id,
             project_id=project_id,
             metadata=run_metadata,
@@ -110,7 +110,7 @@ async def run_new_pipeline(
             }
             for task in tasks_to_run
         ]
-        await comp_runs_snapshot_tasks_repo.batch_create(conn, data=db_create_snapshot_tasks)
+        await comp_runs_snapshot_tasks_repo.batch_create(connection=conn, data=db_create_snapshot_tasks)
 
     rabbitmq_client = get_rabbitmq_client(app)
     await request_pipeline_scheduling(
@@ -149,7 +149,7 @@ async def stop_pipeline(
 
     async with transaction_context(db_engine) as conn:
         comp_run = await comp_runs_repo.get(
-            conn,
+            connection=conn,
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,
@@ -157,7 +157,7 @@ async def stop_pipeline(
 
         # mark the scheduled pipeline for stopping
         updated_comp_run = await comp_runs_repo.mark_for_cancellation(
-            conn,
+            connection=conn,
             user_id=user_id,
             project_id=project_id,
             iteration=comp_run.iteration,
@@ -182,7 +182,7 @@ async def _get_pipeline_at_db(
     connection: AsyncConnection | None = None,
 ) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository(db_engine)
-    return await comp_pipeline_repo.get_pipeline(connection, project_id=project_id)
+    return await comp_pipeline_repo.get_pipeline(connection=connection, project_id=project_id)
 
 
 async def _get_pipeline_tasks_at_db(
@@ -195,7 +195,7 @@ async def _get_pipeline_tasks_at_db(
     comp_tasks_repo = CompTasksRepository(db_engine)
     return [
         t
-        for t in await comp_tasks_repo.list_computational_tasks(connection, project_id=project_id)
+        for t in await comp_tasks_repo.list_computational_tasks(connection=connection, project_id=project_id)
         if (f"{t.node_id}" in list(pipeline_dag.nodes()))
     ]
 
@@ -215,13 +215,13 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
         # both reads below share a single connection
         async with pass_or_acquire_connection(db_engine) as conn:
             runs_to_schedule = await comp_runs_repo.list_(
-                conn,
+                connection=conn,
                 filter_by_state=SCHEDULED_STATES,
                 never_scheduled=True,
                 processed_since=SCHEDULER_INTERVAL,
             )
             possibly_lost_scheduled_pipelines = await comp_runs_repo.list_(
-                conn,
+                connection=conn,
                 filter_by_state=SCHEDULED_STATES,
                 scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
             )

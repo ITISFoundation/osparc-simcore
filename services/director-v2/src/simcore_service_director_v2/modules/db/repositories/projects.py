@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class ProjectsRepository(BaseRepository):
     async def exists(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> bool:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -26,8 +26,8 @@ class ProjectsRepository(BaseRepository):
 
     async def get(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> ProjectAtDB:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:

@@ -124,14 +124,14 @@ async def list_computation_collection_runs_page(
         if filter_only_running is True:
             collection_run_ids = (
                 await comp_runs_repo.list_all_collection_run_ids_for_user_currently_running_computations(
-                    conn, product_name=product_name, user_id=user_id
+                    connection=conn, product_name=product_name, user_id=user_id
                 )
             )
             if collection_run_ids == []:
                 return ComputationCollectionRunRpcGetPage(items=[], total=0)
 
         total, comp_runs_output = await comp_runs_repo.list_group_by_collection_run_id(
-            conn,
+            connection=conn,
             product_name=product_name,
             user_id=user_id,
             project_ids_or_none=project_ids,

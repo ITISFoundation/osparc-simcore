@@ -110,8 +110,8 @@ def _resolve_grouped_state(states: list[RunningState]) -> RunningState:
 class CompRunsRepository(BaseRepository):
     async def get(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration | None = None,
@@ -140,8 +140,8 @@ class CompRunsRepository(BaseRepository):
 
     async def get_latest_run_by_project(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> CompRunsAtDB:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -158,8 +158,8 @@ class CompRunsRepository(BaseRepository):
 
     async def batch_get_latest_run_states_by_projects(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_ids: list[ProjectID],
     ) -> list[ComputationRunStateRpcGet]:
         if not project_ids:
@@ -189,8 +189,8 @@ class CompRunsRepository(BaseRepository):
 
     async def batch_get_latest_run_iteration_by_projects(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_ids: list[ProjectID],
     ) -> dict[ProjectID, Iteration]:
@@ -219,8 +219,8 @@ class CompRunsRepository(BaseRepository):
 
     async def list_(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         filter_by_state: set[RunningState] | None = None,
         never_scheduled: bool = False,
         processed_since: datetime.timedelta | None = None,
@@ -288,8 +288,8 @@ class CompRunsRepository(BaseRepository):
 
     async def list_for_user__only_latest_iterations(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         product_name: str,
         user_id: UserID,
         # filters
@@ -370,8 +370,8 @@ class CompRunsRepository(BaseRepository):
 
     async def list_for_user_and_project_all_iterations(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         product_name: str,
         user_id: UserID,
         project_ids: list[ProjectID],
@@ -424,8 +424,8 @@ class CompRunsRepository(BaseRepository):
 
     async def list_all_collection_run_ids_for_user_currently_running_computations(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         product_name: str,
         user_id: UserID,
     ) -> list[CollectionRunID]:
@@ -448,8 +448,8 @@ class CompRunsRepository(BaseRepository):
 
     async def list_group_by_collection_run_id(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         product_name: str,
         user_id: UserID,
         project_ids_or_none: list[ProjectID] | None = None,
@@ -518,8 +518,8 @@ class CompRunsRepository(BaseRepository):
 
     async def create(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration | None = None,
@@ -555,8 +555,8 @@ class CompRunsRepository(BaseRepository):
 
     async def update(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
@@ -578,8 +578,8 @@ class CompRunsRepository(BaseRepository):
 
     async def set_run_result(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
@@ -609,7 +609,7 @@ class CompRunsRepository(BaseRepository):
             values.update({"ended": arrow.utcnow().datetime})
 
         return await self.update(
-            connection,
+            connection=connection,
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,
@@ -618,15 +618,15 @@ class CompRunsRepository(BaseRepository):
 
     async def mark_as_started(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
         started_time: datetime.datetime,
     ) -> CompRunsAtDB | None:
         return await self.update(
-            connection,
+            connection=connection,
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,
@@ -635,14 +635,14 @@ class CompRunsRepository(BaseRepository):
 
     async def mark_for_cancellation(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
     ) -> CompRunsAtDB | None:
         return await self.update(
-            connection,
+            connection=connection,
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,
@@ -651,14 +651,14 @@ class CompRunsRepository(BaseRepository):
 
     async def mark_for_scheduling(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
     ) -> CompRunsAtDB | None:
         return await self.update(
-            connection,
+            connection=connection,
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,
@@ -668,14 +668,14 @@ class CompRunsRepository(BaseRepository):
 
     async def mark_as_processed(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         user_id: UserID,
         project_id: ProjectID,
         iteration: Iteration,
     ) -> CompRunsAtDB | None:
         return await self.update(
-            connection,
+            connection=connection,
             user_id=user_id,
             project_id=project_id,
             iteration=iteration,

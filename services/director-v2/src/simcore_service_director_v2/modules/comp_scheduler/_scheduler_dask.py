@@ -761,7 +761,7 @@ class DaskScheduler(BaseCompScheduler):
             comp_tasks_repo = CompTasksRepository(self.db_engine)
             comp_runs_repo = CompRunsRepository(self.db_engine)
             async with pass_or_acquire_connection(self.db_engine) as conn:
-                task = await comp_tasks_repo.get_task(conn, project_id=project_id, node_id=node_id)
+                task = await comp_tasks_repo.get_task(connection=conn, project_id=project_id, node_id=node_id)
                 if task.job_id is not None and task.job_id != task_progress_event.job_id:
                     # NOTE: stale/duplicate event for a job_id this task no longer owns (e.g. it was
                     # resubmitted or reset for retry since) - applying it would corrupt the task state
@@ -772,7 +772,7 @@ class DaskScheduler(BaseCompScheduler):
                         task.job_id,
                     )
                     return
-                run = await comp_runs_repo.get(conn, user_id=user_id, project_id=project_id)
+                run = await comp_runs_repo.get(connection=conn, user_id=user_id, project_id=project_id)
 
             if task.state in WAITING_FOR_START_STATES:
                 if task.job_id is None:

@@ -22,8 +22,8 @@ class ProjectAncestors:
 class ProjectsMetadataRepository(BaseRepository):
     async def get_project_ancestors(
         self,
-        connection: AsyncConnection | None = None,
         *,
+        connection: AsyncConnection | None = None,
         project_id: ProjectID,
     ) -> ProjectAncestors:
         """
