@@ -2,7 +2,20 @@
 applyTo: '**/services/web/server/**/*.py'
 ---
 
-### Related Documents
+# Web-server (aiohttp) instructions
 
-- **[DESIGN.md](../../services/web/server/docs/DESIGN.md)** — Web-server architecture, domain layer model, and design invariants. Reference when designing endpoint structure, choosing response models, or understanding service composition.
-- **[TESTS.md](../../services/web/server/docs/TESTS.md)** — Testing invariants and conventions. Reference when designing test fixtures or understanding how endpoints should be tested.
+## aiohttp
+
+- Use typed `web.AppKey` objects, not string keys, for application and request
+  storage, with the most precise value type available:
+  `APP_SETTINGS_KEY: Final = web.AppKey("APP_SETTINGS_KEY", ApplicationSettings)`.
+- Follow the service's middleware, routing, and exception-handling patterns;
+  use `web.RouteTableDef()` where that is the local route convention.
+
+## Related documents
+
+- [DESIGN.md](../../services/web/server/docs/DESIGN.md): architecture, domain
+  layers, and design invariants. Read before designing endpoint structure,
+  response models, or service composition.
+- [TESTS.md](../../services/web/server/docs/TESTS.md): testing invariants. Read
+  before designing test fixtures or endpoint tests.
