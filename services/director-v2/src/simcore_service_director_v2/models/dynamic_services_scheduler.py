@@ -538,12 +538,10 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @field_serializer("compose_spec", return_type=ComposeSpecLabelDict | None)
     @staticmethod
     def _serialize_compose_spec(value: ComposeSpecLabelDict | None) -> ComposeSpecLabelDict | None:
-        # pins the serialization schema to `ComposeSpecLabelDict | None` (otherwise
-        # the `Json[...]` field produces a JSON-encoded string schema)
         return value
 
     def as_label_data(self) -> str:
-        # `simcore.service.compose-spec` is `Json[...]`: the label payload needs it
+        # NOTE: `simcore.service.compose-spec` is `Json[...]`: the label payload needs it
         # double-encoded (a JSON string within the outer JSON). Doing it here keeps
         # the encoding internal to the label and out of the HTTP response schema.
         data = self.model_dump(mode="json")
