@@ -61,7 +61,9 @@ def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
 
 @pytest.fixture
 def service_key(faker: Faker) -> str:
-    return f"simcore/services/{faker.random_element(['comp', 'dynamic', 'frontend'])}/jupyter-math"
+    # NOTE: 'frontend' keys are function services (see `is_function_service`) and the
+    # endpoint would short-circuit to default resources without querying director
+    return f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/jupyter-math"
 
 
 @pytest.fixture
