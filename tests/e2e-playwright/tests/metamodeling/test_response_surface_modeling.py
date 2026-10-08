@@ -186,23 +186,30 @@ def _delete_all_items(
     *,
     headers: dict[str, str] | None = None,
 ) -> None:
-    """Delete everything a listing returns by re-reading its first page.
+    """Delete everything a listing returns.
 
-    The listings have no stable order, so offsets are not safe while deleting.
+    Offsets are unsafe while deleting, so the first page is re-read after each batch.
+    Pages are only walked forward past items whose deletion was already attempted.
     """
     attempted: set[str] = set()
+    offset = 0
     while True:
-        resp = api_request_context.get(f"{list_url}&limit={_LIST_PAGE_LIMIT}&offset=0", headers=headers or {})
+        resp = api_request_context.get(f"{list_url}&limit={_LIST_PAGE_LIMIT}&offset={offset}", headers=headers or {})
         if not resp.ok:
             if resp.status != 404:
                 logging.warning("Could not list %s: %s", label, resp.text()[:200])
             return
-        pending = [item for item in resp.json().get("items", []) if item["uid"] not in attempted]
-        if not pending:
+        payload = resp.json()
+        pending = [item for item in payload.get("items", []) if item["uid"] not in attempted]
+        if pending:
+            for item in pending:
+                attempted.add(item["uid"])
+                delete_item(item)
+            offset = 0
+        elif offset + _LIST_PAGE_LIMIT < payload.get("total", 0):
+            offset += _LIST_PAGE_LIMIT
+        else:
             return
-        for item in pending:
-            attempted.add(item["uid"])
-            delete_item(item)
 
 
 def _get_api_server_url(product_url: AnyUrl) -> str:
