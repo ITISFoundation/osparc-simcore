@@ -9,8 +9,10 @@ import logging
 import subprocess
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import suppress
+from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
+from uuid import uuid4
 
 import aiodocker
 import docker
@@ -22,17 +24,42 @@ import yaml
 from common_library.dict_tools import copy_from_dict
 from docker.errors import APIError
 from faker import Faker
+from filelock import FileLock
 from tenacity import AsyncRetrying, Retrying, TryAgain, retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 
+from .docker_compose import _filter_services_and_dump
+from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
+from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
+from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
+from .helpers.xdist import (
+    ReaderWriterLock,
+    SharedResourceRegistry,
+    get_max_xdist_workers,
+    get_worker_id,
+    get_xdist_root_tmp_path,
+    is_xdist_worker,
+)
 
-log = logging.getLogger(__name__)
+_logger: logging.Logger = logging.getLogger(__name__)
+
+_DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
+_DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
+_DOCKER_STACK_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "docker_exclusive: this test needs exclusive access to the shared docker daemon "
+        "(no other test using the docker_daemon_access fixture running concurrently in any xdist worker)",
+    )
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -52,7 +79,7 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 @retry(
     wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
-    before_sleep=before_sleep_log(log, logging.INFO),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
     reraise=True,
 )
 def assert_service_is_running(service) -> None:
@@ -68,7 +95,7 @@ def assert_service_is_running(service) -> None:
     service_name = service.name
     num_replicas_specified = _get(service.attrs, "Spec.Mode.Replicated.Replicas", default=1)
 
-    log.info(
+    _logger.info(
         "Waiting for service_name='%s' to have num_replicas_specified=%s ...",
         service_name,
         num_replicas_specified,
@@ -147,21 +174,88 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
     client.close()
 
 
+@pytest.fixture
+def docker_daemon_access(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Coordinates access to the docker daemon shared by every xdist worker: tests take a
+    "read" lock and run concurrently with each other; tests marked
+    `@pytest.mark.docker_exclusive` take a "write" lock and run with NO other test holding
+    this fixture concurrently in any worker - for tests that list/inspect ALL matching swarm
+    services/networks and are sensitive to interference from unrelated, concurrent churn.
+
+    Request it (directly or through an autouse fixture) in suites that share ONE docker
+    stack across xdist workers. No-op when not running under xdist (single process cannot
+    race itself): this also keeps non-xdist runs from attaching to - or being blocked by -
+    lock marker files a crashed xdist session may have left behind in the shared base temp dir.
+    """
+    if not is_xdist_worker(request):
+        yield
+        return
+
+    worker_id = get_worker_id(request)
+    lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), "docker_daemon")
+    token = f"{worker_id}-{uuid4().hex}"
+    is_exclusive = request.node.get_closest_marker("docker_exclusive") is not None
+    if is_exclusive:
+        with lock.write_lock(token=token):
+            yield
+    else:
+        with lock.read_lock(token):
+            yield
+
+
+@retry(
+    wait=wait_fixed(2),
+    stop=stop_after_delay(15),
+    reraise=True,
+)
+def _ensure_swarm_init(docker_client: docker.client.DockerClient) -> None:
+    if not _is_docker_swarm_init(docker_client):
+        with log_context(logging.INFO, "initializing docker swarm", logger=_logger):
+            docker_client.swarm.init(advertise_addr=get_localhost_ip())
+
+    # if still not in swarm, raise an error to try and initialize again
+    assert _is_docker_swarm_init(docker_client)
+
+
 @pytest.fixture(scope="module")
-def docker_swarm(docker_client: docker.client.DockerClient, keep_docker_up: bool) -> Iterator[None]:
-    """inits docker swarm"""
+def docker_swarm(
+    docker_client: docker.client.DockerClient,
+    keep_docker_up: bool,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[None]:
+    """inits docker swarm
 
-    for attempt in Retrying(wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True):
-        with attempt:
-            if not _is_docker_swarm_init(docker_client):
-                print("--> initializing docker swarm...")
-                docker_client.swarm.init(advertise_addr=get_localhost_ip())
-                print("--> docker swarm initialized.")
-
-            # if still not in swarm, raise an error to try and initialize again
-            assert _is_docker_swarm_init(docker_client)
+    The swarm is a daemon-wide resource shared by every xdist worker: under xdist it is
+    ref-counted via `SharedResourceRegistry` so the first holder initializes it and ONLY the
+    last holder leaves it (a module-scoped `swarm.leave` in one worker would otherwise strip
+    swarm-manager state from the daemon while other workers are still running, making their
+    docker API calls fail with 503 "this node is not a swarm manager").
+    """
+    registry: SharedResourceRegistry | None = (
+        SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_SWARM_REGISTRY_NAME)
+        if is_xdist_worker(request)
+        else None
+    )
+    token = f"{get_worker_id(request)}-{uuid4().hex}"
+    if registry is None:
+        _ensure_swarm_init(docker_client)
+    elif registry.register(token):
+        try:
+            _ensure_swarm_init(docker_client)
+        except BaseException:
+            registry.mark_failed()
+            registry.unregister(token)
+            raise
+        registry.mark_ready()
+    else:
+        registry.wait_ready(timeout=timedelta(minutes=2))
 
     yield
+
+    if registry is not None and not registry.unregister(token):
+        # other workers still use the swarm
+        return
 
     if not keep_docker_up:
         print("<-- leaving docker swarm...")
@@ -306,17 +400,27 @@ def interactive_services_subnet_docker_network(
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def docker_stack(  # noqa: C901
+async def docker_stack(  # noqa: C901, PLR0912, PLR0915
     osparc_simcore_services_dir: Path,
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
+    simcore_docker_compose: dict,
+    ops_docker_compose: dict,
     keep_docker_up: bool,
     env_vars_for_docker_compose: EnvVarsDict,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> AsyncIterator[dict]:
-    """deploys core and ops stacks and returns as soon as all are running"""
+    """deploys core and ops stacks and returns as soon as all are running
+
+    Under pytest-xdist, every worker process runs this fixture independently, but the
+    underlying stack is a single shared resource: callers coordinate via a cross-process
+    reference-counted registry (see `SharedResourceRegistry`) so exactly one worker deploys
+    it and only the last caller tears it down, regardless of how many workers/modules use it.
+    """
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
@@ -324,58 +428,150 @@ async def docker_stack(  # noqa: C901
 
     assert core_stack_name
     assert core_stack_name.startswith("pytest-")
+
+    def _collected_services_union(attr_name: str) -> list[str]:
+        # NOTE: collection completes before any test runs, so `session.items` already lists
+        # every test this run will execute (the full suite, or a `-k`-filtered subset)
+        seen: set[str] = set()
+        union: list[str] = []
+        for item in request.session.items:
+            for name in getattr(item.module, attr_name, []):
+                if name not in seen:
+                    seen.add(name)
+                    union.append(name)
+        return union
+
+    def _widen_valkey_databases(compose_path: Path) -> None:
+        # valkey/redis `--databases` is a BOOT-TIME argument (NOT CONFIG SET-able), so the widened
+        # count must be baked into the compose BEFORE deploy: reserve one bank of logical
+        # databases per potential xdist worker (+1 bank for the master/default one) on the shared
+        # container, read from the base count the compose itself declares (never hardcoded here)
+        content = yaml.safe_load(compose_path.read_text())
+        base_count = get_valkey_databases_count(content)
+        if base_count is None:
+            return
+        set_valkey_databases_count(content, (get_max_xdist_workers(request.config) + 1) * base_count)
+        compose_path.write_text(yaml.dump(content, default_flow_style=False))
+
+    def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str, selection_attr: str) -> Path:
+        if not is_xdist_worker(request):
+            # single-process run: unaffected, same per-module filtered selection as before
+            return filtered_path
+        # NOTE: under xdist, different test modules may declare different (smaller)
+        # `core_services_selection`/`ops_services_selection` subsets, but only the FIRST
+        # module to reach this fixture actually deploys (see `owns_stack` below) - deploying
+        # ITS OWN filtered subset would starve later modules of services they need (e.g. a
+        # module selecting only "postgres" would prevent "rabbit"/"redis" from ever being
+        # deployed for other modules). Deploy the UNION of every collected module's selection
+        # instead, so every module's selection is always already satisfied - deploying the
+        # full, unfiltered compose is NOT an option: it includes production services whose
+        # images aren't built/available in a test environment.
+        union_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_union_docker_compose.yml"
+        with FileLock(f"{union_path}.lock"):
+            # NOTE: the check+dump must happen under a cross-process lock and the file must
+            # appear atomically (write to .tmp + atomic rename): a worker deploying the stack
+            # must never read a half-written compose produced concurrently by another worker
+            if not union_path.exists():
+                tmp_path = union_path.with_name(f"{union_path.name}.tmp")
+                _filter_services_and_dump(_collected_services_union(selection_attr), unfiltered, tmp_path)
+                _widen_valkey_databases(tmp_path)
+                tmp_path.replace(union_path)  # atomic on the same filesystem
+        return union_path
+
     stacks = [
         (
             "ops",
             ops_stack_name,
-            ops_docker_compose_file,
+            _compose_file_for(
+                ops_docker_compose, ops_docker_compose_file, "ops", FIXTURE_CONFIG_OPS_SERVICES_SELECTION
+            ),
         ),
         (
             "core",
             core_stack_name,
-            core_docker_compose_file,
+            _compose_file_for(
+                simcore_docker_compose, core_docker_compose_file, "core", FIXTURE_CONFIG_CORE_SERVICES_SELECTION
+            ),
         ),
     ]
 
-    # NOTE: if the migration service was already running prior to this call it must
-    # be force updated so that it does its job. else it remains and tests will fail
-    _force_remove_migration_service(docker_client)
-    _make_dask_sidecar_certificates(osparc_simcore_services_dir)
-    # make up-version
+    registry: SharedResourceRegistry | None = (
+        SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_STACK_REGISTRY_NAME)
+        if is_xdist_worker(request)
+        else None
+    )
+    token = f"{get_worker_id(request)}-{uuid4().hex}"
+    owns_stack = True if registry is None else registry.register(token)
+
     stacks_deployed: dict[str, dict] = {}
-    for key, stack_name, compose_file in stacks:
-        _deploy_stack(compose_file, stack_name)
+    if owns_stack:
+        try:
+            # NOTE: if the migration service was already running prior to this call it must
+            # be force updated so that it does its job. else it remains and tests will fail
+            _force_remove_migration_service(docker_client)
+            _make_dask_sidecar_certificates(osparc_simcore_services_dir)
+            # make up-version
+            for key, stack_name, compose_file in stacks:
+                _deploy_stack(compose_file, stack_name)
 
-        stacks_deployed[key] = {
-            "name": stack_name,
-            "compose": yaml.safe_load(compose_file.read_text()),
+                stacks_deployed[key] = {
+                    "name": stack_name,
+                    "compose": yaml.safe_load(compose_file.read_text()),
+                }
+
+            # All SELECTED services ready
+            # - notice that the timeout is set for all services in both stacks
+            # - TODO: the time to deploy will depend on the number of services selected
+            async def _check_all_services_are_running():
+                # NOTE: scoped to THIS stack's namespaces on purpose: under xdist, other workers
+                # may be concurrently creating/removing their own test services, and asserting
+                # those (soon-gone, hence 404-forever) services here would stall the deploy until
+                # `assert_service_is_running` times out and fails the whole shared stack
+                stack_services = [
+                    service
+                    for _, stack_name, _ in stacks
+                    for service in docker_client.services.list(
+                        filters={"label": f"com.docker.stack.namespace={stack_name}"}
+                    )
+                ]
+                done, pending = await asyncio.wait(
+                    [
+                        asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
+                        for service in stack_services
+                    ],
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
+                assert done, f"no services ready, they all failed! [{pending}]"
+
+                for future in done:
+                    if exc := future.exception():
+                        raise exc  # noqa: TRY301
+
+                assert not pending, f"some service did not start correctly [{pending}]"
+
+            try:
+                await _check_all_services_are_running()
+            finally:
+                _fetch_and_print_services(docker_client, "[BEFORE TEST]")
+        except BaseException:
+            # the other workers would wait for a stack that will NEVER become ready: signal
+            # them to fail fast and give up ownership, so the deploy is retried elsewhere
+            if registry is not None:
+                registry.mark_failed()
+                registry.unregister(token)
+            raise
+
+        if registry is not None:
+            registry.mark_ready()
+    else:
+        # another worker owns the deploy: wait until it signals the stack is ready (or failed)
+        assert registry is not None
+        registry.wait_ready(timeout=_DOCKER_STACK_READY_TIMEOUT)
+
+        stacks_deployed = {
+            key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
+            for key, stack_name, compose_file in stacks
         }
-
-    # All SELECTED services ready
-    # - notice that the timeout is set for all services in both stacks
-    # - TODO: the time to deploy will depend on the number of services selected
-    try:
-
-        async def _check_all_services_are_running():
-            done, pending = await asyncio.wait(
-                [
-                    asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
-                    for service in docker_client.services.list()
-                ],
-                return_when=asyncio.FIRST_EXCEPTION,
-            )
-            assert done, f"no services ready, they all failed! [{pending}]"
-
-            for future in done:
-                if exc := future.exception():
-                    raise exc
-
-            assert not pending, f"some service did not start correctly [{pending}]"
-
-        await _check_all_services_are_running()
-
-    finally:
-        _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_deployed,
@@ -383,6 +579,10 @@ async def docker_stack(  # noqa: C901
     }
 
     # TEAR DOWN ----------------------
+
+    if registry is not None and not registry.unregister(token):
+        # other workers/modules still use the shared stack
+        return
 
     _fetch_and_print_services(docker_client, "[AFTER TEST]")
 
@@ -414,7 +614,7 @@ async def docker_stack(  # noqa: C901
                 capture_output=True,
             )
         except subprocess.CalledProcessError as err:
-            log.warning(
+            _logger.warning(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
@@ -433,7 +633,7 @@ async def docker_stack(  # noqa: C901
             for attempt in Retrying(
                 wait=wait_fixed(2),
                 stop=stop_after_delay(3 * MINUTE),
-                before_sleep=before_sleep_log(log, logging.INFO),
+                before_sleep=before_sleep_log(_logger, logging.INFO),
                 reraise=True,
             ):
                 with attempt:

@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import copy
 import json
 import logging
 import os
@@ -305,6 +306,16 @@ def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
     mocker.patch(f"{module_base}.get_repository", return_value=repo_mock, autospec=True)
 
 
+@pytest.fixture
+def service(request: pytest.FixtureRequest, faker: Faker) -> dict[str, Any]:
+    # NOTE: the parametrized cases all pass the SAME static JSON-schema example, so give each
+    # invocation its own node_uuid: concurrent xdist workers running different cases would
+    # otherwise collide trying to schedule a service for the same node_uuid.
+    # Declared 'indirect' below, so every fixture/test requesting 'service' in this test
+    # receives this unique version (name kept because helper fixtures request 'service')
+    return {**copy.deepcopy(request.param), "node_uuid": faker.uuid4()}
+
+
 @pytest.mark.parametrize(
     "service, service_labels, exp_status_code, is_legacy",
     [
@@ -336,6 +347,7 @@ def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
             id="DYNAMIC_COMPOSE",
         ),
     ],
+    indirect=["service"],
 )
 def test_create_dynamic_services(
     mock_user_extra_properties_repo: None,
