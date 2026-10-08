@@ -87,6 +87,18 @@ For test files, also follow `python-tests.instructions.md`.
 - Prefer logging over `print()` for runtime output. Mark intentional `print()`
   calls with `# noqa: T201` where required by Ruff. Add a brief comment explaining why the `print()` is necessary.
 
+## Retries and async file access
+
+- Use the `tenacity` library wherever retries are needed. Do not hand-write
+  retry loops with `sleep`. Reuse existing policies in
+  `servicelib.retry_policies` before defining new ones.
+- Bound every retry (`stop_after_attempt` or `stop_after_delay`), use
+  `wait_exponential`/`wait_random_exponential` for remote calls, retry only
+  specific exceptions (`retry_if_exception_type`), and log via
+  `before_sleep_log`.
+- Use `aiofiles` for file access inside `async` code instead of blocking
+  `open()`/`Path.read_*()`/`write_*()` calls.
+
 ## Serialization, configuration, and Pydantic
 
 - Use `common_library.json_serialization.json_dumps` and `json_loads` for
