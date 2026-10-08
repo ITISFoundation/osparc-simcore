@@ -23,7 +23,7 @@ OutboxEventID = NewType("OutboxEventID", int)
 EventKind = NewType("EventKind", str)
 AggregateID = NewType("AggregateID", str)
 
-__all__ = (
+__all__: tuple[str, ...] = (
     "DB_OUTBOX_CHANGED_COLUMNS_OUTPUTS",
     "DB_OUTBOX_CHANGED_COLUMN_STATE",
     "AggregateID",

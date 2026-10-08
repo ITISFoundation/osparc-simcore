@@ -222,30 +222,22 @@ async def _claim_and_process_aggregate(
 ) -> ClaimOutcome | None:
     """Claim, process, and delete every pending event of one aggregate (at-least-once).
 
-    Claiming never locks more than the aggregate it is about to process:
-    _repository.claim_aggregate takes the per-aggregate advisory lock and only then
-    row-locks the events -- all pending events of the winning aggregate are
-    co-claimed (FOR UPDATE SKIP LOCKED) and projected once: the union of their
-    changed_columns describes everything that happened since the last projection,
-    and _process_outbox_event re-reads the current comp_tasks row, so a burst of N
-    events for one aggregate fans out a single socketio notification instead of N.
+    claim_aggregate takes the per-aggregate advisory lock, then row-locks all
+    pending events of that aggregate (FOR UPDATE SKIP LOCKED). Their changed_columns
+    are unioned and the current comp_tasks row is re-read, so a burst of N events
+    produces a single socketio notification.
 
-    The claim-process-delete cycle runs in a single transaction: the advisory lock
-    and the winner's row locks are held while the events are processed, and released
-    on commit. A failed projection is recorded on the events (attempt + backoff)
-    in that same transaction, so no other replica can re-claim them before the
-    backoff is in place. The projection itself writes through the app's
-    repositories and socket.io -- outside this transaction -- so those writes are
-    not undone and the retried attempt converges by re-reading the current row
-    (at-least-once delivery).
+    The cycle is one transaction. The locks are held while processing and released
+    on commit; a failed projection is recorded on the events (attempt + backoff) in
+    the same transaction, so no other replica can re-claim them before the backoff
+    is in place. The projection writes through the app's repositories and socket.io
+    outside this transaction, so a retried attempt converges by re-reading the
+    current row.
 
-    Returns the ClaimOutcome (success flag + the aggregate claimed), or None when
-    the aggregate is currently claimed by another replica or lost its pending events
-    in the meantime (the caller moves on to its next candidate).
-
-    NOTE: processing runs while the transaction (and both locks) is open, so it is
-    capped by _PROCESSING_TIMEOUT (DB updates + socketio notifications only); a stalled
-    publish aborts the claim as an infrastructure failure instead of pinning the locks.
+    Returns None when another replica holds the aggregate or its pending events are
+    gone. Processing runs with the locks open, so it is capped by
+    _PROCESSING_TIMEOUT: a stalled publish aborts the claim as an infrastructure
+    failure instead of pinning the locks.
     """
     async with transaction_context(engine) as conn:
         # win the aggregate (advisory lock + row lock) before processing
@@ -364,29 +356,21 @@ async def _process_claimable_batch(
 async def claim_and_process_outbox_events(app: web.Application, engine: AsyncEngine) -> None:
     """Drain pending outbox events, one aggregate at a time, safe for concurrent replicas.
 
-    When processing fails for an aggregate, its (kind, aggregate_id) is excluded from
-    the rest of this drain so one poisoned aggregate cannot starve the healthy events
-    behind it: the failure is marked on the row (attempt + backoff) and the drain
-    moves on to the next aggregate. The drain aborts only after too many aggregates
-    have failed with an infrastructure-like error (INFRA_EXCEPTION_TYPES) and no
-    success in between -- that pattern points at a broken DB/socketio connection
-    rather than a handful of unrelated bad rows, and continuing would just spin.
-    An application-level failure never counts towards this abort: the aggregate is
-    still excluded from the rest of the drain, but healthy aggregates behind it keep
-    draining no matter how many unrelated rows fail. Since excluded aggregates cannot
-    be re-claimed within the drain, every counted failure concerns a distinct
-    aggregate; a success resets the count. Everything left over is retried on the
-    next wake-up or poll cycle, where the failed aggregates become claimable again
-    (with their backoff applied).
+    On failure the events are marked (attempt + backoff) and the aggregate is
+    excluded from the rest of this drain, so one poisoned aggregate cannot starve
+    the healthy events behind it. It becomes claimable again on a later cycle, once
+    its backoff has passed. The drain aborts only when
+    _MAX_INFRA_FAILED_AGGREGATES_PER_DRAIN distinct aggregates fail with an
+    infrastructure-like error (INFRA_EXCEPTION_TYPES) with no success in between:
+    that pattern points at a broken DB/socketio connection, and continuing would
+    just spin. Application-level failures never count towards that limit.
 
-    The drain also stops when every claimable event's aggregate is currently locked
-    by another replica: the next cycle will retry, by which time that replica is likely done.
+    The drain also stops when nothing is left to claim here: either the queue is
+    empty or every pending aggregate is locked by another replica, which the next
+    cycle retries.
 
-    Claim candidates come from a bounded batch (list_claimable_aggregates) that is
-    refilled only once exhausted, so draining a backlog of N aggregates costs O(N)
-    scans rather than one scan per claim. Stale candidates (claimed elsewhere or
-    failed in this drain) are skipped from memory and cost only a cheap claim
-    attempt, and the batch limit bounds how many of them can accumulate per refill.
+    Candidates come from a bounded batch refilled only when exhausted, so a backlog
+    of N aggregates costs O(N) scans rather than one scan per claim.
     """
     failed_aggregates: set[ClaimableAggregate] = set()
     consecutive_infra_failed_aggregates = 0

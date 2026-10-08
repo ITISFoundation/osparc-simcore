@@ -16,10 +16,11 @@ from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import suppress
 from decimal import Decimal
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
+from annotated_types import doc
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
@@ -2462,7 +2463,15 @@ async def _send_message_to_rooms(
     rooms: Iterable[GroupID],
     message: SocketMessageDict,
     *,
-    strict: bool,
+    strict: Annotated[
+        bool,
+        doc(
+            "if True, emit failures are raised so the caller can retry the notification "
+            "(at-least-once, used by the outbox consumer); if False, failures are only "
+            "logged. Emitting to a room with no members is a no-op in both cases, see "
+            "socketio/_messages.py"
+        ),
+    ],
 ) -> None:
     # all emits settle before the first failure is raised, so a retry never overlaps
     # emits still in flight from the failed attempt
