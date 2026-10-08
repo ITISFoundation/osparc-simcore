@@ -4,7 +4,7 @@ alembic==1.18.4
     # via -r requirements/_base.in
 annotated-types==0.7.0
     # via pydantic
-asyncpg==0.31.0
+asyncpg==0.32.0
     # via sqlalchemy
 greenlet==3.3.2
     # via sqlalchemy
