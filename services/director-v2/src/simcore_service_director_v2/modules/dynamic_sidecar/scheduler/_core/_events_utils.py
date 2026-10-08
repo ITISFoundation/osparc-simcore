@@ -369,11 +369,13 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     await task_progress.update(message="removing project networks", percent=0.8)
     used_projects_networks = await get_projects_networks_containers(project_id=scheduler_data.project_id)
-    await logged_gather(*[
-        try_to_remove_network(network_name)
-        for network_name, container_count in used_projects_networks.items()
-        if container_count == 0
-    ])
+    await logged_gather(
+        *[
+            try_to_remove_network(network_name)
+            for network_name, container_count in used_projects_networks.items()
+            if container_count == 0
+        ]
+    )
 
     # pylint: disable=protected-access
     scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
@@ -559,18 +561,20 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save
         else VolumeStatus.CONTENT_NO_SAVE_REQUIRED
     )
-    await logged_gather(*(
-        sidecars_client.update_volume_state(
-            scheduler_data.endpoint,
-            volume_category=VolumeCategory.STATES,
-            volume_status=volume_status,
-        ),
-        sidecars_client.update_volume_state(
-            scheduler_data.endpoint,
-            volume_category=VolumeCategory.OUTPUTS,
-            volume_status=volume_status,
-        ),
-    ))
+    await logged_gather(
+        *(
+            sidecars_client.update_volume_state(
+                scheduler_data.endpoint,
+                volume_category=VolumeCategory.STATES,
+                volume_status=volume_status,
+            ),
+            sidecars_client.update_volume_state(
+                scheduler_data.endpoint,
+                volume_category=VolumeCategory.OUTPUTS,
+                volume_status=volume_status,
+            ),
+        )
+    )
 
     async def _pull_output_ports_with_metrics() -> None:
         with track_duration() as duration:

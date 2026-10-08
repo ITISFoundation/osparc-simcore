@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import copy
 import json
 import logging
 import os
@@ -30,7 +31,6 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
 )
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
@@ -43,16 +43,9 @@ from servicelib.common_headers import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.api.dependencies import database as database_module
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
     UserExtraProperties,
-)
-from simcore_service_director_v2.modules.db.repositories.projects import (
-    ProjectsRepository,
-)
-from simcore_service_director_v2.modules.db.repositories.projects_nodes import (
-    ProjectsNodesRepository,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
@@ -313,6 +306,16 @@ def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
     mocker.patch(f"{module_base}.get_repository", return_value=repo_mock, autospec=True)
 
 
+@pytest.fixture
+def service(request: pytest.FixtureRequest, faker: Faker) -> dict[str, Any]:
+    # NOTE: the parametrized cases all pass the SAME static JSON-schema example, so give each
+    # invocation its own node_uuid: concurrent xdist workers running different cases would
+    # otherwise collide trying to schedule a service for the same node_uuid.
+    # Declared 'indirect' below, so every fixture/test requesting 'service' in this test
+    # receives this unique version (name kept because helper fixtures request 'service')
+    return {**copy.deepcopy(request.param), "node_uuid": faker.uuid4()}
+
+
 @pytest.mark.parametrize(
     "service, service_labels, exp_status_code, is_legacy",
     [
@@ -344,6 +347,7 @@ def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
             id="DYNAMIC_COMPOSE",
         ),
     ],
+    indirect=["service"],
 )
 def test_create_dynamic_services(
     mock_user_extra_properties_repo: None,
@@ -626,25 +630,19 @@ def mock_internals_inactivity(
     service_inactivity_map: dict[str, ActivityInfoOrNone] = {faker.uuid4(): s for s in services_activity}
 
     class MockProjectsRepo:
-        async def exists(self, _: ProjectID) -> bool:
+        async def exists(self, *args, **kwargs) -> bool:
             return True
 
     class MockProjectsNodesRepo:
-        async def list_nodes_ids(self, _: ProjectID) -> list[NodeID]:
+        async def list_nodes_ids(self, *args, **kwargs) -> list[NodeID]:
             return [NodeID(node_id) for node_id in service_inactivity_map]
 
-    def _get_base_repository(engine, repo_type):
-        if repo_type is ProjectsRepository:
-            return MockProjectsRepo()
-        if repo_type is ProjectsNodesRepository:
-            return MockProjectsNodesRepo()
-        msg = f"Unexpected repository type requested: {repo_type}"
-        raise AssertionError(msg)
-
-    # patch repositories
+    # the route constructs the repositories directly: patch them where used
+    routes_module = "simcore_service_director_v2.api.routes.dynamic_services"
+    mocker.patch(f"{routes_module}.ProjectsRepository", return_value=MockProjectsRepo())
     mocker.patch(
-        f"{database_module.__name__}.get_base_repository",
-        side_effect=_get_base_repository,
+        f"{routes_module}.ProjectsNodesRepository",
+        return_value=MockProjectsNodesRepo(),
     )
 
     async def get_service_activity(node_uuid: NodeID) -> ActivityInfoOrNone:

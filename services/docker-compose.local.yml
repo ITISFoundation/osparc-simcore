@@ -261,6 +261,8 @@ services:
   rabbit:
     ports:
       - "5672"
+      # NOTE: keep the management port mapping in sync with _MANAGEMENT_PORT in
+      # packages/pytest-simcore/src/pytest_simcore/rabbit_service.py (its fallback value)
       - "15672:15672"
       - "15692"
 
