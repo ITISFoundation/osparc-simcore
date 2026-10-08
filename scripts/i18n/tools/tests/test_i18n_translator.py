@@ -111,6 +111,15 @@ def test_classify_identical_entry_updated_with_opt_in() -> None:
     assert isinstance(tr._classify_entry_state(entry, retranslate_identical=True), tr.EntryUpdated)
 
 
+def test_classify_identical_opt_in_does_not_affect_translated_entries() -> None:
+    # the opt-in must only target verbatim-identical entries: a real translation
+    # stays skipped and an untranslated one stays new even with the flag on
+    translated = tr._classify_entry_state(polib.POEntry(msgid="Add", msgstr="Agregar"), retranslate_identical=True)
+    assert isinstance(translated, tr.EntrySkipped)
+    untranslated = tr._classify_entry_state(polib.POEntry(msgid="x", msgstr=""), retranslate_identical=True)
+    assert isinstance(untranslated, tr.EntryNew)
+
+
 def test_classify_identical_plural_entry_updated_with_opt_in() -> None:
     entry = polib.POEntry(msgid="1 day", msgid_plural="{} days", msgstr_plural={0: "1 day", 1: "{} days"})
     assert isinstance(tr._classify_entry_state(entry), tr.EntrySkipped)
