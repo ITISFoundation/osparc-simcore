@@ -22,72 +22,105 @@ _NODE_MODIFIED_STATE = "modified_state"
 _NODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
 
 
-def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
+def create_complete_dag(project_nodes: NodesDict) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph: nx.DiGraph = nx.DiGraph()
-    for node_id, node in workbench.items():
+
+    nodes: list[tuple[str, Any]] = []
+    edges: list[tuple[str, str]] = []
+
+    for node_id, node in project_nodes.items():
         assert node.state  # nosec
 
-        dag_graph.add_node(
-            node_id,
-            name=node.label,
-            key=node.key,
-            version=node.version,
-            inputs=node.inputs,
-            run_hash=node.run_hash,
-            outputs=node.outputs,
-            state=node.state.current_status,
-            node_class=to_node_class(node.key),
+        str_node_id = f"{node_id}"
+
+        nodes.append(
+            (
+                str_node_id,
+                {
+                    "name": node.label,
+                    "key": node.key,
+                    "version": node.version,
+                    "inputs": node.inputs,
+                    "run_hash": node.run_hash,
+                    "outputs": node.outputs,
+                    "state": node.state.current_status,
+                    "node_class": to_node_class(node.key),
+                },
+            )
         )
+
         if node.input_nodes:
             for input_node_id in node.input_nodes:
-                predecessor_node = workbench.get(f"{input_node_id}")
-                assert (  # nosec
-                    predecessor_node
-                ), f"Node {input_node_id} not found in workbench"
-                if predecessor_node:
-                    dag_graph.add_edge(str(input_node_id), node_id)
+                str_input_id = f"{input_node_id}"
+                predecessor_node = project_nodes.get(str_input_id)
+
+                assert predecessor_node, f"Node {input_node_id} not found in workbench"  # nosec
+
+                edges.append((str_input_id, str_node_id))
+
+    # Bulk add for improved performance
+    dag_graph.add_nodes_from(nodes)
+    dag_graph.add_edges_from(edges)
 
     return dag_graph
 
 
 def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     dag_graph: nx.DiGraph = nx.DiGraph()
+
+    nodes: list[tuple[str, Any]] = []
+    edges: list[tuple[str, str]] = []
+
     for task in tasks:
-        dag_graph.add_node(
-            f"{task.node_id}",
-            name=task.job_id,
-            key=task.image.name,
-            version=task.image.tag,
-            inputs=task.inputs,
-            run_hash=task.run_hash,
-            outputs=task.outputs,
-            state=task.state,
-            node_class=task.node_class,
-            progress=task.progress,
+        node_id = f"{task.node_id}"
+        nodes.append(
+            (
+                node_id,
+                {
+                    "name": task.job_id,
+                    "key": task.image.name,
+                    "version": task.image.tag,
+                    "inputs": task.inputs,
+                    "run_hash": task.run_hash,
+                    "outputs": task.outputs,
+                    "state": task.state,
+                    "node_class": task.node_class,
+                    "progress": task.progress,
+                },
+            )
         )
+
         if task.inputs:
-            for input_data in task.inputs.values():
-                if isinstance(input_data, PortLink):
-                    dag_graph.add_edge(str(input_data.node_uuid), f"{task.node_id}")
+            edges.extend(
+                (f"{input_data.node_uuid}", node_id)
+                for input_data in task.inputs.values()
+                if isinstance(input_data, PortLink)
+            )
+
+    dag_graph.add_nodes_from(nodes)
+    dag_graph.add_edges_from(edges)
+
     return dag_graph
 
 
 async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
+
     # if the node state is in the modified state already
-    if node["state"] in [
+    if node["state"] in {
         None,
         RunningState.ABORTED,
         RunningState.FAILED,
-    ]:
+    }:
         return True
+
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
         return True
-    for output_port in node["outputs"]:
-        if output_port is None:
-            return True
+
+    if any(output_port is None for output_port in node["outputs"]):
+        return True
 
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
     async def get_node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
