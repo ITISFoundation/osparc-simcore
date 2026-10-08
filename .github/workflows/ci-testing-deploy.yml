@@ -1226,7 +1226,10 @@ jobs:
     strategy:
       matrix:
         python: ["3.13", "3.14"]
-        os: [ubuntu-24.04]
+        # ARM runners have 4 vCPUs (vs 2 on x64): pylint runs with jobs=0 (auto
+        # cpu_count), so this doubles its worker pool -> test step 151s -> 121s (3.13)
+        # and 191s -> 119s (3.14). Nothing is pulled, so no multi-arch concern here.
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
