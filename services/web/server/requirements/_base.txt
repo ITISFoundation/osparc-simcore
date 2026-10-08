@@ -429,7 +429,7 @@ simple-websocket==1.1.0
     # via python-engineio
 six==1.16.0
     # via python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==2.1.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
