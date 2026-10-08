@@ -538,6 +538,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     @field_serializer("compose_spec", return_type=ComposeSpecLabelDict | None)
     @staticmethod
     def _serialize_compose_spec(value: ComposeSpecLabelDict | None) -> ComposeSpecLabelDict | None:
+        # NOTE: removing this changes OAS
         return value
 
     def as_label_data(self) -> str:
