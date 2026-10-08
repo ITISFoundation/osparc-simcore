@@ -69,9 +69,16 @@ async def redis_settings(
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_redis" in docker_stack["services"]
 
-    deployed_compose = docker_stack["stacks"]["core"]["compose"]
-    deployed_databases_count = get_valkey_databases_count(deployed_compose)
-    assert deployed_databases_count is not None, "deployed redis/valkey service has no --databases?"
+    db_offset = 0
+    if is_xdist_worker(request):
+        # only xdist workers remap onto a per-worker bank of logical databases, which requires
+        # the deployed valkey to have been widened with `--databases` (see `_worker_db_offset`).
+        # A non-xdist run uses offset 0, so it must NOT read the (possibly redis-less, when the
+        # current module did not select redis) module-scoped compose here.
+        deployed_compose = docker_stack["stacks"]["core"]["compose"]
+        deployed_databases_count = get_valkey_databases_count(deployed_compose)
+        assert deployed_databases_count is not None, "deployed redis/valkey service has no --databases?"
+        db_offset = _worker_db_offset(request, deployed_databases_count)
 
     port = get_service_published_port("simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"]))
     # test runner is running on the host computer
@@ -79,7 +86,7 @@ async def redis_settings(
         REDIS_HOST=get_localhost_ip(),
         REDIS_PORT=TypeAdapter(PortInt).validate_python(port),
         REDIS_PASSWORD=SecretStr(env_vars_for_docker_compose["REDIS_PASSWORD"]),
-        REDIS_DB_OFFSET=_worker_db_offset(request, deployed_databases_count),
+        REDIS_DB_OFFSET=db_offset,
     )
     with log_context(
         logging.INFO,
