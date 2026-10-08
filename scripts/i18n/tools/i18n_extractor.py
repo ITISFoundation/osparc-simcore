@@ -109,7 +109,8 @@ def _mask_cpp_comments(text: str) -> str:
     def blank(m: re.Match[str]) -> str:
         return "".join(c if c == "\n" else " " for c in m.group(0))
 
-    return re.sub(r"//[^\n]*|/\*.*?\*/", blank, text)
+    # DOTALL so /* */ comments spanning several lines are masked too
+    return re.sub(r"//[^\n]*|/\*.*?\*/", blank, text, flags=re.DOTALL)
 
 
 def _literal_run_at(masked: str, pos: int) -> list[re.Match[str]]:

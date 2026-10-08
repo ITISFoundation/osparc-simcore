@@ -224,6 +224,7 @@ def test_fold_skips_mergeable_and_commented_runs() -> None:
         'tr(L"w1 " "w2");\n'  # wide-first narrow-cont: mergeable, leave alone
         '// tr(L"c1 " L"c2")\n'  # inside a comment: not code
         '/* tr(L"d1 " L"d2") */\n'  # inside a block comment: not code
+        '/* tr(L"e1 "\n   L"e2"); */\n'  # block comment spanning lines: not code
         'QT_TR_NOOP(L"q1 " L"q2");\n'  # flagged keyword: folds
     )
     folded, n = ix._fold_wide_literal_runs(text)
@@ -232,6 +233,7 @@ def test_fold_skips_mergeable_and_commented_runs() -> None:
     assert 'tr(L"w1 " "w2")' in folded
     assert 'tr(L"c1 " L"c2")' in folded  # comment untouched
     assert '/* tr(L"d1 " L"d2") */' in folded  # block comment untouched
+    assert 'tr(L"e1 "\n   L"e2");' in folded  # multi-line block comment untouched
     assert 'QT_TR_NOOP(L"q1 " "q2")' in folded
 
 
