@@ -171,9 +171,10 @@ def _fold_wide_literal_runs(text: str) -> tuple[str, int]:
     is rewritten so ONLY the first fragment carries the (L) wide prefix. Text
     outside such runs -- and the line count -- are never touched.
 
-    \note Heuristic like the rest of this file's C/C++ handling (xgettext's own
-    scanner is likewise regex-grade): raw string literals (R"...") and trigraphs
-    are not tokenized; a run in a real source using those is left unfolded.
+    This is a heuristic like the rest of this file's C/C++ handling (xgettext's
+    own scanner is likewise regex-grade): raw string literals (R"...") and
+    trigraphs are not tokenized; a run in a real source using those is left
+    unfolded.
     """
     masked = _mask_cpp_comments(text)
     edits: list[tuple[int, int, str]] = []
@@ -206,7 +207,11 @@ def _mirror_path(root: Path, source: Path) -> Path:
 def _prepare_folded_mirrors(files: list[Path], mirror_root: Path, mirror_to_orig: dict[str, str]) -> list[Path]:
     """Return the file list to hand xgettext: unchanged paths plus folded COPY
     paths for sources whose tr() runs would extract truncated. Registers each
-    copy's mirror->original mapping for the post-run `#: ` reference rewrite."""
+    copy's mirror->original mapping for the post-run `#: ` reference rewrite.
+
+    Raises:
+        OSError: if a folded mirror copy cannot be created under mirror_root.
+    """
     swapped: list[Path] = []
     for f in files:
         text = _read_text_lenient(f)
@@ -228,9 +233,8 @@ def _rewrite_pot_references(out_pot: Path, mirror_to_orig: dict[str, str]) -> No
     reference comments (xgettext records paths exactly as they were passed)."""
     if not mirror_to_orig:
         return
-    try:
-        pot_text = out_pot.read_text(encoding="utf-8", errors="surrogateescape")
-    except OSError:
+    pot_text = _read_text_lenient(out_pot)
+    if pot_text is None:
         return
     # longest keys first: a short mirror path can be a prefix of a longer one
     for mirror, orig in sorted(mirror_to_orig.items(), key=lambda kv: -len(kv[0])):
