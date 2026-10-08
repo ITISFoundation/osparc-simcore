@@ -338,6 +338,49 @@ def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     )
 
 
+def _create_stack_network(
+    docker_client: docker.client.DockerClient, network_name: str
+) -> docker.models.networks.Network:
+    return docker_client.networks.create(
+        name=network_name,
+        driver="overlay",
+        attachable=True,
+        labels={
+            "com.docker.stack.namespace": "simcore",
+            "created_by": "pytest-simcore",
+        },
+    )
+
+
+def _get_or_create_network(
+    docker_client: docker.client.DockerClient, network_name: str
+) -> tuple[docker.models.networks.Network, bool]:
+    """Returns (network, created_new).
+
+    Safe across xdist workers: two workers can both observe `NotFound` and race to create
+    the network; the loser gets a 409 Conflict and must fetch what the winner created.
+    """
+    try:
+        return docker_client.networks.get(network_name), False
+    except docker.errors.NotFound:
+        pass
+    try:
+        return _create_stack_network(docker_client, network_name), True
+    except APIError as err:
+        if err.response is None or err.response.status_code != 409:
+            raise
+        # another worker is creating it right now: wait for it to show up
+        for attempt in Retrying(
+            stop=stop_after_delay(2 * MINUTE),
+            wait=wait_fixed(0.2),
+            retry=retry_if_exception_type(docker.errors.NotFound),
+            reraise=True,
+        ):
+            with attempt:
+                network = docker_client.networks.get(network_name)
+        return network, False
+
+
 @pytest.fixture(scope="module")
 def simcore_docker_network(
     docker_swarm: None,
@@ -347,20 +390,7 @@ def simcore_docker_network(
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
     network_name = simcore_docker_compose["networks"]["default"]["name"]
-    created_new = False
-    try:
-        network = docker_client.networks.get(network_name)
-    except docker.errors.NotFound:
-        network = docker_client.networks.create(
-            name=network_name,
-            driver="overlay",
-            attachable=True,
-            labels={
-                "com.docker.stack.namespace": "simcore",
-                "created_by": "pytest-simcore",
-            },
-        )
-        created_new = True
+    network, created_new = _get_or_create_network(docker_client, network_name)
 
     yield network
 
@@ -378,20 +408,7 @@ def interactive_services_subnet_docker_network(
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
     network_name = simcore_docker_compose["networks"]["interactive_services_subnet"]["name"]
-    created_new = False
-    try:
-        network = docker_client.networks.get(network_name)
-    except docker.errors.NotFound:
-        network = docker_client.networks.create(
-            name=network_name,
-            driver="overlay",
-            attachable=True,
-            labels={
-                "com.docker.stack.namespace": "simcore",
-                "created_by": "pytest-simcore",
-            },
-        )
-        created_new = True
+    network, created_new = _get_or_create_network(docker_client, network_name)
     yield network
 
     if created_new and not keep_docker_up:
