@@ -178,28 +178,31 @@ def _delete_with_retry(
         logging.exception("Gave up deleting %s after %d attempts", label, _TEARDOWN_MAX_ATTEMPTS)
 
 
-def _list_all_items(
+def _delete_all_items(
     api_request_context: APIRequestContext,
-    url: str,
+    list_url: str,
     label: str,
+    delete_item: Callable[[dict[str, Any]], None],
     *,
     headers: dict[str, str] | None = None,
-) -> list[dict[str, Any]]:
-    """Collect every item of a paginated listing before any deletion changes the total."""
-    items: list[dict[str, Any]] = []
-    for offset in range(0, 100_000, _LIST_PAGE_LIMIT):
-        resp = api_request_context.get(f"{url}&limit={_LIST_PAGE_LIMIT}&offset={offset}", headers=headers or {})
+) -> None:
+    """Delete everything a listing returns by re-reading its first page.
+
+    The listings have no stable order, so offsets are not safe while deleting.
+    """
+    attempted: set[str] = set()
+    while True:
+        resp = api_request_context.get(f"{list_url}&limit={_LIST_PAGE_LIMIT}&offset=0", headers=headers or {})
         if not resp.ok:
             if resp.status != 404:
                 logging.warning("Could not list %s: %s", label, resp.text()[:200])
-            break
-        payload = resp.json()
-        page = payload.get("items", [])
-        items.extend(page)
-        total = payload.get("total")
-        if len(page) < _LIST_PAGE_LIMIT or (total is not None and len(items) >= total):
-            break
-    return items
+            return
+        pending = [item for item in resp.json().get("items", []) if item["uid"] not in attempted]
+        if not pending:
+            return
+        for item in pending:
+            attempted.add(item["uid"])
+            delete_item(item)
 
 
 def _get_api_server_url(product_url: AnyUrl) -> str:
@@ -248,42 +251,41 @@ def _teardown_function(
     template_id = function_data.get("templateId")
 
     # 1. Delete all function_job_collections for this function
-    collections = _list_all_items(
+    _delete_all_items(
         api_request_context,
         f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}",
         f"function_job_collections for {function_uuid}",
-        headers=auth_headers,
-    )
-    for collection in collections:
-        _delete_with_retry(
+        lambda collection: _delete_with_retry(
             api_request_context,
             f"{api_server_url}v0/function_job_collections/{collection['uid']}",
             f"function_job_collection {collection['uid']}",
             headers=auth_headers,
-        )
-
-    # 2. Delete all function_jobs and their associated comp projects
-    jobs = _list_all_items(
-        api_request_context,
-        f"{api_server_url}v0/function_jobs?function_id={function_uuid}",
-        f"function_jobs for {function_uuid}",
+        ),
         headers=auth_headers,
     )
-    for job in jobs:
-        job_uid = job["uid"]
-        project_job_id = job.get("project_job_id")
+
+    # 2. Delete all function_jobs and their associated comp projects
+    def _delete_job(job: dict[str, Any]) -> None:
         _delete_with_retry(
             api_request_context,
-            f"{api_server_url}v0/function_jobs/{job_uid}",
-            f"function_job {job_uid}",
+            f"{api_server_url}v0/function_jobs/{job['uid']}",
+            f"function_job {job['uid']}",
             headers=auth_headers,
         )
-        if project_job_id:
+        if project_job_id := job.get("project_job_id"):
             _delete_with_retry(
                 api_request_context,
                 f"{product_url}v0/projects/{project_job_id}",
                 f"comp project {project_job_id}",
             )
+
+    _delete_all_items(
+        api_request_context,
+        f"{api_server_url}v0/function_jobs?function_id={function_uuid}",
+        f"function_jobs for {function_uuid}",
+        _delete_job,
+        headers=auth_headers,
+    )
 
     # 3. Delete the function itself (functions live on the api-server, not web-server)
     _delete_with_retry(
