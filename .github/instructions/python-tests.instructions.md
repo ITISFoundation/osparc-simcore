@@ -58,7 +58,7 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 ## File and directory names
 
-- Test filenames must be unique across the project's test tree; avoid generic
+- Test filenames must be unique across the package's test tree; avoid generic
   names such as `test_list.py`.
 - When splitting a module, keep the full original prefix in each filename, and
   name the directory after the original filename without `test_`:
@@ -67,7 +67,7 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
     test_users_accounts_rest_registration_create.py
     test_users_accounts_rest_registration_search.py
   ```
-- Split a test module near 1,000 lines by behavior or scenario, moving shared
+- Split a test module when it exceeds 1,000 lines by behavior or scenario, moving shared
   fixtures to the nearest `conftest.py`. Do not split if it would duplicate
   setup or obscure relationships.
 
