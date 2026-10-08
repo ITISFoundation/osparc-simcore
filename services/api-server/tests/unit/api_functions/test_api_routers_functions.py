@@ -33,6 +33,7 @@ from models_library.functions import (
     RegisteredSolverFunctionJobPatch,
 )
 from models_library.functions_errors import (
+    FunctionHasJobsCannotDeleteError,
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
 )
@@ -294,6 +295,25 @@ async def test_delete_function(
     # Delete the function
     response = await client.delete(f"{API_VTAG}/functions/{fake_registered_project_function.uid}", auth=auth)
     assert response.status_code == status.HTTP_200_OK
+
+
+async def test_delete_function_with_jobs_returns_conflict(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any, Exception | None], None],
+    fake_registered_project_function: RegisteredProjectFunction,
+    auth: httpx.BasicAuth,
+) -> None:
+    mock_handler_in_functions_rpc_interface(
+        "delete_function",
+        None,
+        FunctionHasJobsCannotDeleteError(function_id=fake_registered_project_function.uid, jobs_count=3),
+    )
+
+    response = await client.delete(f"{API_VTAG}/functions/{fake_registered_project_function.uid}", auth=auth)
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json()["errors"][0] == (
+        f"Cannot delete function {fake_registered_project_function.uid} because it has 3 associated job(s)."
+    )
 
 
 @pytest.mark.parametrize("user_has_execute_right", [False, True])
