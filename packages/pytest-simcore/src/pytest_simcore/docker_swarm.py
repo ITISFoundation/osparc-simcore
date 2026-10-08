@@ -523,10 +523,21 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
             # - notice that the timeout is set for all services in both stacks
             # - TODO: the time to deploy will depend on the number of services selected
             async def _check_all_services_are_running():
+                # NOTE: scoped to THIS stack's namespaces on purpose: under xdist, other workers
+                # may be concurrently creating/removing their own test services, and asserting
+                # those (soon-gone, hence 404-forever) services here would stall the deploy until
+                # `assert_service_is_running` times out and fails the whole shared stack
+                stack_services = [
+                    service
+                    for _, stack_name, _ in stacks
+                    for service in docker_client.services.list(
+                        filters={"label": f"com.docker.stack.namespace={stack_name}"}
+                    )
+                ]
                 done, pending = await asyncio.wait(
                     [
                         asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
-                        for service in docker_client.services.list()
+                        for service in stack_services
                     ],
                     return_when=asyncio.FIRST_EXCEPTION,
                 )
