@@ -11,6 +11,7 @@ coverage
 docker
 faker
 fastapi
+filelock
 orjson
 playwright
 pydantic

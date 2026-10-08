@@ -69,8 +69,8 @@ def disable_postgres(mocker) -> None:
 
 
 @pytest.fixture
-def simcore_services_network_name() -> str:
-    return "test_network_name"
+def simcore_services_network_name(faker: Faker) -> str:
+    return f"test-network-{faker.uuid4()}"
 
 
 @pytest.fixture
