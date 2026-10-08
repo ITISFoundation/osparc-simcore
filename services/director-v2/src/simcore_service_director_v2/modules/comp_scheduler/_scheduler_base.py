@@ -458,7 +458,6 @@ class BaseCompScheduler(ABC):
             limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
-        # update DB — all writes share a single transaction/connection
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         comp_runs_repo = CompRunsRepository(self.db_engine)
         async with transaction_context(self.db_engine) as conn:
