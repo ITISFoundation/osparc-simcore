@@ -22,8 +22,10 @@ Full reference: [scripts/makefiles/README.md](../../scripts/makefiles/README.md)
   in `python-install.mk`, version in `version.mk`, pip-compile in
   `requirements.mk`). If none fits, add a single-purpose `*.mk` instead of
   growing `common.mk`.
-- A recipe spanning two topics lives in the more specific library; the other
-  delegates via a dependency.
+- A recipe spanning two topics lives in the library whose topic is named in the
+  recipe's primary action (e.g. a pip-compile step that also installs goes in
+  `requirements.mk`; an install step that also lints goes in `python-install.mk`).
+  The other library delegates via a dependency.
 - Package Makefiles include `common.mk` + `package.mk`; service Makefiles include
   `common.mk` + `service.mk`.
 - Inside included files, `$(CURDIR)` is the calling project and `REPO_BASE_DIR`
@@ -35,8 +37,9 @@ Follow the [help conventions](../../scripts/makefiles/README.md#help-output-help
 
 - Document public targets with a one-line `##` description starting with a
   capital letter.
-- Group related public targets under `##@ Section Name`; leave helpers and
-  isolated targets unlabeled.
+- Group related public targets under `##@ Section Name`. Leave helper targets
+  (those not documented with `##`) and targets that do not belong to any related
+  public-target group unlabeled, i.e. without a `##@` section header.
 - Sort targets within a group by name unless execution order matters.
 - Never hardcode an emoji, and use a section rather than text such as
   `## [docker] ...`.
@@ -52,8 +55,10 @@ Follow the [help conventions](../../scripts/makefiles/README.md#help-output-help
 
 ## Removing targets
 
-- Delete a target only if it is clearly unused. Otherwise group it under a
-  `# REVIEW: <reason>` banner for batch review.
+- Delete a target only if all of the following hold: (1) `grep -r <target> .`
+  in the repo finds no references outside its definition, (2) it is not a
+  CI-CONTRACT target, and (3) it is not listed in any Makefile's public help.
+  Otherwise group it under a `# REVIEW: <reason>` banner for batch review.
 
 ## Validating refactors
 
