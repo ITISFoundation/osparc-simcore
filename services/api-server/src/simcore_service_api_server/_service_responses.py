@@ -10,6 +10,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
+import anyio
 import httpx
 from celery_library.async_jobs import submit_job
 from common_library.json_serialization import json_loads
@@ -73,7 +74,12 @@ async def _release_reservation(
     reason: str,
 ) -> None:
     if ledger is not None and reservation is not None:
-        await ledger.release(reservation, reason=reason)
+        # callers here are error/cancellation paths: inside a level-triggered cancel
+        # scope (client disconnect) an unshielded refund await is re-cancelled at its
+        # first checkpoint, silently losing the Refund and leaking the Reservation
+        # against the Window Quota until the whole Usage Window expires
+        with anyio.CancelScope(shield=True):
+            await ledger.release(reservation, reason=reason)
 
 
 async def _relay_sse_response(response: httpx.Response, request: Request) -> AsyncIterator[bytes]:
@@ -186,6 +192,7 @@ def _make_metered_sse_relay(
     async def _relay() -> AsyncIterator[bytes]:
         accumulator = _SseUsageAccumulator()
         completed = False
+        failed = False
         try:
             async for chunk in response.aiter_bytes():
                 if await request.is_disconnected():
@@ -195,30 +202,42 @@ def _make_metered_sse_relay(
             else:
                 accumulator.close()
                 completed = True
+        except (anyio.get_cancelled_exc_class(), GeneratorExit):
+            # the consumer side went away mid-stream: a client disconnect reaches the
+            # generator as task cancellation at the `yield` or as aclose() -> GeneratorExit
+            raise
         except BaseException:
             # timeout / upstream abort mid-stream: refund the Reservation (the
             # released-reservations counter makes the uncounted burn visible)
-            await ledger.release(reservation, reason="stream_error")
+            failed = True
             raise
         finally:
-            await response.aclose()
-
-        if not completed:
-            # client disconnected before the completion finished: the tokens
-            # streamed so far were really burned upstream, so bill an estimate
-            # instead of refunding the whole Reservation (a refund would let a
-            # client abort repeatedly to consume for free)
-            await ledger.reconcile(
-                reservation,
-                UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=accumulator.output_chars),
-            )
-            return
-
-        if (usage := accumulator.usage) is None:
-            # the Chatbox is expected to always report usage; if it did not, estimate
-            # from text length and never fail the request over accounting
-            usage = UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=accumulator.output_chars)
-        await ledger.reconcile(reservation, usage)
+            # Starlette tears the stream down with a *level-triggered* cancel scope when
+            # the client disconnects: an unshielded cleanup await is re-cancelled at its
+            # first checkpoint, silently losing the settlement and leaking the Reservation
+            # against the Window Quota until the whole Usage Window expires
+            with anyio.CancelScope(shield=True):
+                await response.aclose()
+                if failed:
+                    await ledger.release(reservation, reason="stream_error")
+                elif not completed:
+                    # client disconnected before the completion finished: the tokens
+                    # streamed so far were really burned upstream, so bill an estimate
+                    # instead of refunding the whole Reservation (a refund would let a
+                    # client abort repeatedly to consume for free)
+                    await ledger.reconcile(
+                        reservation,
+                        UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=accumulator.output_chars),
+                    )
+                else:
+                    usage = accumulator.usage
+                    if usage is None:
+                        # the Chatbox is expected to always report usage; if it did not,
+                        # estimate from text length and never fail the request over accounting
+                        usage = UsageRecord.estimated_from_text(
+                            input_chars=input_chars, output_chars=accumulator.output_chars
+                        )
+                    await ledger.reconcile(reservation, usage)
 
     return _relay()
 
@@ -278,6 +297,11 @@ async def create_streaming_chat_response(
     except httpx.HTTPError as exc:
         await _release_reservation(ledger, reservation, reason="upstream_error")
         raise ChatbotRequestError from exc
+    except BaseException:
+        # client disconnect / shutdown while opening the stream: the metered relay below
+        # is the only other owner of the Reservation and it never takes over from here
+        await _release_reservation(ledger, reservation, reason="stream_open_failed")
+        raise
 
     if ledger and reservation:
         input_chars = sum(len(msg.content) for msg in body.input)

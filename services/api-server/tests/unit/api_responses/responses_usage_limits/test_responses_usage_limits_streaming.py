@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 from typing import Any, NoReturn
 from unittest.mock import AsyncMock, MagicMock
 
+import anyio
 import httpx
 import pytest
 import redis.asyncio as aioredis
@@ -25,12 +26,18 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server._service_responses import _make_metered_sse_relay
+from simcore_service_api_server._service_responses import (
+    _make_metered_sse_relay,
+    create_streaming_chat_response,
+)
 from simcore_service_api_server.api.dependencies.celery import get_task_manager
 from simcore_service_api_server.clients.chatbox_usage import (
     _LEDGER_STREAM_KEY,
     get_chatbox_usage_ledger,
 )
+from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.models.schemas.responses import CreateResponseRequest
+from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
 
 # every test needs an empty Usage Ledger: fake Redis state is shared across tests
 pytestmark = pytest.mark.usefixtures("fresh_usage_ledger")
@@ -600,3 +607,113 @@ async def test_client_abort_bills_estimate_instead_of_refund(
     assert len(entries) == 1
     assert entries[0][1]["estimated"] == "1"
     assert entries[0][1]["total_tokens"] == f"{estimated_tokens}"
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 0.003, "REQUESTS_PER_MINUTE": 100}],
+    indirect=True,
+)
+async def test_task_cancel_mid_stream_still_settles_reservation(
+    app: FastAPI,
+    read_ledger_state,
+):
+    # Starlette streams the relay inside an anyio task group and cancels it
+    # level-triggered on client disconnect: an unshielded settlement await is
+    # re-cancelled before its Redis write lands, leaking the Reservation here.
+
+    # ARRANGE - a real Reservation and an upstream that never finishes streaming
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    reservation = await ledger.admit_and_reserve(user_id=1, product_name="osparc")
+
+    first_event = b'data: {"id": "r", "choices": [{"index": 0, "delta": {"content": "hello world"}}]}\n\n'
+    stream_open = anyio.Event()
+
+    response = MagicMock(spec=httpx.Response)
+
+    async def _aiter_bytes() -> AsyncIterator[bytes]:
+        yield first_event
+        await stream_open.wait()  # the consumer never receives a second chunk
+
+    response.aiter_bytes = _aiter_bytes
+    response.aclose = AsyncMock()
+
+    request = MagicMock()
+    request.is_disconnected = AsyncMock(return_value=False)
+
+    relayed: list[bytes] = []
+    first_chunk_relayed = anyio.Event()
+
+    async def _consume() -> None:
+        async for chunk in _make_metered_sse_relay(
+            response=response,
+            request=request,
+            ledger=ledger,
+            reservation=reservation,
+            input_chars=100,
+        ):
+            relayed.append(chunk)
+            first_chunk_relayed.set()
+
+    # ACT - cancel the consumer task mid-stream, as the response task group does
+    # on disconnect, and let the shielded cleanup finish
+    with anyio.move_on_after(10) as guard:
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(_consume)
+            await first_chunk_relayed.wait()
+            tg.cancel_scope.cancel()
+    assert not guard.cancelled_caught, "relay cleanup did not finish: settlement is not shielded"
+
+    # ASSERT - the first chunk was relayed and billed as an estimate: (100 + len("hello world")) // 4 = 27 tokens
+    assert relayed == [first_event]
+    estimated_tokens = (100 + len("hello world")) // 4
+    state = await read_ledger_state()
+    window = next(iter(state["windows"].values()))
+    assert window["reservations"] == pytest.approx(0.0)
+    assert window["spend"] == pytest.approx(estimated_tokens / 1e6 * 2.5)
+
+    # ASSERT - the upstream response was closed despite the cancellation
+    response.aclose.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 0.003, "REQUESTS_PER_MINUTE": 100}],
+    indirect=True,
+)
+async def test_disconnect_while_opening_stream_refunds_reservation(
+    app: FastAPI,
+    read_ledger_state,
+    usage_builders,
+    mocker,
+):
+    # The metered relay only owns the Reservation from its creation onwards: a client
+    # cancellation during the stream-open await (before the relay exists) must still
+    # refund, or the cold-start Reservation locks the user out for the whole window.
+
+    # ARRANGE - the client cancels (disconnect) while the upstream is still opening
+    mocker.patch.object(ChatbotSession, "stream_chat_completion", side_effect=asyncio.CancelledError)
+
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_CHATBOT is not None
+    body = CreateResponseRequest.model_validate(usage_builders.make_stream_body())
+
+    # ACT / ASSERT - the cancellation propagates unchanged
+    with pytest.raises(asyncio.CancelledError):
+        await create_streaming_chat_response(
+            chatbot_settings=settings.API_SERVER_CHATBOT,
+            chatbot_api=MagicMock(spec=ChatbotApi),
+            body=body,
+            request=MagicMock(),
+            credential_hash="hash",
+            user_id=1,
+            product_name="osparc",
+            ledger=get_chatbox_usage_ledger(app),
+        )
+
+    # ASSERT - the Reservation was refunded, nothing was spent
+    state = await read_ledger_state()
+    window = next(iter(state["windows"].values()))
+    assert window["reservations"] == pytest.approx(0.0)
+    assert "spend" not in window
