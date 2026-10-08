@@ -39,6 +39,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, TypeAdapter
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.fastapi.db_asyncpg_engine import get_engine
+from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
@@ -316,7 +317,7 @@ async def _get_latest_run_state(
 
 
 async def _start_pipeline_if_requested(
-    request: Request,
+    app: FastAPI,
     response: Response,
     *,
     computation: ComputationCreate,
@@ -336,7 +337,7 @@ async def _start_pipeline_if_requested(
         _raise_insufficient_credits_error(computation)
 
     pipeline_started = await _try_start_pipeline(
-        request.app,
+        app,
         computation=computation,
         minimal_dag=minimal_computational_dag,
         project=project,
@@ -412,6 +413,7 @@ async def create_or_update_or_start_computation(
     computation: ComputationCreate,
     request: Request,
     response: Response,
+    app: Annotated[FastAPI, Depends(get_app)],
     db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     rut_client: Annotated[ResourceUsageTrackerClient, Depends(get_rut_client)],
@@ -471,7 +473,7 @@ async def create_or_update_or_start_computation(
         )
 
         pipeline_started = await _start_pipeline_if_requested(
-            request,
+            app,
             response,
             computation=computation,
             insufficient_credits=insufficient_credits,
@@ -594,6 +596,7 @@ async def stop_computation(
     request: Request,
     computation_stop: ComputationStop,
     project_id: ProjectID,
+    app: Annotated[FastAPI, Depends(get_app)],
     db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> ComputationGet:
     _logger.debug(
@@ -620,7 +623,7 @@ async def stop_computation(
     pipeline_state = last_run.result if last_run else RunningState.NOT_STARTED
     # stop the pipeline if it is running (external I/O, outside the DB connection)
     if last_run and utils.is_pipeline_running(last_run.result):
-        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+        await stop_pipeline(app, user_id=computation_stop.user_id, project_id=project_id)
 
     return ComputationGet(
         id=project_id,
@@ -644,9 +647,9 @@ async def stop_computation(
     responses={status.HTTP_409_CONFLICT: {"description": "Pipeline could not be stopped in time"}},
 )
 async def delete_computation(
-    request: Request,
     computation_stop: ComputationDelete,
     project_id: ProjectID,
+    app: Annotated[FastAPI, Depends(get_app)],
     db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> None:
     """Deletes a computation pipeline if it is not running, otherwise stops it first
@@ -673,7 +676,7 @@ async def delete_computation(
                 f"current state is {pipeline_state}",
             )
         # abort the pipeline first
-        await stop_pipeline(request.app, user_id=computation_stop.user_id, project_id=project_id)
+        await stop_pipeline(app, user_id=computation_stop.user_id, project_id=project_id)
 
         def return_last_value(retry_state: Any) -> Any:
             """return the result of the last call attempt"""
