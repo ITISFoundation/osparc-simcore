@@ -130,6 +130,7 @@ jobs:
           filters: |
             i18n:
               - 'scripts/i18n/**'
+              - '.github/workflows/ci-testing-pull-request.yml'
       # setup-simcore-env installs Python 3.13 + uv (version from requirements/UV_VERSION)
       - name: Setup environment
         if: steps.changes.outputs.i18n == 'true'
@@ -145,7 +146,7 @@ jobs:
       - name: Run i18n tools tests
         if: steps.changes.outputs.i18n == 'true'
         run: |
-          uv run --with pytest --with polib --with typer --with rich --with Babel --with Jinja2 --with litellm \
+          uv run --with Babel --with Jinja2 --with litellm --with polib --with pytest --with rich --with typer \
             pytest scripts/i18n/tools/tests -v
 
   all-oas-breaking:
