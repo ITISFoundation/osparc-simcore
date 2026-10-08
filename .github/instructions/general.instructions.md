@@ -3,7 +3,10 @@ applyTo: '**'
 ---
 
 This repository is a monorepo of Python microservices and JavaScript frontends.
-Python version requirements are defined in `.python-version`. Apply the scoped
+Python version requirements are defined in `.python-version`. When editing
+Python code, target only the Python version specified in `.python-version` at
+the repository root and do not use syntax or standard-library features
+unavailable in that version. Apply the scoped
 instruction file whose directory is the nearest ancestor of the file being
 edited. If a scoped file conflicts with this file, the scoped file takes
 precedence.
@@ -35,7 +38,8 @@ precedence.
   user-visible flows that span services. Prefer unit tests to slow integration or end-to-end tests.
 - Prefer behavior-focused tests over tests coupled to private implementation.
 - For a bug fix, add a regression test that fails before the fix and passes
-  after it. If no such test is feasible, state the reason in the summary.
+  after it. If no such test is feasible, state the reason in the final chat
+  response to the user under a heading named 'Validation'.
 - Run the narrowest relevant validation available. Report tests or checks that
   were not run and why.
 
