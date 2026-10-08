@@ -17,7 +17,7 @@ def legacy_scheduler_data_format(mocks_dir: Path) -> Path:
 
 
 def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
-    # golden reference format: the model's JSON payload with `compose_spec` kept as
+    # The model's JSON payload with `compose_spec` kept as
     # a JSON-encoded string (see PR #3610); the old implementation obtained it by
     # assigning the string into the `Json[...]` field, which pydantic serialized
     # while emitting a `PydanticSerializationUnexpectedValue` warning
@@ -25,9 +25,6 @@ def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
     legacy_payload["compose_spec"] = json_dumps(legacy_payload["compose_spec"])
     json_encoded = json_dumps(legacy_payload)
 
-    # using pydantic's internals: serialization must not emit any warning (the
-    # old implementation produced the same payload but with a
-    # `PydanticSerializationUnexpectedValue` warning)
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("always")
         label_data = scheduler_data.as_label_data()
