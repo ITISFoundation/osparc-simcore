@@ -4,7 +4,7 @@ aioboto3==15.5.0
     # via -r requirements/_test.in
 aiobotocore==2.25.1
     # via aioboto3
-aiofiles==24.1.0
+aiofiles==25.1.0
     # via
     #   -c requirements/_base.txt
     #   aioboto3
@@ -308,7 +308,7 @@ urllib3==2.8.0
     #   docker
     #   requests
     #   responses
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via
     #   flask
     #   flask-cors

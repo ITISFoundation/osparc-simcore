@@ -30,6 +30,7 @@ from models_library.functions import (
     RegisteredFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
+    FunctionHasJobsCannotDeleteError,
     FunctionIDNotFoundError,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobCollectionReadAccessDeniedError,
@@ -360,6 +361,7 @@ async def list_function_job_collections(
 
 @router.expose(
     reraise_if_error_type=(
+        FunctionHasJobsCannotDeleteError,
         FunctionIDNotFoundError,
         FunctionReadAccessDeniedError,
         FunctionWriteAccessDeniedError,

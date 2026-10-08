@@ -8207,6 +8207,16 @@
               }
             }
           },
+          "409": {
+            "description": "Function has associated jobs and cannot be deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {

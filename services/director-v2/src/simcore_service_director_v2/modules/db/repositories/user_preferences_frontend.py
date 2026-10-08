@@ -1,7 +1,9 @@
 from models_library.products import ProductName
 from models_library.user_preferences import FrontendUserPreference, PreferenceName
 from models_library.users import UserID
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_user_preferences import FrontendUserPreferencesRepo
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ._base import BaseRepository
 
@@ -17,8 +19,9 @@ class UserPreferencesFrontendRepository(BaseRepository):
         user_id: UserID,
         product_name: ProductName,
         preference_class: type[FrontendUserPreference],
+        connection: AsyncConnection | None = None,
     ) -> FrontendUserPreference | None:
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             preference_payload: dict | None = await FrontendUserPreferencesRepo.load(
                 conn,
                 user_id=user_id,
