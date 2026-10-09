@@ -167,8 +167,8 @@ test_python_version: ## Check Python version, throw error if compilation would f
 
 .PHONY: _check_venv_active
 _check_venv_active:
-	# Checking whether virtual environment was activated
-	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
+	# Checking whether the virtual environment of THIS checkout was activated
+	@python3 -c "import pathlib,sys; e=pathlib.Path('$(CURDIR)/.venv').resolve(); a=pathlib.Path(sys.prefix).resolve(); assert sys.base_prefix!=sys.prefix, 'no virtual environment activated. Run: make devenv && source .venv/bin/activate'; assert a==e, f'wrong virtual environment activated: {a}. This checkout needs its own: source {e}/bin/activate'"
 
 
 ##@ Docker Build
