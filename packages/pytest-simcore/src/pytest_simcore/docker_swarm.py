@@ -134,11 +134,11 @@ def assert_service_is_running(service) -> None:
         f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
     )
 
-    print(f"--> {service_name} is up and running!!")
+    _logger.info("%s is up and running!!", service_name)
 
 
 def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_title: str) -> None:
-    print(HEADER_STR.format(f"docker services running {extra_title}"))
+    _logger.info(HEADER_STR.format(f"docker services running {extra_title}"))
 
     for service_obj in docker_client.services.list():
         tasks = {}
@@ -174,8 +174,8 @@ def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_t
                 for task in service_obj.tasks()  # type: ignore
             ]
 
-        print(HEADER_STR.format(service_obj.name))  # type: ignore
-        print(json.dumps({"service": service, "tasks": tasks}, indent=1))
+        _logger.info(HEADER_STR.format(service_obj.name))  # type: ignore
+        _logger.debug(json.dumps({"service": service, "tasks": tasks}, indent=1))
 
 
 @pytest.fixture(scope="session")
@@ -242,10 +242,11 @@ def docker_swarm(
         return
 
     if not keep_docker_up:
-        with _daemon_churn_access(request, tmp_path_factory):
-            print("<-- leaving docker swarm...")
+        with (
+            _daemon_churn_access(request, tmp_path_factory),
+            log_context(logging.INFO, "leaving docker swarm", logger=_logger),
+        ):
             assert docker_client.swarm.leave(force=True)
-            print("<-- docker swarm left.")
 
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
@@ -269,13 +270,13 @@ def _force_remove_migration_service(docker_client: docker.client.DockerClient) -
         for service in docker_client.services.list()
         if "migration" in service.name  # type: ignore
     ):
-        print(
-            "WARNING: migration service detected before updating stack, it will be force-removed now and re-deployed "
+        _logger.warning(
+            "migration service detected before updating stack, it will be force-removed now and re-deployed "
             "to ensure DB update"
         )
         migration_service.remove()  # type: ignore
         _wait_for_migration_service_to_be_removed(docker_client)
-        print(f"forced updated {migration_service.name}.")  # type: ignore
+        _logger.info("forced updated %s", migration_service.name)  # type: ignore
 
 
 def _deploy_stack(compose_file: Path, stack_name: str) -> None:
@@ -757,7 +758,7 @@ async def docker_network(
             config={"Name": faker.uuid4(), "Driver": "overlay"} | network_config_kwargs
         )
         assert network
-        print(f"--> created network {network=}")
+        _logger.info("created network %s", network)
         networks.append(network)
         return await network.show()
 
@@ -769,10 +770,10 @@ async def docker_network(
         await network.delete()
         async for attempt in AsyncRetrying(reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)):
             with attempt:
-                print(f"<-- waiting for network '{network_name}' deletion...")
+                _logger.info("waiting for network '%s' deletion...", network_name)
                 list_of_network_names = [n["Name"] for n in await async_docker_client.networks.list()]
                 assert network_name not in list_of_network_names
-            print(f"<-- network '{network_name}' deleted")
+        _logger.info("network '%s' deleted", network_name)
 
-    print(f"<-- removing all networks {networks=}")
-    await asyncio.gather(*[_wait_for_network_deletion(network) for network in networks])
+    with log_context(logging.INFO, "removing all networks", logger=_logger):
+        await asyncio.gather(*[_wait_for_network_deletion(network) for network in networks])
