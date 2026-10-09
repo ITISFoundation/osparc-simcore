@@ -1,4 +1,6 @@
 # pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 from datetime import timedelta
 from types import SimpleNamespace
@@ -115,10 +117,12 @@ def test_session_waits_with_registry_under_xdist(monkeypatch: pytest.MonkeyPatch
         def __init__(self, _root, _name) -> None:
             self.unregistered: list[str] = []
 
-        def register(self, _token: str) -> bool:
+        @staticmethod
+        def register(_token: str) -> bool:
             return False  # someone else owns the setup
 
-        def wait_ready(self, *, timeout: timedelta) -> None:
+        @staticmethod
+        def wait_ready(*, timeout: timedelta) -> None:
             assert timeout > timedelta(0)
 
         def unregister(self, token: str) -> bool:
