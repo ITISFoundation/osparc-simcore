@@ -206,3 +206,8 @@ repo*.config*
 .copilot/skills/graphify/references/query.md
 .copilot/skills/graphify/references/transcribe.md
 .copilot/skills/graphify/references/update.md
+
+
+# temporary folders used by agents within workspace
+.tmp
+.scratch

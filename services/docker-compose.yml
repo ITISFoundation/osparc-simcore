@@ -189,7 +189,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "12",
+        "13",
 
         # Persist mutations in AOF as well.
         "--appendonly",
@@ -1416,6 +1416,7 @@ services:
 
       API_SERVER_BOOT_SERVER_MODE: AS_REST_API_SERVER
       API_SERVER_CHATBOT: ${API_SERVER_CHATBOT:-null}
+      API_SERVER_CHATBOX_USAGE_LIMITS: ${API_SERVER_CHATBOX_USAGE_LIMITS:-null}
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOCALIZED_MESSAGES_ENABLED: ${API_SERVER_LOCALIZED_MESSAGES_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
