@@ -317,8 +317,6 @@ class EventHandlerObserver:  # pylint: disable=too-many-instance-attributes
                 continue
 
             if self._startup_grace.in_startup_grace_period(process_running=self._event_handler_process.is_running):
-                # NOTE: the created process still needs to import all the modules
-                # before sending its first heart beat, give it some time
                 continue
 
             _logger.warning(

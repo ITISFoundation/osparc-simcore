@@ -237,8 +237,6 @@ class LoggingEventHandlerObserver:
             if self._startup_grace.in_startup_grace_period(
                 process_running=self._logging_event_handler_process.is_running
             ):
-                # NOTE: the created process still needs to import all the modules
-                # before sending its first heart beat, give it some time
                 continue
 
             with ThreadPoolExecutor(max_workers=1) as executor:
