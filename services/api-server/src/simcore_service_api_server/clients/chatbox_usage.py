@@ -1,23 +1,23 @@
-"""Chatbox Usage Ledger: Redis-backed enforcement of Chatbox usage limits (ADR-0001).
+"""Enforcement of Chatbox usage limits, backed by a dedicated Redis database.
 
-The whole Usage Ledger lives in Redis on a dedicated database:
-- window hash   api-server:chatbox:usage:window:{user_id}:{product_name}
-    fields spend / reservations (USD); TTL = the fixed Usage Window, started at the
-    holder's first admitted request (the TTL is the exact "available again at" answer)
-- global hash   api-server:chatbox:usage:global
-    fields spend / reservations (USD) and requests — cumulative vs the Provider Budget
-- rate key      api-server:chatbox:rate:{user_id}:{credentials_hash}:{minute-bucket}
-- ledger stream api-server:chatbox:usage:ledger — one entry per completion (Usage Ledger)
+Three layers protect the Provider Budget:
+- Global Budget Guard — cumulative platform Spend vs a hard stop
+- Window Quota — max Spend per user and product per Usage Window
+- Rate Limit — max requests per minute per API key
 
-Window Quota and Global Budget Guard reject the request with a 503 when Redis fails;
-the Rate Limit lets the request through instead.
+Redis keys:
+- api-server:chatbox:usage:global     cumulative spend / reservations (USD) / requests
+- api-server:chatbox:usage:window:{user_id}:{product_name}
+    spend / reservations (USD); the TTL is when the user is available again
+- api-server:chatbox:rate:{user_id}:{credentials_hash}:{minute-bucket}
+- api-server:chatbox:usage:ledger     one entry per completion (informational, last 5000)
 
-Admission is a compare-and-swap against Spend + in-flight Reservations, so concurrent
-requests cannot overshoot the Window Quota by more than the Reservations they hold. The
-Reservation is sized from the rolling global average Spend/request (a single Redis stat)
-times a safety factor; before the platform has any completed request there is no average
-to size from, so the cold-start Reservation is the full Window Quota — at most one
-request per window may then be in flight, which closes the cold-start overshoot.
+Each admitted request reserves an estimate of its cost — the average cost per request
+so far times a safety factor — before the Chatbox starts. The check and the reservation
+happen in one atomic step, so concurrent requests cannot spend the same allowance.
+
+If Redis is unreachable, the Window Quota and Global Budget Guard reject the request
+with a 503; the Rate Limit lets it through.
 """
 
 import logging
@@ -98,8 +98,8 @@ _FIELD_REQUESTS: Final[str] = "requests"
 
 
 def _usd(value: str | None) -> float:
-    # a Redis flush mid-flight can leave a released Reservation subtracted from a fresh
-    # counter; treat negative aggregates as zero so enforcement stays conservative
+    # parse a Redis money field: missing -> 0, and negative -> 0 since a negative
+    # counter would give a user more quota than they have left
     return max(0.0, float(value or 0))
 
 
@@ -153,7 +153,7 @@ class UsageRecord:
 
 @dataclass(frozen=True, kw_only=True)
 class Reservation:
-    """A provisional Spend placed against the Window Quota (see CONTEXT.md)."""
+    """A provisional Spend placed against the Window Quota."""
 
     user_id: UserID
     product_name: ProductName
