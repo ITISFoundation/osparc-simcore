@@ -52,7 +52,7 @@ _logger: logging.Logger = logging.getLogger(__name__)
 
 _DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
 _DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
-_DOCKER_NETWORKS_REGISTRY_NAME: Final[str] = "docker_networks"
+_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX: Final[str] = "docker_networks"
 _DOCKER_STACK_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
 
 
@@ -408,7 +408,11 @@ def _shared_stack_network(
                 network.remove()
         return
 
-    registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_NETWORKS_REGISTRY_NAME)
+    # one registry PER network: ref-counting distinct networks jointly would let the last
+    # deregister remove only its own network and orphan every other one
+    registry = SharedResourceRegistry(
+        get_xdist_root_tmp_path(tmp_path_factory), f"{_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX}-{network_name}"
+    )
     token = f"{get_worker_id(request)}-{uuid4().hex}"
     registry.register(token)  # register BEFORE creating: see docstring
     try:
@@ -418,7 +422,7 @@ def _shared_stack_network(
         # setup raised => pytest will NOT run the post-yield teardown: give up our token here
         # so it cannot leak in the persistent base temp dir and poison later sessions
         if registry.unregister(token):
-            with suppress(Exception):
+            with suppress(Exception), _daemon_churn_access(request, tmp_path_factory):
                 _remove_network_when_free(docker_client, network_name)
         raise
 
