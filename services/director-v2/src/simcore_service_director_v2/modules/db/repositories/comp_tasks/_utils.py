@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Final
 
@@ -14,25 +15,27 @@ from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
     ServiceExtras,
 )
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import RutPricingUnitGet
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.resource_tracker import HardwareInfo
+from models_library.resource_tracker import (
+    HardwareInfo,
+    PricingPlanId,
+    PricingUnitId,
+)
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from models_library.services import (
-    ServiceKey,
     ServiceKeyVersion,
     ServiceMetaDataPublished,
-    ServiceVersion,
 )
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     BootMode,
-    ImageResources,
     ServiceResourcesDict,
 )
 from models_library.users import UserID
@@ -46,8 +49,6 @@ from servicelib.rabbitmq import (
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
-from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
@@ -152,12 +153,10 @@ async def _get_node_infos(
 async def _generate_task_image(
     *,
     catalog_client: CatalogClient,
-    connection: AsyncConnection,
     user_id: UserID,
     product_name: str,
-    project_id: ProjectID,
-    node_id: NodeID,
     node: Node,
+    node_resources: ServiceResourcesDict,
     node_extras: ServiceExtras | None,
     node_labels: SimcoreServiceLabels | None,
 ) -> Image:
@@ -166,11 +165,6 @@ async def _generate_task_image(
         "name": node.key,
         "tag": node.version,
     }
-    project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-    project_node = await project_nodes_repo.get(connection, node_id=node_id)
-    node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
-        project_node.required_resources
-    )
     if not node_resources:
         node_resources = await catalog_client.get_service_resources(user_id, node.key, node.version, product_name)
 
@@ -184,124 +178,251 @@ async def _generate_task_image(
     return Image(**data)
 
 
-async def _get_pricing_and_hardware_infos(
-    connection: AsyncConnection,
-    rut_client: ResourceUsageTrackerClient,
-    *,
-    is_wallet: bool,
-    project_id: ProjectID,
-    node_id: NodeID,
-    product_name: str,
-    node_key: ServiceKey,
-    node_version: ServiceVersion,
-) -> tuple[PricingInfo | None, HardwareInfo]:
-    if not is_wallet or (to_node_class(node_key) == NodeClass.FRONTEND):
-        # NOTE: frontend services have no pricing plans, therefore no need to call RUT
-        return None, HardwareInfo(aws_ec2_instances=[])
-    project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-    output = await project_nodes_repo.get_project_node_pricing_unit_id(connection, node_uuid=node_id)
-    # NOTE: this is some kind of lazy insertion of the pricing unit
-    # the projects_nodes is already in at this time, and not in sync with the hardware info
-    # this will need to move away and be in sync.
-    if output:
-        pricing_plan_id, pricing_unit_id = output
-    else:
-        (
-            pricing_plan_id,
-            pricing_unit_id,
-            _,
-            _,
-        ) = await rut_client.get_default_pricing_and_hardware_info(product_name, node_key, node_version)
-        await project_nodes_repo.connect_pricing_unit_to_project_node(
-            connection,
-            node_uuid=node_id,
-            pricing_plan_id=pricing_plan_id,
-            pricing_unit_id=pricing_unit_id,
+@dataclass(frozen=True, kw_only=True)
+class ProjectNodesSnapshot:
+    """`projects_nodes` state read up-front in a short read-only transaction.
+
+    Passed to `generate_tasks_list_from_project` so that no external call (catalog,
+    resource-usage-tracker, clusters-keeper) ever runs while a transaction — and therefore
+    a row lock — is held. See https://github.com/ITISFoundation/private-issues/issues/669
+    """
+
+    required_resources: dict[NodeID, dict[str, Any]]
+    pricing_unit_ids: dict[NodeID, tuple[PricingPlanId, PricingUnitId]]
+
+
+@dataclass(frozen=True, kw_only=True)
+class ProjectNodesPendingUpdates:
+    """`projects_nodes` writes decided by `generate_tasks_list_from_project`.
+
+    The caller applies them in a single short transaction, ordered by `node_id`.
+    """
+
+    required_resources: dict[NodeID, dict[str, Any]] = field(default_factory=dict)
+    pricing_unit_ids: dict[NodeID, tuple[PricingPlanId, PricingUnitId]] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, kw_only=True)
+class PricingContext:
+    """Everything the resource-usage-tracker was asked for, fetched once per distinct argument"""
+
+    node_pricing_unit_ids: dict[NodeID, tuple[PricingPlanId, PricingUnitId]]
+    pending_pricing_unit_ids: dict[NodeID, tuple[PricingPlanId, PricingUnitId]]
+    pricing_units: dict[tuple[PricingPlanId, PricingUnitId], RutPricingUnitGet]
+    ec2_instance_types: dict[str, EC2InstanceTypeGet]
+
+    def get_pricing_and_hardware_info(self, node_id: NodeID) -> tuple[PricingInfo | None, HardwareInfo]:
+        pricing_unit_ids = self.node_pricing_unit_ids.get(node_id)
+        pricing_unit_get = self.pricing_units.get(pricing_unit_ids) if pricing_unit_ids else None
+        if not pricing_unit_ids or pricing_unit_get is None:
+            return None, HardwareInfo(aws_ec2_instances=[])
+        return (
+            PricingInfo(
+                pricing_plan_id=pricing_unit_ids[0],
+                pricing_unit_id=pricing_unit_ids[1],
+                pricing_unit_cost_id=pricing_unit_get.current_cost_per_unit_id,
+                pricing_unit_cost=pricing_unit_get.current_cost_per_unit,
+            ),
+            HardwareInfo(aws_ec2_instances=pricing_unit_get.specific_info.aws_ec2_instances),
         )
 
-    pricing_unit_get = await rut_client.get_pricing_unit(product_name, pricing_plan_id, pricing_unit_id)
-    pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
-    aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
 
-    pricing_info = PricingInfo(
-        pricing_plan_id=pricing_plan_id,
-        pricing_unit_id=pricing_unit_id,
-        pricing_unit_cost_id=pricing_unit_cost_id,
-        pricing_unit_cost=pricing_unit_get.current_cost_per_unit,
+async def _gather_default_pricing_unit_ids(
+    rut_client: ResourceUsageTrackerClient,
+    *,
+    product_name: str,
+    missing: list[ServiceKeyVersion],
+) -> dict[ServiceKeyVersion, tuple[PricingPlanId, PricingUnitId]]:
+    """Resource-usage-tracker default pricing unit, once per service key/version"""
+    if not missing:
+        return {}
+    results = await asyncio.gather(
+        *(rut_client.get_default_pricing_and_hardware_info(product_name, kv.key, kv.version) for kv in missing)
     )
-    hardware_info = HardwareInfo(aws_ec2_instances=aws_ec2_instances)
-    return pricing_info, hardware_info
+    return {
+        key_version: (pricing_plan_id, pricing_unit_id)
+        for key_version, (pricing_plan_id, pricing_unit_id, _, _) in zip(missing, results, strict=True)
+    }
+
+
+async def _gather_pricing_units(
+    rut_client: ResourceUsageTrackerClient,
+    *,
+    product_name: str,
+    pricing_unit_ids: list[tuple[PricingPlanId, PricingUnitId]],
+) -> dict[tuple[PricingPlanId, PricingUnitId], RutPricingUnitGet]:
+    """pricing units fetched once each, concurrently"""
+    if not pricing_unit_ids:
+        return {}
+    results = await asyncio.gather(
+        *(
+            rut_client.get_pricing_unit(product_name, pricing_plan_id, pricing_unit_id)
+            for pricing_plan_id, pricing_unit_id in pricing_unit_ids
+        )
+    )
+    return dict(zip(pricing_unit_ids, results, strict=True))
+
+
+async def _gather_ec2_instance_types(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    instance_type_names: set[str],
+) -> dict[str, EC2InstanceTypeGet]:
+    """clusters-keeper instance types, in ONE call for the whole project"""
+    if not instance_type_names:
+        return {}
+    assert rabbitmq_rpc_client  # nosec
+    try:
+        list_ec2_instance_types: list[EC2InstanceTypeGet] = await get_instance_type_details(
+            rabbitmq_rpc_client,
+            instance_type_names=instance_type_names,
+        )
+    except (RemoteMethodNotRegisteredError, RPCServerError, TimeoutError) as exc:
+        raise ClustersKeeperNotAvailableError from exc
+    return {ec2_instance_type.name: ec2_instance_type for ec2_instance_type in list_ec2_instance_types}
 
 
 _RAM_SAFE_MARGIN_RATIO: Final[float] = 0.1  # NOTE: machines always have less available RAM than advertised
 _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
-async def _update_project_node_resources_from_hardware_info(
-    connection: AsyncConnection,
+async def _gather_pricing_context(
+    rut_client: ResourceUsageTrackerClient,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    is_wallet: bool,
+    product_name: str,
+    project_nodes: NodesDict,
+    wallet_info: WalletInfo | None,
+    snapshot: ProjectNodesSnapshot,
+) -> PricingContext:
+    # frontend services have no pricing plans, therefore no need to call RUT
+    nodes_to_price: list[NodeID] = [
+        NodeID(node_id)
+        for node_id in sorted(project_nodes)
+        if wallet_info and to_node_class(project_nodes[node_id].key) != NodeClass.FRONTEND
+    ]
+    services_missing_pricing_unit: list[ServiceKeyVersion] = sorted(
+        {
+            ServiceKeyVersion(key=node.key, version=node.version)
+            for node_id, node in project_nodes.items()
+            if NodeID(node_id) in nodes_to_price and snapshot.pricing_unit_ids.get(NodeID(node_id)) is None
+        },
+        key=lambda key_version: (key_version.key, key_version.version),
+    )
+    default_pricing_unit_ids = await _gather_default_pricing_unit_ids(
+        rut_client,
+        product_name=product_name,
+        missing=services_missing_pricing_unit,
+    )
+
+    # NOTE: this is some kind of lazy insertion of the pricing unit: the projects_node is
+    # already in at this time, and not in sync with the hardware info. It will need to move
+    # away and be in sync.
+    pending_pricing_unit_ids: dict[NodeID, tuple[PricingPlanId, PricingUnitId]] = {}
+    node_pricing_unit_ids: dict[NodeID, tuple[PricingPlanId, PricingUnitId]] = {}
+    for node_id in nodes_to_price:
+        node = project_nodes[f"{node_id}"]
+        pricing_unit_ids = (
+            snapshot.pricing_unit_ids.get(node_id)
+            or default_pricing_unit_ids[ServiceKeyVersion(key=node.key, version=node.version)]
+        )
+        if node_id not in snapshot.pricing_unit_ids:
+            pending_pricing_unit_ids[node_id] = pricing_unit_ids
+        node_pricing_unit_ids[node_id] = pricing_unit_ids
+
+    pricing_unit_ids_to_fetch = sorted(set(node_pricing_unit_ids.values()))
+    pricing_units = await _gather_pricing_units(
+        rut_client,
+        product_name=product_name,
+        pricing_unit_ids=pricing_unit_ids_to_fetch,
+    )
+    ec2_instance_types = await _gather_ec2_instance_types(
+        rabbitmq_rpc_client,
+        instance_type_names={
+            aws_ec2_instance
+            for pricing_unit in pricing_units.values()
+            for aws_ec2_instance in pricing_unit.specific_info.aws_ec2_instances
+        },
+    )
+    return PricingContext(
+        node_pricing_unit_ids=node_pricing_unit_ids,
+        pending_pricing_unit_ids=pending_pricing_unit_ids,
+        pricing_units=pricing_units,
+        ec2_instance_types=ec2_instance_types,
+    )
+
+
+def _compute_hardware_adjusted_resources(
+    *,
     project_id: ProjectID,
     node_id: NodeID,
+    node_resources: ServiceResourcesDict,
     hardware_info: HardwareInfo,
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> None:
-    if not is_wallet:
-        return
+    ec2_instance_types: dict[str, EC2InstanceTypeGet],
+) -> tuple[dict[str, Any], ServiceResourcesDict] | None:
+    """Resources pinned to the selected machine, or None when nothing has to be written.
+
+    NOTE: with the current implementation, there is no use to get the instance past the first one
+    """
     if not hardware_info.aws_ec2_instances:
-        return
-    try:
-        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
-        )
+        return None
 
-        assert unordered_list_ec2_instance_types  # nosec
-
-        # NOTE: with the current implementation, there is no use to get the instance past the first one
-        def _by_type_name(ec2: EC2InstanceTypeGet) -> bool:
-            return bool(ec2.name == hardware_info.aws_ec2_instances[0])
-
-        selected_ec2_instance_type = next(iter(filter(_by_type_name, unordered_list_ec2_instance_types)))
-
-        # now update the project node required resources
-        # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
-        # less memory than the machine theoretical amount
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        node = await project_nodes_repo.get(connection, node_id=node_id)
-        node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
-            node.required_resources
-        )
-        if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
-            image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
-            adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
-                float(selected_ec2_instance_type.cpus),
-                selected_ec2_instance_type.ram,
-            )
-            image_resources.resources["CPU"].set_value(adjusted_cpus)
-            image_resources.resources["RAM"].set_value(adjusted_ram)
-
-            await project_nodes_repo.update(
-                connection,
-                node_id=node_id,
-                required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
-                    node_resources, mode="json"
-                ),
-            )
-        else:
-            _logger.warning("Services resource override not implemented yet for multi-container services!!!")
-    except StopIteration as exc:
+    selected_ec2_instance_type = ec2_instance_types.get(hardware_info.aws_ec2_instances[0])
+    if selected_ec2_instance_type is None:
         raise EC2InstanceTypeNotFoundError(
             ec2_instance_types=f"{set(hardware_info.aws_ec2_instances)}",
             node_id=f"{node_id}",
             project_id=f"{project_id}",
-        ) from exc
-    except (
-        RemoteMethodNotRegisteredError,
-        RPCServerError,
-        TimeoutError,
-    ) as exc:
-        raise ClustersKeeperNotAvailableError from exc
+        )
+
+    if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
+        _logger.warning("Services resource override not implemented yet for multi-container services!!!")
+        return None
+
+    # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
+    # less memory than the machine theoretical amount
+    adjusted_resources: ServiceResourcesDict = {
+        name: resources.model_copy(deep=True) for name, resources in node_resources.items()
+    }
+    adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
+        float(selected_ec2_instance_type.cpus),
+        selected_ec2_instance_type.ram,
+    )
+    adjusted_resources[DEFAULT_SINGLE_SERVICE_NAME].resources["CPU"].set_value(adjusted_cpus)
+    adjusted_resources[DEFAULT_SINGLE_SERVICE_NAME].resources["RAM"].set_value(adjusted_ram)
+
+    return (
+        TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            adjusted_resources,
+            mode="json",
+        ),
+        adjusted_resources,
+    )
+
+
+def _resolve_node_resources(
+    *,
+    project_id: ProjectID,
+    node_id: NodeID,
+    snapshot: ProjectNodesSnapshot,
+    hardware_info: HardwareInfo,
+    ec2_instance_types: dict[str, EC2InstanceTypeGet],
+) -> tuple[ServiceResourcesDict, dict[str, Any] | None]:
+    """the resources to run the node with, and the `projects_nodes` update to write (if any)"""
+    current_resources: dict[str, Any] = snapshot.required_resources.get(node_id) or {}
+    node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(current_resources)
+    adjusted = _compute_hardware_adjusted_resources(
+        project_id=project_id,
+        node_id=node_id,
+        node_resources=node_resources,
+        hardware_info=hardware_info,
+        ec2_instance_types=ec2_instance_types,
+    )
+    if adjusted is None:
+        return node_resources, None
+    dumped_resources, adjusted_resources = adjusted
+    # NOTE: writing the same value again would take a row lock for nothing
+    return adjusted_resources, dumped_resources if dumped_resources != current_resources else None
 
 
 async def generate_tasks_list_from_project(
@@ -312,34 +433,63 @@ async def generate_tasks_list_from_project(
     published_nodes: list[NodeID],
     user_id: UserID,
     product_name: str,
-    connection: AsyncConnection,
     rut_client: ResourceUsageTrackerClient,
     wallet_info: WalletInfo | None,
     rabbitmq_rpc_client: RabbitMQRPCClient,
-) -> tuple[list[CompTaskAtDB], bool]:
-    """Returns (tasks_list, insufficient_credits).
+    snapshot: ProjectNodesSnapshot,
+) -> tuple[list[CompTaskAtDB], bool, ProjectNodesPendingUpdates]:
+    """Returns (tasks_list, insufficient_credits, projects_nodes_updates).
 
     If insufficient_credits is True, affected published nodes were set to ABORTED.
+
+    NOTE: this function performs **no** database write and takes no connection: every
+    external call (catalog, resource-usage-tracker, clusters-keeper) is gathered here,
+    outside of any transaction, and the resulting `projects_nodes` updates are returned to
+    the caller to be applied in one short transaction. Holding row locks across these calls
+    caused the production deadlock of
+    https://github.com/ITISFoundation/private-issues/issues/669
     """
     list_comp_tasks = []
     insufficient_credits = False
 
-    unique_service_key_versions: set[ServiceKeyVersion] = {
-        ServiceKeyVersion(key=node.key, version=node.version)  # the service key version is frozen
-        for node in project_nodes.values()
-    }
+    unique_service_key_versions: list[ServiceKeyVersion] = sorted(
+        {
+            ServiceKeyVersion(key=node.key, version=node.version)  # the service key version is frozen
+            for node in project_nodes.values()
+        },
+        key=lambda key_version: (key_version.key, key_version.version),
+    )
 
-    key_version_to_node_infos = {
-        key_version: await _get_node_infos(
-            catalog_client,
-            user_id,
-            product_name,
-            key_version,
+    key_version_to_node_infos = dict(
+        zip(
+            unique_service_key_versions,
+            await asyncio.gather(
+                *(
+                    _get_node_infos(
+                        catalog_client,
+                        user_id,
+                        product_name,
+                        key_version,
+                    )
+                    for key_version in unique_service_key_versions
+                )
+            ),
+            strict=True,
         )
-        for key_version in unique_service_key_versions
-    }
+    )
 
-    for internal_id, node_id in enumerate(project_nodes, 1):
+    pricing_context = await _gather_pricing_context(
+        rut_client,
+        rabbitmq_rpc_client,
+        product_name=product_name,
+        project_nodes=project_nodes,
+        wallet_info=wallet_info,
+        snapshot=snapshot,
+    )
+
+    pending_required_resources: dict[NodeID, dict[str, Any]] = {}
+
+    for internal_id, node_id in enumerate(sorted(project_nodes), 1):
         node: Node = project_nodes[node_id]
         node_key_version = ServiceKeyVersion(key=node.key, version=node.version)
         node_details, node_extras, node_labels = key_version_to_node_infos.get(
@@ -366,16 +516,7 @@ async def generate_tasks_list_from_project(
         if NodeID(node_id) in published_nodes and to_node_class(node.key) == NodeClass.COMPUTATIONAL:
             task_state = RunningState.PUBLISHED
 
-        pricing_info, hardware_info = await _get_pricing_and_hardware_infos(
-            connection,
-            rut_client,
-            is_wallet=bool(wallet_info),
-            project_id=project.uuid,
-            node_id=NodeID(node_id),
-            product_name=product_name,
-            node_key=node.key,
-            node_version=node.version,
-        )
+        pricing_info, hardware_info = pricing_context.get_pricing_and_hardware_info(NodeID(node_id))
 
         # Check credits for published nodes with non-zero cost
         if (
@@ -387,24 +528,22 @@ async def generate_tasks_list_from_project(
         ):
             insufficient_credits = True
 
-        assert rabbitmq_rpc_client  # nosec
-        await _update_project_node_resources_from_hardware_info(
-            connection,
-            is_wallet=bool(wallet_info),
+        node_resources, pending_resources = _resolve_node_resources(
             project_id=project.uuid,
             node_id=NodeID(node_id),
+            snapshot=snapshot,
             hardware_info=hardware_info,
-            rabbitmq_rpc_client=rabbitmq_rpc_client,
+            ec2_instance_types=pricing_context.ec2_instance_types,
         )
+        if pending_resources is not None:
+            pending_required_resources[NodeID(node_id)] = pending_resources
 
         image = await _generate_task_image(
             catalog_client=catalog_client,
-            connection=connection,
             user_id=user_id,
             product_name=product_name,
-            project_id=project.uuid,
-            node_id=NodeID(node_id),
             node=node,
+            node_resources=node_resources,
             node_extras=node_extras,
             node_labels=node_labels,
         )
@@ -437,4 +576,11 @@ async def generate_tasks_list_from_project(
             if task.state == RunningState.PUBLISHED:
                 task.state = RunningState.ABORTED
 
-    return list_comp_tasks, insufficient_credits
+    return (
+        list_comp_tasks,
+        insufficient_credits,
+        ProjectNodesPendingUpdates(
+            required_resources=pending_required_resources,
+            pricing_unit_ids=pricing_context.pending_pricing_unit_ids,
+        ),
+    )

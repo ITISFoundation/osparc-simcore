@@ -14,6 +14,7 @@ from models_library.wallets import WalletInfo
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy import CursorResult, literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -29,7 +30,7 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
-from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks
+from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks, projects
 from .._base import BaseRepository
 from . import _utils
 
@@ -140,6 +141,22 @@ class CompTasksRepository(BaseRepository):
             )
             return nid is not None
 
+    async def _get_project_nodes_snapshot(self, project: ProjectAtDB) -> _utils.ProjectNodesSnapshot:
+        """Reads, in one short transaction, everything `projects_nodes` holds for this project
+
+        NOTE: nodes are read in `node_id` order so that every following write happens in the
+        same order, which is what keeps a single transaction from taking row locks in an order
+        another transaction could not wait for.
+        """
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
+            return _utils.ProjectNodesSnapshot(
+                required_resources={
+                    node.node_id: node.required_resources for node in await projects_nodes_repo.list(conn)
+                },
+                pricing_unit_ids=await projects_nodes_repo.get_project_node_pricing_unit_ids(conn),
+            )
+
     async def upsert_tasks_from_project(
         self,
         *,
@@ -156,36 +173,71 @@ class CompTasksRepository(BaseRepository):
         """Returns (comp_tasks, insufficient_credits).
 
         If insufficient_credits is True, affected published nodes were set to ABORTED.
+
+        NOTE: the database is read and written in two short transactions and every call to
+        another backend service happens in between, i.e. while **no** row is locked.
+        See https://github.com/ITISFoundation/private-issues/issues/669
         """
+        # 1. read everything the task creation needs from the DB, then release the transaction
+        snapshot = await self._get_project_nodes_snapshot(project)
+
+        # 2. create the tasks, calling the catalog/resource-usage-tracker/clusters-keeper
+        #    services outside of any transaction
+        (
+            list_of_comp_tasks_in_project,
+            insufficient_credits,
+            projects_nodes_updates,
+        ) = (
+            # WARNING: this is NOT a real repository method, it is a utility function
+            # that calls backend services to generate the tasks list!! Refactoring needed!!
+            await _utils.generate_tasks_list_from_project(
+                project=project,
+                project_nodes=project_nodes,
+                catalog_client=catalog_client,
+                published_nodes=published_nodes,
+                user_id=user_id,
+                product_name=product_name,
+                rut_client=rut_client,
+                wallet_info=wallet_info,
+                rabbitmq_rpc_client=rabbitmq_rpc_client,
+                snapshot=snapshot,
+            )
+        )
+
+        # 3. apply every pending write in one short transaction
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with transaction_context(self.db_engine) as conn:
-            list_of_comp_tasks_in_project, insufficient_credits = (
-                # WARNING: this is NOT a real repository method, it is a utility function
-                # that calls backend services to generate the tasks list!! Refactoring needed!!
-                await _utils.generate_tasks_list_from_project(
-                    project=project,
-                    project_nodes=project_nodes,
-                    catalog_client=catalog_client,
-                    published_nodes=published_nodes,
-                    user_id=user_id,
-                    product_name=product_name,
-                    connection=conn,
-                    rut_client=rut_client,
-                    wallet_info=wallet_info,
-                    rabbitmq_rpc_client=rabbitmq_rpc_client,
-                )
+            # Acquire the same lock as the webserver does before a graph mutation
+            # (see utils_projects_nodes._lock_project_graph), i.e. before touching
+            # `projects_nodes`. Both services then wait on the same row in `projects` and
+            # cannot deadlock with each other any more.
+            await conn.execute(
+                sa.select(projects.c.uuid).where(projects.c.uuid == f"{project.uuid}").with_for_update(key_share=True)
             )
+
+            projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
+            for node_id, pricing_unit_ids in sorted(projects_nodes_updates.pricing_unit_ids.items()):
+                pricing_plan_id, pricing_unit_id = pricing_unit_ids
+                await projects_nodes_repo.connect_pricing_unit_to_project_node(
+                    conn,
+                    node_uuid=node_id,
+                    pricing_plan_id=pricing_plan_id,
+                    pricing_unit_id=pricing_unit_id,
+                )
+            for node_id, required_resources in sorted(projects_nodes_updates.required_resources.items()):
+                await projects_nodes_repo.update(conn, node_id=node_id, required_resources=required_resources)
+
             # get current tasks
             result = await conn.execute(
                 sa.select(comp_tasks.c.node_id).where(comp_tasks.c.project_id == str(project.uuid))
             )
             # remove the tasks that were removed from project workbench
             if all_nodes := result.all():
-                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project_nodes]
-                for node_id in node_ids_to_delete:
+                node_ids_to_delete = sorted(f"{t.node_id}" for t in all_nodes if t.node_id not in project_nodes)
+                for deleted_node_id in node_ids_to_delete:
                     await conn.execute(
                         sa.delete(comp_tasks).where(
-                            (comp_tasks.c.project_id == str(project.uuid)) & (comp_tasks.c.node_id == node_id)
+                            (comp_tasks.c.project_id == str(project.uuid)) & (comp_tasks.c.node_id == deleted_node_id)
                         )
                     )
 
@@ -194,7 +246,7 @@ class CompTasksRepository(BaseRepository):
             # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
 
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
-            for comp_task_db in list_of_comp_tasks_in_project:
+            for comp_task_db in sorted(list_of_comp_tasks_in_project, key=lambda task: task.node_id):
                 insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model(exclude={"created", "modified"}))
 
                 exclusion_rule = {"state", "progress"} if comp_task_db.node_id not in published_nodes else set()
