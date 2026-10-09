@@ -28,6 +28,11 @@ log = logging.getLogger(__name__)
 # pytest-xdist's standard id for the controller process (i.e. any NON-xdist run)
 WORKER_ID_MASTER: Final[str] = "master"
 
+# name of the cross-process reader-writer lock guarding the docker daemon shared by xdist
+# workers; used both by the `pytest_simcore.xdist_docker_daemon` plugin (per-test access)
+# and by the shared-fixture churn sections in `pytest_simcore.docker_swarm`
+DOCKER_DAEMON_LOCK_NAME: Final[str] = "docker_daemon"
+
 # marker-file polls are cheap; coordination polls fast enough to keep tests snappy, while
 # readiness of a full resource setup (container boot, DB template restore) polls slower
 _POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=200)

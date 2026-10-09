@@ -1,18 +1,13 @@
 # pylint: disable=protected-access
 
-from pathlib import Path
 from unittest import mock
 
 import docker
 import docker.errors
 import pytest
 from docker.errors import APIError
-from pytest_simcore.docker_swarm import (
-    _CREATED_STACK_NETWORKS_MARKER_NAME,
-    _get_or_create_network,
-    _record_created_network_for_shared_cleanup,
-    _take_created_networks_for_shared_cleanup,
-)
+from pytest_simcore import docker_swarm
+from pytest_simcore.docker_swarm import _get_or_create_network, _remove_network_when_free
 
 
 def _api_error(status_code: int | None) -> APIError:
@@ -21,20 +16,22 @@ def _api_error(status_code: int | None) -> APIError:
     return APIError("boom", response=response)
 
 
-def test_take_created_networks_returns_empty_when_nothing_recorded(tmp_path: Path):
-    assert _take_created_networks_for_shared_cleanup(tmp_path) == []
+@pytest.fixture
+def fast_retrying(monkeypatch: pytest.MonkeyPatch):
+    """makes the retry loops inside docker_swarm neither sleep nor run for minutes:
+    waits are instant and the time-based stop gives up after a few attempts
+    """
+    monkeypatch.setattr(docker_swarm, "wait_fixed", lambda *_a, **_kw: lambda *_a2, **_kw2: 0)
 
+    def _stop_after(num_attempts: int):
+        remaining = iter(range(num_attempts + 1))
 
-def test_record_then_take_returns_all_created_networks_once(tmp_path: Path):
-    _record_created_network_for_shared_cleanup(tmp_path, "net_a")
-    _record_created_network_for_shared_cleanup(tmp_path, "net_b")
-    _record_created_network_for_shared_cleanup(tmp_path, "net_a")  # same name recorded twice is fine
+        def _stop(*_args, **_kwargs):
+            return next(remaining, num_attempts) >= num_attempts
 
-    assert _take_created_networks_for_shared_cleanup(tmp_path) == ["net_a", "net_b", "net_a"]
+        return _stop
 
-    # taking clears the marker: a second take finds nothing (networks removed exactly once)
-    assert _take_created_networks_for_shared_cleanup(tmp_path) == []
-    assert not (tmp_path / _CREATED_STACK_NETWORKS_MARKER_NAME).exists()
+    monkeypatch.setattr(docker_swarm, "stop_after_delay", _stop_after)
 
 
 def test_get_or_create_network_attaches_to_existing_network_without_creating():
@@ -79,3 +76,40 @@ def test_get_or_create_network_reraises_api_errors_without_response():
 
     with pytest.raises(APIError):
         _get_or_create_network(client, "test-network")
+
+
+def test_remove_network_when_free_retries_while_endpoints_attached(fast_retrying):
+    # swarm endpoint draining after `docker stack remove` is asynchronous: removal must retry
+    # while the daemon reports active endpoints and stop as soon as it succeeds
+    network = mock.Mock()
+    network.remove.side_effect = [
+        _api_error(403),  # "network has active endpoints"
+        _api_error(403),
+        None,
+    ]
+    client = mock.Mock()
+    client.networks.get.return_value = network
+
+    _remove_network_when_free(client, "test-network")
+
+    assert network.remove.call_count == 3
+
+
+def test_remove_network_when_free_skips_already_gone_network(fast_retrying):
+    client = mock.Mock()
+    client.networks.get.side_effect = docker.errors.NotFound("already gone")
+
+    _remove_network_when_free(client, "test-network")  # must not raise
+
+
+def test_remove_network_when_free_reraises_persistent_api_errors(fast_retrying):
+    # a network stuck with endpoints from a foreign session must surface, not hang forever
+    network = mock.Mock()
+    network.remove.side_effect = _api_error(403)
+    client = mock.Mock()
+    client.networks.get.return_value = network
+
+    with pytest.raises(APIError):
+        _remove_network_when_free(client, "test-network")
+
+    assert network.remove.call_count > 1  # it retried before giving up
