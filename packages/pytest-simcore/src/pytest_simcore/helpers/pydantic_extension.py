@@ -6,12 +6,8 @@ def _mask(value):
     Mask the password, showing only the first and last characters
     or *** if very short passwords
     """
-    if len(value) > 2:
-        masked_value = value[0] + "*" * (len(value) - 2) + value[-1]
-    else:
-        # In case of very short passwords
-        masked_value = "*" * len(value)
-    return masked_value
+    # In case of very short passwords, mask the whole value
+    return value[0] + "*" * (len(value) - 2) + value[-1] if len(value) > 2 else "*" * len(value)
 
 
 def _hash(value):

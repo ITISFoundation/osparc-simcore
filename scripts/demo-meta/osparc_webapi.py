@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Generic, TypeVar
+from typing import Annotated, Any
 from uuid import UUID
 
 import httpx
@@ -30,9 +30,6 @@ logging.basicConfig(level=getattr(logging, os.environ.get("LOG_LEVEL", "INFO")))
 
 # MODELS --------------------------------
 
-ItemT = TypeVar("ItemT")
-DataT = TypeVar("DataT")
-
 
 class Meta(BaseModel):
     limit: NonNegativeInt
@@ -49,13 +46,13 @@ class PageLinks(BaseModel):
     last: AnyHttpUrl
 
 
-class Page(BaseModel, Generic[ItemT]):
+class Page[ItemT](BaseModel):
     meta: Meta = Field(..., alias="_meta")
     data: list[ItemT]
     links: PageLinks = Field(..., alias="_links")
 
 
-class Envelope(BaseModel, Generic[DataT]):
+class Envelope[DataT](BaseModel):
     data: DataT | None
     error: Any | None
 
@@ -111,8 +108,7 @@ class ProjectIterationResultItem(ProjectIteration):
 
 
 def ping(client: httpx.Client):
-    r = client.get("/")
-    return r
+    return client.get("/")
 
 
 def login(client: httpx.Client, user: str, password: str):
@@ -138,7 +134,7 @@ def get_profile(client: httpx.Client):
     return r.json()["data"]
 
 
-def iter_items(client: httpx.Client, url_path: str, item_cls: type[ItemT]) -> Iterator[ItemT]:
+def iter_items[ItemT](client: httpx.Client, url_path: str, item_cls: type[ItemT]) -> Iterator[ItemT]:
     """iterates items returned by a List std-method
 
     SEE https://google.aip.dev/132

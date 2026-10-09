@@ -53,7 +53,8 @@ AUTH_SESSION_TTL_SECONDS: Final = 120  # 2 minutes
     ```
 
     **Verdict**:
-    For authentication use case with reasonable user counts (<10K active), memory impact should be minimal with your current TTL configuration.
+    For authentication use case with reasonable user counts (<10K active), memory impact should be minimal
+    with your current TTL configuration.
 """
 
 

@@ -59,7 +59,8 @@ resource_tracker_pricing_units = sa.Table(
         JSONB,
         nullable=False,
         default="'{}'::jsonb",
-        doc="Specific internal info of the pricing unit, ex. for tiers we can store in which EC2 instance type we run the service.",
+        doc="Specific internal info of the pricing unit, ex. for tiers we can store in which EC2 instance type we "
+        "run the service.",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),

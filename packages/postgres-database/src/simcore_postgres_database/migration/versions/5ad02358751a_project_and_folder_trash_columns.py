@@ -25,7 +25,8 @@ def upgrade():
             "trashed_at",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="The date and time when the folder was marked as trashed.Null if the folder has not been trashed [default].",
+            comment="The date and time when the folder was marked as trashed.Null if the folder has not been "
+            "trashed [default].",
         ),
     )
     op.add_column(
@@ -35,7 +36,8 @@ def upgrade():
             sa.Boolean(),
             server_default=sa.text("false"),
             nullable=False,
-            comment="Indicates whether the folder was explicitly trashed by the user (true) or inherited its trashed status from a parent (false) [default].",
+            comment="Indicates whether the folder was explicitly trashed by the user (true) or inherited its "
+            "trashed status from a parent (false) [default].",
         ),
     )
     op.add_column(
@@ -45,14 +47,16 @@ def upgrade():
             sa.Boolean(),
             server_default=sa.text("false"),
             nullable=False,
-            comment="Indicates whether the project was explicitly trashed by the user (true) or inherited its trashed status from a parent (false) [default].",
+            comment="Indicates whether the project was explicitly trashed by the user (true) or inherited its "
+            "trashed status from a parent (false) [default].",
         ),
     )
     op.alter_column(
         "projects",
         "trashed_at",
         existing_type=postgresql.TIMESTAMP(timezone=True),
-        comment="The date and time when the project was marked as trashed. Null if the project has not been trashed [default].",
+        comment="The date and time when the project was marked as trashed. Null if the project has not been "
+        "trashed [default].",
         existing_nullable=True,
     )
     # ### end Alembic commands ###
@@ -65,7 +69,8 @@ def downgrade():
         "trashed_at",
         existing_type=postgresql.TIMESTAMP(timezone=True),
         comment=None,
-        existing_comment="The date and time when the project was marked as trashed. Null if the project has not been trashed [default].",
+        existing_comment="The date and time when the project was marked as trashed. Null if the project has "
+        "not been trashed [default].",
         existing_nullable=True,
     )
     op.drop_column("projects", "trashed_explicitly")

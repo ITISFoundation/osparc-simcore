@@ -1,5 +1,4 @@
 import urllib.parse
-from typing import TypeAlias
 
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -51,7 +50,7 @@ class ViewerQueryParams(BaseModel):
         return v
 
 
-RedirectionQueryParams: TypeAlias = (
+type RedirectionQueryParams = (
     # NOTE: Extra.forbid in FileQueryParams, ServiceQueryParams avoids bad casting when
     # errors in ServiceAndFileParams
     ServiceAndFileParams | FileQueryParams | ServiceQueryParams

@@ -78,8 +78,11 @@ def generate_markdown_table(
 
             elif file_path.stem.lower() == "openapi":
                 badges = [
-                    f"[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?logo=openapiinitiative)]({_REDOC_URL_PREFIX}/{file_path}) "
-                    f"[![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)]({_SWAGGER_URL_PREFIX}/{file_path})",
+                    (
+                        f"[![ReDoc](https://img.shields.io/badge/OpenAPI-ReDoc-85ea2d?"
+                        f"logo=openapiinitiative)]({_REDOC_URL_PREFIX}/{file_path}) "
+                        f"[![Swagger UI](https://img.shields.io/badge/OpenAPI-Swagger_UI-85ea2d?logo=swagger)]({_SWAGGER_URL_PREFIX}/{file_path})"
+                    ),
                 ]
 
             rows.append(

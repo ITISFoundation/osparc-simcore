@@ -22,7 +22,8 @@ def upgrade():
         sa.DDL(
             """
 UPDATE tokens
-    SET token_service = 'pennsieve-datcore', token_data = (regexp_replace(token_data::text, 'blackfynn', 'pennsieve'))::json
+    SET token_service = 'pennsieve-datcore', token_data = (regexp_replace(token_data::text, 'blackfynn',
+    'pennsieve'))::json
     WHERE token_service = 'blackfynn-datcore'
         """
         )
@@ -36,7 +37,8 @@ def downgrade():
         sa.DDL(
             """
 UPDATE tokens
-    SET token_service = 'blackfynn-datcore', token_data = (regexp_replace(token_data::text, 'pennsieve', 'blackfynn'))::json
+    SET token_service = 'blackfynn-datcore', token_data = (regexp_replace(token_data::text, 'pennsieve',
+    'blackfynn'))::json
     WHERE token_service = 'pennsieve-datcore'
         """
         )

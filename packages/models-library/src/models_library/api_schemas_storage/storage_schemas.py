@@ -7,7 +7,7 @@ IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal, Self, TypeAlias
 from uuid import UUID
@@ -297,7 +297,7 @@ class FileMetaDataArray(RootModel[list[FileMetaDataGet]]):
     root: list[FileMetaDataGet] = Field(default_factory=list)
 
 
-class LinkType(str, Enum):
+class LinkType(StrEnum):
     PRESIGNED = "PRESIGNED"
     S3 = "S3"
 

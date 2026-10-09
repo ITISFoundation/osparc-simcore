@@ -1,4 +1,4 @@
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, TypeVar
 
 from pydantic import BaseModel, BeforeValidator, Field
 
@@ -16,7 +16,7 @@ class Filters(BaseModel):
 FilterT = TypeVar("FilterT", bound=Filters)
 
 
-class FiltersQueryParameters(BaseModel, Generic[FilterT]):
+class FiltersQueryParameters[FilterT: Filters](BaseModel):
     filters: Annotated[FilterT | None, BeforeValidator(parse_json_pre_validator)] = Field(  # pylint: disable=unsubscriptable-object
         default=None,
         description="Custom filter query parameter encoded as JSON",

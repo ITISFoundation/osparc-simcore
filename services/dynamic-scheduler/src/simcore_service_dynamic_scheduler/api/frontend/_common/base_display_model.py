@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from typing import Annotated, Any, Self, TypeAlias
+from typing import Annotated, Any, Self
 
 from pydantic import BaseModel, NonNegativeInt, PrivateAttr
 
-CompleteModelDict: TypeAlias = dict[str, Any]
+type CompleteModelDict = dict[str, Any]
 
 
 class BaseUpdatableDisplayModel(BaseModel):

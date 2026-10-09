@@ -63,12 +63,14 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ),
-        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        description="Enables local development log format. WARNING: make sure it is disabled "
+        "if you want to have structured logs!",
     )
     RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
         validation_alias=AliasChoices("RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or "
+        "'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     @cached_property
@@ -116,7 +118,8 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=5),
-        description="Interval to check heartbeat of running services. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
+        description="Interval to check heartbeat of running services. (default to seconds, or see "
+        "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
     )
     RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL: int = Field(
         default=6,

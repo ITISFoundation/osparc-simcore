@@ -122,8 +122,8 @@ async def assert_same_directory_content(
 
     # finally check if hashes are mapped 1 to 1 in order to verify
     # that the compress/decompress worked correctly
-    for key in dir_to_compress_hashes:
-        assert dir_to_compress_hashes[key] == output_dir_hashes[_relative_path(key) if inject_relative_path else key]
+    for key, value in dir_to_compress_hashes.items():
+        assert value == output_dir_hashes[_relative_path(key) if inject_relative_path else key]
 
 
 def assert_unarchived_paths(

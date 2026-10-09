@@ -52,7 +52,7 @@ async def test_user_status_as_pending(asyncpg_engine: AsyncEngine, faker: Faker,
     assert UserStatus("CONFIRMATION_PENDING") == UserStatus.CONFIRMATION_PENDING
     assert UserStatus.CONFIRMATION_PENDING.value == "CONFIRMATION_PENDING"
     assert UserStatus.CONFIRMATION_PENDING == "CONFIRMATION_PENDING"
-    assert str(UserStatus.CONFIRMATION_PENDING) == "UserStatus.CONFIRMATION_PENDING"
+    assert str(UserStatus.CONFIRMATION_PENDING) == "CONFIRMATION_PENDING"
 
     # tests that the database never stores the word "PENDING"
     data = random_user(faker, status="PENDING")

@@ -43,7 +43,8 @@ def upgrade():
     # NOTE: this does not need to be reversed as it was not used before
     op.execute(
         sa.DDL(
-            'UPDATE projects SET access_rights = (regexp_replace(access_rights::text, \'"rwx"\', \'{"read":true, "write":false, "delete":false}\')::jsonb) WHERE access_rights != \'{}\''
+            'UPDATE projects SET access_rights = (regexp_replace(access_rights::text, \'"rwx"\', \'{"read":true, '
+            '"write":false, "delete":false}\')::jsonb) WHERE access_rights != \'{}\''
         )
     )
     # add prj_owner into access rights column
@@ -59,7 +60,8 @@ WITH user_project as (
 )
 
 UPDATE projects
- SET access_rights = jsonb_insert(current_rights::jsonb,json_key::text[], '{"read":true, "write":true, "delete":true}'::jsonb, true)
+ SET access_rights =
+ jsonb_insert(current_rights::jsonb,json_key::text[], '{"read":true, "write":true, "delete":true}'::jsonb, true)
  FROM user_project
  WHERE projects.id = pid
     """

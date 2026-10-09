@@ -6,12 +6,11 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 """
 
 import logging
-from typing import TypeAlias
 
 _logger = logging.getLogger(__name__)
 
-LoggerName: TypeAlias = str
-MessageSubstring: TypeAlias = str
+type LoggerName = str
+type MessageSubstring = str
 
 
 class GeneralLogFilter(logging.Filter):

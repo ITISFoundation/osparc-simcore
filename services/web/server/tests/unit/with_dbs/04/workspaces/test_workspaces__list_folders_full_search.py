@@ -35,7 +35,7 @@ async def test_workspaces__list_folders_full_search(
     # create a new folder
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(f"{url}", json={"name": "My first folder"})
-    root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    _root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # list full folder search
     url = client.app.router["list_folders_full_search"].url_for()
@@ -53,12 +53,12 @@ async def test_workspaces__list_folders_full_search(
             "thumbnail": None,
         },
     )
-    added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    _added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # create a folder
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(url.path, json={"name": "My first folder"})
-    root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    _root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # list full folder search
     url = client.app.router["list_folders_full_search"].url_for()

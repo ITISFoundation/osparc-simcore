@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, StrEnum
 from functools import total_ordering
 
 _USER_ROLE_TO_LEVEL = {
@@ -46,7 +46,7 @@ class UserRole(Enum):
         return NotImplemented
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     # This is a transition state. The user is registered but not confirmed. NOTE that this
     # state is currently unused by the registration flow (no confirmation step), but stays
     # part of the lifecycle for legacy/other flows (e.g. `check_other_registrations`).
@@ -61,7 +61,7 @@ class UserStatus(str, Enum):
     DELETED = "DELETED"
 
 
-class AccountRequestStatus(str, Enum):
+class AccountRequestStatus(StrEnum):
     """Status of the request for an account"""
 
     PENDING = "PENDING"  # Pending PO review to approve/reject the request

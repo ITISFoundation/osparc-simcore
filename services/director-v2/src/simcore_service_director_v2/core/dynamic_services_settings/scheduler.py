@@ -40,7 +40,8 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     SWARM_STACK_NAME: str = Field(
         ...,
-        description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
+        description="in case there are several deployments on the same docker swarm, "
+        "it is attached as a label on all spawned services",
     )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(

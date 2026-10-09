@@ -16,7 +16,7 @@ class ProjectType(enum.Enum):
     STANDARD = "STANDARD"
 
 
-class ProjectTemplateType(str, enum.Enum):
+class ProjectTemplateType(enum.StrEnum):
     TEMPLATE = "TEMPLATE"
     TUTORIAL = "TUTORIAL"
     HYPERTOOL = "HYPERTOOL"
@@ -220,7 +220,8 @@ BEGIN
 
     IF group_id IS NOT NULL THEN
         IF TG_OP = 'INSERT' THEN
-            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete") VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
+            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete")
+            VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
         END IF;
     END IF;
     RETURN NULL;

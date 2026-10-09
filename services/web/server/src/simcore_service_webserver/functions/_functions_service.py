@@ -120,8 +120,10 @@ async def batch_register_function_jobs(
     function_jobs: FunctionJobList,
 ) -> BatchCreateRegisteredFunctionJobs:
     user_groups, user_primary_group_id = await get_all_user_groups_ids_and_primary_gid(app, user_id=user_id)
-    function_jobs = TypeAdapter(FunctionJobList).validate_python(function_jobs)
-    encoded_function_jobs = [_encode_functionjob(job) for job in function_jobs]
+    # NOTE: explicit annotation required since mypy cannot infer
+    # TypeAdapter(...).validate_python() with PEP 695 type aliases
+    validated_function_jobs: FunctionJobList = TypeAdapter(FunctionJobList).validate_python(function_jobs)
+    encoded_function_jobs = [_encode_functionjob(job) for job in validated_function_jobs]
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
         user_id=user_id,

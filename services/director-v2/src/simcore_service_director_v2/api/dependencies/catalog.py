@@ -4,5 +4,4 @@ from ...modules.catalog import CatalogClient
 
 
 def get_catalog_client(request: Request) -> CatalogClient:
-    client = CatalogClient.instance(request.app)
-    return client
+    return CatalogClient.instance(request.app)

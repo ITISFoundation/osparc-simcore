@@ -159,7 +159,8 @@ async def test_delete_price_constraints(connection: AsyncConnection, fake_produc
             await connection.execute(products.delete())
 
         # NOTE: that asyncpg.exceptions are converted to sqlalchemy.exc
-        # sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.ForeignKeyViolationError'>:
+        # sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError)
+        # <class 'asyncpg.exceptions.ForeignKeyViolationError'>:
         assert "asyncpg.exceptions.ForeignKeyViolationError" in exc_info.value.args[0]
 
     # GOOD DELETE: this is the correct way to delete

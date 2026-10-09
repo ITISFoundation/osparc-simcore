@@ -1,10 +1,10 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any, TypedDict, get_args
 
 import sqlalchemy as sa
 
 
-class OrderDirection(str, Enum):
+class OrderDirection(StrEnum):
     ASC = "asc"
     DESC = "desc"
 

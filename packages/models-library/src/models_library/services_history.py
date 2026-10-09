@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, TypeAlias
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,7 +31,9 @@ class ServiceRelease(BaseModel):
     retired: Annotated[
         datetime | None,
         Field(
-            description="whether this service is planned to be retired. If None, the service is still active. If now<retired then the service is deprecated. If retired<now then the service is retired and should not be used."
+            description="whether this service is planned to be retired. If None, the service "
+            "is still active. If now<retired then the service is deprecated. If retired<now "
+            "then the service is retired and should not be used."
         ),
     ] = None
     compatibility: Annotated[
@@ -64,4 +66,4 @@ class ServiceRelease(BaseModel):
     )
 
 
-ReleaseHistory: TypeAlias = list[ServiceRelease]
+type ReleaseHistory = list[ServiceRelease]

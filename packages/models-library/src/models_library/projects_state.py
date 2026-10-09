@@ -2,7 +2,7 @@
 Models both project and node states
 """
 
-from enum import Enum, unique
+from enum import StrEnum, unique
 from typing import Annotated, Final, Self, TypeAlias
 
 from pydantic import (
@@ -20,7 +20,7 @@ from .projects_access import Owner
 
 
 @unique
-class RunningState(str, Enum):
+class RunningState(StrEnum):
     """State of execution of a project's computational workflow
 
     SEE StateType for task state
@@ -73,13 +73,13 @@ RUNNING_STATE_COMPLETED_STATES: Final[tuple[RunningState, ...]] = (
 
 
 @unique
-class DataState(str, Enum):
+class DataState(StrEnum):
     UP_TO_DATE = "UPTODATE"
     OUTDATED = "OUTDATED"
 
 
 @unique
-class ProjectStatus(str, Enum):
+class ProjectStatus(StrEnum):
     CLOSED = "CLOSED"
     CLOSING = "CLOSING"
     CLONING = "CLONING"
@@ -89,9 +89,9 @@ class ProjectStatus(str, Enum):
     MAINTAINING = "MAINTAINING"  # used for maintenance tasks, like removing EFS data
 
 
-ProjectShareStatus: TypeAlias = Annotated[ProjectStatus, Field(description="The status of the project")]
-ProjectShareLocked: TypeAlias = Annotated[bool, Field(description="True if the project is locked")]
-ProjectShareCurrentUserGroupIDs: TypeAlias = Annotated[
+ProjectShareStatus: TypeAlias = Annotated[ProjectStatus, Field(description="The status of the project")]  # noqa: UP040
+ProjectShareLocked: TypeAlias = Annotated[bool, Field(description="True if the project is locked")]  # noqa: UP040
+ProjectShareCurrentUserGroupIDs: TypeAlias = Annotated[  # noqa: UP040
     list[GroupID],
     Field(description="Current users in the project (if the project is locked, the list contains only the lock owner)"),
 ]
@@ -228,8 +228,8 @@ class ProjectRunningState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-ProjectStateShareState: TypeAlias = Annotated[ProjectShareState, Field(description="The project share state")]
-ProjectStateRunningState: TypeAlias = Annotated[ProjectRunningState, Field(description="The project running state")]
+type ProjectStateShareState = Annotated[ProjectShareState, Field(description="The project share state")]
+ProjectStateRunningState: TypeAlias = Annotated[ProjectRunningState, Field(description="The project running state")]  # noqa: UP040
 
 
 class ProjectState(BaseModel):

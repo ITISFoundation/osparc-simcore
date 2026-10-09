@@ -38,7 +38,8 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description="Enables local development log format. "
+            "WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
 
@@ -47,7 +48,8 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("INVITATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or "
+            "'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
