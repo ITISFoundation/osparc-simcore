@@ -9,7 +9,7 @@ from pytest_simcore.docker_swarm import (
 )
 
 
-def test_take_created_networks_returns_empty_when_nothing_recorded(tmp_path: Path) -> None:
+def test_take_created_networks_returns_empty_when_nothing_recorded(tmp_path: Path):
     assert _take_created_networks_for_shared_cleanup(tmp_path) == []
 
 
