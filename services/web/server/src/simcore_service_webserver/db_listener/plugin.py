@@ -11,7 +11,7 @@ from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..socketio.socketio_service import setup_socketio
-from ._db_comp_tasks_listening_task import create_comp_tasks_listening_task
+from ._task import create_comp_tasks_listening_task
 
 _logger = logging.getLogger(__name__)
 
@@ -25,6 +25,5 @@ _logger = logging.getLogger(__name__)
 def setup_db_listener(app: web.Application):
     setup_socketio(app)
     setup_projects_db(app)
-    # Creates a task to listen to comp_task pg-db's table events
     setup_db(app)
     app.cleanup_ctx.append(create_comp_tasks_listening_task)
