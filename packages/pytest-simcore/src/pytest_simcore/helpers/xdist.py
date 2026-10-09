@@ -309,25 +309,39 @@ class ReaderWriterLock:
                 raise TimeoutError(msg) from err
         # phase 2: drain the readers already in the section (fresh `timeout` budget, so a
         # slow phase 1 cannot starve the drain phase)
-        with log_context(
-            logging.INFO,
-            (
-                f"writer {token or 'writer'} waiting for readers to drain on {self.name}",
-                lambda: f"writer section STARTED on {self.name}",
-            ),
-            logger=log,
-        ):
-            try:
-                _drain_readers()
-            except AssertionError as err:
-                msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
-                raise TimeoutError(msg) from err
+        try:
+            with log_context(
+                logging.INFO,
+                (
+                    f"writer {token or 'writer'} waiting for readers to drain on {self.name}",
+                    lambda: f"writer section STARTED on {self.name}",
+                ),
+                logger=log,
+            ):
+                try:
+                    _drain_readers()
+                except AssertionError as err:
+                    msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
+                    raise TimeoutError(msg) from err
+        except BaseException:
+            # the writer section was NEVER entered: release the slot we hold, or a timed-out
+            # writer would leave its marker behind and poison every later reader/writer
+            with FileLock(str(self._control_lock_path)):
+                self._writer_marker.unlink(missing_ok=True)
+            raise
         try:
             yield
         finally:
             with FileLock(str(self._control_lock_path)):
                 self._writer_marker.unlink(missing_ok=True)
             log.info("writer %s left %s", token or "writer", self.name)
+
+
+# active churn read locks per process, keyed by lock name: a NESTED acquisition must NOT
+# touch the shared lock again, because a writer interposing between the two reader files
+# would wait for the outer reader while the inner one waits for the writer (both stall until
+# they time out); the inner call simply piggybacks on the outer hold
+_churn_depths: dict[str, int] = {}
 
 
 @contextmanager
@@ -339,15 +353,27 @@ def daemon_churn_access(request: pytest.FixtureRequest, tmp_path_factory: pytest
     deploys/tests do not serialize); only exclusive tests are excluded, for the duration of the
     section rather than of the whole fixture lifetime.
 
-    A fresh token per acquisition makes nesting safe: `ReaderWriterLock` names reader files
-    after the token, so a re-entrant acquisition cannot unlink the outer one's file.
+    Re-entrant WITHIN one process: only the outermost call acquires the lock (see
+    `_churn_depths`), inner calls are no-ops.
     """
     if not is_xdist_worker(request):
         yield
         return
+    depth = _churn_depths.get(DOCKER_DAEMON_LOCK_NAME, 0)
+    if depth > 0:
+        _churn_depths[DOCKER_DAEMON_LOCK_NAME] = depth + 1
+        try:
+            yield
+        finally:
+            _churn_depths[DOCKER_DAEMON_LOCK_NAME] = depth
+        return
     lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), DOCKER_DAEMON_LOCK_NAME)
     with lock.read_lock(token=f"churn-{get_worker_id(request)}-{uuid4().hex}"):
-        yield
+        _churn_depths[DOCKER_DAEMON_LOCK_NAME] = 1
+        try:
+            yield
+        finally:
+            _churn_depths.pop(DOCKER_DAEMON_LOCK_NAME, None)
 
 
 def _begin_shared_setup(
@@ -385,14 +411,57 @@ def _on_shared_setup_failure(
     resource_name: str,
     setup_failed_cleanup_fn: Callable[[], None] | None,
     run_under_churn_lock: Callable[[Callable[[], None]], None],
+    cleanup_done: list[bool],
 ) -> None:
     # setup raised => pytest will NOT run the post-yield teardown: give up our token here
     # so it cannot leak in the persistent base temp dir and poison later sessions
     if registry.unregister(token) and setup_failed_cleanup_fn is not None:
+        cleanup_done[0] = True  # the cleanup runs (best-effort) right here
         try:
             run_under_churn_lock(setup_failed_cleanup_fn)
         except Exception:
             log.warning("best-effort cleanup after failed setup of %s did not complete", resource_name, exc_info=True)
+
+
+@contextmanager
+def _owner_setup_guard(registry, on_failure: Callable[[SharedResourceRegistry], None]) -> Iterator[None]:
+    """Marks the registry FAILED and runs the failure handler around `setup_fn`"""
+    try:
+        yield
+    except BaseException:
+        if registry is not None:
+            registry.mark_failed()
+            on_failure(registry)
+        raise
+
+
+@asynccontextmanager
+async def _aowner_setup_guard(registry, on_failure: Callable[[SharedResourceRegistry], None]) -> AsyncIterator[None]:
+    # the guard itself never blocks, so a plain sync `with` inside the async generator is safe
+    with _owner_setup_guard(registry, on_failure):
+        yield
+
+
+@contextmanager
+def _pre_body_guard(reached_body: list[bool], cleanup_done: list[bool], cleanup: Callable[[], None]) -> Iterator[None]:
+    """A raise BEFORE the session's first yield never reaches the generator's `finally` (that
+    only runs once the body was entered), so a failed setup must clean up right here: without
+    it, a half-set-up resource would leak without any teardown
+    """
+    try:
+        yield
+    except BaseException:
+        if not reached_body[0] and not cleanup_done[0]:
+            cleanup()
+        raise
+
+
+@asynccontextmanager
+async def _apre_body_guard(
+    reached_body: list[bool], cleanup_done: list[bool], cleanup: Callable[[], None]
+) -> AsyncIterator[None]:
+    with _pre_body_guard(reached_body, cleanup_done, cleanup):
+        yield
 
 
 @contextmanager
@@ -412,46 +481,41 @@ def shared_resource_session(
     See `ashared_resource_session` (whose rules this is) for the full protocol.
     """
     token = f"{get_worker_id(request)}-{uuid4().hex}"
+    reached_body = [False]
+    cleanup_done = [False]
 
     def _run_under_churn_lock(fn: Callable[[], None]) -> None:
         with daemon_churn_access(request, tmp_path_factory):
             fn()
 
     def _on_failure(registry: SharedResourceRegistry) -> None:
-        _on_shared_setup_failure(registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock)
+        _on_shared_setup_failure(
+            registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock, cleanup_done
+        )
 
     registry, owns_setup = _begin_shared_setup(
         request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
     )
 
-    reached_body = False
-    setup_failed_cleanup_done = False
-    try:
+    def _final_teardown() -> None:
+        if registry is None or registry.unregister(token):
+            _run_under_churn_lock(teardown_fn)
+
+    def _pre_body_cleanup() -> None:
+        _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+
+    with _pre_body_guard(reached_body, cleanup_done, _pre_body_cleanup):
         if owns_setup:
-            try:
+            with _owner_setup_guard(registry, _on_failure):
                 _run_under_churn_lock(setup_fn)
-            except BaseException:
-                if registry is not None:
-                    registry.mark_failed()
-                    setup_failed_cleanup_done = True  # _on_failure runs the cleanup itself
-                    _on_failure(registry)
-                raise
             if registry is not None:
                 registry.mark_ready()
 
         try:
-            reached_body = True
+            reached_body[0] = True
             yield owns_setup
         finally:
-            if registry is None or registry.unregister(token):
-                _run_under_churn_lock(teardown_fn)
-    except BaseException:
-        # A raise BEFORE the first yield never reaches the generator's `finally` (that only
-        # runs once the body was entered), so a failed NON-xdist setup must clean up right
-        # here: without it, a half-set-up resource would leak without any teardown
-        if not reached_body and not setup_failed_cleanup_done:
-            _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
-        raise
+            _final_teardown()
 
 
 @asynccontextmanager
@@ -488,44 +552,41 @@ async def ashared_resource_session(
     they also run from the failure paths.
     """
     token = f"{get_worker_id(request)}-{uuid4().hex}"
+    reached_body = [False]
+    cleanup_done = [False]
 
     def _run_under_churn_lock(fn: Callable[[], None]) -> None:
         with daemon_churn_access(request, tmp_path_factory):
             fn()
 
     def _on_failure(registry: SharedResourceRegistry) -> None:
-        _on_shared_setup_failure(registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock)
+        _on_shared_setup_failure(
+            registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock, cleanup_done
+        )
 
     registry, owns_setup = _begin_shared_setup(
         request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
     )
 
-    reached_body = False
-    setup_failed_cleanup_done = False
-    try:
+    def _final_teardown() -> None:
+        if registry is None or registry.unregister(token):
+            _run_under_churn_lock(teardown_fn)
+
+    def _pre_body_cleanup() -> None:
+        _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+
+    async with _apre_body_guard(reached_body, cleanup_done, _pre_body_cleanup):
         if owns_setup:
-            try:
+            async with _aowner_setup_guard(registry, _on_failure):
                 with daemon_churn_access(request, tmp_path_factory):
-                    await setup_fn()
-            except BaseException:
-                if registry is not None:
-                    registry.mark_failed()
-                    setup_failed_cleanup_done = True  # _on_failure runs the cleanup itself
-                    _on_failure(registry)
-                raise
+                    result = setup_fn()
+                    if result is not None:  # sync callbacks returning None are valid per signature
+                        await result
             if registry is not None:
                 registry.mark_ready()
 
         try:
-            reached_body = True
+            reached_body[0] = True
             yield owns_setup
         finally:
-            if registry is None or registry.unregister(token):
-                _run_under_churn_lock(teardown_fn)
-    except BaseException:
-        # A raise BEFORE the first yield never reaches the generator's `finally` (that only
-        # runs once the body was entered), so a failed NON-xdist setup must clean up right
-        # here: without it, a half-deployed stack would leak without any teardown
-        if not reached_body and not setup_failed_cleanup_done:
-            _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
-        raise
+            _final_teardown()

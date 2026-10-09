@@ -39,7 +39,6 @@ from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
 from .helpers.xdist import (
     ashared_resource_session,
-    daemon_churn_access,
     get_max_xdist_workers,
     get_xdist_root_tmp_path,
     is_xdist_worker,
@@ -369,14 +368,28 @@ def _shared_stack_network(
     `docker_stack` (which depends on these network fixtures) BEFORE the network fixtures of the
     same worker, the last deregistration necessarily happens after EVERY worker completed its
     stack teardown and drained its service endpoints.
+
+    Only a network THIS session created is ever removed: a pre-existing one may belong to a
+    concurrent (or crashed, still-recoverable) session and must survive this run's teardown.
     """
+    root_tmp_path = get_xdist_root_tmp_path(tmp_path_factory)
+    # shared marker set when THIS session's setup created the network: under xdist the worker
+    # running the last-user teardown is not necessarily the one that created it, so the flag
+    # must live in the base temp dir every worker shares (fresh per run, never read by another
+    # session, whose registries/markers live in its own base temp)
+    created_marker = root_tmp_path / f"{_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX}-{network_name}.created"
 
     def _setup() -> None:
         # the 409 create race across workers is resolved inside `_get_or_create_network`
-        _get_or_create_network(docker_client, network_name)
+        _, created_new = _get_or_create_network(docker_client, network_name)
+        if created_new:
+            created_marker.touch()
 
     def _teardown() -> None:
         if keep_docker_up:
+            return
+        if not created_marker.exists():
+            # this session never created the network: it belongs to another (or orphaned) one
             return
         try:
             _remove_network_when_free(docker_client, network_name)
@@ -398,9 +411,7 @@ def _shared_stack_network(
         setup_failed_cleanup_fn=_teardown,
         wait_timeout=2 * MINUTE,
     ):
-        # either this worker created it or the owner already marked it ready: just attach
-        network, _ = _get_or_create_network(docker_client, network_name)
-        yield network
+        yield docker_client.networks.get(network_name)
 
 
 @pytest.fixture(scope="module")
@@ -531,9 +542,11 @@ async def docker_stack(  # noqa: C901, PLR0915
         """removes the deployed stacks.
 
         Only runs for the last holder (normal teardown, or the setup-failure cleanup when no
-        stack users remain); `keep_docker_up` short-circuits it. The shared `external` networks
-        are NOT removed here: the network fixtures ref-count their own lifetime and the last of
-        theirs removes them (after this ran everywhere).
+        stack users remain), always from inside the session's `daemon_churn_access` wrapper -
+        re-acquiring it here would risk a writer interposing between the two nested reader
+        acquisitions and stalling both. `keep_docker_up` short-circuits it. The shared
+        `external` networks are NOT removed here: the network fixtures ref-count their own
+        lifetime and the last of theirs removes them (after this ran everywhere).
         """
         _fetch_and_print_services(docker_client, "[AFTER TEST]")
 
@@ -541,57 +554,56 @@ async def docker_stack(  # noqa: C901, PLR0915
             # skip bringing the stack down
             return
 
-        with daemon_churn_access(request, tmp_path_factory):
-            # clean up. Guarantees that all services are down before creating a new stack!
-            # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
-            # (poll until the daemon finished draining stack resources before proceeding)
+        # clean up. Guarantees that all services are down before creating a new stack!
+        # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
+        # (poll until the daemon finished draining stack resources before proceeding)
 
-            # make down
-            # NOTE: remove them in reverse order since stacks share common networks
+        # make down
+        # NOTE: remove them in reverse order since stacks share common networks
 
-            stacks.reverse()
-            for _, stack, _ in stacks:
-                try:
-                    subprocess.run(  # noqa: S603
-                        f"docker stack remove {stack}".split(" "),
-                        check=True,
-                        capture_output=True,
-                    )
-                except subprocess.CalledProcessError as err:
-                    _logger.warning(
-                        "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
-                        err.cmd,
-                        err.returncode,
-                        HEADER_STR.format("stdout"),
-                        err.stdout.decode("utf8") if err.stdout else "",
-                        HEADER_STR.format("stderr"),
-                        err.stderr.decode("utf8") if err.stderr else "",
-                    )
+        stacks.reverse()
+        for _, stack, _ in stacks:
+            try:
+                subprocess.run(  # noqa: S603
+                    f"docker stack remove {stack}".split(" "),
+                    check=True,
+                    capture_output=True,
+                )
+            except subprocess.CalledProcessError as err:
+                _logger.warning(
+                    "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
+                    err.cmd,
+                    err.returncode,
+                    HEADER_STR.format("stdout"),
+                    err.stdout.decode("utf8") if err.stdout else "",
+                    HEADER_STR.format("stderr"),
+                    err.stderr.decode("utf8") if err.stderr else "",
+                )
 
-                # Waits that all resources get removed or force them
-                # The check order is intentional because some resources depend on others to be removed
-                # e.g. cannot remove networks/volumes used by running containers
-                for resource_name in ("services", "containers", "volumes", "networks"):
-                    resource_client = getattr(docker_client, resource_name)
+            # Waits that all resources get removed or force them
+            # The check order is intentional because some resources depend on others to be removed
+            # e.g. cannot remove networks/volumes used by running containers
+            for resource_name in ("services", "containers", "volumes", "networks"):
+                resource_client = getattr(docker_client, resource_name)
 
-                    for attempt in Retrying(
-                        wait=wait_fixed(2),
-                        stop=stop_after_delay(3 * MINUTE),
-                        before_sleep=before_sleep_log(_logger, logging.INFO),
-                        reraise=True,
-                    ):
-                        with attempt:
-                            pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
-                            if pending:
-                                if resource_name in ("volumes",):
-                                    # WARNING: rm volumes on this stack might be a problem when shared
-                                    # between different stacks
-                                    # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
-                                    for resource in pending:
-                                        resource.remove(force=True)
+                for attempt in Retrying(
+                    wait=wait_fixed(2),
+                    stop=stop_after_delay(3 * MINUTE),
+                    before_sleep=before_sleep_log(_logger, logging.INFO),
+                    reraise=True,
+                ):
+                    with attempt:
+                        pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
+                        if pending:
+                            if resource_name in ("volumes",):
+                                # WARNING: rm volumes on this stack might be a problem when shared
+                                # between different stacks
+                                # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
+                                for resource in pending:
+                                    resource.remove(force=True)
 
-                                msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
-                                raise _ResourceStillNotRemovedError(msg)
+                            msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
+                            raise _ResourceStillNotRemovedError(msg)
 
         _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
 
@@ -605,51 +617,53 @@ async def docker_stack(  # noqa: C901, PLR0915
 
     def _deploy_stack_sections() -> Awaitable[None]:
         async def _deploy_and_wait() -> None:
-            with daemon_churn_access(request, tmp_path_factory):
-                # NOTE: if the migration service was already running prior to this call it must
-                # be force updated so that it does its job. else it remains and tests will fail
-                _force_remove_migration_service(docker_client)
-                _make_dask_sidecar_certificates(osparc_simcore_services_dir)
-                # make up-version
-                for key, stack_name, compose_file in stacks:
-                    _deploy_stack(compose_file, stack_name)
+            # NOTE: runs inside the session's `daemon_churn_access` wrapper already: do NOT
+            # re-acquire it here (a writer interposing between nested reader acquisitions
+            # would stall both until they time out)
+            # NOTE: if the migration service was already running prior to this call it must
+            # be force updated so that it does its job. else it remains and tests will fail
+            _force_remove_migration_service(docker_client)
+            _make_dask_sidecar_certificates(osparc_simcore_services_dir)
+            # make up-version
+            for key, stack_name, compose_file in stacks:
+                _deploy_stack(compose_file, stack_name)
 
-                    stacks_deployed[key] = {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
+                stacks_deployed[key] = {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
 
-                # All SELECTED services ready
-                # - notice that the timeout is set for all services in both stacks
-                # - TODO: the time to deploy will depend on the number of services selected
-                async def _check_all_services_are_running():
-                    # NOTE: scoped to THIS stack's namespaces on purpose: under xdist, other workers
-                    # may be concurrently creating/removing their own test services, and asserting
-                    # those (soon-gone, hence 404-forever) services here would stall the deploy until
-                    # `assert_service_is_running` times out and fails the whole shared stack
-                    stack_services = [
-                        service
-                        for _, stack_name, _ in stacks
-                        for service in docker_client.services.list(
-                            filters={"label": f"com.docker.stack.namespace={stack_name}"}
-                        )
-                    ]
-                    done, pending = await asyncio.wait(
-                        [
-                            asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
-                            for service in stack_services
-                        ],
-                        return_when=asyncio.FIRST_EXCEPTION,
+            # All SELECTED services ready
+            # - notice that the timeout is set for all services in both stacks
+            # - TODO: the time to deploy will depend on the number of services selected
+            async def _check_all_services_are_running():
+                # NOTE: scoped to THIS stack's namespaces on purpose: under xdist, other workers
+                # may be concurrently creating/removing their own test services, and asserting
+                # those (soon-gone, hence 404-forever) services here would stall the deploy until
+                # `assert_service_is_running` times out and fails the whole shared stack
+                stack_services = [
+                    service
+                    for _, stack_name, _ in stacks
+                    for service in docker_client.services.list(
+                        filters={"label": f"com.docker.stack.namespace={stack_name}"}
                     )
-                    assert done, f"no services ready, they all failed! [{pending}]"
+                ]
+                done, pending = await asyncio.wait(
+                    [
+                        asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
+                        for service in stack_services
+                    ],
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
+                assert done, f"no services ready, they all failed! [{pending}]"
 
-                    for future in done:
-                        if exc := future.exception():
-                            raise exc
+                for future in done:
+                    if exc := future.exception():
+                        raise exc
 
-                    assert not pending, f"some service did not start correctly [{pending}]"
+                assert not pending, f"some service did not start correctly [{pending}]"
 
-                try:
-                    await _check_all_services_are_running()
-                finally:
-                    _fetch_and_print_services(docker_client, "[BEFORE TEST]")
+            try:
+                await _check_all_services_are_running()
+            finally:
+                _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
         return _deploy_and_wait()
 
