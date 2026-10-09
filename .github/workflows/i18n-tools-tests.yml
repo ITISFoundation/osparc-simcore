@@ -1,0 +1,38 @@
+name: i18n tools tests
+
+on:
+  pull_request:
+    paths:
+      - "scripts/i18n/**"
+      - ".github/workflows/i18n-tools-tests.yml"
+  merge_group:
+    branches:
+      - "master"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  i18n-tools-tests:
+    timeout-minutes: 10
+    name: "[unit] i18n tools tests"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout source branch
+        uses: actions/checkout@v7.0.1
+      # setup-simcore-env installs Python 3.13 + uv (version from requirements/UV_VERSION)
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
+      # node/npm are preinstalled on ubuntu-latest (image default, unpinned)
+      - name: Install frontend tools deps (typescript for the AST extractor tests)
+        run: npm ci --no-audit --no-fund
+        working-directory: scripts/i18n/tools
+      - name: Run i18n tools tests
+        run: |
+          uv run --with Babel --with Jinja2 --with litellm --with polib --with pytest --with rich --with typer \
+            pytest scripts/i18n/tools/tests -v
