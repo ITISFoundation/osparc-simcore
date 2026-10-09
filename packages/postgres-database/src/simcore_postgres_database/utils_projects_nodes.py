@@ -7,7 +7,6 @@ import asyncpg.exceptions  # type: ignore[import-untyped]
 import sqlalchemy.exc
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -249,10 +248,8 @@ class ProjectNodesRepo:
             return (row["pricing_plan_id"], row["pricing_unit_id"])
         return None
 
-    async def get_project_node_pricing_unit_ids(
-        self, connection: AsyncConnection
-    ) -> dict[uuid.UUID, tuple[PricingPlanId, PricingUnitId]]:
-        """get the pricing unit connected to each node of the project
+    async def get_project_node_pricing_unit_ids(self, connection: AsyncConnection) -> dict[uuid.UUID, tuple[int, int]]:
+        """get the (pricing_plan_id, pricing_unit_id) connected to each node of the project
 
         Equivalent to calling `get_project_node_pricing_unit_id` for every node, with a
         single query. Nodes without a connected pricing unit are absent from the result.

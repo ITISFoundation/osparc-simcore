@@ -8,6 +8,7 @@ from models_library.errors import ErrorDict
 from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
@@ -154,7 +155,12 @@ class CompTasksRepository(BaseRepository):
                 required_resources={
                     node.node_id: node.required_resources for node in await projects_nodes_repo.list(conn)
                 },
-                pricing_unit_ids=await projects_nodes_repo.get_project_node_pricing_unit_ids(conn),
+                pricing_unit_ids={
+                    node_id: (PricingPlanId(plan_id), PricingUnitId(unit_id))
+                    for node_id, (plan_id, unit_id) in (
+                        await projects_nodes_repo.get_project_node_pricing_unit_ids(conn)
+                    ).items()
+                },
             )
 
     async def upsert_tasks_from_project(
