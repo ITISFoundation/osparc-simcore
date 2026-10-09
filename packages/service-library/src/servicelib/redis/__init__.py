@@ -2,6 +2,7 @@ from ._client import RedisClientSDK
 from ._clients_manager import RedisClientsManager
 from ._decorators import exclusive
 from ._errors import (
+    BaseRedisError,
     CouldNotAcquireLockError,
     CouldNotConnectToRedisError,
     LockLostError,
@@ -26,6 +27,7 @@ from ._utils import handle_redis_returns_union_types
 __all__: tuple[str, ...] = (
     "PROJECT_DB_UPDATE_REDIS_LOCK_KEY",
     "PROJECT_DOCUMENT_VERSION_KEY",
+    "BaseRedisError",
     "CouldNotAcquireLockError",
     "CouldNotConnectToRedisError",
     "LockLostError",
