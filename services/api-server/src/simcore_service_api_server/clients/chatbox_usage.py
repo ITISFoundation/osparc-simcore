@@ -6,7 +6,7 @@ The whole Usage Ledger lives in Redis on a dedicated database:
     holder's first admitted request (the TTL is the exact "available again at" answer)
 - global hash   api-server:chatbox:usage:global
     fields spend / reservations (USD) and requests — cumulative vs the Provider Budget
-- rate key      api-server:chatbox:rate:{credentials_hash}:{minute-bucket}
+- rate key      api-server:chatbox:rate:{user_id}:{credentials_hash}:{minute-bucket}
 - ledger stream api-server:chatbox:usage:ledger — one entry per completion (Usage Ledger)
 
 Window Quota and Global Budget Guard reject the request with a 503 when Redis fails;
@@ -221,7 +221,7 @@ class ChatboxUsageLedger:
 
     # -- Rate Limit (per API key, fail-open) ---------------------------------------
 
-    async def acquire_rate_limit(self, credentials_hash: str) -> None:
+    async def acquire_rate_limit(self, *, user_id: UserID, credentials_hash: str) -> None:
         """Rate Limit: ``REQUESTS_PER_MINUTE`` per (hash of an) API key.
 
         Fail-open on Redis errors: the Rate Limit is only a burst guard, the money
@@ -232,7 +232,7 @@ class ChatboxUsageLedger:
                 current minute bucket.
         """
         minute_bucket = int(time.time() // 60)
-        key = f"{_RATE_KEY_PREFIX}:{credentials_hash}:{minute_bucket}"
+        key = f"{_RATE_KEY_PREFIX}:{user_id}:{credentials_hash}:{minute_bucket}"
         try:
             # SET NX EX first so the counter can never be created without a TTL
             await self._redis.set(key, 0, nx=True, ex=_RATE_KEY_TTL_SECONDS)

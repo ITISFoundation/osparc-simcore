@@ -63,7 +63,7 @@ async def _admit_and_reserve(
     if ledger is None:
         return None
 
-    await ledger.acquire_rate_limit(credentials_hash)
+    await ledger.acquire_rate_limit(user_id=user_id, credentials_hash=credentials_hash)
     return await ledger.admit_and_reserve(user_id=user_id, product_name=product_name)
 
 

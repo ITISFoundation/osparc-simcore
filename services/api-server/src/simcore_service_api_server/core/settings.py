@@ -114,10 +114,7 @@ class ChatboxUsageLimitsSettings(BaseCustomSettings):
 
     PROVIDER_BUDGET_USD: Annotated[
         PositiveFloat,
-        Field(
-            description="Global Budget Guard: the one-time Provider Budget (USD). "
-            "Required when limits are enabled: without it there is no platform-wide guard."
-        ),
+        Field(description="Global Budget Guard: the one-time Provider Budget (USD). "),
     ]
 
     HARD_STOP_FRACTION: Annotated[

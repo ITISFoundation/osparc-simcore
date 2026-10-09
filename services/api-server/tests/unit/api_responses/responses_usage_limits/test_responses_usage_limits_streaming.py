@@ -160,7 +160,9 @@ async def test_stream_window_expiry_restores_access(
 async def test_stream_rate_limit_returns_429_with_retry_after(
     client: AsyncClient,
     auth: BasicAuth,
+    app: FastAPI,
     usage_builders,
+    read_ledger_state,
     mocked_chatbot_backend: respx.MockRouter,
 ):
     # ARRANGE - Rate Limit 2/min, generous Window Quota so only the rate layer trips
@@ -187,6 +189,19 @@ async def test_stream_rate_limit_returns_429_with_retry_after(
     assert body["code"] == "chatbox_rate_limited"
     assert body["retry_after_seconds"] == int(denied[0].headers["Retry-After"])
     assert body["reset_at"] is None
+
+    # ASSERT - rate-limit keys are inspectable by user ID, while still scoped by API key
+    state = await read_ledger_state()
+    window_key = next(iter(state["windows"]))
+    user_id = window_key.removeprefix("api-server:chatbox:usage:window:").rsplit(":", maxsplit=1)[0]
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    rate_keys = [
+        f"{key}"
+        async for key in ledger._client.redis.scan_iter(f"{usage_builders.rate_key_prefix}:*")  # noqa: SLF001
+    ]
+    assert rate_keys
+    assert all(key.startswith(f"{usage_builders.rate_key_prefix}:{user_id}:") for key in rate_keys)
 
 
 @pytest.mark.parametrize(
