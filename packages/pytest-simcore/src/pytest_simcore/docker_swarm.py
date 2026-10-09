@@ -429,7 +429,7 @@ def interactive_services_subnet_docker_network(
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def docker_stack(  # noqa: C901, PLR0912, PLR0915
+async def docker_stack(  # noqa: C901, PLR0915
     osparc_simcore_services_dir: Path,
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
@@ -532,6 +532,90 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
     token = f"{get_worker_id(request)}-{uuid4().hex}"
     owns_stack = True if registry is None else registry.register(token)
 
+    def _teardown_shared_resources() -> None:  # noqa: C901
+        """removes the deployed stacks and the shared networks recorded for this session.
+
+        Callers must hold last-owner teardown rights (normal teardown, or the setup-failure
+        path below when no stack users remain); `keep_docker_up` short-circuits it.
+        """
+        _fetch_and_print_services(docker_client, "[AFTER TEST]")
+
+        if keep_docker_up:
+            # skip bringing the stack down
+            return
+
+        # clean up. Guarantees that all services are down before creating a new stack!
+        # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
+        # (poll until the daemon finished draining stack resources before proceeding)
+
+        # make down
+        # NOTE: remove them in reverse order since stacks share common networks
+
+        stacks.reverse()
+        for _, stack, _ in stacks:
+            try:
+                subprocess.run(  # noqa: S603
+                    f"docker stack remove {stack}".split(" "),
+                    check=True,
+                    capture_output=True,
+                )
+            except subprocess.CalledProcessError as err:
+                _logger.warning(
+                    "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
+                    err.cmd,
+                    err.returncode,
+                    HEADER_STR.format("stdout"),
+                    err.stdout.decode("utf8") if err.stdout else "",
+                    HEADER_STR.format("stderr"),
+                    err.stderr.decode("utf8") if err.stderr else "",
+                )
+
+            # Waits that all resources get removed or force them
+            # The check order is intentional because some resources depend on others to be removed
+            # e.g. cannot remove networks/volumes used by running containers
+            for resource_name in ("services", "containers", "volumes", "networks"):
+                resource_client = getattr(docker_client, resource_name)
+
+                for attempt in Retrying(
+                    wait=wait_fixed(2),
+                    stop=stop_after_delay(3 * MINUTE),
+                    before_sleep=before_sleep_log(_logger, logging.INFO),
+                    reraise=True,
+                ):
+                    with attempt:
+                        pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
+                        if pending:
+                            if resource_name in ("volumes",):
+                                # WARNING: rm volumes on this stack might be a problem when shared
+                                # between different stacks
+                                # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
+                                for resource in pending:
+                                    resource.remove(force=True)
+
+                            msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
+                            raise _ResourceStillNotRemovedError(msg)
+
+        # the shared networks are declared `external` in the composes, so `docker stack remove` does
+        # NOT touch them: the network fixtures deliberately hand their removal to THIS last-owner
+        # teardown (only the worker removing the last stack reference gets here), since the worker
+        # that created a network may finish its modules while others still run services on it.
+        # NOTE: xdist only — a non-xdist run removes them in its own network fixture teardowns and
+        # must NOT read the marker (it could pick up leftovers of a crashed xdist session)
+        if registry is not None:
+            for network_name in _take_created_networks_for_shared_cleanup(get_xdist_root_tmp_path(tmp_path_factory)):
+                try:
+                    _remove_network_when_free(docker_client, network_name)
+                except APIError:
+                    _logger.warning(
+                        "could not remove shared network '%s' after the last stack teardown: if no other "
+                        "test session is running, remove it manually with 'docker network rm %s'",
+                        network_name,
+                        network_name,
+                        exc_info=True,
+                    )
+
+        _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
+
     stacks_deployed: dict[str, dict] = {}
     if owns_stack:
         try:
@@ -587,7 +671,15 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
             # them to fail fast and give up ownership, so the deploy is retried elsewhere
             if registry is not None:
                 registry.mark_failed()
-                registry.unregister(token)
+                if registry.unregister(token):
+                    # last stack user and THIS fixture's post-yield teardown will never run
+                    # (setup raised before yielding): tear down here, best-effort, so a failed
+                    # deploy does not leave a half-deployed stack or the recorded shared
+                    # networks behind for later sessions to trip over
+                    try:
+                        _teardown_shared_resources()
+                    except Exception:
+                        _logger.warning("best-effort teardown after failed deploy did not complete", exc_info=True)
             raise
 
         if registry is not None:
@@ -613,90 +705,7 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
         # other workers/modules still use the shared stack
         return
 
-    _fetch_and_print_services(docker_client, "[AFTER TEST]")
-
-    if keep_docker_up:
-        # skip bringing the stack down
-        return
-
-    # clean up. Guarantees that all services are down before creating a new stack!
-    #
-    # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
-    #
-    # docker stack rm services
-    # until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ];do
-    # sleep 1;
-    # done
-    # until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ];do
-    # sleep 1;
-    # done
-
-    # make down
-    # NOTE: remove them in reverse order since stacks share common networks
-
-    stacks.reverse()
-    for _, stack, _ in stacks:
-        try:
-            subprocess.run(  # noqa: ASYNC221, S603
-                f"docker stack remove {stack}".split(" "),
-                check=True,
-                capture_output=True,
-            )
-        except subprocess.CalledProcessError as err:
-            _logger.warning(
-                "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
-                err.cmd,
-                err.returncode,
-                HEADER_STR.format("stdout"),
-                err.stdout.decode("utf8") if err.stdout else "",
-                HEADER_STR.format("stderr"),
-                err.stderr.decode("utf8") if err.stderr else "",
-            )
-
-        # Waits that all resources get removed or force them
-        # The check order is intentional because some resources depend on others to be removed
-        # e.g. cannot remove networks/volumes used by running containers
-        for resource_name in ("services", "containers", "volumes", "networks"):
-            resource_client = getattr(docker_client, resource_name)
-
-            for attempt in Retrying(
-                wait=wait_fixed(2),
-                stop=stop_after_delay(3 * MINUTE),
-                before_sleep=before_sleep_log(_logger, logging.INFO),
-                reraise=True,
-            ):
-                with attempt:
-                    pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
-                    if pending:
-                        if resource_name in ("volumes",):
-                            # WARNING: rm volumes on this stack might be a problem when shared between different stacks
-                            # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
-                            for resource in pending:
-                                resource.remove(force=True)
-
-                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
-                        raise _ResourceStillNotRemovedError(msg)
-
-    # the shared networks are declared `external` in the composes, so `docker stack remove` does
-    # NOT touch them: the network fixtures deliberately hand their removal to THIS last-owner
-    # teardown (only the worker removing the last stack reference gets here), since the worker
-    # that created a network may finish its modules while others still run services on it.
-    # NOTE: xdist only — a non-xdist run removes them in its own network fixture teardowns and
-    # must NOT read the marker (it could pick up leftovers of a crashed xdist session)
-    if registry is not None:
-        for network_name in _take_created_networks_for_shared_cleanup(get_xdist_root_tmp_path(tmp_path_factory)):
-            try:
-                _remove_network_when_free(docker_client, network_name)
-            except APIError:
-                _logger.warning(
-                    "could not remove shared network '%s' after the last stack teardown: if no other "
-                    "test session is running, remove it manually with 'docker network rm %s'",
-                    network_name,
-                    network_name,
-                    exc_info=True,
-                )
-
-    _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
+    _teardown_shared_resources()
 
 
 @pytest.fixture
