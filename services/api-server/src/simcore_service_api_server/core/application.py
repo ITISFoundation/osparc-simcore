@@ -28,6 +28,7 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import configure_task_manager
 from ..clients.kms import configure_kms
+from ..exceptions.celery_transferable_errors import register_celery_transferable_error_adapters
 from ..services_http import director_v2, storage, webserver
 from ..services_http.chatbot import configure as configure_chatbot
 from ..services_http.rabbitmq import configure_rabbitmq
@@ -140,6 +141,10 @@ def create_app(
 
     assert settings  # nosec
     assert tracing_config  # nosec
+
+    # the celery worker and this server share this factory: the worker's own process
+    # runs it too, so encoding/decoding both sides get the adapters they need
+    register_celery_transferable_error_adapters()
 
     # Labeling
     title = "osparc.io public API"
