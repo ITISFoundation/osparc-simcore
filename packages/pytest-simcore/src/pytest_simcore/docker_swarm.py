@@ -8,11 +8,10 @@ import json
 import logging
 import subprocess
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final
-from uuid import uuid4
 
 import aiodocker
 import docker
@@ -39,13 +38,12 @@ from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
 from .helpers.xdist import (
-    DOCKER_DAEMON_LOCK_NAME,
-    ReaderWriterLock,
-    SharedResourceRegistry,
+    ashared_resource_session,
+    daemon_churn_access,
     get_max_xdist_workers,
-    get_worker_id,
     get_xdist_root_tmp_path,
     is_xdist_worker,
+    shared_resource_session,
 )
 
 _logger: logging.Logger = logging.getLogger(__name__)
@@ -54,23 +52,6 @@ _DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
 _DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
 _DOCKER_NETWORKS_REGISTRY_NAME_PREFIX: Final[str] = "docker_networks"
 _DOCKER_STACK_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
-
-
-@contextmanager
-def _daemon_churn_access(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
-    """Holds the shared-daemon READ lock (the same `ReaderWriterLock` the
-    `pytest_simcore.xdist_docker_daemon` plugin gives every test) around a section that CHURNS
-    daemon-wide state (swarm init/leave, network and stack create/remove), so such a section
-    can never overlap a `@pytest.mark.docker_exclusive` test in any worker. Readers stay
-    mutually concurrent (concurrent deploys/tests do not serialize); only exclusive tests are
-    excluded, for the duration of the section rather than of the whole fixture lifetime.
-    """
-    if not is_xdist_worker(request):
-        yield
-        return
-    lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), DOCKER_DAEMON_LOCK_NAME)
-    with lock.read_lock(token=f"churn-{get_worker_id(request)}-{uuid4().hex}"):
-        yield
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -209,44 +190,31 @@ def docker_swarm(
     """inits docker swarm
 
     The swarm is a daemon-wide resource shared by every xdist worker: under xdist it is
-    ref-counted via `SharedResourceRegistry` so the first holder initializes it and ONLY the
-    last holder leaves it (a module-scoped `swarm.leave` in one worker would otherwise strip
-    swarm-manager state from the daemon while other workers are still running, making their
-    docker API calls fail with 503 "this node is not a swarm manager").
+    ref-counted (see `shared_resource_session`) so the first holder initializes it and ONLY
+    the last holder leaves it (a module-scoped `swarm.leave` in one worker would otherwise
+    strip swarm-manager state from the daemon while other workers are still running, making
+    their docker API calls fail with 503 "this node is not a swarm manager").
     """
-    registry: SharedResourceRegistry | None = (
-        SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_SWARM_REGISTRY_NAME)
-        if is_xdist_worker(request)
-        else None
-    )
-    token = f"{get_worker_id(request)}-{uuid4().hex}"
-    if registry is None:
-        with _daemon_churn_access(request, tmp_path_factory):
-            _ensure_swarm_init(docker_client)
-    elif registry.register(token):
-        try:
-            with _daemon_churn_access(request, tmp_path_factory):
-                _ensure_swarm_init(docker_client)
-        except BaseException:
-            registry.mark_failed()
-            registry.unregister(token)
-            raise
-        registry.mark_ready()
-    else:
-        registry.wait_ready(timeout=timedelta(minutes=2))
 
-    yield
+    def _setup() -> None:
+        _ensure_swarm_init(docker_client)
 
-    if registry is not None and not registry.unregister(token):
-        # other workers still use the swarm
-        return
-
-    if not keep_docker_up:
-        with (
-            _daemon_churn_access(request, tmp_path_factory),
-            log_context(logging.INFO, "leaving docker swarm", logger=_logger),
-        ):
+    def _teardown() -> None:
+        if keep_docker_up:
+            return
+        with log_context(logging.INFO, "leaving docker swarm", logger=_logger):
             assert docker_client.swarm.leave(force=True)
+
+    with shared_resource_session(
+        request,
+        tmp_path_factory,
+        _DOCKER_SWARM_REGISTRY_NAME,
+        setup_fn=_setup,
+        teardown_fn=_teardown,
+        setup_failed_cleanup_fn=_teardown,
+        wait_timeout=timedelta(minutes=2),
+    ):
+        yield
 
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
@@ -391,56 +359,48 @@ def _shared_stack_network(
     request: pytest.FixtureRequest,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[docker.models.networks.Network]:
-    """Shares one `external` compose network across xdist workers with ref-counted lifetime.
+    """Shares one `external` compose network across xdist workers with ref-counted lifetime
+    (see `shared_resource_session`, which registers the worker BEFORE the network is touched,
+    so a worker that is still setting the network up can never be raced by another worker's
+    last-user teardown removing it out from under it).
 
-    The worker is registered in the shared registry BEFORE touching the network, so a worker
-    that is still setting the network up can never be raced by another worker's last-user
-    teardown removing it out from under it. Only the last deregister removes the network: since
-    pytest finalizes `docker_stack` (which depends on these network fixtures) BEFORE the network
-    fixtures of the same worker, the last deregistration necessarily happens after EVERY worker
-    completed its stack teardown and drained its service endpoints.
+    One registry PER network: ref-counting distinct networks jointly would let the last
+    deregister remove only its own network and orphan every other one. Since pytest finalizes
+    `docker_stack` (which depends on these network fixtures) BEFORE the network fixtures of the
+    same worker, the last deregistration necessarily happens after EVERY worker completed its
+    stack teardown and drained its service endpoints.
     """
-    if keep_docker_up or not is_xdist_worker(request):
-        network, created_new = _get_or_create_network(docker_client, network_name)
-        yield network
-        if created_new and not keep_docker_up:
-            with suppress(docker.errors.NotFound):
-                network.remove()
-        return
 
-    # one registry PER network: ref-counting distinct networks jointly would let the last
-    # deregister remove only its own network and orphan every other one
-    registry = SharedResourceRegistry(
-        get_xdist_root_tmp_path(tmp_path_factory), f"{_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX}-{network_name}"
-    )
-    token = f"{get_worker_id(request)}-{uuid4().hex}"
-    registry.register(token)  # register BEFORE creating: see docstring
-    try:
-        with _daemon_churn_access(request, tmp_path_factory):
-            network, _ = _get_or_create_network(docker_client, network_name)
-    except BaseException:
-        # setup raised => pytest will NOT run the post-yield teardown: give up our token here
-        # so it cannot leak in the persistent base temp dir and poison later sessions
-        if registry.unregister(token):
-            with suppress(Exception), _daemon_churn_access(request, tmp_path_factory):
-                _remove_network_when_free(docker_client, network_name)
-        raise
+    def _setup() -> None:
+        # the 409 create race across workers is resolved inside `_get_or_create_network`
+        _get_or_create_network(docker_client, network_name)
 
-    try:
+    def _teardown() -> None:
+        if keep_docker_up:
+            return
+        try:
+            _remove_network_when_free(docker_client, network_name)
+        except APIError:
+            _logger.warning(
+                "could not remove shared network '%s' after the last user left: if no other "
+                "test session is running, remove it manually with 'docker network rm %s'",
+                network_name,
+                network_name,
+                exc_info=True,
+            )
+
+    with shared_resource_session(
+        request,
+        tmp_path_factory,
+        f"{_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX}-{network_name}",
+        setup_fn=_setup,
+        teardown_fn=_teardown,
+        setup_failed_cleanup_fn=_teardown,
+        wait_timeout=2 * MINUTE,
+    ):
+        # either this worker created it or the owner already marked it ready: just attach
+        network, _ = _get_or_create_network(docker_client, network_name)
         yield network
-    finally:
-        if registry.unregister(token):
-            try:
-                with _daemon_churn_access(request, tmp_path_factory):
-                    _remove_network_when_free(docker_client, network_name)
-            except APIError:
-                _logger.warning(
-                    "could not remove shared network '%s' after the last user left: if no other "
-                    "test session is running, remove it manually with 'docker network rm %s'",
-                    network_name,
-                    network_name,
-                    exc_info=True,
-                )
 
 
 @pytest.fixture(scope="module")
@@ -489,9 +449,9 @@ async def docker_stack(  # noqa: C901, PLR0915
     """deploys core and ops stacks and returns as soon as all are running
 
     Under pytest-xdist, every worker process runs this fixture independently, but the
-    underlying stack is a single shared resource: callers coordinate via a cross-process
-    reference-counted registry (see `SharedResourceRegistry`) so exactly one worker deploys
-    it and only the last caller tears it down, regardless of how many workers/modules use it.
+    underlying stack is a single shared resource: `shared_resource_session` ref-counts it so
+    exactly one worker deploys it and only the last caller tears it down, regardless of how
+    many workers/modules use it.
     """
 
     # WARNING: keep prefix "pytest-" in stack names
@@ -567,21 +527,13 @@ async def docker_stack(  # noqa: C901, PLR0915
         ),
     ]
 
-    registry: SharedResourceRegistry | None = (
-        SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_STACK_REGISTRY_NAME)
-        if is_xdist_worker(request)
-        else None
-    )
-    token = f"{get_worker_id(request)}-{uuid4().hex}"
-    owns_stack = True if registry is None else registry.register(token)
-
     def _teardown_shared_resources() -> None:
         """removes the deployed stacks.
 
-        Callers must hold last-owner teardown rights (normal teardown, or the setup-failure
-        path below when no stack users remain); `keep_docker_up` short-circuits it. The shared
-        `external` networks are NOT removed here: the network fixtures ref-count their own
-        lifetime and the last of theirs removes them (after this ran everywhere).
+        Only runs for the last holder (normal teardown, or the setup-failure cleanup when no
+        stack users remain); `keep_docker_up` short-circuits it. The shared `external` networks
+        are NOT removed here: the network fixtures ref-count their own lifetime and the last of
+        theirs removes them (after this ran everywhere).
         """
         _fetch_and_print_services(docker_client, "[AFTER TEST]")
 
@@ -589,7 +541,7 @@ async def docker_stack(  # noqa: C901, PLR0915
             # skip bringing the stack down
             return
 
-        with _daemon_churn_access(request, tmp_path_factory):
+        with daemon_churn_access(request, tmp_path_factory):
             # clean up. Guarantees that all services are down before creating a new stack!
             # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
             # (poll until the daemon finished draining stack resources before proceeding)
@@ -643,10 +595,17 @@ async def docker_stack(  # noqa: C901, PLR0915
 
         _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
 
+    def _stacks_description() -> dict[str, dict]:
+        return {
+            key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
+            for key, stack_name, compose_file in stacks
+        }
+
     stacks_deployed: dict[str, dict] = {}
-    if owns_stack:
-        try:
-            with _daemon_churn_access(request, tmp_path_factory):
+
+    def _deploy_stack_sections() -> Awaitable[None]:
+        async def _deploy_and_wait() -> None:
+            with daemon_churn_access(request, tmp_path_factory):
                 # NOTE: if the migration service was already running prior to this call it must
                 # be force updated so that it does its job. else it remains and tests will fail
                 _force_remove_migration_service(docker_client)
@@ -655,10 +614,7 @@ async def docker_stack(  # noqa: C901, PLR0915
                 for key, stack_name, compose_file in stacks:
                     _deploy_stack(compose_file, stack_name)
 
-                    stacks_deployed[key] = {
-                        "name": stack_name,
-                        "compose": yaml.safe_load(compose_file.read_text()),
-                    }
+                    stacks_deployed[key] = {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
 
                 # All SELECTED services ready
                 # - notice that the timeout is set for all services in both stacks
@@ -686,7 +642,7 @@ async def docker_stack(  # noqa: C901, PLR0915
 
                     for future in done:
                         if exc := future.exception():
-                            raise exc  # noqa: TRY301
+                            raise exc
 
                     assert not pending, f"some service did not start correctly [{pending}]"
 
@@ -694,59 +650,30 @@ async def docker_stack(  # noqa: C901, PLR0915
                     await _check_all_services_are_running()
                 finally:
                     _fetch_and_print_services(docker_client, "[BEFORE TEST]")
-        except BaseException:
-            # the other workers would wait for a stack that will NEVER become ready: signal
-            # them to fail fast and give up ownership, so the deploy is retried elsewhere
-            if registry is not None:
-                registry.mark_failed()
-                if registry.unregister(token):
-                    # last stack user and THIS fixture's post-yield teardown will never run
-                    # (setup raised before yielding): tear down here, best-effort, so a failed
-                    # deploy does not leave a half-deployed stack behind for later sessions to
-                    # trip over (the shared networks are removed by the network fixtures)
-                    try:
-                        _teardown_shared_resources()
-                    except Exception:
-                        _logger.warning("best-effort teardown after failed deploy did not complete", exc_info=True)
-            raise
 
-        if registry is not None:
-            registry.mark_ready()
-    else:
-        # another worker owns the deploy: wait until it signals the stack is ready (or failed)
-        assert registry is not None
-        try:
-            registry.wait_ready(timeout=_DOCKER_STACK_READY_TIMEOUT)
-        except BaseException:
-            # the owner failed (or died): THIS fixture raises during setup, so pytest will
-            # never run the post-yield unregister and our token would leak in the persistent
-            # base temp dir, poisoning every later register()/wait_ready() (same session or
-            # not): drop it here, and whoever is last must tear down what the failed owner
-            # may have partially deployed
-            if registry.unregister(token):
-                try:
-                    _teardown_shared_resources()
-                except Exception:
-                    _logger.warning("best-effort teardown after failed shared deploy did not complete", exc_info=True)
-            raise
+        return _deploy_and_wait()
 
-        stacks_deployed = {
-            key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
-            for key, stack_name, compose_file in stacks
+    # `ashared_resource_session` registers this worker BEFORE deploying, marks the stack ready
+    # (or FAILED, so waiters abort fast) around the deploy, and ref-counts the teardown so only
+    # the last holder removes the stacks (best-effort cleanup runs there when a deploy fails)
+    async with ashared_resource_session(
+        request,
+        tmp_path_factory,
+        _DOCKER_STACK_REGISTRY_NAME,
+        setup_fn=_deploy_stack_sections,
+        teardown_fn=_teardown_shared_resources,
+        setup_failed_cleanup_fn=_teardown_shared_resources,
+        wait_timeout=_DOCKER_STACK_READY_TIMEOUT,
+    ) as owns_stack:
+        if not owns_stack:
+            # another worker deployed the shared stack: just describe it (its compose files are
+            # the same union ones this worker computed above)
+            stacks_deployed = _stacks_description()
+
+        yield {
+            "stacks": stacks_deployed,
+            "services": [service.name for service in docker_client.services.list()],  # type: ignore
         }
-
-    yield {
-        "stacks": stacks_deployed,
-        "services": [service.name for service in docker_client.services.list()],  # type: ignore
-    }
-
-    # TEAR DOWN ----------------------
-
-    if registry is not None and not registry.unregister(token):
-        # other workers/modules still use the shared stack
-        return
-
-    _teardown_shared_resources()
 
 
 @pytest.fixture
