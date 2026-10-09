@@ -121,17 +121,19 @@ def _postgres_migrated_template_state(
         if not registry.unregister(f"{get_worker_id(request)}-session"):
             return
 
+    dropped = False
     try:
         drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+        dropped = True
     except Exception:  # pylint: disable=broad-except
         # best-effort: the module-scoped docker stack may already have removed the
         # postgres service/volume this template lived on by the time the session ends
         _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
-    finally:
-        if registry is not None:
-            # `unregister` above published the teardown generation marker: end it so a later
-            # setup-owner (if any) is not left waiting on a cleanup that already ran
-            registry.end_teardown()
+    if registry is not None and dropped:
+        # `unregister` above published the teardown generation marker: end it so a later
+        # setup-owner (if any) is not left waiting on a cleanup that already ran. On drop
+        # failure the marker stays: a half-dropped template must not be silently rebuilt over
+        registry.end_teardown()
 
 
 def _build_or_verify_template(postgres_dsn: PostgresTestConfig, state: PgTemplateState) -> None:
@@ -170,7 +172,7 @@ def _ensure_migrated_template(
         if state.get("xdist_owns_template_build", False):
             # a previous generation may still be dropping the template it owned: never build
             # concurrently with that destructive cleanup
-            registry.wait_teardown_done_or_clear(timeout=_TEMPLATE_READY_TIMEOUT)
+            registry.wait_teardown_done(timeout=_TEMPLATE_READY_TIMEOUT)
             try:
                 _build_or_verify_template(postgres_dsn, state)
             except BaseException:
