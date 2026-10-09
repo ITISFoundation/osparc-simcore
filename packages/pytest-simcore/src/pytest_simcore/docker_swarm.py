@@ -203,6 +203,10 @@ def docker_swarm(
             return
         with log_context(logging.INFO, "leaving docker swarm", logger=_logger):
             assert docker_client.swarm.leave(force=True)
+        # only THIS worker left the swarm, so only it can validate the daemon is out: every
+        # non-last holder still sees an initialized swarm (others hold it up) and must not
+        # assert here
+        assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
     with shared_resource_session(
         request,
@@ -214,8 +218,6 @@ def docker_swarm(
         wait_timeout=timedelta(minutes=2),
     ):
         yield
-
-    assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
 @retry(
@@ -409,7 +411,10 @@ def _shared_stack_network(
         setup_fn=_setup,
         teardown_fn=_teardown,
         setup_failed_cleanup_fn=_teardown,
-        wait_timeout=2 * MINUTE,
+        # must exceed the worst-case teardown (`_remove_network_when_free` retries for up to
+        # 3 * MINUTE): the next owner's marker-wait budget covers that cleanup, and timing out
+        # on a still-live one would surface as a hard setup error
+        wait_timeout=10 * MINUTE,
     ):
         yield docker_client.networks.get(network_name)
 

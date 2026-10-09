@@ -124,7 +124,7 @@ class SharedResourceRegistry:
         Returns True if the caller owns the resource's real setup. A new owner (registry empty,
         so NO live waiters) also clears stale "ready"/"failed" markers left over by a previous,
         crashed session before handing out ownership. A "teardown" marker is NEVER cleared here:
-        it may belong to a still-running teardown (see `wait_teardown_done_or_clear`).
+        it may belong to a still-running teardown (see `wait_teardown_done`).
         """
         with (
             log_context(
@@ -269,28 +269,13 @@ class SharedResourceRegistry:
                 )
                 raise TimeoutError(msg) from err
 
-    def wait_teardown_done_or_clear(self, *, timeout: timedelta) -> None:
-        """`wait_teardown_done` with stale-marker recovery
-
-        A marker surviving the full timeout can only mean its holder died mid-teardown (a live
-        one would clear it via `end_teardown` when done): warn and clear it so the new owner
-        proceeds (its `setup_fn` must tolerate the half-torn-down state either way).
-        """
-        try:
-            self.wait_teardown_done(timeout=timeout)
-        except TimeoutError:
-            log.warning(
-                "teardown of %s did not finish within %s: assuming its holder died mid-teardown "
-                "and clearing %s -- verify no orphaned resource state is left behind",
-                self.name,
-                timeout,
-                self._teardown_marker,
-                exc_info=True,
-            )
-            self._teardown_marker.unlink(missing_ok=True)
-
     def end_teardown(self) -> None:
-        """Marks the current teardown generation as finished (see `unregister`/`wait_teardown_done`)"""
+        """Marks the current teardown generation as finished (see `unregister`/`wait_teardown_done`)
+
+        Only the teardown owner calls it, and ONLY after the cleanup completed: a teardown that
+        raised leaves the resource half-removed, and the next owner must then refuse to start
+        over it until an operator has verified the state and removed the marker.
+        """
         self._teardown_marker.unlink(missing_ok=True)
 
 
@@ -474,7 +459,7 @@ def _begin_shared_setup(
         # the registry may have just become empty because a previous generation's teardown is
         # in flight: never set the resource up while that destructive cleanup still runs
         try:
-            registry.wait_teardown_done_or_clear(timeout=wait_timeout)
+            registry.wait_teardown_done(timeout=wait_timeout)
         except BaseException:
             on_setup_failure(registry)
             raise
@@ -499,12 +484,23 @@ def _on_shared_setup_failure(
 ) -> None:
     # setup raised => pytest will NOT run the post-yield teardown: give up our token here
     # so it cannot leak in the persistent base temp dir and poison later sessions
-    if registry.unregister(token) and setup_failed_cleanup_fn is not None:
+    if not registry.unregister(token):
+        # other users are still registered: the LAST one of them to leave owns the cleanup
+        return
+    if setup_failed_cleanup_fn is not None:
         cleanup_done[0] = True  # the cleanup runs (best-effort) right here
         try:
             run_under_churn_lock(setup_failed_cleanup_fn)
         except Exception:
-            log.warning("best-effort cleanup after failed setup of %s did not complete", resource_name, exc_info=True)
+            log.warning(
+                "best-effort cleanup after failed setup of %s did not complete: the resource stays "
+                "flagged as mid-teardown, so the next session will refuse to set it up until the "
+                "teardown marker is removed manually after verifying no half-torn-down state is left",
+                resource_name,
+                exc_info=True,
+            )
+            return  # keep the marker: a half-cleaned resource must not be raced by a new setup
+    registry.end_teardown()
 
 
 @contextmanager
@@ -548,6 +544,45 @@ async def _apre_body_guard(
         yield
 
 
+def _make_final_teardown(
+    registry: SharedResourceRegistry | None,
+    token: str,
+    teardown_fn: Callable[[], None],
+    run_under_churn_lock: Callable[[Callable[[], None]], None],
+) -> Callable[[], None]:
+    def _final_teardown() -> None:
+        if registry is not None and not registry.unregister(token):
+            return  # other users remain registered: the last of them owns the teardown
+        run_under_churn_lock(teardown_fn)
+        if registry is not None:
+            # ONLY a completed teardown releases the generation marker: when `teardown_fn`
+            # raised above, the resource is half-removed and the next owner must not start
+            # over it (the raised error already surfaced to this session; the next one gets
+            # the marker-timeout message with recovery instructions)
+            registry.end_teardown()
+
+    return _final_teardown
+
+
+def _make_pre_body_cleanup(
+    registry: SharedResourceRegistry | None,
+    setup_failed_cleanup_fn: Callable[[], None] | None,
+    teardown_fn: Callable[[], None],
+    run_under_churn_lock: Callable[[Callable[[], None]], None],
+) -> Callable[[], None]:
+    def _pre_body_cleanup() -> None:
+        if registry is not None:
+            # under xdist every pre-body failure path already went through
+            # `_on_shared_setup_failure` (which unregisters and, only when that left the
+            # registry empty, ran the cleanup); cleaning up here as well would tear the
+            # resource down under still-registered waiters, whose own last-exit cleanup
+            # would then run a second time
+            return
+        run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+
+    return _pre_body_cleanup
+
+
 @contextmanager
 def shared_resource_session(
     request: pytest.FixtureRequest,
@@ -580,19 +615,8 @@ def shared_resource_session(
     registry, owns_setup = _begin_shared_setup(
         request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
     )
-
-    def _final_teardown() -> None:
-        if registry is None or registry.unregister(token):
-            try:
-                _run_under_churn_lock(teardown_fn)
-            finally:
-                if registry is not None:
-                    # also when the teardown raised: only a crashed holder may leave the
-                    # marker, an erroring one must not poison the next generation's setup
-                    registry.end_teardown()
-
-    def _pre_body_cleanup() -> None:
-        _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+    _final_teardown = _make_final_teardown(registry, token, teardown_fn, _run_under_churn_lock)
+    _pre_body_cleanup = _make_pre_body_cleanup(registry, setup_failed_cleanup_fn, teardown_fn, _run_under_churn_lock)
 
     with _pre_body_guard(reached_body, cleanup_done, _pre_body_cleanup):
         if owns_setup:
@@ -635,8 +659,10 @@ async def ashared_resource_session(
       the token would otherwise leak in the persistent base temp dir and poison later sessions)
       and, when that leaves nobody registered, `setup_failed_cleanup_fn` runs best-effort;
     - teardown is ref-counted the same way: the last holder's `teardown_fn` runs on block exit,
-      and its errors propagate. The next setup-owner waits until that teardown has finished, so
-      a fresh `setup_fn` can never overlap the previous generation's destructive cleanup.;
+      and its errors propagate. The next setup-owner waits until that teardown has finished,
+      a fresh `setup_fn` can never overlap the previous generation's destructive cleanup;
+      a teardown that RAISED keeps the resource fenced: the next owner then times out with an
+      actionable message instead of setting up over half-removed state;
 
     Yields True when THIS process performed the real setup (so it can adjust what it returns).
     `setup_fn`/`teardown_fn` must be idempotent and tolerant of a partially-set-up resource:
@@ -658,19 +684,8 @@ async def ashared_resource_session(
     registry, owns_setup = _begin_shared_setup(
         request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
     )
-
-    def _final_teardown() -> None:
-        if registry is None or registry.unregister(token):
-            try:
-                _run_under_churn_lock(teardown_fn)
-            finally:
-                if registry is not None:
-                    # also when the teardown raised: only a crashed holder may leave the
-                    # marker, an erroring one must not poison the next generation's setup
-                    registry.end_teardown()
-
-    def _pre_body_cleanup() -> None:
-        _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+    _final_teardown = _make_final_teardown(registry, token, teardown_fn, _run_under_churn_lock)
+    _pre_body_cleanup = _make_pre_body_cleanup(registry, setup_failed_cleanup_fn, teardown_fn, _run_under_churn_lock)
 
     async with _apre_body_guard(reached_body, cleanup_done, _pre_body_cleanup):
         if owns_setup:
