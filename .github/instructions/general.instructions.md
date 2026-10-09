@@ -1,13 +1,59 @@
 ---
 applyTo: '**'
 ---
-Provide project context and coding guidelines that AI should follow when generating code, answering questions, or reviewing changes.
 
-## General Guidelines
+This repository is a monorepo of Python microservices and JavaScript frontends.
+Python version requirements are defined in `.python-version`. When editing
+Python code, target only the Python version specified in `.python-version` at
+the repository root and do not use syntax or standard-library features
+unavailable in that version. Apply the scoped
+instruction file whose directory is the nearest ancestor of the file being
+edited. If a scoped file conflicts with this file, the scoped file takes
+precedence.
 
-1. **Test-Driven Development**: Write unit tests for all new functions and features.
-2. **Environment Variables**: Use [Environment Variables Guide](../../docs/env-vars.md) for configuration. Avoid hardcoding sensitive information.
-3. **Documentation**: Prefer self-explanatory code; add documentation only if explicitly requested by the developer. Be concise. Do not copy paste documentation around or put in NOTE. Use docstrings for functions and classes if not self explanatory, and provide examples when necessary.
-4. **Code Reviews**: Participate in code reviews and provide constructive feedback.
-5. **Localized User Messages**: Use `user_message()` for all user-facing strings so they can be translated. See the [translation pipeline guide](../../scripts/i18n/README.md) for extraction, translation, and catalog compilation.
-6. **Alphabetical Ordering**: Keep all unordered lists in alphabetical order unless the order carries semantic meaning (e.g. dependency ordering, priority). This applies to: pip requirement files (e.g. `_test.in`, `_base.in`), `__all__` declarations, imports groups, registry/mapping entries, and any other enumerations where sequence is otherwise arbitrary.
+## Change discipline
+
+- Keep changes focused on the requested behavior. Avoid unrelated refactors,
+  formatting churn, or reordering.
+- Do not modify generated, vendored, or lock files unless the task requires it
+  and the generation command documented in the generated file's header or in the
+  `README.md` of the owning package or service is used.
+- Do not add secrets, credentials, tokens, private keys, production endpoints,
+  or environment-specific configuration to tracked files, fixtures, logs, or
+  user-visible errors.
+
+## Configuration
+
+- Follow the [Environment Variables Guide](../../docs/env-vars.md) for
+  configuration changes. Do not introduce ad hoc configuration mechanisms.
+- When adding configuration, update validation, safe examples/defaults,
+  deployment configuration, and tests as applicable.
+
+## Tests and validation
+
+- For behavior changes, add or update automated tests at the appropriate level.
+  Use unit tests for pure logic, integration tests for database or service
+  boundaries, API/contract tests for changed HTTP or message interfaces,
+  component tests for frontend components, and end-to-end tests only for
+  user-visible flows that span services. Prefer unit tests to slow integration or end-to-end tests.
+- Prefer behavior-focused tests over tests coupled to private implementation.
+- For a bug fix, add a regression test that fails before the fix and passes
+  after it. If no such test is feasible, state the reason in the final chat
+  response to the user under a heading named 'Validation'.
+- Run the narrowest relevant validation available. Report tests or checks that
+  were not run and why.
+
+## Documentation
+
+- Prefer clear code over comments that repeat it.
+- Update docs when a change affects public APIs, configuration, developer
+  workflows, deployment, or user-visible behavior. Keep them concise and do not
+  duplicate content.
+
+## Ordering
+
+- Insert new entries into hand-maintained unordered lists in alphabetical
+  position. Do not reorder existing entries, and preserve order that carries
+  meaning (precedence, dependency, registration, initialization).
+- Where a formatter, linter, or generator owns sorting, use it instead of
+  sorting manually.
