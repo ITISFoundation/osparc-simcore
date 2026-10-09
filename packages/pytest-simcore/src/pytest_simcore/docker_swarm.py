@@ -381,20 +381,65 @@ def _get_or_create_network(
         return network, False
 
 
+_CREATED_STACK_NETWORKS_MARKER_NAME: Final[str] = "created_stack_networks.txt"
+
+
+def _record_created_network_for_shared_cleanup(root_tmp_path: Path, network_name: str) -> None:
+    """Appends `network_name` to the list of networks created during this xdist session, so the
+    last `docker_stack` user removes them once no worker has services attached anymore (see
+    `simcore_docker_network`): winning the create race does NOT grant lifetime ownership.
+    """
+    marker = root_tmp_path / _CREATED_STACK_NETWORKS_MARKER_NAME
+    with FileLock(f"{marker}.lock"), marker.open("a", encoding="utf8") as fd:
+        fd.write(f"{network_name}\n")
+
+
+def _take_created_networks_for_shared_cleanup(root_tmp_path: Path) -> list[str]:
+    """Returns (and clears) the networks recorded via `_record_created_network_for_shared_cleanup`"""
+    marker = root_tmp_path / _CREATED_STACK_NETWORKS_MARKER_NAME
+    with FileLock(f"{marker}.lock"):
+        if not marker.exists():
+            return []
+        names = [line.strip() for line in marker.read_text(encoding="utf8").splitlines() if line.strip()]
+        marker.unlink(missing_ok=True)
+    return names
+
+
+def _remove_network_when_free(docker_client: docker.client.DockerClient, network_name: str) -> None:
+    """Removes `network_name`, retrying while swarm tasks still have endpoints attached to it
+    (endpoint draining after `docker stack remove` is asynchronous on the daemon)
+    """
+    with suppress(docker.errors.NotFound):
+        network = docker_client.networks.get(network_name)
+        for attempt in Retrying(
+            stop=stop_after_delay(3 * MINUTE),
+            wait=wait_fixed(2),
+            retry=retry_if_exception_type(APIError),
+            before_sleep=before_sleep_log(_logger, logging.INFO),
+            reraise=True,
+        ):
+            with attempt:
+                network.remove()
+
+
 @pytest.fixture(scope="module")
 def simcore_docker_network(
     docker_swarm: None,
     docker_client: docker.client.DockerClient,
     simcore_docker_compose: dict,
     keep_docker_up,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
     network_name = simcore_docker_compose["networks"]["default"]["name"]
     network, created_new = _get_or_create_network(docker_client, network_name)
+    if created_new and not keep_docker_up and is_xdist_worker(request):
+        _record_created_network_for_shared_cleanup(get_xdist_root_tmp_path(tmp_path_factory), network_name)
 
     yield network
 
-    if created_new and not keep_docker_up:
+    if created_new and not keep_docker_up and not is_xdist_worker(request):
         with suppress(docker.errors.NotFound):
             network.remove()
 
@@ -405,13 +450,18 @@ def interactive_services_subnet_docker_network(
     docker_client: docker.client.DockerClient,
     simcore_docker_compose: dict,
     keep_docker_up: bool,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
     network_name = simcore_docker_compose["networks"]["interactive_services_subnet"]["name"]
     network, created_new = _get_or_create_network(docker_client, network_name)
+    if created_new and not keep_docker_up and is_xdist_worker(request):
+        _record_created_network_for_shared_cleanup(get_xdist_root_tmp_path(tmp_path_factory), network_name)
+
     yield network
 
-    if created_new and not keep_docker_up:
+    if created_new and not keep_docker_up and not is_xdist_worker(request):
         with suppress(docker.errors.NotFound):
             network.remove()
 
@@ -664,6 +714,25 @@ async def docker_stack(  # noqa: C901, PLR0912, PLR0915
 
                         msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
                         raise _ResourceStillNotRemovedError(msg)
+
+    # the shared networks are declared `external` in the composes, so `docker stack remove` does
+    # NOT touch them: the network fixtures deliberately hand their removal to THIS last-owner
+    # teardown (only the worker removing the last stack reference gets here), since the worker
+    # that created a network may finish its modules while others still run services on it.
+    # NOTE: xdist only — a non-xdist run removes them in its own network fixture teardowns and
+    # must NOT read the marker (it could pick up leftovers of a crashed xdist session)
+    if registry is not None:
+        for network_name in _take_created_networks_for_shared_cleanup(get_xdist_root_tmp_path(tmp_path_factory)):
+            try:
+                _remove_network_when_free(docker_client, network_name)
+            except APIError:
+                _logger.warning(
+                    "could not remove shared network '%s' after the last stack teardown: if no other "
+                    "test session is running, remove it manually with 'docker network rm %s'",
+                    network_name,
+                    network_name,
+                    exc_info=True,
+                )
 
     _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
 
