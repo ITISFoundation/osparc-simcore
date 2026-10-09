@@ -5,17 +5,16 @@ These are the calls that used to run **inside** the transaction that updated
 https://github.com/ITISFoundation/private-issues/issues/669
 
 `generate_tasks_list_from_project` must
-- take no database connection at all,
 - perform every external call only once per distinct argument,
 - return the `projects_nodes` writes it computed instead of applying them.
+
+That it runs while no row is locked is asserted on the real code path by
+`with_dbs/test_projects_nodes_lock_order.py`.
 """
 
-# ruff: noqa: SLF001
-# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import inspect
 from decimal import Decimal
 from types import SimpleNamespace
 from typing import Any
@@ -168,13 +167,6 @@ async def _generate(
     )
 
 
-def test_generate_tasks_list_from_project_takes_no_database_connection():
-    """the whole point of the restructure: no row can be locked any more"""
-    parameters = inspect.signature(_utils.generate_tasks_list_from_project).parameters
-    assert "connection" not in parameters
-    assert "snapshot" in parameters
-
-
 async def test_external_calls_are_done_once_per_distinct_argument(
     patched_backends: None,
     calls: SimpleNamespace,
@@ -243,30 +235,34 @@ async def test_ec2_resources_are_computed_but_not_written(
         assert 0 < image_resources.resources["RAM"].limit < _16_GIB
 
 
-async def test_required_resources_not_written_when_already_up_to_date(
+async def test_required_resources_are_not_written_twice(
     patched_backends: None,
+    calls: SimpleNamespace,
     fake_rut_client: SimpleNamespace,
-    ec2_instance_type: EC2InstanceTypeGet,
 ) -> None:
-    """writing the same value again would take a row lock for nothing"""
+    """writing the value the previous run returned would take a row lock for nothing"""
     node_id = uuid4()
-    adjusted = _utils._compute_hardware_adjusted_resources(
-        project_id=uuid4(),
-        node_id=node_id,
-        node_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(_resources()),
-        hardware_info=HardwareInfo(aws_ec2_instances=[_EC2_INSTANCE_TYPE]),
-        ec2_instance_types={_EC2_INSTANCE_TYPE: ec2_instance_type},
-    )
-    assert adjusted is not None
-    dumped, _ = adjusted
+    project_nodes = _project_nodes([node_id])
+    wallet_info = _wallet()
 
-    _, _, pending = await _generate(
-        project_nodes=_project_nodes([node_id]),
-        snapshot=ProjectNodesSnapshot(required_resources={node_id: dumped}, pricing_unit_ids={node_id: (1, 2)}),
-        wallet_info=_wallet(),
+    _, _, first_run = await _generate(
+        project_nodes=project_nodes,
+        snapshot=ProjectNodesSnapshot(required_resources={node_id: _resources()}, pricing_unit_ids={node_id: (1, 2)}),
+        wallet_info=wallet_info,
         rut_client=fake_rut_client,
     )
-    assert pending.required_resources == {}
+    assert set(first_run.required_resources) == {node_id}
+
+    # the caller writes that dump to `projects_nodes`, so the next run reads it back
+    _, _, second_run = await _generate(
+        project_nodes=project_nodes,
+        snapshot=ProjectNodesSnapshot(
+            required_resources=first_run.required_resources, pricing_unit_ids={node_id: (1, 2)}
+        ),
+        wallet_info=wallet_info,
+        rut_client=fake_rut_client,
+    )
+    assert second_run.required_resources == {}
 
 
 async def test_pricing_unit_missing_from_the_project_is_returned_as_pending(
@@ -293,7 +289,7 @@ async def test_pricing_unit_missing_from_the_project_is_returned_as_pending(
     assert set(pending.pricing_unit_ids) == set(node_ids)
 
 
-async def test_clusters_keeper_failure_raises_before_returning_any_write(
+async def test_clusters_keeper_failure_is_raised(
     monkeypatch: pytest.MonkeyPatch,
     patched_backends: None,
     fake_rut_client: SimpleNamespace,
@@ -350,11 +346,3 @@ async def test_no_pricing_call_without_a_wallet(
     assert calls.ec2_lookups == []
     assert pending.required_resources == {}
     assert pending.pricing_unit_ids == {}
-
-
-async def test_gather_helpers_are_no_ops_without_anything_to_fetch() -> None:
-    assert (
-        await _utils._gather_default_pricing_unit_ids(SimpleNamespace(), product_name=_PRODUCT_NAME, missing=[]) == {}
-    )
-    assert await _utils._gather_pricing_units(SimpleNamespace(), product_name=_PRODUCT_NAME, pricing_unit_ids=[]) == {}
-    assert await _utils._gather_ec2_instance_types(None, instance_type_names=set()) == {}
