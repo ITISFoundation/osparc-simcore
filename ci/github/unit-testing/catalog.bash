@@ -23,8 +23,8 @@ test() {
   # ONE docker stack and each xdist worker gets its own database clone/rabbit vhost/S3 bucket
   # (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py). Tests that need
   # exclusive access to the shared docker daemon take a cross-worker read/write lock instead
-  # (@pytest.mark.docker_exclusive, see the docker_daemon_access fixture in
-  # packages/pytest-simcore/src/pytest_simcore/docker_swarm.py).
+  # (@pytest.mark.docker_exclusive, see the pytest_simcore.xdist_docker_daemon plugin in
+  # packages/pytest-simcore/src/pytest_simcore/xdist_docker_daemon.py).
   make test-ci-unit pytest-parameters="--numprocesses=auto"
   popd
 }

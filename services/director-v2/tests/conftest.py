@@ -61,6 +61,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.socketio",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 logger = logging.getLogger(__name__)
