@@ -3,12 +3,15 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import threading
 from datetime import timedelta
+from queue import Queue
 from types import SimpleNamespace
 
 import pytest
 from pytest_simcore.helpers.xdist import (
     ReaderWriterLock,
+    SharedResourceRegistry,
     ashared_resource_session,
     daemon_churn_access,
     shared_resource_session,
@@ -158,6 +161,75 @@ def test_session_waits_with_registry_under_xdist(monkeypatch: pytest.MonkeyPatch
     assert calls == []
     assert len(created) == 1
     assert len(created[0].unregistered) == 1  # token given back exactly once
+
+
+def _worker_request(workerid: str):
+    return SimpleNamespace(config=SimpleNamespace(workerinput={"workerid": workerid}))
+
+
+def test_next_generation_setup_waits_while_previous_teardown_in_progress(tmp_path_factory):
+    """the last holder's teardown must stay visible (registry generation marker) so a fresh
+    setup-owner cannot run its `setup_fn` concurrently with the destructive cleanup it replaced
+    """
+    calls: list[str] = []
+    teardown_started = threading.Event()
+    release_teardown = threading.Event()
+    errors: Queue[BaseException] = Queue()
+
+    def _blocked_teardown() -> None:
+        calls.append("teardown:started")
+        teardown_started.set()
+        assert release_teardown.wait(timeout=10), "test must release the teardown"
+        calls.append("teardown:done")
+
+    def _session(workerid: str, setup_marker: str) -> None:
+        try:
+            with shared_resource_session(
+                _worker_request(workerid),
+                tmp_path_factory,
+                "test_resource",
+                setup_fn=lambda: calls.append(setup_marker),
+                teardown_fn=_blocked_teardown if workerid == "gw0" else lambda: calls.append(f"teardown:{workerid}"),
+                wait_timeout=timedelta(seconds=10),
+            ):
+                pass
+        except BaseException as exc:  # pylint: disable=broad-exception-caught
+            errors.put(exc)  # the thread must fail the test, not raise in a foreign stack
+
+    first_generation = threading.Thread(target=_session, args=("gw0", "setup1"))
+    first_generation.start()
+    assert teardown_started.wait(timeout=10), "first session never started tearing down"
+
+    # while that generation's teardown is still in flight, a fresh session must block
+    second_generation = threading.Thread(target=_session, args=("gw1", "setup2"))
+    second_generation.start()
+    second_generation.join(timeout=1)
+    assert second_generation.is_alive()  # still blocked: NOT started over the in-flight teardown
+    assert "setup2" not in calls
+
+    release_teardown.set()
+    first_generation.join(timeout=10)
+    second_generation.join(timeout=10)
+    assert errors.empty(), errors.get_nowait()
+    assert calls == ["setup1", "teardown:started", "teardown:done", "setup2", "teardown:gw1"]
+
+
+def test_stale_teardown_marker_cleared_after_full_timeout(tmp_path_factory):
+    """a marker left by a holder killed mid-teardown must not block later owners forever:
+    `wait_teardown_done_or_clear` waits a full timeout, then declares the holder dead
+    """
+    root = tmp_path_factory.mktemp("stale_teardown")
+    registry = SharedResourceRegistry(root, "test_resource")
+    registry.register("dead-worker")
+    assert registry.unregister("dead-worker")  # publishes the teardown marker
+    with pytest.raises(TimeoutError):  # in-flight: a plain waiter cannot get through
+        registry.wait_teardown_done(timeout=timedelta(milliseconds=1))
+    registry2 = SharedResourceRegistry(root, "test_resource")
+    assert registry2.register("new-owner")  # registering does NOT clear the (possibly live) marker
+    with pytest.raises(TimeoutError):
+        registry2.wait_teardown_done(timeout=timedelta(milliseconds=1))
+    registry2.wait_teardown_done_or_clear(timeout=timedelta(milliseconds=1))  # declares it dead
+    registry2.wait_teardown_done(timeout=timedelta(seconds=1))  # ...so this returns at once
 
 
 @pytest.mark.asyncio
