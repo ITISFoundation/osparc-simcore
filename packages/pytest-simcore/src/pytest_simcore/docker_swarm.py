@@ -39,7 +39,6 @@ from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
 from .helpers.xdist import (
-    ReaderWriterLock,
     SharedResourceRegistry,
     get_max_xdist_workers,
     get_worker_id,
@@ -52,14 +51,6 @@ _logger: logging.Logger = logging.getLogger(__name__)
 _DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
 _DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
 _DOCKER_STACK_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
-
-
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line(
-        "markers",
-        "docker_exclusive: this test needs exclusive access to the shared docker daemon "
-        "(no other test using the docker_daemon_access fixture running concurrently in any xdist worker)",
-    )
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -172,35 +163,6 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()
     yield client
     client.close()
-
-
-@pytest.fixture
-def docker_daemon_access(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
-    """Coordinates access to the docker daemon shared by every xdist worker: tests take a
-    "read" lock and run concurrently with each other; tests marked
-    `@pytest.mark.docker_exclusive` take a "write" lock and run with NO other test holding
-    this fixture concurrently in any worker - for tests that list/inspect ALL matching swarm
-    services/networks and are sensitive to interference from unrelated, concurrent churn.
-
-    Request it (directly or through an autouse fixture) in suites that share ONE docker
-    stack across xdist workers. No-op when not running under xdist (single process cannot
-    race itself): this also keeps non-xdist runs from attaching to - or being blocked by -
-    lock marker files a crashed xdist session may have left behind in the shared base temp dir.
-    """
-    if not is_xdist_worker(request):
-        yield
-        return
-
-    worker_id = get_worker_id(request)
-    lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), "docker_daemon")
-    token = f"{worker_id}-{uuid4().hex}"
-    is_exclusive = request.node.get_closest_marker("docker_exclusive") is not None
-    if is_exclusive:
-        with lock.write_lock(token=token):
-            yield
-    else:
-        with lock.read_lock(token):
-            yield
 
 
 @retry(

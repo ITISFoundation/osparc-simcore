@@ -44,13 +44,6 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-@pytest.fixture(autouse=True)
-def _docker_daemon_access(docker_daemon_access: None) -> None:
-    """Every test takes a read lock (write lock when marked
-    `@pytest.mark.docker_exclusive`) on the docker daemon shared by all xdist workers.
-    """
-
-
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
