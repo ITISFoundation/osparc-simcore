@@ -687,7 +687,20 @@ async def docker_stack(  # noqa: C901, PLR0915
     else:
         # another worker owns the deploy: wait until it signals the stack is ready (or failed)
         assert registry is not None
-        registry.wait_ready(timeout=_DOCKER_STACK_READY_TIMEOUT)
+        try:
+            registry.wait_ready(timeout=_DOCKER_STACK_READY_TIMEOUT)
+        except BaseException:
+            # the owner failed (or died): THIS fixture raises during setup, so pytest will
+            # never run the post-yield unregister and our token would leak in the persistent
+            # base temp dir, poisoning every later register()/wait_ready() (same session or
+            # not): drop it here, and whoever is last must tear down what the failed owner
+            # may have partially deployed
+            if registry.unregister(token):
+                try:
+                    _teardown_shared_resources()
+                except Exception:
+                    _logger.warning("best-effort teardown after failed shared deploy did not complete", exc_info=True)
+            raise
 
         stacks_deployed = {
             key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
