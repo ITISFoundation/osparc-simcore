@@ -22,7 +22,7 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 _SERVER_STARTUP_TIMEOUT_S: Final[float] = 30
 
 
-def _create_storage_app(username: str | None, password: str | None) -> FastAPI:
+def _create_mock_storage_app(username: str | None, password: str | None) -> FastAPI:
     app = FastAPI()
     security = HTTPBasic()
 
@@ -57,7 +57,7 @@ def _create_storage_app(username: str | None, password: str | None) -> FastAPI:
 
 
 def _run_server(host: str, port: int, username: str | None, password: str | None) -> None:
-    uvicorn.run(_create_storage_app(username, password), host=host, port=port)
+    uvicorn.run(_create_mock_storage_app(username, password), host=host, port=port)
 
 
 @pytest.fixture
