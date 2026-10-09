@@ -181,6 +181,35 @@ class _SseUsageAccumulator:
         self.output_chars += text_chars
 
 
+async def _settle_reservation(
+    ledger: ChatboxUsageLedger,
+    reservation: Reservation,
+    *,
+    failed: bool,
+    completed: bool,
+    usage: UsageRecord | None,
+    input_chars: int,
+    output_chars: int,
+) -> None:
+    if failed:
+        await ledger.release(reservation, reason="stream_error")
+    elif not completed:
+        # client disconnected before the completion finished: the tokens streamed so far
+        # were really burned upstream, so bill an estimate instead of refunding the whole
+        # Reservation (a refund would let a client abort repeatedly to consume for free)
+        await ledger.reconcile(
+            reservation,
+            UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=output_chars),
+        )
+    else:
+        # the Chatbox is expected to always report usage; if it did not, estimate from text
+        # length and never fail the request over accounting
+        await ledger.reconcile(
+            reservation,
+            usage or UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=output_chars),
+        )
+
+
 def _make_metered_sse_relay(
     *,
     response: httpx.Response,
@@ -218,26 +247,15 @@ def _make_metered_sse_relay(
             # against the Window Quota until the whole Usage Window expires
             with anyio.CancelScope(shield=True):
                 await response.aclose()
-                if failed:
-                    await ledger.release(reservation, reason="stream_error")
-                elif not completed:
-                    # client disconnected before the completion finished: the tokens
-                    # streamed so far were really burned upstream, so bill an estimate
-                    # instead of refunding the whole Reservation (a refund would let a
-                    # client abort repeatedly to consume for free)
-                    await ledger.reconcile(
-                        reservation,
-                        UsageRecord.estimated_from_text(input_chars=input_chars, output_chars=accumulator.output_chars),
-                    )
-                else:
-                    usage = accumulator.usage
-                    if usage is None:
-                        # the Chatbox is expected to always report usage; if it did not,
-                        # estimate from text length and never fail the request over accounting
-                        usage = UsageRecord.estimated_from_text(
-                            input_chars=input_chars, output_chars=accumulator.output_chars
-                        )
-                    await ledger.reconcile(reservation, usage)
+                await _settle_reservation(
+                    ledger,
+                    reservation,
+                    failed=failed,
+                    completed=completed,
+                    usage=accumulator.usage,
+                    input_chars=input_chars,
+                    output_chars=accumulator.output_chars,
+                )
 
     return _relay()
 

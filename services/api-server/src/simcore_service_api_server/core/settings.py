@@ -85,7 +85,7 @@ class ChatbotSettings(BaseCustomSettings):
 
 
 class ChatboxUsageLimitsSettings(BaseCustomSettings):
-    """Per-user Chatbox usage limits (Rate Limit, Window Quota, Global Budget Guard)."""
+    """Chatbox usage limits (Rate Limit, Window Quota, Global Budget Guard)."""
 
     REDIS: Annotated[
         RedisSettings,
@@ -105,7 +105,7 @@ class ChatboxUsageLimitsSettings(BaseCustomSettings):
     WINDOW_SPEND_USD: Annotated[
         float,
         Field(description="Window Quota: max Spend (USD) per user x product per Usage Window", gt=0),
-    ] = 0.20
+    ] = 5
 
     WINDOW_LENGTH: Annotated[
         timedelta,
@@ -115,7 +115,7 @@ class ChatboxUsageLimitsSettings(BaseCustomSettings):
     PROVIDER_BUDGET_USD: Annotated[
         PositiveFloat,
         Field(description="Global Budget Guard: the one-time Provider Budget (USD). "),
-    ]
+    ] = 50
 
     HARD_STOP_FRACTION: Annotated[
         float,
@@ -125,7 +125,7 @@ class ChatboxUsageLimitsSettings(BaseCustomSettings):
             gt=0,
             le=1,
         ),
-    ] = 0.9
+    ] = 1
 
     BLENDED_RATE_USD_PER_MTOK: Annotated[
         float,

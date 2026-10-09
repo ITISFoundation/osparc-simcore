@@ -63,8 +63,8 @@ _LEDGER_STREAM_KEY: Final[str] = f"{_KEY_PREFIX}:usage:ledger"
 _RATE_KEY_PREFIX: Final[str] = f"{_KEY_PREFIX}:rate"
 
 _RATE_KEY_TTL_SECONDS: Final[NonNegativeInt] = 61
-_LEDGER_STREAM_MAXLEN: Final[NonNegativeInt] = 100_000
-_CAS_MAX_ATTEMPTS: Final[NonNegativeInt] = 5
+_LEDGER_STREAM_MAXLEN: Final[NonNegativeInt] = 5000
+_CAS_MAX_ATTEMPTS: Final[NonNegativeInt] = 5  # Compare and Swap
 _TTL_KEY_MISSING: Final[int] = -2  # Redis TTL reply when the key does not exist
 _FLOAT_EPS: Final[float] = 1e-9
 _CHARS_PER_TOKEN: Final[NonNegativeInt] = 4
@@ -86,6 +86,10 @@ _REDIS_UNAVAILABLE_ERRORS: Final[tuple[type[Exception], ...]] = (
     redis.exceptions.TimeoutError,
     OSError,
 )
+
+# errors a settlement (reconcile/release) retries on: contention (WatchError) or an
+# unreachable ledger — both end in a logged ledger failure rather than a rejected request
+_SETTLEMENT_ERRORS: Final[tuple[type[Exception], ...]] = (WatchError, *_REDIS_UNAVAILABLE_ERRORS)
 
 # Redis hash field names (the wire contract, written with HINCRBYFLOAT/HINCR)
 _FIELD_SPEND: Final[str] = "spend"
@@ -214,9 +218,10 @@ class ChatboxUsageLedger:
         return self._client.redis
 
     def _window_ttl_or_full(self, window_ttl: int) -> int:
-        # a window hash without a TTL (-1) can only be a write that raced its expiry:
-        # re-arm the full Usage Window; a live window keeps its remaining TTL (the
-        # "available again at" answer must not drift)
+        # Keep the existing window deadline when Redis reports a positive remaining TTL;
+        # TTL -1 means the key exists without expiry, and -2 means it is missing. In
+        # either case, apply a fresh full Usage Window so a recreated key cannot persist
+        # forever. In short: ttl_to_set = window_ttl if window_ttl > 0 else window_length.
         return window_ttl if window_ttl > 0 else int(self._settings.WINDOW_LENGTH.total_seconds())
 
     # -- Rate Limit (per API key, fail-open) ---------------------------------------
@@ -240,7 +245,7 @@ class ChatboxUsageLedger:
         except _REDIS_UNAVAILABLE_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="rate_limit").inc()
             # this log is the only record: fail-open returns without raising
-            _logger.warning(
+            _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Chatbox rate limit could not be checked, request allowed (fail-open)",
                     error=exc,
@@ -376,9 +381,9 @@ class ChatboxUsageLedger:
                         pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_SPEND, spend)
                         pipe.hincrby(_GLOBAL_KEY, _FIELD_REQUESTS, 1)
                         await pipe.execute()
-        except (WatchError, *_REDIS_UNAVAILABLE_ERRORS) as exc:
+        except _SETTLEMENT_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="reconcile").inc()
-            _logger.warning(
+            _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Chatbox usage ledger unreachable during reconciliation: Spend not recorded",
                     error=exc,
@@ -417,9 +422,9 @@ class ChatboxUsageLedger:
                             pipe.expire(window_key, self._window_ttl_or_full(window_ttl))
                         pipe.hincrbyfloat(_GLOBAL_KEY, _FIELD_RESERVATIONS, -reservation.amount_usd)
                         await pipe.execute()
-        except (WatchError, *_REDIS_UNAVAILABLE_ERRORS) as exc:
+        except _SETTLEMENT_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="release").inc()
-            _logger.warning(
+            _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Chatbox usage ledger unreachable during reservation release: Refund lost",
                     error=exc,
@@ -455,7 +460,7 @@ class ChatboxUsageLedger:
             if budget > 0:
                 self._metrics.provider_budget_fraction.set(_usd(global_spend) / budget)
         except _REDIS_UNAVAILABLE_ERRORS as exc:
-            _logger.warning(
+            _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Could not record the Chatbox usage ledger entry",
                     error=exc,
