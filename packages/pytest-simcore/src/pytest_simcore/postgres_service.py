@@ -113,6 +113,7 @@ def _postgres_migrated_template_state(
     if dsn is None:
         return
 
+    registry = None
     if is_xdist_worker(request) and state.get("xdist_coordination_started", False):
         # under xdist: only the worker that empties the shared registry drops the template,
         # since other workers may still be building/reading it
@@ -126,6 +127,11 @@ def _postgres_migrated_template_state(
         # best-effort: the module-scoped docker stack may already have removed the
         # postgres service/volume this template lived on by the time the session ends
         _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
+    finally:
+        if registry is not None:
+            # `unregister` above published the teardown generation marker: end it so a later
+            # setup-owner (if any) is not left waiting on a cleanup that already ran
+            registry.end_teardown()
 
 
 def _build_or_verify_template(postgres_dsn: PostgresTestConfig, state: PgTemplateState) -> None:
@@ -162,6 +168,9 @@ def _ensure_migrated_template(
         state["xdist_coordination_started"] = True
 
         if state.get("xdist_owns_template_build", False):
+            # a previous generation may still be dropping the template it owned: never build
+            # concurrently with that destructive cleanup
+            registry.wait_teardown_done_or_clear(timeout=_TEMPLATE_READY_TIMEOUT)
             try:
                 _build_or_verify_template(postgres_dsn, state)
             except BaseException:
@@ -169,6 +178,8 @@ def _ensure_migrated_template(
                 # NEVER be built: signal them to fail fast and give up ownership
                 registry.mark_failed()
                 registry.unregister(token)
+                # the setup never got to a teardown, so no teardown generation is in flight
+                registry.end_teardown()
                 state["xdist_owns_template_build"] = False
                 state["xdist_coordination_started"] = False
                 raise
