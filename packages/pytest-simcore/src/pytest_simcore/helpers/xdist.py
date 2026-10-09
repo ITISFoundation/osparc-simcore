@@ -11,11 +11,12 @@ registry, so exactly one worker performs the real setup/teardown while the other
 
 import logging
 import os
-from collections.abc import Generator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator, Awaitable, Callable, Generator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
+from uuid import uuid4
 
 import pytest
 from filelock import FileLock
@@ -327,3 +328,204 @@ class ReaderWriterLock:
             with FileLock(str(self._control_lock_path)):
                 self._writer_marker.unlink(missing_ok=True)
             log.info("writer %s left %s", token or "writer", self.name)
+
+
+@contextmanager
+def daemon_churn_access(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Holds the shared-daemon READ lock (`DOCKER_DAEMON_LOCK_NAME`) around a section that
+    CHURNS daemon-wide state (swarm init/leave, network and stack create/remove), so such a
+    section can never overlap a `@pytest.mark.docker_exclusive` test in any worker (see the
+    `pytest_simcore.xdist_docker_daemon` plugin). Readers stay mutually concurrent (concurrent
+    deploys/tests do not serialize); only exclusive tests are excluded, for the duration of the
+    section rather than of the whole fixture lifetime.
+
+    A fresh token per acquisition makes nesting safe: `ReaderWriterLock` names reader files
+    after the token, so a re-entrant acquisition cannot unlink the outer one's file.
+    """
+    if not is_xdist_worker(request):
+        yield
+        return
+    lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), DOCKER_DAEMON_LOCK_NAME)
+    with lock.read_lock(token=f"churn-{get_worker_id(request)}-{uuid4().hex}"):
+        yield
+
+
+def _begin_shared_setup(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+    resource_name: str,
+    token: str,
+    on_setup_failure: Callable[[SharedResourceRegistry], None],
+    wait_timeout: timedelta,
+) -> tuple[SharedResourceRegistry | None, bool]:
+    """Drives the registry handshake of `shared_resource_session`/`ashared_resource_session`.
+
+    Returns (registry, owns_setup); when the handshake must raise (owner marking or waiter
+    abort), `on_setup_failure` has already been invoked with the registry before re-raising.
+    """
+    if not is_xdist_worker(request):
+        return None, True
+
+    registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), resource_name)
+    if registry.register(token):
+        return registry, True
+
+    # another process owns the setup: wait until it signals readiness (or failure)
+    try:
+        registry.wait_ready(timeout=wait_timeout)
+    except BaseException:
+        on_setup_failure(registry)
+        raise
+    return registry, False
+
+
+def _on_shared_setup_failure(
+    registry: SharedResourceRegistry,
+    token: str,
+    resource_name: str,
+    setup_failed_cleanup_fn: Callable[[], None] | None,
+    run_under_churn_lock: Callable[[Callable[[], None]], None],
+) -> None:
+    # setup raised => pytest will NOT run the post-yield teardown: give up our token here
+    # so it cannot leak in the persistent base temp dir and poison later sessions
+    if registry.unregister(token) and setup_failed_cleanup_fn is not None:
+        try:
+            run_under_churn_lock(setup_failed_cleanup_fn)
+        except Exception:
+            log.warning("best-effort cleanup after failed setup of %s did not complete", resource_name, exc_info=True)
+
+
+@contextmanager
+def shared_resource_session(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+    resource_name: str,
+    setup_fn: Callable[[], None],
+    teardown_fn: Callable[[], None],
+    *,
+    setup_failed_cleanup_fn: Callable[[], None] | None = None,
+    wait_timeout: timedelta = timedelta(minutes=8),
+) -> Iterator[bool]:
+    """Implements the full shared-resource fixture lifecycle so several xdist workers (or
+    several modules/workers in one run) use ONE physical resource: exactly the first process to
+    register runs `setup_fn`, and only the last one to leave the block runs `teardown_fn`.
+    See `ashared_resource_session` (whose rules this is) for the full protocol.
+    """
+    token = f"{get_worker_id(request)}-{uuid4().hex}"
+
+    def _run_under_churn_lock(fn: Callable[[], None]) -> None:
+        with daemon_churn_access(request, tmp_path_factory):
+            fn()
+
+    def _on_failure(registry: SharedResourceRegistry) -> None:
+        _on_shared_setup_failure(registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock)
+
+    registry, owns_setup = _begin_shared_setup(
+        request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
+    )
+
+    reached_body = False
+    setup_failed_cleanup_done = False
+    try:
+        if owns_setup:
+            try:
+                _run_under_churn_lock(setup_fn)
+            except BaseException:
+                if registry is not None:
+                    registry.mark_failed()
+                    setup_failed_cleanup_done = True  # _on_failure runs the cleanup itself
+                    _on_failure(registry)
+                raise
+            if registry is not None:
+                registry.mark_ready()
+
+        try:
+            reached_body = True
+            yield owns_setup
+        finally:
+            if registry is None or registry.unregister(token):
+                _run_under_churn_lock(teardown_fn)
+    except BaseException:
+        # A raise BEFORE the first yield never reaches the generator's `finally` (that only
+        # runs once the body was entered), so a failed NON-xdist setup must clean up right
+        # here: without it, a half-set-up resource would leak without any teardown
+        if not reached_body and not setup_failed_cleanup_done:
+            _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+        raise
+
+
+@asynccontextmanager
+async def ashared_resource_session(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+    resource_name: str,
+    setup_fn: Callable[[], Awaitable[None] | None],
+    teardown_fn: Callable[[], None],
+    *,
+    setup_failed_cleanup_fn: Callable[[], None] | None = None,
+    wait_timeout: timedelta = timedelta(minutes=8),
+) -> AsyncIterator[bool]:
+    """Implements the full shared-resource fixture lifecycle so several xdist workers (or
+    several modules/workers in one run) use ONE physical resource: exactly the first process to
+    register runs `setup_fn` (which may be async), and only the last one to leave the block runs
+    `teardown_fn`.
+
+    Outside xdist it degenerates to plain setup -> yield -> teardown. Under xdist it drives a
+    `SharedResourceRegistry` (registered with a worker-unique token):
+    - the first registrant runs `setup_fn` under `daemon_churn_access` and marks the resource
+      ready; on failure it marks it FAILED (waiters abort fast instead of timing out) and
+      re-raises;
+    - latecomers wait for readiness and skip the setup;
+    - whatever happens DURING setup (owner failure or waiter timeout/failure), the token is
+      unregistered right away (pytest never runs post-yield teardown after a setup raise, so
+      the token would otherwise leak in the persistent base temp dir and poison later sessions)
+      and, when that leaves nobody registered, `setup_failed_cleanup_fn` runs best-effort;
+    - teardown is ref-counted the same way: the last holder's `teardown_fn` runs on block exit,
+      and its errors propagate.
+
+    Yields True when THIS process performed the real setup (so it can adjust what it returns).
+    `setup_fn`/`teardown_fn` must be idempotent and tolerant of a partially-set-up resource:
+    they also run from the failure paths.
+    """
+    token = f"{get_worker_id(request)}-{uuid4().hex}"
+
+    def _run_under_churn_lock(fn: Callable[[], None]) -> None:
+        with daemon_churn_access(request, tmp_path_factory):
+            fn()
+
+    def _on_failure(registry: SharedResourceRegistry) -> None:
+        _on_shared_setup_failure(registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock)
+
+    registry, owns_setup = _begin_shared_setup(
+        request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
+    )
+
+    reached_body = False
+    setup_failed_cleanup_done = False
+    try:
+        if owns_setup:
+            try:
+                with daemon_churn_access(request, tmp_path_factory):
+                    await setup_fn()
+            except BaseException:
+                if registry is not None:
+                    registry.mark_failed()
+                    setup_failed_cleanup_done = True  # _on_failure runs the cleanup itself
+                    _on_failure(registry)
+                raise
+            if registry is not None:
+                registry.mark_ready()
+
+        try:
+            reached_body = True
+            yield owns_setup
+        finally:
+            if registry is None or registry.unregister(token):
+                _run_under_churn_lock(teardown_fn)
+    except BaseException:
+        # A raise BEFORE the first yield never reaches the generator's `finally` (that only
+        # runs once the body was entered), so a failed NON-xdist setup must clean up right
+        # here: without it, a half-deployed stack would leak without any teardown
+        if not reached_body and not setup_failed_cleanup_done:
+            _run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
+        raise
