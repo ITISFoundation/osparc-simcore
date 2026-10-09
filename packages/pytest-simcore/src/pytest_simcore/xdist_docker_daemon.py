@@ -9,11 +9,13 @@ concurrent churn from unrelated modules). Suites that do not load this plugin ar
 
 import logging
 from collections.abc import Iterator
+from datetime import timedelta
 from uuid import uuid4
 
 import pytest
 
 from .helpers.xdist import (
+    DOCKER_DAEMON_LOCK_NAME,
     ReaderWriterLock,
     get_worker_id,
     get_xdist_root_tmp_path,
@@ -23,6 +25,11 @@ from .helpers.xdist import (
 _logger: logging.Logger = logging.getLogger(__name__)
 
 _logged_activation: set[str] = set()  # worker ids already announced (per process, cheap guard)
+
+# an exclusive writer must outwait any in-progress churn section holding the read lock
+# (shared-stack deploy waits up to ~8 minutes, stack teardown drain up to ~6): pick a
+# budget above the worst case so exclusive tests wait rather than spuriously time out
+_EXCLUSIVE_LOCK_TIMEOUT: timedelta = timedelta(minutes=15)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -35,7 +42,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.fixture(scope="session")
 def _xdist_docker_daemon_lock(tmp_path_factory: pytest.TempPathFactory) -> ReaderWriterLock:
-    return ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), "docker_daemon")
+    return ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), DOCKER_DAEMON_LOCK_NAME)
 
 
 @pytest.fixture
@@ -66,7 +73,7 @@ def docker_daemon_access(
 
     token = f"{worker_id}-{uuid4().hex}"
     if request.node.get_closest_marker("docker_exclusive") is not None:
-        with _xdist_docker_daemon_lock.write_lock(token=token):
+        with _xdist_docker_daemon_lock.write_lock(token=token, timeout=_EXCLUSIVE_LOCK_TIMEOUT):
             yield
     else:
         with _xdist_docker_daemon_lock.read_lock(token):
