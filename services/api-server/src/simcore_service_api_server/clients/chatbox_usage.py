@@ -245,7 +245,7 @@ class ChatboxUsageLedger:
         except _REDIS_UNAVAILABLE_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="rate_limit").inc()
             # this log is the only record: fail-open returns without raising
-            _logger.exception(
+            _logger.error(  # noqa: TRY400
                 **create_troubleshooting_log_kwargs(
                     "Chatbox rate limit could not be checked, request allowed (fail-open)",
                     error=exc,
@@ -383,7 +383,7 @@ class ChatboxUsageLedger:
                         await pipe.execute()
         except _SETTLEMENT_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="reconcile").inc()
-            _logger.exception(
+            _logger.error(  # noqa: TRY400
                 **create_troubleshooting_log_kwargs(
                     "Chatbox usage ledger unreachable during reconciliation: Spend not recorded",
                     error=exc,
@@ -424,7 +424,7 @@ class ChatboxUsageLedger:
                         await pipe.execute()
         except _SETTLEMENT_ERRORS as exc:
             self._metrics.ledger_failures_total.labels(stage="release").inc()
-            _logger.exception(
+            _logger.error(  # noqa: TRY400
                 **create_troubleshooting_log_kwargs(
                     "Chatbox usage ledger unreachable during reservation release: Refund lost",
                     error=exc,
@@ -460,7 +460,7 @@ class ChatboxUsageLedger:
             if budget > 0:
                 self._metrics.provider_budget_fraction.set(_usd(global_spend) / budget)
         except _REDIS_UNAVAILABLE_ERRORS as exc:
-            _logger.exception(
+            _logger.error(  # noqa: TRY400
                 **create_troubleshooting_log_kwargs(
                     "Could not record the Chatbox usage ledger entry",
                     error=exc,
