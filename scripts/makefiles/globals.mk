@@ -73,6 +73,9 @@ _check_python_versio%:
 	@python3 -c "import sys; current_version=[int(d) for d in '$(EXPECTED_PYTHON_VERSION)'.split('.')]; assert sys.version_info[:2]==tuple(current_version[:2]), f'Expected python $(EXPECTED_PYTHON_VERSION), got {sys.version_info}'"
 
 
+# NOTE: every git worktree has its own .venv, therefore checking that *a* virtual
+# environment is active is not enough: a venv inherited from another checkout silently
+# installs and tests the wrong sources.
 _check_venv_active: _check_python_version
-	# Checking whether virtual environment was activated
-	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
+	# Checking whether the virtual environment of THIS checkout was activated
+	@python3 -c "import pathlib,sys; e=pathlib.Path('$(REPO_BASE_DIR)/.venv').resolve(); a=pathlib.Path(sys.prefix).resolve(); assert sys.base_prefix!=sys.prefix, 'no virtual environment activated. Run: make devenv && source .venv/bin/activate'; assert a==e, f'wrong virtual environment activated: {a}. This checkout needs its own: source {e}/bin/activate (then make install-dev)'"
