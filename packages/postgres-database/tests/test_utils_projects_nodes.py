@@ -158,17 +158,21 @@ async def test_list_project_nodes(
     nodes = await projects_nodes_repo.list(asyncpg_connection)
     assert nodes == []
 
+    # NOTE: added in reverse order so that only an ordered query can return them sorted
     created_nodes = await projects_nodes_repo.add(
         asyncpg_connection,
-        nodes=[
-            create_fake_projects_node()
-            for _ in range(randint(3, 12))  # noqa: S311
-        ],
+        nodes=sorted(
+            (create_fake_projects_node() for _ in range(randint(3, 12))),  # noqa: S311
+            key=lambda node: node.node_id,
+            reverse=True,
+        ),
     )
 
     nodes = await projects_nodes_repo.list(asyncpg_connection)
     assert nodes
     assert len(nodes) == len(created_nodes)
+    # the callers iterate over this to write the nodes in a deterministic order
+    assert [node.node_id for node in nodes] == sorted(node.node_id for node in created_nodes)
 
 
 async def test_get_project_node_of_invalid_project_raises(
