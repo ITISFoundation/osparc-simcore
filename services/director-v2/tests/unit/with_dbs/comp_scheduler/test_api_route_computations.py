@@ -492,10 +492,19 @@ async def test_create_computation_with_wallet(
     assert response.status_code == status.HTTP_201_CREATED, response.text
     if default_pricing_plan_aws_ec2_type:
         mocked_clusters_keeper_service_get_instance_type_details.assert_called()
-        assert (
-            mocked_resource_usage_tracker_service_fcts.calls.call_count
-            == len([v for v in proj.workbench.values() if to_node_class(v.key) != NodeClass.FRONTEND]) * 2
+        # the resource-usage-tracker is asked once per distinct service (default pricing
+        # plan) and once per distinct pricing unit, NOT once per node
+        expected_rut_calls = (
+            len(
+                {
+                    (node.key, node.version)
+                    for node in proj.workbench.values()
+                    if to_node_class(node.key) != NodeClass.FRONTEND
+                }
+            )
+            + 1  # every service resolves to the same default pricing unit here
         )
+        assert mocked_resource_usage_tracker_service_fcts.calls.call_count == expected_rut_calls
         # check the project nodes were really overridden now
         async with sqlalchemy_async_engine.connect() as connection:
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)

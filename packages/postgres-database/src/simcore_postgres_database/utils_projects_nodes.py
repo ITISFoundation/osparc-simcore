@@ -152,10 +152,15 @@ class ProjectNodesRepo:
         """list the nodes in the current project
 
         NOTE: Do not use this in an asyncio.gather call as this will fail!
+
+        NOTE: the rows are ordered by `node_id` so that callers iterating over them perform
+        their writes in a deterministic order (required to avoid lock-order inversions)
         """
-        list_stmt = sqlalchemy.select(
-            *[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid]
-        ).where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
+        list_stmt = (
+            sqlalchemy.select(*[c for c in projects_nodes.columns if c is not projects_nodes.c.project_uuid])
+            .where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
+            .order_by(projects_nodes.c.node_id)
+        )
         result = await connection.execute(list_stmt)
         assert result  # nosec
         rows = result.mappings().all()
@@ -242,6 +247,34 @@ class ProjectNodesRepo:
         if row is not None:
             return (row["pricing_plan_id"], row["pricing_unit_id"])
         return None
+
+    async def get_project_node_pricing_unit_ids(self, connection: AsyncConnection) -> dict[uuid.UUID, tuple[int, int]]:
+        """get the (pricing_plan_id, pricing_unit_id) connected to each node of the project
+
+        Equivalent to calling `get_project_node_pricing_unit_id` for every node, with a
+        single query. Nodes without a connected pricing unit are absent from the result.
+
+        NOTE: Do not use this in an asyncio.gather call as this will fail!
+        """
+        result = await connection.execute(
+            sqlalchemy.select(
+                projects_nodes.c.node_id,
+                projects_node_to_pricing_unit.c.pricing_plan_id,
+                projects_node_to_pricing_unit.c.pricing_unit_id,
+            )
+            .select_from(
+                projects_nodes.join(
+                    projects_node_to_pricing_unit,
+                    projects_nodes.c.project_node_id == projects_node_to_pricing_unit.c.project_node_id,
+                )
+            )
+            .where(projects_nodes.c.project_uuid == f"{self.project_uuid}")
+            .order_by(projects_nodes.c.node_id)
+        )
+        return {
+            uuid.UUID(row["node_id"]): (row["pricing_plan_id"], row["pricing_unit_id"])
+            for row in result.mappings().all()
+        }
 
     async def connect_pricing_unit_to_project_node(
         self,
