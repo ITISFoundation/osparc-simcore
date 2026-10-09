@@ -161,7 +161,7 @@ class Reservation:
 
 
 class _UsageMetrics:
-    def __init__(self, registry: CollectorRegistry) -> None:
+    def __init__(self, registry: CollectorRegistry, *, provider_budget_usd: float) -> None:
         self.spend_usd_total = Counter(
             "chatbox_spend_usd_total",
             "Cumulative Chatbox Spend in USD, per product",
@@ -169,18 +169,13 @@ class _UsageMetrics:
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
-        self.spend_usd_global_total = Counter(
-            "chatbox_spend_usd_global_total",
-            "Cumulative platform Chatbox Spend in USD, across all products",
+        self.provider_budget_usd = Gauge(
+            "chatbox_provider_budget_usd",
+            "The one-time Provider Budget (USD): spend_usd_total sums to this",
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
-        self.provider_budget_fraction = Gauge(
-            "chatbox_provider_budget_fraction",
-            "Cumulative platform Chatbox Spend as a fraction of the Provider Budget (50/75 % alerts)",
-            namespace=_METRICS_NAMESPACE,
-            registry=registry,
-        )
+        self.provider_budget_usd.set(provider_budget_usd)
         self.released_reservations_total = Counter(
             "chatbox_released_reservations_total",
             "# Reservations refunded without reconciling to actual Spend (possible Provider Budget under-count)",
@@ -454,23 +449,17 @@ class ChatboxUsageLedger:
         try:
             with log_catch(_logger, reraise=False):  # ledger bookkeeping must not break the response path
                 await self._redis.xadd(_LEDGER_STREAM_KEY, entry, maxlen=_LEDGER_STREAM_MAXLEN, approximate=True)
-
-            global_spend = await handle_redis_returns_union_types(self._redis.hget(_GLOBAL_KEY, _FIELD_SPEND))
-            budget = self._settings.PROVIDER_BUDGET_USD
-            if budget > 0:
-                self._metrics.provider_budget_fraction.set(_usd(global_spend) / budget)
         except _REDIS_UNAVAILABLE_ERRORS as exc:
             _logger.error(  # noqa: TRY400
                 **create_troubleshooting_log_kwargs(
                     "Could not record the Chatbox usage ledger entry",
                     error=exc,
                     error_context={"user_id": reservation.user_id, "product_name": reservation.product_name},
-                    tip="the ledger stream and budget gauge may lag the actual Spend",
+                    tip="the ledger stream may lag the actual Spend",
                 )
             )
 
         self._metrics.spend_usd_total.labels(product_name=reservation.product_name).inc(spend_usd)
-        self._metrics.spend_usd_global_total.inc(spend_usd)
 
     def _spend_usd(self, usage: UsageRecord) -> float:
         # Spend = total tokens at the platform-wide Blended Rate (USD per million tokens)
@@ -499,7 +488,7 @@ def configure_chatbox_usage_ledger(
         app.state.chatbox_usage_ledger = ChatboxUsageLedger(
             _client=client,
             _settings=settings,
-            _metrics=_UsageMetrics(metrics_registry),
+            _metrics=_UsageMetrics(metrics_registry, provider_budget_usd=settings.PROVIDER_BUDGET_USD),
         )
         try:
             yield {}

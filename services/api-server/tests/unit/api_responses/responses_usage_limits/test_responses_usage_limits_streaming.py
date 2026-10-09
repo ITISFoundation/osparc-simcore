@@ -515,11 +515,10 @@ async def test_metrics_expose_spend_budget_fraction_and_failures(
     # ACT - one successful completion
     assert (await _post_stream(client, auth, usage_builders.make_stream_body())).status_code == status.HTTP_200_OK
 
-    # ASSERT - Spend counters (per-product and platform-wide) and the budget-fraction
-    # gauge reflect it (0.0025 USD of a 0.01 USD budget = 25 %)
+    # ASSERT - the per-product Spend counter and the Provider Budget gauge (the
+    # budget-fraction alerting query divides one by the sum of the other)
     assert _sample_sum(ledger._metrics.spend_usd_total, product_name="osparc") == pytest.approx(0.0025)  # noqa: SLF001
-    assert _sample_sum(ledger._metrics.spend_usd_global_total) == pytest.approx(0.0025)  # noqa: SLF001
-    assert _sample_sum(ledger._metrics.provider_budget_fraction) == pytest.approx(0.25)  # noqa: SLF001
+    assert _sample_sum(ledger._metrics.provider_budget_usd) == pytest.approx(0.01)  # noqa: SLF001
 
     # ACT - a ledger failure (fail-closed admission)
     def _broken(*_args: object, **_kwargs: object) -> NoReturn:
