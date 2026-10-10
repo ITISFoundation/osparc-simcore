@@ -1,59 +1,50 @@
-"""Utilities to safely share a single physical resource (docker stack, postgres template
-database, S3 bucket, ...) across pytest-xdist worker processes.
+"""Helpers to share physical resources (docker stack, postgres template, ...) across pytest-xdist workers.
 
-pytest-xdist runs each worker as an independent pytest process with its own session, so
-session/module-scoped fixtures execute once PER WORKER rather than once overall. These helpers
-let a fixture detect it is running under xdist, derive a worker-unique name for resources that
-must NOT be shared (e.g. a database clone), and coordinate exclusive setup/teardown of resources
-that MUST be shared (e.g. one docker stack) via a cross-process file lock + reference-counted
-registry, so exactly one worker performs the real setup/teardown while the others attach to it.
+Every xdist worker is an independent pytest process, so session/module fixtures run once PER WORKER.
+Resources that must exist only once are set up by the first worker (`run_once_across_workers`) and,
+if they need cleanup, recorded for the xdist controller to remove at session end (`record_shared_resource`).
 """
 
 import logging
 import os
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
 import pytest
+from common_library.json_serialization import json_dumps, json_loads
 from filelock import FileLock
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
-from .logging_tools import ContextMessages, log_context
+from .logging_tools import log_context
 
 log = logging.getLogger(__name__)
 
 # pytest-xdist's standard id for the controller process (i.e. any NON-xdist run)
 WORKER_ID_MASTER: Final[str] = "master"
 
-# marker-file polls are cheap; coordination polls fast enough to keep tests snappy, while
-# readiness of a full resource setup (container boot, DB template restore) polls slower
 _POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=200)
-_READY_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=1)
+_SHARED_RESOURCES_MANIFEST: Final[str] = "shared_resources.jsonl"
 
 
 class SharedResourceSetupError(RuntimeError):
-    """Raised when the worker owning a shared resource's setup failed, so waiters can abort
-    immediately instead of timing out waiting for a resource that will never become ready"""
+    """The first worker failed to set a shared resource up, so the others fail fast instead of retrying"""
 
 
 def is_xdist_worker(request: pytest.FixtureRequest) -> bool:
-    """True when running INSIDE a pytest-xdist worker process.
-
-    Fixtures must branch on this to decide whether cross-worker coordination (shared
-    registries/locks) or per-worker isolation is needed: a non-xdist run is a single process
-    that cannot race itself, and touching the shared marker files there would only expose it
-    to leftovers a crashed xdist session may have left in the machine-wide base temp dir.
-    """
+    """True when running INSIDE a pytest-xdist worker process"""
     return getattr(request.config, "workerinput", None) is not None
 
 
+def is_xdist_controller(config: pytest.Config) -> bool:
+    """True in the xdist process that spawns the workers (it runs no tests)"""
+    return config.pluginmanager.has_plugin("dsession")
+
+
 def get_worker_id(request: pytest.FixtureRequest) -> str:
-    """Returns e.g. "gw0" for an xdist worker, or "master" outside xdist. Use it to build
-    worker-unique resource names, only after `is_xdist_worker()` confirmed the worker context
-    """
+    """Returns e.g. "gw0" for an xdist worker, or "master" outside xdist"""
     workerinput = getattr(request.config, "workerinput", None)
     return WORKER_ID_MASTER if workerinput is None else workerinput["workerid"]
 
@@ -61,9 +52,7 @@ def get_worker_id(request: pytest.FixtureRequest) -> str:
 def get_max_xdist_workers(config: pytest.Config) -> int:
     """Maximum number of worker processes an xdist run of this session could spawn.
 
-    NOTE: `max(..., cpu_count)` on purpose: sizing a shared resource's capacity (e.g. redis
-    database banks) from the requested `-n` alone would break if the controller spawns more
-    workers than the requested count, which cpu_count bounds from above.
+    NOTE: bounded below by `cpu_count` because the controller may spawn more workers than `-n`.
     """
     numprocesses = config.getoption("numprocesses", default=None)
     if isinstance(numprocesses, str):  # "auto"/"detect"
@@ -73,142 +62,71 @@ def get_max_xdist_workers(config: pytest.Config) -> int:
 
 
 def get_xdist_root_tmp_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Root temp dir shared by the controller and all xdist worker processes"""
+    """Temp dir of the current run, shared by the controller and all its workers"""
     return tmp_path_factory.getbasetemp().parent
 
 
-class SharedResourceRegistry:
-    """Reference-counts concurrent users of one physical resource shared by xdist workers.
+@contextmanager
+def run_once_across_workers(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+    name: str,
+    *,
+    timeout: timedelta,
+) -> Iterator[bool]:
+    """Yields True to the one worker that must set the resource `name` up inside the block.
 
-    `name` identifies the shared RESOURCE (one registry, i.e. one directory of marker files,
-    per resource); every user (a worker's fixture instance) registers a unique `token` before
-    using the resource and unregisters it once done, both under a cross-process file lock:
-    - the caller for whom `register()` finds the registry empty owns the resource's real setup.
-    - the caller for whom `unregister()` leaves the registry empty owns the resource's real
-      teardown.
-    A "ready" marker lets late-comers wait until the owner's setup has completed; a "failed"
-    marker (see `mark_failed`) lets them abort immediately instead of waiting for a timeout.
+    The other workers wait for it and get False. Outside xdist it always yields True.
 
-    NOTE: this helper is intentionally framework-agnostic (only `pytest` types in signatures)
-    and a natural candidate for extraction to a shared production library in a future PR.
-    NOTE: marker files live in a machine-wide base temp dir (`getbasetemp().parent`) and
-    therefore SURVIVE the session that created them: a process hard-killed mid-setup leaks its
-    token, and only the timeout paths below can surface that (with an actionable message
-    pointing at the leftover files). Non-xdist runs must not use this registry at all.
+    Raises:
+        SharedResourceSetupError: the first worker failed its setup
+        filelock.Timeout: the first worker did not finish within `timeout`
     """
+    if not is_xdist_worker(request):
+        yield True
+        return
 
-    def __init__(self, root_tmp_path: Path, name: str) -> None:
-        self.name = name
-        self._lock_path = root_tmp_path / f"{name}.lock"
-        self._registry_dir = root_tmp_path / f"{name}.registry"
-        self._ready_marker = root_tmp_path / f"{name}.ready"
-        self._failed_marker = root_tmp_path / f"{name}.failed"
-        self._registry_dir.mkdir(parents=True, exist_ok=True)
+    root = get_xdist_root_tmp_path(tmp_path_factory)
+    done, failed = root / f"{name}.done", root / f"{name}.failed"
 
-    def _tokens(self) -> list[Path]:
-        return list(self._registry_dir.glob("*.token"))
-
-    def register(self, token: str) -> bool:
-        """Registers `token` (touching a marker file, idempotent if it already exists).
-
-        Returns True if the caller owns the resource's real setup. A new owner (registry empty,
-        so NO live waiters) also clears stale "ready"/"failed" markers left over by a previous,
-        crashed session before handing out ownership.
-        """
-        with (
-            log_context(
-                logging.INFO,
-                ContextMessages(
-                    starting=f"registering {token} for shared resource {self.name}",
-                    done=lambda: (
-                        f"{token} OWNS setup of {self.name}" if owns_setup else f"{token} attached to {self.name}"
-                    ),
-                ),
-                logger=log,
-            ),
-            FileLock(str(self._lock_path)),
-        ):
-            owns_setup = not self._tokens()
-            if owns_setup:
-                self._ready_marker.unlink(missing_ok=True)
-                self._failed_marker.unlink(missing_ok=True)
-            (self._registry_dir / f"{token}.token").touch()
-            return owns_setup
-
-    def unregister(self, token: str) -> bool:
-        """Unregisters `token`. Returns True if the caller owns the resource's real teardown.
-
-        NOTE: intentionally does NOT clear the "failed" marker, so late waiters keep failing
-        fast: only a subsequent setup-owner clears it in `register()` (see above).
-        """
-        with (
-            log_context(
-                logging.INFO,
-                ContextMessages(
-                    starting=f"unregistering {token} from shared resource {self.name}",
-                    done=lambda: (
-                        f"{token} OWNS teardown of {self.name}" if owns_teardown else f"{token} left {self.name}"
-                    ),
-                ),
-                logger=log,
-            ),
-            FileLock(str(self._lock_path)),
-        ):
-            (self._registry_dir / f"{token}.token").unlink(missing_ok=True)
-            owns_teardown = not self._tokens()
-            if owns_teardown:
-                self._ready_marker.unlink(missing_ok=True)
-            return owns_teardown
-
-    def mark_ready(self) -> None:
-        with log_context(logging.INFO, f"shared resource {self.name} marked ready", logger=log):
-            self._ready_marker.touch()
-
-    def mark_failed(self) -> None:
-        """Signals waiters that the owner's setup failed and the resource will never be ready"""
-        with log_context(logging.WARNING, f"shared resource {self.name} marked FAILED", logger=log):
-            self._failed_marker.touch()
-
-    def wait_ready(self, *, timeout: timedelta) -> None:
-        """Blocks until the owner signals readiness, failing fast if it signals failure
-
-        Raises:
-            SharedResourceSetupError: the owner's setup failed
-            TimeoutError: neither ready nor failed within `timeout` (e.g. the owner was
-                hard-killed and leaked its token: the message points at the leftover files)
-        """
-
-        @retry(
-            stop=stop_after_delay(timeout),
-            wait=wait_fixed(_READY_POLL_INTERVAL),
-            retry=retry_if_exception_type(AssertionError),  # only "not ready YET" is retried
-            reraise=True,
-        )
-        def _check_ready() -> None:
-            if self._failed_marker.exists():
-                msg = f"Setup of shared resource failed (owner reported {self._failed_marker})"
-                raise SharedResourceSetupError(msg)
-            assert self._ready_marker.exists(), f"shared resource not ready yet: {self._ready_marker}"
-
-        with log_context(
-            logging.INFO,
-            ContextMessages(
-                starting=f"waiting (up to {timeout}) for shared resource {self.name} to become ready",
-                done=f"{self.name} is ready",
-                raised=f"{self.name} NEVER became ready",
-            ),
-            logger=log,
-        ):
+    with FileLock(root / f"{name}.lock", timeout=timeout.total_seconds()):
+        if failed.exists():
+            msg = f"Setup of {name} failed in another worker: {failed.read_text()}"
+            raise SharedResourceSetupError(msg)
+        if not done.exists():
             try:
-                _check_ready()
-            except AssertionError as err:
-                msg = (
-                    f"Timed out waiting for shared resource (marker {self._ready_marker}). "
-                    f"If no test session is currently running, leftover token files from a "
-                    f"crashed session are poisoning it: remove {self._registry_dir} "
-                    f"(and {self._ready_marker}, {self._failed_marker}) and retry."
-                )
-                raise TimeoutError(msg) from err
+                with log_context(logging.INFO, f"{get_worker_id(request)} sets up shared {name}", logger=log):
+                    yield True
+            except BaseException as err:
+                failed.write_text(repr(err))
+                raise
+            done.touch()
+            return
+    yield False
+
+
+def record_shared_resource(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory, **resource: str
+) -> None:
+    """Records a resource the xdist controller must remove at session end (see `read_shared_resources`).
+
+    No-op outside xdist, where the fixtures tear their own resources down.
+    """
+    if not is_xdist_worker(request):
+        return
+    manifest = get_xdist_root_tmp_path(tmp_path_factory) / _SHARED_RESOURCES_MANIFEST
+    with manifest.open("a") as fh:
+        fh.write(f"{json_dumps(resource)}\n")
+
+
+def read_shared_resources(config: pytest.Config) -> list[dict[str, str]]:
+    """Resources recorded by the workers, in recording order. To be called from the controller."""
+    # NOTE: the controller has no fixtures; its base temp dir is the parent of every worker's one
+    root: Path = config._tmp_path_factory.getbasetemp()  # type: ignore[attr-defined]  # noqa: SLF001
+    manifest = root / _SHARED_RESOURCES_MANIFEST
+    if not manifest.exists():
+        return []
+    return [json_loads(line) for line in manifest.read_text().splitlines()]
 
 
 class ReaderWriterLock:
@@ -303,19 +221,26 @@ class ReaderWriterLock:
                 raise TimeoutError(msg) from err
         # phase 2: drain the readers already in the section (fresh `timeout` budget, so a
         # slow phase 1 cannot starve the drain phase)
-        with log_context(
-            logging.INFO,
-            (
-                f"writer {token or 'writer'} waiting for readers to drain on {self.name}",
-                lambda: f"writer section STARTED on {self.name}",
-            ),
-            logger=log,
-        ):
-            try:
-                _drain_readers()
-            except AssertionError as err:
-                msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
-                raise TimeoutError(msg) from err
+        try:
+            with log_context(
+                logging.INFO,
+                (
+                    f"writer {token or 'writer'} waiting for readers to drain on {self.name}",
+                    lambda: f"writer section STARTED on {self.name}",
+                ),
+                logger=log,
+            ):
+                try:
+                    _drain_readers()
+                except AssertionError as err:
+                    msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
+                    raise TimeoutError(msg) from err
+        except BaseException:
+            # the writer section was NEVER entered: release the slot we hold, or a timed-out
+            # writer would leave its marker behind and poison every later reader/writer
+            with FileLock(str(self._control_lock_path)):
+                self._writer_marker.unlink(missing_ok=True)
+            raise
         try:
             yield
         finally:
