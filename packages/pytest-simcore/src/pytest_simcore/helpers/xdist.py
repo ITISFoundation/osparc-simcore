@@ -1,65 +1,50 @@
-"""Utilities to safely share a single physical resource (docker stack, postgres template
-database, S3 bucket, ...) across pytest-xdist worker processes.
+"""Helpers to share physical resources (docker stack, postgres template, ...) across pytest-xdist workers.
 
-pytest-xdist runs each worker as an independent pytest process with its own session, so
-session/module-scoped fixtures execute once PER WORKER rather than once overall. These helpers
-let a fixture detect it is running under xdist, derive a worker-unique name for resources that
-must NOT be shared (e.g. a database clone), and coordinate exclusive setup/teardown of resources
-that MUST be shared (e.g. one docker stack) via a cross-process file lock + reference-counted
-registry, so exactly one worker performs the real setup/teardown while the others attach to it.
+Every xdist worker is an independent pytest process, so session/module fixtures run once PER WORKER.
+Resources that must exist only once are set up by the first worker (`run_once_across_workers`) and,
+if they need cleanup, recorded for the xdist controller to remove at session end (`record_shared_resource`).
 """
 
 import logging
 import os
-from collections.abc import AsyncIterator, Awaitable, Callable, Generator, Iterator
-from contextlib import asynccontextmanager, contextmanager
+from collections.abc import Generator, Iterator
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
-from uuid import uuid4
 
 import pytest
+from common_library.json_serialization import json_dumps, json_loads
 from filelock import FileLock
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
-from .logging_tools import ContextMessages, log_context
+from .logging_tools import log_context
 
 log = logging.getLogger(__name__)
 
 # pytest-xdist's standard id for the controller process (i.e. any NON-xdist run)
 WORKER_ID_MASTER: Final[str] = "master"
 
-# name of the cross-process reader-writer lock guarding the docker daemon shared by xdist
-# workers; used both by the `pytest_simcore.xdist_docker_daemon` plugin (per-test access)
-# and by the shared-fixture churn sections in `pytest_simcore.docker_swarm`
-DOCKER_DAEMON_LOCK_NAME: Final[str] = "docker_daemon"
-
-# marker-file polls are cheap; coordination polls fast enough to keep tests snappy, while
-# readiness of a full resource setup (container boot, DB template restore) polls slower
 _POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=200)
-_READY_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=1)
+_SHARED_RESOURCES_MANIFEST: Final[str] = "shared_resources.jsonl"
 
 
 class SharedResourceSetupError(RuntimeError):
-    """Raised when the worker owning a shared resource's setup failed, so waiters can abort
-    immediately instead of timing out waiting for a resource that will never become ready"""
+    """The first worker failed to set a shared resource up, so the others fail fast instead of retrying"""
 
 
 def is_xdist_worker(request: pytest.FixtureRequest) -> bool:
-    """True when running INSIDE a pytest-xdist worker process.
-
-    Fixtures must branch on this to decide whether cross-worker coordination (shared
-    registries/locks) or per-worker isolation is needed: a non-xdist run is a single process
-    that cannot race itself, and touching the shared marker files there would only expose it
-    to leftovers a crashed xdist session may have left in the machine-wide base temp dir.
-    """
+    """True when running INSIDE a pytest-xdist worker process"""
     return getattr(request.config, "workerinput", None) is not None
 
 
+def is_xdist_controller(config: pytest.Config) -> bool:
+    """True in the xdist process that spawns the workers (it runs no tests)"""
+    return config.pluginmanager.has_plugin("dsession")
+
+
 def get_worker_id(request: pytest.FixtureRequest) -> str:
-    """Returns e.g. "gw0" for an xdist worker, or "master" outside xdist. Use it to build
-    worker-unique resource names, only after `is_xdist_worker()` confirmed the worker context
-    """
+    """Returns e.g. "gw0" for an xdist worker, or "master" outside xdist"""
     workerinput = getattr(request.config, "workerinput", None)
     return WORKER_ID_MASTER if workerinput is None else workerinput["workerid"]
 
@@ -67,9 +52,7 @@ def get_worker_id(request: pytest.FixtureRequest) -> str:
 def get_max_xdist_workers(config: pytest.Config) -> int:
     """Maximum number of worker processes an xdist run of this session could spawn.
 
-    NOTE: `max(..., cpu_count)` on purpose: sizing a shared resource's capacity (e.g. redis
-    database banks) from the requested `-n` alone would break if the controller spawns more
-    workers than the requested count, which cpu_count bounds from above.
+    NOTE: bounded below by `cpu_count` because the controller may spawn more workers than `-n`.
     """
     numprocesses = config.getoption("numprocesses", default=None)
     if isinstance(numprocesses, str):  # "auto"/"detect"
@@ -79,204 +62,71 @@ def get_max_xdist_workers(config: pytest.Config) -> int:
 
 
 def get_xdist_root_tmp_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Root temp dir shared by the controller and all xdist worker processes"""
+    """Temp dir of the current run, shared by the controller and all its workers"""
     return tmp_path_factory.getbasetemp().parent
 
 
-class SharedResourceRegistry:
-    """Reference-counts concurrent users of one physical resource shared by xdist workers.
+@contextmanager
+def run_once_across_workers(
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+    name: str,
+    *,
+    timeout: timedelta,
+) -> Iterator[bool]:
+    """Yields True to the one worker that must set the resource `name` up inside the block.
 
-    `name` identifies the shared RESOURCE (one registry, i.e. one directory of marker files,
-    per resource); every user (a worker's fixture instance) registers a unique `token` before
-    using the resource and unregisters it once done, both under a cross-process file lock:
-    - the caller for whom `register()` finds the registry empty owns the resource's real setup.
-    - the caller for whom `unregister()` leaves the registry empty owns the resource's real
-      teardown.
-    A "ready" marker lets late-comers wait until the owner's setup has completed; a "failed"
-    marker (see `mark_failed`) lets them abort immediately instead of waiting for a timeout.
-    When the last token leaves, a "teardown" marker is published in the SAME locked section,
-    so a fresh setup-owner waits (`wait_teardown_done`) until the previous generation's
-    teardown has finished instead of racing its destructive cleanup.
+    The other workers wait for it and get False. Outside xdist it always yields True.
 
-    NOTE: this helper is intentionally framework-agnostic (only `pytest` types in signatures)
-    and a natural candidate for extraction to a shared production library in a future PR.
-    NOTE: marker files live in a machine-wide base temp dir (`getbasetemp().parent`) and
-    therefore SURVIVE the session that created them: a process hard-killed mid-setup leaks its
-    token, and only the timeout paths below can surface that (with an actionable message
-    pointing at the leftover files). Non-xdist runs must not use this registry at all.
+    Raises:
+        SharedResourceSetupError: the first worker failed its setup
+        filelock.Timeout: the first worker did not finish within `timeout`
     """
+    if not is_xdist_worker(request):
+        yield True
+        return
 
-    def __init__(self, root_tmp_path: Path, name: str) -> None:
-        self.name = name
-        self._lock_path = root_tmp_path / f"{name}.lock"
-        self._registry_dir = root_tmp_path / f"{name}.registry"
-        self._ready_marker = root_tmp_path / f"{name}.ready"
-        self._failed_marker = root_tmp_path / f"{name}.failed"
-        self._teardown_marker = root_tmp_path / f"{name}.teardown"
-        self._registry_dir.mkdir(parents=True, exist_ok=True)
+    root = get_xdist_root_tmp_path(tmp_path_factory)
+    done, failed = root / f"{name}.done", root / f"{name}.failed"
 
-    def _tokens(self) -> list[Path]:
-        return list(self._registry_dir.glob("*.token"))
-
-    def register(self, token: str) -> bool:
-        """Registers `token` (touching a marker file, idempotent if it already exists).
-
-        Returns True if the caller owns the resource's real setup. A new owner (registry empty,
-        so NO live waiters) also clears stale "ready"/"failed" markers left over by a previous,
-        crashed session before handing out ownership. A "teardown" marker is NEVER cleared here:
-        it may belong to a still-running teardown (see `wait_teardown_done`).
-        """
-        with (
-            log_context(
-                logging.INFO,
-                ContextMessages(
-                    starting=f"registering {token} for shared resource {self.name}",
-                    done=lambda: (
-                        f"{token} OWNS setup of {self.name}" if owns_setup else f"{token} attached to {self.name}"
-                    ),
-                ),
-                logger=log,
-            ),
-            FileLock(str(self._lock_path)),
-        ):
-            owns_setup = not self._tokens()
-            if owns_setup:
-                self._ready_marker.unlink(missing_ok=True)
-                self._failed_marker.unlink(missing_ok=True)
-            (self._registry_dir / f"{token}.token").touch()
-            return owns_setup
-
-    def unregister(self, token: str) -> bool:
-        """Unregisters `token`. Returns True if the caller owns the resource's real teardown.
-
-        When this removes the LAST token, the "teardown" marker is published in the SAME locked
-        section, so no new setup-owner can slip in between the registry becoming empty and the
-        teardown actually starting (both would only take the churn READ lock and could thus run
-        `setup_fn` concurrently with the previous generation's destructive `teardown_fn`). The
-        teardown owner must call `end_teardown()` when done.
-
-        NOTE: intentionally does NOT clear the "failed" marker, so late waiters keep failing
-        fast: only a subsequent setup-owner clears it in `register()` (see above).
-        """
-        with (
-            log_context(
-                logging.INFO,
-                ContextMessages(
-                    starting=f"unregistering {token} from shared resource {self.name}",
-                    done=lambda: (
-                        f"{token} OWNS teardown of {self.name}" if owns_teardown else f"{token} left {self.name}"
-                    ),
-                ),
-                logger=log,
-            ),
-            FileLock(str(self._lock_path)),
-        ):
-            (self._registry_dir / f"{token}.token").unlink(missing_ok=True)
-            owns_teardown = not self._tokens()
-            if owns_teardown:
-                self._ready_marker.unlink(missing_ok=True)
-                self._teardown_marker.touch()
-            return owns_teardown
-
-    def mark_ready(self) -> None:
-        with log_context(logging.INFO, f"shared resource {self.name} marked ready", logger=log):
-            self._ready_marker.touch()
-
-    def mark_failed(self) -> None:
-        """Signals waiters that the owner's setup failed and the resource will never be ready"""
-        with log_context(logging.WARNING, f"shared resource {self.name} marked FAILED", logger=log):
-            self._failed_marker.touch()
-
-    def wait_ready(self, *, timeout: timedelta) -> None:
-        """Blocks until the owner signals readiness, failing fast if it signals failure
-
-        Raises:
-            SharedResourceSetupError: the owner's setup failed
-            TimeoutError: neither ready nor failed within `timeout` (e.g. the owner was
-                hard-killed and leaked its token: the message points at the leftover files)
-        """
-
-        @retry(
-            stop=stop_after_delay(timeout),
-            wait=wait_fixed(_READY_POLL_INTERVAL),
-            retry=retry_if_exception_type(AssertionError),  # only "not ready YET" is retried
-            reraise=True,
-        )
-        def _check_ready() -> None:
-            if self._failed_marker.exists():
-                msg = f"Setup of shared resource failed (owner reported {self._failed_marker})"
-                raise SharedResourceSetupError(msg)
-            assert self._ready_marker.exists(), f"shared resource not ready yet: {self._ready_marker}"
-
-        with log_context(
-            logging.INFO,
-            ContextMessages(
-                starting=f"waiting (up to {timeout}) for shared resource {self.name} to become ready",
-                done=f"{self.name} is ready",
-                raised=f"{self.name} NEVER became ready",
-            ),
-            logger=log,
-        ):
+    with FileLock(root / f"{name}.lock", timeout=timeout.total_seconds()):
+        if failed.exists():
+            msg = f"Setup of {name} failed in another worker: {failed.read_text()}"
+            raise SharedResourceSetupError(msg)
+        if not done.exists():
             try:
-                _check_ready()
-            except AssertionError as err:
-                msg = (
-                    f"Timed out waiting for shared resource (marker {self._ready_marker}). "
-                    f"If no test session is currently running, leftover token files from a "
-                    f"crashed session are poisoning it: remove {self._registry_dir} "
-                    f"(and {self._ready_marker}, {self._failed_marker}) and retry."
-                )
-                raise TimeoutError(msg) from err
+                with log_context(logging.INFO, f"{get_worker_id(request)} sets up shared {name}", logger=log):
+                    yield True
+            except BaseException as err:
+                failed.write_text(repr(err))
+                raise
+            done.touch()
+            return
+    yield False
 
-    def wait_teardown_done(self, *, timeout: timedelta) -> None:
-        """Blocks until no previous generation's teardown is in flight (`unregister` marker)
 
-        A fresh setup-owner calls this before touching the resource: the last holder publishes
-        the marker atomically with the registry becoming empty, so "empty registry" can never
-        overlap a running teardown.
+def record_shared_resource(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory, **resource: str
+) -> None:
+    """Records a resource the xdist controller must remove at session end (see `read_shared_resources`).
 
-        Raises:
-            TimeoutError: a teardown marker is still there after `timeout` (its holder was
-                most likely hard-killed mid-teardown: the message points at the leftover file)
-        """
+    No-op outside xdist, where the fixtures tear their own resources down.
+    """
+    if not is_xdist_worker(request):
+        return
+    manifest = get_xdist_root_tmp_path(tmp_path_factory) / _SHARED_RESOURCES_MANIFEST
+    with manifest.open("a") as fh:
+        fh.write(f"{json_dumps(resource)}\n")
 
-        @retry(
-            stop=stop_after_delay(timeout),
-            wait=wait_fixed(_READY_POLL_INTERVAL),
-            retry=retry_if_exception_type(AssertionError),
-            reraise=True,
-        )
-        def _check_teardown_done() -> None:
-            assert not self._teardown_marker.exists(), f"previous teardown of {self.name} still in flight"
 
-        with log_context(
-            logging.INFO,
-            ContextMessages(
-                starting=f"waiting (up to {timeout}) for a previous teardown of {self.name} to finish",
-                done=f"no teardown of {self.name} in flight",
-                raised=f"teardown of {self.name} NEVER finished",
-            ),
-            logger=log,
-        ):
-            try:
-                _check_teardown_done()
-            except AssertionError as err:
-                msg = (
-                    f"Timed out waiting for a previous teardown to finish (marker "
-                    f"{self._teardown_marker}). If no test session is currently running, its "
-                    f"holder was likely killed mid-teardown: remove {self._teardown_marker} "
-                    f"and retry."
-                )
-                raise TimeoutError(msg) from err
-
-    def end_teardown(self) -> None:
-        """Marks the current teardown generation as finished (see `unregister`/`wait_teardown_done`)
-
-        Only the teardown owner calls it, and ONLY after the cleanup completed: a teardown that
-        raised leaves the resource half-removed, and the next owner must then refuse to start
-        over it until an operator has verified the state and removed the marker.
-        """
-        self._teardown_marker.unlink(missing_ok=True)
+def read_shared_resources(config: pytest.Config) -> list[dict[str, str]]:
+    """Resources recorded by the workers, in recording order. To be called from the controller."""
+    # NOTE: the controller has no fixtures; its base temp dir is the parent of every worker's one
+    root: Path = config._tmp_path_factory.getbasetemp()  # type: ignore[attr-defined]  # noqa: SLF001
+    manifest = root / _SHARED_RESOURCES_MANIFEST
+    if not manifest.exists():
+        return []
+    return [json_loads(line) for line in manifest.read_text().splitlines()]
 
 
 class ReaderWriterLock:
@@ -397,308 +247,3 @@ class ReaderWriterLock:
             with FileLock(str(self._control_lock_path)):
                 self._writer_marker.unlink(missing_ok=True)
             log.info("writer %s left %s", token or "writer", self.name)
-
-
-# active churn read locks per process, keyed by lock name: a NESTED acquisition must NOT
-# touch the shared lock again, because a writer interposing between the two reader files
-# would wait for the outer reader while the inner one waits for the writer (both stall until
-# they time out); the inner call simply piggybacks on the outer hold
-_churn_depths: dict[str, int] = {}
-
-
-@contextmanager
-def daemon_churn_access(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
-    """Holds the shared-daemon READ lock (`DOCKER_DAEMON_LOCK_NAME`) around a section that
-    CHURNS daemon-wide state (swarm init/leave, network and stack create/remove), so such a
-    section can never overlap a `@pytest.mark.docker_exclusive` test in any worker (see the
-    `pytest_simcore.xdist_docker_daemon` plugin). Readers stay mutually concurrent (concurrent
-    deploys/tests do not serialize); only exclusive tests are excluded, for the duration of the
-    section rather than of the whole fixture lifetime.
-
-    Re-entrant WITHIN one process: only the outermost call acquires the lock (see
-    `_churn_depths`), inner calls are no-ops.
-    """
-    if not is_xdist_worker(request):
-        yield
-        return
-    depth = _churn_depths.get(DOCKER_DAEMON_LOCK_NAME, 0)
-    if depth > 0:
-        _churn_depths[DOCKER_DAEMON_LOCK_NAME] = depth + 1
-        try:
-            yield
-        finally:
-            _churn_depths[DOCKER_DAEMON_LOCK_NAME] = depth
-        return
-    lock = ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), DOCKER_DAEMON_LOCK_NAME)
-    with lock.read_lock(token=f"churn-{get_worker_id(request)}-{uuid4().hex}"):
-        _churn_depths[DOCKER_DAEMON_LOCK_NAME] = 1
-        try:
-            yield
-        finally:
-            _churn_depths.pop(DOCKER_DAEMON_LOCK_NAME, None)
-
-
-def _begin_shared_setup(
-    request: pytest.FixtureRequest,
-    tmp_path_factory: pytest.TempPathFactory,
-    resource_name: str,
-    token: str,
-    on_setup_failure: Callable[[SharedResourceRegistry], None],
-    wait_timeout: timedelta,
-) -> tuple[SharedResourceRegistry | None, bool]:
-    """Drives the registry handshake of `shared_resource_session`/`ashared_resource_session`.
-
-    Returns (registry, owns_setup); when the handshake must raise (owner marking or waiter
-    abort), `on_setup_failure` has already been invoked with the registry before re-raising.
-    """
-    if not is_xdist_worker(request):
-        return None, True
-
-    registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), resource_name)
-    if registry.register(token):
-        # the registry may have just become empty because a previous generation's teardown is
-        # in flight: never set the resource up while that destructive cleanup still runs
-        try:
-            registry.wait_teardown_done(timeout=wait_timeout)
-        except BaseException:
-            on_setup_failure(registry)
-            raise
-        return registry, True
-
-    # another process owns the setup: wait until it signals readiness (or failure)
-    try:
-        registry.wait_ready(timeout=wait_timeout)
-    except BaseException:
-        on_setup_failure(registry)
-        raise
-    return registry, False
-
-
-def _on_shared_setup_failure(
-    registry: SharedResourceRegistry,
-    token: str,
-    resource_name: str,
-    setup_failed_cleanup_fn: Callable[[], None] | None,
-    run_under_churn_lock: Callable[[Callable[[], None]], None],
-    cleanup_done: list[bool],
-) -> None:
-    # setup raised => pytest will NOT run the post-yield teardown: give up our token here
-    # so it cannot leak in the persistent base temp dir and poison later sessions
-    if not registry.unregister(token):
-        # other users are still registered: the LAST one of them to leave owns the cleanup
-        return
-    if setup_failed_cleanup_fn is not None:
-        cleanup_done[0] = True  # the cleanup runs (best-effort) right here
-        try:
-            run_under_churn_lock(setup_failed_cleanup_fn)
-        except Exception:
-            log.warning(
-                "best-effort cleanup after failed setup of %s did not complete: the resource stays "
-                "flagged as mid-teardown, so the next session will refuse to set it up until the "
-                "teardown marker is removed manually after verifying no half-torn-down state is left",
-                resource_name,
-                exc_info=True,
-            )
-            return  # keep the marker: a half-cleaned resource must not be raced by a new setup
-    registry.end_teardown()
-
-
-@contextmanager
-def _owner_setup_guard(registry, on_failure: Callable[[SharedResourceRegistry], None]) -> Iterator[None]:
-    """Marks the registry FAILED and runs the failure handler around `setup_fn`"""
-    try:
-        yield
-    except BaseException:
-        if registry is not None:
-            registry.mark_failed()
-            on_failure(registry)
-        raise
-
-
-@asynccontextmanager
-async def _aowner_setup_guard(registry, on_failure: Callable[[SharedResourceRegistry], None]) -> AsyncIterator[None]:
-    # the guard itself never blocks, so a plain sync `with` inside the async generator is safe
-    with _owner_setup_guard(registry, on_failure):
-        yield
-
-
-@contextmanager
-def _pre_body_guard(reached_body: list[bool], cleanup_done: list[bool], cleanup: Callable[[], None]) -> Iterator[None]:
-    """A raise BEFORE the session's first yield never reaches the generator's `finally` (that
-    only runs once the body was entered), so a failed setup must clean up right here: without
-    it, a half-set-up resource would leak without any teardown
-    """
-    try:
-        yield
-    except BaseException:
-        if not reached_body[0] and not cleanup_done[0]:
-            cleanup()
-        raise
-
-
-@asynccontextmanager
-async def _apre_body_guard(
-    reached_body: list[bool], cleanup_done: list[bool], cleanup: Callable[[], None]
-) -> AsyncIterator[None]:
-    with _pre_body_guard(reached_body, cleanup_done, cleanup):
-        yield
-
-
-def _make_final_teardown(
-    registry: SharedResourceRegistry | None,
-    token: str,
-    teardown_fn: Callable[[], None],
-    run_under_churn_lock: Callable[[Callable[[], None]], None],
-) -> Callable[[], None]:
-    def _final_teardown() -> None:
-        if registry is not None and not registry.unregister(token):
-            return  # other users remain registered: the last of them owns the teardown
-        run_under_churn_lock(teardown_fn)
-        if registry is not None:
-            # ONLY a completed teardown releases the generation marker: when `teardown_fn`
-            # raised above, the resource is half-removed and the next owner must not start
-            # over it (the raised error already surfaced to this session; the next one gets
-            # the marker-timeout message with recovery instructions)
-            registry.end_teardown()
-
-    return _final_teardown
-
-
-def _make_pre_body_cleanup(
-    registry: SharedResourceRegistry | None,
-    setup_failed_cleanup_fn: Callable[[], None] | None,
-    teardown_fn: Callable[[], None],
-    run_under_churn_lock: Callable[[Callable[[], None]], None],
-) -> Callable[[], None]:
-    def _pre_body_cleanup() -> None:
-        if registry is not None:
-            # under xdist every pre-body failure path already went through
-            # `_on_shared_setup_failure` (which unregisters and, only when that left the
-            # registry empty, ran the cleanup); cleaning up here as well would tear the
-            # resource down under still-registered waiters, whose own last-exit cleanup
-            # would then run a second time
-            return
-        run_under_churn_lock(setup_failed_cleanup_fn or teardown_fn)
-
-    return _pre_body_cleanup
-
-
-@contextmanager
-def shared_resource_session(
-    request: pytest.FixtureRequest,
-    tmp_path_factory: pytest.TempPathFactory,
-    resource_name: str,
-    setup_fn: Callable[[], None],
-    teardown_fn: Callable[[], None],
-    *,
-    setup_failed_cleanup_fn: Callable[[], None] | None = None,
-    wait_timeout: timedelta = timedelta(minutes=8),
-) -> Iterator[bool]:
-    """Implements the full shared-resource fixture lifecycle so several xdist workers (or
-    several modules/workers in one run) use ONE physical resource: exactly the first process to
-    register runs `setup_fn`, and only the last one to leave the block runs `teardown_fn`.
-    See `ashared_resource_session` (whose rules this is) for the full protocol.
-    """
-    token = f"{get_worker_id(request)}-{uuid4().hex}"
-    reached_body = [False]
-    cleanup_done = [False]
-
-    def _run_under_churn_lock(fn: Callable[[], None]) -> None:
-        with daemon_churn_access(request, tmp_path_factory):
-            fn()
-
-    def _on_failure(registry: SharedResourceRegistry) -> None:
-        _on_shared_setup_failure(
-            registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock, cleanup_done
-        )
-
-    registry, owns_setup = _begin_shared_setup(
-        request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
-    )
-    _final_teardown = _make_final_teardown(registry, token, teardown_fn, _run_under_churn_lock)
-    _pre_body_cleanup = _make_pre_body_cleanup(registry, setup_failed_cleanup_fn, teardown_fn, _run_under_churn_lock)
-
-    with _pre_body_guard(reached_body, cleanup_done, _pre_body_cleanup):
-        if owns_setup:
-            with _owner_setup_guard(registry, _on_failure):
-                _run_under_churn_lock(setup_fn)
-            if registry is not None:
-                registry.mark_ready()
-
-        try:
-            reached_body[0] = True
-            yield owns_setup
-        finally:
-            _final_teardown()
-
-
-@asynccontextmanager
-async def ashared_resource_session(
-    request: pytest.FixtureRequest,
-    tmp_path_factory: pytest.TempPathFactory,
-    resource_name: str,
-    setup_fn: Callable[[], Awaitable[None] | None],
-    teardown_fn: Callable[[], None],
-    *,
-    setup_failed_cleanup_fn: Callable[[], None] | None = None,
-    wait_timeout: timedelta = timedelta(minutes=8),
-) -> AsyncIterator[bool]:
-    """Implements the full shared-resource fixture lifecycle so several xdist workers (or
-    several modules/workers in one run) use ONE physical resource: exactly the first process to
-    register runs `setup_fn` (which may be async), and only the last one to leave the block runs
-    `teardown_fn`.
-
-    Outside xdist it degenerates to plain setup -> yield -> teardown. Under xdist it drives a
-    `SharedResourceRegistry` (registered with a worker-unique token):
-    - the first registrant runs `setup_fn` under `daemon_churn_access` and marks the resource
-      ready; on failure it marks it FAILED (waiters abort fast instead of timing out) and
-      re-raises;
-    - latecomers wait for readiness and skip the setup;
-    - whatever happens DURING setup (owner failure or waiter timeout/failure), the token is
-      unregistered right away (pytest never runs post-yield teardown after a setup raise, so
-      the token would otherwise leak in the persistent base temp dir and poison later sessions)
-      and, when that leaves nobody registered, `setup_failed_cleanup_fn` runs best-effort;
-    - teardown is ref-counted the same way: the last holder's `teardown_fn` runs on block exit,
-      and its errors propagate. The next setup-owner waits until that teardown has finished,
-      a fresh `setup_fn` can never overlap the previous generation's destructive cleanup;
-      a teardown that RAISED keeps the resource fenced: the next owner then times out with an
-      actionable message instead of setting up over half-removed state;
-
-    Yields True when THIS process performed the real setup (so it can adjust what it returns).
-    `setup_fn`/`teardown_fn` must be idempotent and tolerant of a partially-set-up resource:
-    they also run from the failure paths.
-    """
-    token = f"{get_worker_id(request)}-{uuid4().hex}"
-    reached_body = [False]
-    cleanup_done = [False]
-
-    def _run_under_churn_lock(fn: Callable[[], None]) -> None:
-        with daemon_churn_access(request, tmp_path_factory):
-            fn()
-
-    def _on_failure(registry: SharedResourceRegistry) -> None:
-        _on_shared_setup_failure(
-            registry, token, resource_name, setup_failed_cleanup_fn, _run_under_churn_lock, cleanup_done
-        )
-
-    registry, owns_setup = _begin_shared_setup(
-        request, tmp_path_factory, resource_name, token, _on_failure, wait_timeout
-    )
-    _final_teardown = _make_final_teardown(registry, token, teardown_fn, _run_under_churn_lock)
-    _pre_body_cleanup = _make_pre_body_cleanup(registry, setup_failed_cleanup_fn, teardown_fn, _run_under_churn_lock)
-
-    async with _apre_body_guard(reached_body, cleanup_done, _pre_body_cleanup):
-        if owns_setup:
-            async with _aowner_setup_guard(registry, _on_failure):
-                with daemon_churn_access(request, tmp_path_factory):
-                    result = setup_fn()
-                    if result is not None:  # sync callbacks returning None are valid per signature
-                        await result
-            if registry is not None:
-                registry.mark_ready()
-
-        try:
-            reached_body[0] = True
-            yield owns_setup
-        finally:
-            _final_teardown()

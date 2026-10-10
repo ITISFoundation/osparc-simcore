@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 import subprocess
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator
 from contextlib import suppress
 from datetime import timedelta
 from pathlib import Path
@@ -38,19 +38,19 @@ from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
 from .helpers.xdist import (
-    ashared_resource_session,
     get_max_xdist_workers,
     get_xdist_root_tmp_path,
+    is_xdist_controller,
     is_xdist_worker,
-    shared_resource_session,
+    read_shared_resources,
+    record_shared_resource,
+    run_once_across_workers,
 )
 
 _logger: logging.Logger = logging.getLogger(__name__)
 
-_DOCKER_STACK_REGISTRY_NAME: Final[str] = "docker_stack"
-_DOCKER_SWARM_REGISTRY_NAME: Final[str] = "docker_swarm"
-_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX: Final[str] = "docker_networks"
-_DOCKER_STACK_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
+_DOCKER_STACK_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
+_DOCKER_SWARM_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=2)
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -179,6 +179,11 @@ def _ensure_swarm_init(docker_client: docker.client.DockerClient) -> None:
     assert _is_docker_swarm_init(docker_client)
 
 
+def _leave_swarm(docker_client: docker.client.DockerClient) -> None:
+    with log_context(logging.INFO, "leaving docker swarm", logger=_logger):
+        assert docker_client.swarm.leave(force=True)
+
+
 @pytest.fixture(scope="module")
 def docker_swarm(
     docker_client: docker.client.DockerClient,
@@ -186,38 +191,23 @@ def docker_swarm(
     request: pytest.FixtureRequest,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[None]:
-    """inits docker swarm
+    """inits docker swarm"""
+    with run_once_across_workers(
+        request, tmp_path_factory, "docker_swarm", timeout=_DOCKER_SWARM_SETUP_TIMEOUT
+    ) as is_first:
+        if is_first:
+            _ensure_swarm_init(docker_client)
+            record_shared_resource(request, tmp_path_factory, kind="swarm")
 
-    The swarm is a daemon-wide resource shared by every xdist worker: under xdist it is
-    ref-counted (see `shared_resource_session`) so the first holder initializes it and ONLY
-    the last holder leaves it (a module-scoped `swarm.leave` in one worker would otherwise
-    strip swarm-manager state from the daemon while other workers are still running, making
-    their docker API calls fail with 503 "this node is not a swarm manager").
-    """
+    yield
 
-    def _setup() -> None:
-        _ensure_swarm_init(docker_client)
+    if is_xdist_worker(request):
+        return  # the xdist controller leaves the swarm at session end (see `pytest_sessionfinish`)
 
-    def _teardown() -> None:
-        if keep_docker_up:
-            return
-        with log_context(logging.INFO, "leaving docker swarm", logger=_logger):
-            assert docker_client.swarm.leave(force=True)
-        # only THIS worker left the swarm, so only it can validate the daemon is out: every
-        # non-last holder still sees an initialized swarm (others hold it up) and must not
-        # assert here
-        assert _is_docker_swarm_init(docker_client) is keep_docker_up
+    if not keep_docker_up:
+        _leave_swarm(docker_client)
 
-    with shared_resource_session(
-        request,
-        tmp_path_factory,
-        _DOCKER_SWARM_REGISTRY_NAME,
-        setup_fn=_setup,
-        teardown_fn=_teardown,
-        setup_failed_cleanup_fn=_teardown,
-        wait_timeout=timedelta(minutes=2),
-    ):
-        yield
+    assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
 @retry(
@@ -293,47 +283,22 @@ def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     )
 
 
-def _create_stack_network(
-    docker_client: docker.client.DockerClient, network_name: str
-) -> docker.models.networks.Network:
-    return docker_client.networks.create(
-        name=network_name,
-        driver="overlay",
-        attachable=True,
-        labels={
-            "com.docker.stack.namespace": "simcore",
-            "created_by": "pytest-simcore",
-        },
-    )
-
-
-def _get_or_create_network(
-    docker_client: docker.client.DockerClient, network_name: str
-) -> tuple[docker.models.networks.Network, bool]:
-    """Returns (network, created_new).
-
-    Safe across xdist workers: two workers can both observe `NotFound` and race to create
-    the network; the loser gets a 409 Conflict and must fetch what the winner created.
-    """
+def _create_network_if_missing(docker_client: docker.client.DockerClient, network_name: str) -> bool:
+    """Returns True if the network had to be created"""
     try:
-        return docker_client.networks.get(network_name), False
+        docker_client.networks.get(network_name)
     except docker.errors.NotFound:
-        pass
-    try:
-        return _create_stack_network(docker_client, network_name), True
-    except APIError as err:
-        if err.response is None or err.response.status_code != 409:
-            raise
-        # another worker is creating it right now: wait for it to show up
-        for attempt in Retrying(
-            stop=stop_after_delay(2 * MINUTE),
-            wait=wait_fixed(0.2),
-            retry=retry_if_exception_type(docker.errors.NotFound),
-            reraise=True,
-        ):
-            with attempt:
-                network = docker_client.networks.get(network_name)
-        return network, False
+        docker_client.networks.create(
+            name=network_name,
+            driver="overlay",
+            attachable=True,
+            labels={
+                "com.docker.stack.namespace": "simcore",
+                "created_by": "pytest-simcore",
+            },
+        )
+        return True
+    return False
 
 
 def _remove_network_when_free(docker_client: docker.client.DockerClient, network_name: str) -> None:
@@ -353,70 +318,27 @@ def _remove_network_when_free(docker_client: docker.client.DockerClient, network
                 network.remove()
 
 
-def _shared_stack_network(
+def _stack_network(
     network_name: str,
     docker_client: docker.client.DockerClient,
     keep_docker_up: bool,
     request: pytest.FixtureRequest,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[docker.models.networks.Network]:
-    """Shares one `external` compose network across xdist workers with ref-counted lifetime
-    (see `shared_resource_session`, which registers the worker BEFORE the network is touched,
-    so a worker that is still setting the network up can never be raced by another worker's
-    last-user teardown removing it out from under it).
+    created_new = False
+    with run_once_across_workers(
+        request, tmp_path_factory, f"docker_network_{network_name}", timeout=_DOCKER_SWARM_SETUP_TIMEOUT
+    ) as is_first:
+        if is_first:
+            created_new = _create_network_if_missing(docker_client, network_name)
+            if created_new:
+                record_shared_resource(request, tmp_path_factory, kind="network", name=network_name)
 
-    One registry PER network: ref-counting distinct networks jointly would let the last
-    deregister remove only its own network and orphan every other one. Since pytest finalizes
-    `docker_stack` (which depends on these network fixtures) BEFORE the network fixtures of the
-    same worker, the last deregistration necessarily happens after EVERY worker completed its
-    stack teardown and drained its service endpoints.
+    yield docker_client.networks.get(network_name)
 
-    Only a network THIS session created is ever removed: a pre-existing one may belong to a
-    concurrent (or crashed, still-recoverable) session and must survive this run's teardown.
-    """
-    root_tmp_path = get_xdist_root_tmp_path(tmp_path_factory)
-    # shared marker set when THIS session's setup created the network: under xdist the worker
-    # running the last-user teardown is not necessarily the one that created it, so the flag
-    # must live in the base temp dir every worker shares (fresh per run, never read by another
-    # session, whose registries/markers live in its own base temp)
-    created_marker = root_tmp_path / f"{_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX}-{network_name}.created"
-
-    def _setup() -> None:
-        # the 409 create race across workers is resolved inside `_get_or_create_network`
-        _, created_new = _get_or_create_network(docker_client, network_name)
-        if created_new:
-            created_marker.touch()
-
-    def _teardown() -> None:
-        if keep_docker_up:
-            return
-        if not created_marker.exists():
-            # this session never created the network: it belongs to another (or orphaned) one
-            return
-        try:
-            _remove_network_when_free(docker_client, network_name)
-        except APIError:
-            _logger.warning(
-                "could not remove shared network '%s' after the last user left: if no other "
-                "test session is running, remove it manually with 'docker network rm %s'",
-                network_name,
-                network_name,
-                exc_info=True,
-            )
-
-    with shared_resource_session(
-        request,
-        tmp_path_factory,
-        f"{_DOCKER_NETWORKS_REGISTRY_NAME_PREFIX}-{network_name}",
-        setup_fn=_setup,
-        teardown_fn=_teardown,
-        setup_failed_cleanup_fn=_teardown,
-        # must exceed the worst-case teardown (`_remove_network_when_free` retries for up to
-        # 3 * MINUTE): the next owner's marker-wait budget covers that cleanup, and timing out
-        # on a still-live one would surface as a hard setup error
-        wait_timeout=10 * MINUTE,
-    ):
-        yield docker_client.networks.get(network_name)
+    # under xdist the controller removes it at session end (see `pytest_sessionfinish`)
+    if created_new and not keep_docker_up and not is_xdist_worker(request):
+        _remove_network_when_free(docker_client, network_name)
 
 
 @pytest.fixture(scope="module")
@@ -430,7 +352,7 @@ def simcore_docker_network(
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
     network_name = simcore_docker_compose["networks"]["default"]["name"]
-    yield from _shared_stack_network(network_name, docker_client, keep_docker_up, request, tmp_path_factory)
+    yield from _stack_network(network_name, docker_client, keep_docker_up, request, tmp_path_factory)
 
 
 @pytest.fixture(scope="module")
@@ -444,11 +366,80 @@ def interactive_services_subnet_docker_network(
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
     network_name = simcore_docker_compose["networks"]["interactive_services_subnet"]["name"]
-    yield from _shared_stack_network(network_name, docker_client, keep_docker_up, request, tmp_path_factory)
+    yield from _stack_network(network_name, docker_client, keep_docker_up, request, tmp_path_factory)
+
+
+def _remove_stacks(docker_client: docker.client.DockerClient, stack_names: Iterable[str]) -> None:
+    """Removes the stacks in the given order and waits until the daemon drained their resources"""
+    # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
+    for stack in stack_names:
+        try:
+            subprocess.run(  # noqa: S603
+                f"docker stack remove {stack}".split(" "),
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as err:
+            _logger.warning(
+                "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
+                err.cmd,
+                err.returncode,
+                HEADER_STR.format("stdout"),
+                err.stdout.decode("utf8") if err.stdout else "",
+                HEADER_STR.format("stderr"),
+                err.stderr.decode("utf8") if err.stderr else "",
+            )
+
+        # The check order is intentional because some resources depend on others to be removed
+        # e.g. cannot remove networks/volumes used by running containers
+        for resource_name in ("services", "containers", "volumes", "networks"):
+            resource_client = getattr(docker_client, resource_name)
+
+            for attempt in Retrying(
+                wait=wait_fixed(2),
+                stop=stop_after_delay(3 * MINUTE),
+                before_sleep=before_sleep_log(_logger, logging.INFO),
+                reraise=True,
+            ):
+                with attempt:
+                    pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
+                    if pending:
+                        if resource_name in ("volumes",):
+                            # WARNING: rm volumes on this stack might be a problem when shared
+                            # between different stacks
+                            # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
+                            for resource in pending:
+                                resource.remove(force=True)
+
+                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
+                        raise _ResourceStillNotRemovedError(msg)
+
+    _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
+
+
+def pytest_sessionfinish(session: pytest.Session) -> None:
+    """Under xdist, workers leave the shared docker resources up: the controller removes them here"""
+    if not is_xdist_controller(session.config) or session.config.getoption("--keep-docker-up", default=False):
+        return
+
+    resources = read_shared_resources(session.config)
+    if not resources:
+        return
+
+    docker_client = docker.from_env()
+    try:
+        # stacks first, in reverse deploy order since they share networks
+        _remove_stacks(docker_client, [r["name"] for r in reversed(resources) if r["kind"] == "stack"])
+        for network in (r["name"] for r in resources if r["kind"] == "network"):
+            _remove_network_when_free(docker_client, network)
+        if any(r["kind"] == "swarm" for r in resources):
+            _leave_swarm(docker_client)
+    finally:
+        docker_client.close()
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def docker_stack(  # noqa: C901, PLR0915
+async def docker_stack(  # noqa: C901
     osparc_simcore_services_dir: Path,
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
@@ -464,10 +455,7 @@ async def docker_stack(  # noqa: C901, PLR0915
 ) -> AsyncIterator[dict]:
     """deploys core and ops stacks and returns as soon as all are running
 
-    Under pytest-xdist, every worker process runs this fixture independently, but the
-    underlying stack is a single shared resource: `shared_resource_session` ref-counts it so
-    exactly one worker deploys it and only the last caller tears it down, regardless of how
-    many workers/modules use it.
+    Under xdist, the first worker deploys the stacks for the whole run and the controller removes them.
     """
 
     # WARNING: keep prefix "pytest-" in stack names
@@ -490,10 +478,8 @@ async def docker_stack(  # noqa: C901, PLR0915
         return union
 
     def _widen_valkey_databases(compose_path: Path) -> None:
-        # valkey/redis `--databases` is a BOOT-TIME argument (NOT CONFIG SET-able), so the widened
-        # count must be baked into the compose BEFORE deploy: reserve one bank of logical
-        # databases per potential xdist worker (+1 bank for the master/default one) on the shared
-        # container, read from the base count the compose itself declares (never hardcoded here)
+        # `--databases` is a boot-time argument: reserve one bank of logical databases per potential
+        # xdist worker (+1 for the master) in the compose BEFORE deploying
         content = yaml.safe_load(compose_path.read_text())
         base_count = get_valkey_databases_count(content)
         if base_count is None:
@@ -503,22 +489,12 @@ async def docker_stack(  # noqa: C901, PLR0915
 
     def _compose_file_for(unfiltered: dict, filtered_path: Path, label: str, selection_attr: str) -> Path:
         if not is_xdist_worker(request):
-            # single-process run: unaffected, same per-module filtered selection as before
             return filtered_path
-        # NOTE: under xdist, different test modules may declare different (smaller)
-        # `core_services_selection`/`ops_services_selection` subsets, but only the FIRST
-        # module to reach this fixture actually deploys (see `owns_stack` below) - deploying
-        # ITS OWN filtered subset would starve later modules of services they need (e.g. a
-        # module selecting only "postgres" would prevent "rabbit"/"redis" from ever being
-        # deployed for other modules). Deploy the UNION of every collected module's selection
-        # instead, so every module's selection is always already satisfied - deploying the
-        # full, unfiltered compose is NOT an option: it includes production services whose
-        # images aren't built/available in a test environment.
+        # only the first worker deploys, so it must deploy the UNION of the services selected by all
+        # collected modules (the unfiltered compose has services without test images)
         union_path = get_xdist_root_tmp_path(tmp_path_factory) / f"{label}_union_docker_compose.yml"
         with FileLock(f"{union_path}.lock"):
-            # NOTE: the check+dump must happen under a cross-process lock and the file must
-            # appear atomically (write to .tmp + atomic rename): a worker deploying the stack
-            # must never read a half-written compose produced concurrently by another worker
+            # atomic rename: another worker must never read a half-written compose
             if not union_path.exists():
                 tmp_path = union_path.with_name(f"{union_path.name}.tmp")
                 _filter_services_and_dump(_collected_services_union(selection_attr), unfiltered, tmp_path)
@@ -543,156 +519,74 @@ async def docker_stack(  # noqa: C901, PLR0915
         ),
     ]
 
-    def _teardown_shared_resources() -> None:
-        """removes the deployed stacks.
+    # All SELECTED services ready
+    # - notice that the timeout is set for all services in both stacks
+    # - TODO: the time to deploy will depend on the number of services selected
+    async def _check_all_services_are_running():
+        # NOTE: only THIS stack's services: under xdist, services other workers' tests create and
+        # remove concurrently would make `assert_service_is_running` fail on already-gone services
+        stack_services = [
+            service
+            for _, stack_name, _ in stacks
+            for service in docker_client.services.list(filters={"label": f"com.docker.stack.namespace={stack_name}"})
+        ]
+        done, pending = await asyncio.wait(
+            [
+                asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
+                for service in stack_services
+            ],
+            return_when=asyncio.FIRST_EXCEPTION,
+        )
+        assert done, f"no services ready, they all failed! [{pending}]"
 
-        Only runs for the last holder (normal teardown, or the setup-failure cleanup when no
-        stack users remain), always from inside the session's `daemon_churn_access` wrapper -
-        re-acquiring it here would risk a writer interposing between the two nested reader
-        acquisitions and stalling both. `keep_docker_up` short-circuits it. The shared
-        `external` networks are NOT removed here: the network fixtures ref-count their own
-        lifetime and the last of theirs removes them (after this ran everywhere).
-        """
-        _fetch_and_print_services(docker_client, "[AFTER TEST]")
+        for future in done:
+            if exc := future.exception():
+                raise exc
 
-        if keep_docker_up:
-            # skip bringing the stack down
-            return
+        assert not pending, f"some service did not start correctly [{pending}]"
 
-        # clean up. Guarantees that all services are down before creating a new stack!
-        # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
-        # (poll until the daemon finished draining stack resources before proceeding)
+    with run_once_across_workers(
+        request, tmp_path_factory, "docker_stack", timeout=_DOCKER_STACK_SETUP_TIMEOUT
+    ) as is_first:
+        if is_first:
+            # recorded BEFORE deploying so the controller also cleans up a half-deployed stack
+            for _, stack_name, _ in stacks:
+                record_shared_resource(request, tmp_path_factory, kind="stack", name=stack_name)
 
-        # make down
-        # NOTE: remove them in reverse order since stacks share common networks
-
-        stacks.reverse()
-        for _, stack, _ in stacks:
-            try:
-                subprocess.run(  # noqa: S603
-                    f"docker stack remove {stack}".split(" "),
-                    check=True,
-                    capture_output=True,
-                )
-            except subprocess.CalledProcessError as err:
-                _logger.warning(
-                    "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
-                    err.cmd,
-                    err.returncode,
-                    HEADER_STR.format("stdout"),
-                    err.stdout.decode("utf8") if err.stdout else "",
-                    HEADER_STR.format("stderr"),
-                    err.stderr.decode("utf8") if err.stderr else "",
-                )
-
-            # Waits that all resources get removed or force them
-            # The check order is intentional because some resources depend on others to be removed
-            # e.g. cannot remove networks/volumes used by running containers
-            for resource_name in ("services", "containers", "volumes", "networks"):
-                resource_client = getattr(docker_client, resource_name)
-
-                for attempt in Retrying(
-                    wait=wait_fixed(2),
-                    stop=stop_after_delay(3 * MINUTE),
-                    before_sleep=before_sleep_log(_logger, logging.INFO),
-                    reraise=True,
-                ):
-                    with attempt:
-                        pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
-                        if pending:
-                            if resource_name in ("volumes",):
-                                # WARNING: rm volumes on this stack might be a problem when shared
-                                # between different stacks
-                                # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
-                                for resource in pending:
-                                    resource.remove(force=True)
-
-                            msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
-                            raise _ResourceStillNotRemovedError(msg)
-
-        _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
-
-    def _stacks_description() -> dict[str, dict]:
-        return {
-            key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
-            for key, stack_name, compose_file in stacks
-        }
-
-    stacks_deployed: dict[str, dict] = {}
-
-    def _deploy_stack_sections() -> Awaitable[None]:
-        async def _deploy_and_wait() -> None:
-            # NOTE: runs inside the session's `daemon_churn_access` wrapper already: do NOT
-            # re-acquire it here (a writer interposing between nested reader acquisitions
-            # would stall both until they time out)
             # NOTE: if the migration service was already running prior to this call it must
             # be force updated so that it does its job. else it remains and tests will fail
             _force_remove_migration_service(docker_client)
             _make_dask_sidecar_certificates(osparc_simcore_services_dir)
             # make up-version
-            for key, stack_name, compose_file in stacks:
+            for _, stack_name, compose_file in stacks:
                 _deploy_stack(compose_file, stack_name)
-
-                stacks_deployed[key] = {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
-
-            # All SELECTED services ready
-            # - notice that the timeout is set for all services in both stacks
-            # - TODO: the time to deploy will depend on the number of services selected
-            async def _check_all_services_are_running():
-                # NOTE: scoped to THIS stack's namespaces on purpose: under xdist, other workers
-                # may be concurrently creating/removing their own test services, and asserting
-                # those (soon-gone, hence 404-forever) services here would stall the deploy until
-                # `assert_service_is_running` times out and fails the whole shared stack
-                stack_services = [
-                    service
-                    for _, stack_name, _ in stacks
-                    for service in docker_client.services.list(
-                        filters={"label": f"com.docker.stack.namespace={stack_name}"}
-                    )
-                ]
-                done, pending = await asyncio.wait(
-                    [
-                        asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
-                        for service in stack_services
-                    ],
-                    return_when=asyncio.FIRST_EXCEPTION,
-                )
-                assert done, f"no services ready, they all failed! [{pending}]"
-
-                for future in done:
-                    if exc := future.exception():
-                        raise exc
-
-                assert not pending, f"some service did not start correctly [{pending}]"
 
             try:
                 await _check_all_services_are_running()
             finally:
                 _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
-        return _deploy_and_wait()
+    yield {
+        "stacks": {
+            key: {"name": stack_name, "compose": yaml.safe_load(compose_file.read_text())}
+            for key, stack_name, compose_file in stacks
+        },
+        "services": [service.name for service in docker_client.services.list()],  # type: ignore
+    }
 
-    # `ashared_resource_session` registers this worker BEFORE deploying, marks the stack ready
-    # (or FAILED, so waiters abort fast) around the deploy, and ref-counts the teardown so only
-    # the last holder removes the stacks (best-effort cleanup runs there when a deploy fails)
-    async with ashared_resource_session(
-        request,
-        tmp_path_factory,
-        _DOCKER_STACK_REGISTRY_NAME,
-        setup_fn=_deploy_stack_sections,
-        teardown_fn=_teardown_shared_resources,
-        setup_failed_cleanup_fn=_teardown_shared_resources,
-        wait_timeout=_DOCKER_STACK_READY_TIMEOUT,
-    ) as owns_stack:
-        if not owns_stack:
-            # another worker deployed the shared stack: just describe it (its compose files are
-            # the same union ones this worker computed above)
-            stacks_deployed = _stacks_description()
+    # TEAR DOWN ----------------------
 
-        yield {
-            "stacks": stacks_deployed,
-            "services": [service.name for service in docker_client.services.list()],  # type: ignore
-        }
+    if is_xdist_worker(request):
+        return  # the xdist controller removes the stacks at session end (see `pytest_sessionfinish`)
+
+    _fetch_and_print_services(docker_client, "[AFTER TEST]")
+
+    if keep_docker_up:
+        # skip bringing the stack down
+        return
+
+    # NOTE: remove them in reverse order since stacks share common networks
+    _remove_stacks(docker_client, [stack_name for _, stack_name, _ in reversed(stacks)])
 
 
 @pytest.fixture
