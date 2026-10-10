@@ -19,12 +19,8 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/director-v2
-  # NOTE: with_dbs tests are now safe to run alongside the rest with pytest-xdist: they share
-  # ONE docker stack and each xdist worker gets its own database clone/rabbit vhost/S3 bucket
-  # (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py). A few tests that list
-  # swarm services globally take a cross-worker read/write lock instead
-  # (@pytest.mark.docker_exclusive, see the pytest_simcore.xdist_docker_daemon plugin in
-  # packages/pytest-simcore/src/pytest_simcore/xdist_docker_daemon.py).
+  # NOTE: xdist workers share ONE docker stack (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py);
+  # tests marked `docker_exclusive` run alone (see the pytest_simcore.xdist_docker_daemon plugin)
   make test-ci-unit pytest-parameters="--numprocesses=auto"
   popd
 }
