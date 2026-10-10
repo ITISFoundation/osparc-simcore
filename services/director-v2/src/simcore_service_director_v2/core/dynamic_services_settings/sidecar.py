@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY, BootModeEnum
+from common_library.pydantic_resources import CpuCores
 from models_library.docker import (
     OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerLabelKey,
@@ -15,8 +16,10 @@ from models_library.utils.common_validators import (
 )
 from pydantic import (
     AliasChoices,
+    ByteSize,
     Field,
     Json,
+    TypeAdapter,
     ValidationInfo,
     field_validator,
 )
@@ -142,6 +145,16 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: Annotated[
         RCloneSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
+
+    DYNAMIC_SIDECAR_OWN_CPU_LIMIT: Annotated[
+        CpuCores,
+        Field(description="CPU cores the dynamic-sidecar process itself requires"),
+    ] = CpuCores(cores=0.5)
+
+    DYNAMIC_SIDECAR_OWN_MEMORY_LIMIT: Annotated[
+        ByteSize,
+        Field(description="memory the dynamic-sidecar process itself requires, including usage spikes"),
+    ] = TypeAdapter(ByteSize).validate_python("1GiB")
 
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: Annotated[
         PlacementSettings, Field(json_schema_extra={"auto_default_from_env": True})

@@ -10,6 +10,8 @@ This package owns the whole tracing pipeline for user services, end to end:
    them to the platform's OTLP/HTTP endpoint.
 """
 
+from settings_library.user_services_tracing import UserServicesTracingSettings
+
 from ._otel_collector import (
     OTEL_COLLECTOR_SERVICE_NAME,
     build_otel_collector_compose_service,
@@ -21,7 +23,6 @@ from ._otel_forwarder import (
     is_user_services_tracing_enabled,
     remove_user_services_trace_collector,
 )
-from ._settings import UserServicesTracingSettings
 
 __all__: tuple[str, ...] = (
     "OTEL_COLLECTOR_SERVICE_NAME",
