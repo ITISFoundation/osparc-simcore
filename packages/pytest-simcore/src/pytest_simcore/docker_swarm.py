@@ -26,7 +26,7 @@ from faker import Faker
 from filelock import FileLock
 from tenacity import AsyncRetrying, Retrying, TryAgain, retry
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type
+from tenacity.retry import retry_if_exception_type, retry_if_not_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed, wait_random_exponential
 
@@ -310,7 +310,7 @@ def _remove_network_when_free(docker_client: docker.client.DockerClient, network
         for attempt in Retrying(
             stop=stop_after_delay(3 * MINUTE),
             wait=wait_fixed(2),
-            retry=retry_if_exception_type(APIError),
+            retry=retry_if_exception_type(APIError) & retry_if_not_exception_type(docker.errors.NotFound),
             before_sleep=before_sleep_log(_logger, logging.INFO),
             reraise=True,
         ):
