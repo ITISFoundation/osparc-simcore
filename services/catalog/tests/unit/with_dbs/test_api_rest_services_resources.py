@@ -60,11 +60,6 @@ def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
 
 
 @pytest.fixture
-def service_key(faker: Faker) -> str:
-    return f"simcore/services/{faker.random_element(['comp', 'dynamic', 'frontend'])}/jupyter-math"
-
-
-@pytest.fixture
 def service_version(faker: Faker) -> str:
     return f"{faker.random_int(0, 100)}.{faker.random_int(0, 100)}.{faker.random_int(0, 100)}"
 
@@ -203,10 +198,12 @@ async def test_get_service_resources(
     mocked_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
-    service_key: str,
     service_version: str,
     target_product: ProductName,
 ) -> None:
+    # NOTE: a 'frontend' key would be a function service (see `is_function_service`) and
+    # the endpoint would short-circuit to default resources without querying director
+    service_key = "simcore/services/comp/jupyter-math"
     mocked_director_service_labels.respond(json={"data": params.simcore_service_label})
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
@@ -220,6 +217,35 @@ async def test_get_service_resources(
         boot_modes=params.expected_boot_modes,
     )
     assert received_resources == expected_service_resources
+
+
+async def test_get_service_resources_function_service_returns_defaults_without_querying_director(
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_service_labels: Route,
+    client: TestClient,
+    mock_service_labels: dict[str, Any],
+    service_version: str,
+    target_product: ProductName,
+) -> None:
+    # function services live under `simcore/services/frontend/` (see `is_function_service`):
+    # the endpoint must return the default resources and NEVER query director for labels,
+    # even when labels are available and would otherwise change the resources
+    service_key = "simcore/services/frontend/jupyter-math"
+    mocked_director_service_labels.respond(json={"data": mock_service_labels})
+
+    url = URL(f"/v0/services/{service_key}/{service_version}/resources")
+    response = client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: target_product})
+    assert response.status_code == 200, f"{response.text}"
+    received_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(response.json())
+
+    expected_service_resources = create_service_resources_from_single_service(
+        TypeAdapter(DockerGenericTag).validate_python(f"{service_key}:{service_version}"),
+        _DEFAULT_RESOURCES,
+        boot_modes=[BootMode.CPU],
+    )
+    assert received_resources == expected_service_resources
+    assert not mocked_director_service_labels.called, "director must not be queried for function services"
 
 
 @pytest.fixture
@@ -342,10 +368,11 @@ async def test_get_service_resources_raises_errors(
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
-    service_key: str,
     service_version: str,
     target_product: ProductName,
 ) -> None:
+    # see NOTE in `test_get_service_resources`: this must not be a function service
+    service_key = "simcore/services/dynamic/jupyter-math"
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     # simulate a communication error
     mocked_director_service_labels.side_effect = httpx.HTTPError
