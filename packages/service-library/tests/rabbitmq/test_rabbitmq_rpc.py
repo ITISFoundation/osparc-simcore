@@ -345,7 +345,7 @@ async def test_register_handler_concurrent_with_rebuild_is_not_lost(
     original_register = aio_pika.patterns.RPC.register
     gate_pending = True
 
-    async def _gated_register(self: aio_pika.patterns.RPC, *args, **kwargs) -> None:
+    async def _gated_register(self: aio_pika.patterns.RPC, *args: Any, **kwargs: Any) -> None:
         nonlocal gate_pending
         if gate_pending:  # hold only the racing registration, not the rebuild's re-registrations
             gate_pending = False
