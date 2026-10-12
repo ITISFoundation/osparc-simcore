@@ -134,7 +134,7 @@ async def _get_published_template_project(
 
 
 class _StudyPagePathParams(StrictRequestParameters):
-    id: ProjectID  # matches the '{id}' path parameter
+    id: ProjectID
 
 
 class RedirectToFrontEndPageError(Exception):
