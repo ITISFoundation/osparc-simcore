@@ -2,10 +2,10 @@ import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from uuid import uuid4
 
-from celery import Celery, group, signature  # type: ignore[import-untyped]
+from celery import Celery, group, signature, states  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError, OperationalError  # type: ignore[import-untyped]
 from celery.result import GroupResult  # type: ignore[import-untyped]
 from celery.utils.time import rate as celery_rate  # type: ignore[import-untyped]
@@ -46,6 +46,30 @@ _logger = logging.getLogger(__name__)
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 1.0
+
+_CELERY_STATE_TO_TASK_STATE: Final[dict[str, TaskState]] = {
+    states.FAILURE: TaskState.FAILURE,
+    states.IGNORED: TaskState.FAILURE,
+    states.PENDING: TaskState.PENDING,
+    states.RECEIVED: TaskState.PENDING,
+    states.REJECTED: TaskState.PENDING,
+    states.RETRY: TaskState.RETRY,
+    states.REVOKED: TaskState.FAILURE,
+    states.STARTED: TaskState.STARTED,
+    states.SUCCESS: TaskState.SUCCESS,
+}
+
+
+def _to_task_state(celery_state: str) -> TaskState:
+    """Map a raw Celery state to TaskState, unknown states as PENDING."""
+    if (task_state := _CELERY_STATE_TO_TASK_STATE.get(celery_state)) is None:
+        _logger.warning(
+            "Reporting unknown Celery task state '%s' as '%s'",
+            celery_state,
+            TaskState.PENDING,
+        )
+        return TaskState.PENDING
+    return task_state
 
 
 @dataclass(frozen=True)
@@ -333,7 +357,7 @@ class CeleryTaskManager:
 
     @make_async()
     def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
-        return TaskState(self._app.AsyncResult(task_key).state)
+        return _to_task_state(self._app.AsyncResult(task_key).state)
 
     async def _get_group_result(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> list[Any]:
         with log_context(
