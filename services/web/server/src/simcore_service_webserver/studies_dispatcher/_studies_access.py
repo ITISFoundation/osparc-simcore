@@ -18,6 +18,7 @@ from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.groups import EVERYONE_GROUP_ID, GroupID
 from models_library.projects import ProjectID
+from models_library.rest_base import StrictRequestParameters
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -34,6 +35,7 @@ from ..projects.models import ProjectDict
 from ..security import security_web
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
+from ..web_requests_validation import parse_request_path_parameters_as
 from ._constants import (
     MSG_LOGIN_REQUIRED,
     MSG_PROJECT_NOT_FOUND,
@@ -131,6 +133,10 @@ async def _get_published_template_project(
 # HANDLERS --------------------------------------------------------
 
 
+class _StudyPagePathParams(StrictRequestParameters):
+    id: ProjectID  # matches the '{id}' path parameter
+
+
 class RedirectToFrontEndPageError(Exception):
     def __init__(self, human_readable_message: str, error_code: str, status_code: int) -> None:
         self.human_readable_message = human_readable_message
@@ -209,7 +215,8 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     # Check if studies dispatcher is enabled for this product
     check_studies_dispatcher_enabled(request)
 
-    project_id = request.match_info["id"]
+    path_params = parse_request_path_parameters_as(_StudyPagePathParams, request)
+    project_id = f"{path_params.id}"
     assert request.app.router[INDEX_RESOURCE_NAME]  # nosec
 
     # Checks USER
@@ -223,7 +230,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     # Work-around to check if there is a PROJECT with project_id: check the type of the project.
     try:
         db = ProjectDBAPI.get_from_app_context(request.app)
-        await db.get_project_type(project_uuid=ProjectID(project_id))
+        await db.get_project_type(project_uuid=path_params.id)
     except ProjectNotFoundError as exc:
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
