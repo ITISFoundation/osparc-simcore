@@ -15,6 +15,7 @@ import re
 import shutil
 from collections.abc import Iterator
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final
 
@@ -29,6 +30,13 @@ from .helpers import (
 from .helpers.docker import filter_service_names_for_ci, run_docker_compose_config, save_docker_infos
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
+from .helpers.xdist import (
+    is_xdist_controller,
+    is_xdist_worker,
+    read_shared_resources,
+    record_shared_resource,
+    run_once_across_workers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -133,42 +141,64 @@ def env_file_for_docker_compose(
     temp_folder: Path,
     env_vars_for_docker_compose: EnvVarsDict,
     osparc_simcore_root_dir: Path,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
     Pass path as argument in 'docker compose --env-file ... '
+
+    Under xdist the repo-root .env is shared by all workers and its content is the same for the whole run,
+    so the first worker writes it once and the controller restores the original at session end.
     """
-    # SEE:
-    #   https://docs.docker.com/compose/env-file/
-    #   https://docs.docker.com/compose/environment-variables/#the-env-file
-
-    env_test_path = temp_folder / ".env.test"
-    with env_test_path.open("wt") as fh:
-        print(
-            f"# Auto-generated from env_file_for_testing in {__file__}",
-            file=fh,
-        )
-        for key, value in sorted(env_vars_for_docker_compose.items()):
-            # NOTE: python-dotenv parses JSON encoded strings correctly, but
-            # writing them back shows an issue. if the original ENV is something like
-            #   MY_ENV='{"correct": "encodedjson"}'
-            # it goes to MY_ENV={"incorrect": "encodedjson"}!
-            if value.startswith(("{", "[")) and value.endswith(("}", "]")):
-                print(f"{key}='{value}'", file=fh)
-            else:
-                print(f"{key}={value}", file=fh)
-
-    #
     # WARNING: since compose files have references to ../.env we MUST create .env
-    #
     backup_path = osparc_simcore_root_dir / ".env.bak"
     env_path = osparc_simcore_root_dir / ".env"
-    if env_path.exists():
-        shutil.copy(env_path, backup_path)
 
-    shutil.copy(env_test_path, env_path)
+    with run_once_across_workers(
+        request, tmp_path_factory, "env_file_for_docker_compose", timeout=timedelta(minutes=1)
+    ) as is_first:
+        if is_first:
+            # SEE:
+            #   https://docs.docker.com/compose/env-file/
+            #   https://docs.docker.com/compose/environment-variables/#the-env-file
+            env_test_path = temp_folder / ".env.test"
+            with env_test_path.open("wt") as fh:
+                print(
+                    f"# Auto-generated from env_file_for_testing in {__file__}",
+                    file=fh,
+                )
+                for key, value in sorted(env_vars_for_docker_compose.items()):
+                    # NOTE: python-dotenv parses JSON encoded strings correctly, but
+                    # writing them back shows an issue. if the original ENV is something like
+                    #   MY_ENV='{"correct": "encodedjson"}'
+                    # it goes to MY_ENV={"incorrect": "encodedjson"}!
+                    if value.startswith(("{", "[")) and value.endswith(("}", "]")):
+                        print(f"{key}='{value}'", file=fh)
+                    else:
+                        print(f"{key}={value}", file=fh)
+
+            had_env = env_path.exists()
+            if had_env:
+                shutil.copy(env_path, backup_path)
+
+            # replace is atomic: concurrent `docker compose config` must never read a partial file
+            staging_path = env_path.with_name(".env.staging")
+            shutil.copy(env_test_path, staging_path)
+            staging_path.replace(env_path)
+
+            record_shared_resource(
+                request,
+                tmp_path_factory,
+                kind="env_file",
+                path=f"{env_path}",
+                backup=f"{backup_path}" if had_env else "",
+            )
 
     yield env_path
+
+    if is_xdist_worker(request):
+        return  # the xdist controller restores it at session end (see `pytest_sessionfinish`)
 
     if backup_path.exists():
         backup_path.replace(env_path)
@@ -322,6 +352,11 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name
         _save_docker_logs_to_folder(failed_test_directory)
+
+    if is_xdist_controller(session.config):
+        for resource in read_shared_resources(session.config):
+            if resource["kind"] == "env_file" and resource["backup"]:
+                Path(resource["backup"]).replace(resource["path"])
 
 
 def _fix_s3_endpoint_to_host(service_environs: dict[str, str]) -> dict[str, str]:

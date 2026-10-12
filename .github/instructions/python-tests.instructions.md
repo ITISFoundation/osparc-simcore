@@ -30,6 +30,7 @@ This is a multi-project monorepo with two main groups of projects in the folders
 
 - **Banned** in `conftest.py` and in `pytest_simcore` plugins.
 - **Allowed only** when the fixture is defined and used within the same test module. Add a comment above the fixture explaining why `autouse` is necessary and confirming it is scoped to that module to avoid unintended side effects.
+- **Exception:** a `pytest_simcore` plugin whose entire purpose is a cross-cutting concern that a suite explicitly opts into by listing the plugin in `pytest_plugins` (e.g. `pytest_simcore.xdist_docker_daemon`) may define autouse fixtures: loading the plugin IS the opt-in, so nothing is implicit for suites that do not load it. The plugin's module docstring must document this contract.
 
 ### File size
 
