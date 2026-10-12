@@ -1,15 +1,11 @@
-from typing import Generic, TypeAlias, TypeVar
-
 from ._mixins import DisplayaMixin, ParentMixin
 from .base_component import BaseUpdatableComponent
 from .base_display_model import BaseUpdatableDisplayModel
 
-M = TypeVar("M", bound=BaseUpdatableDisplayModel)
-
-Reference: TypeAlias = str
+type Reference = str
 
 
-class UpdatableComponentStack(DisplayaMixin, ParentMixin, Generic[M]):
+class UpdatableComponentStack[M: BaseUpdatableDisplayModel](DisplayaMixin, ParentMixin):
     """
     Renders `BaseUpdatableComponent` models via the provided `BaseUpdatableDisplayModel`
     Appends new elements to the parent container.

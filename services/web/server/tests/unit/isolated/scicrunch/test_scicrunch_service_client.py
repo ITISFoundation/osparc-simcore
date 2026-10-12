@@ -40,7 +40,8 @@ def mock_scicrunch_service_api(
     API_KEY = os.environ.get("SCICRUNCH_API_KEY")
     assert os.environ.get("SCICRUNCH_API_BASE_URL") == "https://scicrunch.org/api/1"
 
-    # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave" -H "accept: application/json
+    # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name
+    #   &value=octave" -H "accept: application/json
     aioresponses_mocker.get(
         f"https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave&key={API_KEY}",
         status=200,
@@ -76,7 +77,10 @@ def mock_scicrunch_service_api(
         f"https://scicrunch.org/api/1/resource/versions/all/SCR_018997?key={API_KEY}",
         status=200,
         payload=json.loads(
-            '{"data":[{"version":2,"status":"Curated","time":1598984801,"uid":34739,"username":"Edyta Vieth","cid":null},{"version":1,"status":"Pending","time":1598898249,"uid":43,"username":"Anita Bandrowski","cid":30}],"success":true}'
+            '{"data":[{"version":2,"status":"Curated","time":1598984801,"uid":34739,'
+            '"username":"Edyta Vieth","cid":null},{"version":1,"status":"Pending",'
+            '"time":1598898249,"uid":43,"username":"Anita Bandrowski","cid":30}],'
+            '"success":true}'
         ),
     )
 

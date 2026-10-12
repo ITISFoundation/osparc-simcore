@@ -1,21 +1,19 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
+from typing import Any, ClassVar
 
 from pydantic import NonNegativeInt
 
 from ._models import ClassUniqueReference, TaskResultError, TaskUID
 
-ResultType = TypeVar("ResultType")
-
-StartContext: TypeAlias = dict[str, Any]
-GlobalsContext: TypeAlias = dict[str, Any]
+type StartContext = dict[str, Any]
+type GlobalsContext = dict[str, Any]
 
 # composed by merging `GlobalsContext` and `StartContext`
-DeferredContext: TypeAlias = dict[str, Any]
+type DeferredContext = dict[str, Any]
 
 
-class BaseDeferredHandler(ABC, Generic[ResultType]):
+class BaseDeferredHandler[ResultType](ABC):
     """Base class to define a deferred task."""
 
     _SUBCLASSES: ClassVar[list[type["BaseDeferredHandler"]]] = []

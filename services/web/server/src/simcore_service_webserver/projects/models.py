@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any, TypeAlias
 
 from common_library.dict_tools import remap_keys
@@ -21,7 +21,7 @@ from simcore_postgres_database.models.projects import ProjectTemplateType, Proje
 ProjectDict: TypeAlias = dict[str, Any]
 
 
-class ProjectTypeAPI(str, Enum):
+class ProjectTypeAPI(StrEnum):
     all = "all"
     template = "template"
     user = "user"

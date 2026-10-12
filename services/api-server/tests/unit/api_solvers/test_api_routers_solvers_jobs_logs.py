@@ -39,6 +39,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
         _n_logs: int = 0
         _produced_logs: list[str] = []
         deregister_is_called: bool = False
+        _producer_task: asyncio.Task | None = None
 
         async def register(self, job_id: JobID, callback: asyncio.Queue[JobLog]):
             self._job_id = job_id
@@ -56,7 +57,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
                     await callback.put(msg)
                     await asyncio.sleep(0.1)
 
-            asyncio.create_task(produce_log())
+            self._producer_task = asyncio.create_task(produce_log())
             return self._queue_name
 
         async def deregister(self, job_id):
@@ -71,8 +72,10 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
 
 @pytest.fixture
 def fake_project_for_streaming(app: FastAPI, mocker: MockFixture, faker: Faker) -> Iterable[ProjectGet]:
-    assert isinstance(response_body := GET_PROJECT.response_body, dict)
-    assert (data := response_body.get("data")) is not None
+    response_body = GET_PROJECT.response_body
+    assert isinstance(response_body, dict)
+    data = response_body.get("data")
+    assert data is not None
     fake_project = ProjectGet.model_validate(data)
     fake_project.workbench = {faker.uuid4(): faker.uuid4()}
     mocker.patch(

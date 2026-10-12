@@ -256,13 +256,16 @@ async def test_raised_unhandled_exception(client: TestClient, caplog: pytest.Log
         # "tip": null
         # }
         # Traceback (most recent call last):
-        # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 94, in _middleware_handler
+        # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py",
+        #     line 94, in _middleware_handler
         #     return await handler(request)
         #         ^^^^^^^^^^^^^^^^^^^^^^
-        # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 186, in _middleware_handler
+        # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py",
+        #     line 186, in _middleware_handler
         #     resp = await handler(request)
         #         ^^^^^^^^^^^^^^^^^^^^^^
-        # File "/osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 109, in raise_exception
+        # File "/osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py",
+        #     line 109, in raise_exception
         #     raise SomeUnexpectedError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
         # tests.aiohttp.test_rest_middlewares.SomeUnexpectedError: Unexpected error
 

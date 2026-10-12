@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Literal, NamedTuple, TypeAlias, cast
+from typing import Annotated, Any, Literal, NamedTuple, cast
 
 from models_library.basic_types import IDStr
 from models_library.licenses import VIP_DETAILS_EXAMPLE, FeaturesDict
@@ -108,8 +108,8 @@ class ItisVipResourceData(BaseModel):
     terms_of_use_url: HttpUrl | None = None
 
 
-CategoryID: TypeAlias = IDStr
-CategoryDisplay: TypeAlias = str
+type CategoryID = IDStr
+type CategoryDisplay = str
 
 
 class CategoryTuple(NamedTuple):

@@ -176,23 +176,23 @@ async def test_list_workspaces_with_text_search(
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
+    data, _, _meta, _links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 2
 
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for().with_query({"filters": '{"text": "first"}'})
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
+    data, _, _meta, _links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 1
 
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for().with_query({"filters": '{"text": "important"}'})
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
+    data, _, _meta, _links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 1
 
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for().with_query({"filters": '{"text": "non-existing"}'})
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
+    data, _, _meta, _links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 0

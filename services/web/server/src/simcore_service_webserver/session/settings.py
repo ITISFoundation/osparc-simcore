@@ -38,7 +38,8 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         PositiveInt | None,
         Field(
             default=None,
-            description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
+            description="Max-Age attribute. Maximum age for session data, int seconds or None for "
+            "“session cookie” which last until you close your browser.",
         ),
     ]
     SESSION_COOKIE_SAMESITE: str | None = Field(

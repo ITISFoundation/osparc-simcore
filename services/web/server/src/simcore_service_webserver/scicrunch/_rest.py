@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class FieldItem(BaseModel):
     field_name: str = Field(..., alias="field")
     required: bool
-    value: str | None | list[Any] = None
+    value: str | list[Any] | None = None
 
 
 class ResourceView(BaseModel):

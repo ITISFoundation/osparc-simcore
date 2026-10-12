@@ -120,7 +120,8 @@ def downgrade():
             postgresql.TIMESTAMP(timezone=True),
             autoincrement=False,
             nullable=True,
-            comment="The date and time when the licensed_item was marked as trashed. Null if the licensed_item has not been trashed [default].",
+            comment="The date and time when the licensed_item was marked as trashed. Null if the licensed_item "
+            "has not been trashed [default].",
         ),
     )
     op.add_column(

@@ -2,7 +2,7 @@ import datetime
 import uuid
 from collections import namedtuple
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -49,7 +49,7 @@ class AutoscaledInstance:
     is_warm_buffer: bool = False
 
 
-class InstanceRole(str, Enum):
+class InstanceRole(StrEnum):
     manager = "manager"
     worker = "worker"
 

@@ -91,9 +91,8 @@ async def test_workflow(
             progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
             print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
             assert task_status.done, "task incomplete"
-            print(
-                f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
-            )
+            _statistics_json = json.dumps(attempt.retry_state.retry_object.statistics, indent=2)
+            print(f"-- waiting for task status completed successfully: {_statistics_json}")
     EXPECTED_MESSAGES = [
         ("starting", 0.0),
         ("generated item", 0.0),

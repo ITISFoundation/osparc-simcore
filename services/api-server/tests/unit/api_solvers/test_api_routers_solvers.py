@@ -201,7 +201,8 @@ async def test_solvers_page_pagination_last_page(
     total_items = response.json()["total"]
 
     assert total_items > 1, (
-        "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+        "Total items in MOCK examples should be greater than 1 for pagination test since we need "
+        "'prev', 'self' and 'prev' links"
     )
     last_item = total_items - 1
     page_size = 1

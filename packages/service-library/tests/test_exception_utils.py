@@ -8,7 +8,7 @@ from servicelib.exception_utils import DelayedExceptionHandler, suppress_excepti
 
 TOLERANCE: Final[PositiveFloat] = 0.1
 SLEEP_FOR: Final[PositiveFloat] = TOLERANCE * 0.1
-ITERATIONS: Final[PositiveInt] = int(ceil(TOLERANCE / SLEEP_FOR)) + 1
+ITERATIONS: Final[PositiveInt] = ceil(TOLERANCE / SLEEP_FOR) + 1
 
 
 class TargetException(Exception):

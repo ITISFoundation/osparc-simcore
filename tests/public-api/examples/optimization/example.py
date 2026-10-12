@@ -56,7 +56,6 @@ class ObjectiveFunction:
             pi = model.CreatePoint(coordinates)
             pi.Name = f"p{i}"
 
-        center = points[0]
         radius = (points[1] - points[0]).Length()
 
         arm_axis = points[2] - points[0]
@@ -117,7 +116,7 @@ class ObjectiveFunction:
         edgesrc_settings.Bandwidth = 300.0, units.MHz
 
         # Sensors
-        edgesensor_settings = sim.AddEdgeSensorSettings(source)
+        sim.AddEdgeSensorSettings(source)
 
         # Boundary Conditions
         options = sim.GlobalBoundarySettings.GlobalBoundaryType.enum
@@ -132,7 +131,7 @@ class ObjectiveFunction:
         manual_grid_settings.Resolution = (1.0,) * 3  # model units
 
         # Voxels
-        auto_voxel_settings = sim.AddAutomaticVoxelerSettings([arm1, arm2, source])
+        sim.AddAutomaticVoxelerSettings([arm1, arm2, source])
 
         # Solver settings
         options = sim.SolverSettings.Kernel.enum
@@ -185,24 +184,24 @@ class ObjectiveFunction:
 if __name__ == "__main__":
     endl: str = "\n"
     doc: str = (
-        "In this example we use Sim4Life and oSparc to determine the right length (arm_len) of a dipole antenna in order to achieve a given impedance profile."
-        + endl
+        "In this example we use Sim4Life and oSparc to determine the right length (arm_len) "
+        "of a dipole antenna in order to achieve a given impedance profile." + endl
     )
     doc += (
-        "This is done using a bayesian optimization algorithm which tries to guess the minimum of an objective function which,"
-        + endl
+        "This is done using a bayesian optimization algorithm which tries to guess the "
+        "minimum of an objective function which," + endl
     )
     doc += (
-        "given an input arm length, outputs the L2 squared distance to the reference impedance profile. I.e. the minimum of the objective function"
-        + endl
+        "given an input arm length, outputs the L2 squared distance to the reference impedance "
+        "profile. I.e. the minimum of the objective function" + endl
     )
     doc += (
-        "is the arm length giving the wished impedance profile (the optimal armlength is 249.5). N.b. this example should be run with the python interpreter"
-        + endl
+        "is the arm length giving the wished impedance profile (the optimal armlength is 249.5). "
+        "N.b. this example should be run with the python interpreter" + endl
     )
     doc += (
-        "shipped with Sim4Life and several packages must be pip installed into that. This was tested using Sim4Life v. 7.2."
-        + endl
+        "shipped with Sim4Life and several packages must be pip installed into that. "
+        "This was tested using Sim4Life v. 7.2." + endl
     )
 
     parser = ArgumentParser(doc)

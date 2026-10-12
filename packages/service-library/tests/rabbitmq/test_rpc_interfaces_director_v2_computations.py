@@ -10,6 +10,10 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations
 
+pytestmark = (
+    pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
+)  # no rabbitmq instance used (RPC client is mocked)
+
 
 async def test_batch_get_computations_latest_states_enforces_maximum_batch_size(
     mocker: MockerFixture,

@@ -191,7 +191,9 @@ assert set(LicensedResourceSource.model_fields.keys()) == set(  # nosec
     _LicensedResourceSource.model_fields.keys()
 ), "LicensedResourceSource keys do not match"
 
-for key in LicensedResourceSource.model_fields.keys():
+# NOTE: .keys() kept so pylint sees an iterable (E1133); ruff's SIM118 wants the
+# opposite, so it is suppressed here
+for key in LicensedResourceSource.model_fields.keys():  # noqa: SIM118
     if key == "features":
         continue
     assert (  # nosec

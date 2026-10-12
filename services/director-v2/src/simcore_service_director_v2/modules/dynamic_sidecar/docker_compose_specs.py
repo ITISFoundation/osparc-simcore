@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, Final, TypeAlias, TypedDict
+from typing import Any, Final, TypedDict
 
 from common_library.json_serialization import json_dumps
 from fastapi.applications import FastAPI
@@ -39,8 +39,8 @@ from ..osparc_variables.substitutions import (
 )
 from .docker_compose_egress_config import add_egress_configuration
 
-EnvKeyEqValueList: TypeAlias = list[str]
-EnvVarsMap: TypeAlias = dict[str, str | None]
+type EnvKeyEqValueList = list[str]
+type EnvVarsMap = dict[str, str | None]
 
 _COMPOSE_MAJOR_VERSION: Final[int] = 3
 

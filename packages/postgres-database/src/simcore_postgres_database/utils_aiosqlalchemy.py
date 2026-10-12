@@ -1,4 +1,4 @@
-from typing import Any, TypeAlias, TypeVar
+from typing import Any
 
 import sqlalchemy as sa
 import sqlalchemy.exc as sql_exc
@@ -34,12 +34,11 @@ async def raise_if_migration_not_ready(engine: AsyncEngine) -> None:
             raise DBMigrationError(msg)
 
 
-AsyncpgSQLState: TypeAlias = str
-ErrorT = TypeVar("ErrorT", bound=OsparcErrorMixin)
-ErrorKwars: TypeAlias = dict[str, Any]
+type AsyncpgSQLState = str
+type ErrorKwars = dict[str, Any]
 
 
-def map_db_exception(
+def map_db_exception[ErrorT: OsparcErrorMixin](
     exception: Exception,
     exception_map: dict[AsyncpgSQLState, tuple[type[ErrorT], ErrorKwars]],
     default_exception: type[ErrorT] | None = None,

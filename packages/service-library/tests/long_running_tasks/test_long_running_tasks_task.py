@@ -11,7 +11,6 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from pytest_mock import MockerFixture
 from servicelib.long_running_tasks import lrt_api, task
 from servicelib.long_running_tasks._redis_store import (
@@ -360,7 +359,7 @@ async def test_get_status(long_running_manager: LongRunningManager, empty_contex
     )
     task_status = await long_running_manager.tasks_manager.get_task_status(task_id, with_task_context=empty_context)
     assert isinstance(task_status, TaskStatus)
-    assert isinstance(task_status.task_progress.message, ProgressMessage)
+    assert isinstance(task_status.task_progress.message, str)
     assert task_status.task_progress.percent == 0.0
     assert task_status.done is False
     assert isinstance(task_status.started, datetime)

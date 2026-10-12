@@ -4,7 +4,6 @@
 
 import re
 from pathlib import Path
-from typing import TypeAlias
 
 import pytest
 
@@ -17,7 +16,7 @@ def requirements_folder(project_slug_dir: Path) -> Path:
     return reqs_dir
 
 
-NameVersionTuple: TypeAlias = tuple[str, str]
+type NameVersionTuple = tuple[str, str]
 
 
 def test_dask_requirements_in_sync(requirements_folder: Path):

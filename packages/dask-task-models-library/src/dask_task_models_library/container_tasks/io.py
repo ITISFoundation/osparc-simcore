@@ -105,7 +105,7 @@ class FileUrl(BaseModel):
     )
 
 
-PortValue: TypeAlias = Annotated[
+PortValue: TypeAlias = Annotated[  # noqa: UP040
     StrictBool | StrictInt | StrictFloat | StrictStr | FileUrl | list[Any] | dict[str, Any] | None,
     Field(union_mode="left_to_right"),
 ]
@@ -133,7 +133,7 @@ class TaskInputData(DictModel[ServicePortKey, PortValue]):
     )
 
 
-PortSchemaValue: TypeAlias = Annotated[PortSchema | FilePortSchema, Field(union_mode="left_to_right")]
+PortSchemaValue: TypeAlias = Annotated[PortSchema | FilePortSchema, Field(union_mode="left_to_right")]  # noqa: UP040
 
 
 class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):

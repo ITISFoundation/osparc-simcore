@@ -10,7 +10,7 @@ try:
     from fastapi.encoders import jsonable_encoder  # type: ignore[import-not-found]
 
 except ImportError:  # for aiohttp-only services
-    # Taken 'as is' from https://github.com/tiangolo/fastapi/blob/master/fastapi/encoders.py
+    # Taken 'as is' from https://github.com/fastapi/fastapi/blob/0.141.1/fastapi/encoders.py
     # to be used in aiohttp-based services w/o having to install fastapi
     #
     # NOTE: that this might be at some point part of pydantic

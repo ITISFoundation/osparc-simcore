@@ -46,11 +46,10 @@ def get_isolve(solvers_api: osparc.SolversApi, solver_type: ISolveType, version:
     # finds the correct isolve version among all availables
     use_latest = version == "latest"
     isolves = get_isolves(solvers_api, use_latest)
-    isolve = next(
+    return next(
         (solver for solver in isolves if (use_latest or solver.version == version) and is_type(solver, solver_type)),
         None,
     )
-    return isolve
 
 
 def get_solver_type(sim: Simulation) -> ISolveType:

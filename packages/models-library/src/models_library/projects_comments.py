@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 from .projects import ProjectID
 from .users import UserID
 
-CommentID: TypeAlias = PositiveInt
+CommentID: TypeAlias = PositiveInt  # noqa: UP040
 
 
 class _ProjectsCommentsBase(BaseModel):

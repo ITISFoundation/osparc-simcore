@@ -106,7 +106,7 @@ async def test_service_exception_mapper():
     async def coro2(project_id=UUID("9c201eb7-ba04-4d9b-abe6-f16b406ca86d")):
         pass
 
-    with pytest.raises(AssertionError) as exc:
+    with pytest.raises(AssertionError):
         _assert_correct_kwargs(func=coro2, exception_types=set(status_map.values()))
 
     async def coro3(*, project_id):
