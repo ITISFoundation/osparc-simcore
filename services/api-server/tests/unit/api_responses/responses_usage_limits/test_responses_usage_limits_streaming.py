@@ -11,6 +11,7 @@ so Window Quotas in these tests are in the fractions of a cent.
 
 import asyncio
 import json
+import random
 import time
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, datetime
@@ -24,6 +25,7 @@ import redis.asyncio as aioredis
 import respx
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
+from redis.exceptions import WatchError
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_responses import (
@@ -31,15 +33,24 @@ from simcore_service_api_server._service_responses import (
     create_streaming_chat_response,
 )
 from simcore_service_api_server.api.dependencies.celery import get_task_manager
+from simcore_service_api_server.clients import chatbox_usage as cu
 from simcore_service_api_server.clients.chatbox_usage import (
+    _GLOBAL_KEY,
     _LEDGER_STREAM_KEY,
+    Reservation,
+    UsageRecord,
     get_chatbox_usage_ledger,
 )
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.models.schemas.responses import CreateResponseRequest
 from simcore_service_api_server.services_http.chatbot import ChatbotApi, ChatbotSession
+from tenacity import AsyncRetrying
 
-# every test needs an empty Usage Ledger: fake Redis state is shared across tests
+# the Usage Ledger runs against the real swarm-deployed Redis
+pytest_simcore_core_services_selection = ["redis"]
+pytest_simcore_ops_services_selection = []
+
+# every test needs an empty Usage Ledger: Redis state is shared across tests
 pytestmark = pytest.mark.usefixtures("fresh_usage_ledger")
 
 
@@ -56,6 +67,36 @@ _REDIS_DOWN = "redis is down"
 
 async def _post_stream(client: AsyncClient, auth: BasicAuth, body: dict[str, object]) -> httpx.Response:
     return await client.post(f"/{API_VTAG}/responses", auth=auth, json=body)
+
+
+async def _prime_history(ledger) -> None:
+    # seed global spend/requests so Reservations are sized from the rolling average
+    # ($0.004 x 1.5 = $0.006) instead of the cold-start full-allowance estimate,
+    # which admits only one request per window
+    redis = ledger._client.redis  # noqa: SLF001
+    await redis.hset(_GLOBAL_KEY, mapping={"spend": "4.0", "requests": "1000"})
+
+
+def _counting_cas_retrying(count: list[int]):
+    # wrap the CAS retry policy so a test can assert contention actually happened:
+    # the predicate sees every WatchError that triggers a retry
+    real = cu._cas_retrying  # noqa: SLF001
+
+    def _make() -> AsyncRetrying:
+        retrying = real()
+        inner = retrying.retry
+        retrying.retry = lambda rs: (
+            (
+                rs.outcome is not None
+                and rs.outcome.failed
+                and isinstance(rs.outcome.exception(), WatchError)
+                and count.append(1)
+            )
+            or bool(inner(rs))
+        )
+        return retrying
+
+    return _make
 
 
 @pytest.mark.parametrize("app_environment", [{"WINDOW_SPEND_USD": 0.003}], indirect=True)
@@ -778,3 +819,131 @@ async def test_disconnect_while_opening_stream_refunds_reservation(
     window = next(iter(state["windows"].values()))
     assert window["reservations"] == pytest.approx(0.0)
     assert "spend" not in window
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 10, "REQUESTS_PER_MINUTE": 1000}],
+    indirect=True,
+)
+async def test_ledger_stream_trimmed_to_latest_entries(
+    app: FastAPI,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # ARRANGE - shrink the ledger stream cap so trimming is testable, and record far more
+    # completions than fit. Real Redis trims XADD MAXLEN ~ at radix-node granularity: it
+    # drops whole head nodes, so it never keeps FEWER than maxlen entries but may keep
+    # more; the tail is always the most recent.
+    maxlen = 10
+    monkeypatch.setattr("simcore_service_api_server.clients.chatbox_usage._LEDGER_STREAM_MAXLEN", maxlen)
+
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    redis = ledger._client.redis  # noqa: SLF001
+
+    # ACT - 200 completions, distinguishable by user_id
+    n_completions = 200
+    for n in range(n_completions):
+        reservation = Reservation(user_id=n, product_name="osparc", amount_usd=0.001)
+        await ledger._record_completion(reservation, UsageRecord(total_tokens=1000), spend_usd=0.0025)  # noqa: SLF001
+
+    # ASSERT - trimmed (far below what was written), never below the cap, and the tail
+    # holds exactly the most recent `maxlen` completions
+    entries = await redis.xrange(_LEDGER_STREAM_KEY)
+    assert maxlen <= len(entries) < n_completions
+    recorded_user_ids = [int(fields["user_id"]) for _id, fields in entries]
+    assert recorded_user_ids[-maxlen:] == list(range(n_completions - maxlen, n_completions))
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 10, "REQUESTS_PER_MINUTE": 1000}],
+    indirect=True,
+)
+async def test_concurrent_reconciles_settle_without_losing_updates(
+    app: FastAPI,
+    read_ledger_state,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # ARRANGE - many Reservations in flight at once (window $10 admits them all), as
+    # if several completions finished simultaneously on separate clients
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    await _prime_history(ledger)
+
+    watch_retries: list[int] = []
+    monkeypatch.setattr(cu, "_cas_retrying", _counting_cas_retrying(watch_retries))
+
+    n_reservations = 20
+    reservations = [await ledger.admit_and_reserve(user_id=n % 4, product_name="osparc") for n in range(n_reservations)]
+    state = await read_ledger_state()
+    assert state["global"]["reservations"] == pytest.approx(sum(r.amount_usd for r in reservations))
+
+    # ACT - settle them all concurrently (lightly staggered starts, like real clients):
+    # every reconcile CAS-updates the same window/global hashes, contention must retry,
+    # never lose an increment
+    usage = UsageRecord(total_tokens=1000)
+
+    async def _staggered_reconcile(reservation: Reservation) -> None:
+        await asyncio.sleep(random.uniform(0, 0.01))  # noqa: S311
+        await ledger.reconcile(reservation, usage)
+
+    await asyncio.gather(*(_staggered_reconcile(r) for r in reservations))
+
+    # ASSERT - spend and request count are exact (on top of the primed baseline),
+    # reservations fully drained
+    spend_each = 1000 / 1e6 * 2.5
+    state = await read_ledger_state()
+    assert state["global"]["spend"] == pytest.approx(4.0 + n_reservations * spend_each)
+    assert state["global"]["reservations"] == pytest.approx(0.0)
+    assert state["global"]["requests"] == 1000 + n_reservations
+    total_window_spend = sum(w.get("spend", 0.0) for w in state["windows"].values())
+    assert total_window_spend == pytest.approx(n_reservations * spend_each)
+    for window in state["windows"].values():
+        assert window.get("reservations", 0.0) == pytest.approx(0.0)
+
+    # ASSERT - the run really contended: CAS retries happened and the ledger survived them
+    assert watch_retries, "expected WatchError contention between concurrent reconciles"
+
+
+@pytest.mark.parametrize(
+    "app_environment",
+    [{"WINDOW_SPEND_USD": 10, "REQUESTS_PER_MINUTE": 1000}],
+    indirect=True,
+)
+async def test_concurrent_reconciles_and_releases_leave_exact_ledger(
+    app: FastAPI,
+    read_ledger_state,
+):
+    # ARRANGE - half the Reservations will reconcile (real Spend), half will be
+    # released (refunded): interleaved on the same window/global hashes
+    ledger = get_chatbox_usage_ledger(app)
+    assert ledger is not None
+    await _prime_history(ledger)
+
+    n_reservations = 20
+    reservations = [await ledger.admit_and_reserve(user_id=n % 2, product_name="osparc") for n in range(n_reservations)]
+    reconciled = reservations[::2]
+    released = reservations[1::2]
+
+    # ACT
+    async def _staggered(coro_fn, reservation: Reservation) -> None:
+        await asyncio.sleep(random.uniform(0, 0.01))  # noqa: S311
+        await coro_fn(reservation)
+
+    await asyncio.gather(
+        *(
+            [_staggered(lambda r: ledger.reconcile(r, UsageRecord(total_tokens=1000)), r) for r in reconciled]
+            + [_staggered(lambda r: ledger.release(r, reason="client abort"), r) for r in released]
+        )
+    )
+
+    # ASSERT - refunds + settlements cancel exactly: no negative or lingering
+    # reservations, spend only from the reconciled half
+    spend_each = 1000 / 1e6 * 2.5
+    state = await read_ledger_state()
+    assert state["global"]["reservations"] == pytest.approx(0.0)
+    assert state["global"]["spend"] == pytest.approx(4.0 + len(reconciled) * spend_each)
+    assert state["global"]["requests"] == 1000 + len(reconciled)
+    for window in state["windows"].values():
+        assert window.get("reservations", 0.0) == pytest.approx(0.0)

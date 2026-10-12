@@ -222,10 +222,7 @@ class ChatboxUsageLedger:
     # -- Rate Limit (per API key, fail-open) ---------------------------------------
 
     async def acquire_rate_limit(self, *, user_id: UserID, credentials_hash: str) -> None:
-        """Rate Limit: ``REQUESTS_PER_MINUTE`` per (hash of an) API key.
-
-        Fail-open on Redis errors: the Rate Limit is only a burst guard, the money
-        layers still protect the Provider Budget.
+        """Rate Limit: ``REQUESTS_PER_MINUTE`` per user and (hash of an) API key.
 
         Raises:
             ChatboxRateLimitedError: the API key exceeded REQUESTS_PER_MINUTE in the
@@ -242,7 +239,7 @@ class ChatboxUsageLedger:
             # this log is the only record: fail-open returns without raising
             _logger.error(  # noqa: TRY400
                 **create_troubleshooting_log_kwargs(
-                    "Chatbox rate limit could not be checked, request allowed (fail-open)",
+                    "Chatbox rate limit could not be checked, request allowed",
                     error=exc,
                     error_context={"credentials_hash": credentials_hash},
                     tip="Check the api-server connection to the Chatbox usage Redis database.",
@@ -322,7 +319,7 @@ class ChatboxUsageLedger:
         return Reservation(user_id=user_id, product_name=product_name, amount_usd=reservation)
 
     async def ensure_global_budget_available(self) -> None:
-        """Re-check the Global Budget Guard hard stop (Celery worker, at task start).
+        """Re-check the Global Budget Guard hard stop (Celery worker who talks to chatbox client, at task start).
 
         Raises:
             ProviderBudgetExhaustedError: the hard stop was hit while the job was queued.

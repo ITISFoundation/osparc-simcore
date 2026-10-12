@@ -6,8 +6,9 @@
 """Shared fixtures for the Chatbox usage-limits tests (streaming + Celery paths).
 
 Seam: the api-server HTTP API of the /responses routes, with a faked Chatbox upstream
-(respx) and a fake Redis (fakeredis, via use_in_memory_redis). No unit tests of the
-internal counter helpers.
+(respx) and a REAL Redis (the swarm-deployed valkey, via the redis_settings fixture) —
+WATCH/MULTI/EXEC contention and stream trimming then behave exactly as in production.
+No unit tests of the internal counter helpers.
 """
 
 import json
@@ -20,6 +21,24 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
 from simcore_service_api_server.clients.chatbox_usage import get_chatbox_usage_ledger
+
+
+def _limits_redis_env(redis_settings: RedisSettings) -> dict:
+    # embed the deployed Redis connection in the limits settings JSON (SecretStr must be
+    # unmasked — model_dump would serialize it as "**********")
+    return {
+        "REDIS_HOST": redis_settings.REDIS_HOST,
+        "REDIS_PORT": redis_settings.REDIS_PORT,
+        "REDIS_PASSWORD": (redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
+        "REDIS_DB_OFFSET": redis_settings.REDIS_DB_OFFSET,
+    }
+
+
+@pytest.fixture
+def limits_redis_env(redis_settings: RedisSettings) -> dict:
+    """The deployed Redis connection params, ready to embed in the limits settings JSON."""
+    return _limits_redis_env(redis_settings)
+
 
 CHATBOT_BASE_URL = "http://chatbot:8000"
 CHAT_MODEL = "gpt-4o-mini"
@@ -70,8 +89,8 @@ def _make_background_body(content: str = "Hello") -> dict:
     }
 
 
-def _make_limits_env(**overrides: object) -> str:
-    params = {"REDIS": {}, "PROVIDER_BUDGET_USD": 1000, **overrides}
+def _make_limits_env(redis_env: dict, **overrides: object) -> str:
+    params = {"REDIS": redis_env, "PROVIDER_BUDGET_USD": 1000, **overrides}
     return json.dumps(params)
 
 
@@ -95,17 +114,17 @@ def usage_builders():
 def app_environment(
     request: pytest.FixtureRequest,
     app_environment: EnvVarsDict,
-    use_in_memory_redis: RedisSettings,
+    redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    """Chatbox + usage limits against a fake Redis. Override the limits per test with
-    @pytest.mark.parametrize("app_environment", [...], indirect=True)."""
+    """Chatbox + usage limits against the real deployed Redis. Override the limits per
+    test with @pytest.mark.parametrize("app_environment", [...], indirect=True)."""
     overrides: dict = getattr(request, "param", None) or {"WINDOW_SPEND_USD": 0.003}
     return setenvs_from_dict(
         monkeypatch,
         {
             "API_SERVER_CHATBOT": '{"CHATBOT_URL": "http://chatbot:8000", "GRAPH_NAME": "simple_rag"}',
-            "API_SERVER_CHATBOX_USAGE_LIMITS": _make_limits_env(**overrides),
+            "API_SERVER_CHATBOX_USAGE_LIMITS": _make_limits_env(_limits_redis_env(redis_settings), **overrides),
         },
     )
 

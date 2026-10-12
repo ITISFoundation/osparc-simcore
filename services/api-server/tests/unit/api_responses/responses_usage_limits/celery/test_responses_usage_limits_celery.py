@@ -24,7 +24,7 @@ from simcore_service_api_server.models.schemas.responses import (
 )
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 # every test needs an empty Usage Ledger and a drained broker queue

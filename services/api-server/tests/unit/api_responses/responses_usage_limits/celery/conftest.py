@@ -3,7 +3,8 @@
 # pylint: disable=no-name-in-module
 
 """Celery in-process worker + usage limits: the worker app and the API app share one
-fake Redis server (same DSN), so Reservations/Spend placed by either are visible to both.
+REAL Redis server (the swarm-deployed valkey via redis_settings), so Reservations/Spend
+placed by either are visible to both.
 """
 
 import datetime
@@ -32,8 +33,8 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.modules.celery.worker.tasks import register_worker_tasks
 
 
-def _make_limits_env(**overrides: object) -> str:
-    params = {"REDIS": {}, "PROVIDER_BUDGET_USD": 1000, **overrides}
+def _make_limits_env(redis_env: dict, **overrides: object) -> str:
+    params = {"REDIS": redis_env, "PROVIDER_BUDGET_USD": 1000, **overrides}
     return json.dumps(params)
 
 
@@ -86,11 +87,15 @@ def app_environment(
     request: pytest.FixtureRequest,
     mock_celery_app: Celery,
     mocked_log_streamer_setup: MockerFixture,
-    use_in_memory_redis: RedisSettings,
+    redis_service: RedisSettings,
+    limits_redis_env: dict,
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
+    # redis_service also sets the global REDIS_* env vars: the Celery task manager's own
+    # Redis result backend (CelerySettings.CELERY_REDIS_RESULT_BACKEND) auto-defaults from
+    # them and must NOT fall back to the unreachable default host
     delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ", "API_SERVER_CELERY"])
     overrides: dict = getattr(request, "param", None) or {"WINDOW_SPEND_USD": 0.003}
     env_vars_dict = setenvs_from_dict(
@@ -99,7 +104,7 @@ def app_environment(
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
             "API_SERVER_CHATBOT": '{"CHATBOT_URL": "http://chatbot:8000", "GRAPH_NAME": "simple_rag"}',
-            "API_SERVER_CHATBOX_USAGE_LIMITS": _make_limits_env(**overrides),
+            "API_SERVER_CHATBOX_USAGE_LIMITS": _make_limits_env(limits_redis_env, **overrides),
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
