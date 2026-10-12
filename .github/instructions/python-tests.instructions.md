@@ -43,8 +43,8 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 - Do not add `autouse=True` fixtures in `conftest.py`.
 - In `pytest_simcore` plugins, allow them only when loading the plugin
-  explicitly opts a suite into behavior that applies across its tests. Document that
-  contract in the plugin's module docstring.
+  explicitly opts a suite into behavior that applies across its tests.
+  Document that contract in the plugin's module docstring.
 - Otherwise, use `autouse=True` only for a fixture defined and used in the same
   test module. Add a short comment above it explaining why explicit injection
   is impractical.
@@ -64,11 +64,13 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
   names such as `test_list.py`.
 - When splitting a module, keep the full original prefix in each filename, and
   name the directory after the original filename without `test_`:
+
   ```text
   users_accounts_rest_registration/
     test_users_accounts_rest_registration_create.py
     test_users_accounts_rest_registration_search.py
   ```
+
 - Split test modules over 1,000 lines by behavior or scenario. Move shared
   fixtures to the nearest `conftest.py`. Do not split if it would duplicate
   setup or obscure relationships.

@@ -2,6 +2,8 @@
 applyTo: '**'
 ---
 
+# General repository conventions
+
 This repository is a monorepo of Python microservices and JavaScript frontends.
 Use the Python version in the root `.python-version` file. Do not use syntax
 or standard-library features unavailable in that version.

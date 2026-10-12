@@ -4,7 +4,9 @@ applyTo: '**/Makefile,**/*.mk'
 
 # Makefile authoring conventions
 
-See [scripts/makefiles/README.md](../../scripts/makefiles/README.md) for the full reference.
+See
+[scripts/makefiles/README.md](../../scripts/makefiles/README.md)
+for the full reference.
 
 ## Naming
 

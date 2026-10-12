@@ -7,7 +7,8 @@ applyTo: 'api/specs/web-server/**'
 Files in `api/specs/web-server/` are FastAPI stubs used only to generate
 `openapi.json`. They are not the runtime implementation.
 
-1. Write route functions with empty bodies, using `...`. The real aiohttp handlers live in
+1. Write route functions with empty bodies, using `...`.
+   The real aiohttp handlers live in
    `services/web/server/src/simcore_service_webserver/`.
 2. The function name becomes the `operationId`. The aiohttp route must use
    `name="<operationId>"`.

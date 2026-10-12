@@ -4,13 +4,14 @@ applyTo: '**/requirements/**'
 
 # Requirements file conventions
 
-These rules apply to `*.in` and `*.txt` files in any `requirements/` directory.
-Follow the workflow in
-[`requirements/python-dependencies.md`](../../requirements/python-dependencies.md).
+These rules apply to `*.in` and `*.txt` files in any
+`requirements/` directory. Follow the workflow in
+[python-dependencies].
 
 - Sort `*.in` entries by package name within each existing group of
-  `--constraint` lines, intra-repo packages, or third-party packages. Ignore case, version
-  specifiers, and extras when sorting. Treat `-` and `_` as equivalent.
+  `--constraint` lines, intra-repo packages, or third-party packages.
+  Ignore case, version specifiers, and extras when sorting.
+  Treat `-` and `_` as equivalent.
   Keep the group order and place constraints before requirements. Keep lines
   starting with `--` in the first group.
 - Identify generated `*.txt` files by their generation header, matching `*.in`
@@ -24,3 +25,5 @@ Follow the workflow in
   workflow before editing.
 - If `make reqs` fails or does not exist, stop, report the error output, and do
   not edit generated files by hand as a fallback.
+
+[python-dependencies]: ../../requirements/python-dependencies.md
