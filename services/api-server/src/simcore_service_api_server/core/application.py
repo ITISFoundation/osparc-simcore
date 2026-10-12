@@ -27,6 +27,7 @@ from .._meta import (
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.celery_task_manager import configure_task_manager
+from ..clients.chatbox_usage import configure_chatbox_usage_ledger
 from ..clients.kms import configure_kms
 from ..exceptions.celery_transferable_errors import register_celery_transferable_error_adapters
 from ..services_http import director_v2, storage, webserver
@@ -98,6 +99,13 @@ def _configure_plugins(
             app_lifespan,
             base_url=str(settings.API_SERVER_CHATBOT.CHATBOT_URL),
             tracing_settings=settings.API_SERVER_TRACING,
+        )
+
+    if settings.API_SERVER_CHATBOX_USAGE_LIMITS and settings.API_SERVER_CHATBOX_USAGE_LIMITS.ENABLED:
+        configure_chatbox_usage_ledger(
+            app,
+            app_lifespan,
+            settings=settings.API_SERVER_CHATBOX_USAGE_LIMITS,
         )
 
     if settings.API_SERVER_WEBSERVER:

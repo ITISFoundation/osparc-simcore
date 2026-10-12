@@ -1,5 +1,5 @@
-import asyncio
 import functools
+import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Final
@@ -85,7 +85,7 @@ def retry_on_http_errors(
     """
     Will retry the request on `httpx.HTTPError`.
     """
-    assert asyncio.iscoroutinefunction(request_func)
+    assert inspect.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "HttpClient", *args, **kwargs) -> Any:

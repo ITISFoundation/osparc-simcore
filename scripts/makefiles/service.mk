@@ -53,6 +53,7 @@ test-%-integration: FORCE ## run app integration tests (test-path restricts to a
 # CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
 test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
 	# Targets tests/unit folder (or an explicit target= if provided)
+	$(if $(filter dev,$*),$(if $(_PYTEST_ARGS_dev_DROPPED),@echo "WARNING: xdist workers requested but '--pdb' is incompatible with distributing tests: dropping --pdb for this run (single-process debugging: omit pytest-parameters)";))
 	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
 
 # Public targets (alphabetically ordered)
@@ -179,11 +180,24 @@ PYTEST_BASE_ARGS = \
 	--junitxml=junit.xml -o junit_family=legacy \
 	--keep-docker-up
 
-PYTEST_ARGS_dev = \
+_PYTEST_ARGS_dev = \
 	--exitfirst \
 	--failed-first \
 	--pdb \
 	-vv
+
+# NOTE: pytest-xdist refuses to distribute tests together with --pdb (a numeric
+# --numprocesses is a hard UsageError, and "--numprocesses=auto" is silently downgraded to no
+# parallelism). So whenever the caller requests xdist workers via pytest-parameters= (same way
+# the CI scripts pass them to test-ci-unit), --pdb must be dropped for dev runs to actually
+# parallelize. test-%-unit warns when it actually happens.
+ifneq ($(filter -n -n% --numprocesses --numprocesses=%,$(pytest-parameters)),)
+_PYTEST_ARGS_dev_DROPPED = yes
+PYTEST_ARGS_dev = $(filter-out --pdb,$(_PYTEST_ARGS_dev))
+else
+_PYTEST_ARGS_dev_DROPPED =
+PYTEST_ARGS_dev = $(_PYTEST_ARGS_dev)
+endif
 
 PYTEST_ARGS_ci = \
 	--cov-append \

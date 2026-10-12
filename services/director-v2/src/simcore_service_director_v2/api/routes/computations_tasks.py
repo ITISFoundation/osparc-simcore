@@ -19,14 +19,14 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.utils import logged_gather
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 
 from ...core.errors import PipelineTaskMissingError
-from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 from ...utils.computations_tasks import validate_pipeline
-from ..dependencies.database import get_repository
+from ..dependencies.database import get_db_engine
 
 log = logging.getLogger(__name__)
 
@@ -47,15 +47,15 @@ router = APIRouter(prefix="/computations", tags=["computations"])
 async def get_all_tasks_log_files(
     user_id: UserID,
     project_id: ProjectID,
-    comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> list[TaskLogFileGet]:
     """Returns download links to log-files of each task in a computation.
     Each log is only available when the corresponding task is done
     """
     # gets computation task ids
+
     try:
-        info = await validate_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
+        info = await validate_pipeline(db_engine, project_id=project_id)
     except PipelineTaskMissingError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -80,12 +80,12 @@ async def get_task_log_file(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ) -> TaskLogFileGet:
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
     """
-
+    comp_tasks_repo = CompTasksRepository(db_engine)
     if not await comp_tasks_repo.task_exists(project_id, node_uuid):
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
@@ -104,9 +104,13 @@ async def get_task_log_file(
 async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
-    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
+    db_engine: Annotated[AsyncEngine, Depends(get_db_engine)],
 ):
-    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(project_id, set(selection.nodes_ids))
+    comp_tasks_repo = CompTasksRepository(db_engine)
+    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
+        project_id=project_id,
+        node_ids=set(selection.nodes_ids),
+    )
 
     if not nodes_outputs:
         raise HTTPException(status.HTTP_404_NOT_FOUND)

@@ -34,7 +34,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -50,7 +50,7 @@ jobs:
       - name: install
         run: ./ci/github/benchmarks/codspeed.bash install
       - name: benchmark
-        uses: CodSpeedHQ/action@v5.2.1
+        uses: CodSpeedHQ/action@v5.4.0
         with:
           mode: simulation
           run: ./ci/github/benchmarks/codspeed.bash benchmark

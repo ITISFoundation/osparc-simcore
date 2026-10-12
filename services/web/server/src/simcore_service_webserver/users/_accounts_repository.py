@@ -28,7 +28,12 @@ from simcore_postgres_database.utils_repos import (
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
+from ._models_pre_registration_extras import (
+    ExtrasAuditEntry,
+    PreRegistrationExtraKey,
+    PreRegistrationExtrasPatch,
+    merge_audit_entry_into_extras,
+)
 from .errors import (
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
@@ -231,7 +236,7 @@ async def review_user_pre_registration(
     pre_registration_id: int,
     reviewed_by: UserID,
     new_status: AccountRequestStatus,
-    extras: dict[str, Any] | None = None,
+    extras: PreRegistrationExtrasPatch | None = None,
 ) -> None:
     """Updates the account request status of a pre-registered user.
 
@@ -241,10 +246,11 @@ async def review_user_pre_registration(
         pre_registration_id: ID of the pre-registration record
         reviewed_by: ID of the user who reviewed the request
         new_status: New status (APPROVED or REJECTED)
-        extras: Optional top-level extras keys (e.g. ``{"invitation": ...}`` or
-            ``{"approval": ...}``) merged into the record's existing extras
+        extras: Optional patch of known top-level extras keys (``PreRegistrationExtraKey``,
+            build entries via the ``create_*_extras`` helpers) merged into the record's
+            existing extras
     """
-    if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
+    if new_status not in {AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED}:
         msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
         raise ValueError(msg)
 
@@ -371,7 +377,7 @@ async def update_pre_registration_product(
         )
         merged_extras = merge_audit_entry_into_extras(
             current_extras=current_extras,
-            key="product_move",
+            key=PreRegistrationExtraKey.PRODUCT_MOVE,
             entry=audit_entry,
         )
 

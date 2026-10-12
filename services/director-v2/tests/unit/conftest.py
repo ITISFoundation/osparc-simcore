@@ -47,6 +47,11 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import Schedu
 @pytest.fixture
 def disable_postgres(mocker) -> None:
     fake_engine = mock.AsyncMock()
+    # `pass_or_acquire_connection` releases with `await connection.close()` and
+    # checks `connection.closed`, so the connection mock must be awaitable/open
+    fake_conn = mock.AsyncMock()
+    fake_conn.closed = False
+    fake_engine.connect.return_value = fake_conn
 
     def mock_configure(app_lifespan, *args, **kwargs) -> None:
         async def _lifespan(app: FastAPI):
@@ -64,8 +69,8 @@ def disable_postgres(mocker) -> None:
 
 
 @pytest.fixture
-def simcore_services_network_name() -> str:
-    return "test_network_name"
+def simcore_services_network_name(faker: Faker) -> str:
+    return f"test-network-{faker.uuid4()}"
 
 
 @pytest.fixture

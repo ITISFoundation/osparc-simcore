@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 
 import logging
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterator, Mapping
+from datetime import timedelta
 from typing import Any, Final, cast
 
 import pytest
@@ -25,28 +26,39 @@ from .helpers.postgres_tools import (
     wait_engine_ready,
 )
 from .helpers.typing_env import EnvVarsDict
+from .helpers.xdist import get_worker_id, is_xdist_worker, run_once_across_workers
 
 _logger = logging.getLogger(__name__)
 
 _TEMPLATE_DB_TO_RESTORE: Final[str] = "template_simcore_db"
+_TEMPLATE_BUILD_NAME: Final[str] = "postgres_template_simcore_db"
+_TEMPLATE_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
 
 _PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
 
 
-def _as_pg_config(postgres_dsn: dict[str, Any]) -> PostgresTestConfig:
+def _as_pg_config(postgres_dsn: Mapping[str, Any]) -> PostgresTestConfig:
     # suites may pass richer dicts (e.g. with a prebuilt "dsn"), keep only the keys
     # understood by simcore_postgres_database.cli
     return cast(PostgresTestConfig, {k: postgres_dsn[k] for k in _PG_CONFIG_KEYS})
 
 
 @pytest.fixture(scope="module")
-def postgres_dsn(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -> PostgresTestConfig:
+def postgres_dsn(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
+) -> PostgresTestConfig:
     assert "pytest-simcore_postgres" in docker_stack["services"]
+
+    # under xdist, each worker gets its own database clone name on the SAME postgres
+    # container, so concurrent workers never DROP/CREATE the same database
+    database = env_vars_for_docker_compose["POSTGRES_DB"]
+    if is_xdist_worker(request):
+        database = f"{database}_{get_worker_id(request)}"
 
     pg_config: PostgresTestConfig = {
         "user": env_vars_for_docker_compose["POSTGRES_USER"],
         "password": env_vars_for_docker_compose["POSTGRES_PASSWORD"],
-        "database": env_vars_for_docker_compose["POSTGRES_DB"],
+        "database": database,
         "host": get_localhost_ip(),
         "port": get_service_published_port("postgres", int(env_vars_for_docker_compose["POSTGRES_PORT"])),
     }
@@ -83,22 +95,27 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
 
 
 @pytest.fixture(scope="session")
-def _postgres_migrated_template_state() -> Iterator[PgTemplateState]:
+def _postgres_migrated_template_state(request: pytest.FixtureRequest) -> Iterator[PgTemplateState]:
     # NOTE: the template database itself is built lazily by postgres_db because resolving
     # the DSN can require module-scoped fixtures (e.g. docker_stack published ports). This
     # holder only tracks state and drops the template at session end.
     state: PgTemplateState = {"built": False, "dsn": None}
     yield state
-    if (dsn := state["dsn"]) is not None:
-        try:
-            drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
-        except Exception:  # pylint: disable=broad-except
-            # best-effort: the module-scoped docker stack may already have removed the
-            # postgres service/volume this template lived on by the time the session ends
-            _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
+
+    dsn = state["dsn"]
+    if dsn is None or is_xdist_worker(request):
+        # under xdist the template goes away with the postgres service the controller removes
+        return
+
+    try:
+        drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
+    except Exception:  # pylint: disable=broad-except
+        # best-effort: the module-scoped docker stack may already have removed the
+        # postgres service/volume this template lived on by the time the session ends
+        _logger.warning("Could not drop template %s at session end", _TEMPLATE_DB_TO_RESTORE, exc_info=True)
 
 
-def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: PgTemplateState) -> None:
+def _build_or_verify_template(postgres_dsn: PostgresTestConfig, state: PgTemplateState) -> None:
     with maintenance_engine_context(postgres_dsn) as maintenance:
         # wait until the server accepts connections (the stack may have just been deployed)
         wait_engine_ready(maintenance, timeout=_MINUTE)
@@ -110,6 +127,20 @@ def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: PgTemplat
     if needs_build:
         build_migrated_pg_template(postgres_dsn, _TEMPLATE_DB_TO_RESTORE)
         state["built"] = True
+
+
+def _ensure_migrated_template(
+    postgres_dsn: PostgresTestConfig,
+    state: PgTemplateState,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    with run_once_across_workers(
+        request, tmp_path_factory, _TEMPLATE_BUILD_NAME, timeout=_TEMPLATE_READY_TIMEOUT
+    ) as is_first:
+        if is_first:
+            _build_or_verify_template(postgres_dsn, state)
+
     state["dsn"] = postgres_dsn
 
 
@@ -117,6 +148,8 @@ def _ensure_migrated_template(postgres_dsn: PostgresTestConfig, state: PgTemplat
 def postgres_db(
     postgres_dsn: PostgresTestConfig,
     _postgres_migrated_template_state: PgTemplateState,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[sa.engine.Engine]:
     """A postgres database migrated to head and an sqlalchemy engine connected to it.
 
@@ -126,7 +159,7 @@ def postgres_db(
     migrated and empty schema.
     """
     dsn = _as_pg_config(postgres_dsn)
-    _ensure_migrated_template(dsn, _postgres_migrated_template_state)
+    _ensure_migrated_template(dsn, _postgres_migrated_template_state, request, tmp_path_factory)
 
     with cloned_pg_database_context(dsn, _TEMPLATE_DB_TO_RESTORE) as engine:
         yield engine
@@ -136,13 +169,15 @@ def postgres_db(
 def postgres_db_per_test_from_template(
     postgres_dsn: PostgresTestConfig,
     _postgres_migrated_template_state: PgTemplateState,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[sa.engine.Engine]:
     """Same as postgres_db but the test database is re-cloned from the
     migrated template before EVERY test (function scope), for suites whose DB fixture
     is function-scoped.
     """
     dsn = _as_pg_config(postgres_dsn)
-    _ensure_migrated_template(dsn, _postgres_migrated_template_state)
+    _ensure_migrated_template(dsn, _postgres_migrated_template_state, request, tmp_path_factory)
 
     with cloned_pg_database_context(dsn, _TEMPLATE_DB_TO_RESTORE) as engine:
         yield engine

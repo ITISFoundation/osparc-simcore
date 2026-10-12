@@ -18,6 +18,7 @@ coverage
 docker
 faker
 fakeredis[lua]
+filelock
 flaky
 numpy
 openapi-spec-validator

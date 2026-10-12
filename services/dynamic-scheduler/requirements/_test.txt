@@ -16,9 +16,7 @@ certifi==2025.1.31
     #   httpx
     #   requests
 charset-normalizer==3.4.1
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
@@ -135,9 +133,7 @@ redis==7.4.0
     #   -c requirements/_base.txt
     #   fakeredis
 requests==2.34.2
-    # via
-    #   -c requirements/_base.txt
-    #   docker
+    # via docker
 respx==0.22.0
     # via -r requirements/_test.in
 sniffio==1.3.1
@@ -162,7 +158,7 @@ typing-extensions==4.16.0
     #   mypy
     #   pyee
     #   sqlalchemy
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

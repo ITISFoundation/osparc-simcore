@@ -5,8 +5,13 @@
 
 import asyncio
 import contextlib
+import json
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+import urllib.error
+import urllib.request
+from base64 import b64encode
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from urllib.parse import quote
 
 import aio_pika
 import pytest
@@ -19,9 +24,23 @@ from tenacity.wait import wait_fixed
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
+from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
+from .helpers.xdist import get_worker_id, is_xdist_worker
 
 _logger = logging.getLogger(__name__)
+
+
+def _get_management_port() -> int:
+    # NOTE: no fallback port here: if the published management port cannot be resolved the
+    # stack is broken and the run would fail confusingly later on, so fail loudly right here
+    published = get_service_published_port("rabbit", target_ports=15672)
+    assert published.isdigit(), (
+        f"RabbitMQ management API port is not published (got '{published}'): the deployed "
+        "'rabbit' service must publish 15672 (see services/docker-compose.yml) — the per-worker "
+        "vhost isolation cannot work without it"
+    )
+    return int(published)
 
 
 @tenacity.retry(
@@ -35,10 +54,72 @@ async def wait_till_rabbit_responsive(url: str) -> None:
         ...
 
 
+def _management_api_request(method: str, url: str, user: str, password: str, body: dict | None = None) -> None:
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(url, data=data, method=method)  # noqa: S310
+    request.add_header("Content-Type", "application/json")
+    credentials = b64encode(f"{user}:{password}".encode()).decode()
+    request.add_header("Authorization", f"Basic {credentials}")
+    try:
+        urllib.request.urlopen(request, timeout=10)  # noqa: S310
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404 and method == "DELETE":
+            return
+        raise
+
+
+def _create_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
+    with log_context(logging.INFO, f"creating RabbitMQ vhost '{vhost}' on {management_url}", logger=_logger):
+        quoted_vhost = quote(vhost, safe="")
+        _management_api_request("PUT", f"{management_url}/api/vhosts/{quoted_vhost}", user, password)
+        _management_api_request(
+            "PUT",
+            f"{management_url}/api/permissions/{quoted_vhost}/{user}",
+            user,
+            password,
+            body={"configure": ".*", "write": ".*", "read": ".*"},
+        )
+
+
+def _delete_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
+    with log_context(logging.INFO, f"deleting RabbitMQ vhost '{vhost}' on {management_url}", logger=_logger):
+        _management_api_request("DELETE", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
+
+
+@pytest.fixture(scope="module")
+def _rabbit_worker_vhost(
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
+) -> Iterator[str]:
+    """Isolates each xdist worker's RabbitMQ traffic in its own vhost on the SAME shared
+    broker: some exchanges/queues (e.g. comp_scheduler broadcasts, `aio_pika`'s own hardcoded
+    "rpc.dlx" RPC exchange) use fixed, non-worker-scoped names, so concurrent workers sharing
+    the default vhost cross-talk. No-op (default vhost "/") when not running under xdist.
+
+    NOTE: module-scoped (not session-scoped) to match `docker_stack`'s scope: a fixture cannot
+    depend on one with a narrower scope.
+    """
+    if not is_xdist_worker(request):
+        yield "/"
+        return
+
+    worker_id = get_worker_id(request)
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
+    assert f"{prefix}_rabbit" in docker_stack["services"]
+    management_url = f"http://{get_localhost_ip()}:{_get_management_port()}"
+    user = env_vars_for_docker_compose["RABBIT_USER"]
+    password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
+    vhost = f"pytest_{worker_id}"
+
+    _create_vhost(management_url, vhost, user, password)
+    yield vhost
+    _delete_vhost(management_url, vhost, user, password)
+
+
 @pytest.fixture
 def rabbit_env_vars_dict(
     docker_stack: dict,
     env_vars_for_docker_compose: EnvVarsDict,
+    _rabbit_worker_vhost: str,
 ) -> EnvVarsDict:
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
@@ -51,6 +132,7 @@ def rabbit_env_vars_dict(
         "RABBIT_HOST": get_localhost_ip(),
         "RABBIT_PORT": f"{port}",
         "RABBIT_SECURE": env_vars_for_docker_compose["RABBIT_SECURE"],
+        "RABBIT_VHOST": _rabbit_worker_vhost,
     }
 
 
@@ -59,7 +141,10 @@ async def rabbit_settings(rabbit_env_vars_dict: EnvVarsDict) -> RabbitSettings:
     """Returns the settings of a rabbit service that is up and responsive"""
 
     settings = RabbitSettings.model_validate(rabbit_env_vars_dict)
-    await wait_till_rabbit_responsive(settings.dsn)
+    with log_context(
+        logging.INFO, f"waiting for RabbitMQ on vhost '{settings.RABBIT_VHOST}' to be responsive", logger=_logger
+    ):
+        await wait_till_rabbit_responsive(settings.dsn)
     return settings
 
 
@@ -74,6 +159,10 @@ async def rabbit_service(rabbit_settings: RabbitSettings, monkeypatch: pytest.Mo
     monkeypatch.setenv("RABBIT_USER", rabbit_settings.RABBIT_USER)
     monkeypatch.setenv("RABBIT_SECURE", f"{rabbit_settings.RABBIT_SECURE}")
     monkeypatch.setenv("RABBIT_PASSWORD", rabbit_settings.RABBIT_PASSWORD.get_secret_value())
+    # NOTE: must propagate the per-worker vhost, otherwise apps configured from these envs
+    # connect to the default vhost "/" where every xdist worker registers the same fixed
+    # auto_delete RPC queue names and races with the other workers' teardown
+    monkeypatch.setenv("RABBIT_VHOST", rabbit_settings.RABBIT_VHOST)
 
     return rabbit_settings
 

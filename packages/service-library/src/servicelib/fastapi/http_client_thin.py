@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import inspect
 import logging
@@ -127,7 +126,7 @@ def retry_on_errors(
     def decorator(
         request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
-        assert asyncio.iscoroutinefunction(request_func)
+        assert inspect.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
@@ -174,7 +173,7 @@ def expect_status(
     def decorator(
         request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
-        assert asyncio.iscoroutinefunction(request_func)
+        assert inspect.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:

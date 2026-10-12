@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import inspect
 import logging
 import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -67,7 +68,7 @@ def _return_data_or_raise_error(
     """
     Creates a context for safe inter-process communication (IPC)
     """
-    assert asyncio.iscoroutinefunction(request_func)
+    assert inspect.iscoroutinefunction(request_func)
 
     def _unenvelope_or_raise_error(
         resp: httpx.Response,

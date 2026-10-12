@@ -26,6 +26,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_client_lose_connection(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     create_rabbitmq_client: Callable[[str], RabbitMQClient],

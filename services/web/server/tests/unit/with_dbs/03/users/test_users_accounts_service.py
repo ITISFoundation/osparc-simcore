@@ -23,6 +23,7 @@ from simcore_service_webserver.users import _accounts_repository, _accounts_serv
 from simcore_service_webserver.users._accounts_repository import (
     create_user_pre_registration,
 )
+from simcore_service_webserver.users._models_pre_registration_extras import PreRegistrationExtraKey
 from simcore_service_webserver.users.errors import (
     AlreadyPreRegisteredError,
     PreRegistrationAlreadyLinkedToAccountError,
@@ -228,8 +229,8 @@ async def test_move_user_account_request_to_product_happy_path(
 
     assert row.product_name == target_product
     assert row.extras
-    assert "product_move" in row.extras
-    move_audit = row.extras["product_move"]
+    assert PreRegistrationExtraKey.PRODUCT_MOVE in row.extras
+    move_audit = row.extras[PreRegistrationExtraKey.PRODUCT_MOVE]
     if isinstance(move_audit, list):
         move_audit = move_audit[-1]
     assert move_audit["source"] == "po_center:move_product"

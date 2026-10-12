@@ -91,7 +91,7 @@ typing-extensions==4.16.0
     #   sqlalchemy
 tzdata==2025.3
     # via arrow
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt

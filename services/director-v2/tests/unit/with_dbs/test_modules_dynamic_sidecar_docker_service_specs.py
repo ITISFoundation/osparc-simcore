@@ -277,7 +277,8 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
                     "REDIS_SETTINGS": (
-                        '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}'
+                        '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,'
+                        '"REDIS_PASSWORD":null,"REDIS_DB_OFFSET":0}'
                     ),
                     "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": (
                         '{"R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT":"PT1H","R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_PE'

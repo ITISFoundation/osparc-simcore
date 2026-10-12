@@ -2,7 +2,12 @@
 applyTo: '**/services/web/server/**/*.py'
 ---
 
-### Related Documents
+# Web-server instructions
 
-- **[DESIGN.md](../../services/web/server/docs/DESIGN.md)** — Web-server architecture, domain layer model, and design invariants. Reference when designing endpoint structure, choosing response models, or understanding service composition.
-- **[TESTS.md](../../services/web/server/docs/TESTS.md)** — Testing invariants and conventions. Reference when designing test fixtures or understanding how endpoints should be tested.
+## Related documents
+
+- Read [DESIGN.md](../../services/web/server/docs/DESIGN.md) before designing
+  endpoint structure, response models, or service composition. It defines the
+  architecture, domain layers, and design invariants.
+- Read [TESTS.md](../../services/web/server/docs/TESTS.md) before designing test
+  fixtures or endpoint tests. It defines the testing invariants.
