@@ -104,6 +104,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# lychee link checker cache
+.lycheecache
+
 # node
 # Dependency directories
 node_modules/
