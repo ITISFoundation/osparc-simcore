@@ -39,6 +39,11 @@ class ChatResponseFormat(BaseModel):
     json_schema: dict[str, Any] | None = None
 
 
+class ChatStreamOptions(BaseModel):
+    # the vendor then reports aggregated usage on the final streamed chunk
+    include_usage: bool = True
+
+
 class ChatRequest(BaseModel):
     # NOTE None is used as a sentinel for optional fields, not as an actual value (it will never be sent)
     messages: list[ChatCompletionRequestMessage]
@@ -46,6 +51,7 @@ class ChatRequest(BaseModel):
     metadata: dict[str, Any] = {}
     response_format: ChatResponseFormat | None = None
     stream: bool = False
+    stream_options: ChatStreamOptions | None = None
     temperature: Temperature = DEFAULT_TEMPERATURE
     top_p: TopP = DEFAULT_TOP_P
 
@@ -59,9 +65,18 @@ class ChatCompletionsChoice(BaseModel):
     message: ChatCompletionResponseMessage
 
 
+class ChatCompletionsUsage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
 class CreateChatCompletionResponse(BaseModel):
     model_config = {"extra": "ignore"}
 
     id: str
     choices: list[ChatCompletionsChoice]
     metadata: dict[str, str | int] | None = None
+    usage: ChatCompletionsUsage | None = None

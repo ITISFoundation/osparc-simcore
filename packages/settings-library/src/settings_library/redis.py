@@ -21,6 +21,7 @@ class RedisDatabase(IntEnum):
     CELERY_TASKS = 9
     DOCUMENTS = 10
     AIOCACHE = 11
+    CHATBOX_USAGE = 12
 
 
 class RedisSettings(BaseCustomSettings):
