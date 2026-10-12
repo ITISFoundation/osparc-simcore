@@ -8981,12 +8981,32 @@
               }
             }
           },
+          "403": {
+            "description": "The Chatbox Window Quota or the platform Provider Budget is exhausted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageLimitErrorGet"
+                }
+              }
+            }
+          },
           "422": {
             "description": "The request was rejected by the chatbot service",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "The per-API-key Chatbox rate limit was exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageLimitErrorGet"
                 }
               }
             }
@@ -9002,7 +9022,7 @@
             }
           },
           "503": {
-            "description": "Chatbot service is not enabled",
+            "description": "The chatbot service is not reachable",
             "content": {
               "application/json": {
                 "schema": {
@@ -12911,6 +12931,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/ResponseStatus"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -12939,6 +12969,28 @@
           "queued"
         ],
         "title": "ResponseStatus"
+      },
+      "ResponseUsage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "title": "Prompt Tokens",
+            "default": 0
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "title": "Completion Tokens",
+            "default": 0
+          },
+          "total_tokens": {
+            "type": "integer",
+            "title": "Total Tokens",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ResponseUsage",
+        "description": "OpenAI-style aggregated token usage of a completion."
       },
       "RootKeyStr": {
         "type": "string",
@@ -13661,6 +13713,71 @@
           "e_tag"
         ],
         "title": "UploadedPart"
+      },
+      "UsageLimitErrorGet": {
+        "properties": {
+          "errors": {
+            "items": {},
+            "type": "array",
+            "title": "Errors"
+          },
+          "support_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "OEC:([a-fA-F0-9]{12})-(\\d{13,14})"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Stable machine-readable code identifying the usage-limit rejection"
+          },
+          "retry_after_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry After Seconds",
+            "description": "Seconds to wait before the request can be retried, when known"
+          },
+          "reset_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reset At",
+            "description": "ISO-8601 UTC instant when the allowance becomes available again (usage window quota), when known"
+          }
+        },
+        "type": "object",
+        "required": [
+          "errors",
+          "code"
+        ],
+        "title": "UsageLimitErrorGet",
+        "description": "ErrorGet with structured fields for Chatbox usage-limit rejections.\n\nClients can branch on ``code`` and surface ``retry_after_seconds``/``reset_at``\nwithout parsing the prose in ``errors``.",
+        "example": {
+          "code": "chatbox_window_quota_exceeded",
+          "errors": [
+            "chatbox_window_quota_exceeded: You have used your Chatbox allowance ..."
+          ],
+          "reset_at": "2026-01-01T12:00:00+00:00",
+          "retry_after_seconds": 1800
+        }
       },
       "UserFile": {
         "properties": {
