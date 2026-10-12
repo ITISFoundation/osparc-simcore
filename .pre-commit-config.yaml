@@ -52,3 +52,26 @@ repos:
       - id: typos
         name: spellchecker
         exclude: "(^|/)generated_models/|^services/static-webserver/client/source/translation/.*\\.po$|^packages/common-library/src/common_library/locale/.*\\.po$"
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.3
+    hooks:
+      - id: markdownlint-cli2
+        name: markdown-linter
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        name: yaml-linter
+        args: ["--config-file", ".yamllint.yaml"]
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        name: actionlint
+  - repo: https://github.com/lycheeverse/lychee.git
+    rev: lychee-v0.24.2
+    hooks:
+      - id: lychee
+        name: markdown-link-checker
+        args: ["--config", ".lychee.toml"]
+        types_or: [markdown]
