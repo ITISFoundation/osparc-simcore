@@ -337,7 +337,7 @@ jobs:
       build-backend: ${{ matrix.type == 'backend' }}
       build-frontend: ${{ matrix.type == 'frontend' }}
       os: ${{ matrix.os }}
-      python-version: "3.13"
+      python-version: "3.14"
       push-temp: ${{ needs.deploy-vars.outputs.is-deploy == 'true' }}
       arch: ${{ matrix.arch }}
       build-artifacts: ${{ matrix.arch == 'amd64' }}
@@ -351,7 +351,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -391,7 +391,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -427,7 +427,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -467,7 +467,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -505,7 +505,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -543,7 +543,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         # ARM runners have 4 vCPUs (vs 2 on x64), which doubles the xdist workers
         # for free; the test-stack images (postgres/rabbit/valkey/adminer) are multi-arch
         os: [ubuntu-24.04-arm]
@@ -589,7 +589,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -627,7 +627,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -676,7 +676,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -714,7 +714,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -752,7 +752,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -790,7 +790,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -834,7 +834,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -878,7 +878,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         # ARM runners have 4 vCPUs (vs 2 on x64), doubling the xdist workers for free
         os: [ubuntu-24.04-arm]
       fail-fast: false
@@ -923,7 +923,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -961,7 +961,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -999,7 +999,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1037,7 +1037,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1075,7 +1075,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1113,7 +1113,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1151,7 +1151,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1189,7 +1189,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1225,7 +1225,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13", "3.14"]
+        python: ["3.14", "3.15"]
         # ARM runners have 4 vCPUs (vs 2 on x64): pylint runs with jobs=0 (auto
         # cpu_count), so this doubles its worker pool -> test step 151s -> 121s (3.13)
         # and 191s -> 119s (3.14). Nothing is pulled, so no multi-arch concern here.
@@ -1252,7 +1252,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1300,7 +1300,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1338,7 +1338,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1376,7 +1376,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1414,7 +1414,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1454,7 +1454,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1492,7 +1492,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1530,7 +1530,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1570,7 +1570,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1606,7 +1606,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1642,7 +1642,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1728,7 +1728,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1775,7 +1775,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     env:
@@ -1828,7 +1828,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1875,7 +1875,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1924,7 +1924,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -1973,7 +1973,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2047,7 +2047,7 @@ jobs:
     #   image: mcr.microsoft.com/playwright/python:v1.39.0-jammy
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2093,7 +2093,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2116,7 +2116,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
@@ -2190,7 +2190,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13"]
+        python: ["3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     env:
