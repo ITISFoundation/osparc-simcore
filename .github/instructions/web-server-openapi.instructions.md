@@ -11,10 +11,10 @@ Files in `api/specs/web-server/` are FastAPI stubs used only to generate
    `services/web/server/src/simcore_service_webserver/`.
 2. The function name becomes the `operationId`; the aiohttp route must use
    `name="<operationId>"`.
-3. For each route whose parameters are declared as a Pydantic model via
-   `Depends()` or `Query()`, wrap that model with `as_query()` from
-   `api/specs/web-server/_common.py` (import as `from ._common import as_query`)
-   so each field becomes an individual query parameter. Do not wrap request
-   body models.
+3. For Pydantic models representing query parameters, use
+   `Annotated[as_query(QueryModel), Depends()]`, importing `as_query` from
+   `._common`. This exposes each field as an individual query parameter.
+   Do not apply `as_query()` to path, header, cookie, or request-body models;
+   `Depends()` alone does not identify a query model.
 4. Use `Envelope[T]` for single resources and `Page[T]` for paginated lists
    (from `models_library`).

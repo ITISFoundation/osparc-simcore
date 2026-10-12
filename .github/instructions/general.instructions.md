@@ -6,10 +6,9 @@ This repository is a monorepo of Python microservices and JavaScript frontends.
 Python version requirements are defined in `.python-version`. When editing
 Python code, target only the Python version specified in `.python-version` at
 the repository root and do not use syntax or standard-library features
-unavailable in that version. Apply the scoped
-instruction file whose directory is the nearest ancestor of the file being
-edited. If a scoped file conflicts with this file, the scoped file takes
-precedence.
+unavailable in that version. Apply all instruction files whose `applyTo`
+patterns match the file being edited. Where matching instructions conflict,
+prefer the rule specific to that file type or service over a general rule.
 
 ## Change discipline
 
@@ -45,7 +44,9 @@ precedence.
 
 ## Documentation
 
-- Prefer clear code over comments that repeat it.
+- Prefer clear code over comments that repeat it. Write comments in plain,
+  specific language about intent, constraints, or non-obvious behavior. Omit
+  boilerplate, decorative headings, and step-by-step narration.
 - Update docs when a change affects public APIs, configuration, developer
   workflows, deployment, or user-visible behavior. Keep them concise and do not
   duplicate content.

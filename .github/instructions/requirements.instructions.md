@@ -12,10 +12,13 @@ Applies to `*.in` and `*.txt` files in any `requirements/` directory. Workflow:
   each existing group (`--constraint` lines, intra-repo packages, third-party).
   Keep the group order, and keep constraints before requirements. Lines starting
   with `--` keep their position as the first group.
-- Treat `*.txt` files as generated: edit the `*.in` file with the same base name
-  in the same directory (for example, `requirements/dev.in` generates
-  `requirements/dev.txt`) and run `make reqs`; never edit `*.txt` by hand.
-- If no matching `*.in` file exists for a `*.txt` file, do not create or edit
-  the `*.txt` file. Report the mismatch to the user instead.
+- Identify generated `*.txt` files by their generation header, matching `*.in`
+  input, or documented role. Edit the input (for example, `_base.in` for
+  `_base.txt`) and run `make reqs` using the linked workflow; never edit
+  generated files by hand.
+- A missing matching `*.in` does not imply an error: hand-maintained constraints,
+  tooling requirements, and installation shortcuts (such as `constraints.txt`,
+  `devenv.txt`, and `ci.txt`) may be edited directly. If a file's role is unclear,
+  check its header and the owning project's workflow before editing.
 - If `make reqs` fails or does not exist, stop, report the error output, and do
-  not edit `*.txt` files by hand as a fallback.
+  not edit generated files by hand as a fallback.
