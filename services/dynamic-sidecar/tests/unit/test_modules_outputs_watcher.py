@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterator
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
@@ -289,9 +289,11 @@ async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ) -> None:
     await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # generates the first event chain
     await _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[0])
@@ -314,9 +316,11 @@ async def test_does_not_trigger_on_attribute_change(
     mounted_volumes: MountedVolumes,
     port_keys: list[str],
     outputs_watcher: OutputsWatcher,
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
@@ -346,8 +350,10 @@ async def test_port_key_sequential_event_generation(
     files_per_port_key: NonNegativeInt,
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     await outputs_watcher.enable_event_propagation()
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # writing ports sequentially
     wait_interval_for_port: list[float] = []

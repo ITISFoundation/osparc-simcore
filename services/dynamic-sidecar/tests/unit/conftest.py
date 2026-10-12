@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import multiprocessing
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from multiprocessing.queues import Queue
 from threading import Barrier, Thread
 from typing import Final
@@ -28,14 +28,18 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
     PortNotifier,
 )
+from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from tenacity import retry
 from tenacity.after import after_log
+from tenacity.asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 
 _CONCURRENT_RUN_TIMEOUT_S: Final[float] = 10
+_COMMAND_DELIVERY_SETTLEMENT_S: Final[PositiveFloat] = 0.1
 
 
 #
@@ -167,6 +171,29 @@ def health_check_queue() -> Queue[int | None]:
 @pytest.fixture
 def heart_beat_interval_s() -> PositiveFloat:
     return 0.01
+
+
+@pytest.fixture
+def wait_for_command_delivered() -> Callable[[OutputsContext], Awaitable[None]]:
+    async def _(outputs_context: OutputsContext) -> None:
+        # NOTE: commands (port keys registration / propagation toggles) are applied
+        # by a thread running inside a separate process. Filesystem writes must wait
+        # until the last command was consumed there, otherwise the generated events
+        # are silently discarded by the watchdog handler
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+            wait=wait_fixed(0.01),
+            stop=stop_after_delay(10),
+        ):
+            with attempt:
+                assert outputs_context.file_system_event_handler_queue.qsize() == 0
+
+        # NOTE: the consumer thread dequeues the message just a moment before
+        # applying it, let it land before generating filesystem events
+        await asyncio.sleep(_COMMAND_DELIVERY_SETTLEMENT_S)
+
+    return _
 
 
 @pytest.fixture

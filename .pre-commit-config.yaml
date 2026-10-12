@@ -2,7 +2,7 @@
 exclude: "^.venv$|^.cache$|^.pytest_cache$|^services/static-webserver/client/qx_libs/"
 fail_fast: false
 default_language_version:
-  python: python3.13
+  python: python3.14
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.

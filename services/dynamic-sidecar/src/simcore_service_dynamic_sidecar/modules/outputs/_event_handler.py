@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import multiprocessing
 from asyncio import CancelledError, Task, create_task, get_event_loop, to_thread
 from asyncio import sleep as async_sleep
@@ -16,6 +17,12 @@ from pydantic import PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
 
+from ..multiprocess_logging import (
+    LogForwardingListener,
+    create_log_listener,
+    setup_log_forwarding,
+)
+from ..process_startup import ProcessStartupGrace
 from ._context import OutputsContext
 from ._manager import OutputsManager
 from ._watchdog_extensions import ExtendedInotifyObserver, SafeFileSystemEventHandler
@@ -117,10 +124,14 @@ def _process_worker(
     file_system_event_handler_queue: Queue[dict[str, Any] | None],
     health_check_queue: Queue[int | None],
     stop_queue: Queue[None],
+    log_queue: Queue[logging.LogRecord] | None,
     heart_beat_interval_s: PositiveFloat,
 ) -> None:
     # NOTE: module level and only receives pickleable arguments,
     # so that it is compatible with any multiprocessing start method
+
+    if log_queue is not None:
+        setup_log_forwarding(log_queue)
 
     observer = ExtendedInotifyObserver()
     file_system_event_handler = _PortKeysEventHandler(
@@ -177,11 +188,14 @@ class _EventHandlerProcess:
         outputs_context: OutputsContext,
         health_check_queue: Queue[int | None],
         heart_beat_interval_s: PositiveFloat,
+        *,
+        log_queue: Queue[logging.LogRecord] | None = None,
     ) -> None:
         # NOTE: runs in asyncio thread
 
         self.outputs_context: OutputsContext = outputs_context
         self.health_check_queue: Queue[int | None] = health_check_queue
+        self.log_queue: Queue[logging.LogRecord] | None = log_queue
         self.heart_beat_interval_s: PositiveFloat = heart_beat_interval_s
 
         # This is accessible from the creating process and from
@@ -211,6 +225,7 @@ class _EventHandlerProcess:
                     self.outputs_context.file_system_event_handler_queue,
                     self.health_check_queue,
                     self._stop_queue,
+                    self.log_queue,
                     self.heart_beat_interval_s,
                 ),
                 daemon=True,
@@ -244,8 +259,12 @@ class _EventHandlerProcess:
             self.outputs_context.port_key_events_queue.put(None)
             self.health_check_queue.put(None)
 
+    @property
+    def is_running(self) -> bool:
+        return self._process is not None
 
-class EventHandlerObserver:
+
+class EventHandlerObserver:  # pylint: disable=too-many-instance-attributes
     """
     Ensures watchdog is not blocking.
     When blocking, it will restart the process handling the watchdog.
@@ -265,13 +284,16 @@ class EventHandlerObserver:
         self.max_heart_beat_wait_interval_s: PositiveFloat = max_heart_beat_wait_interval_s
 
         self._health_check_queue: Queue[int | None] = multiprocessing.Queue()
+        self._log_listener: LogForwardingListener = create_log_listener()
         self._event_handler_process: _EventHandlerProcess = _EventHandlerProcess(
             outputs_context=outputs_context,
             health_check_queue=self._health_check_queue,
             heart_beat_interval_s=heart_beat_interval_s,
+            log_queue=self._log_listener.queue,
         )
         self._keep_running: bool = False
         self._task_health_worker: Task | None = None
+        self._startup_grace = ProcessStartupGrace()
 
     @property
     def wait_for_heart_beat_interval_s(self) -> PositiveFloat:
@@ -290,20 +312,28 @@ class EventHandlerObserver:
                 except Empty:
                     break
 
-            if heart_beat_count == 0:
-                _logger.warning(
-                    ("WatcherProcess health is no longer responsive. %s will be uploaded when closing."),
-                    self.outputs_context.file_type_port_keys,
-                )
-                # signal the health was degraded and
-                # that all the ports should be uploaded when closing
-                # the sidecar
-                self.outputs_manager.set_all_ports_for_upload()
+            if heart_beat_count > 0:
+                self._startup_grace.on_heart_beats_received()
+                continue
 
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    loop = get_event_loop()
-                    await loop.run_in_executor(executor, self._stop_observer_process)
-                    await loop.run_in_executor(executor, self._start_observer_process)
+            if self._startup_grace.in_startup_grace_period(process_running=self._event_handler_process.is_running):
+                continue
+
+            _logger.warning(
+                ("WatcherProcess health is no longer responsive. %s will be uploaded when closing."),
+                self.outputs_context.file_type_port_keys,
+            )
+            # signal the health was degraded and
+            # that all the ports should be uploaded when closing
+            # the sidecar
+            self.outputs_manager.set_all_ports_for_upload()
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                loop = get_event_loop()
+                await loop.run_in_executor(executor, self._stop_observer_process)
+                await loop.run_in_executor(executor, self._start_observer_process)
+
+            self._startup_grace.on_process_restart()
 
     def _start_observer_process(self) -> None:
         self._event_handler_process.start_process()
@@ -313,9 +343,10 @@ class EventHandlerObserver:
 
     async def start(self) -> None:
         with log_context(_logger, logging.INFO, f"{EventHandlerObserver.__name__} start"):
+            self._log_listener.start()
+            await to_thread(self._start_observer_process)
             self._keep_running = True
             self._task_health_worker = create_task(self._health_worker(), name="observer_monitor_health_worker")
-            self._start_observer_process()
 
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, f"{EventHandlerObserver.__name__} stop"):
@@ -326,3 +357,4 @@ class EventHandlerObserver:
                         await cancel_wait_task(self._task_health_worker)
             finally:
                 await to_thread(self._stop_observer_process)
+                self._log_listener.stop()
