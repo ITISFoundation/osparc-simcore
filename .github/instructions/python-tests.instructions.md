@@ -11,8 +11,8 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 ## Test structure
 
-- Use `pytest` with flat, module-level `test_*` functions; no `class Test...`
-  containers solely for grouping.
+- Use `pytest` with module-level `test_*` functions. Do not use `class Test...`
+  containers solely to group tests.
 - Name tests after behavior and scenario, e.g.
   `test_ordering_query_params_defaults_to_created_at()`.
 - Do not annotate return types of `test_*` functions or methods. Their parameters
@@ -21,8 +21,8 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 ## Parametrization
 
-- Remove repetition only when readability improves; never abstract away the
-  scenario under test.
+- Remove repetition only when it improves readability. Keep the scenario under
+  test clear.
 - Use `pytest.mark.parametrize` for cases with the same flow and give them
   stable, descriptive IDs. Keep separate tests when setup, intent, or failure
   diagnosis differ.
@@ -31,7 +31,7 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 - Reuse existing fixtures from `pytest-simcore` and the project before adding
   new ones.
-- Extract repeated, meaningful setup into a named fixture or factory; keep small
+- Extract repeated, meaningful setup into a named fixture or factory. Keep small
   setup inline when a fixture would hide it.
 - Put fixtures shared within a project in its nearest `conftest.py`, and ones
   useful across projects in `pytest-simcore`.
@@ -43,24 +43,24 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 - Do not add `autouse=True` fixtures in `conftest.py`.
 - In `pytest_simcore` plugins, allow them only when loading the plugin
-  explicitly opts a suite into a cross-cutting behavior. Document that
+  explicitly opts a suite into behavior that applies across its tests. Document that
   contract in the plugin's module docstring.
-- Otherwise, use `autouse=True` only for a fixture defined and used in the same test
-  module, with a short comment above it explaining why explicit injection is
-  impractical.
+- Otherwise, use `autouse=True` only for a fixture defined and used in the same
+  test module. Add a short comment above it explaining why explicit injection
+  is impractical.
 
 ## Shared test data types
 
 - Do not import dataclasses, `TypedDict`s, or other test-support types from
-  another test module or from `conftest.py`; pytest's import behavior makes
+  another test module or from `conftest.py`. Pytest's import behavior makes
   this fragile.
 - Put types shared across modules in a domain-named `pytest_simcore.helpers`
-  module (e.g. `webserver_users.py`), and only once there is a real
-  multi-module or multi-project reuse case. Otherwise keep them in their module.
+  module, such as `webserver_users.py`, only when multiple modules or projects
+  need them. Otherwise, keep them in their module.
 
 ## File and directory names
 
-- Test filenames must be unique across the package's test tree; avoid generic
+- Test filenames must be unique across the package's test tree. Avoid generic
   names such as `test_list.py`.
 - When splitting a module, keep the full original prefix in each filename, and
   name the directory after the original filename without `test_`:
@@ -69,14 +69,14 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
     test_users_accounts_rest_registration_create.py
     test_users_accounts_rest_registration_search.py
   ```
-- Split a test module when it exceeds 1,000 lines by behavior or scenario, moving shared
+- Split test modules over 1,000 lines by behavior or scenario. Move shared
   fixtures to the nearest `conftest.py`. Do not split if it would duplicate
   setup or obscure relationships.
 
 ## Running tests
 
 - Follow the [`run-python-tests`](../skills/run-python-tests/SKILL.md) procedure
-  and start with the narrowest relevant target; broaden when the change crosses
-  package, service, database, serialization, or API boundaries.
+  and start with the narrowest relevant target. Broaden validation when the
+  change crosses package, service, database, serialization, or API boundaries.
 - Use `--keep-docker-up` only for local iteration, never for clean-state or
   CI-equivalent validation.
