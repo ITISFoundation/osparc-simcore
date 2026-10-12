@@ -13,6 +13,7 @@ from ..models.domain.chatbot import (
     ChatCompletionRequestMessage,
     ChatRequest,
     ChatResponseFormat,
+    ChatStreamOptions,
     CreateChatCompletionResponse,
     Temperature,
     TopP,
@@ -59,6 +60,7 @@ class ChatbotSession:
             temperature=temperature,
             top_p=top_p,
             stream=stream,
+            stream_options=ChatStreamOptions() if stream else None,
         )
 
     def _request_timeout(self) -> httpx.Timeout:
