@@ -68,3 +68,10 @@ repos:
     hooks:
       - id: actionlint
         name: actionlint
+  - repo: https://github.com/lycheeverse/lychee.git
+    rev: lychee-v0.24.2
+    hooks:
+      - id: lychee
+        name: markdown-link-checker
+        args: ["--config", ".lychee.toml"]
+        types_or: [markdown]
