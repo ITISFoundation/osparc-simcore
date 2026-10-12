@@ -5,7 +5,7 @@
 # directory on Renovate's own PR branch (targeting only the package(s) Renovate itself
 # bumped, never a bare `make reqs` which upgrades everything) and pushes a fixup commit
 # if the Makefile-ordered recompile produced a diff.
-name: Fix Renovate lockfiles
+name: Chore Fix Renovate Lockfiles
 
 on:
   pull_request:

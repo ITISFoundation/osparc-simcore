@@ -8,7 +8,7 @@
 
 <!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
 [![ruff_badge]](https://github.com/astral-sh/ruff)
-[![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
+[![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-build-test.yml)
 [![codecov_badge]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![codspeed_badge]](https://app.codspeed.io/ITISFoundation/osparc-simcore?utm_source=badge)
 [![doc_badge]](https://itisfoundation.github.io/)
@@ -21,7 +21,7 @@
 
 <!-- BADGES: LINKS TO IMAGES. Default to https://shields.io/ ------------------------------>
 [ruff_badge]:https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
-[ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg
+[ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-build-test.yml/badge.svg
 [codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
 [codspeed_badge]:https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
 [doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
@@ -89,7 +89,7 @@ To develop, in addition:
 
 To verify current base OS, Docker and Python build versions have a look at:
 
-- GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
+- GitHub Actions [config](.github/workflows/ci-build-test.yml)
 
 If you want to verify if your system has all the necessary requirements:
 

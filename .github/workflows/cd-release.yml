@@ -1,9 +1,9 @@
-name: Github-CI-Staging
+name: CD Release
 
 on:
   push:
     tags:
-      - staging_[a-zA-Z0-9]+[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+
 
 env:
   # secrets can be set in settings/secrets on github
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: deploy staging
+    name: deploy release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -25,7 +25,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     env:
-      TO_DOCKER_TAG_PREFIX: staging-github
+      TO_DOCKER_TAG_PREFIX: release-github
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -43,10 +43,10 @@ jobs:
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
-      - name: source image is master
-        run: echo "FROM_DOCKER_TAG_PREFIX=master-github" >> $GITHUB_ENV
-      - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_staging_')
-        name: source image is hotfix-staging (instead of master)
-        run: echo "FROM_DOCKER_TAG_PREFIX=hotfix-staging-github" >> $GITHUB_ENV
+      - name: source image is staging
+        run: echo "FROM_DOCKER_TAG_PREFIX=staging-github" >> $GITHUB_ENV
+      - if: contains(env.BRANCH_NAME, 'remotes/origin/hotfix_v')
+        name: source image is hotfix (instead of staging)
+        run: echo "FROM_DOCKER_TAG_PREFIX=hotfix-github" >> $GITHUB_ENV
       - name: deploy
         run: ./ci/deploy/dockerhub-tag-version.bash

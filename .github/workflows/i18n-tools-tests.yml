@@ -1,4 +1,4 @@
-name: i18n tools tests
+name: I18n Tools Tests
 
 on:
   pull_request:
