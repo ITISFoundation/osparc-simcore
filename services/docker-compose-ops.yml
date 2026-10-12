@@ -140,7 +140,8 @@ services:
         dynamic_services:${REDIS_HOST}:${REDIS_PORT}:8:${REDIS_PASSWORD},
         celery_tasks:${REDIS_HOST}:${REDIS_PORT}:9:${REDIS_PASSWORD},
         documents:${REDIS_HOST}:${REDIS_PORT}:10:${REDIS_PASSWORD},
-        aiocache:${REDIS_HOST}:${REDIS_PORT}:11:${REDIS_PASSWORD}
+        aiocache:${REDIS_HOST}:${REDIS_PORT}:11:${REDIS_PASSWORD},
+        chatbox_usage:${REDIS_HOST}:${REDIS_PORT}:12:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"

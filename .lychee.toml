@@ -1,0 +1,20 @@
+# Link checker configuration for lychee (https://lychee.cliosana.co/reference/configuration/).
+# Used by the pre-commit hook (see .pre-commit-config.yaml).
+
+# Cache remote-URL results so commits don't re-check every link.
+cache = true
+max_cache_age = "7d"
+
+# Vendored / generated content
+exclude_path = [
+  "services/static-webserver/client/qx_libs/",
+]
+
+# Sites that block or rate-limit HEAD/bot requests but are known-good.
+exclude = [
+  "^https://fonts.gstatic.com",
+  "^https://img.shields.io",
+  "^https://badge.fury.io",
+  "^https://pypi.org",
+  "^https://pepy.tech",
+]

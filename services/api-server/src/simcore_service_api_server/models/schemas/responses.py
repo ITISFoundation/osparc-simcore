@@ -166,6 +166,14 @@ class OutputMessage(ApiServerOutputSchema):
     content: list[OutputTextContent]
 
 
+class ResponseUsage(ApiServerOutputSchema):
+    """OpenAI-style aggregated token usage of a completion."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
 class ResponseObject(ApiServerOutputSchema):
     """Response object returned by both POST and GET endpoints."""
 
@@ -176,3 +184,4 @@ class ResponseObject(ApiServerOutputSchema):
     model: str | None = None
     output: list[OutputMessage] | None = None
     status: ResponseStatus
+    usage: ResponseUsage | None = None
