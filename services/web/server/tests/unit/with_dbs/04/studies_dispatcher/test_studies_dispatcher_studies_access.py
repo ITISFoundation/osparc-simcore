@@ -304,10 +304,16 @@ async def test_access_to_invalid_study(
 @pytest.mark.parametrize(
     "malformed_project_id",
     [
-        "this-is-not-an-uuid",
-        "1234",
-        "00000000-0000-0000-0000-00000000000",  # wrong length
-        "ffffffff-ffff-ffff-ffff-ffffffffffff-extra",
+        pytest.param("this-is-not-an-uuid", id="non-uuid-text"),
+        pytest.param("1234", id="short-numeric-value"),
+        pytest.param(
+            "00000000-0000-0000-0000-00000000000",
+            id="uuid-with-wrong-length",
+        ),
+        pytest.param(
+            "ffffffff-ffff-ffff-ffff-ffffffffffff-extra",
+            id="uuid-with-extra-suffix",
+        ),
     ],
 )
 async def test_access_to_study_with_malformed_id(
