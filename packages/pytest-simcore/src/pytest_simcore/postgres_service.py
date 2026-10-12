@@ -26,12 +26,12 @@ from .helpers.postgres_tools import (
     wait_engine_ready,
 )
 from .helpers.typing_env import EnvVarsDict
-from .helpers.xdist import SharedResourceRegistry, get_worker_id, get_xdist_root_tmp_path, is_xdist_worker
+from .helpers.xdist import get_worker_id, is_xdist_worker, run_once_across_workers
 
 _logger = logging.getLogger(__name__)
 
 _TEMPLATE_DB_TO_RESTORE: Final[str] = "template_simcore_db"
-_TEMPLATE_REGISTRY_NAME: Final[str] = "postgres_template_simcore_db"
+_TEMPLATE_BUILD_NAME: Final[str] = "postgres_template_simcore_db"
 _TEMPLATE_READY_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
 
 _PG_CONFIG_KEYS: Final[tuple[str, ...]] = ("user", "password", "database", "host", "port")
@@ -95,30 +95,17 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
 
 
 @pytest.fixture(scope="session")
-def _postgres_migrated_template_state(
-    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
-) -> Iterator[PgTemplateState]:
+def _postgres_migrated_template_state(request: pytest.FixtureRequest) -> Iterator[PgTemplateState]:
     # NOTE: the template database itself is built lazily by postgres_db because resolving
     # the DSN can require module-scoped fixtures (e.g. docker_stack published ports). This
     # holder only tracks state and drops the template at session end.
-    state: PgTemplateState = {
-        "built": False,
-        "dsn": None,
-        "xdist_coordination_started": False,
-        "xdist_owns_template_build": False,
-    }
+    state: PgTemplateState = {"built": False, "dsn": None}
     yield state
 
     dsn = state["dsn"]
-    if dsn is None:
+    if dsn is None or is_xdist_worker(request):
+        # under xdist the template goes away with the postgres service the controller removes
         return
-
-    if is_xdist_worker(request) and state.get("xdist_coordination_started", False):
-        # under xdist: only the worker that empties the shared registry drops the template,
-        # since other workers may still be building/reading it
-        registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
-        if not registry.unregister(f"{get_worker_id(request)}-session"):
-            return
 
     try:
         drop_pg_template(dsn, _TEMPLATE_DB_TO_RESTORE)
@@ -148,35 +135,11 @@ def _ensure_migrated_template(
     request: pytest.FixtureRequest,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> None:
-    if not is_xdist_worker(request):
-        # single-process run: no cross-worker coordination needed
-        _build_or_verify_template(postgres_dsn, state)
-        state["dsn"] = postgres_dsn
-        return
-
-    token = f"{get_worker_id(request)}-session"
-    if not state.get("xdist_coordination_started", False):
-        # first time THIS worker needs the template: register once per worker-session
-        registry = SharedResourceRegistry(get_xdist_root_tmp_path(tmp_path_factory), _TEMPLATE_REGISTRY_NAME)
-        state["xdist_owns_template_build"] = registry.register(token)
-        state["xdist_coordination_started"] = True
-
-        if state.get("xdist_owns_template_build", False):
-            try:
-                _build_or_verify_template(postgres_dsn, state)
-            except BaseException:
-                # waiters would block for `_TEMPLATE_READY_TIMEOUT` on a template that will
-                # NEVER be built: signal them to fail fast and give up ownership
-                registry.mark_failed()
-                registry.unregister(token)
-                state["xdist_owns_template_build"] = False
-                state["xdist_coordination_started"] = False
-                raise
-            registry.mark_ready()
-        else:
-            # another worker owns the build: wait until it signals the template is ready (or failed)
-            registry.wait_ready(timeout=_TEMPLATE_READY_TIMEOUT)
-            state["built"] = True
+    with run_once_across_workers(
+        request, tmp_path_factory, _TEMPLATE_BUILD_NAME, timeout=_TEMPLATE_READY_TIMEOUT
+    ) as is_first:
+        if is_first:
+            _build_or_verify_template(postgres_dsn, state)
 
     state["dsn"] = postgres_dsn
 
