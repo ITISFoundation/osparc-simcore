@@ -340,18 +340,32 @@ async def test_register_handler_concurrent_with_rebuild_is_not_lost(
     # a handler registered while a rebuild is in flight must end up registered on the final
     # surface: the surface lock serialises both, otherwise the rebuild snapshots
     # _registered_handlers before the new entry lands and the method becomes unroutable
+    register_entered = asyncio.Event()
+    release_register = asyncio.Event()
     original_register = aio_pika.patterns.RPC.register
+    gate_pending = True
 
-    async def _slow_register(self: aio_pika.patterns.RPC, *args, **kwargs) -> None:
-        await asyncio.sleep(0.2)  # keep register_handler inside the interleaving window
+    async def _gated_register(self: aio_pika.patterns.RPC, *args, **kwargs) -> None:
+        nonlocal gate_pending
+        if gate_pending:  # hold only the racing registration, not the rebuild's re-registrations
+            gate_pending = False
+            register_entered.set()
+            await release_register.wait()
         await original_register(self, *args, **kwargs)
 
-    mocker.patch.object(aio_pika.patterns.RPC, "register", new=_slow_register)
+    mocker.patch.object(aio_pika.patterns.RPC, "register", new=_gated_register)
 
-    await asyncio.gather(
-        rpc_client._on_reconnect(),
-        rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me),
-    )
+    register_task = asyncio.create_task(rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me))
+    await register_entered.wait()  # registration in flight, handler not yet recorded
+
+    reconnect_task = asyncio.create_task(rpc_client._on_reconnect())
+    # when the rebuild does not wait for the in-flight registration, let it complete its
+    # snapshot of the handler list before the new entry lands; when the lock works, the
+    # rebuild stays blocked here and the release point is irrelevant
+    await asyncio.wait({reconnect_task}, timeout=2)
+    release_register.set()
+
+    await asyncio.gather(register_task, reconnect_task)
 
     assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
 
