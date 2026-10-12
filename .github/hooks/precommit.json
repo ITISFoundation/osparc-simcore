@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "scripts/precommit/agent-post-tool-use.py",
+        "timeout": 120
+      }
+    ]
+  }
+}

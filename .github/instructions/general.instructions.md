@@ -49,6 +49,8 @@ that file type or service over a general rule.
   response to the user under a heading named 'Validation'.
 - Run the narrowest relevant validation available. Report which tests or checks
   you did not run and why.
+- Run `pre-commit run --files <changed files>` and fix all
+  findings.
 
 ## Documentation
 
