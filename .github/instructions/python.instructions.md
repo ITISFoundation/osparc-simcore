@@ -23,7 +23,9 @@ Target the Python version in `.python-version`.
   (e.g. `ProductName(...)`) or carries Pydantic metadata: a `type` statement is
   not callable and can alter generated schemas.
 - Do not rewrite existing code solely to modernize syntax.
-- Annotate public functions, methods, class attributes, and non-obvious values.
+- Fully annotate parameters and return types of all functions and methods,
+  including private helpers.
+  Annotate class attributes and non-obvious values.
 
 ## Documentation
 

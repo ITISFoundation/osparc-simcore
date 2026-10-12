@@ -15,8 +15,8 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
   containers solely for grouping.
 - Name tests after behavior and scenario, e.g.
   `test_ordering_query_params_defaults_to_created_at()`.
-- Do not add a return annotation to `test_*` functions. Annotate helpers,
-  fixtures, and factories.
+- Do not annotate return types of `test_*` functions or methods. Their parameters
+  still require annotations.
 - Test externally observable behavior, not private implementation details.
 
 ## Parametrization
