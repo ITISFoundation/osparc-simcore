@@ -31,8 +31,6 @@ pytest_simcore_core_services_selection = [
 
 MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
 
-_TRANSIENT_REBUILD_BLIP: Final = RuntimeError("transient rebuild failure")
-
 
 async def add_me(*, x: Any, y: Any) -> Any:
     return x + y
@@ -347,7 +345,8 @@ async def test_rpc_rebuild_retries_transient_failure(
         nonlocal fail_next
         if fail_next:
             fail_next = False
-            raise _TRANSIENT_REBUILD_BLIP
+            msg = "transient rebuild failure"
+            raise RuntimeError(msg)
         await create_surface()
 
     mocker.patch.object(rpc_client, "_create_channel_and_rpc", side_effect=_create_with_initial_blip)
