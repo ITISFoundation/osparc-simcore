@@ -4,6 +4,12 @@
 import pytest
 from pytest_mock import MockerFixture
 
+pytest_plugins = [
+    # every test takes a cross-worker read lock on the docker daemon; tests marked
+    # `docker_exclusive` run alone (see packages/pytest-simcore/src/pytest_simcore/xdist_docker_daemon.py)
+    "pytest_simcore.xdist_docker_daemon",
+]
+
 
 @pytest.fixture
 def disable_dsm_cleaner(mocker: MockerFixture) -> None:
