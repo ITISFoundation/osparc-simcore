@@ -1,7 +1,7 @@
 import logging
 from collections.abc import AsyncIterator, Callable, Generator
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Final, NotRequired, TypedDict
+from typing import Any, Final, TypedDict
 from urllib.parse import quote_plus
 
 import simcore_postgres_database.cli
@@ -49,8 +49,6 @@ class PgTemplateState(TypedDict):
 
     built: bool
     dsn: PostgresTestConfig | None
-    xdist_coordination_started: NotRequired[bool]
-    xdist_owns_template_build: NotRequired[bool]
 
 
 def _build_sync_dsn(postgres_config: PostgresTestConfig, *, database: str | None = None) -> str:
