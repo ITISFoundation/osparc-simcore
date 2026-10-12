@@ -31,6 +31,8 @@ pytest_simcore_core_services_selection = [
 
 MULTIPLE_REQUESTS_COUNT: Final[NonNegativeInt] = 100
 
+_TRANSIENT_REBUILD_BLIP: Final = RuntimeError("transient rebuild failure")
+
 
 async def add_me(*, x: Any, y: Any) -> Any:
     return x + y
@@ -332,6 +334,30 @@ async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitM
 
     # the client stays unhealthy so the liveness probe restarts the service as a fallback
     assert rpc_client.healthy is False
+
+
+async def test_rpc_rebuild_retries_transient_failure(
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace, mocker: MockerFixture
+):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    create_surface = rpc_client._create_channel_and_rpc
+    fail_next = True
+
+    async def _create_with_initial_blip() -> None:
+        nonlocal fail_next
+        if fail_next:
+            fail_next = False
+            raise _TRANSIENT_REBUILD_BLIP
+        await create_surface()
+
+    mocker.patch.object(rpc_client, "_create_channel_and_rpc", side_effect=_create_with_initial_blip)
+
+    # the first attempt fails and the decorator retries it: without the retry policy the
+    # exception would propagate and a single blip would mark the client unhealthy
+    await rpc_client._rebuild_rpc_surface()
+
+    assert rpc_client.healthy is True
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
 
 
 async def test_register_handler_concurrent_with_rebuild_is_not_lost(
