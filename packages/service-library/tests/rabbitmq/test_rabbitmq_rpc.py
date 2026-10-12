@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from typing import Any, Final
 
+import aio_pika
 import aiodocker
 import pytest
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -324,11 +325,35 @@ async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitM
     mocker.patch.object(rpc_client, "_rebuild_rpc_surface", side_effect=RuntimeError("boom"))
     assert rpc_client.healthy is True
 
-    with pytest.raises(RuntimeError):
-        await rpc_client._on_reconnect()
+    # _on_reconnect must not raise: aio-pika invokes reconnect callbacks through
+    # gather(return_exceptions=True), so an exception would be swallowed; the failure
+    # is surfaced exclusively through the health state
+    await rpc_client._on_reconnect()
 
     # the client stays unhealthy so the liveness probe restarts the service as a fallback
     assert rpc_client.healthy is False
+
+
+async def test_register_handler_concurrent_with_rebuild_is_not_lost(
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace, mocker: MockerFixture
+):
+    # a handler registered while a rebuild is in flight must end up registered on the final
+    # surface: the surface lock serialises both, otherwise the rebuild snapshots
+    # _registered_handlers before the new entry lands and the method becomes unroutable
+    original_register = aio_pika.patterns.RPC.register
+
+    async def _slow_register(self: aio_pika.patterns.RPC, *args, **kwargs) -> None:
+        await asyncio.sleep(0.2)  # keep register_handler inside the interleaving window
+        await original_register(self, *args, **kwargs)
+
+    mocker.patch.object(aio_pika.patterns.RPC, "register", new=_slow_register)
+
+    await asyncio.gather(
+        rpc_client._on_reconnect(),
+        rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me),
+    )
+
+    assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=2, y=3) == 5
 
 
 def _get_rpc_result_queue_name(rpc_client: RabbitMQRPCClient) -> str:
@@ -338,9 +363,11 @@ def _get_rpc_result_queue_name(rpc_client: RabbitMQRPCClient) -> str:
 
 async def test_rpc_result_queue_is_not_auto_restored_by_robust_channel(rpc_client: RabbitMQRPCClient):
     # regression guard: the exclusive RPC result queue must NOT be part of the
-    # robust channel's restore set. Otherwise aio-pika would try to re-declare it
-    # (with the same name) on reconnect while the previous connection still holds
-    # it, failing with ACCESS_REFUSED and preventing `_on_reconnect` from running.
+    # robust channel's restore set. On reconnect aio-pika would replay the mailbox
+    # consume(exclusive=True) with the same name while the previous connection's
+    # ghost exclusive consumer is still registered (until heartbeat cleanup),
+    # failing with ACCESS_REFUSED and aborting the channel restore before
+    # `_on_reconnect` gets a chance to run.
     assert rpc_client._channel is not None
     restored_queue_names = set(rpc_client._channel._queues.keys())
     assert _get_rpc_result_queue_name(rpc_client) not in restored_queue_names

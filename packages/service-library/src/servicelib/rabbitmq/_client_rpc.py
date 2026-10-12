@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import aio_pika
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
@@ -19,7 +20,7 @@ from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from ._models import RPCNamespacedMethodName
 from ._rpc_router import RPCRouter
 from ._utils import (
-    RabbitMQRetryPolicyUponInitialization,
+    RabbitMQRetryPolicyUponReconnection,
     get_rabbitmq_client_unique_name,
 )
 
@@ -88,7 +89,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             await self._create_connection()
             await self._create_channel_and_rpc()
 
-    @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
+    @retry(**RabbitMQRetryPolicyUponReconnection(_logger).kwargs)
     async def _rebuild_rpc_surface(self) -> None:
         await self._close_channel_and_rpc()
         await self._create_channel_and_rpc()
@@ -114,10 +115,23 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             try:
                 async with self._surface_lock:
                     await self._rebuild_rpc_surface()
-            except Exception:
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                # NOTE: aio-pika runs reconnect callbacks through gather(return_exceptions=True),
+                # hence raising here would be silently swallowed. The unhealthy state is the
+                # escalation path: the health check restarts the container while aio-pika
+                # fires this callback again upon the next reconnection.
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        "RPC surface rebuild failed after reconnection",
+                        error=exc,
+                        error_context={"client_name": self.client_name},
+                        tip="aio-pika retries this callback on the next reconnection; "
+                        "the health check restarts the container while unhealthy",
+                    )
+                )
                 self._mark_unhealthy()
-                raise
-            self._mark_healthy()
+            else:
+                self._mark_healthy()
 
     async def close(self) -> None:
         with log_context(
@@ -193,16 +207,17 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         left to the caller to do so.
         """
 
-        if self._rpc is None:
-            raise RPCNotInitializedError
+        async with self._surface_lock:
+            if self._rpc is None:
+                raise RPCNotInitializedError
 
-        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
-        await self._rpc.register(
-            namespaced_method_name,
-            handler,
-            auto_delete=True,
-        )
-        self._registered_handlers[namespaced_method_name] = handler
+            namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
+            await self._rpc.register(
+                namespaced_method_name,
+                handler,
+                auto_delete=True,
+            )
+            self._registered_handlers[namespaced_method_name] = handler
 
     async def register_router(
         self,
@@ -221,12 +236,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     async def unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
 
-        if self._rpc is None:
-            raise RPCNotInitializedError
+        async with self._surface_lock:
+            if self._rpc is None:
+                raise RPCNotInitializedError
 
-        await self._rpc.unregister(handler)
-        for name in [n for n, h in self._registered_handlers.items() if h is handler]:
-            del self._registered_handlers[name]
+            await self._rpc.unregister(handler)
+            for name in [n for n, h in self._registered_handlers.items() if h is handler]:
+                del self._registered_handlers[name]
 
 
 @asynccontextmanager
