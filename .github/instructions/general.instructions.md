@@ -54,8 +54,9 @@ prefer the rule specific to that file type or service over a general rule.
   specific language about intent, constraints, or non-obvious behavior. Omit
   boilerplate, decorative headings, and step-by-step narration.
 - Update docs when a change affects public APIs, configuration, developer
-  workflows, deployment, or user-visible behavior. Keep them concise and do not
-  duplicate content.
+  workflows, deployment, or user-visible behavior.
+- Keep docs concise. Link to existing explanations rather than copying them;
+  retain brief local context where needed to understand or use the code.
 
 ## Ordering
 
