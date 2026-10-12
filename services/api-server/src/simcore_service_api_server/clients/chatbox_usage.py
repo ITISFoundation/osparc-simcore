@@ -34,7 +34,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from models_library.products import ProductName
 from models_library.users import UserID
-from prometheus_client import CollectorRegistry, Counter, Gauge
+from prometheus_client import CollectorRegistry, Counter
 from pydantic import NonNegativeFloat, NonNegativeInt
 from redis.exceptions import WatchError
 from redis.typing import EncodableT, FieldT
@@ -161,25 +161,18 @@ class Reservation:
 
 
 class _UsageMetrics:
-    def __init__(self, registry: CollectorRegistry, *, provider_budget_usd: float) -> None:
-        self.spend_usd_total = Counter(
-            "chatbox_spend_usd_total",
-            "Cumulative Chatbox Spend in USD, per product",
-            ["product_name"],
+    def __init__(self, registry: CollectorRegistry) -> None:
+        self.blended_spend_usd_total = Counter(
+            "chatbox_blended_spend_usd_total",
+            "Cumulative Chatbox Spend in USD, token counts at the Blended Rate, per user and product",
+            ["user_id", "product_name"],
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
-        self.provider_budget_usd = Gauge(
-            "chatbox_provider_budget_usd",
-            "The one-time Provider Budget (USD): spend_usd_total sums to this",
-            namespace=_METRICS_NAMESPACE,
-            registry=registry,
-        )
-        self.provider_budget_usd.set(provider_budget_usd)
-        self.released_reservations_total = Counter(
-            "chatbox_released_reservations_total",
-            "# Reservations refunded without reconciling to actual Spend (possible Provider Budget under-count)",
-            ["reason"],
+        self.tokens_total = Counter(
+            "chatbox_tokens_total",
+            "# Tokens as reported by the Chatbox in the completion usage, per user, product and type",
+            ["user_id", "product_name", "token_type"],
             namespace=_METRICS_NAMESPACE,
             registry=registry,
         )
@@ -395,10 +388,8 @@ class ChatboxUsageLedger:
         """Refund a Reservation (timeout / client abort / submit or task failure).
 
         Real provider burn between the start of the completion and the release can then
-        go uncounted against the Provider Budget — the released-reservations counter keeps
-        that visible.
+        go uncounted against the Provider Budget.
         """
-        self._metrics.released_reservations_total.labels(reason=reason).inc()
         window_key = _window_key(reservation.user_id, reservation.product_name)
         try:
             async for attempt in _cas_retrying():
@@ -456,7 +447,17 @@ class ChatboxUsageLedger:
                 )
             )
 
-        self._metrics.spend_usd_total.labels(product_name=reservation.product_name).inc(spend_usd)
+        # positional labels, in labelnames order: the token_type= keyword trips S106
+        self._metrics.blended_spend_usd_total.labels(f"{reservation.user_id}", reservation.product_name).inc(spend_usd)
+        # the Chatbox-reported counts, for reconciling against the vendor invoice
+        if usage.prompt_tokens is not None:
+            self._metrics.tokens_total.labels(f"{reservation.user_id}", reservation.product_name, "prompt").inc(
+                usage.prompt_tokens
+            )
+        if usage.completion_tokens is not None:
+            self._metrics.tokens_total.labels(f"{reservation.user_id}", reservation.product_name, "completion").inc(
+                usage.completion_tokens
+            )
 
     def _spend_usd(self, usage: UsageRecord) -> float:
         # Spend = total tokens at the platform-wide Blended Rate (USD per million tokens)
@@ -485,7 +486,7 @@ def configure_chatbox_usage_ledger(
         app.state.chatbox_usage_ledger = ChatboxUsageLedger(
             _client=client,
             _settings=settings,
-            _metrics=_UsageMetrics(metrics_registry, provider_budget_usd=settings.PROVIDER_BUDGET_USD),
+            _metrics=_UsageMetrics(metrics_registry),
         )
         try:
             yield {}

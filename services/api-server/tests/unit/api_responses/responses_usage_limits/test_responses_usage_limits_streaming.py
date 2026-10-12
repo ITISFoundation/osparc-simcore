@@ -25,6 +25,7 @@ import redis.asyncio as aioredis
 import respx
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
+from models_library.users import UserID
 from redis.exceptions import WatchError
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._meta import API_VTAG
@@ -531,10 +532,11 @@ async def test_redis_down_window_quota_fails_closed(
     [{"WINDOW_SPEND_USD": 10, "PROVIDER_BUDGET_USD": 0.01, "REQUESTS_PER_MINUTE": 100}],
     indirect=True,
 )
-async def test_metrics_expose_spend_budget_fraction_and_failures(
+async def test_metrics_expose_spend_tokens_and_failures(
     client: AsyncClient,
     auth: BasicAuth,
     app: FastAPI,
+    user_id: UserID,
     usage_builders,
     mocked_chatbot_backend: respx.MockRouter,
     monkeypatch: pytest.MonkeyPatch,
@@ -556,10 +558,15 @@ async def test_metrics_expose_spend_budget_fraction_and_failures(
     # ACT - one successful completion
     assert (await _post_stream(client, auth, usage_builders.make_stream_body())).status_code == status.HTTP_200_OK
 
-    # ASSERT - the per-product Spend counter and the Provider Budget gauge (the
-    # budget-fraction alerting query divides one by the sum of the other)
-    assert _sample_sum(ledger._metrics.spend_usd_total, product_name="osparc") == pytest.approx(0.0025)  # noqa: SLF001
-    assert _sample_sum(ledger._metrics.provider_budget_usd) == pytest.approx(0.01)  # noqa: SLF001
+    # ASSERT - the per-user per-product Spend counter (compare against the Provider
+    # Budget from the deployment settings, e.g. in the budget-fraction alerting query)
+    metrics = ledger._metrics  # noqa: SLF001
+    labels = {"user_id": f"{user_id}", "product_name": "osparc"}
+    assert _sample_sum(metrics.blended_spend_usd_total, **labels) == pytest.approx(0.0025)
+
+    # ASSERT - the Chatbox-reported token counts, per user and type
+    assert _sample_sum(metrics.tokens_total, **labels | {"token_type": "prompt"}) == 400
+    assert _sample_sum(metrics.tokens_total, **labels | {"token_type": "completion"}) == 600
 
     # ACT - a ledger failure (fail-closed admission)
     def _broken(*_args: object, **_kwargs: object) -> NoReturn:
