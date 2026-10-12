@@ -17,9 +17,11 @@ prefer the rule specific to that file type or service over a general rule.
 - Do not modify generated, vendored, or lock files unless the task requires it
   and the generation command documented in the generated file's header or in the
   `README.md` of the owning package or service is used.
-- Do not add secrets, credentials, tokens, private keys, production endpoints,
-  or environment-specific configuration to tracked files, fixtures, logs, or
-  user-visible errors.
+- Do not add real secrets or credentials (including tokens and private keys),
+  production endpoints, or environment-specific configuration to tracked files,
+  fixtures, logs, or user-visible errors. Test fixtures may contain clearly
+  synthetic credentials or credentials generated solely for disposable local
+  test resources; never copy credentials from real environments into tests.
 
 ## Configuration
 
@@ -36,6 +38,10 @@ prefer the rule specific to that file type or service over a general rule.
   component tests for frontend components, and end-to-end tests only for
   user-visible flows that span services. Prefer unit tests to slow integration or end-to-end tests.
 - Prefer behavior-focused tests over tests coupled to private implementation.
+  Avoid tautological assertions: derive expected results from the required
+  behavior or an independent reference, not by calling the implementation under
+  test or copying its algorithm. Mock dependencies, not the behavior being
+  tested; checking only a mock's configured return value does not validate it.
 - For a bug fix, add a regression test that fails before the fix and passes
   after it. If no such test is feasible, state the reason in the final chat
   response to the user under a heading named 'Validation'.

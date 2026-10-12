@@ -2,15 +2,7 @@
 applyTo: '**/services/web/server/**/*.py'
 ---
 
-# Web-server (aiohttp) instructions
-
-## aiohttp
-
-- Use typed `web.AppKey` objects, not string keys, for application and request
-  storage, with the most precise value type available:
-  `APP_SETTINGS_KEY: Final = web.AppKey("APP_SETTINGS_KEY", ApplicationSettings)`.
-- Follow the service's middleware, routing, and exception-handling patterns;
-  use `web.RouteTableDef()` where that is the local route convention.
+# Web-server instructions
 
 ## Related documents
 

@@ -41,9 +41,11 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 
 ## `autouse=True` fixtures
 
-- Do not add `autouse=True` fixtures in `conftest.py` or `pytest_simcore`
-  plugins.
-- Use `autouse=True` only for a fixture defined and used in the same test
+- Do not add `autouse=True` fixtures in `conftest.py`.
+- In `pytest_simcore` plugins, allow them only when loading the plugin
+  explicitly opts a suite into a cross-cutting behavior. Document that
+  contract in the plugin's module docstring.
+- Otherwise, use `autouse=True` only for a fixture defined and used in the same test
   module, with a short comment above it explaining why explicit injection is
   impractical.
 
