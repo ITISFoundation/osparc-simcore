@@ -9,33 +9,18 @@ from aiormq.exceptions import ChannelPreconditionFailed
 from common_library.network import redact_url
 from pydantic import NonNegativeInt
 from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..logging_utils import log_context
-from ._models import QueueName
+from ._models import (
+    _MINUTE,
+    QueueName,
+    RabbitMQRetryPolicyUponInitialization,
+)
 
 _logger = logging.getLogger(__file__)
 
 
-_MINUTE: Final[int] = 60
-
 RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
-
-
-class RabbitMQRetryPolicyUponInitialization:
-    """Retry policy upon service initialization"""
-
-    def __init__(self, logger: logging.Logger | None = None) -> None:
-        logger = logger or _logger
-
-        self.kwargs: dict[str, Any] = {
-            "wait": wait_fixed(2),
-            "stop": stop_after_delay(3 * _MINUTE),
-            "before_sleep": before_sleep_log(logger, logging.WARNING),
-            "reraise": True,
-        }
 
 
 async def is_rabbitmq_responsive(url: str) -> bool:

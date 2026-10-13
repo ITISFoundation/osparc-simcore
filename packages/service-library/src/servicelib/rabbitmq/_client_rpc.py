@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import aio_pika
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
@@ -16,12 +17,12 @@ from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
 from ._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from ._models import RPCNamespacedMethodName
-from ._rpc_router import RPCRouter
-from ._utils import (
-    RabbitMQRetryPolicyUponInitialization,
-    get_rabbitmq_client_unique_name,
+from ._models import (
+    RabbitMQRetryPolicyUponReconnection,
+    RPCNamespacedMethodName,
 )
+from ._rpc_router import RPCRouter
+from ._utils import get_rabbitmq_client_unique_name
 
 _logger = logging.getLogger(__name__)
 
@@ -33,10 +34,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _rpc: aio_pika.patterns.RPC | None = None
     _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
+    # NOTE: serializes every mutation of the RPC surface (_channel, _rpc, _registered_handlers) so that
+    # initialization, reconnection rebuilds, close and (un)registering handlers never interleave
+    # with each other; e.g. a rebuild swapping _rpc cannot run while unregister_handler is in flight
     _surface_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     @classmethod
-    async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
+    async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> RabbitMQRPCClient:
         client = cls(client_name=client_name, settings=settings, **kwargs)
         await client._rpc_initialize()
         return client
@@ -52,7 +56,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             client_properties={"connection_name": connection_name},
         )
         self._connection.close_callbacks.add(self._connection_close_callback)
-        self._connection.reconnect_callbacks.add(self._on_reconnect)
+        self._connection.reconnect_callbacks.add(self._on_safe_reconnect)
 
     async def _close_connection(self) -> None:
         connection, self._connection = self._connection, None
@@ -88,7 +92,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             await self._create_connection()
             await self._create_channel_and_rpc()
 
-    @retry(**RabbitMQRetryPolicyUponInitialization(_logger).kwargs)
+    @retry(**RabbitMQRetryPolicyUponReconnection(_logger).kwargs)
     async def _rebuild_rpc_surface(self) -> None:
         await self._close_channel_and_rpc()
         await self._create_channel_and_rpc()
@@ -104,7 +108,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             for namespaced_method_name, handler in handlers:
                 await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
 
-    async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
+    async def _on_safe_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
+        """Rebuild the RPC surface after a reconnection.
+
+        This callback never raises: aio-pika gathers reconnect callbacks with
+        ``return_exceptions=True``, so failures are logged and surfaced through the
+        health state instead.
+        """
         with log_context(
             _logger,
             logging.WARNING,
@@ -114,10 +124,22 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             try:
                 async with self._surface_lock:
                     await self._rebuild_rpc_surface()
-            except Exception:
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                # NOTE: aio-pika runs reconnect callbacks through gather(return_exceptions=True),
+                # hence raising here would be silently swallowed. Marking the instance unhealthy
+                # is the escalation path (e.g. the health check can restart the container), while
+                # aio-pika runs the reconnection again upon the next reconnection.
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        "RPC surface rebuild failed after reconnection: this application is marked as unhealthy",
+                        error=exc,
+                        error_context={"client_name": self.client_name},
+                        tip="the RPC surface gets rebuilt again on the next reconnection",
+                    )
+                )
                 self._mark_unhealthy()
-                raise
-            self._mark_healthy()
+            else:
+                self._mark_healthy()
 
     async def close(self) -> None:
         with log_context(
@@ -193,16 +215,17 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         left to the caller to do so.
         """
 
-        if self._rpc is None:
-            raise RPCNotInitializedError
+        async with self._surface_lock:
+            if self._rpc is None:
+                raise RPCNotInitializedError
 
-        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
-        await self._rpc.register(
-            namespaced_method_name,
-            handler,
-            auto_delete=True,
-        )
-        self._registered_handlers[namespaced_method_name] = handler
+            namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name)
+            await self._rpc.register(
+                namespaced_method_name,
+                handler,
+                auto_delete=True,
+            )
+            self._registered_handlers[namespaced_method_name] = handler
 
     async def register_router(
         self,
@@ -221,12 +244,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     async def unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
 
-        if self._rpc is None:
-            raise RPCNotInitializedError
+        async with self._surface_lock:
+            if self._rpc is None:
+                raise RPCNotInitializedError
 
-        await self._rpc.unregister(handler)
-        for name in [n for n, h in self._registered_handlers.items() if h is handler]:
-            del self._registered_handlers[name]
+            await self._rpc.unregister(handler)
+            for name in [n for n, h in self._registered_handlers.items() if h is handler]:
+                del self._registered_handlers[name]
 
 
 @asynccontextmanager
