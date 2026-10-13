@@ -618,7 +618,10 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 # Single source of truth for the uv version (see requirements/UV_VERSION for the pinning note).
 # tests/environment-setup/test_used_uv.py verifies all other references stay in sync.
-UV_VERSION := $(shell cat requirements/UV_VERSION)
+# exported so docker buildx bake interpolates it into the base image builds
+# (services/docker-compose-build.yml); requirements/UV_VERSION is hashed into
+# BASE_TAG by ci/helpers/compute_base_image_tag.bash
+export UV_VERSION := $(shell cat requirements/UV_VERSION)
 
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
