@@ -49,7 +49,7 @@ RUN \
   python3 ./scripts/post-compile.py
 
 
-FROM joseluisq/static-web-server:2.32.1-alpine AS server-base
+FROM joseluisq/static-web-server:2.44.1-alpine AS server-base
 
 LABEL org.opencontainers.image.authors="GitHK, odeimaiz"
 
@@ -59,13 +59,10 @@ ENV SC_USER_ID=8004 \
   SC_BUILD_TARGET=base \
   SC_BOOT_MODE=default
 
+# the base image runs as a non-root user
+USER root
+
 RUN adduser -D -u ${SC_USER_ID} -s /bin/sh -h /home/${SC_USER_NAME} ${SC_USER_NAME}
-
-# changing ownership of static-web-server files
-RUN chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /entrypoint.sh && \
-  chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /usr/local/bin/static-web-server && \
-  chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /public
-
 
 USER ${SC_USER_NAME}
 
