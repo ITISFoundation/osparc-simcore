@@ -18,12 +18,12 @@ def fake_owner_metadata() -> OwnerMetadata:
 
 
 @pytest.fixture
-def celery_app_mock() -> MagicMock:
+def mocked_celery_app() -> MagicMock:
     return MagicMock()
 
 
 @pytest.fixture
-def task_store_mock() -> AsyncMock:
+def mocked_task_store() -> AsyncMock:
     mock = AsyncMock()
     # keep progress lookups pydantic-valid when STARTED/RETRY tasks are polled
     mock.get_task_progress.return_value = None
@@ -31,5 +31,5 @@ def task_store_mock() -> AsyncMock:
 
 
 @pytest.fixture
-def task_manager_mock(celery_app_mock: MagicMock, task_store_mock: AsyncMock) -> CeleryTaskManager:
-    return CeleryTaskManager(_app=celery_app_mock, _settings=MagicMock(), _task_store=task_store_mock)
+def mocked_task_manager(mocked_celery_app: MagicMock, mocked_task_store: AsyncMock) -> CeleryTaskManager:
+    return CeleryTaskManager(_app=mocked_celery_app, _settings=MagicMock(), _task_store=mocked_task_store)
