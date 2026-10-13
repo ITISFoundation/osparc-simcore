@@ -30,7 +30,6 @@ def _limits_redis_env(redis_settings: RedisSettings) -> dict:
         "REDIS_HOST": redis_settings.REDIS_HOST,
         "REDIS_PORT": redis_settings.REDIS_PORT,
         "REDIS_PASSWORD": (redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else None),
-        "REDIS_DB_OFFSET": redis_settings.REDIS_DB_OFFSET,
     }
 
 
