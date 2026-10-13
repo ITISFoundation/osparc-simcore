@@ -37,6 +37,7 @@ from simcore_service_webserver.login.constants import (
 )
 from simcore_service_webserver.security import security_service
 from simcore_service_webserver.session.settings import get_plugin_settings
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
@@ -193,9 +194,22 @@ async def test_login_rehash_does_not_overwrite_concurrent_password_change(
 
     original = UsersRepo.update_user_password_hash_if_unchanged
 
-    async def _password_changed_just_before_update(self: UsersRepo, *args, **kwargs):
-        await self.update_user_password_hash(user_id=kwargs["user_id"], password_hash=concurrent_hash)
-        return await original(self, *args, **kwargs)
+    async def _password_changed_just_before_update(
+        self: UsersRepo,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: int,
+        expected_password_hash: str,
+        new_password_hash: str,
+    ) -> bool:
+        await self.update_user_password_hash(user_id=user_id, password_hash=concurrent_hash)
+        return await original(
+            self,
+            connection,
+            user_id=user_id,
+            expected_password_hash=expected_password_hash,
+            new_password_hash=new_password_hash,
+        )
 
     mocker.patch.object(UsersRepo, "update_user_password_hash_if_unchanged", _password_changed_just_before_update)
 

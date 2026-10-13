@@ -19,7 +19,7 @@ def test_encrypt_password_returns_string():
     assert isinstance(security_service.encrypt_password("password"), str)
 
 
-def test_encrypt_password_returns_valid_sha256_hash():
+def test_encrypt_password_returns_verifiable_hash():
     password = "password"  # dummy test password  # noqa: S105
     hashed_password = security_service.encrypt_password(password)
     assert security_service.check_password(password, hashed_password)
