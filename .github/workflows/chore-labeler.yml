@@ -5,7 +5,7 @@
 # PRs opened from forks (the workflow then runs with the base repo's
 # permissions). The job is read-only on the checkout side and only writes
 # labels through the GitHub API, so this is safe.
-name: PR auto-labeler
+name: Chore PR Auto-Labeler
 
 on:
   pull_request_target:

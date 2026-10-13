@@ -3,9 +3,10 @@ import contextlib
 import datetime
 import functools
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
-from typing import Any, Final, ParamSpec, TypeVar
+from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
+from typing import Annotated, Any, Final, ParamSpec
 
+from annotated_types import doc
 from common_library.async_tools import cancel_wait_task, delayed_start
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
@@ -32,29 +33,26 @@ class SleepUsingAsyncioEvent:
 
 
 P = ParamSpec("P")
-R = TypeVar("R")
 
 
 def periodic(
     *,
-    interval: datetime.timedelta,
-    raise_on_error: bool = False,
-    early_wake_up_event: asyncio.Event | None = None,
-) -> Callable[[Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]]:
-    """Calls the function periodically with a given interval or triggered by an early wake-up event.
-
-    Arguments:
-        interval -- the interval between calls
-
-    Keyword Arguments:
-        raise_on_error -- If False the function will be retried indefinitely unless cancelled.
-                          If True the function will be retried indefinitely unless cancelled
-                          or an exception is raised. (default: {False})
-        early_wake_up_event -- allows to awaken the function before the interval has passed. (default: {None})
-
-    Returns:
-        coroutine that will be called periodically (runs forever)
-    """
+    interval: Annotated[datetime.timedelta, doc("the interval between calls")],
+    raise_on_error: Annotated[
+        bool,
+        doc(
+            "if True, an exception raised by the wrapped function stops the loop; "
+            "if False (default) it is retried indefinitely until cancelled"
+        ),
+    ] = False,
+    early_wake_up_event: Annotated[
+        asyncio.Event | None, doc("when set, wakes up the function before ``interval`` elapses")
+    ] = None,
+) -> Annotated[
+    Callable[[Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]],
+    doc("decorator that runs the wrapped coroutine function forever"),
+]:
+    """Calls the wrapped function periodically, or earlier when ``early_wake_up_event`` is set."""
 
     def _decorator(
         async_fun: Callable[P, Coroutine[Any, Any, None]],
@@ -85,31 +83,35 @@ def periodic(
 
 
 def create_periodic_task(
-    task: Callable[..., Awaitable[None]],
+    task: Annotated[Callable[..., Awaitable[None]], doc("the coroutine function to run on every iteration")],
     *,
-    interval: datetime.timedelta,
-    task_name: str | None = None,
-    raise_on_error: bool = False,
-    wait_before_running: datetime.timedelta = datetime.timedelta(0),
-    early_wake_up_event: asyncio.Event | None = None,
-    **kwargs,
-) -> asyncio.Task:
+    interval: Annotated[datetime.timedelta, doc("the interval between two consecutive runs")],
+    task_name: Annotated[
+        str | None,
+        doc(
+            "name given to the underlying asyncio task; if omitted, a namespaced name is "
+            "derived from the callable (see :func:`servicelib.utils.get_callable_namespaced_name`)"
+        ),
+    ] = None,
+    raise_on_error: Annotated[
+        bool,
+        doc(
+            "if True, an exception raised by ``task`` stops the periodic loop; "
+            "if False (default) the task is retried indefinitely until cancelled"
+        ),
+    ] = False,
+    wait_before_running: Annotated[
+        datetime.timedelta, doc("delay before the first run (default: no delay)")
+    ] = datetime.timedelta(0),
+    early_wake_up_event: Annotated[
+        asyncio.Event | None, doc("when set, wakes up the task before ``interval`` elapses")
+    ] = None,
+    **kwargs: Annotated[Any, doc("forwarded to ``task`` on every call")],
+) -> Annotated[asyncio.Task[None], doc("the running task, owned by the caller")]:
     """Creates an :class:`asyncio.Task` that runs ``task`` periodically until cancelled.
 
     The caller owns the returned task and is responsible for cancelling it (e.g. via
     ``cancel_wait_task``); prefer :func:`periodic_task` when a managed lifetime is enough.
-
-    Arguments:
-        task -- the coroutine function to run on every iteration
-        interval -- the interval between two consecutive runs
-        task_name -- name given to the underlying asyncio task. If omitted, a namespaced
-            name is derived from the callable (see
-            :func:`servicelib.utils.get_callable_namespaced_name`)
-        raise_on_error -- if True, an exception raised by ``task`` stops the periodic
-            loop; if False (default) the task is retried indefinitely until cancelled
-        wait_before_running -- delay before the first run (default: no delay)
-        early_wake_up_event -- when set, wakes up the task before ``interval`` elapses
-        **kwargs -- forwarded to ``task`` on every call
     """
     resolved_task_name = task_name or get_callable_namespaced_name(task)
 
@@ -128,37 +130,42 @@ def create_periodic_task(
 
 @contextlib.asynccontextmanager
 async def periodic_task(
-    task: Callable[..., Awaitable[None]],
+    task: Annotated[Callable[..., Awaitable[None]], doc("the coroutine function to run on every iteration")],
     *,
-    interval: datetime.timedelta,
-    task_name: str | None = None,
-    stop_timeout: float = _DEFAULT_STOP_TIMEOUT_S,
-    raise_on_error: bool = False,
-    **kwargs,
-) -> AsyncIterator[asyncio.Task]:
+    interval: Annotated[datetime.timedelta, doc("the interval between two consecutive runs")],
+    task_name: Annotated[
+        str | None,
+        doc(
+            "name given to the underlying asyncio task; if omitted, a namespaced name is "
+            "derived from the callable (see :func:`servicelib.utils.get_callable_namespaced_name`)"
+        ),
+    ] = None,
+    stop_timeout: Annotated[float, doc("maximum time to wait for the task to stop on exit")] = _DEFAULT_STOP_TIMEOUT_S,
+    raise_on_error: Annotated[
+        bool,
+        doc(
+            "if True, an exception raised by ``task`` stops the periodic loop; "
+            "if False (default) the task is retried indefinitely until cancelled"
+        ),
+    ] = False,
+    early_wake_up_event: Annotated[
+        asyncio.Event | None, doc("when set, wakes up the task before ``interval`` elapses")
+    ] = None,
+    **kwargs: Annotated[Any, doc("forwarded to ``task`` on every call")],
+) -> AsyncGenerator[asyncio.Task[None]]:
     """Async context manager that runs ``task`` periodically and cancels it on exit.
 
     Wraps :func:`create_periodic_task` and guarantees the task is stopped when the
     context is left, even if an exception occurs. Yields the underlying asyncio task.
-
-    Arguments:
-        task -- the coroutine function to run on every iteration
-        interval -- the interval between two consecutive runs
-        task_name -- name given to the underlying asyncio task. If omitted, a namespaced
-            name is derived from the callable (see
-            :func:`servicelib.utils.get_callable_namespaced_name`)
-        stop_timeout -- maximum time to wait for the task to stop on exit
-        raise_on_error -- if True, an exception raised by ``task`` stops the periodic
-            loop; if False (default) the task is retried indefinitely until cancelled
-        **kwargs -- forwarded to ``task`` on every call
     """
-    asyncio_task: asyncio.Task | None = None
+    asyncio_task: asyncio.Task[None] | None = None
     try:
         asyncio_task = create_periodic_task(
             task,
             interval=interval,
             task_name=task_name,
             raise_on_error=raise_on_error,
+            early_wake_up_event=early_wake_up_event,
             **kwargs,
         )
         yield asyncio_task
