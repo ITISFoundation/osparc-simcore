@@ -9,7 +9,7 @@
   "platformAutomerge": true,
   "automerge": true,
   // Pinned explicitly (matches the default) so CI can gate on this exact prefix,
-  // e.g. .github/workflows/renovate-fix-lockfiles.yml
+  // e.g. .github/workflows/chore-renovate-lockfiles.yml
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   "labels": [
