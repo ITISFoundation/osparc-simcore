@@ -372,7 +372,7 @@ jobs:
         run: ./ci/github/unit-testing/agent.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -380,7 +380,7 @@ jobs:
         with:
           report_type: test_results
           files: services/agent/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api:
@@ -408,7 +408,7 @@ jobs:
         run: ./ci/github/unit-testing/api.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -416,7 +416,7 @@ jobs:
         with:
           report_type: test_results
           files: api/tests/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api-server:
@@ -448,7 +448,7 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -456,7 +456,7 @@ jobs:
         with:
           report_type: test_results
           files: services/api-server/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-autoscaling:
@@ -486,7 +486,7 @@ jobs:
         run: ./ci/github/unit-testing/autoscaling.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -494,7 +494,7 @@ jobs:
         with:
           report_type: test_results
           files: services/autoscaling/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-aws-library:
@@ -524,7 +524,7 @@ jobs:
         run: ./ci/github/unit-testing/aws-library.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -532,7 +532,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/aws-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-catalog:
@@ -570,7 +570,7 @@ jobs:
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -578,7 +578,7 @@ jobs:
         with:
           report_type: test_results
           files: services/catalog/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-celery-library:
@@ -608,7 +608,7 @@ jobs:
         run: ./ci/github/unit-testing/celery-library.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -616,7 +616,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/celery-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-clusters-keeper:
@@ -657,7 +657,7 @@ jobs:
           make test-ci-unit
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -665,7 +665,7 @@ jobs:
         with:
           report_type: test_results
           files: services/clusters-keeper/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-common-library:
@@ -695,7 +695,7 @@ jobs:
         run: ./ci/github/unit-testing/common-library.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -703,7 +703,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/common-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dask-sidecar:
@@ -733,7 +733,7 @@ jobs:
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -741,7 +741,7 @@ jobs:
         with:
           report_type: test_results
           files: services/dask-sidecar/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dask-task-models-library:
@@ -771,7 +771,7 @@ jobs:
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -779,7 +779,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/dask-task-models-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-datcore-adapter:
@@ -815,7 +815,7 @@ jobs:
           path: ./services/datcore-adapter/test_failures
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -823,7 +823,7 @@ jobs:
         with:
           report_type: test_results
           files: services/datcore-adapter/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-director:
@@ -859,7 +859,7 @@ jobs:
           path: ./services/director/test_failures
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -867,7 +867,7 @@ jobs:
         with:
           report_type: test_results
           files: services/director/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-director-v2:
@@ -904,7 +904,7 @@ jobs:
           path: ./services/director-v2/test_failures
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -912,7 +912,7 @@ jobs:
         with:
           report_type: test_results
           files: services/director-v2/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dynamic-scheduler:
@@ -942,7 +942,7 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -950,7 +950,7 @@ jobs:
         with:
           report_type: test_results
           files: services/dynamic-scheduler/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dynamic-sidecar:
@@ -980,7 +980,7 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -988,7 +988,7 @@ jobs:
         with:
           report_type: test_results
           files: services/dynamic-sidecar/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-invitations:
@@ -1018,7 +1018,7 @@ jobs:
         run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1026,7 +1026,7 @@ jobs:
         with:
           report_type: test_results
           files: services/invitations/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-models-library:
@@ -1056,7 +1056,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1064,7 +1064,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/models-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-notifications:
@@ -1094,7 +1094,7 @@ jobs:
         run: ./ci/github/unit-testing/notifications.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1102,7 +1102,7 @@ jobs:
         with:
           report_type: test_results
           files: services/notifications/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-payments:
@@ -1132,7 +1132,7 @@ jobs:
         run: ./ci/github/unit-testing/payments.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1140,7 +1140,7 @@ jobs:
         with:
           report_type: test_results
           files: services/payments/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-postgres-database:
@@ -1170,7 +1170,7 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1178,7 +1178,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/postgres-database/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-pytest-simcore:
@@ -1206,7 +1206,7 @@ jobs:
         run: ./ci/github/unit-testing/pytest-simcore.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1214,7 +1214,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/pytest-simcore/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-python-linting:
@@ -1281,7 +1281,7 @@ jobs:
           make test-ci-unit
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1289,7 +1289,7 @@ jobs:
         with:
           report_type: test_results
           files: services/resource-usage-tracker/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-service-integration:
@@ -1319,7 +1319,7 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1327,7 +1327,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/service-integration/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-service-library:
@@ -1357,7 +1357,7 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1365,7 +1365,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/service-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-settings-library:
@@ -1395,7 +1395,7 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1403,7 +1403,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/settings-library/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-simcore-sdk:
@@ -1435,7 +1435,7 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash test
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1443,7 +1443,7 @@ jobs:
         with:
           report_type: test_results
           files: packages/simcore-sdk/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-storage-01:
@@ -1474,7 +1474,7 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash test_01
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1482,7 +1482,7 @@ jobs:
         with:
           report_type: test_results
           files: services/storage/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-storage-02:
@@ -1513,7 +1513,7 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash test_02
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1521,7 +1521,7 @@ jobs:
         with:
           report_type: test_results
           files: services/storage/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-01:
@@ -1553,7 +1553,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1561,7 +1561,7 @@ jobs:
         with:
           report_type: test_results
           files: services/web/server/junit.xml,services/web/server/junit-isolated.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-02:
@@ -1589,7 +1589,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1597,7 +1597,7 @@ jobs:
         with:
           report_type: test_results
           files: services/web/server/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-03:
@@ -1625,7 +1625,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1633,7 +1633,7 @@ jobs:
         with:
           report_type: test_results
           files: services/web/server/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-04:
@@ -1661,7 +1661,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_with_db 04
       - uses: codecov/codecov-action@v7
         with:
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -1669,7 +1669,7 @@ jobs:
         with:
           report_type: test_results
           files: services/web/server/junit.xml
-          flags: unittests #optional
+          flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-tests:
@@ -1758,7 +1758,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          flags: integrationtests #optional
+          flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v7
@@ -1767,7 +1767,7 @@ jobs:
         with:
           report_type: test_results
           files: services/director-v2/junit.xml
-          flags: integrationtests #optional
+          flags: integrationtests # optional
 
   integration-test-director-v2-02:
     needs: [changes, build-test-images]
@@ -1811,7 +1811,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          flags: integrationtests #optional
+          flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v7
@@ -1820,7 +1820,7 @@ jobs:
         with:
           report_type: test_results
           files: services/director-v2/junit.xml
-          flags: integrationtests #optional
+          flags: integrationtests # optional
 
   integration-test-docker-api-proxy:
     needs: [changes, build-test-images]
@@ -1858,7 +1858,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          flags: integrationtests #optional
+          flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v7
@@ -1867,7 +1867,7 @@ jobs:
         with:
           report_type: test_results
           files: services/docker-api-proxy/junit.xml
-          flags: integrationtests #optional
+          flags: integrationtests # optional
 
   integration-test-dynamic-sidecar:
     needs: [changes, build-test-images]
@@ -1907,7 +1907,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          flags: integrationtests #optional
+          flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v7
@@ -1916,7 +1916,7 @@ jobs:
         with:
           report_type: test_results
           files: services/dynamic-sidecar/junit.xml
-          flags: integrationtests #optional
+          flags: integrationtests # optional
 
   integration-test-simcore-sdk:
     needs: [changes, build-test-images]
@@ -2003,7 +2003,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          flags: integrationtests #optional
+          flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v7
@@ -2012,7 +2012,7 @@ jobs:
         with:
           report_type: test_results
           files: services/web/server/junit.xml
-          flags: integrationtests #optional
+          flags: integrationtests # optional
 
   integration-tests:
     # NOTE: this is a github required status check!
@@ -2205,7 +2205,7 @@ jobs:
       - name: Setup docker buildx
         uses: docker/setup-buildx-action@v4.4.1
       - name: set owner variable
-        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> "$GITHUB_ENV"
       - name: download amd64 digests
         uses: actions/download-artifact@v8
         with:
