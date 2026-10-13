@@ -127,8 +127,14 @@ async def check_authorized_user_credentials(
 
     repo = UsersRepo(get_asyncpg_engine(app))
 
-    if not security_service.check_password(password, password_hash=await repo.get_password_hash(user_id=user["id"])):
+    password_hash = await repo.get_password_hash(user_id=user["id"])
+    if not security_service.check_password(password, password_hash):
         raise WrongPasswordError(user_id=user["id"], product_name=product.name)
+
+    if security_service.password_needs_rehash(password_hash):
+        await repo.update_user_password_hash(
+            user_id=user["id"], password_hash=security_service.encrypt_password(password)
+        )
     return user
 
 

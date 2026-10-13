@@ -8,6 +8,7 @@
 import string
 
 import pytest
+from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
 from hypothesis import given
 from hypothesis import strategies as st
 from passlib.hash import sha256_crypt
@@ -19,9 +20,31 @@ def test_encrypt_password_returns_string():
 
 
 def test_encrypt_password_returns_valid_sha256_hash():
-    password = "password"
+    password = "password"  # dummy test password  # noqa: S105
     hashed_password = security_service.encrypt_password(password)
     assert security_service.check_password(password, hashed_password)
+
+
+def test_encrypt_password_uses_argon2id():
+    assert security_service.encrypt_password("password").startswith("$argon2id$")
+
+
+def test_check_password_rejects_wrong_password():
+    hashed_password = security_service.encrypt_password("password")
+    assert not security_service.check_password("other", hashed_password)
+
+
+def test_password_needs_rehash():
+    legacy_hash = sha256_crypt.using(rounds=1000).hash("password")
+    assert security_service.check_password("password", legacy_hash)
+    assert security_service.password_needs_rehash(legacy_hash)
+
+    assert not security_service.password_needs_rehash(security_service.encrypt_password("password"))
+
+    weaker_params_hash = Argon2id(
+        salt=b"0123456789abcdef", length=32, iterations=1, lanes=1, memory_cost=19 * 1024
+    ).derive_phc_encoded(b"password")
+    assert security_service.password_needs_rehash(weaker_params_hash)
 
 
 def test_encrypt_password_raises_type_error_for_non_string_input():
