@@ -171,8 +171,7 @@ async def _process_outbox_event(
     try:
         project_owner = await get_project_owner(conn, comp_task.project_id)
     except exceptions.ProjectOwnerNotFoundError:
-        # a project always has an owner row: this should never happen
-        _logger.error(
+        _logger.exception(
             "project owner not found for project_id=%s; skipping stale outbox event",
             comp_task.project_id,
         )
