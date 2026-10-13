@@ -3424,8 +3424,6 @@ async def test_start_tasks_retry_after_db_write_failure_does_not_duplicate_dask_
     with_real_dask_cluster_url: None,
     with_mocked_node_ports_and_storage: None,
     initialized_app: FastAPI,
-    # otherwise consumers would run apply() on their own and race the asserts below,
-    # flipping the task to FAILED
     with_disabled_distributed_scheduling: None,
     scheduler_api: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
