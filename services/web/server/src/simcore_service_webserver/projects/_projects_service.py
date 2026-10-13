@@ -16,10 +16,11 @@ from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import suppress
 from decimal import Decimal
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
+from annotated_types import doc
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
@@ -1712,14 +1713,14 @@ async def _trigger_connected_service_retrieve(
     await logged_gather(*update_tasks, reraise=False)
 
 
-async def post_trigger_connected_service_retrieve(
+def post_trigger_connected_service_retrieve(
     app: web.Application,
     *,
     project: dict,
     updated_node_uuid: str,
     changed_keys: list[str],
 ) -> None:
-    await fire_and_forget_task(
+    fire_and_forget_task(
         _trigger_connected_service_retrieve(
             app,
             project=project,
@@ -2461,27 +2462,47 @@ async def _send_message_to_rooms(
     app: web.Application,
     rooms: Iterable[GroupID],
     message: SocketMessageDict,
+    *,
+    strict: Annotated[
+        bool,
+        doc(
+            "if True, emit failures are raised so the caller can retry the notification "
+            "(at-least-once, used by the outbox consumer); if False, failures are only "
+            "logged. Emitting to a room with no members is a no-op in both cases, see "
+            "socketio/_messages.py"
+        ),
+    ],
 ) -> None:
-    await limited_gather(
-        *(socketio_service.send_message_to_standard_group(app, room, message) for room in rooms),
+    # all emits settle before the first failure is raised, so a retry never overlaps
+    # emits still in flight from the failed attempt
+    results = await limited_gather(
+        *(socketio_service.send_message_to_standard_group(app, room, message, strict=strict) for room in rooms),
+        reraise=False,
         log=_logger,
         limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
     )
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
 
 async def _send_message_to_project_groups(
     app: web.Application,
     project_id: ProjectID,
     message: SocketMessageDict,
+    *,
+    strict: bool,
 ) -> None:
     rooms_to_notify = await _list_project_group_rooms_to_notify(app, project_id)
-    await _send_message_to_rooms(app, rooms_to_notify, message)
+    await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
     notify_only_user: UserID | None = None,
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2502,15 +2523,18 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
+            strict=strict,
         )
     else:
-        await _send_message_to_project_groups(app, project["uuid"], message)
+        await _send_message_to_project_groups(app, project["uuid"], message, strict=strict)
 
 
 async def notify_project_nodes_update(
     app: web.Application,
     project: dict,
     node_ids: Iterable[NodeID],
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2528,15 +2552,17 @@ async def notify_project_nodes_update(
             data=data,
         )
 
-        await _send_message_to_rooms(app, rooms_to_notify, message)
+        await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
+    *,
+    strict: bool = False,
 ) -> None:
-    await notify_project_nodes_update(app, project, (node_id,))
+    await notify_project_nodes_update(app, project, (node_id,), strict=strict)
 
 
 async def retrieve_and_notify_project_locked_state(
