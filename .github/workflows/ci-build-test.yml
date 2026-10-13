@@ -1,4 +1,4 @@
-name: CI
+name: CI Build Test
 # NOTE: this CI workflow is running a number of unit/integration/system tests jobs
 # and also builds a set of "test" docker images (required for integration/system tests)
 # if all tests are passing, and the CI runs on the master branch, then it will also deploy
