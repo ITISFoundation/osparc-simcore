@@ -8,7 +8,6 @@ import json
 from collections.abc import AsyncIterator
 
 import pytest
-from faker import Faker
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import (
     DB_CHANNEL_NAME,
@@ -147,7 +146,7 @@ async def test_listen_query(
     "update_kwargs,expected_column",
     [
         pytest.param({"outputs": {"some new stuff": "it is new"}}, "outputs", id="outputs"),
-        pytest.param({"run_hash": None}, "run_hash", id="run_hash"),
+        pytest.param({"run_hash": "some-fresh-hash"}, "run_hash", id="run_hash"),
         pytest.param({"state": StateType.ABORTED}, "state", id="state"),
     ],
 )
@@ -158,16 +157,11 @@ async def test_each_trigger_column_alone_emits_event(
     task: dict,
     update_kwargs: dict,
     expected_column: str,
-    faker: Faker,
 ):
     """a change to ONLY each of the trigger columns must emit a wakeup notification
     and one outbox event reporting that column (plus `modified`, bumped by the
     trigger); repeating the exact same change must not trigger again"""
     task_id = task["task_id"]
-
-    if "run_hash" in update_kwargs:
-        # fresh random hash so the value can never collide with the row's current one
-        update_kwargs = {**update_kwargs, "run_hash": faker.sha256()}
 
     await _update_comp_task_with(db_connection, task, **update_kwargs)
     await _assert_wakeup_notifications(db_notification_queue, 1)
