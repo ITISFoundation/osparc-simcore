@@ -61,6 +61,7 @@ from ...core.errors import (
     PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
     ProjectNodeNotFoundError,
+    ProjectNodesConcurrentlyUpdatedError,
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
 )
@@ -398,7 +399,10 @@ async def _create_computation_get(
             "description": "Service not available or configuration error",
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Payment required"},
-        status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
+        status.HTTP_409_CONFLICT: {
+            "description": "Project already started, contains deprecated services, "
+            "or changed while its tasks were being created (retry)",
+        },
         status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Invalid computation request (e.g. missing collection_run_id)",
         },
@@ -453,11 +457,6 @@ async def create_or_update_or_start_computation(
         if computation.start_pipeline:
             await _check_pipeline_startable(minimal_computational_dag, computation, catalog_client)
 
-        await comp_pipelines_repo.upsert_pipeline(
-            project_id=project.uuid,
-            dag_graph=minimal_computational_dag,
-            publish=computation.start_pipeline or False,
-        )
         assert computation.product_name  # nosec
         min_computation_nodes: list[NodeID] = [NodeID(n) for n in minimal_computational_dag.nodes()]
         comp_tasks, insufficient_credits = await comp_tasks_repo.upsert_tasks_from_project(
@@ -470,6 +469,14 @@ async def create_or_update_or_start_computation(
             rut_client=rut_client,
             wallet_info=computation.wallet_info,
             rabbitmq_rpc_client=rpc_client,
+        )
+
+        # NOTE: after the tasks, so that a project that changed in the meantime leaves no
+        # half-written pipeline behind
+        await comp_pipelines_repo.upsert_pipeline(
+            project_id=project.uuid,
+            dag_graph=minimal_computational_dag,
+            publish=computation.start_pipeline or False,
         )
 
         pipeline_started = await _start_pipeline_if_requested(
@@ -510,6 +517,11 @@ async def create_or_update_or_start_computation(
 
     except WalletNotEnoughCreditsError as e:
         raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=f"{e}") from e
+
+    except ProjectNodesConcurrentlyUpdatedError as e:
+        # the caller's graph mutation lost the race: retry once the tasks are recomputed
+        # from the new state of the project
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
 
 @router.get(

@@ -47,6 +47,15 @@ class ProjectNodeNotFoundError(DirectorError):
     msg_template: str = "node {node_id} in project {project_id} not found"
 
 
+class ProjectNodesConcurrentlyUpdatedError(DirectorError):
+    """the project's nodes changed while its tasks were being created
+
+    Raised instead of writing back values computed from the previous state of those nodes.
+    """
+
+    msg_template: str = "Project {project_id} changed while its tasks were being created. TIP: retry"
+
+
 class ProjectNetworkNotFoundError(DirectorError):
     msg_template: str = "no networks found for project {project_id}"
 

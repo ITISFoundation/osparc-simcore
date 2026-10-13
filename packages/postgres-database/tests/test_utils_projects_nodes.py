@@ -251,9 +251,19 @@ async def test_update_project_node(
 
 async def test_delete_invalid_node_does_nothing(
     asyncpg_connection: AsyncConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+):
+    await projects_nodes_repo.delete(asyncpg_connection, node_id=uuid.uuid4())
+
+
+async def test_delete_of_invalid_project_raises(
+    asyncpg_connection: AsyncConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
 ):
-    await projects_nodes_repo_of_invalid_project.delete(asyncpg_connection, node_id=uuid.uuid4())
+    # deleting locks the project graph before touching any node, so a project that does not
+    # exist is reported instead of quietly having nothing deleted
+    with pytest.raises(ProjectNodesProjectNotFoundError):
+        await projects_nodes_repo_of_invalid_project.delete(asyncpg_connection, node_id=uuid.uuid4())
 
 
 async def test_delete_node(

@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
 from .utils_aiosqlalchemy import map_db_exception
@@ -94,6 +95,32 @@ class ProjectNode(ProjectNodeCreate):
 class ProjectNodesRepo:
     project_uuid: uuid.UUID
 
+    async def lock_project_graph(self, connection: AsyncConnection) -> None:
+        """Lock the project graph, i.e. the single `projects` row the nodes belong to
+
+        The `projects_nodes_changed` trigger updates that row on every INSERT/UPDATE/DELETE
+        on `projects_nodes`. A writer that does not take this lock first therefore reaches
+        the `projects` row *last*, which is the lock-order inversion that makes PostgreSQL
+        abort one of the two transactions (SQLSTATE 40P01), see
+        https://github.com/ITISFoundation/private-issues/issues/669
+
+        Every mutating method of this repository takes it, so callers only need to call this
+        themselves to also cover their own reads, or when they write `projects_nodes` with
+        their own statements. Re-taking it in the same transaction is a no-op, hence a caller
+        that already locked the graph keeps working.
+
+        NOTE: like every other method here, do not use it in an asyncio.gather call!
+        """
+        # SQLAlchemy renders key_share=True without read=True as FOR NO KEY UPDATE, i.e. the
+        # weakest lock that still excludes the trigger's UPDATE on the row
+        result = await connection.execute(
+            sqlalchemy.select(projects.c.uuid)
+            .where(projects.c.uuid == f"{self.project_uuid}")
+            .with_for_update(key_share=True)
+        )
+        if result.scalar_one_or_none() is None:
+            raise ProjectNodesProjectNotFoundError(project_uuid=self.project_uuid)
+
     async def add(
         self,
         connection: AsyncConnection,
@@ -112,6 +139,8 @@ class ProjectNodesRepo:
         """
         if not nodes:
             return []
+
+        await self.lock_project_graph(connection)
 
         values = [
             {
@@ -194,6 +223,8 @@ class ProjectNodesRepo:
         Raises:
             ProjectsNodesNodeNotFound: _description_
         """
+        await self.lock_project_graph(connection)
+
         update_stmt = (
             projects_nodes.update()
             .values(**values)
@@ -216,6 +247,8 @@ class ProjectNodesRepo:
         Raises:
             Nothing special
         """
+        await self.lock_project_graph(connection)
+
         delete_stmt = sqlalchemy.delete(projects_nodes).where(
             (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
         )
@@ -284,6 +317,8 @@ class ProjectNodesRepo:
         pricing_plan_id: int,
         pricing_unit_id: int,
     ) -> None:
+        await self.lock_project_graph(connection)
+
         result = await connection.scalar(
             sqlalchemy.select(projects_nodes.c.project_node_id).where(
                 (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")

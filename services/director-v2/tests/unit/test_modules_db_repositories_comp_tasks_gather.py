@@ -9,7 +9,7 @@ https://github.com/ITISFoundation/private-issues/issues/669
 - return the `projects_nodes` writes it computed instead of applying them.
 
 That it runs while no row is locked is asserted on the real code path by
-`with_dbs/test_projects_nodes_lock_order.py`.
+`with_dbs/test_comp_tasks_upsert_concurrency.py`.
 """
 
 # pylint: disable=redefined-outer-name
@@ -47,6 +47,10 @@ _SERVICE_VERSION = "1.0.0"
 _EC2_INSTANCE_TYPE = "c5.xlarge"
 _8_CPUS = 8.0
 _16_GIB = 16 * 1024 * 1024 * 1024
+# what `estimate_dask_worker_resources_from_ec2_instance` keeps of that machine: 0.1 cpus and
+# 10% of the RAM are left to the machine itself
+_WORKER_CPUS = 7.9
+_WORKER_RAM = 15461882265
 
 
 def _resources(cpu: float = 2, ram_gib: int = 4) -> dict[str, Any]:
@@ -231,8 +235,8 @@ async def test_ec2_resources_are_computed_but_not_written(
     for dumped in pending.required_resources.values():
         resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(dumped)
         image_resources = resources[DEFAULT_SINGLE_SERVICE_NAME]
-        assert 0 < image_resources.resources["CPU"].limit < _8_CPUS
-        assert 0 < image_resources.resources["RAM"].limit < _16_GIB
+        assert image_resources.resources["CPU"].limit == pytest.approx(_WORKER_CPUS)
+        assert image_resources.resources["RAM"].limit == _WORKER_RAM
 
 
 async def test_required_resources_are_not_written_twice(

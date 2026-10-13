@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .....core.errors import (
     ComputationalTaskJobIdAlreadySetError,
     ComputationalTaskNotFoundError,
+    ProjectNodesConcurrentlyUpdatedError,
 )
 from .....models.comp_runs import RunID
 from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
@@ -31,7 +32,7 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
-from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks, projects
+from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks
 from .._base import BaseRepository
 from . import _utils
 
@@ -142,14 +143,16 @@ class CompTasksRepository(BaseRepository):
             )
             return nid is not None
 
-    async def _get_project_nodes_snapshot(self, project: ProjectAtDB) -> _utils.ProjectNodesSnapshot:
+    async def _get_project_nodes_snapshot(
+        self, project: ProjectAtDB, *, connection: AsyncConnection | None = None
+    ) -> _utils.ProjectNodesSnapshot:
         """Reads, in one short transaction, everything `projects_nodes` holds for this project
 
         NOTE: nodes are read in `node_id` order so that every following write happens in the
         same order, which is what keeps a single transaction from taking row locks in an order
         another transaction could not wait for.
         """
-        async with pass_or_acquire_connection(self.db_engine) as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
             return _utils.ProjectNodesSnapshot(
                 required_resources={
@@ -213,15 +216,21 @@ class CompTasksRepository(BaseRepository):
         # 3. apply every pending write in one short transaction
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with transaction_context(self.db_engine) as conn:
-            # Acquire the same lock as the webserver does before a graph mutation
-            # (see utils_projects_nodes._lock_project_graph), i.e. before touching
-            # `projects_nodes`. Both services then wait on the same row in `projects` and
-            # cannot deadlock with each other any more.
-            await conn.execute(
-                sa.select(projects.c.uuid).where(projects.c.uuid == f"{project.uuid}").with_for_update(key_share=True)
-            )
-
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
+
+            # Acquire the same lock as the webserver does before a graph mutation, i.e. before
+            # touching `projects_nodes`. Every writer of that table then waits on the same row
+            # in `projects` and none of them can deadlock with another any more.
+            await projects_nodes_repo.lock_project_graph(conn)
+
+            # The tasks were created in step 2 without any transaction, so the snapshot they
+            # were computed from may be stale by now: another client may have changed a node
+            # (and the resources/pricing computed from it), or deleted a node (and a task would
+            # be created for it in vain). Writing those values back would silently undo the
+            # other client's change, so the current state is compared with the snapshot first.
+            if await self._get_project_nodes_snapshot(project, connection=conn) != snapshot:
+                raise ProjectNodesConcurrentlyUpdatedError(project_id=f"{project.uuid}")
+
             for node_id, pricing_unit_ids in sorted(projects_nodes_updates.pricing_unit_ids.items()):
                 pricing_plan_id, pricing_unit_id = pricing_unit_ids
                 await projects_nodes_repo.connect_pricing_unit_to_project_node(
