@@ -16,7 +16,7 @@ down_revision = "9f24c8e1a3b7"
 branch_labels = None
 depends_on = None
 
-# comp_tasks trigger/procedure (unchanged names, new body: outbox insert instead of raw NOTIFY payload)
+# names reused from the previous trigger setup; see models/comp_tasks.py for the model-side definitions
 DB_PROCEDURE_NAME: str = "notify_comp_tasks_changed"
 DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
 DB_CHANNEL_NAME: str = "outbox_wakeup"
@@ -102,8 +102,8 @@ $$ LANGUAGE plpgsql;
         )
     )
 
-    # the trigger's column list / WHEN predicate must also include run_hash, otherwise a
-    # run_hash-only update never fires the procedure and projects_nodes.run_hash goes stale
+    # the trigger must be dropped and recreated: its column list and WHEN predicate are
+    # stored on the trigger object, so replacing only the procedure would not update them
     op.execute(
         sa.DDL(
             f"""

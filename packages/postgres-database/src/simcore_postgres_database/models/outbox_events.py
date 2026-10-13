@@ -44,7 +44,7 @@ outbox_events = sa.Table(
         "aggregate_id",
         sa.String,
         nullable=False,
-        doc="Logical source entity ID encoded as text (e.g., task_id::text)",
+        doc="ID (as text) of the table row that produced this event (e.g., the comp_tasks task_id)",
     ),
     sa.Column(
         "changed_columns",

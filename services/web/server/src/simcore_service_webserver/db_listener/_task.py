@@ -40,11 +40,8 @@ async def _with_outbox_wakeup_listener(
 ) -> AsyncGenerator[asyncio.Event]:
     """Holds one dedicated connection open to LISTEN on the outbox wake-up channel.
 
-    The connection is opened directly with asyncpg, *outside* the app's shared
-    SQLAlchemy pool: asyncpg's callback-based notifications require holding one
-    connection open for the listener's lifetime, and a permanent check-out from
-    the shared pool would steal capacity from request-handling code (projections
-    also need pool connections while the LISTEN one is held).
+    The connection is opened directly with asyncpg, outside the app's shared
+    SQLAlchemy pool, so it never takes capacity from request-handling code.
 
     With several web-server replicas, each holds its own LISTEN connection and
     pg_notify is broadcast, so every replica wakes up on every event.

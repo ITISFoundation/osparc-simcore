@@ -117,9 +117,6 @@ class _BatchOutcome(Enum):
 
 _DEAD_LETTER_RETENTION: Final[datetime.timedelta] = datetime.timedelta(days=30)
 
-# hard deadline on processing one aggregate: the socketio fan-out rides on RabbitMQ and
-# a half-open broker connection can stall a publish indefinitely, which would pin the
-# claim transaction, its locks, and pool connections until the replica restarts
 _PROCESSING_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
 
 _logger = logging.getLogger(__name__)
@@ -141,9 +138,7 @@ async def _update_project_state(
         client_session_id=None,
     )
 
-    # strict: a failed socket.io fan-out (e.g. the RabbitMQ-backed manager is down)
-    # must fail the processing so the outbox event is retried, not deleted. Emitting
-    # to a room with no members (disconnected users) is a no-op and never raises.
+    # strict: a failed emit must fail the processing so the outbox event is retried
     await notify_project_node_update(app, project, node_uuid, strict=True)
 
     await notify_project_state_update(app, project, strict=True)
@@ -155,12 +150,12 @@ async def _process_outbox_event(
     task_id: int,
     changed_columns: frozenset[str],
 ) -> None:
-    """Project a comp_tasks change onto projects_nodes.
+    """Transmit a comp_tasks change to the frontend and sync projects_nodes.
 
-    Only the columns reported by the event's `changed_columns` are projected
+    Only the columns reported by the event's `changed_columns` are transferred
     (mirroring the previous LISTEN/NOTIFY payload semantics): pushing state
     or outputs the UI already has would produce needless socketio notifications.
-    The DB projection re-reads the *current* row, so retries converge to the same
+    The DB sync re-reads the *current* row, so retries converge to the same
     state; the socketio notifications themselves are not transactional and may be
     re-sent on a retried attempt (at-least-once, not exactly-once).
     """
@@ -176,7 +171,8 @@ async def _process_outbox_event(
     try:
         project_owner = await get_project_owner(conn, comp_task.project_id)
     except exceptions.ProjectOwnerNotFoundError:
-        _logger.warning(
+        # a project always has an owner row: this should never happen
+        _logger.error(
             "project owner not found for project_id=%s; skipping stale outbox event",
             comp_task.project_id,
         )
