@@ -222,6 +222,7 @@ class ProjectNodesRepo:
 
         Raises:
             ProjectsNodesNodeNotFound: _description_
+            ProjectNodesProjectNotFoundError: in case the project_uuid does not exist
         """
         await self.lock_project_graph(connection)
 
@@ -242,12 +243,19 @@ class ProjectNodesRepo:
     async def delete(self, connection: AsyncConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project
 
+        Deleting is idempotent: neither an unknown node nor an unknown project is an error.
+
         NOTE: Do not use this in an asyncio.gather call as this will fail!
 
         Raises:
             Nothing special
         """
-        await self.lock_project_graph(connection)
+        try:
+            await self.lock_project_graph(connection)
+        except ProjectNodesProjectNotFoundError:
+            # `projects_nodes.project_uuid` refers to `projects.uuid`, so a project without a row
+            # cannot have any node either and there is nothing left to delete
+            return
 
         delete_stmt = sqlalchemy.delete(projects_nodes).where(
             (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
