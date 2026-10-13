@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any
 
@@ -125,8 +126,8 @@ async def unregister_account(request: web.Request):
 
     # checks before deleting
     credentials = await users_service.get_user_credentials(request.app, user_id=req_ctx.user_id)
-    if body.email != credentials.email or not security_service.check_password(
-        body.password.get_secret_value(), credentials.password_hash
+    if body.email != credentials.email or not await asyncio.to_thread(
+        security_service.check_password, body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(text=user_message("Wrong email or password. Please try again to delete this account"))
 

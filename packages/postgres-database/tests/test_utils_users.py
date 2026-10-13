@@ -80,3 +80,22 @@ async def test_update_user_password_hash_updates_modified_column(
 
         # Verify password hash was actually updated
         assert await repo.get_password_hash(connection, user_id=user["id"]) == new_password_hash
+
+
+async def test_update_user_password_hash_if_unchanged(asyncpg_engine: AsyncEngine, user: dict[str, Any], faker: Faker):
+    repo = UsersRepo(asyncpg_engine)
+    current_hash = user["password_hash"]
+
+    # stale expectation: nothing is written
+    stale_hash = faker.password()
+    assert not await repo.update_user_password_hash_if_unchanged(
+        user_id=user["id"], expected_password_hash=stale_hash, new_password_hash=faker.password()
+    )
+    assert await repo.get_password_hash(user_id=user["id"]) == current_hash
+
+    # matching expectation: updated
+    new_hash = faker.password()
+    assert await repo.update_user_password_hash_if_unchanged(
+        user_id=user["id"], expected_password_hash=current_hash, new_password_hash=new_hash
+    )
+    assert await repo.get_password_hash(user_id=user["id"]) == new_hash

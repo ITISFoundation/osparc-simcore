@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from typing import TypedDict
 
@@ -69,11 +70,12 @@ async def create_user(
 ) -> UserInfoDict:
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
+    password_hash = await asyncio.to_thread(security_service.encrypt_password, password)
     async with transaction_context(asyncpg_engine) as conn:
         user_row = await repo.new_user(
             conn,
             email=email,
-            password_hash=security_service.encrypt_password(password),
+            password_hash=password_hash,
             status=status_upon_creation,
             expires_at=expires_at,
         )
@@ -127,8 +129,16 @@ async def check_authorized_user_credentials(
 
     repo = UsersRepo(get_asyncpg_engine(app))
 
-    if not security_service.check_password(password, password_hash=await repo.get_password_hash(user_id=user["id"])):
+    password_hash = await repo.get_password_hash(user_id=user["id"])
+    if not await asyncio.to_thread(security_service.check_password, password, password_hash):
         raise WrongPasswordError(user_id=user["id"], product_name=product.name)
+
+    if security_service.password_needs_rehash(password_hash):
+        await repo.update_user_password_hash_if_unchanged(
+            user_id=user["id"],
+            expected_password_hash=password_hash,
+            new_password_hash=await asyncio.to_thread(security_service.encrypt_password, password),
+        )
     return user
 
 
@@ -178,9 +188,9 @@ async def update_user_password(
         current_password_hash = await repo.get_password_hash(user_id=user_id)
 
         # Verify current password
-        if not security_service.check_password(current_password, current_password_hash):
+        if not await asyncio.to_thread(security_service.check_password, current_password, current_password_hash):
             raise WrongPasswordError(user_id=user_id)
 
     # Encrypt new password and update
-    new_password_hash = security_service.encrypt_password(new_password)
+    new_password_hash = await asyncio.to_thread(security_service.encrypt_password, new_password)
     await repo.update_user_password_hash(user_id=user_id, password_hash=new_password_hash)

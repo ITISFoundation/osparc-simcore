@@ -73,7 +73,7 @@ class UserRow:
     phone: str | None = None
 
     @classmethod
-    def from_row(cls, row: Row) -> "UserRow":
+    def from_row(cls, row: Row) -> UserRow:
         return cls(**{f.name: getattr(row, f.name) for f in fields(cls)})
 
 
@@ -371,6 +371,26 @@ class UsersRepo:
             await conn.execute(
                 users_secrets.update().where(users_secrets.c.user_id == user_id).values(password_hash=password_hash)
             )
+
+    async def update_user_password_hash_if_unchanged(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: int,
+        expected_password_hash: str,
+        new_password_hash: str,
+    ) -> bool:
+        """Updates the hash only if it still equals `expected_password_hash`
+
+        Returns False (nothing written) if it was changed concurrently
+        """
+        async with transaction_context(self._engine, connection) as conn:
+            result = await conn.execute(
+                users_secrets.update()
+                .where((users_secrets.c.user_id == user_id) & (users_secrets.c.password_hash == expected_password_hash))
+                .values(password_hash=new_password_hash)
+            )
+            return result.rowcount == 1
 
     async def is_email_used(self, connection: AsyncConnection | None = None, *, email: str) -> bool:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
