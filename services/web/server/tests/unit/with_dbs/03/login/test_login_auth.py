@@ -21,8 +21,10 @@ from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_users import UsersRepo
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.db.models import UserStatus
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_LOGGED_IN,
@@ -32,6 +34,7 @@ from simcore_service_webserver.login.constants import (
     MSG_USER_EXPIRED,
     MSG_WRONG_PASSWORD,
 )
+from simcore_service_webserver.security import security_service
 from simcore_service_webserver.session.settings import get_plugin_settings
 
 
@@ -141,6 +144,44 @@ async def test_login_successfully(client: TestClient):
     assert MSG_LOGGED_IN in data["message"]
 
 
+async def test_login_migrates_legacy_password_hash_to_argon2id(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    repo = UsersRepo(get_asyncpg_engine(client.app))
+
+    async with NewUser(app=client.app) as user:
+        # NewUser seeds a legacy sha256_crypt hash
+        legacy_hash = await repo.get_password_hash(user_id=user["id"])
+        assert legacy_hash.startswith("$5$")
+
+        credentials = {"email": user["email"], "password": user["raw_password"]}
+        r = await client.post(url.path, json=credentials)
+        await assert_status(r, status.HTTP_200_OK)
+
+        migrated_hash = await repo.get_password_hash(user_id=user["id"])
+        assert migrated_hash.startswith("$argon2id$")
+        assert security_service.check_password(user["raw_password"], migrated_hash)
+
+        # an up-to-date hash is not rewritten on the next login
+        r = await client.post(url.path, json=credentials)
+        await assert_status(r, status.HTTP_200_OK)
+        assert await repo.get_password_hash(user_id=user["id"]) == migrated_hash
+
+
+async def test_login_with_wrong_password_keeps_legacy_password_hash(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    repo = UsersRepo(get_asyncpg_engine(client.app))
+
+    async with NewUser(app=client.app) as user:
+        legacy_hash = await repo.get_password_hash(user_id=user["id"])
+
+        r = await client.post(url.path, json={"email": user["email"], "password": "wrong."})
+        await assert_status(r, status.HTTP_401_UNAUTHORIZED)
+
+        assert await repo.get_password_hash(user_id=user["id"]) == legacy_hash
+
+
 async def test_login_successfully_with_email_containing_uppercase_letters(
     client: TestClient,
     faker: Faker,
@@ -177,7 +218,7 @@ async def test_proxy_login(client: TestClient, cookie_enabled: bool, expected: H
         #
         assert client.app
         # Based on aiohttp_session and aiohttp_security
-        # HACK to get secret for testing purposes
+        # HACK to get secret for testing purposes  # noqa: FIX004
         session_settings = get_plugin_settings(client.app)
         _fernet = fernet.Fernet(session_settings.SESSION_SECRET_KEY.get_secret_value())
 
@@ -262,7 +303,7 @@ async def test_multiple_users_login_logout_concurrently(
 
         # Try to access profile after logout
         profile_after_logout_resp = await user_client.get(profile_url)
-        _, error = await assert_status(profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED)
+        await assert_status(profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED)
 
         # No need to manually close the client as aiohttp_client fixture handles cleanup
 
