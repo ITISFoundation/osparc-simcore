@@ -36,10 +36,12 @@ async def clean_auth_policy_cache(app: web.Application) -> None:
 
 
 # OWASP minimum argon2id parameters; they are stored in each hash
-_ARGON2_MEMORY_COST_KIB: Final = 19 * 1024
-_ARGON2_ITERATIONS: Final = 2
-_ARGON2_LANES: Final = 1
-_ARGON2_PHC_PARAMS: Final = re.compile(r"^\$argon2id\$v=19\$m=(\d+),t=(\d+),p=(\d+)\$")
+_ARGON2_MEMORY_COST_KIB: Final[int] = 19 * 1024
+_ARGON2_ITERATIONS: Final[int] = 2
+_ARGON2_LANES: Final[int] = 1
+_ARGON2_SALT_NBYTES: Final[int] = 16
+_ARGON2_KEY_NBYTES: Final[int] = 32
+_ARGON2_PHC_PARAMS: Final[re.Pattern[str]] = re.compile(r"^\$argon2id\$v=19\$m=(\d+),t=(\d+),p=(\d+)\$")
 
 
 def encrypt_password(password: str) -> str:
@@ -48,8 +50,8 @@ def encrypt_password(password: str) -> str:
         msg = f"password must be str, got {type(password).__name__}"
         raise TypeError(msg)
     kdf = Argon2id(
-        salt=os.urandom(16),
-        length=32,
+        salt=os.urandom(_ARGON2_SALT_NBYTES),
+        length=_ARGON2_KEY_NBYTES,
         iterations=_ARGON2_ITERATIONS,
         lanes=_ARGON2_LANES,
         memory_cost=_ARGON2_MEMORY_COST_KIB,
