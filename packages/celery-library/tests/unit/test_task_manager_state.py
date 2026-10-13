@@ -1,3 +1,4 @@
+import inspect
 import logging
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -5,7 +6,24 @@ from uuid import uuid4
 import pytest
 from celery import states
 from celery_library import CeleryTaskManager
+from celery_library._task_manager import _CELERY_STATE_TO_TASK_STATE
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, TaskState, TaskStatus
+
+
+def test_celery_state_to_task_state_map_covers_all_celery_states():
+    """Defensive assert: guards against Celery upgrades introducing (or removing)
+    task states without updating the mapping.
+    """
+    all_celery_states = {
+        celery_state
+        for name, celery_state in inspect.getmembers(states)
+        if name.isupper() and isinstance(celery_state, str)
+    }
+    assert len(_CELERY_STATE_TO_TASK_STATE) == len(all_celery_states)
+    assert set(_CELERY_STATE_TO_TASK_STATE) == all_celery_states, (
+        f"missing in '_CELERY_STATE_TO_TASK_STATE': {all_celery_states - set(_CELERY_STATE_TO_TASK_STATE)}, "
+        f"no longer defined by 'celery.states': {set(_CELERY_STATE_TO_TASK_STATE) - all_celery_states}"
+    )
 
 
 @pytest.mark.parametrize(
