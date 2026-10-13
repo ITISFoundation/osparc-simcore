@@ -14,7 +14,7 @@ from simcore_service_webserver.login._controller.rest._rest_exceptions import (
     _try_show_login_fallbacks_on_wrong_password,
 )
 from simcore_service_webserver.login.constants import (
-    MSG_WRONG_PASSWORD,
+    MSG_INVALID_CREDENTIALS,
     MSG_WRONG_PASSWORD_MERGED_ACCOUNTS,
 )
 from simcore_service_webserver.login.errors import WrongPasswordError
@@ -248,6 +248,23 @@ async def test_handler_returns_merged_accounts_message_when_tip_applies(
     assert msg == expected
 
 
+async def test_handler_returns_default_message_for_unknown_user(
+    mock_app: web.Application,
+    patch_products: Callable,
+    mock_is_user_in_group: AsyncMock,
+    s4llite_product: MagicMock,
+    s4l_product: MagicMock,
+):
+    patch_products([s4llite_product, s4l_product])
+    request = _make_request_with_product(mock_app, "s4llite")
+
+    response = await _handle_legacy_error_response(request, WrongPasswordError(user_id=None))
+
+    assert response.status == 401
+    assert _parse_enveloped_message(response) == MSG_INVALID_CREDENTIALS
+    mock_is_user_in_group.assert_not_called()
+
+
 async def test_handler_returns_default_message_when_no_tip(
     mock_app: web.Application,
     patch_products: Callable,
@@ -262,7 +279,7 @@ async def test_handler_returns_default_message_when_no_tip(
 
     assert response.status == 401
     msg = _parse_enveloped_message(response)
-    assert msg == MSG_WRONG_PASSWORD
+    assert msg == MSG_INVALID_CREDENTIALS
 
 
 async def test_handler_returns_default_message_when_user_not_in_tip_products(
@@ -281,4 +298,4 @@ async def test_handler_returns_default_message_when_user_not_in_tip_products(
 
     assert response.status == 401
     msg = _parse_enveloped_message(response)
-    assert msg == MSG_WRONG_PASSWORD
+    assert msg == MSG_INVALID_CREDENTIALS
