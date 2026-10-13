@@ -1,7 +1,7 @@
 import datetime
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any, ClassVar, Final, Protocol
+from typing import Any, ClassVar, Final, Protocol, TypeAlias
 
 from models_library.basic_types import ConstrainedStr
 from models_library.rabbitmq_basic_types import (
@@ -18,10 +18,10 @@ _MINUTE: Final[int] = 60
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
 
-type ExchangeName = str
-type QueueName = str
-type ConsumerTag = str
-type TopicName = str
+ExchangeName: TypeAlias = str
+QueueName: TypeAlias = str
+ConsumerTag: TypeAlias = str
+TopicName: TypeAlias = str
 
 
 class RabbitMessage(Protocol):
