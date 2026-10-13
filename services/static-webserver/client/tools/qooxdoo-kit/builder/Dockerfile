@@ -53,24 +53,13 @@ FROM joseluisq/static-web-server:2.44.1-alpine AS server-base
 
 LABEL org.opencontainers.image.authors="GitHK, odeimaiz"
 
-# simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
-ENV SC_USER_ID=8004 \
-  SC_USER_NAME=scu \
-  SC_BUILD_TARGET=base \
+# NOTE: runs as the non-root user (sws) provided by the base image
+ENV SC_BUILD_TARGET=base \
   SC_BOOT_MODE=default
-
-# the base image runs as a non-root user
-USER root
-
-RUN adduser -D -u ${SC_USER_ID} -s /bin/sh -h /home/${SC_USER_NAME} ${SC_USER_NAME}
-
-USER ${SC_USER_NAME}
 
 FROM server-base AS production
 # front-end client last we copy the client application directly inside
-COPY --from=build-client \
-  --chown=${SC_USER_NAME}:${SC_USER_NAME} \
-  /project/build-output "/static-content"
+COPY --from=build-client /project/build-output "/static-content"
 ENV SC_BUILD_TARGET=production
 
 FROM server-base AS development
