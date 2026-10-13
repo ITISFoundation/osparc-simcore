@@ -3,7 +3,8 @@
 #
 # Shared base images for all python-based simcore services.
 #
-#  Produces two images, tagged with a content-hash (see ci/helpers/compute_base_image_tag.bash):
+#  Produces two images, tagged with a content-hash of this Dockerfile plus
+#  requirements/UV_VERSION (see ci/helpers/compute_base_image_tag.bash):
 #
 #   - ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG}
 #       minimal runtime: python + common apt deps + non-root `scu` user + venv env.
@@ -14,15 +15,20 @@
 #       Used as parent of every service dependency-install / development stage.
 #
 #  USAGE:
-#     docker buildx build -f services/_base_images/Dockerfile --target runtime-base -t simcore-runtime-base .
-#     docker buildx build -f services/_base_images/Dockerfile --target build-base   -t simcore-build-base .
+#     docker buildx build -f services/_base_images/Dockerfile --build-arg UV_VERSION=$(cat requirements/UV_VERSION) --target runtime-base -t simcore-runtime-base .
+#     docker buildx build -f services/_base_images/Dockerfile --build-arg UV_VERSION=$(cat requirements/UV_VERSION) --target build-base   -t simcore-build-base .
 #
 #  This image needs NO repository files in the build context (only apt + uv).
 #
 
 # Define arguments in the global scope
+# exact patch on purpose: a floating minor (python:3.14) would let upstream
+# patch releases change the image contents under an unchanged content-hash tag
 ARG PYTHON_VERSION="3.14.8"
-ARG UV_VERSION="0.12.23"
+# no default on purpose: the uv version comes from requirements/UV_VERSION,
+# which is hashed into BASE_TAG. A build without --build-arg UV_VERSION fails
+# loudly instead of producing an image whose contents do not match its tag.
+ARG UV_VERSION
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
 
