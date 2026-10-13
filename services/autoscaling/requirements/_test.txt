@@ -56,7 +56,7 @@ cfn-lint==1.41.0
     # via moto
 charset-normalizer==3.4.4
     # via requests
-click==8.3.1
+click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -168,7 +168,7 @@ openapi-spec-validator==0.7.2
     # via moto
 orderly-set==5.5.0
     # via deepdiff
-packaging==25.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
