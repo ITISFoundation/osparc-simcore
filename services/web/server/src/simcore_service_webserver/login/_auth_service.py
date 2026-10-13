@@ -132,8 +132,10 @@ async def check_authorized_user_credentials(
         raise WrongPasswordError(user_id=user["id"], product_name=product.name)
 
     if security_service.password_needs_rehash(password_hash):
-        await repo.update_user_password_hash(
-            user_id=user["id"], password_hash=security_service.encrypt_password(password)
+        await repo.update_user_password_hash_if_unchanged(
+            user_id=user["id"],
+            expected_password_hash=password_hash,
+            new_password_hash=security_service.encrypt_password(password),
         )
     return user
 

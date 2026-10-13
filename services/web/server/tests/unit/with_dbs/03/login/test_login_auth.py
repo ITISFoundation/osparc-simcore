@@ -16,6 +16,7 @@ import pytest
 from aiohttp.test_utils import TestClient, TestServer
 from cryptography import fernet
 from faker import Faker
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
@@ -180,6 +181,29 @@ async def test_login_with_wrong_password_keeps_legacy_password_hash(client: Test
         await assert_status(r, status.HTTP_401_UNAUTHORIZED)
 
         assert await repo.get_password_hash(user_id=user["id"]) == legacy_hash
+
+
+async def test_login_rehash_does_not_overwrite_concurrent_password_change(
+    client: TestClient, mocker: MockerFixture, faker: Faker
+):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    repo = UsersRepo(get_asyncpg_engine(client.app))
+    concurrent_hash = security_service.encrypt_password(faker.password())
+
+    original = UsersRepo.update_user_password_hash_if_unchanged
+
+    async def _password_changed_just_before_update(self: UsersRepo, *args, **kwargs):
+        await self.update_user_password_hash(user_id=kwargs["user_id"], password_hash=concurrent_hash)
+        return await original(self, *args, **kwargs)
+
+    mocker.patch.object(UsersRepo, "update_user_password_hash_if_unchanged", _password_changed_just_before_update)
+
+    async with NewUser(app=client.app) as user:
+        r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
+        await assert_status(r, status.HTTP_200_OK)
+
+        assert await repo.get_password_hash(user_id=user["id"]) == concurrent_hash
 
 
 async def test_login_successfully_with_email_containing_uppercase_letters(
