@@ -64,7 +64,8 @@ def _to_task_state(celery_state: str) -> TaskState:
     """Map a raw Celery state to TaskState, unknown states as PENDING."""
     if (task_state := _CELERY_STATE_TO_TASK_STATE.get(celery_state)) is None:
         _logger.warning(
-            "Reporting unknown Celery task state '%s' as '%s'",
+            "Reporting unknown Celery task state '%s' as '%s'. "
+            "TIP: add the new state to '_CELERY_STATE_TO_TASK_STATE' if valid",
             celery_state,
             TaskState.PENDING,
         )
@@ -474,7 +475,7 @@ class CeleryTaskManager:
         """Restore a GroupResult from its ID."""
         try:
             return GroupResult.restore(f"{group_uuid}", app=self._app)
-        except (KeyError, AttributeError):
+        except KeyError, AttributeError:
             # Group not found or invalid
             return None
 
