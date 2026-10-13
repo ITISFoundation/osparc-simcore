@@ -281,7 +281,7 @@ async def test_rpc_rebuilds_surface_after_reconnection(rpc_client: RabbitMQRPCCl
     assert rpc_client.healthy is True
 
     # Simulate a RabbitMQ reconnection by invoking the callback directly
-    await rpc_client._on_reconnect()
+    await rpc_client._on_safe_reconnect()
 
     # the client reconnects (no service restart) and keeps serving requests
     assert rpc_client.healthy is True
@@ -291,7 +291,7 @@ async def test_rpc_rebuilds_surface_after_reconnection(rpc_client: RabbitMQRPCCl
 async def test_rpc_reconnection_without_registered_handlers(rpc_client: RabbitMQRPCClient):
     assert rpc_client.healthy is True
 
-    await rpc_client._on_reconnect()
+    await rpc_client._on_safe_reconnect()
 
     assert rpc_client.healthy is True
 
@@ -326,10 +326,10 @@ async def test_rpc_client_stays_unhealthy_when_rebuild_fails(rpc_client: RabbitM
     mocker.patch.object(rpc_client, "_rebuild_rpc_surface", side_effect=RuntimeError("boom"))
     assert rpc_client.healthy is True
 
-    # _on_reconnect must not raise: aio-pika invokes reconnect callbacks through
+    # _on_safe_reconnect must not raise: aio-pika invokes reconnect callbacks through
     # gather(return_exceptions=True), so an exception would be swallowed; the failure
     # is surfaced exclusively through the health state
-    await rpc_client._on_reconnect()
+    await rpc_client._on_safe_reconnect()
 
     # the client stays unhealthy so the liveness probe restarts the service as a fallback
     assert rpc_client.healthy is False
@@ -384,7 +384,7 @@ async def test_register_handler_concurrent_with_rebuild_is_not_lost(
     register_task = asyncio.create_task(rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me))
     await register_entered.wait()  # registration in flight, handler not yet recorded
 
-    reconnect_task = asyncio.create_task(rpc_client._on_reconnect())
+    reconnect_task = asyncio.create_task(rpc_client._on_safe_reconnect())
     # when the rebuild does not wait for the in-flight registration, let it complete its
     # snapshot of the handler list before the new entry lands; when the lock works, the
     # rebuild stays blocked here and the release point is irrelevant
@@ -407,7 +407,7 @@ async def test_rpc_result_queue_is_not_auto_restored_by_robust_channel(rpc_clien
     # consume(exclusive=True) with the same name while the previous connection's
     # ghost exclusive consumer is still registered (until heartbeat cleanup),
     # failing with ACCESS_REFUSED and aborting the channel restore before
-    # `_on_reconnect` gets a chance to run.
+    # `_on_safe_reconnect` gets a chance to run.
     assert rpc_client._channel is not None
     restored_queue_names = set(rpc_client._channel._queues.keys())
     assert _get_rpc_result_queue_name(rpc_client) not in restored_queue_names
@@ -417,7 +417,7 @@ async def test_rpc_reconnection_creates_a_fresh_result_queue(rpc_client: RabbitM
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
     queue_before = _get_rpc_result_queue_name(rpc_client)
 
-    await rpc_client._on_reconnect()
+    await rpc_client._on_safe_reconnect()
 
     # the rebuild allocates a brand-new mailbox (fresh exclusive queue) so it can
     # never collide with the stale queue still held by the previous connection
@@ -433,7 +433,7 @@ async def test_rpc_concurrent_reconnections_are_serialized(rpc_client: RabbitMQR
     # a flapping connection can fire the reconnect callback multiple times at once;
     # the surface lock must serialize the rebuilds so they cannot interleave and
     # leak a channel or leave the client in an inconsistent state
-    await asyncio.gather(*(rpc_client._on_reconnect() for _ in range(5)))
+    await asyncio.gather(*(rpc_client._on_safe_reconnect() for _ in range(5)))
 
     # a single consistent surface remains and keeps serving requests
     assert rpc_client.healthy is True
@@ -452,7 +452,7 @@ async def test_rpc_client_recovers_when_broker_closes_all_connections(
 
     # force a broker-side disconnect of every client, mirroring the AWS maintenance
     # `CONNECTION_FORCED` event; the robust connection reconnects and fires
-    # `_on_reconnect`, which rebuilds the RPC surface with a fresh mailbox
+    # `_on_safe_reconnect`, which rebuilds the RPC surface with a fresh mailbox
     async with aiodocker.Docker() as docker_client:
         containers = await docker_client.containers.list(filters={"name": ["rabbit"]})
         assert len(containers) == 1, "missing rabbit container!"

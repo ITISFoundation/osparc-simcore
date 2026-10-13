@@ -1,7 +1,7 @@
 import logging
 import os
 import socket
-from typing import Any, ClassVar, Final
+from typing import Any, Final
 
 import aio_pika
 import psutil
@@ -9,53 +9,18 @@ from aiormq.exceptions import ChannelPreconditionFailed
 from common_library.network import redact_url
 from pydantic import NonNegativeInt
 from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..logging_utils import log_context
-from ._models import QueueName
+from ._models import (
+    _MINUTE,
+    QueueName,
+    RabbitMQRetryPolicyUponInitialization,
+)
 
 _logger = logging.getLogger(__file__)
 
 
-_MINUTE: Final[int] = 60
-
 RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
-
-
-class _BaseRabbitMQRetryPolicy:
-    WAIT_S: ClassVar[float]
-    STOP_AFTER_S: ClassVar[float]
-
-    def __init__(self, logger: logging.Logger | None = None) -> None:
-        logger = logger or _logger
-
-        self.kwargs: dict[str, Any] = {
-            "wait": wait_fixed(self.WAIT_S),
-            "stop": stop_after_delay(self.STOP_AFTER_S),
-            "before_sleep": before_sleep_log(logger, logging.WARNING),
-            "reraise": True,
-        }
-
-
-class RabbitMQRetryPolicyUponInitialization(_BaseRabbitMQRetryPolicy):
-    """Retry policy upon service initialization"""
-
-    WAIT_S: ClassVar[float] = 2
-    STOP_AFTER_S: ClassVar[float] = 3 * _MINUTE
-
-
-class RabbitMQRetryPolicyUponReconnection(_BaseRabbitMQRetryPolicy):
-    """Retry policy to rebuild the RPC surface after a reconnection event.
-
-    The broker is already reachable when reconnection callbacks run, so only a short bounded
-    budget is needed: the rebuild executes inside aio-pika's reconnection loop, and a longer
-    retry would delay the detection of the next disconnect (e.g. rolling broker node restarts).
-    """
-
-    WAIT_S: ClassVar[float] = 1
-    STOP_AFTER_S: ClassVar[float] = 15
 
 
 async def is_rabbitmq_responsive(url: str) -> bool:

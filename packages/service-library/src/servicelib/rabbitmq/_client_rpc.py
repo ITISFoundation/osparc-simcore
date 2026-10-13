@@ -17,12 +17,12 @@ from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
 from ._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
-from ._models import RPCNamespacedMethodName
-from ._rpc_router import RPCRouter
-from ._utils import (
+from ._models import (
     RabbitMQRetryPolicyUponReconnection,
-    get_rabbitmq_client_unique_name,
+    RPCNamespacedMethodName,
 )
+from ._rpc_router import RPCRouter
+from ._utils import get_rabbitmq_client_unique_name
 
 _logger = logging.getLogger(__name__)
 
@@ -34,10 +34,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     _rpc: aio_pika.patterns.RPC | None = None
     _registered_handlers: dict[RPCNamespacedMethodName, Callable[..., Any]] = field(default_factory=dict)
 
+    # NOTE: serializes every mutation of the RPC surface (_channel, _rpc, _registered_handlers) so that
+    # initialization, reconnection rebuilds, close and (un)registering handlers never interleave
+    # with each other; e.g. a rebuild swapping _rpc cannot run while unregister_handler is in flight
     _surface_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
     @classmethod
-    async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> "RabbitMQRPCClient":
+    async def create(cls, *, client_name: str, settings: RabbitSettings, **kwargs) -> RabbitMQRPCClient:
         client = cls(client_name=client_name, settings=settings, **kwargs)
         await client._rpc_initialize()
         return client
@@ -53,7 +56,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             client_properties={"connection_name": connection_name},
         )
         self._connection.close_callbacks.add(self._connection_close_callback)
-        self._connection.reconnect_callbacks.add(self._on_reconnect)
+        self._connection.reconnect_callbacks.add(self._on_safe_reconnect)
 
     async def _close_connection(self) -> None:
         connection, self._connection = self._connection, None
@@ -105,7 +108,13 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             for namespaced_method_name, handler in handlers:
                 await self._rpc.register(namespaced_method_name, handler, auto_delete=True)
 
-    async def _on_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
+    async def _on_safe_reconnect(self, _connection: aio_pika.abc.AbstractRobustConnection | None = None) -> None:
+        """Rebuild the RPC surface after a reconnection.
+
+        This callback never raises: aio-pika gathers reconnect callbacks with
+        ``return_exceptions=True``, so failures are logged and surfaced through the
+        health state instead.
+        """
         with log_context(
             _logger,
             logging.WARNING,
@@ -117,16 +126,15 @@ class RabbitMQRPCClient(RabbitMQClientBase):
                     await self._rebuild_rpc_surface()
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 # NOTE: aio-pika runs reconnect callbacks through gather(return_exceptions=True),
-                # hence raising here would be silently swallowed. The unhealthy state is the
-                # escalation path: the health check restarts the container while aio-pika
-                # fires this callback again upon the next reconnection.
+                # hence raising here would be silently swallowed. Marking the instance unhealthy
+                # is the escalation path (e.g. the health check can restart the container), while
+                # aio-pika runs the reconnection again upon the next reconnection.
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
-                        "RPC surface rebuild failed after reconnection",
+                        "RPC surface rebuild failed after reconnection: this application is marked as unhealthy",
                         error=exc,
                         error_context={"client_name": self.client_name},
-                        tip="aio-pika retries this callback on the next reconnection; "
-                        "the health check restarts the container while unhealthy",
+                        tip="the RPC surface gets rebuilt again on the next reconnection",
                     )
                 )
                 self._mark_unhealthy()
