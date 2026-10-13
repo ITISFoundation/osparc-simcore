@@ -1,5 +1,5 @@
 # originates from https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows#managing-caches
-name: cleanup caches by a branch
+name: Chore Cleanup Caches
 on:
   pull_request:
     types:
