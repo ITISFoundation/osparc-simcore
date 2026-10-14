@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.wallets import WalletID
+from models_library.wallets import WalletID, get_autorecharge_min_balance_in_credits
 
 from ._autorecharge_db import (
     PaymentsAutorechargeGetDB,
@@ -74,14 +74,20 @@ async def get_wallet_payment_autorecharge(
         return GetWalletAutoRecharge(
             enabled=False,
             payment_method_id=payment_method_id,
-            min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+            min_balance_in_credits=get_autorecharge_min_balance_in_credits(
+                product_name,
+                settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+            ),
             top_up_amount_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
             monthly_limit_in_usd=settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT,
         )
 
     return _from_db_to_api_model(
         got,
-        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+        min_balance_in_credits=get_autorecharge_min_balance_in_credits(
+            product_name,
+            settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+        ),
     )
 
 
@@ -105,5 +111,8 @@ async def replace_wallet_payment_autorecharge(
 
     return _from_db_to_api_model(
         got,
-        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+        min_balance_in_credits=get_autorecharge_min_balance_in_credits(
+            product_name,
+            settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+        ),
     )
