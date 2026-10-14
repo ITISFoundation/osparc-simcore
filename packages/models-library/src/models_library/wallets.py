@@ -15,7 +15,7 @@ type _WalletIDInt = PositiveInt
 WalletID = NewType("WalletID", _WalletIDInt)
 WalletIDAdapter: Final[TypeAdapter[WalletID]] = TypeAdapter(WalletID)
 
-# HOTFIX: hardcoded until a per-product setting exists
+# HOTFIX: hardcoded until a per-product setting exists. See https://github.com/ITISFoundation/osparc-simcore/issues/9814
 TIP_PRODUCT_NAMES: Final[frozenset[ProductName]] = frozenset({"tis", "tiplite"})
 TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: Final[NonNegativeDecimal] = Decimal(500)
 
