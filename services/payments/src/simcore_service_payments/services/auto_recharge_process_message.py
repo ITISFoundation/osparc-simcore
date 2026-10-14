@@ -14,7 +14,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
-from models_library.wallets import WalletID
+from models_library.wallets import WalletID, get_autorecharge_min_balance_in_credits
 from pydantic import TypeAdapter
 
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
@@ -36,9 +36,6 @@ from .rabbitmq import get_rabbitmq_rpc_client
 
 _logger = logging.getLogger(__name__)
 
-_TIP_PRODUCT_NAMES = frozenset({"tis", "tiplite"})  # Hardcoded as this needs to be hotfixed
-_TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: NonNegativeDecimal = Decimal(500)
-
 
 async def process_message(app: FastAPI, data: bytes) -> bool:  # noqa: PLR0911
 
@@ -49,7 +46,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:  # noqa: PLR0911
 
     # Step 1: Check if wallet credits are above the threshold
     if await _check_wallet_credits_above_threshold(
-        _get_autorecharge_min_balance_in_credits(
+        get_autorecharge_min_balance_in_credits(
             rabbit_message.product_name,
             settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
         ),
@@ -120,15 +117,6 @@ async def process_message(app: FastAPI, data: bytes) -> bool:  # noqa: PLR0911
 
 async def _check_wallet_credits_above_threshold(threshold_in_credits: NonNegativeDecimal, _credits: Decimal) -> bool:
     return bool(_credits > threshold_in_credits)
-
-
-def _get_autorecharge_min_balance_in_credits(
-    product_name: str,
-    default_threshold_in_credits: NonNegativeDecimal,
-) -> NonNegativeDecimal:
-    if product_name in _TIP_PRODUCT_NAMES:
-        return _TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
-    return default_threshold_in_credits
 
 
 async def _check_autorecharge_conditions_not_met(

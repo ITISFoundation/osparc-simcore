@@ -5,13 +5,28 @@ from typing import Annotated, Final, NewType
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, TypeAdapter
 
+from .basic_types import NonNegativeDecimal
 from .groups import GroupID
+from .products import ProductName
 from .utils.enums import StrAutoEnum
 
 type _WalletIDInt = PositiveInt
 
 WalletID = NewType("WalletID", _WalletIDInt)
 WalletIDAdapter: Final[TypeAdapter[WalletID]] = TypeAdapter(WalletID)
+
+# HOTFIX: hardcoded until a per-product setting exists
+TIP_PRODUCT_NAMES: Final[frozenset[ProductName]] = frozenset({"tis", "tiplite"})
+TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: Final[NonNegativeDecimal] = Decimal(500)
+
+
+def get_autorecharge_min_balance_in_credits(
+    product_name: ProductName,
+    default_threshold_in_credits: NonNegativeDecimal,
+) -> NonNegativeDecimal:
+    if product_name in TIP_PRODUCT_NAMES:
+        return TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
+    return default_threshold_in_credits
 
 
 class WalletStatus(StrAutoEnum):

@@ -1,5 +1,4 @@
 import logging
-from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import (
@@ -9,7 +8,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.wallets import WalletID
+from models_library.wallets import WalletID, get_autorecharge_min_balance_in_credits
 
 from ._autorecharge_db import (
     PaymentsAutorechargeGetDB,
@@ -21,18 +20,6 @@ from ._onetime_api import raise_for_wallet_payments_permissions
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-_TIP_PRODUCT_NAMES = frozenset({"tis", "tiplite"})
-_TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: NonNegativeDecimal = Decimal(500)
-
-
-def _get_autorecharge_min_balance_in_credits(
-    product_name: ProductName,
-    default_threshold_in_credits: NonNegativeDecimal,
-) -> NonNegativeDecimal:
-    if product_name in _TIP_PRODUCT_NAMES:
-        return _TIP_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
-    return default_threshold_in_credits
 
 
 def _from_db_to_api_model(
@@ -87,7 +74,7 @@ async def get_wallet_payment_autorecharge(
         return GetWalletAutoRecharge(
             enabled=False,
             payment_method_id=payment_method_id,
-            min_balance_in_credits=_get_autorecharge_min_balance_in_credits(
+            min_balance_in_credits=get_autorecharge_min_balance_in_credits(
                 product_name,
                 settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
             ),
@@ -97,7 +84,7 @@ async def get_wallet_payment_autorecharge(
 
     return _from_db_to_api_model(
         got,
-        min_balance_in_credits=_get_autorecharge_min_balance_in_credits(
+        min_balance_in_credits=get_autorecharge_min_balance_in_credits(
             product_name,
             settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
         ),
@@ -124,7 +111,7 @@ async def replace_wallet_payment_autorecharge(
 
     return _from_db_to_api_model(
         got,
-        min_balance_in_credits=_get_autorecharge_min_balance_in_credits(
+        min_balance_in_credits=get_autorecharge_min_balance_in_credits(
             product_name,
             settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
         ),

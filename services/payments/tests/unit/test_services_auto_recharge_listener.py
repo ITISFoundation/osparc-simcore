@@ -23,6 +23,7 @@ from models_library.payments import InvoiceDataGet
 from models_library.products import ProductName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.users import UserID
+from models_library.wallets import get_autorecharge_min_balance_in_credits
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.faker_factories import (
     random_payment_autorecharge,
@@ -56,7 +57,6 @@ from simcore_service_payments.services.auto_recharge_process_message import (
     _check_autorecharge_conditions_not_met,
     _check_wallet_credits_above_threshold,
     _exceeds_monthly_limit,
-    _get_autorecharge_min_balance_in_credits,
     _is_message_too_old,
     _was_wallet_topped_up_recently,
 )
@@ -291,7 +291,7 @@ async def test_tip_autorecharge_threshold_is_product_specific_and_inclusive(
     _credits: Decimal,
     expected_skip_recharge: bool,
 ):
-    threshold = _get_autorecharge_min_balance_in_credits(product_name, Decimal(100))
+    threshold = get_autorecharge_min_balance_in_credits(product_name, Decimal(100))
     assert (await _check_wallet_credits_above_threshold(threshold, _credits)) is expected_skip_recharge
 
 
