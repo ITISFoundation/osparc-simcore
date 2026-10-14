@@ -46,7 +46,9 @@ test_01() {
   test_01_targets="$(printf '%s ' "${TEST_01_FILES[@]}")"
   # NOTE: target must be set explicitly to the selected test files, otherwise
   # test-ci-unit defaults it to the whole tests/unit folder (running ALL tests)
-  make test-ci-unit target="${test_01_targets}" pytest-parameters="--disk-usage"
+  # NOTE: xdist workers share ONE docker stack (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py);
+  # tests marked `docker_exclusive` run alone (see the pytest_simcore.xdist_docker_daemon plugin)
+  make test-ci-unit target="${test_01_targets}" pytest-parameters="--disk-usage --numprocesses=auto"
   popd
 }
 
@@ -60,7 +62,7 @@ test_02() {
     ignore_args+="--ignore=${test_file} "
   done
   # runs everything in tests/unit except what test_01 already covers
-  make test-ci-unit pytest-parameters="--disk-usage ${ignore_args}"
+  make test-ci-unit pytest-parameters="--disk-usage --numprocesses=auto ${ignore_args}"
   popd
 }
 

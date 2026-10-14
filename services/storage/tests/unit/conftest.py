@@ -4,6 +4,10 @@
 import pytest
 from pytest_mock import MockerFixture
 
+pytest_plugins = [
+    "pytest_simcore.xdist_docker_daemon",
+]
+
 
 @pytest.fixture
 def disable_dsm_cleaner(mocker: MockerFixture) -> None:
