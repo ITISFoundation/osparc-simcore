@@ -37,7 +37,7 @@ from .rabbitmq import get_rabbitmq_rpc_client
 _logger = logging.getLogger(__name__)
 
 
-async def process_message(app: FastAPI, data: bytes) -> bool:  # noqa: PLR0911
+async def process_message(app: FastAPI, data: bytes) -> bool:  # noqa: PLR0911  # pylint: disable=too-many-return-statements
 
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
     _logger.debug("Process msg: %s", rabbit_message)
