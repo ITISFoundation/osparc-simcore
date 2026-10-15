@@ -260,23 +260,27 @@ def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
         raise ValueError(msg)
     assert tracing_config.tracing_settings  # nosec
     assert tracing_config.tracer_provider  # nosec
-    tracing_settings = tracing_config.tracing_settings
-    tracer_provider = tracing_config.tracer_provider
+
+    
+    _startup(
+        # NOTE: instrumentation must be applied when the lifespan is *configured*, not when it
+        # runs. Some instrumentors (AioPikaInstrumentor) decorate consumer callbacks at
+        # queue.consume() registration time, so instrumentors patched here guarantee that
+        # consumers registered by any lifespan step are traced, regardless of step ordering.
+        tracing_settings=tracing_config.tracing_settings,
+        service_name=tracing_config.service_name,
+        tracer_provider=tracing_config.tracer_provider,
+    )
 
     async def tracing_instrumentation_lifespan(
         app: FastAPI,
     ) -> AsyncIterator[State]:
         assert app  # nosec
 
-        _startup(
-            tracing_settings=tracing_settings,
-            service_name=tracing_config.service_name,
-            tracer_provider=tracer_provider,
-        )
-
         yield {}
 
-        _shutdown(tracer_provider)
+        # flush and release the provider only after the app stopped serving
+        _shutdown(tracing_config.tracer_provider)
 
     return tracing_instrumentation_lifespan
 
