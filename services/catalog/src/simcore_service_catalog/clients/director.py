@@ -103,7 +103,7 @@ def _return_data_or_raise_error(
         return data or {}
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: "DirectorClient", path: str, *args, **kwargs) -> list[Any] | dict[str, Any]:
+    async def request_wrapper(zelf: DirectorClient, path: str, *args, **kwargs) -> list[Any] | dict[str, Any]:
         normalized_path = path.lstrip("/")
         try:
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)  # noqa: B026
@@ -160,8 +160,7 @@ class DirectorClient:
 
     @_return_data_or_raise_error
     async def get(self, path: str) -> httpx.Response:
-        # temp solution: default timeout increased to 20"
-        return await self.client.get(path, timeout=20.0)
+        return await self.client.get(path)
 
     #
     # High level API
@@ -174,7 +173,7 @@ class DirectorClient:
             response = await self.client.head(health_check_path, timeout=1.0)
             response.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
+        except httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException:
             return False
 
     async def get_service(self, service_key: ServiceKey, service_version: ServiceVersion) -> ServiceMetaDataPublished:
