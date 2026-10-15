@@ -560,13 +560,6 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
     faker: Faker,
     mocker: MockerFixture,
 ):
-    """A duplicate submission must be reported as a duplicate, never as a server error.
-
-    Regression test for a 500 on `POST /v0/auth/request-account`: the duplicate check and the
-    insert run in two separate transactions, so two concurrent requests for the same email
-    (i.e. a double-click on the "Request account" button) can both pass the check and have the
-    second insert hit `users_pre_registration_details_pre_email_product_name_key`.
-    """
     email = faker.email()
     first_name = faker.first_name()
     last_name = faker.last_name()
@@ -591,8 +584,7 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
         pre_first_name=first_name,
         pre_last_name=last_name,
     )
-    # ... which happens after this request's duplicate check already answered, i.e. the exact
-    # interleaving that a double-click produces
+
     mocker.patch.object(
         _accounts_repository,
         "check_pre_registration_email_exists_in_product",
