@@ -18,7 +18,7 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 from unittest import mock
 
 import pytest
@@ -58,23 +58,23 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
-_SERVICE_KEY = ServiceKey("simcore/services/comp/is4cpu")
-_SERVICE_VERSION = ServiceVersion("1.0.0")
-_EC2_INSTANCE_TYPE = "c5.xlarge"
+_SERVICE_KEY: Final[ServiceKey] = ServiceKey("simcore/services/comp/is4cpu")
+_SERVICE_VERSION: Final[ServiceVersion] = ServiceVersion("1.0.0")
+_EC2_INSTANCE_TYPE: Final[str] = "c5.xlarge"
 
 # what the nodes ask for, less than what the machine of the pricing unit offers
-_REQUESTED_CPUS = 1.0
-_REQUESTED_RAM = 1024 * 1024 * 1024
+_REQUESTED_CPUS: Final[float] = 1.0
+_REQUESTED_RAM: Final[int] = 1024 * 1024 * 1024
 
-_DEADLOCK_SQLSTATE = "40P01"
-_TIMEOUT_S = 30.0
+_DEADLOCK_SQLSTATE: Final[str] = "40P01"
+_TIMEOUT_S: Final[float] = 30.0
 
 # the lock the webserver takes before it mutates the graph (see projects._projects_repository)
-_LOCK_GRAPH_SQL = "SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"
-_SOMEONE_WAITS_FOR_A_LOCK_SQL = (
+_LOCK_GRAPH_SQL: Final[str] = "SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"
+_SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = (
     "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid()"
 )
-_WAITERS_BEHIND_SQL = (
+_WAITERS_BEHIND_SQL: Final[str] = (
     "SELECT count(*) FROM pg_stat_activity "
     "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
 )
