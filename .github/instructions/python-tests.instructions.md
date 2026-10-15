@@ -30,7 +30,18 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
 ## Fixtures
 
 - Reuse existing fixtures from `pytest-simcore` and the project before adding
-  new ones.
+  new ones. Before writing a test, search for an existing fixture or helper for
+  each collaborator it needs (user, product, project, wallet, service or
+  backend client stubs, and so on). Search `pytest-simcore`, every `conftest.py`
+  up the test tree, and the fixtures defined in sibling test modules. Do not
+  copy fixtures or fakes from an earlier test, including one you wrote
+  yourself, without repeating this search.
+- When a sibling test module defines a fixture you need, move it to the nearest
+  `conftest.py` and use it from both modules. Do not duplicate it.
+- Prefer `mock.create_autospec(Client, instance=True)` over hand-written fakes
+  such as `SimpleNamespace`, so that calls are checked against the real
+  signature. Do not patch private functions of the code under test when its
+  collaborators can be replaced through their public API.
 - Extract repeated, meaningful setup into a named fixture or factory. Keep small
   setup inline when a fixture would hide it.
 - Put fixtures shared within a project in its nearest `conftest.py`, and ones
