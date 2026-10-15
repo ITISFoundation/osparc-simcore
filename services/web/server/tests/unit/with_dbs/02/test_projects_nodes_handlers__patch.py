@@ -245,6 +245,47 @@ async def test_patch_project_node_ui_remove_marker(
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+@pytest.mark.parametrize(
+    "patch_payload,expect_pipeline_sync",
+    [
+        pytest.param({"progress": 42.0}, False, id="progress only"),
+        pytest.param({"progress": 100.0}, False, id="progress finished"),
+        pytest.param({"ui": {"position": {"x": 1, "y": 2}}}, False, id="ui only"),
+        pytest.param({"progress": 12.5, "ui": {"marker": {"color": "#123456"}}}, False, id="progress and ui"),
+        pytest.param({"progress": 42.0, "label": "renamed"}, True, id="progress with label"),
+        pytest.param({"label": "renamed"}, True, id="label only"),
+    ],
+)
+async def test_patch_project_node_syncs_director_v2_only_for_non_ui_keys(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_rpc_check_for_service: None,
+    patch_payload: dict,
+    expect_pipeline_sync: bool,
+):
+    """patches touching only keys director-v2 does not use (see _NODE_UI_KEYS) must not
+    trigger a pipeline sync, since the file-picker progress updates would otherwise
+    fire a full POST /v2/computations on every tick
+    """
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    base_url = client.app.router["patch_project_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
+
+    resp = await client.patch(f"{base_url}", json=patch_payload)
+    await assert_status(resp, expected)
+
+    create_or_update_pipeline = mocked_dynamic_services_interface["director_v2.api.create_or_update_pipeline"]
+    if expect_pipeline_sync:
+        create_or_update_pipeline.assert_called_once()
+    else:
+        create_or_update_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_computational_project_node_notifies_only_updated_node(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
