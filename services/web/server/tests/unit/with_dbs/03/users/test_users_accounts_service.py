@@ -5,13 +5,16 @@
 
 from collections.abc import AsyncIterable
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
+from faker import Faker
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.products import ProductName
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
@@ -548,3 +551,75 @@ async def test_pre_register_existing_account_user_on_new_product(
                     sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.pre_email == email)
                 )
                 await conn.commit()
+
+
+async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
+    app: web.Application,
+    product_name: ProductName,
+    asyncpg_engine: AsyncEngine,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    """A duplicate submission must be reported as a duplicate, never as a server error.
+
+    Regression test for a 500 on `POST /v0/auth/request-account`: the duplicate check and the
+    insert run in two separate transactions, so two concurrent requests for the same email
+    (i.e. a double-click on the "Request account" button) can both pass the check and have the
+    second insert hit `users_pre_registration_details_pre_email_product_name_key`.
+    """
+    email = faker.email()
+    first_name = faker.first_name()
+    last_name = faker.last_name()
+    profile = UserAccountRestPreRegister.model_validate(
+        {
+            "firstName": first_name,
+            "lastName": last_name,
+            "email": email,
+            "address": faker.address().replace("\n", ", "),
+            "city": faker.city(),
+            "postalCode": faker.postcode(),
+            "country": faker.country(),
+            "phone": None,
+        }
+    )
+
+    # A concurrent request inserts and commits first ...
+    await create_user_pre_registration(
+        asyncpg_engine,
+        email=email,
+        product_name=product_name,
+        pre_first_name=first_name,
+        pre_last_name=last_name,
+    )
+    # ... which happens after this request's duplicate check already answered, i.e. the exact
+    # interleaving that a double-click produces
+    mocker.patch.object(
+        _accounts_repository,
+        "check_pre_registration_email_exists_in_product",
+        new_callable=AsyncMock,
+        return_value=False,
+    )
+
+    try:
+        with pytest.raises(AlreadyPreRegisteredError):
+            await _accounts_service.pre_register_user(
+                app,
+                profile=profile,
+                creator_user_id=None,
+                product_name=product_name,
+            )
+
+        # the losing insert left no partial row behind
+        async with asyncpg_engine.connect() as conn:
+            num_rows = await conn.scalar(
+                sa.select(sa.func.count())
+                .select_from(users_pre_registration_details)
+                .where(users_pre_registration_details.c.pre_email == email)
+            )
+        assert num_rows == 1
+    finally:
+        async with asyncpg_engine.connect() as conn:
+            await conn.execute(
+                sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.pre_email == email)
+            )
+            await conn.commit()

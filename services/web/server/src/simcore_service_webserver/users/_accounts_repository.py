@@ -25,6 +25,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -35,6 +36,7 @@ from ._models_pre_registration_extras import (
     merge_audit_entry_into_extras,
 )
 from .errors import (
+    AlreadyPreRegisteredError,
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
@@ -115,10 +117,29 @@ async def create_user_pre_registration(
                 if created_by is not None:
                     values["account_request_reviewed_by"] = created_by
 
-        result = await conn.execute(
-            sa.insert(users_pre_registration_details).values(**values).returning(users_pre_registration_details.c.id)
+        # Duplicate detection is enforced at DB level: callers pre-check for duplicates in a
+        # separate transaction, so a concurrent request (e.g. a double-click on the "Request
+        # account" button) can commit the same (pre_email, product_name) in between. On conflict
+        # nothing is inserted and RETURNING yields no row, which we report as a duplicate instead
+        # of a server error.
+        stmt = (
+            postgresql.insert(users_pre_registration_details)
+            .values(**values)
+            .on_conflict_do_nothing(
+                index_elements=[
+                    users_pre_registration_details.c.pre_email,
+                    users_pre_registration_details.c.product_name,
+                ]
+            )
+            .returning(users_pre_registration_details.c.id)
         )
-        pre_registration_id: int = result.scalar_one()
+        result = await conn.execute(stmt)
+        pre_registration_id: int | None = result.scalar_one_or_none()
+        if pre_registration_id is None:
+            raise AlreadyPreRegisteredError(
+                email=email,
+                product_name=product_name,
+            )
         return pre_registration_id
 
 
