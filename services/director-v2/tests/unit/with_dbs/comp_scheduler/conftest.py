@@ -15,11 +15,13 @@ from unittest import mock
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_director_v2.modules.rabbitmq import get_rabbitmq_client
 
 
 @pytest.fixture
@@ -72,6 +74,21 @@ def with_disabled_scheduler_publisher(mocker: MockerFixture) -> mock.Mock:
         "simcore_service_director_v2.modules.comp_scheduler._manager.request_pipeline_scheduling",
         autospec=True,
     )
+
+
+@pytest.fixture
+async def with_disabled_distributed_scheduling(initialized_app: FastAPI) -> None:
+    """Cancels the RabbitMQ consumers that run ``apply()`` on scheduling messages.
+
+    ``app.state.scheduler_worker`` stays usable, but no message can trigger an ``apply()``
+    pass behind the test's back. Use it in tests calling ``apply()`` directly, so that
+    consumer-triggered passes cannot run concurrently and race the test's assertions.
+    """
+    rabbitmq_client = get_rabbitmq_client(initialized_app)
+    for queue_name, consumer_tag in initialized_app.state.scheduler_worker_consumers:
+        await rabbitmq_client.unsubscribe_consumer(queue_name, consumer_tag)
+    # so that shutdown_worker does not unsubscribe them twice
+    initialized_app.state.scheduler_worker_consumers = []
 
 
 @pytest.fixture
