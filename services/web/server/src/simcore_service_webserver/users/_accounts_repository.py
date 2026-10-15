@@ -117,11 +117,6 @@ async def create_user_pre_registration(
                 if created_by is not None:
                     values["account_request_reviewed_by"] = created_by
 
-        # Duplicate detection is enforced at DB level: callers pre-check for duplicates in a
-        # separate transaction, so a concurrent request (e.g. a double-click on the "Request
-        # account" button) can commit the same (pre_email, product_name) in between. On conflict
-        # nothing is inserted and RETURNING yields no row, which we report as a duplicate instead
-        # of a server error.
         stmt = (
             postgresql.insert(users_pre_registration_details)
             .values(**values)
