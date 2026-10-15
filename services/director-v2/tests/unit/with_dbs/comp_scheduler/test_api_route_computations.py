@@ -8,13 +8,9 @@
 
 import base64
 import datetime as dt
-import json
 import re
 import urllib.parse
 from collections.abc import Awaitable, Callable, Iterator
-from decimal import Decimal
-from pathlib import Path
-from random import choice
 from typing import Any
 from unittest import mock
 
@@ -44,7 +40,6 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
@@ -84,33 +79,10 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
     )
 
 
-@pytest.fixture(scope="session")
-def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
-    fake_service_path = mocks_dir / "fake_service.json"
-    assert fake_service_path.exists()
-    fake_service_data = json.loads(fake_service_path.read_text())
-    return ServiceMetaDataPublished(**fake_service_data)
-
-
-@pytest.fixture
-def fake_service_extras() -> ServiceExtras:
-    extra_example = ServiceExtras.model_json_schema()["examples"][2]  # type: ignore
-    random_extras = ServiceExtras(**extra_example)  # type: ignore
-    assert random_extras is not None
-    return random_extras
-
-
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
     return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
         SERVICE_RESOURCES_DICT_EXAMPLES[0],
-    )
-
-
-@pytest.fixture
-def fake_service_labels() -> dict[str, Any]:
-    return choice(  # noqa: S311
-        SimcoreServiceLabels.model_json_schema()["examples"]  # type: ignore
     )
 
 
@@ -382,25 +354,6 @@ async def test_create_computation(
         ),
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
-
-
-@pytest.fixture
-def wallet_info(faker: Faker) -> WalletInfo:
-    return WalletInfo(
-        wallet_id=faker.pyint(),
-        wallet_name=faker.name(),
-        wallet_credit_amount=Decimal(faker.pyint(min_value=12, max_value=129312)),
-    )
-
-
-@pytest.fixture
-def fake_ec2_cpus() -> PositiveInt:
-    return 4
-
-
-@pytest.fixture
-def fake_ec2_ram() -> ByteSize:
-    return TypeAdapter(ByteSize).validate_python("4GiB")
 
 
 @pytest.fixture
