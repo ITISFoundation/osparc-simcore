@@ -1,14 +1,5 @@
 """Restrict projects_nodes_changed trigger to specific columns
 
-The trigger previously fired on every update to projects_nodes, including
-runtime-owned writes (progress, state, outputs, run_hash) that the runner
-performs while tasks execute. Those bump projects.last_change_date, which
-tracks user-visible changes and orders recent projects, so a project would
-look "recently changed" only because a task ran.
-
-INSERT and DELETE keep firing the trigger: they always represent a real
-change to the project (a node added or removed).
-
 Revision ID: ae186e140a65
 Revises: 966758d7226c
 Create Date: 2026-10-15 12:58:00.000000+00:00
