@@ -29,7 +29,7 @@ from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClien
 from .....utils.computations import to_node_class
 from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
-from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks
+from ...tables import NodeClass, comp_run_snapshot_tasks, comp_tasks, projects
 from .._base import BaseRepository
 from . import _utils
 
@@ -159,6 +159,13 @@ class CompTasksRepository(BaseRepository):
         """
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with transaction_context(self.db_engine) as conn:
+            # Every write to `projects_nodes` updates the parent `projects` row through the
+            # `projects_nodes_changed` trigger. The webserver locks that row before it mutates the
+            # graph, so take it first as well: the reverse order deadlocks, see
+            # https://github.com/ITISFoundation/private-issues/issues/669
+            await conn.execute(
+                sa.select(projects.c.uuid).where(projects.c.uuid == f"{project.uuid}").with_for_update(key_share=True)
+            )
             list_of_comp_tasks_in_project, insufficient_credits = (
                 # WARNING: this is NOT a real repository method, it is a utility function
                 # that calls backend services to generate the tasks list!! Refactoring needed!!
