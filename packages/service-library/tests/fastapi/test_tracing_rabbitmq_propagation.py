@@ -135,7 +135,7 @@ def _publish_span(tracing_config: TracingConfig, name: str) -> AbstractContextMa
 
 
 @pytest.mark.regression
-async def test_regression_trace_context_propagates_to_consumer_registered_before_tracing_startup(
+async def test_trace_context_propagates_to_consumer_registered_before_tracing_startup(
     enabled_rabbitmq: RabbitSettings,
     tracing_config: TracingConfig,
     mock_otel_collector: InMemorySpanExporter,
@@ -204,7 +204,7 @@ async def test_regression_trace_context_propagates_to_consumer_registered_before
 
 
 @pytest.mark.regression
-async def test_regression_trace_context_propagates_to_rpc_handler_registered_before_tracing_startup(
+async def test_trace_context_propagates_to_rpc_handler_registered_before_tracing_startup(
     enabled_rabbitmq: RabbitSettings,
     tracing_config: TracingConfig,
     mock_otel_collector: InMemorySpanExporter,
