@@ -3,6 +3,9 @@
 # pylint:disable=no-name-in-module
 
 
+from collections.abc import AsyncIterator
+from typing import cast
+
 import pytest
 from opentelemetry.instrumentation.aiohttp_server import create_aiohttp_middleware
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -40,10 +43,15 @@ async def test_middleware_restrictions_opentelemetry_is_second_middleware(
     def _otel_middleware_installed() -> bool:
         return any(create_aiohttp_middleware.__name__ in f"{middleware}" for middleware in app.middlewares)
 
-    # NOTE: tracing instruments when its lifespan (a cleanup_ctx) is entered, not at app creation
-    assert not _otel_middleware_installed(), "OpenTelemetry middleware must not be installed before startup"
+    # NOTE: tracing instruments at setup time (app creation), not when its lifespan
+    # (a cleanup_ctx) is entered: instrumentors such as AioPikaInstrumentor decorate
+    # consumer callbacks at registration time and must be patched before any component
+    # registers a RabbitMQ consumer
+    assert _otel_middleware_installed(), "OpenTelemetry middleware must be installed at app creation"
 
     tracing_lifespan = next(ctx for ctx in app.cleanup_ctx if ctx.__module__.endswith("servicelib.aiohttp.tracing"))
-    async for _ in tracing_lifespan(app):
+    # aiohttp types cleanup_ctx entries as async context managers; this one is an
+    # async generator function, which is also an async iterator at runtime
+    async for _ in cast(AsyncIterator, tracing_lifespan(app)):
         assert app.middlewares
         assert create_aiohttp_middleware.__name__ in f"{app.middlewares[0]}"

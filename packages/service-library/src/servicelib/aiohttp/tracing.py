@@ -270,6 +270,7 @@ def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
 
 def setup_tracing(
     *,
+    app: web.Application,
     tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
@@ -278,21 +279,24 @@ def setup_tracing(
         raise ValueError(msg)
     assert tracing_config.tracer_provider  # nosec
     assert tracing_config.tracing_settings  # nosec
-    tracing_settings = tracing_config.tracing_settings
-    tracer_provider = tracing_config.tracer_provider
+
+    # NOTE: instrumentation must be applied at setup time, not when the lifespan runs.
+    # Some instrumentors (AioPikaInstrumentor) decorate consumer callbacks at
+    # queue.consume() registration time, so patching here guarantees that consumers
+    # registered by any later setup step or lifespan are traced, regardless of ordering.
+    _startup(
+        app=app,
+        tracing_settings=tracing_config.tracing_settings,
+        tracer_provider=tracing_config.tracer_provider,
+        service_name=tracing_config.service_name,
+        add_response_trace_id_header=add_response_trace_id_header,
+    )
 
     async def tracing_lifespan(app: web.Application):
         assert app  # nosec
 
-        _startup(
-            app=app,
-            tracing_settings=tracing_settings,
-            tracer_provider=tracer_provider,
-            service_name=tracing_config.service_name,
-            add_response_trace_id_header=add_response_trace_id_header,
-        )
-
         yield
-        _shutdown(tracer_provider)
+        # flush and release the provider only after the app stopped serving
+        _shutdown(tracing_config.tracer_provider)
 
     return tracing_lifespan
