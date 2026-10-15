@@ -261,11 +261,12 @@ def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
     assert tracing_config.tracing_settings  # nosec
     assert tracing_config.tracer_provider  # nosec
 
-    # NOTE: instrumentation must be applied when the lifespan is *configured*, not when it
-    # runs. Some instrumentors (AioPikaInstrumentor) decorate consumer callbacks at
-    # queue.consume() registration time, so instrumentors patched here guarantee that
-    # consumers registered by any lifespan step are traced, regardless of step ordering.
+    
     _startup(
+        # NOTE: instrumentation must be applied when the lifespan is *configured*, not when it
+        # runs. Some instrumentors (AioPikaInstrumentor) decorate consumer callbacks at
+        # queue.consume() registration time, so instrumentors patched here guarantee that
+        # consumers registered by any lifespan step are traced, regardless of step ordering.
         tracing_settings=tracing_config.tracing_settings,
         service_name=tracing_config.service_name,
         tracer_provider=tracing_config.tracer_provider,
