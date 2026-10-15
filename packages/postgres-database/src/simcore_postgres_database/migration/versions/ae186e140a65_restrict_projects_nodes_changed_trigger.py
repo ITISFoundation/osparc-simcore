@@ -24,10 +24,9 @@ down_revision = "966758d7226c"
 branch_labels = None
 depends_on = None
 
-# Updates to these columns are user-visible changes to a node and must bump
-# projects.last_change_date. The runtime-owned columns excluded here (progress,
-# state, outputs, run_hash) are rewritten by the runner while tasks execute.
-# NOTE: UPDATE OF fires when a column appears in the UPDATE SET list, not only
+# NOTE: Updates to these columns are user-visible changes to a node and must bump
+# projects.last_change_date.
+# UPDATE OF fires when a column appears in the UPDATE SET list, not only
 # when its value actually changes.
 _LAST_CHANGE_DATE_COLUMNS = (
     "boot_options",
@@ -38,7 +37,10 @@ _LAST_CHANGE_DATE_COLUMNS = (
     "inputs_units",
     "key",
     "label",
+    "output",
     "required_resources",
+    "run_hash",
+    "state",
     "ui",
     "version",
 )
