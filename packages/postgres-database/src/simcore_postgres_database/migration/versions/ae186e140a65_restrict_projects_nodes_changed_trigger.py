@@ -28,7 +28,7 @@ _LAST_CHANGE_DATE_COLUMNS = (
     "inputs_units",
     "key",
     "label",
-    "output",
+    "outputs",
     "required_resources",
     "run_hash",
     "state",
