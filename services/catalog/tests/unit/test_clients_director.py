@@ -28,6 +28,8 @@ def app_environment(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDic
         {
             **app_environment,
             "SC_BOOT_MODE": "local-development",
+            # keep the director requests fast and verify it is effectively used
+            "HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT": "3",
         },
     )
 
@@ -141,3 +143,36 @@ async def test_director_client_get_service_extras_without_org_labels(
 
     # Check service build details are NOT present (since we don't have org.label-schema labels)
     assert service_extras.service_build_details is None
+
+
+async def test_requests_honor_configured_timeout(
+    repository_lifespan_disabled: None,
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api: MockRouter,
+    service_key_and_version: tuple[str, str],
+    app: FastAPI,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A hardcoded per-request timeout would silently shadow HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT"""
+    settings = app.state.settings.CATALOG_CLIENT_REQUEST
+    assert settings is not None
+    assert settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT == 3
+
+    director_api = get_director_client(app)
+    assert director_api.client.timeout == httpx.Timeout(3.0)
+
+    requested_timeouts: list[Any] = []
+    original_request = httpx.AsyncClient.request
+
+    async def _capture_request(self: httpx.AsyncClient, method: str, url, **kwargs):
+        requested_timeouts.append(kwargs.get("timeout"))
+        return await original_request(self, method, url, **kwargs)
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", _capture_request)
+
+    key, version = service_key_and_version
+    await director_api.get_service_labels(key, version)
+
+    # no per-request override: the client's configured timeout applies
+    assert requested_timeouts == [httpx.USE_CLIENT_DEFAULT]
