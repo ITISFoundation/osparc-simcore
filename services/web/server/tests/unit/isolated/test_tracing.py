@@ -52,6 +52,6 @@ async def test_middleware_restrictions_opentelemetry_is_second_middleware(
     tracing_lifespan = next(ctx for ctx in app.cleanup_ctx if ctx.__module__.endswith("servicelib.aiohttp.tracing"))
     # aiohttp types cleanup_ctx entries as async context managers; this one is an
     # async generator function, which is also an async iterator at runtime
-    async for _ in cast("AsyncIterator", tracing_lifespan(app)):
+    async for _ in cast(AsyncIterator, tracing_lifespan(app)):
         assert app.middlewares
         assert create_aiohttp_middleware.__name__ in f"{app.middlewares[0]}"
