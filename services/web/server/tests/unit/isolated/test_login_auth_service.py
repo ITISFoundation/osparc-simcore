@@ -6,14 +6,17 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login.errors import WrongPasswordError
 
 
-async def test_unknown_user_is_verified_against_dummy_hash_and_rejected(mocker: MockerFixture):
+async def test_unknown_user_is_verified_against_dummy_hash_and_rejected(
+    mocker: MockerFixture, product_name: ProductName
+):
     mock_check_password = mocker.patch.object(_auth_service.security_service, "check_password", return_value=False)
-    product = SimpleNamespace(name="osparc")
+    product = SimpleNamespace(name=product_name)
 
     with pytest.raises(WrongPasswordError) as exc_info:
         await _auth_service.check_authorized_user_credentials(
