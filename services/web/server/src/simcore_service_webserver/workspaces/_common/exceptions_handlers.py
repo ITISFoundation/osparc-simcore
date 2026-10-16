@@ -9,7 +9,7 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...projects.exceptions import ProjectRunningConflictError
+from ...projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
 from ..errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceGroupNotFoundError,
@@ -40,6 +40,13 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "Unable to delete workspace because one or more projects are currently running. Please stop all running services and try again.",
+            _version=1,
+        ),
+    ),
+    ProjectStoppingError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message(
+            "Something went wrong while stopping running services in projects within this workspace before trashing. Aborting trash.",
             _version=1,
         ),
     ),

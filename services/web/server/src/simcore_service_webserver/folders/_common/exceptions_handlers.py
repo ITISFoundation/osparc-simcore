@@ -12,6 +12,7 @@ from ...exception_handling import (
 from ...projects.exceptions import (
     ProjectInvalidRightsError,
     ProjectRunningConflictError,
+    ProjectStoppingError,
 )
 from ...workspaces.errors import (
     WorkspaceAccessForbiddenError,
@@ -69,6 +70,13 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "Cannot move folder to trash because it contains projects that are currently running. Please stop all running services first and try again.",
+            _version=2,
+        ),
+    ),
+    ProjectStoppingError: HttpErrorInfo(
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        user_message(
+            "Something went wrong while stopping running services in projects within this folder before trashing. Aborting trash.",
             _version=2,
         ),
     ),
