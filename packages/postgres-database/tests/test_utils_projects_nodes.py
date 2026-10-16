@@ -7,11 +7,12 @@ import random
 import uuid
 from collections.abc import Awaitable, Callable
 from random import randint
-from typing import Any, Final
+from typing import Any
 
 import pytest
 import sqlalchemy
 from faker import Faker
+from pytest_simcore.helpers import postgres_locks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.utils_projects_nodes import (
@@ -415,26 +416,6 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
         await ProjectNodesRepo.get_project_id_from_node_id(asyncpg_connection, node_id=project1_nodes[0].node_id)
 
 
-_WAITERS_BEHIND_SQL: Final[str] = (
-    "SELECT count(*) FROM pg_stat_activity "
-    "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
-)
-_DEADLOCK_SQLSTATE: Final[str] = "40P01"
-_TIMEOUT_S: Final[float] = 30.0
-
-
-def _sqlstate(exc: BaseException) -> str | None:
-    return getattr(getattr(exc, "orig", None), "sqlstate", None) or getattr(exc, "sqlstate", None)
-
-
-async def _wait_until(condition: Callable[[], Awaitable[bool]], what: str) -> None:
-    deadline = asyncio.get_running_loop().time() + _TIMEOUT_S
-    while not await condition():  # polls the state of the database, no event to wait for
-        if asyncio.get_running_loop().time() > deadline:
-            pytest.fail(what)
-        await asyncio.sleep(0.05)
-
-
 @pytest.mark.parametrize("pg_sa_engine", ["alembicMigration"], indirect=True)
 async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
     asyncpg_engine: AsyncEngine,
@@ -468,19 +449,16 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
         # exactly this call), then the node rows through the same repo the mutation uses
         async with asyncpg_engine.connect() as conn, conn.begin():
             assert await lock_project_for_write(conn, project_uuid)
-            holder = int(await conn.scalar(sqlalchemy.text("SELECT pg_backend_pid()")))
+            holder = await postgres_locks.get_backend_pid(conn)
             # the lock is held now: release the node writer, it must queue behind it
             node_start.set()
 
             async def _node_writer_is_done_or_behind_me() -> bool:
                 if node_writer.done():
                     return True
-                async with asyncpg_engine.connect() as probe:
-                    return bool(
-                        await probe.scalar(sqlalchemy.text(_WAITERS_BEHIND_SQL), {"pid": holder}),
-                    )
+                return await postgres_locks.count_lock_waiters_behind(asyncpg_engine, holder) > 0
 
-            await _wait_until(
+            await postgres_locks.wait_until(
                 _node_writer_is_done_or_behind_me, "the node writer neither finished nor queued behind the parent lock"
             )
 
@@ -492,10 +470,10 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
     # both run to completion so that a deadlock surfaces as a failure here instead of
     # cancelling the survivor
     results = await asyncio.wait_for(
-        asyncio.gather(parent_writer, node_writer, return_exceptions=True), timeout=_TIMEOUT_S
+        asyncio.gather(parent_writer, node_writer, return_exceptions=True), timeout=postgres_locks.TIMEOUT_S
     )
     failures = [result for result in results if isinstance(result, BaseException)]
-    deadlock = next((exc for exc in failures if _sqlstate(exc) == _DEADLOCK_SQLSTATE), None)
+    deadlock = next((exc for exc in failures if postgres_locks.sqlstate(exc) == postgres_locks.DEADLOCK_SQLSTATE), None)
     assert deadlock is None, f"deadlocked with the parent row writer: {deadlock}"
     assert not failures, f"unexpected failure: {failures}"
 
