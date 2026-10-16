@@ -208,3 +208,17 @@ async def test_clearing_failed_logins_ignores_redis_errors(
     mocker.patch.object(fake_redis, "delete", side_effect=RedisConnectionError("down"))
 
     await clear_failed_logins(app, email=_EMAIL)
+
+
+async def test_overlapping_failures_never_shorten_the_back_off(
+    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings, mocker: MockerFixture
+):
+    # failure #7 is handled before the slower failure #6 writes its block
+    mocker.patch.object(_login_throttle_repository, "increment_failures", side_effect=[7, 6])
+    longest_delay_sec = compute_delay_sec(7, settings=login_settings)
+    assert compute_delay_sec(6, settings=login_settings) < longest_delay_sec
+
+    await register_failed_login(app, email=_EMAIL, settings=login_settings)
+    await register_failed_login(app, email=_EMAIL, settings=login_settings)
+
+    assert await get_login_retry_after_sec(app, email=_EMAIL) == longest_delay_sec

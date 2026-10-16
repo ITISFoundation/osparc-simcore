@@ -29,8 +29,13 @@ async def increment_failures(app: web.Application, *, digest: str, window_sec: i
 
 
 async def block(app: web.Application, *, digest: str, duration_ms: int) -> None:
+    """Blocks for at least `duration_ms`; an existing longer block is never shortened"""
     redis_client = get_redis_login_throttle_client(app)
-    await redis_client.set(_BLOCK_KEY_FORMAT.format(digest=digest), 1, px=duration_ms)
+    key = _BLOCK_KEY_FORMAT.format(digest=digest)
+    async with redis_client.pipeline(transaction=True) as pipe:
+        pipe.set(key, 1, px=duration_ms, nx=True)
+        pipe.pexpire(key, duration_ms, gt=True)
+        await pipe.execute()
 
 
 async def clear(app: web.Application, *, digest: str) -> None:
