@@ -9,6 +9,8 @@ from ..redis import get_redis_validation_code_client
 _FAILURES_KEY_FORMAT: Final[str] = "login-throttle:failures:{digest}"
 _BLOCK_KEY_FORMAT: Final[str] = "login-throttle:blocked:{digest}"
 
+# NOTE: shares the 2FA validation-code redis DB, keys are told apart by prefix
+
 
 async def get_block_ttl_ms(app: web.Application, *, digest: str) -> int:
     """Remaining block time in ms (0 if not blocked)"""
