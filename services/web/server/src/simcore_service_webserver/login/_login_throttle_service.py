@@ -31,7 +31,7 @@ def _handle_redis_errors_as_503() -> Iterator[None]:
     except RedisError as err:
         _logger.exception(
             **create_troubleshooting_log_kwargs(
-                f"{MSG_LOGIN_UNAVAILABLE}: login throttle unavailable due to redis error.",
+                "Login throttle unavailable due to redis error",
                 error=err,
                 tip="Check redis connection",
             )
@@ -89,5 +89,14 @@ async def register_failed_login(app: web.Application, *, email: str, settings: L
 
 
 async def clear_failed_logins(app: web.Application, *, email: str) -> None:
-    with _handle_redis_errors_as_503():
+    """Best effort: the user is already authenticated and a stale counter expires by itself"""
+    try:
         await _repository.clear(app, digest=_get_digest(email))
+    except RedisError as err:
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Could not clear failed login counter after a successful login",
+                error=err,
+                tip="Check redis connection",
+            )
+        )
