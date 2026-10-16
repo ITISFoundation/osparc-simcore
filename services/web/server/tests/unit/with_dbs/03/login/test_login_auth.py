@@ -28,12 +28,12 @@ from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
+    MSG_INVALID_CREDENTIALS,
     MSG_LOGGED_IN,
     MSG_UNKNOWN_EMAIL,
     MSG_USER_BANNED,
     MSG_USER_DELETED,
     MSG_USER_EXPIRED,
-    MSG_WRONG_PASSWORD,
 )
 from simcore_service_webserver.security import security_service
 from simcore_service_webserver.session.settings import get_plugin_settings
@@ -72,8 +72,24 @@ async def test_login_with_unknown_email(client: TestClient):
     r = await client.post(url.path, json={"email": "unknown@email.com", "password": "wrong."})
 
     _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
-    assert MSG_UNKNOWN_EMAIL in error["errors"][0]["message"]
+    assert MSG_UNKNOWN_EMAIL not in await r.text()
+    assert MSG_INVALID_CREDENTIALS in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
+
+
+async def test_login_unknown_email_is_indistinguishable_from_wrong_password(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+
+    r_unknown = await client.post(url.path, json={"email": "unknown@email.com", "password": "wrong."})
+    async with NewUser(app=client.app) as user:
+        r_wrong = await client.post(url.path, json={"email": user["email"], "password": "wrong."})
+
+    assert r_unknown.status == r_wrong.status == status.HTTP_401_UNAUTHORIZED
+    _, error_unknown = await assert_status(r_unknown, status.HTTP_401_UNAUTHORIZED)
+    _, error_wrong = await assert_status(r_wrong, status.HTTP_401_UNAUTHORIZED)
+    assert error_unknown["errors"] == error_wrong["errors"]
+    assert error_unknown["message"] == error_wrong["message"]
 
 
 async def test_login_with_wrong_password(client: TestClient):
@@ -83,7 +99,7 @@ async def test_login_with_wrong_password(client: TestClient):
     r = await client.post(url.path)
     payload = await r.json()
 
-    assert MSG_WRONG_PASSWORD not in await r.text(), str(payload)
+    assert MSG_INVALID_CREDENTIALS not in await r.text(), str(payload)
 
     async with NewUser(app=client.app) as user:
         r = await client.post(
@@ -94,7 +110,7 @@ async def test_login_with_wrong_password(client: TestClient):
             },
         )
     _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
-    assert MSG_WRONG_PASSWORD in error["errors"][0]["message"]
+    assert MSG_INVALID_CREDENTIALS in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
 
 
@@ -119,6 +135,23 @@ async def test_login_blocked_user(client: TestClient, user_status: UserStatus, e
     # expected_msg contains {support_email} at the end of the string
     assert expected_msg[: -len("xxx{support_email}")] in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
+
+
+@pytest.mark.parametrize(
+    "user_status",
+    [UserStatus.BANNED, UserStatus.EXPIRED, UserStatus.DELETED, UserStatus.CONFIRMATION_PENDING],
+)
+async def test_login_blocked_user_with_wrong_password_does_not_reveal_status(
+    client: TestClient, user_status: UserStatus
+):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+
+    async with NewUser({"status": user_status.name}, app=client.app) as user:
+        r = await client.post(url.path, json={"email": user["email"], "password": "wrong."})
+
+    _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
+    assert error["errors"][0]["message"] == MSG_INVALID_CREDENTIALS
 
 
 async def test_login_inactive_user(client: TestClient):

@@ -76,8 +76,6 @@ async def login(request: web.Request):
     # Authenticate user and verify access to the product
     user = await _auth_service.get_user_or_none(request.app, email=login_data.email)
 
-    user = _auth_service.check_not_null_user(user)
-
     user = await _auth_service.check_authorized_user_credentials(
         request.app,
         user,
