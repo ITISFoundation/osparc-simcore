@@ -50,7 +50,7 @@ def compute_delay_sec(failures: int, *, settings: LoginSettings) -> int:
         return 0
     return min(
         settings.LOGIN_THROTTLE_MAX_DELAY_SEC,
-        settings.LOGIN_THROTTLE_BASE_DELAY_SEC * 2 ** min(excess - 1, _MAX_BACKOFF_EXPONENT),
+        settings.LOGIN_THROTTLE_BASE_DELAY_SEC * (1 << min(excess - 1, _MAX_BACKOFF_EXPONENT)),
     )
 
 

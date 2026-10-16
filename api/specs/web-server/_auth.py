@@ -166,6 +166,7 @@ async def check_auth():
 
 @router.post(
     "/auth:login-guard",
+    operation_id="auth_login_guard",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_429_TOO_MANY_REQUESTS: {
