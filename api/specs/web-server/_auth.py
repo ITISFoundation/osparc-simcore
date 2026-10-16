@@ -170,7 +170,8 @@ async def check_auth():
     responses={
         status.HTTP_429_TOO_MANY_REQUESTS: {
             "model": EnvelopedError,
-        }
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
     },
 )
 async def login_guard(_body: LoginBody):

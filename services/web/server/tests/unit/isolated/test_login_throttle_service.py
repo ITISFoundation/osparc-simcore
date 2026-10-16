@@ -9,6 +9,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from fakeredis import FakeAsyncRedis
 from pytest_mock import MockerFixture
+from redis.exceptions import ConnectionError as RedisConnectionError
 from simcore_service_webserver.login import _login_throttle_repository
 from simcore_service_webserver.login._login_throttle_service import (
     clear_failed_logins,
@@ -180,3 +181,22 @@ async def test_login_guard_lets_invalid_bodies_through_to_the_login_endpoint(gua
     response = await guard_client.post("/v0/auth:login-guard", data=body)
 
     assert response.status == 204
+
+
+async def test_login_guard_answers_503_when_redis_fails(
+    guard_client: TestClient, fake_redis: FakeAsyncRedis, mocker: MockerFixture
+):
+    mocker.patch.object(fake_redis, "pttl", side_effect=RedisConnectionError("down"))
+
+    response = await guard_client.post("/v0/auth:login-guard", json={"email": _EMAIL, "password": "x"})
+
+    assert response.status == 503
+
+
+async def test_registering_a_failed_login_answers_503_when_redis_fails(
+    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings, mocker: MockerFixture
+):
+    mocker.patch.object(fake_redis, "pipeline", side_effect=RedisConnectionError("down"))
+
+    with pytest.raises(web.HTTPServiceUnavailable):
+        await register_failed_login(app, email=_EMAIL, settings=login_settings)
