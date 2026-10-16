@@ -19,6 +19,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from settings_library.redis import RedisSettings
 from simcore_service_webserver.application import create_application_auth
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
@@ -38,6 +39,7 @@ def app_environment_for_wb_authz_service_dict(
     docker_compose_service_environment_dict: EnvVarsDict,
     docker_compose_service_hostname: str,
     default_app_cfg: AppConfigDict,
+    redis_service: RedisSettings,
 ) -> EnvVarsDict:
     postgres_cfg = default_app_cfg["db"]["postgres"]
 
@@ -59,6 +61,9 @@ def app_environment_for_wb_authz_service_dict(
         "POSTGRES_PORT": postgres_cfg["port"],
         "POSTGRES_USER": postgres_cfg["user"],
         "POSTGRES_PASSWORD": postgres_cfg["password"],
+        "REDIS_HOST": redis_service.REDIS_HOST,
+        "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+        "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value() if redis_service.REDIS_PASSWORD else "",
         "HOSTNAME": docker_compose_service_hostname,
         "WEBSERVER_CELERY": "null",
         "WEBSERVER_TRACING": "null",  # BUT we will disable it for tests
