@@ -506,18 +506,6 @@ async def test_patch_project_node_service_key_with_error(
         assert resp.status == status.HTTP_404_NOT_FOUND
 
 
-#
-# Deadlock regression (https://github.com/ITISFoundation/private-issues/issues/669)
-#
-# On 2026-10-16 production raised DeadlockDetectedError on this very entrypoint: the PATCH
-# wrote the node row and the `projects_nodes_changed` trigger then locked the parent
-# `projects` row, while a graph mutation had locked the parent row first and was going for
-# the node rows. This test runs the real endpoint against that interleaving; the repo-level
-# twin is packages/postgres-database/tests/test_utils_projects_nodes.py
-# ::test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer
-#
-
-# test instrumentation only: which backend holds/waits on which lock
 _WAITERS_BEHIND_SQL: Final[str] = (
     "SELECT count(*) FROM pg_stat_activity "
     "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
