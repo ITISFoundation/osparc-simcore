@@ -3,9 +3,9 @@ from typing import Annotated, Final, Literal
 
 from aiohttp import web
 from models_library.products import ProductName
-from pydantic import BaseModel, ValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator, model_validator
 from pydantic.fields import Field
-from pydantic.types import PositiveFloat, PositiveInt
+from pydantic.types import NonNegativeInt, PositiveFloat, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
@@ -63,6 +63,35 @@ class LoginSettings(BaseCustomSettings):
             description="Minimum length of password",
         ),
     ] = 12
+
+    LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS: Annotated[
+        NonNegativeInt,
+        Field(description="Failed logins per email before the back-off delays start"),
+    ] = 5
+
+    LOGIN_THROTTLE_BASE_DELAY_SEC: Annotated[
+        PositiveInt,
+        Field(
+            description="Delay [sec] after the first failure above the free ones. It doubles with each further failure"
+        ),
+    ] = 2
+
+    LOGIN_THROTTLE_MAX_DELAY_SEC: Annotated[
+        PositiveInt,
+        Field(description="Upper bound [sec] of the back-off delay"),
+    ] = 900
+
+    LOGIN_THROTTLE_WINDOW_SEC: Annotated[
+        PositiveInt,
+        Field(description="Failed logins are forgotten after this time [sec] without new failures"),
+    ] = 3600
+
+    @model_validator(mode="after")
+    def _login_throttle_max_delay_not_below_base(self):
+        if self.LOGIN_THROTTLE_MAX_DELAY_SEC < self.LOGIN_THROTTLE_BASE_DELAY_SEC:
+            msg = "LOGIN_THROTTLE_MAX_DELAY_SEC must not be smaller than LOGIN_THROTTLE_BASE_DELAY_SEC"
+            raise ValueError(msg)
+        return self
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod

@@ -21,6 +21,22 @@ MSG_TOO_MANY_REQUESTS: Final[str] = user_message(
 )
 
 
+def create_too_many_requests_error(*, retry_after_sec: int, error_msg: str) -> HTTPTooManyRequests:
+    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+    return HTTPTooManyRequests(
+        headers={
+            "Content-Type": "application/json",
+            "Retry-After": f"{retry_after_sec}",
+        },
+        text=EnvelopedError(
+            error=ErrorGet(
+                message=error_msg,
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        ).model_dump_json(),
+    )
+
+
 def global_rate_limit_route(
     number_of_requests: int,
     interval_seconds: float,
@@ -62,20 +78,8 @@ def global_rate_limit_route(
                 context.remaining = context.max_allowed
 
             if utc_now_timestamp <= context.rate_limit_reset and context.remaining <= 0:
-                # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
-                retry_after_sec = int(ceil(context.rate_limit_reset - utc_now_timestamp))
-                raise HTTPTooManyRequests(
-                    headers={
-                        "Content-Type": "application/json",
-                        "Retry-After": f"{retry_after_sec}",
-                    },
-                    text=EnvelopedError(
-                        error=ErrorGet(
-                            message=error_msg,
-                            status=status.HTTP_429_TOO_MANY_REQUESTS,
-                        )
-                    ).model_dump_json(),
-                )
+                retry_after_sec = ceil(context.rate_limit_reset - utc_now_timestamp)
+                raise create_too_many_requests_error(retry_after_sec=retry_after_sec, error_msg=error_msg)
 
             assert (  # nosec
                 HTTPTooManyRequests.status_code == status.HTTP_429_TOO_MANY_REQUESTS
