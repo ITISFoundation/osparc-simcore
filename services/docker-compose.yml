@@ -1129,7 +1129,7 @@ services:
         # login guard: rejects login attempts of emails in back-off, before any password hashing
         - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.address=http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:login-guard
         - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.forwardBody=true
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.maxBodySize=4096
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.maxBodySize=1048576
         - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.preserveRequestMethod=true
         - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.trustForwardHeader=true
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.rule=Path(`/v0/auth/login`) && Method(`POST`)
