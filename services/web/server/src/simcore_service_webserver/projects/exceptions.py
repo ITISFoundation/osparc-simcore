@@ -112,10 +112,6 @@ class InsufficientRoleForProjectTemplateTypeUpdateError(ProjectsPatchError): ...
 class ProjectTrashError(BaseProjectError): ...
 
 
-class ProjectStoppingError(ProjectTrashError):
-    msg_template = "Failed to  services in '{project_uuid}' before trashing"
-
-
 class ProjectRunningConflictError(ProjectTrashError):
     msg_template = "Cannot trash running project '{project_uuid}' except if forced option is on"
 

@@ -7,8 +7,6 @@ from pydantic import (
 
 from ...models import AuthenticatedRequestContext
 
-assert AuthenticatedRequestContext.__name__  # nosec
-
 
 class ProjectPathParams(BaseModel):
     project_id: ProjectID

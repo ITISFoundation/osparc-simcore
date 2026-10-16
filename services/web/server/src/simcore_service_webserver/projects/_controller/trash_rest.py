@@ -1,5 +1,3 @@
-import logging
-
 from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
@@ -16,12 +14,9 @@ from ...products import products_web
 from ...security.decorators import permission_required
 from ...web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from .. import _trash_service
-from ..exceptions import ProjectRunningConflictError, ProjectStoppingError
+from ..exceptions import ProjectRunningConflictError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import ProjectPathParams, RemoveQueryParams
-
-_logger = logging.getLogger(__name__)
-
 
 _TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
@@ -29,10 +24,6 @@ _TRASH_ERRORS: ExceptionToHttpErrorMap = {
         user_message(
             "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again"  # noqa: E501
         ),
-    ),
-    ProjectStoppingError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message("Something went wrong while stopping services before trashing. Aborting trash."),
     ),
 }
 

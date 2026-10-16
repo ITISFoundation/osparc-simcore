@@ -16,7 +16,7 @@ from ..exception_handling import (
 )
 from ..login.decorators import get_user_id, login_required
 from ..products import products_web
-from ..projects.exceptions import ProjectRunningConflictError, ProjectStoppingError
+from ..projects.exceptions import ProjectRunningConflictError
 from ..security.decorators import permission_required
 from . import _service
 
@@ -28,13 +28,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "The project is currently in use and cannot be moved to trash. Please stop all running services first and try again.",
-            _version=1,
-        ),
-    ),
-    ProjectStoppingError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message(
-            "An error occurred while stopping services before moving to trash. The operation has been cancelled.",
             _version=1,
         ),
     ),
