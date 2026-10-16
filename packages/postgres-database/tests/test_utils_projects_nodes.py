@@ -442,7 +442,7 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
         async with asyncpg_engine.connect() as conn, conn.begin():
             await repo.update(conn, node_id=node.node_id, label="plain-update")
 
-    node_writer: asyncio.Task[None] = asyncio.create_task(_node_writer())
+    node_writer = asyncio.create_task(_node_writer())
 
     async def _parent_first_writer() -> None:
         # what the webserver graph mutation does: parent row lock (its _lock_project_graph is
@@ -465,7 +465,7 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
             # the node row, written only after the parent row was locked first
             await repo.update(conn, node_id=node.node_id, progress=42.0)
 
-    parent_writer: asyncio.Task[None] = asyncio.create_task(_parent_first_writer())
+    parent_writer = asyncio.create_task(_parent_first_writer())
 
     # both run to completion so that a deadlock surfaces as a failure here instead of
     # cancelling the survivor

@@ -533,7 +533,7 @@ async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row
 
         # the PATCH starts only while the lock is held: it cannot complete before its first
         # statement queues on the parent row, so the interleaving below is always exercised
-        patch_task: asyncio.Task[None] = asyncio.create_task(_patch_node())
+        patch_task = asyncio.create_task(_patch_node())
 
         async def _patch_is_done_or_behind_me() -> bool:
             # done() cannot mean "won the race": the PATCH started only after the lock above was
