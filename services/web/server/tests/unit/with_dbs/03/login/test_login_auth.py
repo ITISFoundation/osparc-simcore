@@ -18,6 +18,8 @@ from cryptography import fernet
 from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -386,6 +388,12 @@ async def test_multiple_users_login_logout_concurrently(
     await asyncio.gather(*(user_session_flow(user) for user in multiple_users))
 
 
+@pytest.fixture
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    # long enough for a slow run not to outlive the back-off between two requests
+    return app_environment | setenvs_from_dict(monkeypatch, {"LOGIN_THROTTLE_BASE_DELAY_SEC": "60"})
+
+
 def _free_failed_login_attempts(client: TestClient) -> int:
     assert client.app
     login_settings = client.app[APP_SETTINGS_APPKEY].WEBSERVER_LOGIN
@@ -439,10 +447,10 @@ async def test_successful_login_resets_failed_attempts(client: TestClient):
             await assert_status(r, status.HTTP_200_OK)
 
 
-async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient):
+async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient, faker: Faker):
     assert client.app
     url = client.app.router["auth_login"].url_for()
-    payload = {"email": "unknown@email.com", "password": "wrong."}
+    payload = {"email": faker.unique.email(), "password": "wrong."}
 
     for _ in range(_free_failed_login_attempts(client) + 1):
         r = await client.post(url.path, json=payload)

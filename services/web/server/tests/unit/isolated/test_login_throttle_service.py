@@ -200,3 +200,11 @@ async def test_registering_a_failed_login_answers_503_when_redis_fails(
 
     with pytest.raises(web.HTTPServiceUnavailable):
         await register_failed_login(app, email=_EMAIL, settings=login_settings)
+
+
+async def test_clearing_failed_logins_ignores_redis_errors(
+    app: web.Application, fake_redis: FakeAsyncRedis, mocker: MockerFixture
+):
+    mocker.patch.object(fake_redis, "delete", side_effect=RedisConnectionError("down"))
+
+    await clear_failed_logins(app, email=_EMAIL)
