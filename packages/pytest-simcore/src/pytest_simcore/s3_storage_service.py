@@ -19,7 +19,8 @@ from pytest_simcore.helpers.xdist import get_worker_id, is_xdist_worker
 def s3_storage_settings(
     docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker, request: pytest.FixtureRequest
 ) -> S3Settings:
-    assert "pytest-ops_s3-storage" in docker_stack["services"]
+    ops_stack_name = env_vars_for_docker_compose["SWARM_OPS_STACK_NAME"]
+    assert f"{ops_stack_name}_s3-storage" in docker_stack["services"]
 
     # under xdist, each worker gets its own bucket on the SAME shared S3/rustfs container
     bucket_name = env_vars_for_docker_compose["S3_BUCKET_NAME"]
@@ -30,7 +31,7 @@ def s3_storage_settings(
         S3_ACCESS_KEY=SecretStr(env_vars_for_docker_compose["S3_ACCESS_KEY"]),
         S3_SECRET_KEY=SecretStr(env_vars_for_docker_compose["S3_SECRET_KEY"]),
         S3_ENDPOINT=TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{get_localhost_ip()}:{get_service_published_port('s3-storage')}"
+            f"http://{get_localhost_ip()}:{get_service_published_port('s3-storage', stack_name=ops_stack_name)}"
         ),
         S3_BUCKET_NAME=bucket_name,
         S3_REGION="us-east-1",

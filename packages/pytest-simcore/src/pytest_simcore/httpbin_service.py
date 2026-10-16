@@ -22,11 +22,12 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.host import get_localhost_ip
+from .helpers.stack_names import get_run_uid
 from .helpers.xdist import get_worker_id
 
 
 @pytest.fixture(scope="session")
-def httpbin_base_url(request: pytest.FixtureRequest) -> Iterable[HttpUrl]:
+def httpbin_base_url(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterable[HttpUrl]:
     """
     Implemented as a fixture since it cannot rely on full availability of https://httpbin.org/ during testing
     """
@@ -35,9 +36,10 @@ def httpbin_base_url(request: pytest.FixtureRequest) -> Iterable[HttpUrl]:
     base_url = f"http://{ip_address}:{port}"
 
     client = docker.from_env()
-    # NOTE: the name must be unique per xdist worker, otherwise concurrent workers
-    # running this session fixture would race on creating the same container (409)
-    container_name = f"httpbin-fixture-{get_worker_id(request)}"
+    # NOTE: the name must be unique per run AND per xdist worker, otherwise concurrent
+    # workers (or a concurrent pytest run on the same daemon, e.g. another worktree)
+    # would race on creating the same container (409)
+    container_name = f"httpbin-fixture-{get_worker_id(request)}-{get_run_uid(tmp_path_factory.getbasetemp())}"
     try:
         container = client.containers.run(
             image="mccutchen/go-httpbin:2.25.0",
