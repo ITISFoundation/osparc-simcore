@@ -17,7 +17,11 @@ from pydantic import BaseModel, Field, NonNegativeInt, TypeAdapter, ValidationEr
 from servicelib.file_utils import disk_usage
 from servicelib.r_clone_utils import get_r_clone_version
 from servicelib.ssl_context import get_shared_ssl_context
-from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
+from settings_library.r_clone import (
+    DEFAULT_VFS_CACHE_PATH,
+    RCloneSettings,
+    RCloneSimcoreSDKMountSettings,
+)
 from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
 from ..r_clone_utils import get_effective_vfs_write_back_seconds, overwrite_command
@@ -107,7 +111,7 @@ cleanup
 )
 
 
-async def _get_max_vfs_cache_size(delegate: DelegateInterface, mount_settings: SimcoreSDKMountSettings) -> str:
+async def _get_max_vfs_cache_size(delegate: DelegateInterface, mount_settings: RCloneSimcoreSDKMountSettings) -> str:
     # maximum size of the VFS cache on the disk to be enforced by rclone
     # NOTE 1: the vfs-cache is the folder where the real data form the user's files is stored
     # NOTE 2: if a user has a file that goes over this limit the cache will not behave as expected
@@ -127,7 +131,7 @@ def get_vfs_cache_path(index: NonNegativeInt) -> Path:
 
 async def _get_rclone_mount_command(
     delegate: DelegateInterface,
-    mount_settings: SimcoreSDKMountSettings,
+    mount_settings: RCloneSimcoreSDKMountSettings,
     r_clone_config_content: str,
     remote_path: StorageFileID,
     local_mount_path: Path,
@@ -285,8 +289,8 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             command=command,
             r_clone_version=await get_r_clone_version(),
             local_mount_path=self.local_mount_path,
-            memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
-            nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
+            memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT_MAX,
+            nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CPU_LIMIT.to_nano_cpus(),
             labels=_RCloneContainerLabels.from_rc_credentials(
                 rc_user=self.rc_user,
                 rc_password=self.rc_password,

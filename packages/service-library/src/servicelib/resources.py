@@ -6,6 +6,7 @@ https://docs.python.org/3.11/library/importlib.resources.html#module-importlib.r
 import importlib.resources
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Final
 
 
 @dataclass(frozen=True)
@@ -36,5 +37,5 @@ class DataResourcesFacade:
 
 
 # resources env keys
-CPU_RESOURCE_LIMIT_KEY = "SIMCORE_NANO_CPUS_LIMIT"
-MEM_RESOURCE_LIMIT_KEY = "SIMCORE_MEMORY_BYTES_LIMIT"
+USER_SERVICE_CPU_RESOURCE_LIMIT_ENV_KEY: Final[str] = "SIMCORE_NANO_CPUS_LIMIT"
+USER_SERVICE_MEM_RESOURCE_LIMIT_ENV_KEY: Final[str] = "SIMCORE_MEMORY_BYTES_LIMIT"

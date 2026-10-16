@@ -9,6 +9,7 @@ from typing import Any, Final, Literal
 
 import aiodocker
 import arrow
+from models_library.basic_types import InstanceCPUCount
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
@@ -446,7 +447,7 @@ _SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_
 DYNAMIC_SIDECAR_MIN_CPUS: Final[float] = 0.5
 
 
-def estimate_dynamic_sidecar_resources_from_ec2_instance(cpus: float, ram: int) -> tuple[float, int]:
+def estimate_dynamic_sidecar_resources_from_ec2_instance(cpus: InstanceCPUCount, ram: int) -> tuple[float, int]:
     """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
     taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
 

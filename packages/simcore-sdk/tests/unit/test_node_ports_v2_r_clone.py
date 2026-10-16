@@ -9,18 +9,18 @@ from unittest.mock import Mock
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import RCloneProvider
 from simcore_sdk.node_ports_common import r_clone
 from simcore_sdk.node_ports_common.r_clone import RCloneSettings
 
 
-@pytest.fixture(params=list(S3Provider))
-def s3_provider(request) -> S3Provider:
+@pytest.fixture(params=list(RCloneProvider))
+def s3_provider(request) -> RCloneProvider:
     return request.param
 
 
 @pytest.fixture
-def r_clone_settings(monkeypatch: pytest.MonkeyPatch, s3_provider: S3Provider, faker: Faker) -> RCloneSettings:
+def r_clone_settings(monkeypatch: pytest.MonkeyPatch, s3_provider: RCloneProvider, faker: Faker) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", s3_provider.value)
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
