@@ -53,7 +53,6 @@ from pytest_simcore.helpers.postgres_locks import (
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_nodes import ProjectNode, ProjectNodesRepo
-from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import CompTasksRepository
 from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils import (
@@ -283,7 +282,7 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
             return True
         return await count_lock_waiters(project.engine) > 0
 
-    upsert: asyncio.Task[tuple[list[CompTaskAtDB], bool]] = asyncio.create_task(
+    upsert = asyncio.create_task(
         CompTasksRepository(project.engine).upsert_tasks_from_project(
             project=project.project_row,
             project_nodes=project.project_nodes,
