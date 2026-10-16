@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 
 import pytest
@@ -10,7 +11,7 @@ from aiohttp.test_utils import TestClient
 from fakeredis import FakeAsyncRedis
 from pytest_mock import MockerFixture
 from redis.exceptions import ConnectionError as RedisConnectionError
-from simcore_service_webserver.login import _login_throttle_repository
+from simcore_service_webserver.login import _login_throttle_repository, _login_throttle_service
 from simcore_service_webserver.login._login_throttle_service import (
     clear_failed_logins,
     compute_delay_sec,
@@ -222,3 +223,33 @@ async def test_overlapping_failures_never_shorten_the_back_off(
     await register_failed_login(app, email=_EMAIL, settings=login_settings)
 
     assert await get_login_retry_after_sec(app, email=_EMAIL) == longest_delay_sec
+
+
+@pytest.fixture
+def unresponsive_redis(fake_redis: FakeAsyncRedis, mocker: MockerFixture) -> None:
+    async def _never_replies(*args, **kwargs):
+        await asyncio.sleep(3600)
+
+    mocker.patch.object(_login_throttle_service, "_REDIS_TIMEOUT_SEC", 0.05)
+    for command in ("pttl", "delete"):
+        mocker.patch.object(fake_redis, command, side_effect=_never_replies)
+    mocker.patch.object(_login_throttle_repository, "increment_failures", side_effect=_never_replies)
+
+
+async def test_guard_answers_503_when_redis_does_not_reply(guard_client: TestClient, unresponsive_redis: None):
+    response = await guard_client.post("/v0/auth:login-guard", json={"email": _EMAIL, "password": "x"})
+
+    assert response.status == 503
+
+
+async def test_registering_a_failed_login_answers_503_when_redis_does_not_reply(
+    app: web.Application, login_settings: LoginSettings, unresponsive_redis: None
+):
+    with pytest.raises(web.HTTPServiceUnavailable):
+        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+
+
+async def test_clearing_failed_logins_ignores_a_redis_that_does_not_reply(
+    app: web.Application, unresponsive_redis: None
+):
+    await clear_failed_logins(app, email=_EMAIL)
