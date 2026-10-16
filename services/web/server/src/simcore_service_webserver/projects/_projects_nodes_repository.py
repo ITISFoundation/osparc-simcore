@@ -16,7 +16,7 @@ from simcore_postgres_database.webserver_models import projects_nodes
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
-from .exceptions import NodeNotFoundError
+from .exceptions import NodeNotFoundError, ProjectNotFoundError
 
 _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.node_id,
@@ -84,7 +84,8 @@ async def add(
         values["required_resources"] = required_resources
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await lock_project_for_write(conn, project_id)
+        if not await lock_project_for_write(conn, project_id):
+            raise ProjectNotFoundError(project_uuid=project_id)
         await conn.execute(projects_nodes.insert().values(project_uuid=f"{project_id}", node_id=f"{node_id}", **values))
 
 
@@ -96,7 +97,8 @@ async def delete(
     node_id: NodeID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await lock_project_for_write(conn, project_id)
+        if not await lock_project_for_write(conn, project_id):
+            raise ProjectNotFoundError(project_uuid=project_id)
         result = await conn.execute(
             projects_nodes.delete().where(
                 (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
@@ -185,7 +187,8 @@ async def update(
         values["ui"] = merge_jsonb_patch_expression(projects_nodes.c.ui, values["ui"])
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await lock_project_for_write(conn, project_id)
+        if not await lock_project_for_write(conn, project_id):
+            raise ProjectNotFoundError(project_uuid=project_id)
         result = await conn.execute(
             projects_nodes.update()
             .values(**values)
