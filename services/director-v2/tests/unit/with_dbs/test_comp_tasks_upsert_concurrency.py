@@ -12,13 +12,20 @@ On 2026-10-09 production deadlocked (https://github.com/ITISFoundation/private-i
 Every write to `projects_nodes` updates the single parent `projects` row through the
 `projects_nodes_changed` trigger. The webserver locks that row before it touches any node, so
 director-v2 must take it first too, otherwise each waits for a lock the other holds.
+
+The graph mutation is not the only webserver writer though: on 2026-10-16 the single-node
+`PATCH /projects/{id}/nodes/{node_id}` deadlocked against the same upsert, because it takes the
+node row first and only then, through the same trigger, the project row. That order cannot be
+flipped without locking the whole project for every dragged node, so instead the upsert must not
+write node rows it does not have to, and must not hold the project row longer than necessary.
 """
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Final, NamedTuple
+from typing import Any, Final, NamedTuple, cast
 from unittest import mock
 
 import pytest
@@ -53,6 +60,7 @@ from pytest_simcore.helpers.postgres_locks import (
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_nodes import ProjectNode, ProjectNodesRepo
+from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import CompTasksRepository
 from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils import (
@@ -66,8 +74,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
-_SERVICE_KEY: Final[ServiceKey] = ServiceKey("simcore/services/comp/is4cpu")
-_SERVICE_VERSION: Final[ServiceVersion] = ServiceVersion("1.0.0")
+_SERVICE_KEY: Final[ServiceKey] = TypeAdapter(ServiceKey).validate_python("simcore/services/comp/is4cpu")
+_SERVICE_VERSION: Final[ServiceVersion] = TypeAdapter(ServiceVersion).validate_python("1.0.0")
 _EC2_INSTANCE_TYPE: Final[str] = "c5.xlarge"
 
 # what the nodes ask for, less than what the machine of the pricing unit offers
@@ -151,17 +159,17 @@ def catalog_client(
         encoded: dict[str, Any] = jsonable_encoder(payload, by_alias=True)
         return encoded
 
-    client: CatalogClient = mock.create_autospec(CatalogClient, instance=True)
+    client = cast("mock.MagicMock", mock.create_autospec(CatalogClient, instance=True))
     client.get_service.side_effect = _get_service
     client.get_service_extras.return_value = fake_service_extras
     client.get_service_labels.return_value = SimcoreServiceLabels.model_validate(fake_service_labels)
-    return client
+    return cast("CatalogClient", client)
 
 
 @pytest.fixture
 def rut_client() -> ResourceUsageTrackerClient:
     """every node is priced on the same unit, whose machine is `_EC2_INSTANCE_TYPE`"""
-    client: ResourceUsageTrackerClient = mock.create_autospec(ResourceUsageTrackerClient, instance=True)
+    client = cast("mock.MagicMock", mock.create_autospec(ResourceUsageTrackerClient, instance=True))
     client.get_default_pricing_and_hardware_info.return_value = PricingAndHardwareInfoTuple(
         pricing_plan_id=1,
         pricing_unit_id=2,
@@ -177,7 +185,7 @@ def rut_client() -> ResourceUsageTrackerClient:
         default=True,
         specific_info=HardwareInfo(aws_ec2_instances=[_EC2_INSTANCE_TYPE]),
     )
-    return client
+    return cast("ResourceUsageTrackerClient", client)
 
 
 @pytest.fixture
@@ -311,7 +319,7 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
     assert deadlock is None, f"deadlocked with the graph mutation: {deadlock}"
     assert not failures, f"unexpected failure: {failures}"
 
-    (tasks, insufficient_credits), _ = results
+    tasks, insufficient_credits = cast("tuple[list[CompTaskAtDB], bool]", results[0])
     assert not insufficient_credits
     assert len(tasks) == len(project.node_ids)
 
@@ -322,3 +330,196 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
         node = await _get_node(project.engine, project.uuid, node_id)
         assert node.inputs == {"changed_by": "webserver"}
         assert _limits(node.required_resources) == pytest.approx((adjusted_cpus, adjusted_ram), rel=1e-6)
+
+
+async def _run_upsert(
+    project: _Project,
+    catalog_client: CatalogClient,
+    rut_client: ResourceUsageTrackerClient,
+    mocked_rpc_client: RabbitMQRPCClient,
+    wallet_info: WalletInfo,
+) -> tuple[list[CompTaskAtDB], bool]:
+    return await CompTasksRepository(project.engine).upsert_tasks_from_project(
+        project=project.project_row,
+        project_nodes=project.project_nodes,
+        catalog_client=catalog_client,
+        published_nodes=[],
+        user_id=project.user_id,
+        product_name=project.product_name,
+        rut_client=rut_client,
+        wallet_info=wallet_info,
+        rabbitmq_rpc_client=mocked_rpc_client,
+    )
+
+
+async def _change_stamps(project: _Project) -> tuple[Any, dict[NodeID, Any]]:
+    """the `projects` row's `last_change_date`, which the `projects_nodes_changed` trigger bumps
+    on every node write, plus each node's own `modified`"""
+    async with project.engine.connect() as conn:
+        last_change_date = await conn.scalar(
+            sa.text("SELECT last_change_date FROM projects WHERE uuid = :project_uuid"),
+            {"project_uuid": f"{project.uuid}"},
+        )
+    nodes = {node_id: (await _get_node(project.engine, project.uuid, node_id)).modified for node_id in project.node_ids}
+    return last_change_date, nodes
+
+
+async def test_upsert_skips_writing_unchanged_required_resources(
+    project: _Project,
+    catalog_gate: _CatalogGate,
+    catalog_client: CatalogClient,
+    rut_client: ResourceUsageTrackerClient,
+    mocked_rpc_client: RabbitMQRPCClient,
+    mocked_clusters_keeper_get_instance_type_details: mock.Mock,
+    wallet_info: WalletInfo,
+    fake_ec2_cpus: PositiveInt,
+    fake_ec2_ram: ByteSize,
+):
+    """the second upsert of an unchanged project must leave `projects_nodes` alone
+
+    On 2026-10-16 production deadlocked again, with the webserver losing against a director-v2
+    that was rewriting `required_resources` to the very value that was already stored. Each of
+    those writes also updates the parent `projects` row through a trigger, which the upsert's own
+    transaction has locked for the whole time it talks to the backends.
+    """
+    catalog_gate.release.set()
+
+    tasks, insufficient_credits = await _run_upsert(project, catalog_client, rut_client, mocked_rpc_client, wallet_info)
+    assert not insufficient_credits
+    assert len(tasks) == len(project.node_ids)
+
+    # the first run sizes the nodes to the machine of their pricing unit, so it has to write
+    adjusted_cpus = fake_ec2_cpus - _CPUS_SAFE_MARGIN
+    adjusted_ram = int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram)
+    for node_id in project.node_ids:
+        node = await _get_node(project.engine, project.uuid, node_id)
+        assert _limits(node.required_resources) == pytest.approx((adjusted_cpus, adjusted_ram), rel=1e-6)
+
+    before = await _change_stamps(project)
+
+    # nothing changed in between, so the second run computes the same resources it just wrote
+    tasks, insufficient_credits = await _run_upsert(project, catalog_client, rut_client, mocked_rpc_client, wallet_info)
+    assert not insufficient_credits
+    assert len(tasks) == len(project.node_ids)
+
+    after = await _change_stamps(project)
+    assert after[0] == before[0], "the upsert updated the `projects` row through the node trigger"
+    for node_id in project.node_ids:
+        assert after[1][node_id] == before[1][node_id], f"the upsert rewrote node {node_id}"
+
+
+async def test_upsert_does_not_deadlock_with_a_concurrent_single_node_update(
+    project: _Project,
+    catalog_gate: _CatalogGate,
+    catalog_client: CatalogClient,
+    rut_client: ResourceUsageTrackerClient,
+    mocked_rpc_client: RabbitMQRPCClient,
+    mocked_clusters_keeper_get_instance_type_details: mock.Mock,
+    wallet_info: WalletInfo,
+):
+    """a single-node update the way the webserver does it must not deadlock with the upsert
+
+    `PATCH /projects/{id}/nodes/{node_id}` for e.g. `ui.position` takes no project lock: it locks
+    the node row and then bumps the parent `projects` row through the trigger, i.e. the opposite
+    order of director-v2's. Once the resources are up to date, the upsert must not write node
+    rows at all, then it can never wait behind such an update.
+    """
+    catalog_gate.release.set()
+    # bring the nodes to the state of a project that runs: resources already sized to the machine
+    await _run_upsert(project, catalog_client, rut_client, mocked_rpc_client, wallet_info)
+
+    node_id = project.node_ids[0]
+    ui_payload = {"position": [1.0, 2.0]}
+    update_pid: dict[str, int] = {}
+    update_started = asyncio.Event()
+
+    async def _single_node_update() -> None:
+        async with project.engine.connect() as conn, conn.begin():
+            # what the webserver's `_projects_nodes_repository.update` does: node row first,
+            # the parent `projects` row second, through the `projects_nodes_changed` trigger
+            update_pid["pid"] = int(await conn.scalar(sa.text("SELECT pg_backend_pid()")))
+            update_started.set()
+            await conn.execute(
+                sa.text(
+                    "UPDATE projects_nodes SET modified = now(), ui = CAST(:ui AS JSONB) "
+                    "WHERE project_uuid = :project_uuid AND node_id = :node_id"
+                ),
+                {"ui": json.dumps(ui_payload), "project_uuid": f"{project.uuid}", "node_id": f"{node_id}"},
+            )
+
+    # start the upsert anew and hold it inside its transaction, on the project row
+    catalog_gate.called.clear()
+    catalog_gate.release.clear()
+    upsert: asyncio.Task[tuple[list[CompTaskAtDB], bool]] = asyncio.create_task(
+        _run_upsert(project, catalog_client, rut_client, mocked_rpc_client, wallet_info)
+    )
+    await asyncio.wait_for(catalog_gate.called.wait(), timeout=TIMEOUT_S)
+
+    update = asyncio.create_task(_single_node_update())
+    await asyncio.wait_for(update_started.wait(), timeout=TIMEOUT_S)
+
+    # the update holds the node row and queues on the project row that the upsert holds
+    async def _update_is_queued_on_the_project_row() -> bool:
+        async with project.engine.connect() as probe:
+            waiting = await probe.scalar(
+                sa.text(
+                    "SELECT count(*) FROM pg_stat_activity "
+                    "WHERE pid = :pid AND wait_event_type = 'Lock' AND wait_event = 'transactionid'"
+                ),
+                {"pid": update_pid["pid"]},
+            )
+            return bool(waiting)
+
+    await wait_until(_update_is_queued_on_the_project_row, "the single node update never queued on the project row")
+    catalog_gate.release.set()
+
+    results = await asyncio.wait_for(asyncio.gather(upsert, update, return_exceptions=True), timeout=TIMEOUT_S)
+    failures = [result for result in results if isinstance(result, BaseException)]
+    deadlock = next((exc for exc in failures if sqlstate(exc) == DEADLOCK_SQLSTATE), None)
+    assert deadlock is None, f"deadlocked with a single node update: {deadlock}"
+    assert not failures, f"unexpected failure: {failures}"
+
+    tasks, insufficient_credits = cast("tuple[list[CompTaskAtDB], bool]", results[0])
+    assert not insufficient_credits
+    assert len(tasks) == len(project.node_ids)
+    node = await _get_node(project.engine, project.uuid, node_id)
+    assert node.ui == ui_payload
+
+
+async def test_upsert_asks_each_backend_once_per_service(
+    project: _Project,
+    catalog_gate: _CatalogGate,
+    catalog_client: CatalogClient,
+    rut_client: ResourceUsageTrackerClient,
+    mocked_rpc_client: RabbitMQRPCClient,
+    mocked_clusters_keeper_get_instance_type_details: mock.Mock,
+    wallet_info: WalletInfo,
+):
+    """both nodes of the project run the same service, so every backend is asked once for it
+
+    Every remote call happens while the upsert holds the project row, so asking per node instead
+    of per service multiplies the time for which that lock — the one the whole webserver queues
+    behind — is held.
+    """
+    assert len(project.node_ids) == 2
+    keys = {node.key for node in project.project_nodes.values()}
+    assert keys == {_SERVICE_KEY}, "the fixture must hold two nodes of the same service"
+    catalog_gate.release.set()
+
+    tasks, insufficient_credits = await _run_upsert(project, catalog_client, rut_client, mocked_rpc_client, wallet_info)
+    assert not insufficient_credits
+    assert len(tasks) == len(project.node_ids)
+
+    mocked_catalog = cast("mock.MagicMock", catalog_client)
+    mocked_catalog.get_service.assert_called_once()
+    mocked_catalog.get_service_extras.assert_called_once()
+    mocked_catalog.get_service_labels.assert_called_once()
+    mocked_catalog.get_service_resources.assert_not_called()  # the nodes carry their resources
+
+    mocked_rut = cast("mock.MagicMock", rut_client)
+    mocked_rut.get_default_pricing_and_hardware_info.assert_called_once()
+    mocked_rut.get_pricing_unit.assert_called_once()
+
+    mocked_clusters_keeper_get_instance_type_details.assert_called_once()
+    _, rpc_kwargs = mocked_clusters_keeper_get_instance_type_details.call_args
+    assert rpc_kwargs["instance_type_names"] == {_EC2_INSTANCE_TYPE}
