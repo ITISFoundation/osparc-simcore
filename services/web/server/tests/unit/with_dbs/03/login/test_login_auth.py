@@ -437,3 +437,17 @@ async def test_successful_login_resets_failed_attempts(client: TestClient):
 
             r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
             await assert_status(r, status.HTTP_200_OK)
+
+
+async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    payload = {"email": "unknown@email.com", "password": "wrong."}
+
+    for _ in range(_free_failed_login_attempts(client) + 1):
+        r = await client.post(url.path, json=payload)
+        await assert_status(r, status.HTTP_401_UNAUTHORIZED)
+
+    r = await client.post(url.path, json=payload)
+
+    await assert_status(r, status.HTTP_429_TOO_MANY_REQUESTS)
