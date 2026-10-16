@@ -1135,7 +1135,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.rule=Path(`/v0/auth/login`) && Method(`POST`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.priority=10
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.priority=7
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_login_guard, ${SWARM_STACK_NAME}_webserver_retry
     networks: &webserver_networks
       - default
