@@ -19,6 +19,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from settings_library.redis import RedisSettings
 from simcore_service_webserver.application import create_application_auth
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
@@ -43,6 +44,7 @@ def app_environment_for_wb_authz_service_dict(
     docker_compose_service_environment_dict: EnvVarsDict,
     docker_compose_service_hostname: str,
     postgres_env_vars_dict: EnvVarsDict,
+    redis_service: RedisSettings,
 ) -> EnvVarsDict:
     # Checks that docker-compose service environment is correct
     assert docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"] == "WEBSERVER_AUTHZ_APP_FACTORY"
@@ -60,6 +62,9 @@ def app_environment_for_wb_authz_service_dict(
         # the tests run outside the swarm, so they reach postgres through the ports the
         # stack publishes instead of through the service names in docker-compose
         **postgres_env_vars_dict,
+        "REDIS_HOST": redis_service.REDIS_HOST,
+        "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+        "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value() if redis_service.REDIS_PASSWORD else "",
         "HOSTNAME": docker_compose_service_hostname,
         "WEBSERVER_CELERY": "null",
         "WEBSERVER_TRACING": "null",  # BUT we will disable it for tests

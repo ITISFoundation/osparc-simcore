@@ -83,7 +83,9 @@ async def register_failed_login(app: web.Application, *, email: str, settings: L
         delay_sec = compute_delay_sec(failures, settings=settings)
         if delay_sec > 0:
             await _repository.block(app, digest=digest, duration_ms=delay_sec * 1000)
-        _logger.warning("Login back-off applied: failures=%d delay_sec=%d digest=%s", failures, delay_sec, digest[:8])
+            _logger.warning(
+                "Login back-off applied: failures=%d delay_sec=%d digest=%s", failures, delay_sec, digest[:8]
+            )
 
 
 async def clear_failed_logins(app: web.Application, *, email: str) -> None:
