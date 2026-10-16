@@ -35,10 +35,13 @@ from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.host import get_localhost_ip
 from .helpers.logging_tools import log_context
+from .helpers.stack_names import get_run_dir
+from .helpers.swarm_coordination import SwarmCoordinator, get_coordination_dir
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
 from .helpers.xdist import (
     get_max_xdist_workers,
+    get_run_owner_pid,
     get_xdist_root_tmp_path,
     is_xdist_controller,
     is_xdist_worker,
@@ -51,6 +54,10 @@ _logger: logging.Logger = logging.getLogger(__name__)
 
 _DOCKER_STACK_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
 _DOCKER_SWARM_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=2)
+
+# set when this session joined the swarm, so `pytest_sessionfinish` releases membership only
+# for sessions that actually took it
+_SWARM_JOINED_STASH_KEY: Final[pytest.StashKey[bool]] = pytest.StashKey()
 
 
 class _ResourceStillNotRemovedError(Exception):
@@ -184,30 +191,53 @@ def _leave_swarm(docker_client: docker.client.DockerClient) -> None:
         assert docker_client.swarm.leave(force=True)
 
 
+def _swarm_membership_token(basetemp: Path) -> str:
+    # the run's shared temp dir (prefixed by its parent to stay unique across users): identical in
+    # the xdist controller and every worker of one run, and unique among concurrent runs
+    run_dir = get_run_dir(basetemp)
+    return f"{run_dir.parent.name}-{run_dir.name}"
+
+
+def _swarm_coordinator(docker_client: docker.client.DockerClient) -> SwarmCoordinator:
+    return SwarmCoordinator(get_coordination_dir(docker_client.info()["ID"]))
+
+
 @pytest.fixture(scope="module")
 def docker_swarm(
     docker_client: docker.client.DockerClient,
-    keep_docker_up: bool,
     request: pytest.FixtureRequest,
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Iterator[None]:
-    """inits docker swarm"""
-    with run_once_across_workers(
-        request, tmp_path_factory, "docker_swarm", timeout=_DOCKER_SWARM_SETUP_TIMEOUT
-    ) as is_first:
-        if is_first:
-            _ensure_swarm_init(docker_client)
-            record_shared_resource(request, tmp_path_factory, kind="swarm")
+    """joins this pytest run to the daemon's docker swarm, initializing the swarm when it is down
+
+    NOTE: the swarm is ONE daemon-wide resource, potentially shared by concurrent runs (e.g. from
+    different git worktrees): membership is coordinated through files so the swarm is left only by
+    the run that ends last, and a swarm without pytest lineage (the user's own) is never left.
+    See helpers/swarm_coordination.py
+    """
+    _swarm_coordinator(docker_client).join(
+        token=_swarm_membership_token(tmp_path_factory.getbasetemp()),
+        watched_pid=get_run_owner_pid(request),
+        swarm_is_up=lambda: _is_docker_swarm_init(docker_client),
+        init_swarm=lambda: _ensure_swarm_init(docker_client),
+    )
+    request.session.stash[_SWARM_JOINED_STASH_KEY] = True
 
     yield
 
-    if is_xdist_worker(request):
-        return  # the xdist controller leaves the swarm at session end (see `pytest_sessionfinish`)
+    # NOTE: the swarm is NOT left here: later modules of this session (and other runs) may still
+    # need it; membership is released at session end (see `pytest_sessionfinish`)
+    assert _is_docker_swarm_init(docker_client)
 
-    if not keep_docker_up:
-        _leave_swarm(docker_client)
 
-    assert _is_docker_swarm_init(docker_client) is keep_docker_up
+def _own_migration_services(docker_client: docker.client.DockerClient, stack_name: str) -> list:
+    # NOTE: filter by THIS run's stack: other pytest runs may share the daemon with their
+    # own migration service, which must be left alone
+    return [
+        service
+        for service in docker_client.services.list()
+        if str(service.name).startswith(f"{stack_name}_") and "migration" in service.name  # type: ignore
+    ]
 
 
 @retry(
@@ -217,24 +247,20 @@ def docker_swarm(
 )
 def _wait_for_migration_service_to_be_removed(
     docker_client: docker.client.DockerClient,
+    stack_name: str,
 ) -> None:
-    for service in docker_client.services.list():
-        if "migration" in service.name:  # type: ignore
-            raise TryAgain
+    if _own_migration_services(docker_client, stack_name):
+        raise TryAgain
 
 
-def _force_remove_migration_service(docker_client: docker.client.DockerClient) -> None:
-    for migration_service in (
-        service
-        for service in docker_client.services.list()
-        if "migration" in service.name  # type: ignore
-    ):
+def _force_remove_migration_service(docker_client: docker.client.DockerClient, stack_name: str) -> None:
+    for migration_service in _own_migration_services(docker_client, stack_name):
         _logger.warning(
             "migration service detected before updating stack, it will be force-removed now and re-deployed "
             "to ensure DB update"
         )
         migration_service.remove()  # type: ignore
-        _wait_for_migration_service_to_be_removed(docker_client)
+        _wait_for_migration_service_to_be_removed(docker_client, stack_name)
         _logger.info("forced updated %s", migration_service.name)  # type: ignore
 
 
@@ -418,22 +444,40 @@ def _remove_stacks(docker_client: docker.client.DockerClient, stack_names: Itera
 
 
 def pytest_sessionfinish(session: pytest.Session) -> None:
-    """Under xdist, workers leave the shared docker resources up: the controller removes them here"""
-    if not is_xdist_controller(session.config) or session.config.getoption("--keep-docker-up", default=False):
-        return
+    """Releases what this run shared across processes: under xdist the workers already exited, so
+    the controller removes the stacks/networks they recorded; the swarm is left only when this run
+    was the last member using it (see helpers/swarm_coordination.py)
+    """
+    config = session.config
+    if getattr(config, "workerinput", None) is not None:
+        return  # an xdist worker: its controller releases the resources
+    if not session.stash.get(_SWARM_JOINED_STASH_KEY, False) and not is_xdist_controller(config):
+        return  # a session that never used the docker swarm
 
-    resources = read_shared_resources(session.config)
-    if not resources:
-        return
-
-    docker_client = docker.from_env()
     try:
-        # stacks first, in reverse deploy order since they share networks
-        _remove_stacks(docker_client, [r["name"] for r in reversed(resources) if r["kind"] == "stack"])
-        for network in (r["name"] for r in resources if r["kind"] == "network"):
-            _remove_network_when_free(docker_client, network)
-        if any(r["kind"] == "swarm" for r in resources):
-            _leave_swarm(docker_client)
+        docker_client = docker.from_env()
+    except docker.errors.DockerException:
+        _logger.warning("docker daemon is not reachable: skipping session docker cleanup")
+        return
+
+    keep_up = bool(config.getoption("--keep-docker-up", default=False))
+    try:
+        if is_xdist_controller(config):
+            resources = read_shared_resources(config)
+            if resources and not keep_up:
+                # stacks first, in reverse deploy order since they share networks
+                _remove_stacks(docker_client, [r["name"] for r in reversed(resources) if r["kind"] == "stack"])
+                for network in (r["name"] for r in resources if r["kind"] == "network"):
+                    _remove_network_when_free(docker_client, network)
+
+        # NOTE: the controller has no fixtures: its base temp dir is the run's shared one
+        # NOTE: like `read_shared_resources`: the controller has no fixtures, its base temp dir IS
+        # the run's shared one (the parent of every worker's)
+        basetemp: Path = config._tmp_path_factory.getbasetemp()  # type: ignore[attr-defined]  # noqa: SLF001
+        token = _swarm_membership_token(basetemp)
+        coordinator = _swarm_coordinator(docker_client)
+        if coordinator.has_member(token):
+            coordinator.leave(token=token, keep_up=keep_up, leave_swarm=lambda: _leave_swarm(docker_client))
     finally:
         docker_client.close()
 
@@ -460,10 +504,10 @@ async def docker_stack(  # noqa: C901
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
-    ops_stack_name = "pytest-ops"
+    ops_stack_name = env_vars_for_docker_compose["SWARM_OPS_STACK_NAME"]
 
-    assert core_stack_name
     assert core_stack_name.startswith("pytest-")
+    assert ops_stack_name.startswith("pytest-")
 
     def _collected_services_union(attr_name: str) -> list[str]:
         # NOTE: collection completes before any test runs, so `session.items` already lists
@@ -555,7 +599,7 @@ async def docker_stack(  # noqa: C901
 
             # NOTE: if the migration service was already running prior to this call it must
             # be force updated so that it does its job. else it remains and tests will fail
-            _force_remove_migration_service(docker_client)
+            _force_remove_migration_service(docker_client, core_stack_name)
             _make_dask_sidecar_certificates(osparc_simcore_services_dir)
             # make up-version
             for _, stack_name, compose_file in stacks:
