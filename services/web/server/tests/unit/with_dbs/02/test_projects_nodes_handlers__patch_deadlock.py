@@ -17,6 +17,7 @@ See https://github.com/ITISFoundation/private-issues/issues/669
 """
 
 import asyncio
+from collections.abc import Sequence
 from typing import Any, Final
 from unittest import mock
 
@@ -38,11 +39,6 @@ _TIMEOUT_S: Final[float] = 30.0
 _SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'"
 
 
-@pytest.mark.xfail(
-    reason="https://github.com/ITISFoundation/osparc-simcore/issues/9820",
-    raises=AssertionError,
-    strict=True,
-)
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_patch_node_does_not_deadlock_with_a_concurrent_graph_patch(
     mock_dynamic_scheduler: None,
@@ -90,7 +86,7 @@ async def test_patch_node_does_not_deadlock_with_a_concurrent_graph_patch(
     release_graph_patch.set()
 
     # both run to the end, so that a deadlock shows up as a 500 instead of a hang
-    responses: list[ClientResponse] = await asyncio.wait_for(
+    responses: Sequence[ClientResponse] = await asyncio.wait_for(
         asyncio.gather(graph_patch, label_patch), timeout=_TIMEOUT_S
     )
     for response in responses:
