@@ -105,6 +105,13 @@ async def lock_project_for_write(connection: AsyncConnection, project_uuid: uuid
     Returns:
         True if the parent project row exists, False otherwise. Callers whose DML would not
         surface a missing project on its own should check this.
+
+    Raises:
+        sqlalchemy.exc.DBAPIError (e.g. ``OperationalError`` on a serialized/deadlock 40001
+        or 40P01 error, ``InterfaceError`` if the transaction is already aborted): any DB
+        error while taking the lock. No domain error is raised here — a missing project is
+        reported through the return value, so that callers can map it to their own
+        ``ProjectNotFoundError``.
     """
     # NOTE: key_share=True without read=True renders as FOR NO KEY UPDATE
     result = await connection.execute(
