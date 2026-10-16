@@ -210,6 +210,16 @@ def docker_swarm(
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
+def _own_migration_services(docker_client: docker.client.DockerClient, stack_name: str) -> list:
+    # NOTE: filter by THIS run's stack: other pytest runs may share the daemon with their
+    # own migration service, which must be left alone
+    return [
+        service
+        for service in docker_client.services.list()
+        if str(service.name).startswith(f"{stack_name}_") and "migration" in service.name  # type: ignore
+    ]
+
+
 @retry(
     wait=wait_fixed(0.3),
     retry=retry_if_exception_type(AssertionError),
@@ -217,24 +227,20 @@ def docker_swarm(
 )
 def _wait_for_migration_service_to_be_removed(
     docker_client: docker.client.DockerClient,
+    stack_name: str,
 ) -> None:
-    for service in docker_client.services.list():
-        if "migration" in service.name:  # type: ignore
-            raise TryAgain
+    if _own_migration_services(docker_client, stack_name):
+        raise TryAgain
 
 
-def _force_remove_migration_service(docker_client: docker.client.DockerClient) -> None:
-    for migration_service in (
-        service
-        for service in docker_client.services.list()
-        if "migration" in service.name  # type: ignore
-    ):
+def _force_remove_migration_service(docker_client: docker.client.DockerClient, stack_name: str) -> None:
+    for migration_service in _own_migration_services(docker_client, stack_name):
         _logger.warning(
             "migration service detected before updating stack, it will be force-removed now and re-deployed "
             "to ensure DB update"
         )
         migration_service.remove()  # type: ignore
-        _wait_for_migration_service_to_be_removed(docker_client)
+        _wait_for_migration_service_to_be_removed(docker_client, stack_name)
         _logger.info("forced updated %s", migration_service.name)  # type: ignore
 
 
@@ -460,10 +466,10 @@ async def docker_stack(  # noqa: C901
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
-    ops_stack_name = "pytest-ops"
+    ops_stack_name = env_vars_for_docker_compose["SWARM_OPS_STACK_NAME"]
 
-    assert core_stack_name
     assert core_stack_name.startswith("pytest-")
+    assert ops_stack_name.startswith("pytest-")
 
     def _collected_services_union(attr_name: str) -> list[str]:
         # NOTE: collection completes before any test runs, so `session.items` already lists
@@ -555,7 +561,7 @@ async def docker_stack(  # noqa: C901
 
             # NOTE: if the migration service was already running prior to this call it must
             # be force updated so that it does its job. else it remains and tests will fail
-            _force_remove_migration_service(docker_client)
+            _force_remove_migration_service(docker_client, core_stack_name)
             _make_dask_sidecar_certificates(osparc_simcore_services_dir)
             # make up-version
             for _, stack_name, compose_file in stacks:
