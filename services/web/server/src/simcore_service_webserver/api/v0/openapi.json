@@ -407,7 +407,7 @@
         ],
         "summary": "Login Guard",
         "description": "checks whether a login attempt is allowed for the email, i.e. not in back-off after repeated failures",
-        "operationId": "login_guard",
+        "operationId": "auth_login_guard",
         "requestBody": {
           "content": {
             "application/json": {
