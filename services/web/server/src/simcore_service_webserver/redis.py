@@ -54,6 +54,7 @@ async def setup_redis_client(app: web.Application):
                 RedisDatabase.ANNOUNCEMENTS,
                 RedisDatabase.DOCUMENTS,
                 RedisDatabase.CELERY_TASKS,
+                RedisDatabase.LOGIN_THROTTLE,
             )
         },
         settings=redis_settings,
@@ -98,6 +99,11 @@ def get_redis_document_manager_client_sdk(app: web.Application) -> RedisClientSD
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
     redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.VALIDATION_CODES).redis
+    return redis_client
+
+
+def get_redis_login_throttle_client(app: web.Application) -> aioredis.Redis:
+    redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.LOGIN_THROTTLE).redis
     return redis_client
 
 

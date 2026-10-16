@@ -22,6 +22,7 @@ class RedisDatabase(IntEnum):
     DOCUMENTS = 10
     AIOCACHE = 11
     CHATBOX_USAGE = 12
+    LOGIN_THROTTLE = 13
 
 
 class RedisSettings(BaseCustomSettings):

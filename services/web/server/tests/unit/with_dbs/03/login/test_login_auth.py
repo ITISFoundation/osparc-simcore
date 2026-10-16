@@ -18,6 +18,8 @@ from cryptography import fernet
 from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -26,10 +28,12 @@ from simcore_postgres_database.utils_users import UsersRepo
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_INVALID_CREDENTIALS,
     MSG_LOGGED_IN,
+    MSG_LOGIN_TOO_MANY_ATTEMPTS,
     MSG_UNKNOWN_EMAIL,
     MSG_USER_BANNED,
     MSG_USER_DELETED,
@@ -382,3 +386,76 @@ async def test_multiple_users_login_logout_concurrently(
 
     # Run all user flows concurrently
     await asyncio.gather(*(user_session_flow(user) for user in multiple_users))
+
+
+@pytest.fixture
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    # long enough for a slow run not to outlive the back-off between two requests
+    return app_environment | setenvs_from_dict(monkeypatch, {"LOGIN_THROTTLE_BASE_DELAY_SEC": "60"})
+
+
+def _free_failed_login_attempts(client: TestClient) -> int:
+    assert client.app
+    login_settings = client.app[APP_SETTINGS_APPKEY].WEBSERVER_LOGIN
+    assert login_settings
+    return login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
+
+
+async def test_login_is_throttled_after_repeated_wrong_passwords(client: TestClient, mocker: MockerFixture):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+
+    async with NewUser(app=client.app) as user:
+        for _ in range(_free_failed_login_attempts(client) + 1):
+            r = await client.post(url.path, json={"email": user["email"], "password": "wrong."})
+            await assert_status(r, status.HTTP_401_UNAUTHORIZED)
+
+        check_credentials = mocker.spy(_auth_service, "check_authorized_user_credentials")
+        r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
+
+        _, error = await assert_status(r, status.HTTP_429_TOO_MANY_REQUESTS)
+        assert MSG_LOGIN_TOO_MANY_ATTEMPTS in error["message"]
+        assert int(r.headers["Retry-After"]) > 0
+        check_credentials.assert_not_called()
+
+
+async def test_login_throttle_is_per_email(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+
+    async with NewUser(app=client.app) as blocked_user, NewUser(app=client.app) as other_user:
+        for _ in range(_free_failed_login_attempts(client) + 1):
+            await client.post(url.path, json={"email": blocked_user["email"], "password": "wrong."})
+
+        r = await client.post(url.path, json={"email": other_user["email"], "password": other_user["raw_password"]})
+
+        await assert_status(r, status.HTTP_200_OK)
+
+
+async def test_successful_login_resets_failed_attempts(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    max_failures_without_block = _free_failed_login_attempts(client)
+
+    async with NewUser(app=client.app) as user:
+        for _ in range(2):
+            for _ in range(max_failures_without_block):
+                r = await client.post(url.path, json={"email": user["email"], "password": "wrong."})
+                await assert_status(r, status.HTTP_401_UNAUTHORIZED)
+
+            r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
+            await assert_status(r, status.HTTP_200_OK)
+
+
+async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient, faker: Faker):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    payload = {"email": faker.unique.email(), "password": "wrong."}
+
+    for _ in range(_free_failed_login_attempts(client) + 1):
+        r = await client.post(url.path, json=payload)
+        await assert_status(r, status.HTTP_401_UNAUTHORIZED)
+
+    r = await client.post(url.path, json=payload)
+
+    await assert_status(r, status.HTTP_429_TOO_MANY_REQUESTS)
