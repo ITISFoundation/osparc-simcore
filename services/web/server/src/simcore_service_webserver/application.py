@@ -221,6 +221,7 @@ def create_application_auth() -> web.Application:
     # Core modules
     setup_rest(app)
     setup_db(app)
+    setup_redis(app)
     setup_login_auth(app)
 
     # NOTE: *last* events

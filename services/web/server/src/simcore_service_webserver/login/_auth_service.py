@@ -15,9 +15,10 @@ from ..db.plugin import get_asyncpg_engine
 from ..groups.groups_service import is_user_by_email_in_group
 from ..products.models import Product
 from ..security import security_service
-from . import _login_service
+from . import _login_service, _login_throttle_service
 from .constants import MSG_UNKNOWN_EMAIL
 from .errors import WrongPasswordError
+from .settings import get_plugin_settings
 
 
 @functools.cache
@@ -154,6 +155,35 @@ async def check_authorized_user_credentials(
             expected_password_hash=password_hash,
             new_password_hash=await asyncio.to_thread(security_service.encrypt_password, password),
         )
+    return user
+
+
+async def authenticate_user(
+    app: web.Application,
+    *,
+    email: str,
+    password: str,
+    product: Product,
+) -> UserInfoDict:
+    """Checks login credentials, with exponential back-off after repeated failures per email
+
+    Raises:
+        web.HTTPTooManyRequests: while the email is in back-off
+        WrongPasswordError: when the password is invalid or the user does not exist
+        web.HTTPUnauthorized: 401
+    """
+    await _login_throttle_service.raise_if_login_throttled(app, email=email)
+
+    user = await get_user_or_none(app, email=email)
+    try:
+        user = await check_authorized_user_credentials(app, user, password=password, product=product)
+    except WrongPasswordError:
+        await _login_throttle_service.register_failed_login(
+            app, email=email, settings=get_plugin_settings(app, product_name=product.name)
+        )
+        raise
+
+    await _login_throttle_service.clear_failed_logins(app, email=email)
     return user
 
 
