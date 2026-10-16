@@ -80,7 +80,9 @@ async def redis_settings(
         assert deployed_databases_count is not None, "deployed redis/valkey service has no --databases?"
         db_offset = _worker_db_offset(request, deployed_databases_count)
 
-    port = get_service_published_port("simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"]))
+    port = get_service_published_port(
+        "simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"]), stack_name=prefix
+    )
     # test runner is running on the host computer
     settings = RedisSettings(
         REDIS_HOST=get_localhost_ip(),

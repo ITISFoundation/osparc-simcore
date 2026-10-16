@@ -69,7 +69,12 @@ def _pick_service(candidates: list[Service], service_name: str, target_ports: li
     stop=stop_after_attempt(10),
     after=after_log(log, logging.WARNING),
 )
-def get_service_published_port(service_name: str, target_ports: list[int] | int | None = None) -> str:
+def get_service_published_port(
+    service_name: str,
+    target_ports: list[int] | int | None = None,
+    *,
+    stack_name: str | None = None,
+) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
 
@@ -77,8 +82,12 @@ def get_service_published_port(service_name: str, target_ports: list[int] | int 
     client = docker.from_env()
 
     candidates = [s for s in client.services.list() if str(s.name).endswith(service_name)]
+    if stack_name is not None:
+        # other pytest runs may share the daemon: only consider THIS run's stack
+        candidates = [s for s in candidates if str(s.name).startswith(f"{stack_name}_")]
     if not candidates:
-        msg = f"Cannot find published port for service '{service_name}'.Probably services still not started."
+        scope = f" in stack '{stack_name}'" if stack_name else ""
+        msg = f"Cannot find published port for service '{service_name}'{scope}. Probably services still not started."
         raise RuntimeError(msg)
 
     service_ports = _pick_service(candidates, service_name, target_ports).attrs["Endpoint"].get("Ports")

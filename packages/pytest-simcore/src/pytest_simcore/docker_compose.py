@@ -29,6 +29,7 @@ from .helpers import (
 )
 from .helpers.docker import filter_service_names_for_ci, run_docker_compose_config, save_docker_infos
 from .helpers.host import get_localhost_ip
+from .helpers.stack_names import compute_stack_names, get_git_ref, get_run_token
 from .helpers.typing_env import EnvVarsDict
 from .helpers.xdist import (
     is_xdist_controller,
@@ -49,7 +50,11 @@ def temp_folder(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPat
 
 
 @pytest.fixture(scope="session")
-def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
+def env_vars_for_docker_compose(
+    env_devel_file: Path,
+    osparc_simcore_root_dir: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> EnvVarsDict:
     """
     Loads and extends .env-devel returning all environment variables key=value
 
@@ -73,7 +78,13 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
 
-    env_devel["SWARM_STACK_NAME"] = "pytest-simcore"
+    # run-scoped stack names: stack names are global inside the docker daemon, so every
+    # pytest run deploys its own (see pytest_simcore.helpers.stack_names)
+    core_stack_name, ops_stack_name = compute_stack_names(
+        get_git_ref(osparc_simcore_root_dir), get_run_token(tmp_path_factory.getbasetemp())
+    )
+    env_devel["SWARM_STACK_NAME"] = core_stack_name
+    env_devel["SWARM_OPS_STACK_NAME"] = ops_stack_name
     env_devel.setdefault("SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_"))
 
     env_devel[

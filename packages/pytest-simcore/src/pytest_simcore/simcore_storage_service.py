@@ -28,7 +28,9 @@ def storage_endpoint(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDic
 
     default_port = int(env_vars_for_docker_compose["STORAGE_ENDPOINT"].split(":")[1])
     # NOTE: full service name required to disambiguate from the ops 's3-storage' service
-    endpoint = f"{get_localhost_ip()}:{get_service_published_port(f'{prefix}_storage', default_port)}"
+    endpoint = (
+        f"{get_localhost_ip()}:{get_service_published_port(f'{prefix}_storage', default_port, stack_name=prefix)}"
+    )
 
     # nodeports takes its configuration from env variables
     old_environ = deepcopy(os.environ)
