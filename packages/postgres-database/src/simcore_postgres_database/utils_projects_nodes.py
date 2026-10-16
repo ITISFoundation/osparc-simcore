@@ -136,8 +136,6 @@ class ProjectNodesRepo:
         if not nodes:
             return []
 
-        # lock the parent project first: deadlock avoidance, see lock_project_for_write.
-        # a missing project still raises ProjectNodesProjectNotFoundError via the FK violation below
         await lock_project_for_write(connection, self.project_uuid)
 
         values = [
@@ -216,7 +214,7 @@ class ProjectNodesRepo:
         Raises:
             ProjectsNodesNodeNotFound: _description_
         """
-        # lock the parent project first: deadlock avoidance, see lock_project_for_write
+
         await lock_project_for_write(connection, self.project_uuid)
 
         update_stmt = (
@@ -241,7 +239,7 @@ class ProjectNodesRepo:
         Raises:
             Nothing special
         """
-        # lock the parent project first: deadlock avoidance, see lock_project_for_write
+
         await lock_project_for_write(connection, self.project_uuid)
 
         delete_stmt = sqlalchemy.delete(projects_nodes).where(
