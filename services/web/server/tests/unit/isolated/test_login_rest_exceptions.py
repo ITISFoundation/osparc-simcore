@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
+from models_library.users import UserID
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
 from simcore_service_webserver.login._controller.rest._rest_exceptions import (
     _handle_legacy_error_response,
@@ -93,7 +94,7 @@ async def test_tip_returns_preferred_product_display_name(
     patch_products([s4llite, s4l_product, osparc])
     mock_is_user_in_group.return_value = True
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4llite")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4llite")
 
     assert result == "Sim4Life"
 
@@ -109,7 +110,7 @@ async def test_tip_not_shown_when_no_tip_configured(
     patch_products([s4l, s4llite_product])
     mock_is_user_in_group.return_value = True
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4l")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4l")
 
     assert result is None
 
@@ -125,7 +126,7 @@ async def test_tip_not_shown_when_user_not_in_listed_products(
     patch_products([s4llite_product, s4l_product])
     # mock_is_user_in_group defaults to return_value=False
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4llite")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4llite")
 
     assert result is None
 
@@ -140,7 +141,7 @@ async def test_tip_handles_db_error_gracefully(
     patch_products([s4llite_product, s4l_product])
     mock_is_user_in_group.side_effect = RuntimeError("DB connection failed")
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4llite")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4llite")
 
     assert result is None
 
@@ -152,7 +153,7 @@ async def test_tip_handles_missing_current_product_gracefully(
 ):
     patch_products([])  # no products configured
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="unknown")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="unknown")
 
     assert result is None
 
@@ -168,7 +169,7 @@ async def test_tip_skips_listed_product_without_group_id(
     patch_products([s4llite_product, s4l_no_group])
     mock_is_user_in_group.return_value = True
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4llite")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4llite")
 
     assert result is None
 
@@ -184,7 +185,7 @@ async def test_tip_skips_unknown_listed_product(
     patch_products([s4llite, s4l_product])
     mock_is_user_in_group.return_value = True
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4llite")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4llite")
 
     assert result == "Sim4Life"
 
@@ -206,7 +207,7 @@ async def test_tip_returns_matching_product_not_first(
 
     mock_is_user_in_group.side_effect = _is_in_group
 
-    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=42, product_name="s4llite")
+    result = await _try_show_login_fallbacks_on_wrong_password(mock_app, user_id=UserID(42), product_name="s4llite")
 
     assert result == "o²S²PARC"
 

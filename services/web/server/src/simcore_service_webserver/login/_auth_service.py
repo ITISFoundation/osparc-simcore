@@ -1,7 +1,8 @@
 import asyncio
+import functools
 import secrets
 from datetime import datetime
-from typing import Final, TypedDict
+from typing import TypedDict
 
 from aiohttp import web
 from models_library.users import UserID
@@ -18,8 +19,15 @@ from . import _login_service
 from .constants import MSG_UNKNOWN_EMAIL
 from .errors import WrongPasswordError
 
-# dummy verify for unknown emails (matches wrong-password timing)
-_DUMMY_PASSWORD_HASH: Final[str] = security_service.encrypt_password(secrets.token_urlsafe(16))
+
+@functools.cache
+def _get_dummy_password_hash() -> str:
+    return security_service.encrypt_password(secrets.token_urlsafe(16))
+
+
+def _verify_against_dummy_hash(password: str) -> None:
+    # approximates the wrong-password cost for unknown emails
+    security_service.check_password(password, _get_dummy_password_hash())
 
 
 class UserInfoDict(TypedDict):
@@ -124,7 +132,7 @@ async def check_authorized_user_credentials(
     """
 
     if user is None:
-        await asyncio.to_thread(security_service.check_password, password, _DUMMY_PASSWORD_HASH)
+        await asyncio.to_thread(_verify_against_dummy_hash, password)
         raise WrongPasswordError(user_id=None, product_name=product.name)
 
     repo = UsersRepo(get_asyncpg_engine(app))

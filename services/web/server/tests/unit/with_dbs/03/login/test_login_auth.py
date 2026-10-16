@@ -151,9 +151,7 @@ async def test_login_blocked_user_with_wrong_password_does_not_reveal_status(
         r = await client.post(url.path, json={"email": user["email"], "password": "wrong."})
 
     _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
-    assert MSG_INVALID_CREDENTIALS in error["errors"][0]["message"]
-    for msg in (MSG_USER_BANNED, MSG_USER_EXPIRED, MSG_USER_DELETED, MSG_ACTIVATION_REQUIRED):
-        assert msg[:20] not in error["errors"][0]["message"]
+    assert error["errors"][0]["message"] == MSG_INVALID_CREDENTIALS
 
 
 async def test_login_inactive_user(client: TestClient):
