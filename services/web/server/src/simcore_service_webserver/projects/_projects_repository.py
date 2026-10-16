@@ -20,7 +20,10 @@ from servicelib.redis import exclusive
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_extensions import projects_extensions
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodesRepo,
+    lock_project_for_write,
+)
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -122,11 +125,7 @@ async def _lock_project_graph(
     *,
     project_uuid: ProjectID,
 ) -> None:
-    # SQLAlchemy renders key_share=True without read=True as FOR NO KEY UPDATE.
-    result = await connection.execute(
-        sa.select(projects.c.uuid).where(projects.c.uuid == f"{project_uuid}").with_for_update(key_share=True)
-    )
-    if result.scalar_one_or_none() is None:
+    if not await lock_project_for_write(connection, project_uuid):
         raise ProjectNotFoundError(project_uuid=project_uuid)
 
 
