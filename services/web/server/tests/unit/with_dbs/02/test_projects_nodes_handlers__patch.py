@@ -8,6 +8,7 @@
 
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 from http import HTTPStatus
 from typing import Final
 from unittest import mock
@@ -30,6 +31,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import (
     _projects_nodes_repository as projects_nodes_repository,
 )
+from simcore_service_webserver.projects import _projects_repository as projects_repository
 from simcore_service_webserver.projects import _projects_service as projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -523,15 +525,12 @@ _WAITERS_BEHIND_SQL: Final[str] = (
 _TIMEOUT_S: Final[float] = 30.0
 
 
-async def _wait_until(condition, what: str) -> None:
-    async def _poll() -> None:
-        while not await condition():  # noqa: ASYNC110  # polls the state of the database, no event to wait for
-            await asyncio.sleep(0.05)
-
-    try:
-        await asyncio.wait_for(_poll(), timeout=_TIMEOUT_S)
-    except TimeoutError:
-        pytest.fail(what)
+async def _wait_until(condition: Callable[[], Awaitable[bool]], what: str) -> None:
+    deadline = asyncio.get_running_loop().time() + _TIMEOUT_S
+    while not await condition():  # polls the state of the database, no event to wait for
+        if asyncio.get_running_loop().time() > deadline:
+            pytest.fail(what)
+        await asyncio.sleep(0.05)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
@@ -556,40 +555,40 @@ async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row
         resp = await client.patch(f"{url}", json={"label": "concurrent-rename"})
         assert resp.status == expected, f"PATCH returned {resp.status}"
 
-    patch_task: asyncio.Task[None] = asyncio.create_task(_patch_node())
-
     # what a graph mutation does: lock the parent project row first, then write the node rows
     async with asyncpg_engine.connect() as conn, conn.begin():
-        await conn.execute(
-            sa.text("SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"),
-            {"project_uuid": project_uuid},
-        )
+        await projects_repository._lock_project_graph(conn, project_uuid=project_uuid)  # noqa: SLF001
         holder = int(await conn.scalar(sa.text("SELECT pg_backend_pid()")))
 
+        # the PATCH starts only while the lock is held: it cannot complete before its first
+        # statement queues on the parent row, so the interleaving below is always exercised
+        patch_task: asyncio.Task[None] = asyncio.create_task(_patch_node())
+
         async def _patch_is_done_or_behind_me() -> bool:
+            # done() cannot mean "won the race": the PATCH started only after the lock above was
+            # taken, so finishing now could only come from an unrelated early failure, which the
+            # awaited patch_task below surfaces as the real error
             if patch_task.done():
                 return True
             async with asyncpg_engine.connect() as probe:
                 return bool(await probe.scalar(sa.text(_WAITERS_BEHIND_SQL), {"pid": holder}))
 
-        await _wait_until(_patch_is_done_or_behind_me, "the PATCH neither finished nor queued behind the parent lock")
+        await _wait_until(_patch_is_done_or_behind_me, "the PATCH neither failed nor queued behind the parent lock")
 
-        # the node row, written only after the parent row was locked first
-        await conn.execute(
-            sa.text("UPDATE projects_nodes SET progress = 42.0 WHERE project_uuid = :pid AND node_id = :nid"),
-            {"pid": project_uuid, "nid": node_id},
+        # the node row, written through the production repository only after the parent
+        # row was locked first, in the same transaction
+        await projects_nodes_repository.update(
+            client.app,
+            conn,
+            project_id=project_uuid,
+            node_id=node_id,
+            partial_node=PartialNode.model_construct(progress=42.0),
         )
 
     # a deadlock surfaces as a failed PATCH (its backend was aborted), not as a stuck test
     await asyncio.wait_for(patch_task, timeout=_TIMEOUT_S)
 
-    async with asyncpg_engine.connect() as conn:
-        label, progress = (
-            await conn.execute(
-                sa.text("SELECT label, progress FROM projects_nodes WHERE project_uuid = :pid AND node_id = :nid"),
-                {"pid": project_uuid, "nid": node_id},
-            )
-        ).one()
+    final_node = await projects_nodes_repository.get(client.app, project_id=project_uuid, node_id=node_id)
     # both writers got their write in
-    assert label == "concurrent-rename"
-    assert progress == 42.0
+    assert final_node.label == "concurrent-rename"
+    assert final_node.progress == pytest.approx(42.0)

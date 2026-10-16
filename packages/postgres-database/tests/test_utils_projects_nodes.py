@@ -440,14 +440,11 @@ def _sqlstate(exc: BaseException) -> str | None:
 
 
 async def _wait_until(condition: Callable[[], Awaitable[bool]], what: str) -> None:
-    async def _poll() -> None:
-        while not await condition():  # noqa: ASYNC110  # polls the state of the database, no event to wait for
-            await asyncio.sleep(0.05)
-
-    try:
-        await asyncio.wait_for(_poll(), timeout=_TIMEOUT_S)
-    except TimeoutError:
-        pytest.fail(what)
+    deadline = asyncio.get_running_loop().time() + _TIMEOUT_S
+    while not await condition():  # polls the state of the database, no event to wait for
+        if asyncio.get_running_loop().time() > deadline:
+            pytest.fail(what)
+        await asyncio.sleep(0.05)
 
 
 @pytest.mark.parametrize("pg_sa_engine", ["alembicMigration"], indirect=True)
@@ -517,5 +514,5 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
     async with asyncpg_engine.connect() as conn:
         final_node = await repo.get(conn, node_id=node.node_id)
     # both writers got their write in
-    assert final_node.progress == 42.0
+    assert final_node.progress == pytest.approx(42.0)
     assert final_node.label == "plain-update"
