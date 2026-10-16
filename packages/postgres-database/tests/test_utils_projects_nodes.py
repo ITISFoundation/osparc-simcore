@@ -415,18 +415,6 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
         await ProjectNodesRepo.get_project_id_from_node_id(asyncpg_connection, node_id=project1_nodes[0].node_id)
 
 
-#
-# Deadlock regression (https://github.com/ITISFoundation/private-issues/issues/669)
-#
-# On 2026-10-16 production raised DeadlockDetectedError on PATCH projects/{pid}/nodes/{nid}:
-# a plain node update locks the node row and then, through the `projects_nodes_changed`
-# trigger, the parent `projects` row; the graph mutation locks the parent row first and then
-# the node row. The two orders in parallel close a cycle. All writers now take the parent row
-# first (see lock_project_for_write), so both transactions must simply queue.
-#
-
-# test instrumentation only: which backend holds/waits on which lock (see the precedent in
-# director-v2 test_comp_tasks_upsert_concurrency.py)
 _WAITERS_BEHIND_SQL: Final[str] = (
     "SELECT count(*) FROM pg_stat_activity "
     "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
