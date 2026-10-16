@@ -39,6 +39,10 @@ MSG_INVALID_CREDENTIALS: Final[str] = user_message(
 )
 MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
 MSG_LOGGED_OUT: Final[str] = user_message("You have successfully signed out.", _version=1)
+MSG_LOGIN_TOO_MANY_ATTEMPTS: Final[str] = user_message(
+    "Too many failed login attempts. Please wait before trying again.",
+    _version=1,
+)
 MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
     "You've recently requested a password reset. "
     "Please check your email for the reset link or wait before requesting another one.",

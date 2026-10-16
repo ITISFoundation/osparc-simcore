@@ -400,6 +400,41 @@
         }
       }
     },
+    "/v0/auth:login-guard": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login Guard",
+        "description": "checks whether a login attempt is allowed for the email, i.e. not in back-off after repeated failures",
+        "operationId": "login_guard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/auth/reset-password": {
       "post": {
         "tags": [
