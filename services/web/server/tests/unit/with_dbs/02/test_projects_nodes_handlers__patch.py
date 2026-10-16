@@ -6,11 +6,14 @@
 # pylint: disable=too-many-statements
 
 
+import asyncio
 import json
 from http import HTTPStatus
+from typing import Final
 from unittest import mock
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from deepdiff import DeepDiff
 from models_library.projects_nodes import PartialNode
@@ -29,6 +32,7 @@ from simcore_service_webserver.projects import (
 )
 from simcore_service_webserver.projects import _projects_service as projects_service
 from simcore_service_webserver.projects.models import ProjectDict
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -498,3 +502,94 @@ async def test_patch_project_node_service_key_with_error(
     ):
         resp = await client.patch(f"{url}", json=_patch_version)
         assert resp.status == status.HTTP_404_NOT_FOUND
+
+
+#
+# Deadlock regression (https://github.com/ITISFoundation/private-issues/issues/669)
+#
+# On 2026-10-16 production raised DeadlockDetectedError on this very entrypoint: the PATCH
+# wrote the node row and the `projects_nodes_changed` trigger then locked the parent
+# `projects` row, while a graph mutation had locked the parent row first and was going for
+# the node rows. This test runs the real endpoint against that interleaving; the repo-level
+# twin is packages/postgres-database/tests/test_utils_projects_nodes.py
+# ::test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer
+#
+
+# test instrumentation only: which backend holds/waits on which lock
+_WAITERS_BEHIND_SQL: Final[str] = (
+    "SELECT count(*) FROM pg_stat_activity "
+    "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
+)
+_TIMEOUT_S: Final[float] = 30.0
+
+
+async def _wait_until(condition, what: str) -> None:
+    async def _poll() -> None:
+        while not await condition():  # noqa: ASYNC110  # polls the state of the database, no event to wait for
+            await asyncio.sleep(0.05)
+
+    try:
+        await asyncio.wait_for(_poll(), timeout=_TIMEOUT_S)
+    except TimeoutError:
+        pytest.fail(what)
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
+async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row_writer(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_rpc_check_for_service: None,
+    mocked_notify_project_node_update,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    asyncpg_engine: AsyncEngine,
+):
+    """a real PATCH must queue behind the parent project row instead of deadlocking with it"""
+    project_uuid = user_project["uuid"]
+    node_id = next(iter(user_project["workbench"]))
+    assert client.app
+    url = client.app.router["patch_project_node"].url_for(project_id=project_uuid, node_id=node_id)
+
+    async def _patch_node() -> None:
+        resp = await client.patch(f"{url}", json={"label": "concurrent-rename"})
+        assert resp.status == expected, f"PATCH returned {resp.status}"
+
+    patch_task: asyncio.Task[None] = asyncio.create_task(_patch_node())
+
+    # what a graph mutation does: lock the parent project row first, then write the node rows
+    async with asyncpg_engine.connect() as conn, conn.begin():
+        await conn.execute(
+            sa.text("SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"),
+            {"project_uuid": project_uuid},
+        )
+        holder = int(await conn.scalar(sa.text("SELECT pg_backend_pid()")))
+
+        async def _patch_is_done_or_behind_me() -> bool:
+            if patch_task.done():
+                return True
+            async with asyncpg_engine.connect() as probe:
+                return bool(await probe.scalar(sa.text(_WAITERS_BEHIND_SQL), {"pid": holder}))
+
+        await _wait_until(_patch_is_done_or_behind_me, "the PATCH neither finished nor queued behind the parent lock")
+
+        # the node row, written only after the parent row was locked first
+        await conn.execute(
+            sa.text("UPDATE projects_nodes SET progress = 42.0 WHERE project_uuid = :pid AND node_id = :nid"),
+            {"pid": project_uuid, "nid": node_id},
+        )
+
+    # a deadlock surfaces as a failed PATCH (its backend was aborted), not as a stuck test
+    await asyncio.wait_for(patch_task, timeout=_TIMEOUT_S)
+
+    async with asyncpg_engine.connect() as conn:
+        label, progress = (
+            await conn.execute(
+                sa.text("SELECT label, progress FROM projects_nodes WHERE project_uuid = :pid AND node_id = :nid"),
+                {"pid": project_uuid, "nid": node_id},
+            )
+        ).one()
+    # both writers got their write in
+    assert label == "concurrent-rename"
+    assert progress == 42.0

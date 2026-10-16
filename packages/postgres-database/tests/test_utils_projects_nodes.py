@@ -7,7 +7,7 @@ import random
 import uuid
 from collections.abc import Awaitable, Callable
 from random import randint
-from typing import Any
+from typing import Any, Final
 
 import pytest
 import sqlalchemy
@@ -21,6 +21,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNonUniqueNodeFoundError,
     ProjectNodesProjectNotFoundError,
     ProjectNodesRepo,
+    lock_project_for_write,
 )
 from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -424,17 +425,29 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
 # first (see lock_project_for_write), so both transactions must simply queue.
 #
 
-_LOCK_PARENT_ROW_SQL = "SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"
-_WAITERS_BEHIND_SQL = (
+# test instrumentation only: which backend holds/waits on which lock (see the precedent in
+# director-v2 test_comp_tasks_upsert_concurrency.py)
+_WAITERS_BEHIND_SQL: Final[str] = (
     "SELECT count(*) FROM pg_stat_activity "
     "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
 )
-_DEADLOCK_SQLSTATE = "40P01"
-_TIMEOUT_S = 30.0
+_DEADLOCK_SQLSTATE: Final[str] = "40P01"
+_TIMEOUT_S: Final[float] = 30.0
 
 
 def _sqlstate(exc: BaseException) -> str | None:
     return getattr(getattr(exc, "orig", None), "sqlstate", None) or getattr(exc, "sqlstate", None)
+
+
+async def _wait_until(condition: Callable[[], Awaitable[bool]], what: str) -> None:
+    async def _poll() -> None:
+        while not await condition():  # noqa: ASYNC110  # polls the state of the database, no event to wait for
+            await asyncio.sleep(0.05)
+
+    try:
+        await asyncio.wait_for(_poll(), timeout=_TIMEOUT_S)
+    except TimeoutError:
+        pytest.fail(what)
 
 
 @pytest.mark.parametrize("pg_sa_engine", ["alembicMigration"], indirect=True)
@@ -466,9 +479,10 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
     node_writer: asyncio.Task[None] = asyncio.create_task(_node_writer())
 
     async def _parent_first_writer() -> None:
-        # what the webserver graph mutation does: parent row lock, then the node rows
+        # what the webserver graph mutation does: parent row lock (its _lock_project_graph is
+        # exactly this call), then the node rows through the same repo the mutation uses
         async with asyncpg_engine.connect() as conn, conn.begin():
-            await conn.execute(sqlalchemy.text(_LOCK_PARENT_ROW_SQL), {"project_uuid": f"{project_uuid}"})
+            assert await lock_project_for_write(conn, project_uuid)
             holder = int(await conn.scalar(sqlalchemy.text("SELECT pg_backend_pid()")))
             # the lock is held now: release the node writer, it must queue behind it
             node_start.set()
@@ -481,18 +495,12 @@ async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
                         await probe.scalar(sqlalchemy.text(_WAITERS_BEHIND_SQL), {"pid": holder}),
                     )
 
-            while not await _node_writer_is_done_or_behind_me():  # noqa: ASYNC110  # polls the db lock state
-                await asyncio.sleep(0.05)
+            await _wait_until(
+                _node_writer_is_done_or_behind_me, "the node writer neither finished nor queued behind the parent lock"
+            )
 
             # the node row, written only after the parent row was locked first
-            await conn.execute(
-                projects_nodes.update()
-                .values(progress=42.0)
-                .where(
-                    (projects_nodes.c.project_uuid == f"{project_uuid}")
-                    & (projects_nodes.c.node_id == f"{node.node_id}")
-                )
-            )
+            await repo.update(conn, node_id=node.node_id, progress=42.0)
 
     parent_writer: asyncio.Task[None] = asyncio.create_task(_parent_first_writer())
 
