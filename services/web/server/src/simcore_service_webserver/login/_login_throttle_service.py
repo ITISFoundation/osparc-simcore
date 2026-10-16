@@ -4,11 +4,12 @@ Failures are counted per submitted email, whether or not the account exists, so
 the back-off does not reveal which emails are registered.
 """
 
+import asyncio
 import contextlib
 import hashlib
 import logging
 import math
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -22,13 +23,15 @@ from .settings import LoginSettings
 _logger = logging.getLogger(__name__)
 
 _MAX_BACKOFF_EXPONENT = 32
+_REDIS_TIMEOUT_SEC = 5
 
 
-@contextlib.contextmanager
-def _handle_redis_errors_as_503() -> Iterator[None]:
+@contextlib.asynccontextmanager
+async def _handle_redis_errors_as_503() -> AsyncIterator[None]:
     try:
-        yield
-    except RedisError as err:
+        async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
+            yield
+    except (RedisError, TimeoutError) as err:
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Login throttle unavailable due to redis error",
@@ -56,7 +59,7 @@ def compute_delay_sec(failures: int, *, settings: LoginSettings) -> int:
 
 async def get_login_retry_after_sec(app: web.Application, *, email: str) -> int:
     """Seconds until the next login attempt is allowed for this email (0 if allowed now)"""
-    with _handle_redis_errors_as_503():
+    async with _handle_redis_errors_as_503():
         ttl_ms = await _repository.get_block_ttl_ms(app, digest=_get_digest(email))
     return math.ceil(ttl_ms / 1000)
 
@@ -76,7 +79,7 @@ async def raise_if_login_throttled(app: web.Application, *, email: str) -> None:
 
 async def register_failed_login(app: web.Application, *, email: str, settings: LoginSettings) -> None:
     digest = _get_digest(email)
-    with _handle_redis_errors_as_503():
+    async with _handle_redis_errors_as_503():
         failures = await _repository.increment_failures(
             app, digest=digest, window_sec=settings.LOGIN_THROTTLE_WINDOW_SEC
         )
@@ -91,8 +94,9 @@ async def register_failed_login(app: web.Application, *, email: str, settings: L
 async def clear_failed_logins(app: web.Application, *, email: str) -> None:
     """Best effort: the user is already authenticated and a stale counter expires by itself"""
     try:
-        await _repository.clear(app, digest=_get_digest(email))
-    except RedisError as err:
+        async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
+            await _repository.clear(app, digest=_get_digest(email))
+    except (RedisError, TimeoutError) as err:
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Could not clear failed login counter after a successful login",
