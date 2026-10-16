@@ -6,6 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
+from simcore_postgres_database.utils_projects_nodes import lock_project_for_write
 from simcore_postgres_database.utils_repos import (
     merge_jsonb_patch_expression,
     pass_or_acquire_connection,
@@ -83,6 +84,9 @@ async def add(
         values["required_resources"] = required_resources
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # lock the parent project before the node row: same order as _lock_project_graph,
+        # the reverse order deadlocks with the projects_nodes_changed trigger (see lock_project_for_write)
+        await lock_project_for_write(conn, project_id)
         await conn.execute(projects_nodes.insert().values(project_uuid=f"{project_id}", node_id=f"{node_id}", **values))
 
 
@@ -94,6 +98,9 @@ async def delete(
     node_id: NodeID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # lock the parent project before the node row: same order as _lock_project_graph,
+        # the reverse order deadlocks with the projects_nodes_changed trigger (see lock_project_for_write)
+        await lock_project_for_write(conn, project_id)
         result = await conn.execute(
             projects_nodes.delete().where(
                 (projects_nodes.c.project_uuid == f"{project_id}") & (projects_nodes.c.node_id == f"{node_id}")
@@ -182,6 +189,9 @@ async def update(
         values["ui"] = merge_jsonb_patch_expression(projects_nodes.c.ui, values["ui"])
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        # lock the parent project before the node row: same order as _lock_project_graph,
+        # the reverse order deadlocks with the projects_nodes_changed trigger (see lock_project_for_write)
+        await lock_project_for_write(conn, project_id)
         result = await conn.execute(
             projects_nodes.update()
             .values(**values)

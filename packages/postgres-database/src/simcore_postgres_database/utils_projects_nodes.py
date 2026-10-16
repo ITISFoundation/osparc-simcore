@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
 from .utils_aiosqlalchemy import map_db_exception
@@ -90,6 +91,28 @@ class ProjectNode(ProjectNodeCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+async def lock_project_for_write(connection: AsyncConnection, project_uuid: uuid.UUID) -> bool:
+    """Takes the project-wide write lock: FOR NO KEY UPDATE on the parent ``projects`` row.
+
+    Every writer of ``projects_nodes`` MUST take this lock BEFORE any INSERT/UPDATE/DELETE on
+    ``projects_nodes``: the ``projects_nodes_changed`` trigger updates that same parent row on
+    every node write, so writers that take the locks in the opposite order deadlock, see
+    https://github.com/ITISFoundation/private-issues/issues/669
+
+    Re-acquiring the lock within the same transaction is a no-op, so callers already holding it
+    (e.g. the webserver graph mutations) are unaffected.
+
+    Returns:
+        True if the parent project row exists, False otherwise. Callers whose DML would not
+        surface a missing project on its own should check this.
+    """
+    # NOTE: key_share=True without read=True renders as FOR NO KEY UPDATE
+    result = await connection.execute(
+        sqlalchemy.select(projects.c.uuid).where(projects.c.uuid == f"{project_uuid}").with_for_update(key_share=True)
+    )
+    return result.scalar_one_or_none() is not None
+
+
 @dataclass(frozen=True, kw_only=True)
 class ProjectNodesRepo:
     project_uuid: uuid.UUID
@@ -112,6 +135,10 @@ class ProjectNodesRepo:
         """
         if not nodes:
             return []
+
+        # lock the parent project first: deadlock avoidance, see lock_project_for_write.
+        # a missing project still raises ProjectNodesProjectNotFoundError via the FK violation below
+        await lock_project_for_write(connection, self.project_uuid)
 
         values = [
             {
@@ -189,6 +216,9 @@ class ProjectNodesRepo:
         Raises:
             ProjectsNodesNodeNotFound: _description_
         """
+        # lock the parent project first: deadlock avoidance, see lock_project_for_write
+        await lock_project_for_write(connection, self.project_uuid)
+
         update_stmt = (
             projects_nodes.update()
             .values(**values)
@@ -211,6 +241,9 @@ class ProjectNodesRepo:
         Raises:
             Nothing special
         """
+        # lock the parent project first: deadlock avoidance, see lock_project_for_write
+        await lock_project_for_write(connection, self.project_uuid)
+
         delete_stmt = sqlalchemy.delete(projects_nodes).where(
             (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_id}")
         )

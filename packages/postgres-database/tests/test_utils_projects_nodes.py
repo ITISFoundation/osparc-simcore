@@ -412,3 +412,102 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
     ) == project2_nodes[0].model_dump(include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"}))
     with pytest.raises(ProjectNodesNonUniqueNodeFoundError):
         await ProjectNodesRepo.get_project_id_from_node_id(asyncpg_connection, node_id=project1_nodes[0].node_id)
+
+
+#
+# Deadlock regression (https://github.com/ITISFoundation/private-issues/issues/669)
+#
+# On 2026-10-16 production raised DeadlockDetectedError on PATCH projects/{pid}/nodes/{nid}:
+# a plain node update locks the node row and then, through the `projects_nodes_changed`
+# trigger, the parent `projects` row; the graph mutation locks the parent row first and then
+# the node row. The two orders in parallel close a cycle. All writers now take the parent row
+# first (see lock_project_for_write), so both transactions must simply queue.
+#
+
+_LOCK_PARENT_ROW_SQL = "SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"
+_WAITERS_BEHIND_SQL = (
+    "SELECT count(*) FROM pg_stat_activity "
+    "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
+)
+_DEADLOCK_SQLSTATE = "40P01"
+_TIMEOUT_S = 30.0
+
+
+def _sqlstate(exc: BaseException) -> str | None:
+    return getattr(getattr(exc, "orig", None), "sqlstate", None) or getattr(exc, "sqlstate", None)
+
+
+@pytest.mark.parametrize("pg_sa_engine", ["alembicMigration"], indirect=True)
+async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
+    asyncpg_engine: AsyncEngine,
+    registered_project: dict[str, Any],
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+):
+    """a single node update must not deadlock with a writer that locked the parent project first
+
+    Only runs against the migrated database: the `projects_nodes_changed` trigger, which makes
+    the inversion possible, is created by a migration and not by the model metadata.
+    """
+    project_uuid = uuid.UUID(registered_project["uuid"])
+    repo = ProjectNodesRepo(project_uuid=project_uuid)
+    async with asyncpg_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+        [node] = await repo.add(conn, nodes=[create_fake_projects_node()])
+
+    node_start = asyncio.Event()
+
+    async def _node_writer() -> None:
+        # what PATCH projects/*/nodes/* does for ui/progress: a single node write whose
+        # trigger touches the parent row
+        await node_start.wait()
+        async with asyncpg_engine.connect() as conn, conn.begin():
+            await repo.update(conn, node_id=node.node_id, label="plain-update")
+
+    node_writer: asyncio.Task[None] = asyncio.create_task(_node_writer())
+
+    async def _parent_first_writer() -> None:
+        # what the webserver graph mutation does: parent row lock, then the node rows
+        async with asyncpg_engine.connect() as conn, conn.begin():
+            await conn.execute(sqlalchemy.text(_LOCK_PARENT_ROW_SQL), {"project_uuid": f"{project_uuid}"})
+            holder = int(await conn.scalar(sqlalchemy.text("SELECT pg_backend_pid()")))
+            # the lock is held now: release the node writer, it must queue behind it
+            node_start.set()
+
+            async def _node_writer_is_done_or_behind_me() -> bool:
+                if node_writer.done():
+                    return True
+                async with asyncpg_engine.connect() as probe:
+                    return bool(
+                        await probe.scalar(sqlalchemy.text(_WAITERS_BEHIND_SQL), {"pid": holder}),
+                    )
+
+            while not await _node_writer_is_done_or_behind_me():  # noqa: ASYNC110  # polls the db lock state
+                await asyncio.sleep(0.05)
+
+            # the node row, written only after the parent row was locked first
+            await conn.execute(
+                projects_nodes.update()
+                .values(progress=42.0)
+                .where(
+                    (projects_nodes.c.project_uuid == f"{project_uuid}")
+                    & (projects_nodes.c.node_id == f"{node.node_id}")
+                )
+            )
+
+    parent_writer: asyncio.Task[None] = asyncio.create_task(_parent_first_writer())
+
+    # both run to completion so that a deadlock surfaces as a failure here instead of
+    # cancelling the survivor
+    results = await asyncio.wait_for(
+        asyncio.gather(parent_writer, node_writer, return_exceptions=True), timeout=_TIMEOUT_S
+    )
+    failures = [result for result in results if isinstance(result, BaseException)]
+    deadlock = next((exc for exc in failures if _sqlstate(exc) == _DEADLOCK_SQLSTATE), None)
+    assert deadlock is None, f"deadlocked with the parent row writer: {deadlock}"
+    assert not failures, f"unexpected failure: {failures}"
+
+    async with asyncpg_engine.connect() as conn:
+        final_node = await repo.get(conn, node_id=node.node_id)
+    # both writers got their write in
+    assert final_node.progress == 42.0
+    assert final_node.label == "plain-update"
