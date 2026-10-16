@@ -42,9 +42,17 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
 from pydantic import ByteSize, PositiveInt, TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.postgres_locks import (
+    DEADLOCK_SQLSTATE,
+    TIMEOUT_S,
+    count_lock_waiters,
+    count_lock_waiters_behind,
+    get_backend_pid,
+    sqlstate,
+    wait_until,
+)
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_nodes import ProjectNode, ProjectNodesRepo
-from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.catalog import CatalogClient
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import CompTasksRepository
 from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils import (
@@ -66,18 +74,8 @@ _EC2_INSTANCE_TYPE: Final[str] = "c5.xlarge"
 _REQUESTED_CPUS: Final[float] = 1.0
 _REQUESTED_RAM: Final[int] = 1024 * 1024 * 1024
 
-_DEADLOCK_SQLSTATE: Final[str] = "40P01"
-_TIMEOUT_S: Final[float] = 30.0
-
 # the lock the webserver takes before it mutates the graph (see projects._projects_repository)
 _LOCK_GRAPH_SQL: Final[str] = "SELECT uuid FROM projects WHERE uuid = :project_uuid FOR NO KEY UPDATE"
-_SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = (
-    "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid()"
-)
-_WAITERS_BEHIND_SQL: Final[str] = (
-    "SELECT count(*) FROM pg_stat_activity "
-    "WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND :pid = ANY(pg_blocking_pids(pid))"
-)
 
 
 def _requested_resources() -> dict[str, Any]:
@@ -237,21 +235,6 @@ async def project(
     )
 
 
-async def _wait_until(condition: Callable[[], Awaitable[bool]], what: str) -> None:
-    async def _poll() -> None:
-        while not await condition():  # noqa: ASYNC110  # polls the state of the database, no event to wait for
-            await asyncio.sleep(0.05)
-
-    try:
-        await asyncio.wait_for(_poll(), timeout=_TIMEOUT_S)
-    except TimeoutError:
-        pytest.fail(what)
-
-
-def _sqlstate(exc: BaseException) -> str | None:
-    return getattr(getattr(exc, "orig", None), "sqlstate", None) or getattr(exc, "sqlstate", None)
-
-
 async def _get_node(engine: AsyncEngine, project_uuid: ProjectID, node_id: NodeID) -> ProjectNode:
     async with engine.connect() as conn:
         return await ProjectNodesRepo(project_uuid=project_uuid).get(conn, node_id=node_id)
@@ -272,7 +255,7 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
 
     async def _graph_mutation() -> None:
         # director-v2 is inside `upsert_tasks_from_project`, i.e. it read the project already
-        await asyncio.wait_for(catalog_gate.called.wait(), timeout=_TIMEOUT_S)
+        await asyncio.wait_for(catalog_gate.called.wait(), timeout=TIMEOUT_S)
         projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
         async with project.engine.connect() as conn, conn.begin():
             # what the webserver does before touching any node, see run_project_graph_mutation
@@ -281,15 +264,14 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
 
             # Hold the lock until director-v2 either finished, i.e. it had to wait for this lock
             # before doing anything, or is stuck behind it halfway through its writes.
-            holder = int(await conn.scalar(sa.text("SELECT pg_backend_pid()")))
+            holder = await get_backend_pid(conn)
 
             async def _director_v2_is_done_or_blocked() -> bool:
                 if upsert.done():
                     return True
-                async with project.engine.connect() as probe:
-                    return bool(await probe.scalar(sa.text(_WAITERS_BEHIND_SQL), {"pid": holder}))
+                return await count_lock_waiters_behind(project.engine, holder) > 0
 
-            await _wait_until(_director_v2_is_done_or_blocked, "director-v2 neither finished nor waited")
+            await wait_until(_director_v2_is_done_or_blocked, "director-v2 neither finished nor waited")
 
             # the nodes are written in the opposite order of director-v2's, as webserver did
             for node_id in reversed(project.node_ids):
@@ -298,10 +280,9 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
     async def _graph_mutation_is_locked_or_queued() -> bool:
         if graph_locked.is_set():
             return True
-        async with project.engine.connect() as probe:
-            return bool(await probe.scalar(sa.text(_SOMEONE_WAITS_FOR_A_LOCK_SQL)))
+        return await count_lock_waiters(project.engine) > 0
 
-    upsert: asyncio.Task[tuple[list[CompTaskAtDB], bool]] = asyncio.create_task(
+    upsert = asyncio.create_task(
         CompTasksRepository(project.engine).upsert_tasks_from_project(
             project=project.project_row,
             project_nodes=project.project_nodes,
@@ -318,15 +299,15 @@ async def test_upsert_does_not_deadlock_with_a_concurrent_graph_mutation(
 
     # the mutation either got the lock, or waits for director-v2 to release it: let the catalog
     # call return only then, so that director-v2 has to write the nodes while the mutation runs
-    await asyncio.wait_for(catalog_gate.called.wait(), timeout=_TIMEOUT_S)
-    await _wait_until(_graph_mutation_is_locked_or_queued, "the graph mutation neither locked nor queued")
+    await asyncio.wait_for(catalog_gate.called.wait(), timeout=TIMEOUT_S)
+    await wait_until(_graph_mutation_is_locked_or_queued, "the graph mutation neither locked nor queued")
     catalog_gate.release.set()
 
     # both run to the end, whichever way each of them ends, so that a deadlock shows up as a
     # failure of this test instead of cancelling the writer that survived it
-    results = await asyncio.wait_for(asyncio.gather(upsert, mutation, return_exceptions=True), timeout=_TIMEOUT_S)
+    results = await asyncio.wait_for(asyncio.gather(upsert, mutation, return_exceptions=True), timeout=TIMEOUT_S)
     failures = [result for result in results if isinstance(result, BaseException)]
-    deadlock = next((exc for exc in failures if _sqlstate(exc) == _DEADLOCK_SQLSTATE), None)
+    deadlock = next((exc for exc in failures if sqlstate(exc) == DEADLOCK_SQLSTATE), None)
     assert deadlock is None, f"deadlocked with the graph mutation: {deadlock}"
     assert not failures, f"unexpected failure: {failures}"
 

@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 import sqlalchemy
 from faker import Faker
+from pytest_simcore.helpers import postgres_locks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.utils_projects_nodes import (
@@ -21,6 +22,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNonUniqueNodeFoundError,
     ProjectNodesProjectNotFoundError,
     ProjectNodesRepo,
+    lock_project_for_write,
 )
 from sqlalchemy.engine.row import RowMapping
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -412,3 +414,71 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
     ) == project2_nodes[0].model_dump(include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"}))
     with pytest.raises(ProjectNodesNonUniqueNodeFoundError):
         await ProjectNodesRepo.get_project_id_from_node_id(asyncpg_connection, node_id=project1_nodes[0].node_id)
+
+
+@pytest.mark.parametrize("pg_sa_engine", ["alembicMigration"], indirect=True)
+async def test_node_writes_do_not_deadlock_with_a_concurrent_parent_row_writer(
+    asyncpg_engine: AsyncEngine,
+    registered_project: dict[str, Any],
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+):
+    """a single node update must not deadlock with a writer that locked the parent project first
+
+    Only runs against the migrated database: the `projects_nodes_changed` trigger, which makes
+    the inversion possible, is created by a migration and not by the model metadata.
+    """
+    project_uuid = uuid.UUID(registered_project["uuid"])
+    repo = ProjectNodesRepo(project_uuid=project_uuid)
+    async with asyncpg_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+        [node] = await repo.add(conn, nodes=[create_fake_projects_node()])
+
+    node_start = asyncio.Event()
+
+    async def _node_writer() -> None:
+        # what PATCH projects/*/nodes/* does for ui/progress: a single node write whose
+        # trigger touches the parent row
+        await node_start.wait()
+        async with asyncpg_engine.connect() as conn, conn.begin():
+            await repo.update(conn, node_id=node.node_id, label="plain-update")
+
+    node_writer = asyncio.create_task(_node_writer())
+
+    async def _parent_first_writer() -> None:
+        # what the webserver graph mutation does: parent row lock (its _lock_project_graph is
+        # exactly this call), then the node rows through the same repo the mutation uses
+        async with asyncpg_engine.connect() as conn, conn.begin():
+            assert await lock_project_for_write(conn, project_uuid)
+            holder = await postgres_locks.get_backend_pid(conn)
+            # the lock is held now: release the node writer, it must queue behind it
+            node_start.set()
+
+            async def _node_writer_is_done_or_behind_me() -> bool:
+                if node_writer.done():
+                    return True
+                return await postgres_locks.count_lock_waiters_behind(asyncpg_engine, holder) > 0
+
+            await postgres_locks.wait_until(
+                _node_writer_is_done_or_behind_me, "the node writer neither finished nor queued behind the parent lock"
+            )
+
+            # the node row, written only after the parent row was locked first
+            await repo.update(conn, node_id=node.node_id, progress=42.0)
+
+    parent_writer = asyncio.create_task(_parent_first_writer())
+
+    # both run to completion so that a deadlock surfaces as a failure here instead of
+    # cancelling the survivor
+    results = await asyncio.wait_for(
+        asyncio.gather(parent_writer, node_writer, return_exceptions=True), timeout=postgres_locks.TIMEOUT_S
+    )
+    failures = [result for result in results if isinstance(result, BaseException)]
+    deadlock = next((exc for exc in failures if postgres_locks.sqlstate(exc) == postgres_locks.DEADLOCK_SQLSTATE), None)
+    assert deadlock is None, f"deadlocked with the parent row writer: {deadlock}"
+    assert not failures, f"unexpected failure: {failures}"
+
+    async with asyncpg_engine.connect() as conn:
+        final_node = await repo.get(conn, node_id=node.node_id)
+    # both writers got their write in
+    assert final_node.progress == pytest.approx(42.0)
+    assert final_node.label == "plain-update"
