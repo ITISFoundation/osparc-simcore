@@ -39,7 +39,7 @@ def login_settings() -> LoginSettings:
 @pytest.fixture
 async def fake_redis(mocker: MockerFixture) -> AsyncIterator[FakeAsyncRedis]:
     redis_client = FakeAsyncRedis()
-    mocker.patch.object(_login_throttle_repository, "get_redis_validation_code_client", return_value=redis_client)
+    mocker.patch.object(_login_throttle_repository, "get_redis_login_throttle_client", return_value=redis_client)
     yield redis_client
     await redis_client.aclose()
 
