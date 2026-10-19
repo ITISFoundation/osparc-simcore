@@ -369,7 +369,7 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==80.9.0
+setuptools==84.0.0
     # via
     #   moto
     #   pytest-celery

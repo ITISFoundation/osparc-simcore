@@ -372,7 +372,7 @@ s3transfer==0.11.3
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==82.0.1
+setuptools==84.0.0
     # via moto
 simcore-service-storage-sdk @ git+https://github.com/ITISFoundation/osparc-simcore.git@cfdf4f86d844ebb362f4f39e9c6571d561b72897#subdirectory=services/storage/client-sdk/python
     # via -r requirements/_test.in
