@@ -83,7 +83,7 @@ def get_service_published_port(
 
     candidates = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if stack_name is not None:
-        # other pytest runs may share the daemon: only consider THIS run's stack
+        # other checkouts may share the daemon: only consider THIS checkout's stack
         candidates = [s for s in candidates if str(s.name).startswith(f"{stack_name}_")]
     if not candidates:
         scope = f" in stack '{stack_name}'" if stack_name else ""

@@ -191,8 +191,8 @@ def mock_env(
             "REGISTRY_URL": faker.url(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-            # NOTE: the run-scoped stack name, so that swarm services created by tests
-            # (fake sidecars, ...) are observed/cleaned per run and never per branch
+            # NOTE: the checkout-scoped stack name, so that swarm services created by tests
+            # (fake sidecars, ...) are observed/cleaned per checkout and never per branch
             "SWARM_STACK_NAME": env_vars_for_docker_compose["SWARM_STACK_NAME"],
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
             "DIRECTOR_V2_TRACING": "null",

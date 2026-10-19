@@ -1,15 +1,16 @@
-"""Run-scoped names for the docker stacks the integration tests deploy.
+"""Checkout-scoped names for the docker stacks the integration tests deploy.
 
 Stack and service names are global inside a docker daemon, so two pytest sessions
-running concurrently on the same machine (e.g. from two git worktrees of this repo)
-must not deploy under the same names. Every run therefore deploys its own core stack
-``pytest-<branch>-<uid>`` plus a companion ops stack ``pytest-<branch>-<uid>-ops``:
+running from different checkouts of this repo on one machine (e.g. two git worktrees)
+must not deploy under the same names. Every checkout therefore deploys its own core
+stack ``pytest-<branch>-<uid>`` plus a companion ops stack ``pytest-<branch>-<uid>-ops``:
 
-- the *branch* fragment makes the stacks recognizable per checkout
+- the *branch* fragment makes the stacks recognizable
   (``docker stack ls | grep pytest-``)
-- the *uid* fragment (hash of the run's shared temp dir) keeps two concurrent runs of
-  the SAME branch apart, and is identical across the xdist workers of one run so they
-  all agree on the stack name.
+- the *uid* fragment (hash of the checkout directory) tells checkouts apart — including
+  two worktrees on the same branch — and stays *stable across runs* of one checkout, so
+  a stack kept up with ``--keep-docker-up`` is re-deployed onto instead of piled up next
+  to a new one. It is also identical across the xdist workers of a run.
 
 Both names stay within ``MAX_STACK_NAME_LEN`` so that the names ``docker stack deploy``
 derives from them (``{stack}_{service}`` and ``{stack}_{network}``) each remain a valid
@@ -34,10 +35,6 @@ _STACK_PREFIX: Final[str] = "pytest"
 _UID_LEN: Final[int] = 4
 _OPS_STACK_SUFFIX: Final[str] = "ops"
 _FALLBACK_REF: Final[str] = "local"
-
-# pytest-xdist roots every worker's base temp dir under "{run}/popen-gwN": the parent is
-# shared by the controller and every worker of one run (and only of that run)
-_XDIST_WORKER_BASETEMP_PATTERN: Final[re.Pattern[str]] = re.compile(r"^popen-gw\d+$")
 
 # docker service/stack names must match [a-zA-Z0-9](-?[a-zA-Z0-9])*
 _NON_NAME_CHARS: Final[re.Pattern[str]] = re.compile(r"[^a-z0-9]+")
@@ -76,21 +73,24 @@ def get_git_ref(repo_dir: Path) -> str:
         return _FALLBACK_REF
 
 
-def get_run_dir(basetemp: Path) -> Path:
-    """Temp dir of one pytest *run*: shared by the controller and every xdist worker,
-    unique per run (pytest keeps a fresh numbered dir per invocation)"""
-    return basetemp.parent if _XDIST_WORKER_BASETEMP_PATTERN.match(basetemp.name) else basetemp
+def _make_uid(token: str) -> str:
+    return hashlib.sha1(token.encode(), usedforsecurity=False).hexdigest()[:_UID_LEN]
 
 
-def get_run_token(basetemp: Path) -> str:
-    """Token identifying one pytest run: same in every xdist worker, different per run"""
-    return f"{get_run_dir(basetemp)}"
+def get_checkout_token(repo_dir: Path) -> str:
+    """Token identifying one checkout: identical for every run and every xdist worker of
+    the same checkout, different for any other checkout (e.g. another git worktree)
+
+    NOTE: resolved to keep the token stable when the same checkout is reached through a
+    symlink or a different path spelling.
+    """
+    return f"{repo_dir.resolve()}"
 
 
-def get_run_uid(basetemp: Path) -> str:
-    """Short readable identifier of one pytest run (e.g. 'pytest-123'), to keep
-    docker objects created outside of the stacks (plain containers) run-scoped as well"""
-    return get_run_dir(basetemp).name
+def get_checkout_uid(repo_dir: Path) -> str:
+    """Short identifier of one checkout, to keep docker objects created outside of the
+    stacks (plain containers) scoped to the checkout as well"""
+    return _make_uid(get_checkout_token(repo_dir))
 
 
 def _make_stack_name(git_ref: str, uid: str, suffix: str | None) -> str:
@@ -102,13 +102,13 @@ def _make_stack_name(git_ref: str, uid: str, suffix: str | None) -> str:
     return stack_name
 
 
-def compute_stack_names(git_ref: str, run_token: str) -> tuple[str, str]:
-    """Returns the (core, ops) stack names for one run
+def compute_stack_names(git_ref: str, checkout_token: str) -> tuple[str, str]:
+    """Returns the (core, ops) stack names of one checkout
 
     Both names start with 'pytest-' so test-owned stacks remain easy to spot (and to
     garbage-collect) on a shared daemon.
     """
-    uid = hashlib.sha1(run_token.encode(), usedforsecurity=False).hexdigest()[:_UID_LEN]
+    uid = _make_uid(checkout_token)
     core_stack_name = _make_stack_name(git_ref, uid, suffix=None)
     ops_stack_name = _make_stack_name(git_ref, uid, suffix=_OPS_STACK_SUFFIX)
     return core_stack_name, ops_stack_name

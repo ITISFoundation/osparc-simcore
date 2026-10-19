@@ -9,19 +9,21 @@ import yaml
 from pytest_simcore.helpers.stack_names import (
     MAX_STACK_NAME_LEN,
     compute_stack_names,
+    get_checkout_token,
+    get_checkout_uid,
     get_git_ref,
-    get_run_token,
-    get_run_uid,
 )
 
 _DOCKER_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
-_RUN_DIR = Path("pytest-run-dirs/pytest-1")
+# two checkouts of the same repo, e.g. the main clone and a git worktree
+_CHECKOUT_A = Path("/home/dev/simcore")
+_CHECKOUT_B = Path("/home/dev/simcore-worktree")
 
 
 def test_names_are_docker_legal_and_bounded():
-    core, ops = compute_stack_names("maintenance/fix-something", f"{_RUN_DIR}")
+    core, ops = compute_stack_names("maintenance/fix-something", get_checkout_token(_CHECKOUT_A))
     assert core.startswith("pytest-")
     assert ops.startswith("pytest-")
     assert ops.endswith("-ops")
@@ -31,54 +33,54 @@ def test_names_are_docker_legal_and_bounded():
 
 
 def test_branch_fragment_is_recognizable_and_sanitized():
-    core, _ = compute_stack_names("fix/Fix_Autoscaling.Reqs", f"{_RUN_DIR}")
+    core, _ = compute_stack_names("fix/Fix_Autoscaling.Reqs", get_checkout_token(_CHECKOUT_A))
     assert "fix-fix-autoscaling" in core
 
 
 def test_long_branch_is_truncated_to_budget():
-    core, ops = compute_stack_names("maintenance/fix-autoscaling-reqs-and-more" * 3, f"{_RUN_DIR}")
+    core, ops = compute_stack_names("maintenance/fix-autoscaling-reqs-and-more" * 3, get_checkout_token(_CHECKOUT_A))
     # the branch fragment keeps its prefix (still recognizable) and the name fits
     assert core.startswith("pytest-maintenance-fix-autos-")
     assert len(core) <= MAX_STACK_NAME_LEN
     assert len(ops) <= MAX_STACK_NAME_LEN
 
 
-def test_same_branch_different_runs_do_not_collide():
-    core_a, ops_a = compute_stack_names("master", f"{_RUN_DIR}")
-    core_b, ops_b = compute_stack_names("master", f"{_RUN_DIR.parent}/pytest-2")
+def test_same_branch_in_different_checkouts_does_not_collide():
+    core_a, ops_a = compute_stack_names("master", get_checkout_token(_CHECKOUT_A))
+    core_b, ops_b = compute_stack_names("master", get_checkout_token(_CHECKOUT_B))
     assert core_a != core_b
     assert ops_a != ops_b
 
 
-def test_names_are_stable_within_a_run():
-    core1, ops1 = compute_stack_names("master", f"{_RUN_DIR}")
-    core2, ops2 = compute_stack_names("master", f"{_RUN_DIR}")
-    assert (core1, ops1) == (core2, ops2)
+def test_names_are_stable_across_runs_of_one_checkout():
+    # only the checkout enters the name, so a second run of the same checkout lands on the
+    # same stacks -- what makes a stack kept up by '--keep-docker-up' get reused
+    first_run = compute_stack_names("master", get_checkout_token(_CHECKOUT_A))
+    second_run = compute_stack_names("master", get_checkout_token(_CHECKOUT_A))
+    assert first_run == second_run
 
 
 def test_missing_branch_still_produces_unique_names():
-    core1, _ = compute_stack_names("", f"{_RUN_DIR}")
-    core2, _ = compute_stack_names("", f"{_RUN_DIR.parent}/pytest-2")
+    core1, _ = compute_stack_names("", get_checkout_token(_CHECKOUT_A))
+    core2, _ = compute_stack_names("", get_checkout_token(_CHECKOUT_B))
     assert core1 != core2
     assert _DOCKER_NAME_PATTERN.match(core1)
 
 
-@pytest.mark.parametrize(
-    "basetemp,expected",
-    [
-        # plain run: the base temp dir IS the run dir
-        (_RUN_DIR, _RUN_DIR),
-        # xdist worker: the shared run dir is the parent of the worker's base temp dir
-        (_RUN_DIR / "popen-gw3", _RUN_DIR),
-    ],
-)
-def test_run_token_shared_across_xdist_workers_of_one_run(basetemp: Path, expected: Path):
-    assert get_run_token(basetemp) == f"{expected}"
-    # every worker of the same run computes the same token
-    other_worker = expected / "popen-gw9"
-    assert get_run_token(other_worker) == get_run_token(basetemp)
-    # ... and the same readable run uid
-    assert get_run_uid(other_worker) == get_run_uid(basetemp) == expected.name
+def test_checkout_uid_is_short_and_stable(tmp_path: Path):
+    assert get_checkout_token(tmp_path) == f"{tmp_path.resolve()}"
+    uid = get_checkout_uid(tmp_path)
+    assert re.fullmatch(r"[0-9a-f]{4}", uid)
+    # the same checkout written differently is still the same checkout
+    assert get_checkout_uid(tmp_path / "services" / "..") == uid
+
+
+def test_checkout_token_is_stable_when_reached_through_a_symlink(tmp_path: Path):
+    checkout = tmp_path / "simcore"
+    checkout.mkdir()
+    alias = tmp_path / "alias"
+    alias.symlink_to(checkout, target_is_directory=True)
+    assert get_checkout_token(alias) == get_checkout_token(checkout)
 
 
 def test_get_git_ref_falls_back_without_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
