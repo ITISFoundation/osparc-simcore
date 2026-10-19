@@ -11,8 +11,9 @@ must not deploy under the same names. Every run therefore deploys its own core s
   the SAME branch apart, and is identical across the xdist workers of one run so they
   all agree on the stack name.
 
-Both names stay within ``MAX_STACK_NAME_LEN`` so the overlay-network alias of the
-longest service (``{stack}_{service}``) remains a valid single DNS label.
+Both names stay within ``MAX_STACK_NAME_LEN`` so that the names ``docker stack deploy``
+derives from them (``{stack}_{service}`` and ``{stack}_{network}``) each remain a valid
+single DNS label.
 """
 
 import hashlib
@@ -23,10 +24,11 @@ import subprocess
 from pathlib import Path
 from typing import Final
 
-# a service is addressable on the overlay network as "{stack}_{service}", which must fit
-# in one DNS label (<= 63 chars); the longest service deployed by the tests is
-# "traefik-config-placeholder" (26 chars, see services/docker-compose.yml)
-MAX_STACK_NAME_LEN: Final[int] = 63 - len("_") - len("traefik-config-placeholder")
+# "docker stack deploy" names both its services ("{stack}_{service}", also the overlay
+# network alias) and its networks ("{stack}_{network}"), which must each fit in one DNS
+# label (<= 63 chars); the longest name deployed by the tests is the network
+# "computational_services_subnet" (29 chars, see services/docker-compose.yml)
+MAX_STACK_NAME_LEN: Final[int] = 63 - len("_") - len("computational_services_subnet")
 
 _STACK_PREFIX: Final[str] = "pytest"
 _UID_LEN: Final[int] = 4

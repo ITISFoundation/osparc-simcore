@@ -32,13 +32,13 @@ def test_names_are_docker_legal_and_bounded():
 
 def test_branch_fragment_is_recognizable_and_sanitized():
     core, _ = compute_stack_names("fix/Fix_Autoscaling.Reqs", f"{_RUN_DIR}")
-    assert "fix-fix-autoscaling-reqs" in core
+    assert "fix-fix-autoscaling" in core
 
 
 def test_long_branch_is_truncated_to_budget():
     core, ops = compute_stack_names("maintenance/fix-autoscaling-reqs-and-more" * 3, f"{_RUN_DIR}")
     # the branch fragment keeps its prefix (still recognizable) and the name fits
-    assert core.startswith("pytest-maintenance-fix-autoscal-")
+    assert core.startswith("pytest-maintenance-fix-autos-")
     assert len(core) <= MAX_STACK_NAME_LEN
     assert len(ops) <= MAX_STACK_NAME_LEN
 
@@ -102,12 +102,17 @@ def test_get_git_ref_uses_github_ref_name_on_push_events(monkeypatch: pytest.Mon
 
 
 @pytest.mark.parametrize("compose_filename", ["docker-compose.yml", "docker-compose-ops.yml"])
-def test_longest_stack_service_alias_fits_dns_label(osparc_simcore_root_dir: Path, compose_filename: str):
-    """the DNS budget baked into MAX_STACK_NAME_LEN must cover every deployed service"""
-    compose_path = osparc_simcore_root_dir / "services" / compose_filename
-    services = yaml.safe_load(compose_path.read_text())["services"]
+def test_longest_deployed_name_fits_dns_label(osparc_simcore_root_dir: Path, compose_filename: str):
+    """the DNS budget baked into MAX_STACK_NAME_LEN must cover every deployed name
 
-    longest = max((len(name) for name in services), default=0)
+    "docker stack deploy" prefixes both services and networks with "{stack}_", so both
+    compete for the same 63-char DNS-label budget.
+    """
+    compose_path = osparc_simcore_root_dir / "services" / compose_filename
+    compose = yaml.safe_load(compose_path.read_text())
+
+    deployed_names = [*(compose.get("services") or {}), *(compose.get("networks") or {})]
+    longest = max((len(name) for name in deployed_names), default=0)
     assert longest > 0
     # NOTE: 63 = limit of a single DNS label (RFC 1123)
     assert MAX_STACK_NAME_LEN + len("_") + longest <= 63
