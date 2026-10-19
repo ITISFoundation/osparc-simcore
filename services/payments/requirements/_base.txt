@@ -281,7 +281,7 @@ psutil==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.11
     # via sqlalchemy
-pyasn1==0.6.1
+pyasn1==0.4.8
     # via
     #   python-jose
     #   rsa
@@ -325,7 +325,7 @@ python-dotenv==1.2.3
     #   uvicorn
 python-engineio==4.13.5
     # via python-socketio
-python-jose==3.3.0
+python-jose==3.4.0
     # via -r requirements/_base.in
 python-multipart==0.0.32
     # via
@@ -406,7 +406,6 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream
