@@ -69,7 +69,7 @@ certifi==2026.10.18
     #   httpx
 click==8.3.1
     # via typer
-dnspython==2.8.0
+dnspython==2.9.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic

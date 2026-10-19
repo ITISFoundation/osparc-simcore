@@ -62,7 +62,7 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-dnspython==2.8.0
+dnspython==2.9.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic

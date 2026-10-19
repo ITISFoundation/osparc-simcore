@@ -67,7 +67,7 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dnspython==2.2.1
+dnspython==2.9.0
     # via
     #   -c requirements/_base.txt
     #   email-validator
