@@ -125,7 +125,7 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.7.7
     # via moto
 jsonpatch==1.33
     # via cfn-lint
