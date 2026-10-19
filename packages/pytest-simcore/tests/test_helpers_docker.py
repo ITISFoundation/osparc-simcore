@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import pytest
+import pytest_simcore
 import yaml
 from pytest_simcore.helpers.docker import (
     filter_compose_file_for_ci,
@@ -79,7 +80,7 @@ def test_filter_compose_file_returns_original_when_all_allowed(in_ci: bool, comp
 
 
 _DOCKER_COMPOSE_FILE_FIXTURE_RE = re.compile(r"^def docker_compose_file\(", re.MULTILINE)
-_SKIPPED_DIRS = (".git", ".venv", "node_modules")
+_SKIPPED_DIRS = (".git", ".venv", "node_modules", ".cache")
 
 
 def test_every_docker_compose_file_fixture_filters_for_ci(osparc_simcore_root_dir: Path):
@@ -100,3 +101,36 @@ def test_every_docker_compose_file_fixture_filters_for_ci(osparc_simcore_root_di
         f"{offenders} override the 'docker_compose_file' fixture without filtering it for the CI."
         " Use 'pytest_simcore.helpers.docker.filter_compose_file_for_ci'"
     )
+
+
+_PUBLISHED_PORT_CALL_RE = re.compile(r"get_service_published_port\(\s*['\"]([^'\"]+)['\"]")
+
+
+def test_published_port_lookups_name_real_compose_services(osparc_simcore_root_dir: Path):
+    """lookups must not depend on the stack name they are deployed under
+
+    swarm deploys each service as "{stack}_{service}" and the lookup keeps candidates whose name
+    *ends with* the requested name. e.g. "simcore_redis" only ever matched because the stack was
+    named "pytest-simcore" ("pytest-simcore_redis"); run-scoped stack names remove that
+    coincidence, so every literal lookup name must be an actual compose service key.
+
+    f-string call sites build the full "{stack}_{service}" name and are validated at runtime
+    against the deployed compose, so they are not scanned here.
+    """
+    lookup_names = {
+        name
+        for module in (Path(pytest_simcore.__file__).parent).rglob("*.py")
+        for name in _PUBLISHED_PORT_CALL_RE.findall(module.read_text())
+    }
+    assert lookup_names, "the scan found no lookup literals: the regex needs updating"
+
+    compose_service_keys = {
+        service_key
+        for compose_filename in ("docker-compose.yml", "docker-compose-ops.yml")
+        for service_key in yaml.safe_load((osparc_simcore_root_dir / "services" / compose_filename).read_text())[
+            "services"
+        ]
+    }
+
+    unknown = lookup_names - compose_service_keys
+    assert not unknown, f"{sorted(unknown)} are not services in services/docker-compose*.yml"
