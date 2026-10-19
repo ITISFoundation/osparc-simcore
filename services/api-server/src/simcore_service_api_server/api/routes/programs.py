@@ -10,7 +10,7 @@ from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import ByteSize, StringConstraints, ValidationError
+from pydantic import ByteSize, HttpUrl, StringConstraints, ValidationError
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.filemanager import (
@@ -64,7 +64,7 @@ async def list_programs(
     page_params.offset = page_meta.offset
 
     for program in programs:
-        program.url = url_for("get_program_release", program_key=program.id, version=program.version)
+        program.url = HttpUrl(url_for("get_program_release", program_key=program.id, version=program.version))
 
     return create_page(
         programs,
@@ -99,7 +99,7 @@ async def list_program_history(
     page_params.offset = page_meta.offset
 
     for program in programs:
-        program.url = url_for("get_program_release", program_key=program.id, version=program.version)
+        program.url = HttpUrl(url_for("get_program_release", program_key=program.id, version=program.version))
 
     return create_page(
         programs,
@@ -125,7 +125,7 @@ async def get_program_release(
             version=version,
         )
 
-        program.url = url_for("get_program_release", program_key=program.id, version=program.version)
+        program.url = HttpUrl(url_for("get_program_release", program_key=program.id, version=program.version))
         return program
 
     except (

@@ -572,26 +572,35 @@ def _update_solver_job_urls(
     solver_key: SolverKeyId,
     solver_version: VersionStr,
     job_id: JobID | str,
-    url_for: Callable[..., HttpUrl],
+    url_for: Callable[..., str],
 ) -> Job:
-    job.url = url_for(
-        get_job.__name__,
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
+    # NOTE: url fields are typed as HttpUrl and assigned after validation, hence the
+    # explicit conversion — otherwise serializing the model (e.g. the API response) warns
+    # that the value's type does not match the field's (PydanticSerializationUnexpectedValue)
+    job.url = HttpUrl(
+        url_for(
+            get_job.__name__,
+            solver_key=solver_key,
+            version=solver_version,
+            job_id=job_id,
+        )
     )
 
-    job.runner_url = url_for(
-        "get_solver_release",
-        solver_key=solver_key,
-        version=solver_version,
+    job.runner_url = HttpUrl(
+        url_for(
+            "get_solver_release",
+            solver_key=solver_key,
+            version=solver_version,
+        )
     )
 
-    job.outputs_url = url_for(
-        "get_job_outputs",
-        solver_key=solver_key,
-        version=solver_version,
-        job_id=job_id,
+    job.outputs_url = HttpUrl(
+        url_for(
+            "get_job_outputs",
+            solver_key=solver_key,
+            version=solver_version,
+            job_id=job_id,
+        )
     )
 
     return job
