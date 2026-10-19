@@ -574,9 +574,7 @@ def _update_solver_job_urls(
     job_id: JobID | str,
     url_for: Callable[..., str],
 ) -> Job:
-    # NOTE: url fields are typed as HttpUrl and assigned after validation, hence the
-    # explicit conversion — otherwise serializing the model (e.g. the API response) warns
-    # that the value's type does not match the field's (PydanticSerializationUnexpectedValue)
+
     job.url = HttpUrl(
         url_for(
             get_job.__name__,
