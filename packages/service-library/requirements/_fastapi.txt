@@ -15,7 +15,7 @@ asgi-lifespan==2.1.0
     # via -r requirements/_fastapi.in
 asgiref==3.11.1
     # via opentelemetry-instrumentation-asgi
-certifi==2026.2.25
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -26,7 +26,7 @@ click==8.3.1
     #   rich-toolkit
     #   typer
     #   uvicorn
-dnspython==2.8.0
+dnspython==2.9.0
     # via email-validator
 email-validator==2.3.0
     # via

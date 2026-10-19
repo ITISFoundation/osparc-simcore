@@ -46,7 +46,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.2.25
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -58,7 +58,7 @@ click==8.3.1
     # via typer
 coverage==7.16.0
     # via pytest-cov
-dnspython==2.8.0
+dnspython==2.9.0
     # via email-validator
 docker==7.1.0
     # via -r requirements/_test.in
