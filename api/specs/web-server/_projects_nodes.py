@@ -25,6 +25,7 @@ from models_library.generics import Envelope
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_error import EnvelopedError
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._controller.nodes_rest import (
     NodePathParams,
@@ -33,6 +34,9 @@ from simcore_service_webserver.projects._controller.nodes_rest import (
 )
 from simcore_service_webserver.projects._controller.projects_rest import (
     ProjectPathParams,
+)
+from simcore_service_webserver.projects.exceptions import (
+    ProjectNodeResourcesSetByPricingUnitError,
 )
 
 router = APIRouter(
@@ -132,6 +136,14 @@ def get_node_resources(project_id: str, node_id: str): ...
 @router.put(
     "/projects/{project_id}/nodes/{node_id}/resources",
     response_model=Envelope[ServiceResourcesDict],
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": f"{ProjectNodeResourcesSetByPricingUnitError.__name__}: "
+            "the node's resources are defined by its linked pricing unit and "
+            "cannot be set manually",
+            "model": EnvelopedError,
+        },
+    },
 )
 def replace_node_resources(project_id: str, node_id: str, _new: ServiceResourcesDict): ...
 

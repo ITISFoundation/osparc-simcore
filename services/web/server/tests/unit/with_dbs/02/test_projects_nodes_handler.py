@@ -32,14 +32,16 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGetIdle
 from models_library.generics import Envelope
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeShareStatus
+from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
+from pydantic import AnyUrl, NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -56,6 +58,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
 )
+from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_NODE_UPDATED_EVENT
 from tenacity import (
@@ -213,6 +216,46 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
                 TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(node_resources, mode="json")
                 == SERVICE_RESOURCES_DICT_EXAMPLES[0]
             )
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.TESTER, status.HTTP_409_CONFLICT),
+    ],
+)
+async def test_replace_node_resources_raises_409_if_pricing_unit_is_connected(
+    client: TestClient,
+    user_project: dict[str, Any],
+    expected: HTTPStatus,
+    with_permitted_override_services_specifications: None,
+):
+    assert client.app
+    db = ProjectDBAPI.get_from_app_context(client.app)
+    for node_id in user_project["workbench"]:
+        get_url = client.app.router["get_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
+        response = await client.get(f"{get_url}")
+        resources_before, _ = await assert_status(response, status.HTTP_200_OK)
+
+        await db.connect_pricing_unit_to_project_node(
+            ProjectID(user_project["uuid"]), NodeID(node_id), pricing_plan_id=1, pricing_unit_id=1
+        )
+
+        url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
+        response = await client.put(
+            f"{url}",
+            json=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+                    SERVICE_RESOURCES_DICT_EXAMPLES[0]
+                ),
+                mode="json",
+            ),
+        )
+        await assert_status(response, expected)
+
+        response = await client.get(f"{get_url}")
+        resources_after, _ = await assert_status(response, status.HTTP_200_OK)
+        assert resources_after == resources_before
 
 
 @pytest.mark.parametrize(
@@ -948,7 +991,9 @@ def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
     aioresponses_mocker.get(
         _get_download_link,
         status=status.HTTP_200_OK,
-        payload=jsonable_encoder(Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))),
+        payload=jsonable_encoder(
+            Envelope[PresignedLink](data=PresignedLink(link=TypeAdapter(AnyUrl).validate_python(faker.image_url())))
+        ),
         repeat=True,
     )
 

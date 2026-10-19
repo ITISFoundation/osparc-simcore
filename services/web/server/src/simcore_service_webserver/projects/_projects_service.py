@@ -20,7 +20,7 @@ from typing import Annotated, Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
-from annotated_types import doc
+from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
@@ -186,6 +186,7 @@ from .exceptions import (
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesSetByPricingUnitError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -2306,6 +2307,14 @@ async def update_project_node_resources(
 
         validate_new_service_resources(current_resources, new_resources=resources)
         set_reservation_same_as_limit(resources)
+
+        if pricing := await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id):
+            raise ProjectNodeResourcesSetByPricingUnitError(
+                project_uuid=f"{project_id}",
+                node_uuid=f"{node_id}",
+                pricing_plan_id=pricing.pricing_plan_id,
+                pricing_unit_id=pricing.pricing_unit_id,
+            )
 
         project_node = await db.update_project_node(
             user_id=user_id,
