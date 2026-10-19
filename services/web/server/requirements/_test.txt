@@ -44,7 +44,7 @@ attrs==25.4.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2023.7.22
+certifi==2026.10.18
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -67,7 +67,7 @@ coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dnspython==2.2.1
+dnspython==2.9.0
     # via
     #   -c requirements/_base.txt
     #   email-validator

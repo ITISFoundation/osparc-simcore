@@ -27,7 +27,7 @@ attrs==24.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-certifi==2024.8.30
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
