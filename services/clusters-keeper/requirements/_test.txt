@@ -57,7 +57,7 @@ botocore==1.40.61
     #   s3transfer
 cachebox==5.2.3
     # via deepdiff
-certifi==2025.11.12
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

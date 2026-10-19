@@ -62,7 +62,7 @@ botocore==1.40.61
     #   s3transfer
 botocore-stubs==1.42.41
     # via types-aiobotocore
-certifi==2026.2.25
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore

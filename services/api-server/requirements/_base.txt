@@ -80,7 +80,7 @@ botocore-stubs==1.43.14
     # via types-aiobotocore
 celery==5.6.3
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
-certifi==2024.8.30
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
