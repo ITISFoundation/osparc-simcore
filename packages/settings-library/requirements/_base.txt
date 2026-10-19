@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/_base.txt requirements/_base.in
 annotated-doc==0.0.4
     # via typer
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
 click==8.3.1
     # via typer

@@ -21,7 +21,7 @@ alembic==1.8.1
     #   -r requirements/_test.in
 annotated-doc==0.0.5
     # via fastapi
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic

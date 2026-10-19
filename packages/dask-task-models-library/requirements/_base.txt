@@ -4,7 +4,7 @@ aiocache==0.12.3
     # via -r requirements/_base.in
 annotated-doc==0.0.4
     # via typer
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
 arrow==1.4.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
