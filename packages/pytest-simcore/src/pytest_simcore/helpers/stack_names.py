@@ -3,10 +3,10 @@
 Stack and service names are global inside a docker daemon, so two pytest sessions
 running from different checkouts of this repo on one machine (e.g. two git worktrees)
 must not deploy under the same names. Every checkout therefore deploys its own core
-stack ``pytest-<branch>-<uid>`` plus a companion ops stack ``pytest-<branch>-<uid>-ops``:
+stack ``pt-<branch>-core-<uid>`` plus a companion ops stack ``pt-<branch>-ops-<uid>``:
 
 - the *branch* fragment makes the stacks recognizable
-  (``docker stack ls | grep pytest-``)
+  (``docker stack ls | grep '^pt-'``)
 - the *uid* fragment (hash of the checkout directory) tells checkouts apart — including
   two worktrees on the same branch — and stays *stable across runs* of one checkout, so
   a stack kept up with ``--keep-docker-up`` is re-deployed onto instead of piled up next
@@ -31,9 +31,12 @@ from typing import Final
 # "computational_services_subnet" (29 chars, see services/docker-compose.yml)
 MAX_STACK_NAME_LEN: Final[int] = 63 - len("_") - len("computational_services_subnet")
 
-_STACK_PREFIX: Final[str] = "pytest"
+_STACK_PREFIX: Final[str] = "pt"  # short for pytest, to leave the budget to the branch
 _UID_LEN: Final[int] = 4
-_OPS_STACK_SUFFIX: Final[str] = "ops"
+# role fragments, placed before the uid so core and ops names keep the same prefix
+# and the uid stays aligned at the end of both names
+_CORE_STACK_ROLE: Final[str] = "core"
+_OPS_STACK_ROLE: Final[str] = "ops"
 _FALLBACK_REF: Final[str] = "local"
 
 # docker service/stack names must match [a-zA-Z0-9](-?[a-zA-Z0-9])*
@@ -93,11 +96,15 @@ def get_checkout_uid(repo_dir: Path) -> str:
     return _make_uid(get_checkout_token(repo_dir))
 
 
-def _make_stack_name(git_ref: str, uid: str, suffix: str | None) -> str:
-    tail = f"-{suffix}" if suffix else ""
-    budget = MAX_STACK_NAME_LEN - len(_STACK_PREFIX) - len(uid) - len("-") * 2 - len(tail)
-    readable = _NON_NAME_CHARS.sub("-", git_ref.lower()).strip("-")[:budget].strip("-")
-    stack_name = "-".join(part for part in (_STACK_PREFIX, readable, uid, suffix) if part)
+def _make_readable_branch(git_ref: str, role_len: int) -> str:
+    # sized against the LONGEST role so core and ops truncate identically and therefore
+    # share one prefix, with the uid landing at the same offset in both names
+    budget = MAX_STACK_NAME_LEN - len(_STACK_PREFIX) - _UID_LEN - len("-") * 3 - role_len
+    return _NON_NAME_CHARS.sub("-", git_ref.lower()).strip("-")[:budget].strip("-")
+
+
+def _make_stack_name(readable_branch: str, uid: str, role: str) -> str:
+    stack_name = "-".join(part for part in (_STACK_PREFIX, readable_branch, role, uid) if part)
     assert len(stack_name) <= MAX_STACK_NAME_LEN
     return stack_name
 
@@ -105,10 +112,12 @@ def _make_stack_name(git_ref: str, uid: str, suffix: str | None) -> str:
 def compute_stack_names(git_ref: str, checkout_token: str) -> tuple[str, str]:
     """Returns the (core, ops) stack names of one checkout
 
-    Both names start with 'pytest-' so test-owned stacks remain easy to spot (and to
+    Both names start with 'pt-' so test-owned stacks remain easy to spot (and to
     garbage-collect) on a shared daemon.
     """
     uid = _make_uid(checkout_token)
-    core_stack_name = _make_stack_name(git_ref, uid, suffix=None)
-    ops_stack_name = _make_stack_name(git_ref, uid, suffix=_OPS_STACK_SUFFIX)
+    longest_role_len = max(len(_CORE_STACK_ROLE), len(_OPS_STACK_ROLE))
+    readable_branch = _make_readable_branch(git_ref, longest_role_len)
+    core_stack_name = _make_stack_name(readable_branch, uid, role=_CORE_STACK_ROLE)
+    ops_stack_name = _make_stack_name(readable_branch, uid, role=_OPS_STACK_ROLE)
     return core_stack_name, ops_stack_name

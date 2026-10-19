@@ -444,6 +444,13 @@ def pytest_sessionfinish(session: pytest.Session) -> None:
         docker_client.close()
 
 
+def _module_service_selection(item: pytest.Item, attr_name: str) -> list[str]:
+    # only test functions live in a module able to declare the fixture config
+    if not isinstance(item, pytest.Function):
+        return []
+    return getattr(item.module, attr_name, [])
+
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def docker_stack(  # noqa: C901
     osparc_simcore_services_dir: Path,
@@ -464,12 +471,12 @@ async def docker_stack(  # noqa: C901
     Under xdist, the first worker deploys the stacks for the whole run and the controller removes them.
     """
 
-    # WARNING: keep prefix "pytest-" in stack names
+    # WARNING: keep prefix "pt-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     ops_stack_name = env_vars_for_docker_compose["SWARM_OPS_STACK_NAME"]
 
-    assert core_stack_name.startswith("pytest-")
-    assert ops_stack_name.startswith("pytest-")
+    assert core_stack_name.startswith("pt-")
+    assert ops_stack_name.startswith("pt-")
 
     def _collected_services_union(attr_name: str) -> list[str]:
         # NOTE: collection completes before any test runs, so `session.items` already lists
@@ -477,7 +484,7 @@ async def docker_stack(  # noqa: C901
         seen: set[str] = set()
         union: list[str] = []
         for item in request.session.items:
-            for name in getattr(item.module, attr_name, []):
+            for name in _module_service_selection(item, attr_name):
                 if name not in seen:
                     seen.add(name)
                     union.append(name)

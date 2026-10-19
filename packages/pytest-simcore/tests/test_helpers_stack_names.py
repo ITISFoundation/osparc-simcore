@@ -24,12 +24,22 @@ _CHECKOUT_B = Path("/home/dev/simcore-worktree")
 
 def test_names_are_docker_legal_and_bounded():
     core, ops = compute_stack_names("maintenance/fix-something", get_checkout_token(_CHECKOUT_A))
-    assert core.startswith("pytest-")
-    assert ops.startswith("pytest-")
-    assert ops.endswith("-ops")
+    assert core.startswith("pt-")
+    assert ops.startswith("pt-")
     for name in (core, ops):
         assert len(name) <= MAX_STACK_NAME_LEN
         assert _DOCKER_NAME_PATTERN.match(name), name
+
+
+def test_core_and_ops_names_share_a_prefix_and_align_the_uid():
+    core, ops = compute_stack_names("feature/dyn-scheduler", get_checkout_token(_CHECKOUT_A))
+    # everything up to the role fragment is identical, so listing stacks groups them and
+    # the uid keeps the same position in both names
+    core_prefix, core_role, core_uid = core.rsplit("-", 2)
+    ops_prefix, ops_role, ops_uid = ops.rsplit("-", 2)
+    assert core_prefix == ops_prefix
+    assert (core_role, ops_role) == ("core", "ops")
+    assert core_uid == ops_uid
 
 
 def test_branch_fragment_is_recognizable_and_sanitized():
@@ -40,9 +50,12 @@ def test_branch_fragment_is_recognizable_and_sanitized():
 def test_long_branch_is_truncated_to_budget():
     core, ops = compute_stack_names("maintenance/fix-autoscaling-reqs-and-more" * 3, get_checkout_token(_CHECKOUT_A))
     # the branch fragment keeps its prefix (still recognizable) and the name fits
-    assert core.startswith("pytest-maintenance-fix-autos-")
+    assert core.startswith("pt-maintenance-fix-auto-")
     assert len(core) <= MAX_STACK_NAME_LEN
     assert len(ops) <= MAX_STACK_NAME_LEN
+    # truncation is sized to the longer role, so both names stay aligned even when the
+    # branch is cut short
+    assert core.rsplit("-", 2)[0] == ops.rsplit("-", 2)[0]
 
 
 def test_same_branch_in_different_checkouts_does_not_collide():
