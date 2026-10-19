@@ -5,6 +5,7 @@
 
 import base64
 from decimal import Decimal
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -32,6 +33,7 @@ from models_library.api_schemas_webserver.computations import (
 )
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID, WalletInfo
+from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
@@ -48,6 +50,12 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+def _first_schema_example(model_cls: type[BaseModel]) -> dict[str, Any]:
+    """The first JSON-schema example of a model, as a fresh dict (test fixtures mutate it)."""
+    examples: list[dict[str, Any]] = model_cls.model_json_schema()["examples"]
+    return examples[0]
 
 
 @pytest.fixture
@@ -261,7 +269,7 @@ def mock_rpc_list_computations_latest_iteration_tasks(
     user_project: ProjectDict,
 ) -> ComputationRunRpcGetPage:
     project_uuid = user_project["uuid"]
-    example = ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example = _first_schema_example(ComputationRunRpcGet)
     example["project_uuid"] = project_uuid
     example["info"]["project_metadata"]["root_parent_project_id"] = project_uuid
 
@@ -281,9 +289,9 @@ def mock_rpc_list_computation_iterations(
     user_project: ProjectDict,
 ) -> ComputationRunRpcGetPage:
     project_uuid = user_project["uuid"]
-    example_1 = ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example_1 = _first_schema_example(ComputationRunRpcGet)
     example_1["project_uuid"] = project_uuid
-    example_2 = ComputationRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example_2 = _first_schema_example(ComputationRunRpcGet)
     example_2["project_uuid"] = project_uuid
     example_2["iteration"] = 2
 
@@ -307,7 +315,7 @@ def mock_rpc_list_computations_latest_iteration_tasks_page(
 ) -> ComputationTaskRpcGetPage:
     project_uuid = user_project["uuid"]
     workbench_ids = list(user_project["workbench"].keys())
-    example = ComputationTaskRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example = _first_schema_example(ComputationTaskRpcGet)
     example["node_id"] = workbench_ids[0]
     example["project_uuid"] = project_uuid
 
@@ -363,7 +371,7 @@ def mock_rpc_list_computation_collection_runs_page(
     user_project: ProjectDict,
 ) -> ComputationCollectionRunRpcGetPage:
     project_uuid = user_project["uuid"]
-    example = ComputationCollectionRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example = _first_schema_example(ComputationCollectionRunRpcGet)
     example["project_ids"] = [project_uuid]
     example["info"]["project_metadata"]["root_parent_project_id"] = project_uuid
 
@@ -384,7 +392,7 @@ def mock_rpc_list_computation_collection_run_tasks_page(
 ) -> str:
     project_uuid = user_project["uuid"]
     workbench_ids = list(user_project["workbench"].keys())
-    example = ComputationCollectionRunTaskRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example = _first_schema_example(ComputationCollectionRunTaskRpcGet)
     example["node_id"] = workbench_ids[0]
     example["project_uuid"] = project_uuid
 
@@ -437,7 +445,7 @@ async def populated_comp_run_collection(
     postgres_db: sa.engine.Engine,
 ):
     assert client.app
-    example = ComputationCollectionRunRpcGet.model_config["json_schema_extra"]["examples"][0]
+    example = _first_schema_example(ComputationCollectionRunRpcGet)
     collection_run_id = example["collection_run_id"]
 
     with postgres_db.connect() as con:

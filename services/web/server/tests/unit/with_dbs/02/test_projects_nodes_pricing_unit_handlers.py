@@ -8,6 +8,7 @@
 
 import re
 from http import HTTPStatus
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -19,6 +20,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import ByteSize
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -103,9 +105,8 @@ def mock_rut_api_responses(client: TestClient, aioresponses_mocker: AioResponses
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    pricing_unit_get_base = RutPricingUnitGet.model_validate(
-        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][0]
-    )
+    pricing_unit_example: dict[str, Any] = RutPricingUnitGet.model_json_schema()["examples"][0]
+    pricing_unit_get_base = RutPricingUnitGet.model_validate(pricing_unit_example)
     pricing_unit_get_1 = pricing_unit_get_base.model_copy()
     pricing_unit_get_1.pricing_unit_id = _PRICING_UNIT_ID_1
     pricing_unit_get_2 = pricing_unit_get_base.model_copy()
@@ -133,7 +134,7 @@ def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixtu
             EC2InstanceTypeGet(
                 name=next(iter(instance_type_names)),
                 cpus=faker.pyfloat(min_value=0.1),
-                ram=faker.pyint(min_value=1024),
+                ram=ByteSize(faker.pyint(min_value=1024)),
             )
         ]
 

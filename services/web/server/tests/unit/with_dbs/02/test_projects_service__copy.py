@@ -21,6 +21,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 from aiohttp import web
@@ -33,7 +34,7 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.project_nodes_pricing import (
@@ -163,7 +164,7 @@ async def _get_inserted_nodes(app, project_uuid: str) -> dict[NodeID, Any]:
     return {node.node_id: node for node in await db.list_project_nodes(ProjectID(project_uuid))}
 
 
-async def _fetch_source_project(app, project_uuid: str, user_id: int) -> ProjectDict:
+async def _fetch_source_project(app, project_uuid: str, user_id: UserID) -> ProjectDict:
     """Fetches a project the same way `_prepare_project_copy` does in `_crud_api_create.py`.
 
     NOTE: the `user_project`/`template_project` fixtures return a test-helper-only
@@ -187,7 +188,7 @@ def test_remap_port_links_in_inputs_with_none_or_empty():
 
 def test_remap_port_links_in_inputs_with_dict_form():
     # SETUP
-    nodes_map: NodesMap = {NodeIDStr("old-node-id"): NodeIDStr("new-node-id")}
+    nodes_map: NodesMap = {"old-node-id": "new-node-id"}
     inputs = {
         "input_1": {"nodeUuid": "old-node-id", "output": "out_1"},
         "input_2": {"nodeUuid": "unmapped-node-id", "output": "out_1"},
@@ -208,9 +209,9 @@ def test_remap_port_links_in_inputs_with_dict_form():
 
 def test_remap_port_links_in_inputs_with_portlink_form():
     # SETUP
-    old_node_id = NodeID("38a0d401-af4b-4ea7-ab4c-5005c712a546")
-    new_node_id = NodeID("13220a1d-a569-49de-b375-904301af9295")
-    nodes_map: NodesMap = {NodeIDStr(f"{old_node_id}"): NodeIDStr(f"{new_node_id}")}
+    old_node_id = UUID("38a0d401-af4b-4ea7-ab4c-5005c712a546")
+    new_node_id = UUID("13220a1d-a569-49de-b375-904301af9295")
+    nodes_map: NodesMap = {f"{old_node_id}": f"{new_node_id}"}
     inputs = {"input_1": PortLink(nodeUuid=old_node_id, output="out_1")}
 
     # ACT
@@ -255,7 +256,7 @@ async def test_clone_project_data_raises_if_source_is_trashed(
     assert client.app
 
     # SETUP: a trashed source project must never be duplicated
-    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
     source_project["trashed"] = "2026-07-21T00:00:00+00:00"
 
     # ACT & ASSERT
@@ -264,7 +265,7 @@ async def test_clone_project_data_raises_if_source_is_trashed(
             client.app,
             source_project=source_project,
             forced_copy_project_id=None,
-            user_id=logged_user["id"],
+            user_id=UserID(logged_user["id"]),
             product_name=osparc_product_name,
             product_api_base_url="http://product.testserver.io",
             task_progress=task_progress,
@@ -285,7 +286,7 @@ async def test_clone_project_data_from_standard_project(
 
     # SETUP
     # `shared_project` is owned by `logged_user` but also shared (read-only) with `all_group`
-    source_project = await _fetch_source_project(client.app, shared_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, shared_project["uuid"], UserID(logged_user["id"]))
     assert len(source_project["accessRights"]) > 1
 
     # ACT
@@ -293,7 +294,7 @@ async def test_clone_project_data_from_standard_project(
         client.app,
         source_project=source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -347,14 +348,14 @@ async def test_clone_project_data_with_forced_project_id(
     # SETUP
     assert client.app
     forced_project_id = ProjectID(faker.uuid4())
-    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
 
     # ACT
     cloned_project = await clone_project_data(
         client.app,
         source_project=source_project,
         forced_copy_project_id=forced_project_id,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -381,12 +382,12 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     spied_with_project_locked = mocker.spy(_projects_service, "with_project_locked")
 
     # ACT: cloning a STANDARD project locks the source while copying data
-    standard_source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    standard_source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
     await clone_project_data(
         client.app,
         source_project=standard_source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -398,12 +399,14 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     spied_with_project_locked.reset_mock()
 
     # ACT: cloning a TEMPLATE does NOT lock it (templates are not "in use")
-    template_source_project = await _fetch_source_project(client.app, template_project["uuid"], logged_user["id"])
+    template_source_project = await _fetch_source_project(
+        client.app, template_project["uuid"], UserID(logged_user["id"])
+    )
     await clone_project_data(
         client.app,
         source_project=template_source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -425,14 +428,16 @@ async def test_clone_project_data_with_template_parameters(
 ):
     # SETUP
     assert client.app
-    source_project = await _fetch_source_project(client.app, template_project_with_params["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(
+        client.app, template_project_with_params["uuid"], UserID(logged_user["id"])
+    )
 
     # ACT
     cloned_project = await clone_project_data(
         client.app,
         source_project=source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -473,14 +478,14 @@ async def test_clone_project_data_reports_progress(
     # SETUP
     assert client.app
     assert task_progress.percent == 0
-    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
 
     # ACT
     await clone_project_data(
         client.app,
         source_project=source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -504,8 +509,7 @@ async def test_clone_project_nodes_remaps_port_links_and_input_nodes(
     assert client.app
 
     nodes_map: NodesMap = {
-        NodeIDStr(node_id): NodeIDStr(f"11111111-1111-1111-1111-{i:012d}")
-        for i, node_id in enumerate(user_project["workbench"])
+        node_id: f"11111111-1111-1111-1111-{i:012d}" for i, node_id in enumerate(user_project["workbench"])
     }
 
     # ACT
@@ -645,7 +649,7 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
     _, sourced_resources = await _price_and_size_one_computational_node(client.app, asyncpg_engine, source_uuid)
 
     # ACT
-    source_project = await _fetch_source_project(client.app, source_uuid, logged_user["id"])
+    source_project = await _fetch_source_project(client.app, source_uuid, UserID(logged_user["id"]))
     cloned_project = await clone_project_data(
         client.app,
         source_project=source_project,

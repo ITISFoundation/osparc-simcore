@@ -71,9 +71,7 @@ def get_fixed_ec2_instance_types(instance_type_names: set[str]) -> list[EC2Insta
 def make_pricing_unit(*, pricing_unit_id: int, default: bool, aws_ec2_instance: str) -> RutPricingUnitGet:
     """A pricing unit whose hardware is exactly one of the fixed EC2 types."""
     assert aws_ec2_instance in _EC2_REGISTRY
-    base = RutPricingUnitGet.model_validate(
-        RutPricingUnitGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore[literal-required]
-    )
+    base = RutPricingUnitGet.model_validate(RutPricingUnitGet.model_json_schema()["examples"][0])
     return base.model_copy(
         update={
             "pricing_unit_id": pricing_unit_id,
