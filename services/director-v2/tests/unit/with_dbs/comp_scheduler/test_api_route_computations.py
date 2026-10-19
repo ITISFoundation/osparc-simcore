@@ -37,7 +37,8 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB
-from models_library.projects_nodes import NodeID, NodeState
+from models_library.projects_nodes import NodeState
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.services import ServiceMetaDataPublished
@@ -444,11 +445,14 @@ async def test_create_computation_with_wallet(
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
     if default_pricing_plan_aws_ec2_type:
-        mocked_clusters_keeper_service_get_instance_type_details.assert_called()
-        assert (
-            mocked_resource_usage_tracker_service_fcts.calls.call_count
-            == len([v for v in proj.workbench.values() if to_node_class(v.key) != NodeClass.FRONTEND]) * 2
-        )
+        # clusters-keeper is asked once for all the nodes together
+        mocked_clusters_keeper_service_get_instance_type_details.assert_called_once()
+        # RUT is asked once per distinct non-frontend service (its default pricing) and once for
+        # the pricing unit those services all share
+        non_frontend_service_key_versions = {
+            (v.key, v.version) for v in proj.workbench.values() if to_node_class(v.key) != NodeClass.FRONTEND
+        }
+        assert mocked_resource_usage_tracker_service_fcts.calls.call_count == len(non_frontend_service_key_versions) + 1
         # check the project nodes were really overridden now
         async with sqlalchemy_async_engine.connect() as connection:
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
@@ -650,8 +654,11 @@ async def test_start_computation(
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
     mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
-    # there should be as many calls to the catalog as there are no defined resources by default
-    assert mocked_get_service_resources.call_count == len(fake_workbench_without_outputs)
+    # no resources are defined by default, so the catalog is asked — once per distinct service,
+    # not once per node
+    assert mocked_get_service_resources.call_count == len(
+        {(node["key"], node["version"]) for node in fake_workbench_without_outputs.values()}
+    )
 
 
 async def test_start_computation_with_encryption_propagates_context_to_pipeline(
