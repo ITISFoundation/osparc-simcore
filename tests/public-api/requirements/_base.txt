@@ -4,7 +4,7 @@ aiofiles==25.1.0
     # via osparc
 annotated-doc==0.0.4
     # via typer
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
     # via httpx

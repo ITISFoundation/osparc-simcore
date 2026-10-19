@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/_base.txt requirements/_base.in
 alembic==1.18.4
     # via -r requirements/_base.in
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
 asyncpg==0.32.0
     # via sqlalchemy

@@ -23,7 +23,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic

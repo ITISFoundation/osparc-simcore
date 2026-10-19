@@ -17,7 +17,7 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
