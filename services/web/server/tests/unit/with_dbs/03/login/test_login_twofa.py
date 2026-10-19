@@ -22,13 +22,13 @@ from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._twofa_service import (
-    _do_create_2fa_code,
     create_2fa_code,
     delete_2fa_code,
-    get_2fa_code,
     get_redis_validation_code_client,
+    has_2fa_code,
     notifications_service,
     send_email_code,
+    verify_2fa_code,
 )
 from simcore_service_webserver.login.constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -72,22 +72,31 @@ def mocked_twilio_service(mocker: MockerFixture) -> dict[str, MockType]:
 async def test_2fa_code_operations(client: TestClient):
     assert client.app
 
-    # get/delete an entry that does not exist
-    assert await get_2fa_code(client.app, "invalid@bar.com") is None
+    # check/verify an entry that does not exist
+    assert await has_2fa_code(client.app, "invalid@bar.com") is False
+    assert await verify_2fa_code(client.app, user_email="invalid@bar.com", code="123456") is False
     await delete_2fa_code(client.app, "invalid@bar.com")
 
-    # set/get/delete
+    # set/verify/delete
     email = "foo@bar.com"
     code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
 
-    assert await get_2fa_code(client.app, email) == code
+    assert await has_2fa_code(client.app, email) is True
+    assert await verify_2fa_code(client.app, user_email=email, code=code) is True
+    # a wrong code is rejected
+    wrong_code = "000000" if code != "000000" else "111111"
+    assert await verify_2fa_code(client.app, user_email=email, code=wrong_code) is False
+    # only the HMAC digest is persisted, never the plaintext code
+    assert await get_redis_validation_code_client(client.app).get(email) != code
+
     await delete_2fa_code(client.app, email)
+    assert await has_2fa_code(client.app, email) is False
 
     # expired
     email = "expired@bar.com"
-    code = await _do_create_2fa_code(get_redis_validation_code_client(client.app), email, expiration_seconds=1)
+    await create_2fa_code(client.app, user_email=email, expiration_in_seconds=1)
     await asyncio.sleep(1.5)
-    assert await get_2fa_code(client.app, email) is None
+    assert await has_2fa_code(client.app, email) is False
 
 
 @pytest.mark.acceptance_test

@@ -26,6 +26,7 @@ from models_library.functions import (
     SolverFunctionJob,
 )
 from models_library.functions_errors import (
+    FunctionHasJobsCannotDeleteError,
     FunctionJobIDNotFoundError,
     FunctionJobPatchModelIncompatibleError,
     FunctionJobReadAccessDeniedError,
@@ -141,6 +142,58 @@ async def test_register_get_delete_function_job(
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_delete_function_with_associated_jobs(
+    client: TestClient,
+    add_user_function_api_access_rights: None,
+    webserver_rpc_client: WebServerRpcClient,
+    create_fake_function_obj: Callable[[FunctionClass], Function],
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+):
+    registered_function = await webserver_rpc_client.functions.register_function(
+        function=create_fake_function_obj(FunctionClass.PROJECT),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert registered_function.uid is not None
+
+    registered_job = await webserver_rpc_client.functions.register_function_job(
+        function_job=ProjectFunctionJob(
+            function_uid=registered_function.uid,
+            title="Test Function Job",
+            description="A test function job",
+            project_job_id=uuid4(),
+            inputs={"input1": "value1"},
+            outputs={"output1": "result1"},
+            job_creation_task_id=None,
+        ),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    with pytest.raises(FunctionHasJobsCannotDeleteError):
+        await webserver_rpc_client.functions.delete_function(
+            function_id=registered_function.uid,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
+
+    await webserver_rpc_client.functions.delete_function_job(
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    await webserver_rpc_client.functions.delete_function(
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
 
 
 @pytest.mark.parametrize(

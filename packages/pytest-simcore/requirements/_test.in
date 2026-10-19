@@ -5,11 +5,13 @@
 
 
 aiodocker
+alembic
 arrow
 coverage
 docker
 faker
 fastapi
+filelock
 orjson
 playwright
 pydantic
@@ -25,7 +27,7 @@ pytest-sugar
 python-dotenv
 python-socketio
 pyyaml
-sqlalchemy[mypy]
+sqlalchemy[mypy,postgresql_psycopg2binary]
 tenacity
 types-aiofiles
 uvicorn

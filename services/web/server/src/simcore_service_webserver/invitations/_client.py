@@ -1,9 +1,9 @@
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final
+from typing import ClassVar, Final
 
 from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
 from aiohttp.client_exceptions import ClientError
@@ -40,7 +40,7 @@ def _handle_exceptions_as_invitations_errors(member_func: Callable):
             return await member_func(*args, **kwargs)
 
         except ClientResponseError as err:
-            if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+            if err.status == status.HTTP_422_UNPROCESSABLE_CONTENT:
                 raise InvalidInvitationError(
                     api_funcname=member_func.__name__,
                     status=err.status,
@@ -119,7 +119,7 @@ class InvitationsServiceApi:
             _logger.debug("Invitations service is not responsive: %s", err)
         return ok
 
-    is_responsive = ping
+    is_responsive: ClassVar[Callable[..., Awaitable[bool]]] = ping  # alias
 
     #
     # service API

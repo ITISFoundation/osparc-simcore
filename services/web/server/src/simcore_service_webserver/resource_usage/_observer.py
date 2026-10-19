@@ -13,6 +13,7 @@ from servicelib.aiohttp.observer import (
 from servicelib.utils import logged_gather
 
 from ..notifications import wallet_osparc_credits
+from ..signals import SIGNAL_USER_CONNECTED, SIGNAL_USER_DISCONNECTED
 from ..wallets.wallets_service import list_wallets_for_user
 
 _logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ def setup_resource_usage_observer_events(app: web.Application) -> None:
     # add
     setup_observer_registry(app)
 
-    register_observer(app, _on_user_connected, event="SIGNAL_USER_CONNECTED")
-    register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
+    register_observer(app, _on_user_connected, event=SIGNAL_USER_CONNECTED)
+    register_observer(app, _on_user_disconnected, event=SIGNAL_USER_DISCONNECTED)
 
     _logger.info("App registered events (at this point):\n%s", registered_observers_report(app))

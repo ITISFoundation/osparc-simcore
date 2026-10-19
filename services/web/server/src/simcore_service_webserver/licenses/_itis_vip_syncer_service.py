@@ -9,12 +9,10 @@ from httpx import AsyncClient
 from models_library.licenses import LicensedResourceType
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.ssl_context import get_shared_ssl_context
 
 from ..redis import get_redis_lock_manager_client_sdk, setup_redis
-from . import (
-    _itis_vip_service,
-    _licensed_resources_service,
-)
+from . import _itis_vip_service, _licensed_resources_service
 from ._itis_vip_models import CategoryTuple, ItisVipData, ItisVipResourceData
 from ._licensed_resources_service import RegistrationState
 
@@ -22,7 +20,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def sync_licensed_resources(app: web.Application, categories: list[CategoryTuple]):
-    async with AsyncClient() as http_client:
+    async with AsyncClient(verify=get_shared_ssl_context()) as http_client:
         for category_url, category_id, category_display in categories:
             assert f"{category_url}".endswith(category_id)  # nosec
 

@@ -22,9 +22,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -70,7 +70,7 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "s3-storage",
 ]
 
 
@@ -170,7 +170,9 @@ def start_request_data(
             "outputs_path": "/tmp/outputs",  # noqa: S108
             "inputs_path": "/tmp/inputs",  # noqa: S108
         },
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(service_resources),
+        "service_resources": TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            service_resources, mode="json"
+        ),
     }
 
 
@@ -194,7 +196,7 @@ async def director_v2_client(
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "S3_ENDPOINT": faker.url(),
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),

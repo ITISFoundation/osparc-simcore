@@ -116,7 +116,7 @@ async def _create_domain_file(
         project = await webserver_api.get_project(project_id=client_file.job_id)
         if len(project.workbench) > 1:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Job_id {project.uuid} is not a valid program job.",
             )
         node_id = next(iter(project.workbench.keys()))

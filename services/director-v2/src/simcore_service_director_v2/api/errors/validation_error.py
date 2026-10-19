@@ -16,7 +16,7 @@ async def http422_error_handler(
 
     return JSONResponse(
         content=jsonable_encoder({"errors": exc.errors()}),
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
 
 

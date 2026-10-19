@@ -184,7 +184,7 @@ async def delete_job_assets(
             "description": "Job assets missing",
             "model": ErrorGet,
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Configuration error",
             "model": ErrorGet,
         },

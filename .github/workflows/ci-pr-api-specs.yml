@@ -1,0 +1,145 @@
+# This workflow holds jobs which are required to pass before merging into master
+
+name: CI PR API Specs
+on:
+  pull_request:
+    branches:
+      - "*"
+  # https://github.blog/changelog/2023-02-08-pull-request-merge-queue-public-beta/
+  merge_group:
+    branches:
+      - "master"
+
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: full repository name (e.g. 'ITISFoundation/osparc-simcore')
+        required: true
+        default: "ITISFoundation/osparc-simcore"
+        type: environment
+      target_branch:
+        description: Check backwards compatibility against target_branch in target_repo
+        required: true
+        default: "master"
+        type: environment
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-specs:
+    timeout-minutes: 10
+    name: "check OAS' are up to date"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout source branch
+        uses: actions/checkout@v7.0.1
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
+      - name: Generate openapi specs
+        run: |
+          make devenv
+          source .venv/bin/activate
+          make openapi-specs
+      - name: Check openapi specs are up to date
+        run: |
+          if ! ./ci/github/helpers/openapi-specs-diff.bash diff \
+            "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_SHA" \
+            .; then \
+            echo "::error:: OAS are not up to date. Run 'make openapi-specs' to update them"; exit 1; \
+          fi
+
+  api-server-openai-compatible:
+    needs: api-specs
+    timeout-minutes: 10
+    name: "api-server openai compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+      - name: check for api-server changes
+        uses: dorny/paths-filter@v4
+        id: changes
+        with:
+          filters: |
+            api-server:
+              - 'services/api-server/**'
+      - name: Setup environment
+        if: steps.changes.outputs.api-server == 'true'
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
+      - name: Generate openapi specs
+        if: steps.changes.outputs.api-server == 'true'
+        run: |
+          make devenv
+          source .venv/bin/activate
+          cd services/api-server
+          make install-dev
+          make openapi-openai-compatible.json
+      - name: check api-server openai compatibility
+        if: steps.changes.outputs.api-server == 'true'
+        run: |
+          source .venv/bin/activate
+          cd services/api-server
+          make test-openai-api-compatibility
+
+  api-server-oas-breaking:
+    needs: api-specs
+    timeout-minutes: 10
+    name: "api-server backwards compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.14"
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+      - name: Set environment variables based on event type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          else
+            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
+      - name: check api-server backwards compatibility
+        run: |
+          ./scripts/openapi-diff.bash breaking --fail-on ERR\
+            "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/services/api-server/openapi.json" \
+            /specs/services/api-server/openapi.json
+
+  all-oas-breaking:
+    needs: api-specs
+    continue-on-error: true
+    timeout-minutes: 10
+    name: "OAS backwards compatibility"
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup python environment
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.14"
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+      - name: Set environment variables based on event type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          else
+            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
+            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
+      - name: Check openapi-specs backwards compatibility
+        run: |
+          ./ci/github/helpers/openapi-specs-diff.bash breaking \
+            "https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH" \
+            .

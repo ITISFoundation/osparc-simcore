@@ -14,17 +14,23 @@ services:
   # `FROM ${DOCKER_REGISTRY}/simcore-{runtime,build}-base:${BASE_TAG}`.
   #
   # - On local/test builds (no push) the Makefile links these targets in-memory as
-  #   build contexts, so no registry is needed (see scripts/common.Makefile / root Makefile).
+  #   build contexts, so no registry is needed (see scripts/makefiles/common.mk / root Makefile).
   # - On deploy (push) builds the service FROM pulls the pre-built & pushed base images.
   #
   # NOTE: these targets are NOT part of SERVICES_NAMES_TO_BUILD, they are only built
   # when referenced (as a build context or explicitly via `make build-base`).
+  # UV_VERSION must match the requirements/UV_VERSION content that
+  # compute_base_image_tag.bash hashed into BASE_TAG (exported by the root
+  # Makefile). No fallback: a base image must never be built with a uv version
+  # that its tag does not describe.
   simcore-runtime-base:
     image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-runtime-base:${BASE_TAG:-latest}
     build:
       context: ../
       dockerfile: services/_base_images/Dockerfile
       target: runtime-base
+      args:
+        UV_VERSION: ${UV_VERSION:?UV_VERSION must be exported (see root Makefile)}
 
   simcore-build-base:
     image: ${DOCKER_REGISTRY:-itisfoundation}/simcore-build-base:${BASE_TAG:-latest}
@@ -32,6 +38,8 @@ services:
       context: ../
       dockerfile: services/_base_images/Dockerfile
       target: build-base
+      args:
+        UV_VERSION: ${UV_VERSION:?UV_VERSION must be exported (see root Makefile)}
 
   service-integration:
     image: local/service-integration:${BUILD_TARGET:?build_target_required}
@@ -350,28 +358,6 @@ services:
         org.opencontainers.image.description: "osparc-simcore dynamic-sidecar service"
         org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
         org.opencontainers.image.version: "${DYNAMIC_SIDECAR_API_VERSION}"
-        org.opencontainers.image.vendor: "IT'IS Foundation"
-        org.opencontainers.image.licenses: "MIT"
-
-  efs-guardian:
-    image: local/efs-guardian:${BUILD_TARGET:?build_target_required}
-    build:
-      context: ../
-      dockerfile: services/efs-guardian/Dockerfile
-      cache_from:
-        - local/efs-guardian:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:master-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:staging-github-latest
-        - ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:release-github-latest
-      target: ${BUILD_TARGET:?build_target_required}
-      labels:
-        org.opencontainers.image.title: "efs-guardian"
-        org.opencontainers.image.created: "${BUILD_DATE}"
-        org.opencontainers.image.source: "${VCS_URL}"
-        org.opencontainers.image.revision: "${VCS_REF}"
-        org.opencontainers.image.description: "osparc-simcore efs-guardian service"
-        org.opencontainers.image.documentation: "https://github.com/ITISFoundation/osparc-simcore#readme"
-        org.opencontainers.image.version: "${EFS_GUARDIAN_API_VERSION}"
         org.opencontainers.image.vendor: "IT'IS Foundation"
         org.opencontainers.image.licenses: "MIT"
 

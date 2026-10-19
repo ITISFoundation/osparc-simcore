@@ -66,7 +66,6 @@ class RedisClientSDK:
                 redis.exceptions.BusyLoadingError,
                 redis.exceptions.ConnectionError,
             ],
-            retry_on_timeout=True,
             socket_timeout=None,  # NOTE: setting a timeout here can lead to issues with long running commands
             encoding="utf-8",
             decode_responses=self.decode_responses,

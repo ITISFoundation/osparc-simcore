@@ -8,7 +8,7 @@ dependencies = [
   "boto3",
   # NOTE: these must be in sync with osparc
   "cloudpickle",
-  "dask[distributed]==2025.11.0",
+  "dask[distributed]==2026.7.1",
   "mypy_boto3_ec2",
   "types-boto3",
   "parse",
@@ -22,17 +22,17 @@ dependencies = [
   "orjson>=3.11.7",
 ]
 name = "autoscaled-monitor"
-version = "1.1.0"
+version = "1.2.1"
 authors = [
   { name = "Sylvain Anderegg", email = "35365065+sanderegg@users.noreply.github.com" },
 ]
 description = "Helper script for monitoring clusters"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14,<3.15"
 
 [project.scripts]
 autoscaled-monitor = "autoscaled_monitor.main:app"
 
 [build-system]
-requires = ["uv_build>=0.10.9,<0.11.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"

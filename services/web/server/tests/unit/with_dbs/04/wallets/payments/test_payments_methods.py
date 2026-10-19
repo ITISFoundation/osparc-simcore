@@ -17,16 +17,23 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodID,
     PaymentMethodInitiated,
     PaymentTransaction,
+    ReplaceWalletAutoRecharge,
     WalletGet,
     WalletPaymentInitiated,
 )
 from models_library.rest_pagination import Page
+from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
+from simcore_service_webserver.payments._autorecharge_api import (
+    get_wallet_payment_autorecharge,
+    replace_wallet_payment_autorecharge,
+)
+from simcore_service_webserver.payments._autorecharge_db import PaymentsAutorechargeGetDB
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
 )
@@ -36,6 +43,75 @@ from simcore_service_webserver.payments.settings import (
 from simcore_service_webserver.payments.settings import (
     get_plugin_settings as get_payments_plugin_settings,
 )
+
+
+async def test_get_wallet_autorecharge_reports_tip_threshold(
+    client: TestClient,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.payments._autorecharge_api.raise_for_wallet_payments_permissions",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.payments._autorecharge_api.get_wallet_autorecharge",
+        autospec=True,
+        return_value=None,
+    )
+    mocker.patch(
+        "simcore_service_webserver.payments._autorecharge_api.list_successful_payment_methods",
+        autospec=True,
+        return_value=[],
+    )
+
+    result = await get_wallet_payment_autorecharge(
+        client.app,
+        product_name="tis",
+        user_id=UserID(1),
+        wallet_id=WalletID(1),
+    )
+
+    assert result.min_balance_in_credits == Decimal(500)
+
+
+async def test_replace_wallet_autorecharge_reports_tip_threshold(
+    client: TestClient,
+    mocker: MockerFixture,
+):
+    assert client.app
+    mocker.patch(
+        "simcore_service_webserver.payments._autorecharge_api.raise_for_wallet_payments_permissions",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.payments._autorecharge_api.replace_wallet_autorecharge",
+        autospec=True,
+        return_value=PaymentsAutorechargeGetDB(
+            wallet_id=WalletID(1),
+            enabled=True,
+            primary_payment_method_id=PaymentMethodID("synthetic-payment-method"),
+            top_up_amount_in_usd=Decimal(100),
+            monthly_limit_in_usd=Decimal(1000),
+        ),
+    )
+
+    result = await replace_wallet_payment_autorecharge(
+        client.app,
+        product_name="tiplite",
+        user_id=UserID(1),
+        wallet_id=WalletID(1),
+        new=ReplaceWalletAutoRecharge.model_validate(
+            {
+                "enabled": True,
+                "paymentMethodId": "synthetic-payment-method",
+                "topUpAmountInUsd": Decimal(100),
+                "monthlyLimitInUsd": Decimal(1000),
+            }
+        ),
+    )
+
+    assert result.min_balance_in_credits == Decimal(500)
 
 
 @pytest.mark.acceptance_test("Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751")
@@ -168,7 +244,7 @@ async def _add_payment_method(client: TestClient, wallet_id: WalletID) -> Paymen
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
     [
-        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (1, status.HTTP_422_UNPROCESSABLE_CONTENT),
         (123.45, status.HTTP_200_OK),
     ],
 )
@@ -341,7 +417,7 @@ def mock_payment_dependencies(
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
     [
-        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (1, status.HTTP_422_UNPROCESSABLE_CONTENT),
         (26, status.HTTP_202_ACCEPTED),
     ],
 )

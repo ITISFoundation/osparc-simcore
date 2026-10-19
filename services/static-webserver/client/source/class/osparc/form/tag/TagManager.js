@@ -147,7 +147,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
       const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this.__studyData["resourceType"], {plural: true}) || "projects";
       this.__introLabel.set({
-        value: this.tr("Manage and apply tags to better organize your " + resourceAlias + ". Select from existing tags or create new ones, then save your changes when ready."),
+        value: this.tr("Manage and apply tags to better organize your %1. Select from existing tags or create new ones, then save your changes when ready.", resourceAlias),
       });
 
       this.__selectedTags.clear();

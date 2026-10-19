@@ -166,7 +166,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 ):
     await _list_projects(
         client,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
         expected_error_code="greater_than_equal",

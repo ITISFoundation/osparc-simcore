@@ -6,19 +6,22 @@ from collections.abc import AsyncIterable
 from typing import Annotated, Final
 
 import pytest
-from asgi_lifespan import LifespanManager
+from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
+    configure_client,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as setup_client
-from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
-from servicelib.fastapi.long_running_tasks.server import setup as setup_server
+from servicelib.fastapi.long_running_tasks.server import (
+    configure_server,
+    get_long_running_manager,
+)
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     GenericClientError,
@@ -40,6 +43,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
+TASK_LONG_SLEEP_INTERVAL: Final[PositiveFloat] = 2.0
 
 # UTILS
 
@@ -56,6 +60,15 @@ async def a_test_task(progress: TaskProgress) -> int:
 
 
 TaskRegistry.register(a_test_task)
+
+
+async def a_slow_test_task(progress: TaskProgress) -> int:
+    _ = progress
+    await asyncio.sleep(TASK_LONG_SLEEP_INTERVAL)
+    return 42
+
+
+TaskRegistry.register(a_slow_test_task)
 
 
 class _TestingError(Exception):
@@ -86,6 +99,16 @@ def user_routes() -> APIRouter:
             a_test_task.__name__,
         )
 
+    @router.get("/api/slow", status_code=status.HTTP_200_OK)
+    async def create_slow_task_user_defined_route(
+        long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
+    ) -> TaskId:
+        return await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            a_slow_test_task.__name__,
+        )
+
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
         long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
@@ -106,20 +129,22 @@ async def bg_task_app(
     use_in_memory_redis: RedisSettings,
     rabbit_service: RabbitSettings,
 ) -> AsyncIterable[FastAPI]:
-    app = FastAPI()
+    app_lifespan: LifespanManager[FastAPI] = LifespanManager()
+    app = FastAPI(lifespan=app_lifespan)
 
     app.include_router(user_routes)
 
-    setup_server(
+    configure_server(
         app,
+        app_lifespan,
         router_prefix=router_prefix,
         redis_settings=use_in_memory_redis,
         rabbit_settings=rabbit_service,
         lrt_namespace="test",
     )
-    setup_client(app, router_prefix=router_prefix)
+    configure_client(app, router_prefix=router_prefix)
 
-    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
+    async with ASGILifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
@@ -164,9 +189,13 @@ async def test_task_result_times_out(
     http_client: HttpClient,
     router_prefix: str,
 ) -> None:
-    task_id = await _create_and_get_taskid(async_client, endpoint="success")
+    # NOTE: awaiting a slow task (2 s) with a much shorter client timeout (0.1 s) keeps a
+    # ~20x margin so the timeout reliably wins the race against task completion, also on
+    # loaded CI runners where sub-100 ms scheduling delays would otherwise let a
+    # fast task finish before the deadline is delivered (see flaky `DID NOT RAISE` failures).
+    task_id = await _create_and_get_taskid(async_client, endpoint="slow")
 
-    timeout = TASK_SLEEP_INTERVAL / 10
+    timeout = TASK_SLEEP_INTERVAL
     with pytest.raises(TaskClientTimeoutError) as exec_info:
         async with periodic_task_result(
             http_client,

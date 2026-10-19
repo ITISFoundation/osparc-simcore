@@ -84,8 +84,7 @@ class Handlers:
     def returns_value(cls, suffix):
         handlers = cls()
         coro = getattr(handlers, "get_" + suffix)
-        loop = asyncio.get_event_loop()
-        returned_value = loop.run_until_complete(coro(None))
+        returned_value = asyncio.run(coro(None))
         return json.loads(json_dumps(returned_value))
 
     EXPECTED_RAISE_UNEXPECTED_REASON = "Unexpected error"

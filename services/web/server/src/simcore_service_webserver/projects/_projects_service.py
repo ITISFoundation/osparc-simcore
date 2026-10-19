@@ -16,10 +16,11 @@ from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import suppress
 from decimal import Decimal
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
+from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
@@ -27,8 +28,10 @@ from models_library.api_schemas_directorv2.comp_runs import (
     ComputationRunStateRpcGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
     GetProjectInactivityResponse,
+)
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -77,7 +80,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    set_reservation_same_as_limit,
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID, UserIDAdapter
@@ -118,6 +121,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
@@ -163,7 +167,7 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._nodes_utils import validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
@@ -176,11 +180,13 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
+    ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesSetByPricingUnitError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -418,15 +424,6 @@ async def get_project_type(app: web.Application, project_uuid: ProjectID) -> Pro
     db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     return await db_legacy.get_project_type(project_uuid)
-
-
-async def get_project_dict_legacy(app: web.Application, project_uuid: ProjectID) -> ProjectDict:
-    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
-    assert db_legacy  # nosec
-    project, _ = await db_legacy.get_project_dict_and_type(
-        f"{project_uuid}",
-    )
-    return project
 
 
 async def get_project_dict_and_type(
@@ -828,7 +825,9 @@ async def update_project_node_resources_from_hardware_info(
             project_id,
             node_id,
             product_name,
-            required_resources=ServiceResourcesDictHelpers.create_jsonable(node_resources),
+            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                node_resources, mode="json"
+            ),
             check_update_allowed=False,
         )
     except StopIteration as exc:
@@ -1228,6 +1227,47 @@ async def _remove_service_and_its_data_folders(
     )
 
 
+def _prune_node_references(node: Node, *, deleted_node_id: NodeID) -> PartialNode | None:
+    updates: dict[str, Any] = {}
+    if node.inputs is not None:
+        inputs = {
+            input_id: value
+            for input_id, value in node.inputs.items()
+            if not (isinstance(value, PortLink) and value.node_uuid == deleted_node_id)
+        }
+        if inputs != node.inputs:
+            updates["inputs"] = inputs
+
+    if node.input_nodes is not None:
+        input_nodes = [input_node_id for input_node_id in node.input_nodes if input_node_id != deleted_node_id]
+        if input_nodes != node.input_nodes:
+            updates["input_nodes"] = input_nodes
+
+    return PartialNode.model_construct(**updates) if updates else None
+
+
+_NODE_GRAPH_FIELDS: Final[frozenset[str]] = frozenset({"input_nodes", "inputs"})
+
+
+def _validate_node_references(
+    partial_node: PartialNode,
+    *,
+    project_id: ProjectID,
+    project_node_ids: set[NodeID],
+) -> None:
+    referenced_node_ids = (
+        set(partial_node.input_nodes or []) if "input_nodes" in partial_node.model_fields_set else set()
+    )
+    if "inputs" in partial_node.model_fields_set and partial_node.inputs is not None:
+        referenced_node_ids.update(
+            value.node_uuid for value in partial_node.inputs.values() if isinstance(value, PortLink)
+        )
+
+    if missing_node_ids := referenced_node_ids - project_node_ids:
+        missing_node_id = min(missing_node_ids, key=str)
+        raise ParentNodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{missing_node_id}")
+
+
 async def delete_project_node(
     request: web.Request,
     project_uuid: ProjectID,
@@ -1253,6 +1293,39 @@ async def delete_project_node(
         project_id=project_uuid,
     )
 
+    async def _delete_node_from_graph(connection: AsyncConnection) -> None:
+        project_nodes = await _projects_nodes_repository.get_by_project(
+            request.app,
+            connection=connection,
+            project_id=project_uuid,
+        )
+        for sibling_node_id, sibling_node in project_nodes.items():
+            if sibling_node_id == node_uuid:
+                continue
+
+            partial_node = _prune_node_references(sibling_node, deleted_node_id=node_uuid)
+            if partial_node is not None:
+                await _projects_nodes_repository.update(
+                    request.app,
+                    connection=connection,
+                    project_id=project_uuid,
+                    node_id=sibling_node_id,
+                    partial_node=partial_node,
+                )
+
+        await _projects_nodes_repository.delete(
+            request.app,
+            connection=connection,
+            project_id=project_uuid,
+            node_id=node_uuid,
+        )
+
+    await _projects_repository.run_project_graph_mutation(
+        request.app,
+        project_uuid=project_uuid,
+        mutation=_delete_node_from_graph,
+    )
+
     fire_and_forget_task(
         _remove_service_and_its_data_folders(
             request.app,
@@ -1265,12 +1338,6 @@ async def delete_project_node(
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
-    await _projects_nodes_repository.delete(
-        request.app,
-        project_id=project_uuid,
-        node_id=node_uuid,
     )
 
     await create_project_document_and_notify(
@@ -1336,7 +1403,7 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
 
 # Node fields that only affect the UI and therefore do not require syncing
 # the computational pipeline (director-v2 / comp_* DB tables) on patch.
-_NODE_UI_KEYS: Final[frozenset[str]] = frozenset({"ui"})
+_NODE_UI_KEYS: Final[frozenset[str]] = frozenset({"ui", "progress"})
 
 
 async def patch_project_node(
@@ -1379,13 +1446,39 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
+    if partial_node.model_fields_set & _NODE_GRAPH_FIELDS:
 
-    await _projects_nodes_repository.update(
-        app,
-        project_id=project_id,
-        node_id=node_id,
-        partial_node=partial_node,
-    )
+        async def _patch_node_graph(connection: AsyncConnection) -> None:
+            project_nodes = await _projects_nodes_repository.get_by_project(
+                app,
+                connection=connection,
+                project_id=project_id,
+            )
+            _validate_node_references(
+                partial_node,
+                project_id=project_id,
+                project_node_ids=set(project_nodes),
+            )
+            await _projects_nodes_repository.update(
+                app,
+                connection=connection,
+                project_id=project_id,
+                node_id=node_id,
+                partial_node=partial_node,
+            )
+
+        await _projects_repository.run_project_graph_mutation(
+            app,
+            project_uuid=project_id,
+            mutation=_patch_node_graph,
+        )
+    else:
+        await _projects_nodes_repository.update(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+            partial_node=partial_node,
+        )
 
     await create_project_document_and_notify(
         app,
@@ -1536,16 +1629,16 @@ async def _get_node_share_state(
     node_id: NodeID,
     node_key: ServiceKey,
     computational_pipeline_running: bool | None,
-    user_primrary_groupid: GroupID,
+    user_primary_groupid: GroupID,
 ) -> NodeShareState:
     if _is_node_dynamic(node_key):
         # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(app, node_id=node_id)
 
-        if isinstance(service, DynamicServiceGet | NodeGet):
+        if isinstance(service, RunningDynamicServiceDetails | NodeGet):
             # service is running
             is_collaborative_service = False
-            if isinstance(service, DynamicServiceGet):
+            if isinstance(service, RunningDynamicServiceDetails):
                 # only dynamic-sidecar powered services can be collaborative
                 is_collaborative_service = service.is_collaborative
 
@@ -1566,7 +1659,7 @@ async def _get_node_share_state(
         return NodeShareState(
             locked=True,
             current_user_groupids=[
-                user_primrary_groupid,
+                user_primary_groupid,
             ],
             status=NodeShareStatus.OPENED,
         )
@@ -1621,14 +1714,14 @@ async def _trigger_connected_service_retrieve(
     await logged_gather(*update_tasks, reraise=False)
 
 
-async def post_trigger_connected_service_retrieve(
+def post_trigger_connected_service_retrieve(
     app: web.Application,
     *,
     project: dict,
     updated_node_uuid: str,
     changed_keys: list[str],
 ) -> None:
-    await fire_and_forget_task(
+    fire_and_forget_task(
         _trigger_connected_service_retrieve(
             app,
             project=project,
@@ -1863,31 +1956,34 @@ async def close_project_for_user(
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
     _logger.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
-    if not all_user_sessions_with_project:
-        # NOTE: depending on the garbage collector speed, it might already be removing it
-        remove_services_task = remove_project_dynamic_services(
-            user_id, project_uuid, app, simcore_user_agent, product_name
-        )
-        if wait_for_service_closed:
-            # wait for the task to finish
-            await remove_services_task
-        else:
-            fire_and_forget_task(
-                remove_services_task,
-                task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
-                fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    try:
+        if not all_user_sessions_with_project:
+            # NOTE: depending on the garbage collector speed, it might already be removing it
+            remove_services_task = remove_project_dynamic_services(
+                user_id, project_uuid, app, simcore_user_agent, product_name
             )
-    else:
-        # when the project is still opened by other users, we just notify the project state update
-        project = await get_project_for_user(
-            app,
-            f"{project_uuid}",
-            user_id,
-            include_state=True,
-        )
-        await notify_project_state_update(app, project)
-
-    await conditionally_unsubscribe_project_logs_across_replicas(app, project_uuid, user_id)
+            if wait_for_service_closed:
+                # wait for the task to finish
+                await remove_services_task
+            else:
+                fire_and_forget_task(
+                    remove_services_task,
+                    task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+                    fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+                )
+        else:
+            # when the project is still opened by other users, we just notify the project state update
+            project = await get_project_for_user(
+                app,
+                f"{project_uuid}",
+                user_id,
+                include_state=True,
+            )
+            await notify_project_state_update(app, project)
+    finally:
+        # NOTE: always unsubscribe, even if the above raised (e.g. an RPC timeout), so a
+        # failure here can never leak this project's log topic binding on this replica
+        await conditionally_unsubscribe_project_logs_across_replicas(app, project_uuid, user_id)
 
 
 async def _get_project_share_state(
@@ -2088,7 +2184,7 @@ async def add_project_states_for_user(
                 node_id=NodeID(node_uuid),
                 node_key=node["key"],
                 computational_pipeline_running=is_pipeline_running,
-                user_primrary_groupid=user_primary_group_id,
+                user_primary_groupid=user_primary_group_id,
             )
         if NodeID(node_uuid) in computational_node_states:
             computed_node_state = computational_node_states[NodeID(node_uuid)].model_copy(
@@ -2171,7 +2267,9 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+            project_node.required_resources
+        )
         if not node_resources:
             # get default resources
             node_resources = await catalog_service.get_service_resources(
@@ -2197,7 +2295,9 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources = TypeAdapter(ServiceResourcesDict).validate_python(current_project_node.required_resources)
+        current_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+            current_project_node.required_resources
+        )
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
@@ -2208,15 +2308,25 @@ async def update_project_node_resources(
         validate_new_service_resources(current_resources, new_resources=resources)
         set_reservation_same_as_limit(resources)
 
+        if pricing := await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id):
+            raise ProjectNodeResourcesSetByPricingUnitError(
+                project_uuid=f"{project_id}",
+                node_uuid=f"{node_id}",
+                pricing_plan_id=pricing.pricing_plan_id,
+                pricing_unit_id=pricing.pricing_unit_id,
+            )
+
         project_node = await db.update_project_node(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             product_name=product_name,
-            required_resources=jsonable_encoder(resources),
+            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                resources, mode="json"
+            ),
             check_update_allowed=True,
         )
-        return TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(project_node.required_resources)
     except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}") from exc
 
@@ -2361,27 +2471,47 @@ async def _send_message_to_rooms(
     app: web.Application,
     rooms: Iterable[GroupID],
     message: SocketMessageDict,
+    *,
+    strict: Annotated[
+        bool,
+        doc(
+            "if True, emit failures are raised so the caller can retry the notification "
+            "(at-least-once, used by the outbox consumer); if False, failures are only "
+            "logged. Emitting to a room with no members is a no-op in both cases, see "
+            "socketio/_messages.py"
+        ),
+    ],
 ) -> None:
-    await limited_gather(
-        *(socketio_service.send_message_to_standard_group(app, room, message) for room in rooms),
+    # all emits settle before the first failure is raised, so a retry never overlaps
+    # emits still in flight from the failed attempt
+    results = await limited_gather(
+        *(socketio_service.send_message_to_standard_group(app, room, message, strict=strict) for room in rooms),
+        reraise=False,
         log=_logger,
         limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
     )
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
 
 
 async def _send_message_to_project_groups(
     app: web.Application,
     project_id: ProjectID,
     message: SocketMessageDict,
+    *,
+    strict: bool,
 ) -> None:
     rooms_to_notify = await _list_project_group_rooms_to_notify(app, project_id)
-    await _send_message_to_rooms(app, rooms_to_notify, message)
+    await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
     notify_only_user: UserID | None = None,
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2402,15 +2532,18 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
+            strict=strict,
         )
     else:
-        await _send_message_to_project_groups(app, project["uuid"], message)
+        await _send_message_to_project_groups(app, project["uuid"], message, strict=strict)
 
 
 async def notify_project_nodes_update(
     app: web.Application,
     project: dict,
     node_ids: Iterable[NodeID],
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2428,15 +2561,17 @@ async def notify_project_nodes_update(
             data=data,
         )
 
-        await _send_message_to_rooms(app, rooms_to_notify, message)
+        await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
+    *,
+    strict: bool = False,
 ) -> None:
-    await notify_project_nodes_update(app, project, (node_id,))
+    await notify_project_nodes_update(app, project, (node_id,), strict=strict)
 
 
 async def retrieve_and_notify_project_locked_state(

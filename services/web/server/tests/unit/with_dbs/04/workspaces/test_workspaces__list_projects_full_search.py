@@ -411,7 +411,7 @@ async def test__list_projects_full_search_with_template_type_regular_and_none(
     # Test: Filter by template_type="template" --> Default type is "all"
     url = base_url.with_query({"text": "Project Test", "template_type": "TEMPLATE"})
     resp = await client.get(f"{url}")
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     # Test: Filter by type= template_type="null"
     url = base_url.with_query({"text": "Project Test", "type": "all", "template_type": "null"})

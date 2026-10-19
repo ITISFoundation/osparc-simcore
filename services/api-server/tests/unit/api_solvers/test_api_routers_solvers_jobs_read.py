@@ -293,4 +293,4 @@ async def test_list_all_solvers_jobs_metadata_any_and_all_mutually_exclusive(
         params=params,
     )
 
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

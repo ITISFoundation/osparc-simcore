@@ -3,10 +3,12 @@ from typing import Literal
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services_environments import (
     VendorSecret,
     get_vendor_secrets,
 )
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ._base import BaseRepository
 
@@ -21,9 +23,11 @@ class ServicesEnvironmentsRepository(BaseRepository):
         service_key: ServiceKey,
         service_version: ServiceVersion | Literal["latest"],
         product_name: ProductName,
+        *,
+        connection: AsyncConnection | None = None,
     ) -> dict[str, VendorSecret]:
         """Fetches vendor secrets for a service using normalized names"""
-        async with self.db_engine.connect() as conn:
+        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             vendor_secrets = await get_vendor_secrets(
                 conn,
                 product_name=product_name,

@@ -32,6 +32,7 @@ qx.Class.define("osparc.notification.RibbonNotifications", {
       visibility: "excluded"
     });
 
+    qx.event.message.Bus.getInstance().subscribe("localeSwitch", this.__updateRibbon, this);
     this.__updateRibbon();
   },
 

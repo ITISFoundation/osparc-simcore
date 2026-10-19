@@ -50,7 +50,7 @@ pip-delete-this-directory.txt
 cov.xml
 coverage.xml
 htmlcov/
-junit.xml
+junit*.xml
 locust_report/
 nosetests.xml
 test_failures/
@@ -104,6 +104,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# lychee link checker cache
+.lycheecache
+
 # node
 # Dependency directories
 node_modules/
@@ -133,6 +136,7 @@ services/docker-compose.stack.*.yml
 # Any generated output folder (e.g. codegen, build, ...)
 out/
 **/tmp/
+.tmp
 
 # See .vscode-template
 pytest.ini
@@ -193,3 +197,20 @@ repo*.config*
 
 # playwright CLI outputs
 .playwright-cli/*
+
+# temporary: ignore graphify
+.copilot/skills/graphify/.graphify_version
+.copilot/skills/graphify/SKILL.md
+.copilot/skills/graphify/references/add-watch.md
+.copilot/skills/graphify/references/exports.md
+.copilot/skills/graphify/references/extraction-spec.md
+.copilot/skills/graphify/references/github-and-merge.md
+.copilot/skills/graphify/references/hooks.md
+.copilot/skills/graphify/references/query.md
+.copilot/skills/graphify/references/transcribe.md
+.copilot/skills/graphify/references/update.md
+
+
+# temporary folders used by agents within workspace
+.tmp
+.scratch

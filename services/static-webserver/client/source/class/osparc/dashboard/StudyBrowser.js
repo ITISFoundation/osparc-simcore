@@ -744,7 +744,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _trashFolderRequested: function(folderId) {
       const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       let msg = this.tr("Are you sure you want to delete the Folder and all its content?");
-      msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
+      msg += "<br><br>" + this.tr("It will be permanently deleted after %1 days.", trashDays);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
@@ -1754,12 +1754,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         marginRight: 8
       });
       selectButton.bind("value", this, "multiSelection");
-      selectButton.bind("value", selectButton, "label", {
-        converter: val => val ? this.tr("Cancel Selection") : (this.tr("Select ") + osparc.product.Utils.getStudyAlias({
+      const updateLabel = () => {
+        const alias = osparc.product.Utils.getStudyAlias({
           plural: true,
           firstUpperCase: true
-        }))
-      });
+        });
+        selectButton.setLabel(selectButton.getValue() ? this.tr("Cancel Selection") : this.tr("Select %1", alias));
+      };
+      selectButton.addListener("changeValue", updateLabel);
+      qx.event.message.Bus.getInstance().subscribe("localeSwitch", updateLabel);
+      updateLabel();
       this.bind("multiSelection", selectButton, "value");
       this.bind("currentContext", selectButton, "visibility", {
         converter: currentContext => currentContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS ? "visible" : "excluded"

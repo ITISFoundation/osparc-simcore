@@ -186,7 +186,7 @@ async def delete_study_job(
             "description": "Cluster not found",
             "model": ErrorGet,
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Configuration error",
             "model": ErrorGet,
         },

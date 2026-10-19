@@ -1,3 +1,6 @@
+import asyncio
+import functools
+import secrets
 from datetime import datetime
 from typing import TypedDict
 
@@ -15,6 +18,16 @@ from ..security import security_service
 from . import _login_service
 from .constants import MSG_UNKNOWN_EMAIL
 from .errors import WrongPasswordError
+
+
+@functools.cache
+def _get_dummy_password_hash() -> str:
+    return security_service.encrypt_password(secrets.token_urlsafe(16))
+
+
+def _verify_against_dummy_hash(password: str) -> None:
+    # approximates the wrong-password cost for unknown emails
+    security_service.check_password(password, _get_dummy_password_hash())
 
 
 class UserInfoDict(TypedDict):
@@ -69,11 +82,12 @@ async def create_user(
 ) -> UserInfoDict:
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
+    password_hash = await asyncio.to_thread(security_service.encrypt_password, password)
     async with transaction_context(asyncpg_engine) as conn:
         user_row = await repo.new_user(
             conn,
             email=email,
-            password_hash=security_service.encrypt_password(password),
+            password_hash=password_hash,
             status=status_upon_creation,
             expires_at=expires_at,
         )
@@ -110,25 +124,36 @@ async def check_authorized_user_credentials(
     """
 
     Raises:
-        WrongPasswordError: when password is invalid
+        WrongPasswordError: when password is invalid or the user does not exist
         web.HTTPUnauthorized: 401
 
     Returns:
         user info dict
     """
 
-    user = check_not_null_user(user)
+    if user is None:
+        await asyncio.to_thread(_verify_against_dummy_hash, password)
+        raise WrongPasswordError(user_id=None, product_name=product.name)
 
+    repo = UsersRepo(get_asyncpg_engine(app))
+
+    password_hash = await repo.get_password_hash(user_id=user["id"])
+    if not await asyncio.to_thread(security_service.check_password, password, password_hash):
+        raise WrongPasswordError(user_id=user["id"], product_name=product.name)
+
+    # only after the password check, to not reveal the account state
     _login_service.validate_user_access(
         user_status=user["status"],
         user_role=user["role"],
         support_email=product.support_email,
     )
 
-    repo = UsersRepo(get_asyncpg_engine(app))
-
-    if not security_service.check_password(password, password_hash=await repo.get_password_hash(user_id=user["id"])):
-        raise WrongPasswordError(user_id=user["id"], product_name=product.name)
+    if security_service.password_needs_rehash(password_hash):
+        await repo.update_user_password_hash_if_unchanged(
+            user_id=user["id"],
+            expected_password_hash=password_hash,
+            new_password_hash=await asyncio.to_thread(security_service.encrypt_password, password),
+        )
     return user
 
 
@@ -178,9 +203,9 @@ async def update_user_password(
         current_password_hash = await repo.get_password_hash(user_id=user_id)
 
         # Verify current password
-        if not security_service.check_password(current_password, current_password_hash):
+        if not await asyncio.to_thread(security_service.check_password, current_password, current_password_hash):
             raise WrongPasswordError(user_id=user_id)
 
     # Encrypt new password and update
-    new_password_hash = security_service.encrypt_password(new_password)
+    new_password_hash = await asyncio.to_thread(security_service.encrypt_password, new_password)
     await repo.update_user_password_hash(user_id=user_id, password_hash=new_password_hash)

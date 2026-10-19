@@ -1497,7 +1497,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __mouseMove: function(e) {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
-      } else if (this.__tempEdgeRepr === null && this.__annotating && this.__annotationInitPos && e.isLeftPressed()) {
+      } else if (this.__tempEdgeRepr === null && this.__annotating === osparc.workbench.Annotation.TYPES.RECT && this.__annotationInitPos && e.isLeftPressed()) {
         this.__drawingAnnotation(e);
       } else if (this.__tempEdgeRepr === null && this.__selectionRectInitPos && e.isLeftPressed()) {
         this.__drawingSelectionRect(e);

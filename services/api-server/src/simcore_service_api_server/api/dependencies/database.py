@@ -9,14 +9,15 @@ from simcore_postgres_database.utils_aiosqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ...clients.postgres import get_engine
 from ...repository import BaseRepository
 
 _logger = logging.getLogger(__name__)
 
 
 def get_db_asyncpg_engine(request: Request) -> AsyncEngine:
-    return get_engine(request.app)
+    assert request.app.state.engine  # nosec
+    engine: AsyncEngine = request.app.state.engine
+    return engine
 
 
 def get_repository(repo_type: type[BaseRepository]) -> Callable:

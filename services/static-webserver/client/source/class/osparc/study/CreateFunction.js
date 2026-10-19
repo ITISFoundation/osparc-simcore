@@ -33,12 +33,12 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
-      In order to Create a Function, the pipeline needs:
-      - at least one parameter and one probe (numbers)
-      - at least one computational app
-      - no dynamic apps
-    `),
+    CREATE_FUNCTION_TEXT: [
+      qx.locale.Manager.tr("In order to Create a Function, the pipeline needs:"),
+      qx.locale.Manager.tr("- at least one parameter and one probe (numbers)"),
+      qx.locale.Manager.tr("- at least one computational app"),
+      qx.locale.Manager.tr("- no dynamic apps"),
+    ].join("\n"),
 
     isPotentialFunction: function(workbench) {
       // const filePickers = osparc.study.Utils.extractFilePickers(workbench);

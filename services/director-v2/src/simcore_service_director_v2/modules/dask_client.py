@@ -49,6 +49,7 @@ from dask_task_models_library.models import (
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
@@ -78,7 +79,7 @@ from ..core.errors import (
     TaskSchedulingError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
-from ..models.comp_runs import RunMetadataDict
+from ..models.comp_runs import RunID, RunMetadataDict
 from ..models.comp_tasks import Image
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
@@ -157,7 +158,7 @@ class DaskClient:
                     )
                     _logger.info(
                         "Scheduler info:\n%s",
-                        json_dumps(backend.client.scheduler_info(), indent=2),
+                        json_dumps(await get_scheduler_details(backend.client), indent=2, sanitize_keys=True),
                     )
                     return instance
         # this is to satisfy pylance
@@ -251,7 +252,15 @@ class DaskClient:
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
 
-            await dask_utils.wrap_client_async_routine(self.backend.client.publish_dataset(task_future, name=job_id))
+            try:
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.publish_dataset(task_future, name=job_id)
+                )
+            except KeyError as exc:
+                if "already exists" not in f"{exc}":
+                    raise
+                # NOTE: job_id (stable per run_id) was already published -> resubmission is a no-op.
+                _logger.info("dask task %s was already published, this should not happen but is harmless", f"{job_id=}")
 
             _logger.info(
                 "Dask task %s started [%s] with encryption [%s]",
@@ -277,9 +286,12 @@ class DaskClient:
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
         resource_tracking_run_id: ServiceRunID,
+        run_id: RunID,
     ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started.
+
+        `run_id` makes the job_id stable for a given (project_id, node_id, run_id), enabling idempotent resubmission.
 
         Raises:
           - ComputationalBackendNoS3AccessError when storage is not accessible
@@ -299,6 +311,7 @@ class DaskClient:
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
+                run_id=run_id,
             )
             assert node_image.node_requirements  # nosec
             dask_resources = dask_utils.from_node_reqs_to_dask_resources(node_image.node_requirements)
@@ -317,7 +330,7 @@ class DaskClient:
                 dask_utils.check_if_cluster_is_able_to_run_pipeline(
                     project_id=project_id,
                     node_id=node_id,
-                    scheduler_info=self.backend.client.scheduler_info(),
+                    scheduler_info=await get_scheduler_details(self.backend.client),
                     task_resources=dask_resources,
                     node_image=node_image,
                 )

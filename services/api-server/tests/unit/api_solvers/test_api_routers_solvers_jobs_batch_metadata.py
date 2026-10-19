@@ -291,4 +291,4 @@ async def test_batch_get_jobs_custom_metadata_exceeds_max_ids(
         auth=auth,
         params={"job_ids": [str(j) for j in too_many_job_ids]},
     )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

@@ -32,7 +32,7 @@ from typing import Final, Literal
 _logger = logging.getLogger(__name__)
 
 # Extend as new language catalogs are added. See test_supported_locale_catalog_alignment.
-type SupportedLocale = Literal["en", "es_ES", "zh_CN"]
+type SupportedLocale = Literal["en", "es_ES", "ko_KR", "zh_CN"]
 DEFAULT_LOCALE: Final[SupportedLocale] = "en"
 
 

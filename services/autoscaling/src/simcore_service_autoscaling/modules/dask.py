@@ -3,12 +3,11 @@ import contextlib
 import logging
 import re
 from collections import defaultdict
-from collections.abc import AsyncIterator, Callable, Coroutine
-from typing import Any, Final, TypeAlias, TypedDict
+from collections.abc import AsyncGenerator, Coroutine
+from typing import Any, Final, TypedDict
 
 import dask.typing
 import distributed
-from aiocache import cached  # type: ignore[import-untyped]
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceType
 from dask_task_models_library.resource_constraints import (
@@ -16,8 +15,8 @@ from dask_task_models_library.resource_constraints import (
     DaskTaskResources,
     create_ec2_resource_constraint_key,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from distributed.core import Status
-from distributed.objects import SchedulerInfo
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
@@ -49,31 +48,10 @@ async def _wrap_client_async_routine(
 
 
 _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
-_SCHEDULER_IDENTITY_CACHE_TTL_S: Final[int] = 2
-
-
-def _scheduler_identity_key_builder(func: Callable[..., Any], client: distributed.Client) -> str:
-    assert client.scheduler  # nosec
-    return f"{func.__module__}.{func.__qualname__}|{client.scheduler.address}"
-
-
-@cached(ttl=_SCHEDULER_IDENTITY_CACHE_TTL_S, key_builder=_scheduler_identity_key_builder)
-async def _get_scheduler_identity(client: distributed.Client) -> SchedulerInfo:
-    """Returns all workers from the scheduler with a 2-second TTL cache.
-
-    client.scheduler_info() is a local cache capped at 5 workers for async clients
-    since https://github.com/dask/distributed/pull/9045.
-    client.scheduler.identity(n_workers=-1) is a live RPC but we cache it briefly
-    to avoid redundant round-trips within a single autoscaling tick.
-    """
-    assert client.scheduler  # nosec
-    info = await client.scheduler.identity(n_workers=-1)
-    assert isinstance(info, dict)  # nosec
-    return SchedulerInfo(info)
 
 
 @contextlib.asynccontextmanager
-async def _scheduler_client(url: AnyUrl, authentication: ClusterAuthentication) -> AsyncIterator[distributed.Client]:
+async def _scheduler_client(url: AnyUrl, authentication: ClusterAuthentication) -> AsyncGenerator[distributed.Client]:
     """
     Raises:
         DaskSchedulerNotFoundError: if the scheduler was not found/cannot be reached
@@ -98,8 +76,8 @@ async def _scheduler_client(url: AnyUrl, authentication: ClusterAuthentication) 
         raise DaskSchedulerNotFoundError(url=url) from exc
 
 
-DaskWorkerUrl: TypeAlias = str
-DaskWorkerDetails: TypeAlias = dict[str, Any]
+type DaskWorkerUrl = str
+type DaskWorkerDetails = dict[str, Any]
 DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(
     r"^(?P<host_name>.+)_(?P<private_ip>ip-\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})[-_].*$"
 )
@@ -109,9 +87,6 @@ async def _dask_worker_from_ec2_instance(
     client: distributed.Client, ec2_instance: EC2InstanceData
 ) -> tuple[DaskWorkerUrl, DaskWorkerDetails]:
     """
-    Uses client.scheduler.identity() RPC to get all workers live from the scheduler,
-    bypassing client.scheduler_info() which is a local cache capped at 5 workers
-    for async clients regardless of the n_workers argument.
 
     Raises:
         Ec2InvalidDnsNameError
@@ -120,7 +95,7 @@ async def _dask_worker_from_ec2_instance(
     """
     node_hostname = node_host_name_from_ec2_private_dns(ec2_instance)
     assert client.scheduler  # nosec
-    scheduler_identity = await _get_scheduler_identity(client)
+    scheduler_identity = await get_scheduler_details(client)
     if "workers" not in scheduler_identity or not scheduler_identity["workers"]:
         raise DaskNoWorkersError(url=client.scheduler.address)
     workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_identity["workers"]
@@ -324,7 +299,7 @@ async def compute_cluster_total_resources(
     async with _scheduler_client(scheduler_url, authentication) as client:
         ec2_instance_resources_map = {node_ip_from_ec2_private_dns(i): i.resources for i in instances}
         assert client.scheduler is not None  # nosec
-        scheduler_identity = await _get_scheduler_identity(client)
+        scheduler_identity = await get_scheduler_details(client)
         if "workers" not in scheduler_identity or not scheduler_identity["workers"]:
             raise DaskNoWorkersError(url=scheduler_url)
         workers: dict[str, Any] = scheduler_identity["workers"]

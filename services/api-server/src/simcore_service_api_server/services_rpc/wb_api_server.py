@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from functools import partial
-from typing import cast
+from typing import ClassVar, cast
 
 from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI
@@ -129,8 +129,9 @@ def _create_licensed_items_get_page(
 
 @dataclass
 class WbApiRpcClient(SingletonInAppStateMixin):
-    app_state_name = "wb_api_rpc_client"
     _rpc_client: WebServerRpcClient
+
+    app_state_name: ClassVar[str] = "wb_api_rpc_client"
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(

@@ -23,9 +23,9 @@ pytest
 pytest-aiohttp
 pytest-benchmark
 pytest-cov
-pytest-docker
 pytest-mock
 pytest-runner
+pytest-xdist
 respx
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types-psycopg2

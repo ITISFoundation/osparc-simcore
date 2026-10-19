@@ -21,7 +21,7 @@ qx.Class.define("osparc.About", {
   type: "singleton",
 
   construct: function() {
-    this.base(arguments, this.tr("About ") + this.self().OSPARC_OFFICIAL);
+    this.base(arguments, this.tr("About %1", this.self().OSPARC_OFFICIAL));
     this.set({
       layout: new qx.ui.layout.VBox(10),
       maxWidth: this.self().MAX_WIDTH,
@@ -64,8 +64,8 @@ qx.Class.define("osparc.About", {
       });
       this.add(poweredByLabel);
       const displayName = osparc.store.StaticInfo.getDisplayName();
-      const poweredText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
-      poweredByLabel.setValue(displayName + poweredText);
+      const platformLink = `<a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a>`;
+      poweredByLabel.setValue(this.tr("%1 is powered by the %2 platform.", displayName, platformLink));
 
       const text = this.tr("\
          is an online-accessible, cloud-based, and collaborative computational modeling platform \
@@ -75,7 +75,7 @@ qx.Class.define("osparc.About", {
         and the resulting effects on organ function.<br><br>\
         For more information about SPARC and the services offered, visit the \
       ");
-      const portalLink = `<a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>.`;
+      const portalLink = `<a href='https://sparc.science/' style='color: ${color}' target='_blank'>SPARC Portal</a>`;
       const aboutText = this.self().OSPARC_OFFICIAL + text + portalLink;
       const aboutLabel = new qx.ui.basic.Label().set({
         value: aboutText,

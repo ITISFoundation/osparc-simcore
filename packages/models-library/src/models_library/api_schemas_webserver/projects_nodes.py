@@ -78,7 +78,7 @@ class NodePatch(InputSchemaWithoutCamelCase):
             exclude_unset=True,
             by_alias=True,
         )
-        return PartialNode.model_construct(**data)
+        return PartialNode.model_validate(data)
 
 
 class NodeCreated(OutputSchema):

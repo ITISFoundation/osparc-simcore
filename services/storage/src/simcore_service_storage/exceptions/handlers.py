@@ -35,7 +35,7 @@ def set_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         InvalidFileIdentifierError,
         make_http_error_handler_for_exception(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             InvalidFileIdentifierError,
             envelope_error=True,
         ),
@@ -62,7 +62,7 @@ def set_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         LinkAlreadyExistsError,
         make_http_error_handler_for_exception(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             LinkAlreadyExistsError,
             envelope_error=True,
         ),

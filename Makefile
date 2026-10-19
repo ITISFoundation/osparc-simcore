@@ -41,7 +41,6 @@ SERVICES_NAMES_TO_BUILD := \
   director \
   director-v2 \
   dynamic-sidecar \
-	efs-guardian \
 	invitations \
   migration \
 	notifications \
@@ -74,7 +73,6 @@ export DIRECTOR_API_VERSION   := $(shell cat $(CURDIR)/services/director/VERSION
 export DIRECTOR_V2_API_VERSION:= $(shell cat $(CURDIR)/services/director-v2/VERSION)
 export DOCKER_API_PROXY_API_VERSION := $(shell cat $(CURDIR)/services/docker-api-proxy/VERSION)
 export DYNAMIC_SIDECAR_API_VERSION := $(shell cat $(CURDIR)/services/dynamic-sidecar/VERSION)
-export EFS_GUARDIAN_API_VERSION := $(shell cat $(CURDIR)/services/efs-guardian/VERSION)
 export STORAGE_API_VERSION    := $(shell cat $(CURDIR)/services/storage/VERSION)
 export INVITATIONS_API_VERSION  := $(shell cat $(CURDIR)/services/invitations/VERSION)
 export MIGRATION_API_VERSION := $(shell cat $(CURDIR)/services/migration/VERSION)
@@ -159,10 +157,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-.PHONY: help
-
-help: ## help on rule's targets
-	@awk 'BEGIN {FS = ":.*?## "}; /^[^.[:space:]].*?:.*?## / {if ($$1 != "help" && NF == 2) {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}}' $(MAKEFILE_LIST)
+include scripts/makefiles/help.mk
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
@@ -176,7 +171,7 @@ _check_venv_active:
 	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"
 
 
-## DOCKER BUILD -------------------------------
+##@ Docker Build
 #
 # - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
@@ -279,7 +274,7 @@ shell:
 	docker run -it local/$(target):production /bin/sh
 
 
-## DOCKER SWARM -------------------------------
+##@ Docker Swarm
 #
 # - All resolved configuration are named as .stack-${name}-*.yml to distinguish from docker-compose files which can be parametrized
 #
@@ -396,7 +391,7 @@ printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
 printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
-printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
+printf "$$rows" "Storage S3 (RustFS)" "http://$(get_my_ip).nip.io:9090/rustfs/console/" 12345678 12345678;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
 printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
@@ -557,7 +552,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 
-## DOCKER TAGS  -------------------------------
+##@ Docker Tags
 
 .PHONY: tag-local tag-version tag-latest
 
@@ -579,7 +574,7 @@ tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/
 
 
 
-## DOCKER PULL/PUSH  -------------------------------
+##@ Docker Pull/Push
 
 .PHONY: pull-version
 
@@ -617,22 +612,28 @@ pull-externals: ## pulls non-simcore external images defined in docker-compose.y
 
 
 
-
-## ENVIRONMENT -------------------------------
+##@ Environment
 
 .PHONY: devenv devenv-all node-env
+
+# Single source of truth for the uv version (see requirements/UV_VERSION for the pinning note).
+# tests/environment-setup/test_used_uv.py verifies all other references stay in sync.
+# exported so docker buildx bake interpolates it into the base image builds
+# (services/docker-compose-build.yml); requirements/UV_VERSION is hashed into
+# BASE_TAG by ci/helpers/compute_base_image_tag.bash
+export UV_VERSION := $(shell cat requirements/UV_VERSION)
 
 .check-uv-installed:
 		@echo "Checking if 'uv' is installed..."
 		@if ! command -v uv >/dev/null 2>&1; then \
-				curl -LsSf https://astral.sh/uv/install.sh | sh; \
+				curl -LsSf https://astral.sh/uv/$(UV_VERSION)/install.sh | sh; \
 		else \
 				printf "\033[32m'uv' is installed. Version: \033[0m"; \
 				uv --version; \
 		fi
-		# upgrading uv
+		# upgrading uv (pinned, see note above)
 		@if [ "${CI}" != "true" ]; then \
-			uv self --quiet update; \
+			uv self --quiet update $(UV_VERSION) || true; \
 		else \
 			echo "Skipping 'uv self update' in CI (CI=${CI})"; \
 		fi
@@ -676,7 +677,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
 
-## TOOLS -------------------------------
+##@ Tools
 
 .PHONY: pylint
 
@@ -766,7 +767,7 @@ postgres-upgrade: ## initialize or upgrade postgres db to latest state
 CITATION-validate: ## validates CITATION.cff file
 	@docker run --rm -v $(CURDIR):/app citationcff/cffconvert --validate
 
-## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
+##@ Local Docker Registry (local-dev)
 
 LOCAL_REGISTRY_HOSTNAME := registry
 LOCAL_REGISTRY_VOLUME   := $(LOCAL_REGISTRY_HOSTNAME)
@@ -856,7 +857,7 @@ info-registry: ## info on local registry (if any)
 	@echo No target set)
 
 
-## INFO -------------------------------
+##@ Info
 
 .PHONY: info info-images info-swarm
 info: ## displays setup information
@@ -922,7 +923,7 @@ endif
 
 
 
-## CLEAN -------------------------------
+##@ Clean
 
 .PHONY: clean clean-images clean-venv clean-all clean-more
 
@@ -974,7 +975,8 @@ reset: ## restart docker daemon (LINUX ONLY)
 	sudo systemctl restart docker
 
 
-# RELEASE --------------------------------------------------------------------------------------------------------------------------------------------
+
+##@ Release
 
 staging_prefix := staging_
 prod_prefix := v
@@ -1010,6 +1012,8 @@ define create_github_release_url
 	echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)" && \
 	echo -e "\e[34m$(_prettify_logs)"
 endef
+
+
 
 .PHONY: release-staging release-prod
 release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=mandatory)

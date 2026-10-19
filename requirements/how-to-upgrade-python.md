@@ -18,7 +18,7 @@ These are kept in sync by reusing the `PYTHON_VERSION` variable where possible.
 
 ## Tooling support
 
-- CI job `unit-test-python-linting` (in `.github/workflows/ci-testing-deploy.yml`)
+- CI job `unit-test-python-linting` (in `.github/workflows/ci-build-test.yml`)
   runs the lint suite against a matrix of the current and next Python versions
   to surface incompatibilities early.
 - [pyupgrade](https://github.com/asottile/pyupgrade) is containerized as

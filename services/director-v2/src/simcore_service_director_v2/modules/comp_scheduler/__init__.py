@@ -47,8 +47,8 @@ def configure_comp_scheduler(app_lifespan: LifespanManager) -> None:
     # NOTE: each resource is registered as its own lifespan so that, if a later one fails to
     # start, the LifespanManager only tears down the resources that were actually started (in
     # reverse order), instead of leaving them dangling.
-    app_lifespan.add(_releaser_lifespan)
     app_lifespan.add(_worker_lifespan)
+    app_lifespan.add(_releaser_lifespan)
     app_lifespan.add(_manager_lifespan)
 
 

@@ -206,7 +206,7 @@ qx.Class.define("osparc.tours.Step", {
 
     __updateButtons: function() {
       const stepLabel = this.getChildControl("step-label");
-      stepLabel.setValue(this.tr("Step: ") + this.getStepIndex() + "/" + this.getNSteps());
+      stepLabel.setValue(this.tr("Step: %1/%2", this.getStepIndex(), this.getNSteps()));
 
       const nextButton = this.getChildControl("next-button");
       const lastStep = this.getStepIndex() === this.getNSteps();

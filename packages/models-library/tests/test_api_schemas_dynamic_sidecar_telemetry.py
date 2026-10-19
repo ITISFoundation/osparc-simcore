@@ -38,21 +38,7 @@ def test_disk_usage():
     _assert_same_value(ps_util_disk_usage)
 
 
-def test_from_efs_guardian_constructor():
-    result = DiskUsage.from_efs_guardian(10, 100)
-    assert result.used == ByteSize(10)
-    assert result.free == ByteSize(90)
-    assert result.total == ByteSize(100)
-    assert result.used_percent == 10
-
-
 def test_failing_validation():
-    with pytest.raises(ValidationError) as exc:
-        assert DiskUsage.from_efs_guardian(100, 10)
-
-    assert "free" in f"{exc.value}"
-    assert "input_value=-90" in f"{exc.value}"
-
     with pytest.raises(ValidationError) as exc:
         assert DiskUsage(
             used=-10,  # type: ignore

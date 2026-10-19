@@ -75,7 +75,7 @@ async def app(
         rabbit_settings=rabbit_service,
         lrt_namespace="test-lifespan",
     )
-    configure_client(app_lifespan)
+    configure_client(_app)
 
     async with ASGILifespanManager(_app, startup_timeout=30, shutdown_timeout=30):
         yield _app
@@ -138,7 +138,7 @@ async def test_teardown_called_once_on_shutdown(
         rabbit_settings=rabbit_service,
         lrt_namespace="test-lifespan-teardown",
     )
-    configure_client(app_lifespan)
+    configure_client(_app)
 
     async with ASGILifespanManager(_app, startup_timeout=30, shutdown_timeout=30):
         teardown_spy.assert_not_called()

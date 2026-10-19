@@ -1,0 +1,37 @@
+# This workflow holds jobs which are required to pass before merging into master
+
+name: CI Pact
+on:
+  push:
+    branches:
+      - "master"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pact-tests:
+    timeout-minutes: 10
+    name: "Run PACT tests"
+    runs-on: ubuntu-latest
+    env:
+      # secrets can be set in settings/secrets on github
+      PACT_BROKER_URL: ${{ secrets.PACT_BROKER_URL }}
+      PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+      PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+    steps:
+      - name: checkout source branch
+        uses: actions/checkout@v7.0.1
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
+      - name: Run pact tests
+        run: |
+          make devenv
+          source .venv/bin/activate
+          cd services/api-server
+          make install-ci
+          make test-pacts

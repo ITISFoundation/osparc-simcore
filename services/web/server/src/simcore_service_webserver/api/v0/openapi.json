@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
-    "version": "0.90.1"
+    "version": "0.92.0"
   },
   "servers": [
     {
@@ -4756,7 +4756,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__"
+                  "$ref": "#/components/schemas/Envelope_ServiceResourcesDict_"
                 }
               }
             }
@@ -10317,7 +10317,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__"
+                  "$ref": "#/components/schemas/Envelope_ServiceResourcesDict_"
                 }
               }
             }
@@ -10357,6 +10357,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "description": "Resources reserved/limited per running container of a service",
                 "title": " New"
               }
             }
@@ -10368,7 +10369,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_dict_Annotated_str__StringConstraints___ImageResources__"
+                  "$ref": "#/components/schemas/Envelope_ServiceResourcesDict_"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ProjectNodeResourcesSetByPricingUnitError: the node's resources are defined by its linked pricing unit and cannot be set manually",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
                 }
               }
             }
@@ -14521,6 +14532,15 @@
         "maxLength": 200,
         "minLength": 1
       },
+      "AggregatedPreferences": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/Preference"
+        },
+        "propertyNames": {
+          "$ref": "#/components/schemas/PreferenceIdentifier"
+        },
+        "type": "object"
+      },
       "AnnotationID": {
         "type": "string",
         "format": "uuid"
@@ -18421,6 +18441,31 @@
         "type": "object",
         "title": "Envelope[ServicePricingPlanGet]"
       },
+      "Envelope_ServiceResourcesDict_": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceResourcesDict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "Envelope[ServiceResourcesDict]"
+      },
       "Envelope_StatusDiagnosticsGet_": {
         "properties": {
           "data": {
@@ -18930,32 +18975,6 @@
         },
         "type": "object",
         "title": "Envelope[_ProjectNodePreview]"
-      },
-      "Envelope_dict_Annotated_str__StringConstraints___ImageResources__": {
-        "properties": {
-          "data": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          },
-          "error": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Error"
-          }
-        },
-        "type": "object",
-        "title": "Envelope[dict[Annotated[str, StringConstraints], ImageResources]]"
       },
       "Envelope_dict_NewType__FunctionGroupAccessRightsGet__": {
         "properties": {
@@ -22768,11 +22787,7 @@
             "$ref": "#/components/schemas/MyProfilePrivacyGet"
           },
           "preferences": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Preference"
-            },
-            "type": "object",
-            "title": "Preferences"
+            "$ref": "#/components/schemas/AggregatedPreferences"
           },
           "contact": {
             "anyOf": [
@@ -24947,6 +24962,17 @@
           "value": {
             "title": "Value",
             "description": "preference value"
+          },
+          "constraints": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreferenceConstraints"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null when the value is unconstrained"
           }
         },
         "type": "object",
@@ -24955,6 +24981,119 @@
           "value"
         ],
         "title": "Preference"
+      },
+      "PreferenceConstraints": {
+        "properties": {
+          "ge": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ge"
+          },
+          "gt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gt"
+          },
+          "le": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Le"
+          },
+          "lt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lt"
+          },
+          "maxLength": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxlength"
+          },
+          "minLength": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minlength"
+          },
+          "multipleOf": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Multipleof"
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pattern"
+          }
+        },
+        "type": "object",
+        "title": "PreferenceConstraints",
+        "description": "Limits applying to a preference value, used by the frontend to render its widget."
+      },
+      "PreferenceIdentifier": {
+        "type": "string"
       },
       "PresignedLink": {
         "properties": {
@@ -27994,6 +28133,10 @@
         ],
         "title": "ServiceRelease"
       },
+      "ServiceResourcesDict": {
+        "type": "object",
+        "description": "Resources reserved/limited per running container of a service"
+      },
       "ServiceRunGet": {
         "properties": {
           "service_run_id": {
@@ -28665,6 +28808,7 @@
         "enum": [
           "en",
           "es_ES",
+          "ko_KR",
           "zh_CN"
         ]
       },
@@ -29422,6 +29566,10 @@
               }
             ],
             "title": "Invitationurl"
+          },
+          "extraCreditsInUsd": {
+            "$ref": "#/components/schemas/WelcomeCreditsAnnotated",
+            "description": "Extra credits (in USD) granted to an already-registered user when approving their request for a new product. For new users the credits travel inside the invitation instead, so this field is ignored when an invitation is used."
           },
           "messageContent": {
             "anyOf": [

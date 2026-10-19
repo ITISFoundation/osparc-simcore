@@ -482,7 +482,7 @@ async def test_update_profile_invalid_language_is_rejected(
 
     url = client.app.router["update_my_profile"].url_for()
     resp = await client.patch(f"{url}", json={"language": "not-a-locale"})
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -502,7 +502,7 @@ async def test_update_wrong_user_name(
             "userName": invalid_username,
         },
     )
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

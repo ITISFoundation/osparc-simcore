@@ -1,0 +1,88 @@
+# Renovate's pip-compile manager recompiles each requirements/*.txt file independently
+# and can process them out of the Makefile's prerequisite order (_base -> _test -> _tools,
+# see scripts/makefiles/requirements.mk), producing an inconsistent lockfile.
+# This re-runs `make reqs upgrade="<pkg==ver ...>"` per affected requirements directory
+# on Renovate's own PR branch, pinning the exact versions Renovate chose (never a bare
+# `make reqs` which upgrades everything, and never a bare package name which uv would
+# re-resolve to the latest release, overriding Renovate's pin) and pushes a fixup commit
+# if the Makefile-ordered recompile produced a diff.
+name: Chore Fix Renovate Lockfiles
+
+on:
+  pull_request:
+    paths:
+      - "**/requirements/*.txt"
+      - "api/tests/requirements.txt"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  fix-lockfiles:
+    # Only act on Renovate's own same-repo branches (matches .renovaterc.jsonc branchPrefix)
+    if: >
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'renovate/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: checkout PR branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          setup-docker: 'false'
+          expose-github-runtime: 'false'
+
+      - name: re-run make reqs per changed directory, pinning the versions Renovate chose
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          DIRS=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | xargs -r -n1 dirname | sort -u)
+
+          while IFS= read -r dir; do
+            [ -n "$dir" ] || continue
+
+            # Extract the exact "<pkg[extras]==<version>>" pins Renovate added in this
+            # dir (added lines only, column-0 so indented "# via ..." provenance
+            # comments are excluded). Passing bare names would let uv re-resolve to the
+            # latest release instead of keeping Renovate's chosen version.
+            PKGS=$(git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- "$dir" \
+              | grep -E '^\+[A-Za-z0-9][A-Za-z0-9._-]*(\[[^]]+\])?==' \
+              | sed -E 's/^\+([A-Za-z0-9._-]+(\[[^]]+\])?==[A-Za-z0-9._+!-]+).*$/\1/' \
+              | sort -u \
+              | tr '\n' ' ')
+            PKGS="${PKGS% }"
+
+            if [ -z "$PKGS" ]; then
+              echo "No top-level version changes detected in $dir, skipping"
+              continue
+            fi
+
+            echo "::group::make -C $dir reqs upgrade=\"$PKGS\""
+            make -C "$dir" touch reqs upgrade="$PKGS"
+            echo "::endgroup::"
+          done <<< "$DIRS"
+
+      - name: commit and push fix, if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "fix(requirements): resync pip-compile lockfiles"
+            git push origin "HEAD:${PR_HEAD_REF}"
+          else
+            echo "Lockfiles already consistent, nothing to fix"
+          fi

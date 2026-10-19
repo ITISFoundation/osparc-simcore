@@ -8,13 +8,9 @@
 
 import base64
 import datetime as dt
-import json
 import re
 import urllib.parse
 from collections.abc import Awaitable, Callable, Iterator
-from decimal import Decimal
-from pathlib import Path
-from random import choice
 from typing import Any
 from unittest import mock
 
@@ -41,15 +37,15 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB
-from models_library.projects_nodes import NodeID, NodeState
+from models_library.projects_nodes import NodeState
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
@@ -84,33 +80,10 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
     )
 
 
-@pytest.fixture(scope="session")
-def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
-    fake_service_path = mocks_dir / "fake_service.json"
-    assert fake_service_path.exists()
-    fake_service_data = json.loads(fake_service_path.read_text())
-    return ServiceMetaDataPublished(**fake_service_data)
-
-
-@pytest.fixture
-def fake_service_extras() -> ServiceExtras:
-    extra_example = ServiceExtras.model_json_schema()["examples"][2]  # type: ignore
-    random_extras = ServiceExtras(**extra_example)  # type: ignore
-    assert random_extras is not None
-    return random_extras
-
-
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore
-    )
-
-
-@pytest.fixture
-def fake_service_labels() -> dict[str, Any]:
-    return choice(  # noqa: S311
-        SimcoreServiceLabels.model_json_schema()["examples"]  # type: ignore
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
 
@@ -385,25 +358,6 @@ async def test_create_computation(
 
 
 @pytest.fixture
-def wallet_info(faker: Faker) -> WalletInfo:
-    return WalletInfo(
-        wallet_id=faker.pyint(),
-        wallet_name=faker.name(),
-        wallet_credit_amount=Decimal(faker.pyint(min_value=12, max_value=129312)),
-    )
-
-
-@pytest.fixture
-def fake_ec2_cpus() -> PositiveInt:
-    return 4
-
-
-@pytest.fixture
-def fake_ec2_ram() -> ByteSize:
-    return TypeAdapter(ByteSize).validate_python("4GiB")
-
-
-@pytest.fixture
 def mocked_clusters_keeper_service_get_instance_type_details(
     mocker: MockerFixture,
     default_pricing_plan_aws_ec2_type: str,
@@ -441,12 +395,7 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
-assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
-assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
-assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list)
-
-
-@pytest.fixture(params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
+@pytest.fixture(params=SERVICE_RESOURCES_DICT_EXAMPLES)
 def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
@@ -496,11 +445,14 @@ async def test_create_computation_with_wallet(
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
     if default_pricing_plan_aws_ec2_type:
-        mocked_clusters_keeper_service_get_instance_type_details.assert_called()
-        assert (
-            mocked_resource_usage_tracker_service_fcts.calls.call_count
-            == len([v for v in proj.workbench.values() if to_node_class(v.key) != NodeClass.FRONTEND]) * 2
-        )
+        # clusters-keeper is asked once for all the nodes together
+        mocked_clusters_keeper_service_get_instance_type_details.assert_called_once()
+        # RUT is asked once per distinct non-frontend service (its default pricing) and once for
+        # the pricing unit those services all share
+        non_frontend_service_key_versions = {
+            (v.key, v.version) for v in proj.workbench.values() if to_node_class(v.key) != NodeClass.FRONTEND
+        }
+        assert mocked_resource_usage_tracker_service_fcts.calls.call_count == len(non_frontend_service_key_versions) + 1
         # check the project nodes were really overridden now
         async with sqlalchemy_async_engine.connect() as connection:
             project_nodes_repo = ProjectNodesRepo(project_uuid=proj.uuid)
@@ -644,7 +596,7 @@ async def test_start_computation_without_product_fails(
             "collection_run_id": f"{fake_collection_run_id}",
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, response.text
 
 
 async def test_start_computation_without_collection_run_id_fails(
@@ -669,7 +621,7 @@ async def test_start_computation_without_collection_run_id_fails(
             "start_pipeline": f"{True}",
         },
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, response.text
 
 
 async def test_start_computation(
@@ -702,8 +654,11 @@ async def test_start_computation(
     )
     assert response.status_code == status.HTTP_201_CREATED, response.text
     mocked_get_service_resources = mocked_catalog_service_fcts["get_service_resources"]
-    # there should be as many calls to the catalog as there are no defined resources by default
-    assert mocked_get_service_resources.call_count == len(fake_workbench_without_outputs)
+    # no resources are defined by default, so the catalog is asked — once per distinct service,
+    # not once per node
+    assert mocked_get_service_resources.call_count == len(
+        {(node["key"], node["version"]) for node in fake_workbench_without_outputs.values()}
+    )
 
 
 async def test_start_computation_with_encryption_propagates_context_to_pipeline(
@@ -772,14 +727,9 @@ async def test_start_computation_with_project_node_resources_defined(
     fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
-    assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
-    assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"], dict)
-    assert isinstance(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"], list)
     proj = await create_project(
         user,
-        project_nodes_overrides={
-            "required_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
-        },
+        project_nodes_overrides={"required_resources": SERVICE_RESOURCES_DICT_EXAMPLES[0]},
         workbench=fake_workbench_without_outputs,
     )
     create_computation_url = httpx.URL("/v2/computations")

@@ -19,7 +19,9 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/catalog
-  make test-ci-unit
+  # NOTE: xdist workers share ONE docker stack (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py);
+  # tests marked `docker_exclusive` run alone (see the pytest_simcore.xdist_docker_daemon plugin)
+  make test-ci-unit pytest-parameters="--numprocesses=auto"
   popd
 }
 

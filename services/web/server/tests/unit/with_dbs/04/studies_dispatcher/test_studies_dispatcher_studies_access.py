@@ -301,6 +301,37 @@ async def test_access_to_invalid_study(
     )
 
 
+@pytest.mark.parametrize(
+    "malformed_project_id",
+    [
+        pytest.param("this-is-not-an-uuid", id="non-uuid-text"),
+        pytest.param("1234", id="short-numeric-value"),
+        pytest.param(
+            "00000000-0000-0000-0000-00000000000",
+            id="uuid-with-wrong-length",
+        ),
+        pytest.param(
+            "ffffffff-ffff-ffff-ffff-ffffffffffff-extra",
+            id="uuid-with-extra-suffix",
+        ),
+    ],
+)
+async def test_access_to_study_with_malformed_id(
+    studies_dispatcher_enabled: bool,
+    client: TestClient,
+    malformed_project_id: str,
+):
+    # malformed ids (e.g. probes/scanners) must not raise an unexpected 500;
+    # same validation behavior as POST /studies/{study_id}:dispatch (422)
+    response = await client.get(f"/study/{malformed_project_id}")
+
+    _assert_redirected_to_error_page(
+        response,
+        expected_page="error",
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+
+
 async def test_access_to_forbidden_study(
     studies_dispatcher_enabled: bool,
     client: TestClient,

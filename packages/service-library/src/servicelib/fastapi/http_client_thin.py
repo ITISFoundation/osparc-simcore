@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import inspect
 import logging
@@ -15,6 +14,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
+from ..ssl_context import get_shared_ssl_context
 from ..tracing import TracingConfig, setup_httpx_client_tracing
 from .http_client import BaseHTTPApi
 
@@ -126,7 +126,7 @@ def retry_on_errors(
     def decorator(
         request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
-        assert asyncio.iscoroutinefunction(request_func)
+        assert inspect.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
@@ -173,7 +173,7 @@ def expect_status(
     def decorator(
         request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
-        assert asyncio.iscoroutinefunction(request_func)
+        assert inspect.iscoroutinefunction(request_func)
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
@@ -216,7 +216,7 @@ class BaseThinClient(BaseHTTPApi):
         if default_http_client_timeout:
             client_args["timeout"] = default_http_client_timeout
 
-        client = AsyncClient(**client_args)
+        client = AsyncClient(verify=get_shared_ssl_context(), **client_args)
         if tracing_config.tracing_enabled:
             setup_httpx_client_tracing(client, tracing_config=tracing_config)
         super().__init__(client=client)

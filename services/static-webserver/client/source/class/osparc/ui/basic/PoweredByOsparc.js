@@ -29,7 +29,7 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
     this._setLayout(new qx.ui.layout.VBox(2));
 
     this.set({
-      toolTipText: this.tr("powered by ") + osparc.About.OSPARC_OFFICIAL,
+      toolTipText: this.tr("powered by %1", osparc.About.OSPARC_OFFICIAL),
       alignX: "center",
       alignY: "middle",
       cursor: "pointer",

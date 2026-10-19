@@ -187,7 +187,7 @@ qx.Class.define("osparc.study.ConversationPage", {
         } else if (nMessages === 1) {
           nMessagesLabel.setValue(this.tr("1 Message"));
         } else if (nMessages > 1) {
-          nMessagesLabel.setValue(nMessages + this.tr(" Messages"));
+          nMessagesLabel.setValue(this.tr("%1 Messages", nMessages));
         }
       }
     },

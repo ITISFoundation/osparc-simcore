@@ -6,7 +6,7 @@ attrs==26.1.0
     #   referencing
 cffi==2.0.0
     # via cryptography
-coverage==7.13.5
+coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -14,6 +14,10 @@ cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
+faker==40.39.0
+    # via -r requirements/_test.in
+filelock==4.0.12
+    # via -r requirements/_test.in
 iniconfig==2.3.0
     # via
     #   -c requirements/_base.txt
@@ -29,18 +33,18 @@ pluggy==1.6.0
     #   pytest-cov
 pycparser==3.0
     # via cffi
-pygments==2.19.2
+pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.0.2
+pytest==9.1.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -68,7 +72,7 @@ types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
 types-requests==2.32.4.20260107
     # via types-docker
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

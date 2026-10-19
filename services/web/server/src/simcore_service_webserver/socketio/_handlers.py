@@ -24,6 +24,7 @@ from ..groups.groups_service import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
 from ..resource_manager.resource_manager_service import PROJECT_ID_KEY, managed_resource
+from ..signals import SIGNAL_USER_CONNECTED, SIGNAL_USER_DISCONNECTED
 from ._messages import send_message_to_user
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .constants import SOCKET_IO_HEARTBEAT_EVENT
@@ -139,7 +140,7 @@ async def connect(socket_id: SocketID, environ: EnvironDict, app: web.Applicatio
 
         _logger.debug("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
-        await emit(app, "SIGNAL_USER_CONNECTED", user_id, app, product_name, client_session_id)
+        await emit(app, SIGNAL_USER_CONNECTED, user_id, app, product_name, client_session_id)
 
         await send_message_to_user(
             app,
@@ -210,7 +211,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
         # signal same user other clients if available
         await emit(
             app,
-            "SIGNAL_USER_DISCONNECTED",
+            SIGNAL_USER_DISCONNECTED,
             user_id,
             client_session_id,
             app,

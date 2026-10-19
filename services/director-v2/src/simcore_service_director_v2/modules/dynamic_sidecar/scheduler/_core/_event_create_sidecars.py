@@ -15,8 +15,9 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import ServiceRunID
-from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -32,6 +33,7 @@ from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
 from ....catalog import CatalogClient
+from ....db import get_db_engine
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_nodes import ProjectsNodesRepository
@@ -159,15 +161,17 @@ class CreateSidecars(DynamicSchedulerEvent):
         # also other encodes the env vars to target the proper container
 
         # fetching project form DB and fetching user settings
-        projects_repository = get_repository(app, ProjectsRepository)
+        # the adjacent project/node reads below share a single connection
+        async with pass_or_acquire_connection(get_db_engine(app)) as conn:
+            projects_repository = get_repository(app, ProjectsRepository)
 
-        if not await projects_repository.exists(project_id=scheduler_data.project_id):
-            raise ProjectNotFoundError(project_id=scheduler_data.project_id)
+            if not await projects_repository.exists(connection=conn, project_id=scheduler_data.project_id):
+                raise ProjectNotFoundError(project_id=scheduler_data.project_id)
 
-        projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
-        node = await projects_nodes_repository.get(
-            project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
-        )
+            projects_nodes_repository = get_repository(app, ProjectsNodesRepository)
+            node = await projects_nodes_repository.get(
+                connection=conn, project_id=scheduler_data.project_id, node_id=scheduler_data.node_uuid
+            )
         boot_options = node.boot_options if node is not None and node.boot_options is not None else {}
         _logger.info("%s", f"{boot_options=}")
 
@@ -227,11 +231,9 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = ServiceRunID.get_resource_tracking_run_id_for_dynamic()
 
-        rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
-
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
@@ -242,7 +244,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             metrics_collection_allowed=metrics_collection_allowed,
             user_extra_properties=user_extra_properties,
-            rpc_client=rpc_client,
         )
 
         user_specific_service_spec = (

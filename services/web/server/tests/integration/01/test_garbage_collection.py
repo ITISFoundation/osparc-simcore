@@ -77,7 +77,7 @@ pytest_simcore_core_services_selection = [
     "sto-worker",
 ]
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
     "redis-commander",
 ]
@@ -88,11 +88,6 @@ GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
 WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
-
-
-@pytest.fixture(autouse=True)
-def _drop_and_recreate_postgres(database_from_template_before_each_function):
-    return
 
 
 @pytest.fixture(autouse=True)
@@ -141,7 +136,7 @@ def director_v2_service_mock(
 async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     app_config: dict[str, Any],
-    postgres_with_template_db: sa.engine.Engine,
+    postgres_db: sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
     redis_client: aioredis.Redis,

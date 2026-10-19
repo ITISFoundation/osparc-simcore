@@ -38,6 +38,7 @@ async def update_node_outputs(
     client_session_id: ClientSessionID | None,
     *,
     ui_changed_keys: set[str] | None,
+    strict_notification: bool = False,
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
     project, keys_changed = await _projects_service.update_project_node_outputs(
@@ -48,13 +49,6 @@ async def update_node_outputs(
         new_outputs=outputs,
         new_run_hash=run_hash,
         client_session_id=client_session_id,
-    )
-
-    await _projects_service.notify_project_node_update(app, project, node_uuid)
-    # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
-    await logged_gather(
-        *[_projects_service.notify_project_node_update(app, project, nid) for nid in depending_node_uuids]
     )
 
     # changed keys are coming from two sources:
@@ -71,7 +65,18 @@ async def update_node_outputs(
 
     keys: list[str] = keys_changed if ui_changed_keys is None else list(ui_changed_keys | set(keys_changed))
 
-    # fire&forget to notify connected nodes to retrieve its inputs **if necessary**
-    await _projects_service.post_trigger_connected_service_retrieve(
+    # notify connected nodes to retrieve its inputs **if necessary**
+    # NOTE: scheduled before the strict notifications, which may raise: a retry would see no changed keys
+    _projects_service.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
+    )
+
+    await _projects_service.notify_project_node_update(app, project, node_uuid, strict=strict_notification)
+    # get depending node and notify for these ones as well
+    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    await logged_gather(
+        *[
+            _projects_service.notify_project_node_update(app, project, nid, strict=strict_notification)
+            for nid in depending_node_uuids
+        ]
     )

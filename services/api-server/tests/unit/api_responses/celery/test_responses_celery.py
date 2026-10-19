@@ -278,7 +278,7 @@ async def test_create_response_with_invalid_json_schema_returns_422(
     )
 
     # ASSERT - validation error is returned and body is json serializable
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     payload = response.json()
     assert "errors" in payload
     assert isinstance(payload["errors"], list)

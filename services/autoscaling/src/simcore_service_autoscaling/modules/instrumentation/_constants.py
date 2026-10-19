@@ -5,7 +5,7 @@ from servicelib.instrumentation import get_metrics_namespace
 from ..._meta import APP_NAME
 
 METRICS_NAMESPACE: Final[str] = get_metrics_namespace(APP_NAME)
-EC2_INSTANCE_LABELS: Final[tuple[str, ...]] = ("instance_type",)
+EC2_INSTANCE_LABELS: Final[tuple[str, ...]] = ("instance_type", "product_name")
 
 CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
     "active_nodes": (
@@ -45,7 +45,8 @@ CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
         EC2_INSTANCE_LABELS,
     ),
     "retired_nodes": (
-        "Number of EC2-backed docker nodes that were actively retired and waiting for draining and termination or re-use",
+        "Number of EC2-backed docker nodes that were actively retired and "
+        "waiting for draining and termination or re-use",
         EC2_INSTANCE_LABELS,
     ),
     "terminated_instances": (

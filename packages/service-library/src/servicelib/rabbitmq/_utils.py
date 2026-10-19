@@ -9,33 +9,18 @@ from aiormq.exceptions import ChannelPreconditionFailed
 from common_library.network import redact_url
 from pydantic import NonNegativeInt
 from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..logging_utils import log_context
-from ._models import QueueName
+from ._models import (
+    _MINUTE,
+    QueueName,
+    RabbitMQRetryPolicyUponInitialization,
+)
 
 _logger = logging.getLogger(__file__)
 
 
-_MINUTE: Final[int] = 60
-
 RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
-
-
-class RabbitMQRetryPolicyUponInitialization:
-    """Retry policy upon service initialization"""
-
-    def __init__(self, logger: logging.Logger | None = None) -> None:
-        logger = logger or _logger
-
-        self.kwargs: dict[str, Any] = {
-            "wait": wait_fixed(2),
-            "stop": stop_after_delay(3 * _MINUTE),
-            "before_sleep": before_sleep_log(logger, logging.WARNING),
-            "reraise": True,
-        }
 
 
 async def is_rabbitmq_responsive(url: str) -> bool:
@@ -74,7 +59,20 @@ async def declare_queue(
     exclusive_queue: bool,
     arguments: dict[str, Any] | None = None,
     message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
+    passive: bool = False,
 ) -> aio_pika.abc.AbstractRobustQueue:
+    """Declares (or, if `passive=True`, just looks up) the queue derived from `queue_name`.
+
+    `passive=False` (default): asks the broker to create the queue if it does not exist, or
+    otherwise assert that it exists AND has the exact same `durable`/`exclusive`/`arguments` as
+    passed here; a mismatch raises `ChannelPreconditionFailed` and closes the channel. Use this
+    only where this call is meant to define the queue's shape (e.g. the original `subscribe()`).
+
+    `passive=True`: only checks that the queue already exists (raises if not) and returns a handle
+    to it; the broker does not create anything and does not compare arguments, so this is safe to
+    use to just re-attach to (e.g. to bind/unbind topics on) a queue defined elsewhere, even if the
+    `arguments` passed here don't match what that queue was actually created with.
+    """
     default_arguments = {"x-message-ttl": message_ttl}
     if arguments is not None:
         default_arguments.update(arguments)
@@ -82,6 +80,7 @@ async def declare_queue(
         "durable": not exclusive_queue,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
+        "passive": passive,
         "name": f"{get_rabbitmq_client_unique_name(client_name)}_{queue_name}_exclusive",
     }
     if not exclusive_queue:

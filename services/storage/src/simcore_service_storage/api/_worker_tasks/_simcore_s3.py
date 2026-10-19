@@ -1,11 +1,12 @@
 import datetime
 import functools
 import logging
-from typing import Any
+from typing import Any, Final
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
+from common_library.user_messages import user_message
 from models_library.api_schemas_storage.search_async_jobs import SearchResultItem
 from models_library.api_schemas_storage.storage_schemas import (
     UNDEFINED_SIZE,
@@ -32,6 +33,9 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
+_MSG_COPYING_FILES: Final[str] = user_message("Copying files", _version=1)
+_MSG_CREATING_EXPORT_ARCHIVE: Final[str] = user_message("Creating export archive", _version=1)
+
 
 async def _task_progress_cb(task: Task, task_key: TaskKey, report: ProgressReport) -> None:
     worker = get_app_server(task.app).task_manager
@@ -54,7 +58,7 @@ async def deep_copy_files_from_project(
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
         async with ProgressBarData(
             num_steps=1,
-            description="copying files",
+            description=_MSG_COPYING_FILES,
             progress_report_cb=functools.partial(_task_progress_cb, task, task_key),
         ) as task_progress:
             await dsm.deep_copy_project_simcore_s3(
@@ -101,7 +105,7 @@ async def export_data(
 
         async with ProgressBarData(
             num_steps=1,
-            description=f"'{task_key}' export data",
+            description=_MSG_CREATING_EXPORT_ARCHIVE,
             progress_report_cb=_progress_cb,
         ) as progress_bar:
             return await dsm.create_s3_export(

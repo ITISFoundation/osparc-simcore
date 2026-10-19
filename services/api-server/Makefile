@@ -1,8 +1,10 @@
 #
 # Targets for DEVELOPMENT of Public API Server
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-service.Makefile
+.DEFAULT_GOAL := help
+
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/service.mk
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -19,11 +21,6 @@ guard-%:
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
-
-
-
-.env:
-	cp .env-devel $@
 
 
 define _create_and_validate_openapi
@@ -104,9 +101,12 @@ test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BRO
 
 .PHONY: test-openai-api-compatibility
 test-openai-api-compatibility: openapi-openai-compatible.json ## Tests that the OpenAI-compatible endpoints are indeed compatible with the OpenAI API. Usage: make test-openai-api-compatibility
+	# NOTE: pinned to a commit (instead of `main`) because openai/openai-openapi churns constantly and can
+	# introduce specs that oasdiff's --flatten-allof cannot parse (e.g. 78e0725d added a Type conflict),
+	# breaking this check for every PR regardless of any osparc-simcore change. Bump deliberately.
 	$(SCRIPTS_DIR)/openapi-diff.bash breaking \
 		--strip-prefix-base="/v0" \
 		--fail-on ERR \
 		--flatten-allof \
 		"/specs/openapi-openai-compatible.json" \
-		"https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml"
+		"https://raw.githubusercontent.com/openai/openai-openapi/7a350f69/openapi.yaml"

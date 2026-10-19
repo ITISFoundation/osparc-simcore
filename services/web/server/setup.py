@@ -59,7 +59,7 @@ SETUP = {
             "simcore-service=simcore_service_webserver.__main__:main",
         ]
     },
-    "python_requires": "~=3.13",
+    "python_requires": "~=3.14",
     "install_requires": INSTALL_REQUIREMENTS,
     "tests_require": TEST_REQUIREMENTS,
     "setup_requires": ["pytest-runner"],

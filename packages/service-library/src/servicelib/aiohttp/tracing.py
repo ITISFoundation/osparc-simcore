@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator, Callable
+from contextlib import suppress
 from typing import Final
 
 from aiohttp import web
@@ -21,13 +22,14 @@ from opentelemetry.trace import get_current_span
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
-from ..logging_utils import log_catch, log_context
+from ..logging_utils import log_catch, log_context, log_exceptions
 from ..traced_functions_instrumentor import TracedFunctionsInstrumentor
 from ..tracing import (
     AIOHTTP_TRACING_CONFIG_KEY,
     TracingConfig,
     create_standard_attributes,
     get_trace_info_headers,
+    setup_meter_provider,
 )
 
 _logger = logging.getLogger(__name__)
@@ -142,6 +144,8 @@ def _startup(
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
 
+    setup_meter_provider()
+
     # Instrument aiohttp server
     if add_response_trace_id_header:
         app.middlewares.insert(0, response_trace_id_header_middleware)
@@ -233,7 +237,7 @@ async def add_custom_request_attributes_to_span_middleware(request: web.Request,
     return response
 
 
-def _shutdown() -> None:
+def _shutdown(tracer_provider: TracerProvider | None = None) -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
     with log_catch(_logger, reraise=False):
         AioHttpClientInstrumentor().uninstrument()
@@ -259,6 +263,10 @@ def _shutdown() -> None:
     with log_catch(_logger, reraise=False):
         TracedFunctionsInstrumentor().uninstrument()
 
+    if tracer_provider is not None:
+        with suppress(Exception), log_exceptions(_logger, logging.WARNING):
+            tracer_provider.shutdown()
+
 
 def setup_tracing(
     *,
@@ -272,6 +280,10 @@ def setup_tracing(
     assert tracing_config.tracer_provider  # nosec
     assert tracing_config.tracing_settings  # nosec
 
+    # NOTE: instrumentation must be applied at setup time, not when the lifespan runs.
+    # Some instrumentors (AioPikaInstrumentor) decorate consumer callbacks at
+    # queue.consume() registration time, so patching here guarantees that consumers
+    # registered by any later setup step or lifespan are traced, regardless of ordering.
     _startup(
         app=app,
         tracing_settings=tracing_config.tracing_settings,
@@ -282,7 +294,9 @@ def setup_tracing(
 
     async def tracing_lifespan(app: web.Application):
         assert app  # nosec
+
         yield
-        _shutdown()
+        # flush and release the provider only after the app stopped serving
+        _shutdown(tracing_config.tracer_provider)
 
     return tracing_lifespan

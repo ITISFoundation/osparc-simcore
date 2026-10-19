@@ -219,7 +219,7 @@ async def test_patch_project_with_client_session_header(
         headers={"X-Client-Session-Id": "invalid-uuid-format"},
     )
     # This should fail validation since it's not a proper UUID
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])

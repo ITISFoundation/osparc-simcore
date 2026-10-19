@@ -27,7 +27,8 @@ def storage_endpoint(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDic
     assert f"{prefix}_storage" in docker_stack["services"]
 
     default_port = int(env_vars_for_docker_compose["STORAGE_ENDPOINT"].split(":")[1])
-    endpoint = f"{get_localhost_ip()}:{get_service_published_port('storage', default_port)}"
+    # NOTE: full service name required to disambiguate from the ops 's3-storage' service
+    endpoint = f"{get_localhost_ip()}:{get_service_published_port(f'{prefix}_storage', default_port)}"
 
     # nodeports takes its configuration from env variables
     old_environ = deepcopy(os.environ)
@@ -36,7 +37,8 @@ def storage_endpoint(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDic
     yield URL(f"http://{endpoint}")
 
     # restore environ
-    os.environ = old_environ
+    os.environ.clear()
+    os.environ.update(old_environ)
 
 
 @pytest.fixture()

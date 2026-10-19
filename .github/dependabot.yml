@@ -68,7 +68,6 @@ updates:
       - "/services/docker-api-proxy"
       - "/services/dynamic-scheduler"
       - "/services/dynamic-sidecar"
-      - "/services/efs-guardian"
       - "/services/invitations"
       - "/services/migration"
       - "/services/notifications"

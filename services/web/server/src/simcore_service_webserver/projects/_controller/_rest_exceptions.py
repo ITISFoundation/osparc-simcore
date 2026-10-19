@@ -42,6 +42,7 @@ from ..exceptions import (
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesSetByPricingUnitError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
@@ -80,6 +81,13 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message("Required input values for this project node have not been set.", _version=1),
     ),
+    ProjectNodeResourcesSetByPricingUnitError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "The resources of this node are defined by its selected pricing unit and cannot be changed manually.",
+            _version=1,
+        ),
+    ),
 }
 
 
@@ -117,11 +125,11 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         ),
     ),
     ProjectInvalidUsageError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message("The project cannot be used in this way.", _version=1),
     ),
     ProjectTooManyNodesError: HttpErrorInfo(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         user_message(
             "The project cannot contain more than {max_num_nodes} nodes. Requested: {requested_num_nodes}.",
             _version=1,

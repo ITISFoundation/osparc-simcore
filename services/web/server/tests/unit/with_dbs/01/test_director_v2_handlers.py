@@ -212,7 +212,7 @@ async def test_start_computation_with_invalid_encryption(
     url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(f"{url}", json={"encryption": invalid_encryption_body})
     _, error = await assert_status(
-        rsp, status.HTTP_422_UNPROCESSABLE_ENTITY if user_role == UserRole.GUEST else expected.unprocessable
+        rsp, status.HTTP_422_UNPROCESSABLE_CONTENT if user_role == UserRole.GUEST else expected.unprocessable
     )
     if user_role not in {UserRole.ANONYMOUS}:
         assert expected_error_fragment in str(error)

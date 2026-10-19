@@ -5,7 +5,12 @@ from servicelib.instrumentation import get_metrics_namespace
 from ..._meta import APP_NAME
 
 METRICS_NAMESPACE: Final[str] = get_metrics_namespace(APP_NAME)
-PRIMARY_INSTANCE_LABELS: Final[tuple[str, ...]] = ("instance_type", "user_id", "wallet_id")
+PRIMARY_INSTANCE_LABELS: Final[tuple[str, ...]] = (
+    "instance_type",
+    "user_id",
+    "wallet_id",
+    "product_name",
+)
 
 PRIMARY_INSTANCES_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
     "starting_instances": (

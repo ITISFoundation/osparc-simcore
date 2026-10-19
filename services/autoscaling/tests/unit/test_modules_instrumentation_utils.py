@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from aws_library.ec2._models import EC2InstanceData
+from aws_library.ec2._models import PRODUCT_NAME_TAG_KEY, EC2InstanceData
 from prometheus_client import CollectorRegistry
 from simcore_service_autoscaling.modules.instrumentation._constants import (
     EC2_INSTANCE_LABELS,
@@ -13,7 +13,8 @@ def test_create_gauge_labels_instances_by_instance_type(
 ):
     # NOTE: TrackedGauge's own bookkeeping (e.g. resetting stale label combos to 0) is
     # tested once, generically, in aws-library's test_ec2_instrumentation.py. Here we only
-    # check that this service's create_gauge() wrapper feeds it the expected instance_type label.
+    # check that this service's create_gauge() wrapper feeds it the expected instance_type/
+    # product_name labels.
     registry = CollectorRegistry()
     tracked_gauge = create_gauge(
         field_name="example_gauge",
@@ -22,10 +23,10 @@ def test_create_gauge_labels_instances_by_instance_type(
         registry=registry,
     )
 
-    instance = fake_ec2_instance_data()
+    instance = fake_ec2_instance_data(tags={f"{PRODUCT_NAME_TAG_KEY}": "osparc"})
     tracked_gauge.update_from_instances([instance])
 
     sample = next(iter(tracked_gauge.gauge.collect())).samples[0]
     assert sample.name == "simcore_service_autoscaling_whatever_example_gauge"
     assert sample.value == 1
-    assert sample.labels == {"instance_type": instance.type}
+    assert sample.labels == {"instance_type": instance.type, "product_name": "osparc"}
