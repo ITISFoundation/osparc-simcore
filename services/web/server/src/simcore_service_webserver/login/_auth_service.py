@@ -180,7 +180,10 @@ async def authenticate_user(
             user = await check_authorized_user_credentials(app, user, password=password, product=product)
         except WrongPasswordError:
             await _login_throttle_service.register_failed_login(
-                app, email=email, settings=get_plugin_settings(app, product_name=product.name)
+                app,
+                email=email,
+                user_id=user["id"] if user else None,
+                settings=get_plugin_settings(app, product_name=product.name),
             )
             raise
 
