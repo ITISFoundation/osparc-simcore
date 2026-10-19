@@ -459,3 +459,14 @@ async def test_login_throttle_also_applies_to_unknown_emails(client: TestClient,
     r = await client.post(url.path, json=payload)
 
     await assert_status(r, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+async def test_login_with_a_very_long_password(client: TestClient):
+    assert client.app
+    url = client.app.router["auth_login"].url_for()
+    long_password = "a" * 4096  # passlib's maximum, above the login body size limit this once had
+
+    async with NewUser({"password": long_password}, app=client.app) as user:
+        r = await client.post(url.path, json={"email": user["email"], "password": long_password})
+
+    await assert_status(r, status.HTTP_200_OK)

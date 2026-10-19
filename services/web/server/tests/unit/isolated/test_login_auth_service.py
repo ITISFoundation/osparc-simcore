@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import contextlib
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -34,6 +35,9 @@ async def test_unknown_user_is_verified_against_dummy_hash_and_rejected(
 
 @pytest.fixture
 def mock_throttle(mocker: MockerFixture) -> dict[str, AsyncMock]:
+    mocker.patch.object(
+        _login_throttle_service, "exclusive_login_attempt", side_effect=lambda *_, **__: contextlib.nullcontext()
+    )
     return {
         name: mocker.patch.object(_login_throttle_service, name, new_callable=AsyncMock)
         for name in ("raise_if_login_throttled", "register_failed_login", "clear_failed_logins")

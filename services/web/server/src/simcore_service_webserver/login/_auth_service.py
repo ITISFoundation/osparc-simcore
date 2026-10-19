@@ -172,19 +172,20 @@ async def authenticate_user(
         WrongPasswordError: when the password is invalid or the user does not exist
         web.HTTPUnauthorized: 401
     """
-    await _login_throttle_service.raise_if_login_throttled(app, email=email)
+    async with _login_throttle_service.exclusive_login_attempt(app, email=email):
+        await _login_throttle_service.raise_if_login_throttled(app, email=email)
 
-    user = await get_user_or_none(app, email=email)
-    try:
-        user = await check_authorized_user_credentials(app, user, password=password, product=product)
-    except WrongPasswordError:
-        await _login_throttle_service.register_failed_login(
-            app, email=email, settings=get_plugin_settings(app, product_name=product.name)
-        )
-        raise
+        user = await get_user_or_none(app, email=email)
+        try:
+            user = await check_authorized_user_credentials(app, user, password=password, product=product)
+        except WrongPasswordError:
+            await _login_throttle_service.register_failed_login(
+                app, email=email, settings=get_plugin_settings(app, product_name=product.name)
+            )
+            raise
 
-    await _login_throttle_service.clear_failed_logins(app, email=email)
-    return user
+        await _login_throttle_service.clear_failed_logins(app, email=email)
+        return user
 
 
 async def check_authorized_user_in_product(

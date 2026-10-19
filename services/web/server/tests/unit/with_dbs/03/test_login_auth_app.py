@@ -214,3 +214,18 @@ def test_docker_compose_dev_vendors_forwardauth_configuration(
 
     assert wb_auth_host is not None, "WB_AUTH_WEBSERVER_HOST should be configured in test environment"
     assert wb_auth_port is not None, "WB_AUTH_WEBSERVER_PORT should be configured in test environment"
+
+
+def test_login_guard_body_limit_allows_what_the_login_endpoint_accepts(services_docker_compose_file: Path):
+    compose_config = yaml.safe_load(services_docker_compose_file.read_text())
+    labels = compose_config["services"]["webserver"]["deploy"]["labels"]
+
+    limits = [
+        int(label.split("forwardauth.maxBodySize=")[1])
+        for label in labels
+        if "login_guard.forwardauth.maxBodySize=" in label
+    ]
+
+    assert len(limits) == 1
+    # the guard receives the same body as the login endpoint, which aiohttp caps at 1 MiB by default
+    assert limits[0] >= 1024**2
