@@ -2,9 +2,10 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import arrow
+from annotated_types import doc
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from dask_task_models_library.resource_constraints import (
     estimate_dask_worker_resources_from_ec2_instance,
@@ -15,12 +16,18 @@ from models_library.api_schemas_directorv2.services import (
     NodeRequirements,
     ServiceExtras,
 )
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    RutPricingUnitGet,
+)
 from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.resource_tracker import HardwareInfo
+from models_library.resource_tracker import (
+    HardwareInfo,
+    PricingPlanAndUnitIdsTuple,
+)
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
@@ -78,10 +85,16 @@ _FRONTEND_SERVICES_CATALOG: dict[str, ServiceMetaDataPublished] = {
     meta.key: meta for meta in iter_service_docker_data()
 }
 
-# the catalog is asked while the project row is locked in `upsert_tasks_from_project`, so these
-# remote calls are run concurrently but bounded, see
-# https://github.com/ITISFoundation/private-issues/issues/669
-_MAX_CONCURRENT_CATALOG_CALLS: Final[int] = 10
+_MAX_CONCURRENT_CATALOG_CALLS: Final[
+    Annotated[
+        int,
+        doc(
+            "The catalog is queried while the project row is locked in `upsert_tasks_from_project`, "
+            "so these remote calls run concurrently but bounded. "
+            "See https://github.com/ITISFoundation/private-issues/issues/669"
+        ),
+    ]
+] = 10
 
 
 async def _get_service_details(
@@ -208,8 +221,8 @@ async def _get_pricing_and_hardware_infos(
     product_name: str,
     node_key: ServiceKey,
     node_version: ServiceVersion,
-    default_pricing_cache: dict[ServiceKeyVersion, tuple[int, int]],
-    pricing_unit_cache: dict[tuple[int, int], tuple[PricingInfo, HardwareInfo]],
+    default_pricing_cache: dict[ServiceKeyVersion, PricingPlanAndUnitIdsTuple],
+    pricing_unit_cache: dict[PricingPlanAndUnitIdsTuple, RutPricingUnitGet],
 ) -> tuple[PricingInfo | None, HardwareInfo]:
     if not is_wallet or (to_node_class(node_key) == NodeClass.FRONTEND):
         # NOTE: frontend services have no pricing plans, therefore no need to call RUT
@@ -231,7 +244,10 @@ async def _get_pricing_and_hardware_infos(
                 _,
                 _,
             ) = await rut_client.get_default_pricing_and_hardware_info(product_name, node_key, node_version)
-            default_pricing_cache[key_version] = (pricing_plan_id, pricing_unit_id)
+            default_pricing_cache[key_version] = PricingPlanAndUnitIdsTuple(
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+            )
         pricing_plan_id, pricing_unit_id = default_pricing_cache[key_version]
         await project_nodes_repo.connect_pricing_unit_to_project_node(
             connection,
@@ -240,21 +256,23 @@ async def _get_pricing_and_hardware_infos(
             pricing_unit_id=pricing_unit_id,
         )
 
-    # nodes sharing a pricing unit share its cost and hardware, so RUT is asked once per unit
-    cached = pricing_unit_cache.get((pricing_plan_id, pricing_unit_id))
-    if cached is None:
+    # nodes sharing a pricing unit share its cost and hardware, so RUT is asked once per unit;
+    # only the RUT response is cached, the derived infos are cheap to rebuild
+    unit_ids = PricingPlanAndUnitIdsTuple(
+        pricing_plan_id=pricing_plan_id,
+        pricing_unit_id=pricing_unit_id,
+    )
+    pricing_unit_get = pricing_unit_cache.get(unit_ids)
+    if pricing_unit_get is None:
         pricing_unit_get = await rut_client.get_pricing_unit(product_name, pricing_plan_id, pricing_unit_id)
-        cached = (
-            PricingInfo(
-                pricing_plan_id=pricing_plan_id,
-                pricing_unit_id=pricing_unit_id,
-                pricing_unit_cost_id=pricing_unit_get.current_cost_per_unit_id,
-                pricing_unit_cost=pricing_unit_get.current_cost_per_unit,
-            ),
-            HardwareInfo(aws_ec2_instances=pricing_unit_get.specific_info.aws_ec2_instances),
-        )
-        pricing_unit_cache[(pricing_plan_id, pricing_unit_id)] = cached
-    pricing_info, hardware_info = cached
+        pricing_unit_cache[unit_ids] = pricing_unit_get
+    pricing_info = PricingInfo(
+        pricing_plan_id=pricing_plan_id,
+        pricing_unit_id=pricing_unit_id,
+        pricing_unit_cost_id=pricing_unit_get.current_cost_per_unit_id,
+        pricing_unit_cost=pricing_unit_get.current_cost_per_unit,
+    )
+    hardware_info = HardwareInfo(aws_ec2_instances=pricing_unit_get.specific_info.aws_ec2_instances)
     return pricing_info, hardware_info
 
 
@@ -397,8 +415,8 @@ async def generate_tasks_list_from_project(
 
     # the same answers are requested over and over within one project: keep them per call,
     # since a later call must not miss a change made in the meantime
-    default_pricing_cache: dict[ServiceKeyVersion, tuple[int, int]] = {}
-    pricing_unit_cache: dict[tuple[int, int], tuple[PricingInfo, HardwareInfo]] = {}
+    default_pricing_cache: dict[ServiceKeyVersion, PricingPlanAndUnitIdsTuple] = {}
+    pricing_unit_cache: dict[PricingPlanAndUnitIdsTuple, RutPricingUnitGet] = {}
     service_resources_cache: dict[ServiceKeyVersion, ServiceResourcesDict] = {}
 
     # first pass: gather everything, without writing to `projects_nodes` yet
