@@ -294,7 +294,7 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==83.0.0
+setuptools==84.0.0
     # via moto
 six==1.17.0
     # via
@@ -316,6 +316,7 @@ types-pyyaml==6.0.12.20250915
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic

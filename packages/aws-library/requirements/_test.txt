@@ -276,7 +276,7 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==83.0.0
+setuptools==84.0.0
     # via moto
 six==1.17.0
     # via
@@ -313,6 +313,7 @@ types-s3transfer==0.16.0
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   fastapi
