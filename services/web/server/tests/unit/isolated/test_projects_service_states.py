@@ -57,9 +57,7 @@ async def test_add_projects_states_distinguishes_no_run_from_retrieval_failure(
 @pytest.mark.parametrize(
     "node_in_computation,expected_current_status",
     [
-        # the node has a state in the computation task
         (True, RunningState.PUBLISHED),
-        # the node has no state in the computation task, but its service is opened
         (False, RunningState.STARTED),
     ],
 )
@@ -68,10 +66,6 @@ async def test_add_project_states_for_user_produces_json_native_node_states(
     node_in_computation: bool,
     expected_current_status: RunningState,
 ):
-    """The node state written back to the project must be consistent with `NodeState`'s
-    annotations, otherwise pydantic complains while serializing it and non-JSON values
-    (e.g. a set of UUIDs) can leak into the project document
-    """
     node_id: NodeID = uuid4()
     dependency_id: NodeID = uuid4()
     project: ProjectDict = {
