@@ -114,7 +114,7 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.70.0
+googleapis-common-protos==1.75.5
     # via
     #   -c requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-http
@@ -219,7 +219,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via -r requirements/_test.in
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.1
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -248,13 +248,13 @@ opentelemetry-proto==1.45.0
     #   -c requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.45.0
+opentelemetry-sdk==1.45.1
     # via
     #   -c requirements/_base.txt
     #   fastapi
     #   opentelemetry-exporter-otlp-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.66b0
+opentelemetry-semantic-conventions==0.66b1
     # via
     #   -c requirements/_base.txt
     #   opentelemetry-sdk
@@ -278,7 +278,7 @@ propcache==0.3.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-protobuf==5.29.6
+protobuf==7.36.2
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
