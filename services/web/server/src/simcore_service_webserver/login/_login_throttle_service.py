@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from models_library.users import UserID
 from redis.exceptions import LockError, RedisError
 
 from ..utils_rate_limiting import create_too_many_requests_error
@@ -114,7 +115,9 @@ async def raise_if_login_throttled(app: web.Application, *, email: str) -> None:
         )
 
 
-async def register_failed_login(app: web.Application, *, email: str, settings: LoginSettings) -> None:
+async def register_failed_login(
+    app: web.Application, *, email: str, user_id: UserID | None = None, settings: LoginSettings
+) -> None:
     digest = _get_digest(email)
     async with _handle_redis_errors_as_503():
         failures = await _repository.increment_failures(
@@ -123,8 +126,15 @@ async def register_failed_login(app: web.Application, *, email: str, settings: L
         delay_sec = compute_delay_sec(failures, settings=settings)
         if delay_sec > 0:
             await _repository.block(app, digest=digest, duration_ms=delay_sec * 1000)
+            # user_id is logged (not stored) only to help ops identify an account under
+            # attack; it does not affect the throttle key or the response to the caller,
+            # so known and unknown emails remain indistinguishable from the outside
             _logger.warning(
-                "Login back-off applied: failures=%d delay_sec=%d digest=%s", failures, delay_sec, digest[:8]
+                "Login back-off applied: failures=%d delay_sec=%d digest=%s user_id=%s",
+                failures,
+                delay_sec,
+                digest[:8],
+                user_id if user_id is not None else "unknown",
             )
 
 
