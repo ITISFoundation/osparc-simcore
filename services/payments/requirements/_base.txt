@@ -69,7 +69,7 @@ cryptography==50.0.0
     #   -r requirements/_base.in
 dnspython==2.7.0
     # via email-validator
-ecdsa==0.19.0
+ecdsa==0.19.2
     # via python-jose
 email-validator==2.2.0
     # via
@@ -405,7 +405,6 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream
