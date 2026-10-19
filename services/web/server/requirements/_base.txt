@@ -104,7 +104,7 @@ cryptography==50.0.0
     #   aiohttp-session
 deepdiff==9.1.0
     # via -r requirements/_base.in
-dnspython==2.2.1
+dnspython==2.6.1
     # via email-validator
 email-validator==2.2.0
     # via pydantic
@@ -459,7 +459,6 @@ types-python-dateutil==2.9.0.20250516
 typing-extensions==4.16.0
     # via
     #   aiodebug
-    #   anyio
     #   fast-depends
     #   faststream
     #   flexcache

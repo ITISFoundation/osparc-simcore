@@ -19,8 +19,6 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-annotated-doc==0.0.5
-    # via fastapi
 annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
@@ -30,7 +28,6 @@ anyio==4.15.1
     #   -c requirements/_base.txt
     #   httpx
     #   starlette
-    #   watchfiles
 asyncpg==0.32.0
     # via
     #   -c requirements/_base.txt
@@ -51,7 +48,6 @@ certifi==2023.7.22
     #   httpcore
     #   httpx
     #   requests
-    #   sentry-sdk
 charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
@@ -60,24 +56,12 @@ click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-    #   rich-toolkit
-    #   typer
-    #   uvicorn
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-dnspython==2.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   email-validator
 docker==7.1.0
     # via -r requirements/_test.in
-email-validator==2.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   fastapi
-    #   pydantic
 execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
@@ -86,20 +70,12 @@ faker==40.38.0
     #   -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-fastapi==0.141.1
+fastapi==0.110.3
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
-fastapi-cli==0.0.32
-    # via fastapi
-fastapi-cloud-cli==0.15.0
-    # via fastapi-cli
 fastapi-pagination==0.15.16
     # via -r requirements/_test.in
-fastar==0.11.0
-    # via
-    #   fastapi
-    #   fastapi-cloud-cli
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.4.1
@@ -115,19 +91,14 @@ h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-    #   uvicorn
 httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
-httptools==0.8.0
-    # via uvicorn
 httpx==0.28.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   fastapi
-    #   fastapi-cloud-cli
     #   respx
 hypothesis==6.151.9
     # via -r requirements/_test.in
@@ -137,17 +108,11 @@ idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
-    #   email-validator
     #   httpx
     #   requests
     #   yarl
 iniconfig==2.3.0
     # via pytest
-jinja2==3.1.6
-    # via
-    #   -c requirements/../../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   fastapi
 jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
@@ -176,19 +141,10 @@ mako==1.4.3
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-markdown-it-py==3.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   rich
 markupsafe==3.0.2
     # via
     #   -c requirements/_base.txt
-    #   jinja2
     #   mako
-mdurl==0.1.2
-    # via
-    #   -c requirements/_base.txt
-    #   markdown-it-py
 multidict==6.9.1
     # via
     #   -c requirements/_base.txt
@@ -228,27 +184,15 @@ pydantic==2.13.5
     # via
     #   -c requirements/_base.txt
     #   fastapi
-    #   fastapi-cloud-cli
     #   fastapi-pagination
-    #   pydantic-extra-types
-    #   pydantic-settings
 pydantic-core==2.46.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pydantic-extra-types==2.11.1
-    # via
-    #   -c requirements/_base.txt
-    #   fastapi
-pydantic-settings==2.14.2
-    # via
-    #   -c requirements/_base.txt
-    #   fastapi
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-    #   rich
 pytest==9.1.1
     # via
     #   -r requirements/_test.in
@@ -285,16 +229,11 @@ python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-    #   pydantic-settings
-    #   uvicorn
-python-multipart==0.0.32
-    # via fastapi
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema-path
-    #   uvicorn
 redis==6.4.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -317,28 +256,11 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rich==14.1.0
-    # via
-    #   -c requirements/_base.txt
-    #   rich-toolkit
-    #   typer
-rich-toolkit==0.19.7
-    # via
-    #   fastapi-cli
-    #   fastapi-cloud-cli
-rignore==0.7.6
-    # via fastapi-cloud-cli
 rpds-py==0.28.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-sentry-sdk==2.55.0
-    # via fastapi-cloud-cli
-shellingham==1.5.4
-    # via
-    #   -c requirements/_base.txt
-    #   typer
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -353,7 +275,7 @@ sqlalchemy==2.0.51
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-starlette==1.6.0
+starlette==0.37.2
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   fastapi
@@ -363,11 +285,6 @@ tenacity==8.5.0
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-typer==0.16.1
-    # via
-    #   -c requirements/_base.txt
-    #   fastapi-cli
-    #   fastapi-cloud-cli
 types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20260202
@@ -381,46 +298,26 @@ types-pyyaml==6.0.12.20250915
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asyncpg-stubs
     #   fastapi
     #   fastapi-pagination
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pydantic-extra-types
-    #   rich-toolkit
     #   sqlalchemy
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
-    #   fastapi
     #   pydantic
-    #   pydantic-settings
 urllib3==2.8.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   docker
     #   requests
-    #   sentry-sdk
-uvicorn==0.53.0
-    # via
-    #   fastapi
-    #   fastapi-cli
-    #   fastapi-cloud-cli
-uvloop==0.22.1
-    # via
-    #   -c requirements/_base.txt
-    #   uvicorn
-watchfiles==1.1.1
-    # via uvicorn
 websockets==17.1
-    # via
-    #   -r requirements/_test.in
-    #   uvicorn
+    # via -r requirements/_test.in
 yarl==1.24.5
     # via
     #   -c requirements/_base.txt
