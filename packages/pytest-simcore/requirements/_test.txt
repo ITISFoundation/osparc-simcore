@@ -14,7 +14,7 @@ alembic==1.20.0
     # via -r requirements/_test.in
 annotated-doc==0.0.4
     # via fastapi
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
     # via starlette
