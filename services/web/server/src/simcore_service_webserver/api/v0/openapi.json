@@ -10373,6 +10373,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "ProjectNodeResourcesSetByPricingUnitError: the node's resources are defined by its linked pricing unit and cannot be set manually",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvelopedError"
+                }
+              }
+            }
           }
         }
       }
