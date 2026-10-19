@@ -123,7 +123,7 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.8
+joserfc==1.7.7
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -310,6 +310,7 @@ typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   mypy

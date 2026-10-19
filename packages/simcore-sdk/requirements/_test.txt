@@ -134,7 +134,7 @@ jmespath==1.1.0
     #   aiobotocore
     #   boto3
     #   botocore
-joserfc==1.6.8
+joserfc==1.7.7
     # via moto
 jsonpatch==1.33
     # via cfn-lint

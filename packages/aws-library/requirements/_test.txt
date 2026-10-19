@@ -131,7 +131,7 @@ jmespath==1.1.0
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.8
+joserfc==1.7.7
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -313,6 +313,7 @@ types-s3transfer==0.16.0
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   fastapi
