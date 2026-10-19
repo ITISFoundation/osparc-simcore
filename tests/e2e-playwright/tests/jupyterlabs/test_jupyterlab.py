@@ -84,7 +84,7 @@ def test_jupyterlab(
         node_ids: list[str] = list(project_data["workbench"])
         assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-        wait_for_service_running(
+        iframe = wait_for_service_running(
             page=page,
             node_id=node_ids[0],
             websocket=log_in_and_out,
@@ -94,7 +94,6 @@ def test_jupyterlab(
             is_service_legacy=is_service_legacy,
         )
 
-    iframe = page.frame_locator("iframe")
     if service_key == "jupyter-octave-python-math":
         print(f"skipping any more complicated stuff since this is {service_key=} which is legacy")
         return
