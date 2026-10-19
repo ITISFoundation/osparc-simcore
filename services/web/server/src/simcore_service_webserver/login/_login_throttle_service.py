@@ -13,7 +13,7 @@ from collections.abc import AsyncIterator
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
-from redis.exceptions import RedisError
+from redis.exceptions import LockError, RedisError
 
 from ..utils_rate_limiting import create_too_many_requests_error
 from . import _login_throttle_repository as _repository
@@ -24,6 +24,8 @@ _logger = logging.getLogger(__name__)
 
 _MAX_BACKOFF_EXPONENT = 32
 _REDIS_TIMEOUT_SEC = 5
+_LOGIN_ATTEMPT_LOCK_TTL_SEC = 30
+_LOGIN_ATTEMPT_LOCK_WAIT_SEC = 3  # below _REDIS_TIMEOUT_SEC
 
 
 @contextlib.asynccontextmanager
@@ -40,6 +42,41 @@ async def _handle_redis_errors_as_503() -> AsyncIterator[None]:
             )
         )
         raise web.HTTPServiceUnavailable(text=MSG_LOGIN_UNAVAILABLE) from err
+
+
+@contextlib.asynccontextmanager
+async def exclusive_login_attempt(app: web.Application, *, email: str) -> AsyncIterator[None]:
+    """Serializes password verification per email, so that concurrent attempts
+    cannot slip past a back-off that an earlier attempt triggers.
+
+    Raises:
+        web.HTTPTooManyRequests: if other attempts for this email keep the lock for too long
+    """
+    lock = _repository.get_login_attempt_lock(
+        app,
+        digest=_get_digest(email),
+        ttl_sec=_LOGIN_ATTEMPT_LOCK_TTL_SEC,
+        wait_sec=_LOGIN_ATTEMPT_LOCK_WAIT_SEC,
+    )
+    async with _handle_redis_errors_as_503():
+        acquired = await lock.acquire()
+    if not acquired:
+        raise create_too_many_requests_error(retry_after_sec=1, error_msg=MSG_LOGIN_TOO_MANY_ATTEMPTS)
+
+    try:
+        yield
+    finally:
+        try:
+            async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
+                await lock.release()
+        except (LockError, RedisError, TimeoutError) as err:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Could not release the login attempt lock, it expires by itself",
+                    error=err,
+                    tip="Check redis connection",
+                )
+            )
 
 
 def _get_digest(email: str) -> str:

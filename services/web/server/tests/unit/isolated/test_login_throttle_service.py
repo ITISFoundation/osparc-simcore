@@ -3,7 +3,9 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
@@ -11,7 +13,7 @@ from aiohttp.test_utils import TestClient
 from fakeredis import FakeAsyncRedis
 from pytest_mock import MockerFixture
 from redis.exceptions import ConnectionError as RedisConnectionError
-from simcore_service_webserver.login import _login_throttle_repository, _login_throttle_service
+from simcore_service_webserver.login import _auth_service, _login_throttle_repository, _login_throttle_service
 from simcore_service_webserver.login._login_throttle_service import (
     clear_failed_logins,
     compute_delay_sec,
@@ -19,6 +21,7 @@ from simcore_service_webserver.login._login_throttle_service import (
     raise_if_login_throttled,
     register_failed_login,
 )
+from simcore_service_webserver.login.errors import WrongPasswordError
 from simcore_service_webserver.login.settings import LoginSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
 
@@ -253,3 +256,60 @@ async def test_clearing_failed_logins_ignores_a_redis_that_does_not_reply(
     app: web.Application, unresponsive_redis: None
 ):
     await clear_failed_logins(app, email=_EMAIL)
+
+
+async def test_login_guard_accepts_a_very_long_password(guard_client: TestClient):
+    response = await guard_client.post("/v0/auth:login-guard", json={"email": _EMAIL, "password": "a" * 100_000})
+
+    assert response.status == 204
+
+
+@pytest.fixture
+def wrong_password_checks(mocker: MockerFixture, login_settings: LoginSettings) -> list[None]:
+    calls: list[None] = []
+
+    async def _wrong_password(*_args, **_kwargs):
+        calls.append(None)
+        await asyncio.sleep(0.01)
+        raise WrongPasswordError(user_id=None, product_name="osparc")
+
+    mocker.patch.object(_auth_service, "get_user_or_none", return_value=None)
+    mocker.patch.object(_auth_service, "check_authorized_user_credentials", side_effect=_wrong_password)
+    mocker.patch.object(_auth_service, "get_plugin_settings", return_value=login_settings)
+    return calls
+
+
+async def test_concurrent_attempts_cannot_exceed_the_free_attempts(
+    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings, wrong_password_checks: list[None]
+):
+    num_attempts = 20
+    product = SimpleNamespace(name="osparc")
+
+    results = await asyncio.gather(
+        *(
+            _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # type: ignore[arg-type]  # noqa: S106
+            for _ in range(num_attempts)
+        ),
+        return_exceptions=True,
+    )
+
+    allowed_checks = login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1
+    assert len(wrong_password_checks) == allowed_checks
+    assert sum(isinstance(r, WrongPasswordError) for r in results) == allowed_checks
+    assert sum(isinstance(r, web.HTTPTooManyRequests) for r in results) == num_attempts - allowed_checks
+
+
+async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
+    app: web.Application, fake_redis: FakeAsyncRedis, wrong_password_checks: list[None], mocker: MockerFixture
+):
+    mocker.patch.object(_login_throttle_service, "_LOGIN_ATTEMPT_LOCK_WAIT_SEC", 0.2)
+    held = _login_throttle_repository.get_login_attempt_lock(
+        app, digest=hashlib.sha256(_EMAIL.encode()).hexdigest(), ttl_sec=30, wait_sec=1
+    )
+    assert await held.acquire()
+    product = SimpleNamespace(name="osparc")
+
+    with pytest.raises(web.HTTPTooManyRequests):
+        await _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # type: ignore[arg-type]  # noqa: S106
+
+    assert not wrong_password_checks

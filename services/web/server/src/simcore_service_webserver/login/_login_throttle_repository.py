@@ -3,11 +3,23 @@
 from typing import Final
 
 from aiohttp import web
+from redis.asyncio.lock import Lock
 
 from ..redis import get_redis_login_throttle_client
 
 _FAILURES_KEY_FORMAT: Final[str] = "login-throttle:failures:{digest}"
 _BLOCK_KEY_FORMAT: Final[str] = "login-throttle:blocked:{digest}"
+_LOCK_KEY_FORMAT: Final[str] = "login-throttle:lock:{digest}"
+
+
+def get_login_attempt_lock(app: web.Application, *, digest: str, ttl_sec: float, wait_sec: float) -> Lock:
+    redis_client = get_redis_login_throttle_client(app)
+    return redis_client.lock(
+        _LOCK_KEY_FORMAT.format(digest=digest),
+        timeout=ttl_sec,
+        blocking_timeout=wait_sec,
+        thread_local=False,  # many asyncio tasks share the thread
+    )
 
 
 async def get_block_ttl_ms(app: web.Application, *, digest: str) -> int:
