@@ -36,6 +36,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.project_nodes_pricing import (
+    get_node_pricing_state,
+    set_node_pricing_link,
+    set_node_required_resources,
+    single_container_required_resources,
+)
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.projects import (
@@ -55,6 +61,7 @@ from simcore_service_webserver.projects._projects_service import (
 from simcore_service_webserver.projects.exceptions import ProjectCopyingTrashedProjectError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -553,6 +560,116 @@ async def test_copy_allow_guests_to_push_states_and_output_ports_copies_flag_whe
         )
         is True
     )
+
+
+#
+# CHARACTERIZATION TESTS (pin the state of the DB, not the code that produces it)
+#
+
+
+# hand-computed: a computational node sized for r5.4xlarge (16 CPU / 128 GiB)
+# with the DASK-WORKER formula: cpu = 16 - 0.1 = 15.9,
+#                              ram = int(128 GiB * 0.9) = 123695058124
+_SOURCED_SIZED_RESOURCES: dict[str, Any] = single_container_required_resources(
+    "simcore/services/comp/itis/sleeper", cpu=15.9, ram_bytes=123695058124
+)
+_PRICING_PLAN_ID = 1
+_PRICING_UNIT_ID = 2
+
+
+def _sleeper_node(nodes: dict) -> Any:
+    # the workbench fixture has TWO comp sleepers; pin one deterministically by label
+    return next(node for node in nodes.values() if node.label == "sleeper")
+
+
+async def _price_and_size_one_computational_node(
+    app, engine: AsyncEngine, project_uuid: str
+) -> tuple[str, dict[str, Any]]:
+    """Directly (no endpoints) give the project's computational node a non-default
+    pricing-unit link and hand-sized `required_resources`.
+    """
+    nodes = await _get_inserted_nodes(app, project_uuid)
+    comp_node = _sleeper_node(nodes)
+    await set_node_pricing_link(
+        engine,
+        project_uuid,
+        f"{comp_node.node_id}",
+        pricing_plan_id=_PRICING_PLAN_ID,
+        pricing_unit_id=_PRICING_UNIT_ID,
+    )
+    await set_node_required_resources(engine, project_uuid, f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES)
+    return f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES
+
+
+async def _assert_clone_kept_resources_but_lost_pricing_links(
+    app, engine: AsyncEngine, cloned_project: ProjectDict, expected_resources: dict[str, Any]
+) -> None:
+    state = await get_node_pricing_state(engine, cloned_project["uuid"])
+    assert len(state) == len(cloned_project["workbench"])
+    for node_state in state.values():
+        # ⚠️ CURRENT BEHAVIOUR: the pricing link is NOT copied. The copy-and-template
+        # part of the pricing/resources ownership rework (PR 2) will copy the source
+        # links; when that lands, update this assertion for the computational node to
+        # expect (pricing_plan_id=_PRICING_PLAN_ID, pricing_unit_id=_PRICING_UNIT_ID).
+        assert node_state.pricing_plan_id is None
+        assert node_state.pricing_unit_id is None
+    # `required_resources` ARE copied verbatim from the source node
+    nodes = await _get_inserted_nodes(app, cloned_project["uuid"])
+    comp_node = _sleeper_node(nodes)
+    assert state[comp_node.node_id].required_resources == expected_resources
+
+
+@pytest.mark.parametrize("source_kind", ["standard_project", "template"])
+async def test_clone_project_data_copies_required_resources_but_not_pricing_links(
+    source_kind: str,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    template_project: ProjectDict,
+    osparc_product_name: ProductName,
+    task_progress: TaskProgress,
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mock_dynamic_scheduler: None,
+    storage_subsystem_mock_override: None,
+    asyncpg_engine: AsyncEngine,
+):
+    """W6/W7: cloning (a project or a template) copies `required_resources` but
+    drops the `projects_node_to_pricing_unit` links (director-v2 would later
+    re-link the DEFAULT unit on the first pipeline update, losing the user's choice).
+    """
+    assert client.app
+    source = template_project if source_kind == "template" else user_project
+    source_uuid = source["uuid"]
+
+    # SETUP: source computational node is linked to a non-default unit and sized
+    _, sourced_resources = await _price_and_size_one_computational_node(client.app, asyncpg_engine, source_uuid)
+
+    # ACT
+    source_project = await _fetch_source_project(client.app, source_uuid, logged_user["id"])
+    cloned_project = await clone_project_data(
+        client.app,
+        source_project=source_project,
+        forced_copy_project_id=None,
+        user_id=UserID(logged_user["id"]),
+        product_name=osparc_product_name,
+        product_api_base_url="http://product.testserver.io",
+        task_progress=task_progress,
+    )
+
+    # ASSERT: the clone's DB state
+    await _assert_clone_kept_resources_but_lost_pricing_links(
+        client.app, asyncpg_engine, cloned_project, sourced_resources
+    )
+
+    # the SOURCE project keeps its link and resources untouched
+    source_state = await get_node_pricing_state(asyncpg_engine, source_uuid)
+    linked = {
+        node_id: node_state for node_id, node_state in source_state.items() if node_state.pricing_unit_id is not None
+    }
+    assert len(linked) == 1
+    (source_node_state,) = linked.values()
+    assert source_node_state.pricing_plan_id == _PRICING_PLAN_ID
+    assert source_node_state.required_resources == sourced_resources
 
 
 async def test_copy_allow_guests_to_push_states_and_output_ports_keeps_disabled_when_source_disabled(

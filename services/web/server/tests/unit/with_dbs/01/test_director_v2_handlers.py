@@ -4,6 +4,7 @@
 
 
 import base64
+from decimal import Decimal
 
 import pytest
 import sqlalchemy as sa
@@ -30,8 +31,10 @@ from models_library.api_schemas_webserver.computations import (
     ComputationTaskRestGet,
 )
 from models_library.projects import ProjectID
+from models_library.wallets import WalletID, WalletInfo
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -44,6 +47,7 @@ from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.projects.models import ProjectDict
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -549,3 +553,68 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
     if user_role != UserRole.ANONYMOUS:
         assert ComputationCollectionRunTaskRestGet.model_validate(data[0])
         assert data[0]["name"] == "My Job Name"
+
+
+#
+# CHARACTERIZATION TESTS (pin the state of the DB, not the code that produces it)
+#
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize(
+    "wallet_info_expected",
+    [
+        pytest.param(
+            WalletInfo(wallet_id=WalletID(1), wallet_name="Test Wallet", wallet_credit_amount=Decimal(100)), id="billed"
+        ),
+        pytest.param(None, id="not_billed"),
+    ],
+)
+async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_projects_nodes(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    asyncpg_engine: AsyncEngine,
+    wallet_info_expected: WalletInfo | None,
+):
+    """W8/W9: starting a computation forwards `wallet_info` to director-v2 and the
+    web-server itself writes NOTHING to `projects_nodes` or
+    `projects_node_to_pricing_unit`.
+
+    ⚠️ In the pricing/resources ownership rework (PR 2), starting a billed project
+    will additionally REPAIR missing/stale pricing links and node resources here;
+    the "not_billed" case must keep writing nothing.
+    """
+    assert client.app
+
+    mocked_get_wallet_info = mocker.patch(
+        "simcore_service_webserver.director_v2._controller.rest._director_v2_service.get_wallet_info",
+        autospec=True,
+        return_value=wallet_info_expected,
+    )
+    mocked_start = mocker.patch.object(
+        DirectorV2RestClient,
+        "start_computation",
+        autospec=True,
+        return_value=(user_project["uuid"], status.HTTP_201_CREATED),
+    )
+
+    state_before = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+    assert state_before, "the test project must have nodes"
+
+    url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
+    rsp = await client.post(f"{url}")
+    data, _ = await assert_status(rsp, status.HTTP_201_CREATED)
+    assert data["pipeline_id"] == user_project["uuid"]
+
+    # the wallet was resolved by the web-server and forwarded verbatim
+    mocked_get_wallet_info.assert_called_once()
+    assert mocked_start.call_count == 1
+    assert mocked_start.call_args.kwargs["wallet_info"] == wallet_info_expected
+
+    # the web-server wrote nothing to the nodes' pricing state
+    state_after = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+    assert state_after == state_before
+    assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
