@@ -86,8 +86,7 @@ async def create_user_pre_registration(
                 user_id = user.id
                 user_has_product_access = bool(
                     await conn.scalar(
-                        sa
-                        .select(users.c.id)
+                        sa.select(users.c.id)
                         .select_from(
                             users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
                                 products,
@@ -119,8 +118,7 @@ async def create_user_pre_registration(
                     values["account_request_reviewed_by"] = created_by
 
         stmt = (
-            postgresql
-            .insert(users_pre_registration_details)
+            postgresql.insert(users_pre_registration_details)
             .values(**values)
             .on_conflict_do_nothing(
                 index_elements=[
@@ -193,8 +191,7 @@ async def list_user_pre_registrations(
 
     # Main query to get pre-registration data
     main_query = (
-        sa
-        .select(
+        sa.select(
             users_pre_registration_details.c.id,
             users_pre_registration_details.c.user_id,
             users_pre_registration_details.c.pre_email,
@@ -296,8 +293,7 @@ async def review_user_pre_registration(
             update_values["extras"] = merged_extras
 
         await conn.execute(
-            users_pre_registration_details
-            .update()
+            users_pre_registration_details.update()
             .values(**update_values)
             .where(users_pre_registration_details.c.id == pre_registration_id)
         )
@@ -406,8 +402,7 @@ async def update_pre_registration_product(
         # that can happen with a separate pre-check query under concurrency.
         try:
             await conn.execute(
-                users_pre_registration_details
-                .update()
+                users_pre_registration_details.update()
                 .values(
                     product_name=new_product_name,
                     extras=merged_extras,
@@ -436,8 +431,7 @@ def _create_account_request_reviewed_by_username_subquery() -> Any:
     """Creates a reusable subquery for getting reviewer username by ID."""
     reviewer_alias = sa.alias(users, name="reviewer_alias")
     return (
-        sa
-        .select(
+        sa.select(
             reviewer_alias.c.name,
         )
         .where(users_pre_registration_details.c.account_request_reviewed_by == reviewer_alias.c.id)
@@ -501,8 +495,7 @@ async def search_merged_pre_and_registered_users(
     users_alias = sa.alias(users, name="users_alias")
 
     invited_by = (
-        sa
-        .select(
+        sa.select(
             users_alias.c.name,
         )
         .where(users_pre_registration_details.c.created_by == users_alias.c.id)
@@ -627,8 +620,7 @@ async def list_merged_pre_and_registered_users(
     # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
     pre_reg_query = (
-        sa
-        .select(
+        sa.select(
             users_pre_registration_details.c.id,
             users_pre_registration_details.c.pre_email.label("email"),
             users_pre_registration_details.c.pre_first_name.label("first_name"),
@@ -664,8 +656,7 @@ async def list_merged_pre_and_registered_users(
 
     # Query for users that are associated with the product through groups
     users_query = (
-        sa
-        .select(
+        sa.select(
             sa.literal(None).label("id"),
             users.c.email,
             users.c.first_name,
@@ -694,8 +685,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal_column("false").label("is_pre_registered"),
         )
         .select_from(
-            users
-            .join(user_to_groups, user_to_groups.c.uid == users.c.id)
+            users.join(user_to_groups, user_to_groups.c.uid == users.c.id)
             .join(groups, groups.c.gid == user_to_groups.c.gid)
             .join(products, products.c.group_id == groups.c.gid)
         )
@@ -731,8 +721,7 @@ async def list_merged_pre_and_registered_users(
         sa.select(filtered_query_subq, dedupe_rank.label("email_rank")).select_from(filtered_query_subq).subquery()
     )
     deduped_query_subq = (
-        sa
-        .select(*[deduped_rows_subq.c[column.name] for column in filtered_query_subq.c])
+        sa.select(*[deduped_rows_subq.c[column.name] for column in filtered_query_subq.c])
         .where(deduped_rows_subq.c.email_rank == 1)
         .subquery()
     )
@@ -761,8 +750,7 @@ async def list_merged_pre_and_registered_users(
     final_order_by_clauses.append(deduped_query_subq.c.user_id.asc().nullsfirst())
 
     distinct_query = (
-        sa
-        .select(deduped_query_subq)
+        sa.select(deduped_query_subq)
         .select_from(deduped_query_subq)
         .order_by(*final_order_by_clauses)
         .limit(pagination_limit)
