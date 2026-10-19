@@ -262,6 +262,7 @@ def _get_node_id_for_service_class(user_project: ProjectDict, service_class: str
     [(UserRole.USER, "comp"), (UserRole.USER, "dynamic")],
     ids=["computational", "dynamic"],
 )
+@pytest.mark.epic("sanderegg/9851", flips_in="PR1")
 async def test_connect_pricing_unit_persists_link_and_sizes_node(
     service_class: str,
     client: TestClient,

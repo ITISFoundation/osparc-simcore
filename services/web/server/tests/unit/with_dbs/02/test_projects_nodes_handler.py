@@ -355,6 +355,7 @@ async def test_create_node_returns_422_if_body_is_missing(
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize(
     "node_class, expect_run_service_call",
     [("dynamic", True), ("comp", False), ("frontend", False)],

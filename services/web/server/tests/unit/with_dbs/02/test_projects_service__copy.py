@@ -623,6 +623,7 @@ async def _assert_clone_kept_resources_but_lost_pricing_links(
     assert state[comp_node.node_id].required_resources == expected_resources
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("source_kind", ["standard_project", "template"])
 async def test_clone_project_data_copies_required_resources_but_not_pricing_links(
     source_kind: str,

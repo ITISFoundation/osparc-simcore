@@ -415,6 +415,7 @@ def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR3")
 async def test_create_computation_with_wallet(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,

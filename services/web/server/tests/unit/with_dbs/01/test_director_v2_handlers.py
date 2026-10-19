@@ -568,6 +568,7 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
 #
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
     "wallet_info_expected",

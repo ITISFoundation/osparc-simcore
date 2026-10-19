@@ -11,7 +11,8 @@
 These tests describe the STATE produced by project creation, not the code that
 produces it, so they keep passing while the responsibility for writing that state
 moves from director-v2 to the web-server (pricing/resources ownership rework).
-Tests marked ⚠️ assert TODAY's behaviour and name the PR intended to change them.
+Tests marked `@pytest.mark.epic(...)` assert TODAY's behaviour and name, in their
+docstring, the PR of the epic intended to change them (`flips_in`).
 
 The dynamic-node "linked + sized with the dynamic formula at dynamic start" and
 the computational-node "linked to the default unit + sized on the first pipeline
@@ -28,6 +29,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_project_creation_writes_no_pricing_links(
     client: TestClient,
