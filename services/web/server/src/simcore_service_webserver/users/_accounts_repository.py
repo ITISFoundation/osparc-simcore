@@ -129,7 +129,7 @@ async def create_user_pre_registration(
             .returning(users_pre_registration_details.c.id)
         )
         result = await conn.execute(stmt)
-        pre_registration_id: int | None = result.scalar_one_or_none()
+        pre_registration_id = result.scalar_one_or_none()
         if pre_registration_id is None:
             raise AlreadyPreRegisteredError(
                 email=email,
