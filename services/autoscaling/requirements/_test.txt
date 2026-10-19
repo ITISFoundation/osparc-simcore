@@ -125,7 +125,7 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.6.8
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -318,7 +318,6 @@ types-pyyaml==6.0.12.20250915
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic

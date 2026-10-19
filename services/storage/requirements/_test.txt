@@ -177,7 +177,7 @@ jmespath==1.0.1
     #   -c requirements/_base.txt
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.6.8
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -402,7 +402,6 @@ types-aiofiles==25.1.0.20251011
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asyncpg-stubs
     #   aws-sam-translator
     #   cfn-lint
