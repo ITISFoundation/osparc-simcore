@@ -1,9 +1,10 @@
 # Renovate's pip-compile manager recompiles each requirements/*.txt file independently
 # and can process them out of the Makefile's prerequisite order (_base -> _test -> _tools,
 # see scripts/makefiles/requirements.mk), producing an inconsistent lockfile.
-# This re-runs `make reqs upgrade="<changed packages>"` per affected requirements
-# directory on Renovate's own PR branch (targeting only the package(s) Renovate itself
-# bumped, never a bare `make reqs` which upgrades everything) and pushes a fixup commit
+# This re-runs `make reqs upgrade="<pkg==ver ...>"` per affected requirements directory
+# on Renovate's own PR branch, pinning the exact versions Renovate chose (never a bare
+# `make reqs` which upgrades everything, and never a bare package name which uv would
+# re-resolve to the latest release, overriding Renovate's pin) and pushes a fixup commit
 # if the Makefile-ordered recompile produced a diff.
 name: Chore Fix Renovate Lockfiles
 
@@ -41,7 +42,9 @@ jobs:
           setup-docker: 'false'
           expose-github-runtime: 'false'
 
-      - name: re-run make reqs per changed directory, targeting only the packages Renovate bumped
+      - name: re-run make reqs per changed directory, pinning the versions Renovate chose
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
@@ -51,11 +54,13 @@ jobs:
           while IFS= read -r dir; do
             [ -n "$dir" ] || continue
 
-            # Extract only the top-level pinned package names that actually changed
-            # version in this dir (excludes indented "# via ..." provenance comments)
+            # Extract the exact "<pkg[extras]==<version>>" pins Renovate added in this
+            # dir (added lines only, column-0 so indented "# via ..." provenance
+            # comments are excluded). Passing bare names would let uv re-resolve to the
+            # latest release instead of keeping Renovate's chosen version.
             PKGS=$(git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- "$dir" \
-              | grep -E '^[+-][A-Za-z0-9_.-]+==' \
-              | sed -E 's/^[+-]([A-Za-z0-9_.-]+)==.*/\1/' \
+              | grep -E '^\+[A-Za-z0-9][A-Za-z0-9._-]*(\[[^]]+\])?==' \
+              | sed -E 's/^\+([A-Za-z0-9._-]+(\[[^]]+\])?==[A-Za-z0-9._+!-]+).*$/\1/' \
               | sort -u \
               | tr '\n' ' ')
             PKGS="${PKGS% }"
@@ -77,7 +82,7 @@ jobs:
           if [ -n "$(git status --porcelain)" ]; then
             git add -A
             git commit -m "fix(requirements): resync pip-compile lockfiles"
-            git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+            git push origin "HEAD:${PR_HEAD_REF}"
           else
             echo "Lockfiles already consistent, nothing to fix"
           fi
