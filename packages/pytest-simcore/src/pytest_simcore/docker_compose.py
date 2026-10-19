@@ -86,6 +86,11 @@ def env_vars_for_docker_compose(
     env_devel["SWARM_OPS_STACK_NAME"] = ops_stack_name
     env_devel.setdefault("SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_"))
 
+    # traefik's swarm provider selects services by this label ONLY, and labels are
+    # daemon-global: with two checkouts deployed, each stack's traefik would discover the
+    # other's routers (same rules, same priorities) and round-robin onto foreign backends
+    env_devel["TRAEFIK_SIMCORE_ZONE"] = core_stack_name
+
     env_devel[
         "AIOCACHE_DISABLE"
         # ensure that aio-caches are disabled for testing [https://aiocache.readthedocs.io/en/latest/testing.html]

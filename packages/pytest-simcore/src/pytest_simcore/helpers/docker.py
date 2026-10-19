@@ -75,6 +75,15 @@ def get_service_published_port(
     *,
     stack_name: str | None = None,
 ) -> str:
+    return _get_service_published_port(service_name, target_ports, stack_name=stack_name)
+
+
+def _get_service_published_port(
+    service_name: str,
+    target_ports: list[int] | int | None,
+    *,
+    stack_name: str | None,
+) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
 
@@ -87,13 +96,21 @@ def get_service_published_port(
         candidates = [s for s in candidates if str(s.name).startswith(f"{stack_name}_")]
     if not candidates:
         scope = f" in stack '{stack_name}'" if stack_name else ""
-        msg = f"Cannot find published port for service '{service_name}'{scope}. Probably services still not started."
+        expected_prefix = f"{stack_name}_" if stack_name else "<any-stack>_"
+        same_suffix = sorted(str(s.name) for s in client.services.list() if str(s.name).endswith(service_name))
+        msg = (
+            f"Cannot find published port for service '{service_name}'{scope}: no service matching "
+            f"'{expected_prefix}{service_name}' is deployed. Probably services still not started. "
+            f"Services on this daemon ending in '{service_name}': {same_suffix or 'none'}."
+        )
         raise RuntimeError(msg)
 
-    service_ports = _pick_service(candidates, service_name, target_ports).attrs["Endpoint"].get("Ports")
+    service = _pick_service(candidates, service_name, target_ports)
+    service_ports = service.attrs["Endpoint"].get("Ports")
     if not service_ports:
         msg = (
-            f"Cannot find published port for service '{service_name}' in endpoint.Probably services still not started."
+            f"Cannot find published port for service '{service_name}' (resolved to '{service.name}') "
+            "in endpoint: it publishes no ports. Probably services still not started."
         )
         raise RuntimeError(msg)
 

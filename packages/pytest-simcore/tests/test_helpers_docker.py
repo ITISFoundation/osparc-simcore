@@ -4,10 +4,12 @@
 import re
 from pathlib import Path
 
+import docker
 import pytest
 import pytest_simcore
 import yaml
 from pytest_simcore.helpers.docker import (
+    _get_service_published_port,
     filter_compose_file_for_ci,
     filter_service_names_for_ci,
 )
@@ -134,3 +136,48 @@ def test_published_port_lookups_name_real_compose_services(osparc_simcore_root_d
 
     unknown = lookup_names - compose_service_keys
     assert not unknown, f"{sorted(unknown)} are not services in services/docker-compose*.yml"
+
+
+class _FakeService:
+    def __init__(self, name: str, ports: list[dict] | None = None) -> None:
+        self.name = name
+        self.attrs = {"Endpoint": {"Ports": ports if ports is not None else []}}
+
+
+class _FakeServices:
+    def __init__(self, services: list[_FakeService]) -> None:
+        self._services = services
+
+    def list(self) -> list[_FakeService]:
+        return self._services
+
+
+class _FakeClient:
+    def __init__(self, services: list[_FakeService]) -> None:
+        self.services = _FakeServices(services)
+
+
+@pytest.fixture
+def fake_docker(monkeypatch: pytest.MonkeyPatch):
+    def _install(services: list[_FakeService]):
+        monkeypatch.setattr(docker, "from_env", lambda: _FakeClient(services))
+
+    return _install
+
+
+def test_published_port_lookup_error_reports_the_stack_filter(fake_docker) -> None:
+    # another checkout's service exists but is filtered out: the error must say what was
+    # looked for and what IS on the daemon, so a wrong stack_name is diagnosable
+    fake_docker([_FakeService("pt-other-ops-1234_postgres")])
+    with pytest.raises(RuntimeError) as excinfo:
+        _get_service_published_port("postgres", None, stack_name="pt-this-core-abcd")
+    message = f"{excinfo.value}"
+    assert "pt-this-core-abcd_postgres" in message
+    assert "pt-other-ops-1234_postgres" in message
+
+
+def test_published_port_lookup_error_names_the_resolved_service(fake_docker) -> None:
+    fake_docker([_FakeService("pt-this-core-abcd_postgres", ports=[])])
+    with pytest.raises(RuntimeError) as excinfo:
+        _get_service_published_port("postgres", None, stack_name="pt-this-core-abcd")
+    assert "pt-this-core-abcd_postgres" in f"{excinfo.value}"
