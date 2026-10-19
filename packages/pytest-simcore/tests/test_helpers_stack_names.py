@@ -12,6 +12,7 @@ from pytest_simcore.helpers.stack_names import (
     get_checkout_token,
     get_checkout_uid,
     get_git_ref,
+    is_service_in_stack,
 )
 
 _DOCKER_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -24,8 +25,8 @@ _CHECKOUT_B = Path("/home/dev/simcore-worktree")
 
 def test_names_are_docker_legal_and_bounded():
     core, ops = compute_stack_names("maintenance/fix-something", get_checkout_token(_CHECKOUT_A))
-    assert core.startswith("pt-")
-    assert ops.startswith("pt-")
+    assert core.startswith("pytest-")
+    assert ops.startswith("pytest-")
     for name in (core, ops):
         assert len(name) <= MAX_STACK_NAME_LEN
         assert _DOCKER_NAME_PATTERN.match(name), name
@@ -43,16 +44,20 @@ def test_core_and_ops_names_share_a_prefix_and_align_the_uid():
 
 
 def test_branch_fragment_is_recognizable_and_sanitized():
-    core, _ = compute_stack_names("fix/Fix_Autoscaling.Reqs", get_checkout_token(_CHECKOUT_A))
-    assert "fix-fix-autoscaling" in core
+    core, _ = compute_stack_names("fix/Fix_AutoScal", get_checkout_token(_CHECKOUT_A))
+    assert "fix-fix-autoscal" in core
 
 
-def test_long_branch_is_truncated_to_budget():
+def test_long_branch_is_truncated_in_the_middle_preserving_head_and_tail():
     core, ops = compute_stack_names("maintenance/fix-autoscaling-reqs-and-more" * 3, get_checkout_token(_CHECKOUT_A))
-    # the branch fragment keeps its prefix (still recognizable) and the name fits
-    assert core.startswith("pt-maintenance-fix-auto-")
-    assert len(core) <= MAX_STACK_NAME_LEN
-    assert len(ops) <= MAX_STACK_NAME_LEN
+    # the branch fragment keeps BOTH its head and its tail (still recognizable) and the
+    # name fits the budget
+    assert core.startswith("pytest-maintena")
+    branch_fragment = core.rsplit("-", 2)[0].removeprefix("pytest-")
+    assert branch_fragment.endswith("and-more")
+    for name in (core, ops):
+        assert len(name) <= MAX_STACK_NAME_LEN
+        assert _DOCKER_NAME_PATTERN.match(name), name
     # truncation is sized to the longer role, so both names stay aligned even when the
     # branch is cut short
     assert core.rsplit("-", 2)[0] == ops.rsplit("-", 2)[0]
@@ -78,6 +83,13 @@ def test_missing_branch_still_produces_unique_names():
     core2, _ = compute_stack_names("", get_checkout_token(_CHECKOUT_B))
     assert core1 != core2
     assert _DOCKER_NAME_PATTERN.match(core1)
+
+
+def test_is_service_in_stack_requires_the_full_stack_prefix():
+    assert is_service_in_stack("pytest-core-one-1234_postgres", "pytest-core-one-1234")
+    # a co-tenant stack whose name merely extends ours must not be mistaken for it
+    assert not is_service_in_stack("pytest-core-one-12345_postgres", "pytest-core-one-1234")
+    assert not is_service_in_stack("other-core-1234_postgres", "pytest-core-one-1234")
 
 
 def test_checkout_uid_is_short_and_stable(tmp_path: Path):

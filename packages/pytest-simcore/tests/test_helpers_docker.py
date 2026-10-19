@@ -168,16 +168,16 @@ def fake_docker(monkeypatch: pytest.MonkeyPatch):
 def test_published_port_lookup_error_reports_the_stack_filter(fake_docker) -> None:
     # another checkout's service exists but is filtered out: the error must say what was
     # looked for and what IS on the daemon, so a wrong stack_name is diagnosable
-    fake_docker([_FakeService("pt-other-ops-1234_postgres")])
+    fake_docker([_FakeService("pytest-other-ops-1234_postgres")])
     with pytest.raises(RuntimeError) as excinfo:
-        _get_service_published_port("postgres", None, stack_name="pt-this-core-abcd")
+        _get_service_published_port("postgres", None, stack_name="pytest-this-core-abcd")
     message = f"{excinfo.value}"
-    assert "pt-this-core-abcd_postgres" in message
-    assert "pt-other-ops-1234_postgres" in message
+    assert "pytest-this-core-abcd_postgres" in message
+    assert "pytest-other-ops-1234_postgres" in message
 
 
 def test_published_port_lookup_error_names_the_resolved_service(fake_docker) -> None:
-    fake_docker([_FakeService("pt-this-core-abcd_postgres", ports=[])])
+    fake_docker([_FakeService("pytest-this-core-abcd_postgres", ports=[])])
     with pytest.raises(RuntimeError) as excinfo:
-        _get_service_published_port("postgres", None, stack_name="pt-this-core-abcd")
-    assert "pt-this-core-abcd_postgres" in f"{excinfo.value}"
+        _get_service_published_port("postgres", None, stack_name="pytest-this-core-abcd")
+    assert "pytest-this-core-abcd_postgres" in f"{excinfo.value}"

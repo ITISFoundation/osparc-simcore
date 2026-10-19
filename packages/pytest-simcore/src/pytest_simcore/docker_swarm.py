@@ -210,14 +210,16 @@ def docker_swarm(
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
-def _own_migration_services(docker_client: docker.client.DockerClient, stack_name: str) -> list:
-    # NOTE: filter by THIS run's stack: other pytest runs may share the daemon with their
+_MIGRATION_COMPOSE_SERVICE: Final[str] = "migration"  # services/docker-compose.yml key
+
+
+def _list_owned_migration_services(docker_client: docker.client.DockerClient, stack_name: str) -> list:
+    # NOTE: match the EXACT deployed name: the stack name embeds the branch, so a substring
+    # match on "migration" would select EVERY service of a checkout whose branch contains
+    # that word (e.g. 'fix/migration'). Other pytest runs may share the daemon with their
     # own migration service, which must be left alone
-    return [
-        service
-        for service in docker_client.services.list()
-        if str(service.name).startswith(f"{stack_name}_") and "migration" in service.name  # type: ignore
-    ]
+    migration_service_name = f"{stack_name}_{_MIGRATION_COMPOSE_SERVICE}"
+    return [service for service in docker_client.services.list() if str(service.name) == migration_service_name]
 
 
 @retry(
@@ -229,12 +231,12 @@ def _wait_for_migration_service_to_be_removed(
     docker_client: docker.client.DockerClient,
     stack_name: str,
 ) -> None:
-    if _own_migration_services(docker_client, stack_name):
+    if _list_owned_migration_services(docker_client, stack_name):
         raise TryAgain
 
 
 def _force_remove_migration_service(docker_client: docker.client.DockerClient, stack_name: str) -> None:
-    for migration_service in _own_migration_services(docker_client, stack_name):
+    for migration_service in _list_owned_migration_services(docker_client, stack_name):
         _logger.warning(
             "migration service detected before updating stack, it will be force-removed now and re-deployed "
             "to ensure DB update"
@@ -471,12 +473,12 @@ async def docker_stack(  # noqa: C901
     Under xdist, the first worker deploys the stacks for the whole run and the controller removes them.
     """
 
-    # WARNING: keep prefix "pt-" in stack names
+    # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     ops_stack_name = env_vars_for_docker_compose["SWARM_OPS_STACK_NAME"]
 
-    assert core_stack_name.startswith("pt-")
-    assert ops_stack_name.startswith("pt-")
+    assert core_stack_name.startswith("pytest-")
+    assert ops_stack_name.startswith("pytest-")
 
     def _collected_services_union(attr_name: str) -> list[str]:
         # NOTE: collection completes before any test runs, so `session.items` already lists

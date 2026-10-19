@@ -17,6 +17,8 @@ from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+from .stack_names import is_service_in_stack
+
 
 # NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status1 because some of the
 # packages tests installations do not include this library!!
@@ -93,7 +95,7 @@ def _get_service_published_port(
     candidates = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if stack_name is not None:
         # other checkouts may share the daemon: only consider THIS checkout's stack
-        candidates = [s for s in candidates if str(s.name).startswith(f"{stack_name}_")]
+        candidates = [s for s in candidates if is_service_in_stack(str(s.name), stack_name)]
     if not candidates:
         scope = f" in stack '{stack_name}'" if stack_name else ""
         expected_prefix = f"{stack_name}_" if stack_name else "<any-stack>_"
