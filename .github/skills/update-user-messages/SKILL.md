@@ -1,9 +1,11 @@
 ---
-agent: agent
+name: update-user-messages
 description: 'Update user messages'
-model: Claude Haiku 4.5 (copilot)
+disable-model-invocation: true
 ---
 
+<!-- markdownlint-disable -->
+<!-- model-facing instructions; repo-wide markdownlint rollout deferred -->
 This prompt guide is for updating user-facing messages in ${file} or ${selection}
 
 ## What is a User Message?
@@ -108,10 +110,15 @@ return HttpErrorInfo(status.HTTP_404_NOT_FOUND, user_message("The requested user
 
 ```python
 # Before
-user_message("Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!")
+user_message(
+    "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!"
+)
 
 # After
-user_message("Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience.", _version=1)
+user_message(
+    "Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience.",
+    _version=1,
+)
 ```
 
 Remember: The goal is to improve clarity and helpfulness for end-users while maintaining accurate versioning for tracking changes. **Always check that your updated messages comply with ALL 10 guidelines, especially avoiding humor and maintaining a professional tone.**
