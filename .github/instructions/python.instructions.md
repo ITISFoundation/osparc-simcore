@@ -27,7 +27,9 @@ Target the Python version in `.python-version`.
 - Fully annotate parameters and return types of all functions and methods,
   including private helpers. Annotate class attributes and non-obvious values.
 - Declare module-level constants as `NAME: Final[T] = value` with an explicit
-  type, including private ones and constants in test modules.
+  type, including private ones and constants in test modules. Document
+  non-obvious constant rationale with `Final[Annotated[T, doc(...)]]` instead
+  of a preceding comment.
 
 ## Documentation
 
