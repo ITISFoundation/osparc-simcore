@@ -380,7 +380,7 @@ pygments==2.21.0
     # via rich
 pyinstrument==5.1.1
     # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
-pyjwt==2.4.0
+pyjwt==2.15.1
     # via twilio
 python-dateutil==2.8.2
     # via
