@@ -44,6 +44,7 @@ from ..web_requests_validation import (
     parse_request_query_parameters_as,
 )
 from . import _pricing_plans_admin_service as pricing_plans_admin_service
+from ._constants import MSG_PRICING_UNIT_CREATION_FAILED_ERROR
 from ._pricing_plans_models import PricingPlanGetPathParams
 
 #
@@ -58,7 +59,7 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
             return await handler(request)
 
         except (ValueError, PricingUnitDuplicationError) as exc:
-            raise web.HTTPBadRequest(text=f"{exc}") from exc
+            raise web.HTTPBadRequest(text=MSG_PRICING_UNIT_CREATION_FAILED_ERROR) from exc
 
         except RPCServerError as exc:
             # NOTE: This will be improved; we will add a mapping between

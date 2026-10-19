@@ -34,6 +34,7 @@ from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
 from ..web_requests_validation import parse_request_query_parameters_as
 from . import _service_runs_service as api
+from ._constants import MSG_WALLET_ACCESS_FORBIDDEN_ERROR
 
 #
 # API components/schemas
@@ -47,7 +48,7 @@ def _handle_resource_usage_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(text=f"{exc}") from exc
+            raise web.HTTPForbidden(text=MSG_WALLET_ACCESS_FORBIDDEN_ERROR) from exc
 
     return wrapper
 

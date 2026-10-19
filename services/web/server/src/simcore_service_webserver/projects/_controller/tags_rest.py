@@ -1,5 +1,3 @@
-import logging
-
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -12,9 +10,6 @@ from ...utils_aiohttp import envelope_json_response
 from .. import _tags_service as tags_api
 from ._rest_exceptions import handle_plugin_requests_exceptions
 
-_logger = logging.getLogger(__name__)
-
-
 routes = web.RouteTableDef()
 
 
@@ -25,13 +20,10 @@ routes = web.RouteTableDef()
 async def add_project_tag(request: web.Request):
     user_id: UserID = request[RQT_USERID_KEY]
 
-    try:
-        tag_id, project_uuid = (
-            request.match_info["tag_id"],
-            request.match_info["project_uuid"],
-        )
-    except KeyError as err:
-        raise web.HTTPBadRequest(text=f"Invalid request parameter {err}") from err
+    tag_id, project_uuid = (
+        request.match_info["tag_id"],
+        request.match_info["project_uuid"],
+    )
 
     project = await tags_api.add_tag(
         request.app,

@@ -22,6 +22,7 @@ from ..wallets.errors import WalletAccessForbiddenError
 from ..web_requests_validation import parse_request_path_parameters_as, parse_request_query_parameters_as
 from . import _pricing_plans_admin_service as pricing_plans_admin_service
 from . import _pricing_plans_service as pricing_plans_service
+from ._constants import MSG_WALLET_ACCESS_FORBIDDEN_ERROR
 from ._pricing_plans_models import PricingPlanGetPathParams
 
 #
@@ -36,7 +37,7 @@ def _handle_resource_usage_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(text=f"{exc}") from exc
+            raise web.HTTPForbidden(text=MSG_WALLET_ACCESS_FORBIDDEN_ERROR) from exc
 
     return wrapper
 

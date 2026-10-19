@@ -48,8 +48,13 @@ from ..utils_aiohttp import envelope_json_response
 from ..web_requests_validation import parse_request_body_as, parse_request_path_parameters_as
 from . import _api
 from ._constants import (
+    MSG_BELOW_MINIMUM_PAYMENT_ERROR,
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
+    MSG_PAYMENT_CONFLICT_ERROR,
     MSG_PRICE_NOT_DEFINED_ERROR,
+    MSG_WALLET_ACCESS_FORBIDDEN_ERROR,
+    MSG_WALLET_NOT_ENOUGH_CREDITS_ERROR,
+    MSG_WALLET_OR_PAYMENT_NOT_FOUND_ERROR,
 )
 from ._schemas import WalletsPathParams
 from .errors import (
@@ -104,7 +109,7 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             PaymentMethodNotFoundError,
             UserDefaultWalletNotFoundError,
         ) as exc:
-            raise web.HTTPNotFound(text=f"{exc}") from exc
+            raise web.HTTPNotFound(text=MSG_WALLET_OR_PAYMENT_NOT_FOUND_ERROR) from exc
 
         except PaymentUnverifiedError as exc:
             return _create_error_response_with_support_id_and_logging(
@@ -121,7 +126,7 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             PaymentMethodUniqueViolationError,
             InvalidPaymentMethodError,
         ) as exc:
-            raise web.HTTPConflict(text=f"{exc}") from exc
+            raise web.HTTPConflict(text=MSG_PAYMENT_CONFLICT_ERROR) from exc
 
         except PaymentServiceUnavailableError as exc:
             return _create_error_response_with_support_id_and_logging(
@@ -132,16 +137,16 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             )
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(text=f"{exc}") from exc
+            raise web.HTTPForbidden(text=MSG_WALLET_ACCESS_FORBIDDEN_ERROR) from exc
 
         except BelowMinimumPaymentError as exc:
-            raise web.HTTPUnprocessableEntity(text=f"{exc}") from exc
+            raise web.HTTPUnprocessableEntity(text=MSG_BELOW_MINIMUM_PAYMENT_ERROR) from exc
 
         except ProductPriceNotDefinedError as exc:
             raise web.HTTPConflict(text=MSG_PRICE_NOT_DEFINED_ERROR) from exc
 
         except WalletNotEnoughCreditsError as exc:
-            raise web.HTTPPaymentRequired(text=f"{exc}") from exc
+            raise web.HTTPPaymentRequired(text=MSG_WALLET_NOT_ENOUGH_CREDITS_ERROR) from exc
 
         except BillingDetailsNotFoundError as exc:
             raise web.HTTPServiceUnavailable(text=MSG_BILLING_DETAILS_NOT_DEFINED_ERROR) from exc
