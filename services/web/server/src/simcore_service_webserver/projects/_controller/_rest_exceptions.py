@@ -42,6 +42,7 @@ from ..exceptions import (
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesSetByPricingUnitError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyNodesError,
@@ -79,6 +80,13 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
     ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message("Required input values for this project node have not been set.", _version=1),
+    ),
+    ProjectNodeResourcesSetByPricingUnitError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "The resources of this node are defined by its selected pricing unit and cannot be changed manually.",
+            _version=1,
+        ),
     ),
 }
 
