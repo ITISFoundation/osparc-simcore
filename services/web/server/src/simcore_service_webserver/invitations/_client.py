@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import ClassVar, Final
 
-from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
+from aiohttp import ClientResponseError, ClientSession, encode_basic_auth, hdrs, web
 from aiohttp.client_exceptions import ClientError
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
@@ -78,14 +78,16 @@ class InvitationsServiceApi:
     healthcheck_path: str = "/"
 
     @classmethod
-    async def create(cls, settings: InvitationsSettings) -> "InvitationsServiceApi":
+    async def create(cls, settings: InvitationsSettings) -> InvitationsServiceApi:
         exit_stack = contextlib.AsyncExitStack()
         client_session = await exit_stack.enter_async_context(
             ClientSession(
-                auth=BasicAuth(
-                    login=settings.INVITATIONS_USERNAME,
-                    password=settings.INVITATIONS_PASSWORD.get_secret_value(),
-                ),
+                headers={
+                    hdrs.AUTHORIZATION: encode_basic_auth(
+                        login=settings.INVITATIONS_USERNAME,
+                        password=settings.INVITATIONS_PASSWORD.get_secret_value(),
+                    )
+                },
                 raise_for_status=True,
             )
         )

@@ -32,7 +32,7 @@ _STATE_OK_PAYLOAD: Final[dict[str, Any]] = {
 
 def _clear_caches() -> None:
     storage_endpoint.is_storage_secure.cache_clear()
-    storage_endpoint.get_basic_auth.cache_clear()
+    storage_endpoint.get_basic_auth_headers.cache_clear()
 
 
 @pytest.fixture

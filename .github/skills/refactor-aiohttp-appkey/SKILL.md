@@ -1,8 +1,11 @@
 ---
-agent: agent
+name: refactor-aiohttp-appkey
 description: Converts string-based aiohttp app key constants to type-safe web.AppKey
+disable-model-invocation: true
 ---
 
+<!-- markdownlint-disable -->
+<!-- model-facing instructions; repo-wide markdownlint rollout deferred -->
 Convert all string-based app key constants to use type-safe web.AppKey.
 
 - Replace patterns like:
@@ -12,6 +15,7 @@ Convert all string-based app key constants to use type-safe web.AppKey.
   with:
   ```python
   from aiohttp import web
+
   CONSTNAME_APPKEY: Final = web.AppKey("CONSTNAME", ValueType)
   ```
   (Replace ValueType with the actual type stored under this key.)
