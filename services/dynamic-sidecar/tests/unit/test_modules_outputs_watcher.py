@@ -13,6 +13,7 @@ from pathlib import Path
 from queue import Empty as QueueEmpty
 from random import randbytes, shuffle
 from shutil import move, rmtree
+from threading import Event as ThreadingEvent
 from threading import Thread
 from time import sleep as blocking_sleep
 from typing import Any, Final
@@ -46,6 +47,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._event_handler import (
+    _HEART_BEAT_MARK,
     _PortKeysEventHandler,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
@@ -414,8 +416,8 @@ async def test_port_key_sequential_event_generation(
 # The tests below document notification losses which are currently inherent to
 # the inotify-based outputs watcher. They are expected to start passing (XPASS)
 # once the watcher hardens, e.g. by rescanning directories after registering a
-# watch (inotify(7) scan-after-add-watch) and handling queue overflow /
-# inotify_add_watch failures.
+# watch (inotify(7) scan-after-add-watch), handling queue overflow /
+# inotify_add_watch failures, and surfacing dead event threads.
 
 
 # enough directory creations to keep the inotify emitter busy, so its watch
@@ -432,13 +434,13 @@ def _get_notified_port_keys(mock_upload_trigger: AsyncMock) -> set[str]:
     return {call.args[0] for call in mock_upload_trigger.call_args_list}
 
 
-def _drain_port_key_events(queue: multiprocessing.Queue[str | None]) -> list[str | None]:
-    seen: list[str | None] = []
+def _drain_nowait[T](queue: multiprocessing.queues.Queue[T]) -> list[T]:
+    drained: list[T] = []
     while True:
         try:
-            seen.append(queue.get_nowait())
+            drained.append(queue.get_nowait())
         except QueueEmpty:
-            return seen
+            return drained
 
 
 @pytest.fixture
@@ -602,7 +604,7 @@ async def test_watch_registration_failure_does_not_silently_kill_notifications(
     outputs_root = tmp_path / "outputs_root"
     outputs_root.mkdir()
 
-    port_key_events_queue: multiprocessing.Queue[str | None] = multiprocessing.get_context().Queue()
+    port_key_events_queue: multiprocessing.queues.Queue[str | None] = multiprocessing.get_context().Queue()
 
     event_handler = _PortKeysEventHandler(outputs_root, port_key_events_queue)
     event_handler.handle_toggle_event_propagation(is_enabled=True)
@@ -621,7 +623,7 @@ async def test_watch_registration_failure_does_not_silently_kill_notifications(
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 await asyncio.sleep(0.1)
-                notified.extend(_drain_port_key_events(port_key_events_queue))
+                notified.extend(_drain_nowait(port_key_events_queue))
                 assert regular_port_key in notified
 
         # the watch registration for this directory fails with ENOSPC: its content
@@ -632,8 +634,104 @@ async def test_watch_registration_failure_does_not_silently_kill_notifications(
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
                 await asyncio.sleep(0.1)
-                seen.extend(_drain_port_key_events(port_key_events_queue))
+                seen.extend(_drain_nowait(port_key_events_queue))
                 assert _WATCH_LIMIT_PORT_KEY in seen
     finally:
+        observer.stop()
+        observer.join()
+
+
+# shorter than the production heart-beat interval, only used to observe that
+# heart-beats keep flowing after the event thread dies
+_HEART_BEAT_INTERVAL_S: Final[PositiveFloat] = 0.1
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="the watcher heart-beats from its process main loop, so an unhandled "
+    "error in the inotify read thread stops every notification while the health "
+    "check keeps receiving heart-beats and never restarts the watcher",
+)
+async def test_dead_event_thread_does_not_silently_stop_notifications(
+    settle_for_watch_registration_s: PositiveFloat,
+    tmp_path: Path,
+) -> None:
+    # NOTE: in-process like the watch-registration test, reproducing the two
+    # channels the watcher process shares with the main process: the port-key
+    # events queue and the health-check heart-beats of _process_worker.
+    outputs_root = tmp_path / "outputs_root"
+    outputs_root.mkdir()
+
+    port_key = "port_key"
+    port_key_events_queue: multiprocessing.queues.Queue[str | None] = multiprocessing.get_context().Queue()
+    health_check_queue: multiprocessing.queues.Queue[int | None] = multiprocessing.get_context().Queue()
+
+    event_handler = _PortKeysEventHandler(outputs_root, port_key_events_queue)
+    event_handler.handle_toggle_event_propagation(is_enabled=True)
+    event_handler.handle_set_outputs_port_keys(outputs_port_keys={port_key})
+
+    # the watcher process main loop sends heart-beats independently of the
+    # observer threads
+    stop_heart_beats = ThreadingEvent()
+
+    def _heart_beat_loop() -> None:
+        while not stop_heart_beats.is_set():
+            health_check_queue.put(_HEART_BEAT_MARK)
+            blocking_sleep(_HEART_BEAT_INTERVAL_S)
+
+    heart_beat_thread = Thread(target=_heart_beat_loop, daemon=True)
+
+    observer = ExtendedInotifyObserver()
+    observer.schedule(event_handler, str(outputs_root), recursive=True)
+    observer.start()
+    heart_beat_thread.start()
+    try:
+        await asyncio.sleep(settle_for_watch_registration_s)
+
+        # sanity check: notifications flow while everything is healthy
+        await _generate_event_burst(outputs_root, port_key, settle_s=settle_for_watch_registration_s)
+        notified: list[str | None] = []
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                await asyncio.sleep(0.1)
+                notified.extend(_drain_nowait(port_key_events_queue))
+                assert port_key in notified
+
+        # simulate an unhandled error in the inotify read loop: the read thread
+        # dies and with it every further notification
+        emitter = next(iter(observer.emitters))
+        # pylint: disable-next=pointless-statement
+        assert (read_thread := emitter._inotify) is not None  # pyright: ignore[reportAttributeAccessIssue] # noqa: RUF018, SLF001
+        inotify = read_thread._inotify  # noqa: SLF001
+
+        def _raise_io_error() -> bool:
+            raise OSError(errno.EIO, "simulated inotify read failure")
+
+        inotify._check_inotify_fd = _raise_io_error  # noqa: SLF001
+        # the read thread is parked inside poll(), so waking it with the kill
+        # channel makes it re-enter _check_inotify_fd (now raising) and die
+        blocking_os.write(inotify._kill_w, b"!")  # noqa: SLF001
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                await asyncio.sleep(0.1)
+                assert not read_thread.is_alive()
+
+        # the health check keeps receiving heart-beats and considers the watcher
+        # perfectly healthy: drop the marks sent before the thread died first
+        _ = _drain_nowait(health_check_queue)
+        await asyncio.sleep(5 * _HEART_BEAT_INTERVAL_S)
+        assert _drain_nowait(health_check_queue).count(_HEART_BEAT_MARK) >= 2
+
+        # yet the watcher is dead: further changes must either still be delivered
+        # or surface the degraded watcher, today they are lost silently
+        await _generate_event_burst(outputs_root, port_key, settle_s=settle_for_watch_registration_s)
+        seen_after_death: list[str | None] = []
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                await asyncio.sleep(0.1)
+                seen_after_death.extend(_drain_nowait(port_key_events_queue))
+                assert port_key in seen_after_death
+    finally:
+        stop_heart_beats.set()
         observer.stop()
         observer.join()
