@@ -16,11 +16,12 @@ from models_library.services_resources import (
 )
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="session")
-def network_name() -> str:
-    return "pytest-simcore_interactive_services_subnet"
+def network_name(env_vars_for_docker_compose: EnvVarsDict) -> str:
+    return f"{env_vars_for_docker_compose['SWARM_STACK_NAME']}_interactive_services_subnet"
 
 
 @pytest.fixture

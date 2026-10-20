@@ -80,7 +80,11 @@ async def redis_settings(
         assert deployed_databases_count is not None, "deployed redis/valkey service has no --databases?"
         db_offset = _worker_db_offset(request, deployed_databases_count)
 
-    port = get_service_published_port("simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"]))
+    # NOTE: the compose service key is "redis" (deployed as "{stack}_redis"), NOT "simcore_redis":
+    # that only ever matched on master because the stack name was "pytest-simcore" and docker
+    # service names are "{stack}_{service}" -> "pytest-simcore_redis".endswith("simcore_redis").
+    # With run-scoped stack names that coincidence is gone, so look the real name up.
+    port = get_service_published_port("redis", int(env_vars_for_docker_compose["REDIS_PORT"]), stack_name=prefix)
     # test runner is running on the host computer
     settings = RedisSettings(
         REDIS_HOST=get_localhost_ip(),
