@@ -174,6 +174,17 @@ def heart_beat_interval_s() -> PositiveFloat:
 
 
 @pytest.fixture
+def settle_for_watch_registration_s() -> PositiveFloat:
+    """Time to wait after creating a directory before generating events in it: the inotify
+    emitter registers its watch for a new directory only while processing the directory's
+    creation event, and the kernel silently drops events made inside it until then
+    (inotify(7) limitation). Normally milliseconds, it grows to seconds under CPU
+    contention (pytest-xdist)
+    """
+    return 0.5
+
+
+@pytest.fixture
 def wait_for_command_delivered() -> Callable[[OutputsContext], Awaitable[None]]:
     async def _(outputs_context: OutputsContext) -> None:
         # NOTE: commands (port keys registration / propagation toggles) are applied

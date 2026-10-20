@@ -8,7 +8,7 @@ import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from inspect import signature
 from pathlib import Path
-from typing import Annotated, Any, Final
+from typing import Any, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -18,7 +18,6 @@ import pytest
 import yaml
 from aiodocker.volumes import DockerVolume
 from aiofiles.os import mkdir
-from annotated_types import doc
 from async_asgi_testclient import TestClient
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
@@ -26,7 +25,7 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
-from pydantic import TypeAdapter
+from pydantic import PositiveFloat, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
@@ -55,17 +54,6 @@ pytest_simcore_core_services_selection = [
 
 _WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 _FAST_POLLING_INTERVAL: Final[float] = 0.1
-_SETTLE_FOR_WATCH_S: Final[
-    Annotated[
-        float,
-        doc(
-            "time to wait after creating a directory before generating events in it: the "
-            "inotify emitter registers its watch on a newly created directory on a later "
-            "processing tick, and events created inside it before that are lost. Under xdist "
-            "CPU contention the emitter thread can starve, so wait for the watch to land first"
-        ),
-    ]
-] = 0.5
 
 
 # UTILS
@@ -462,6 +450,7 @@ async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mocked_port_key_events_queue_get: Mock,
     mock_event_filter_enqueue: AsyncMock,
+    settle_for_watch_registration_s: PositiveFloat,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     assert isinstance(test_client.application, FastAPI)
@@ -477,7 +466,7 @@ async def test_outputs_watcher_disabling(
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
-        await asyncio.sleep(_SETTLE_FOR_WATCH_S)
+        await asyncio.sleep(settle_for_watch_registration_s)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 

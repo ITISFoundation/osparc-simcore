@@ -10,13 +10,12 @@ from random import randbytes, shuffle
 from shutil import move, rmtree
 from threading import Thread
 from time import sleep as blocking_sleep
-from typing import Annotated, Any, Final
+from typing import Any, Final
 from unittest.mock import AsyncMock
 
 import aiofiles
 import pytest
 from aiofiles import os
-from annotated_types import doc
 from faker import Faker
 from models_library.services import ServiceRunID
 from pydantic import (
@@ -58,17 +57,6 @@ _TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
 _TICK_INTERVAL: Final[PositiveFloat] = 0.001
 _WAIT_INTERVAL: Final[PositiveFloat] = _TICK_INTERVAL * 10
 _UPLOAD_DURATION: Final[PositiveFloat] = _TICK_INTERVAL * 10
-_SETTLE_FOR_WATCH_S: Final[
-    Annotated[
-        float,
-        doc(
-            "time to wait after creating a directory before generating events in it: the "
-            "inotify emitter registers its watch on a newly created directory on a later "
-            "processing tick, and events created inside it before that are lost. Under xdist "
-            "CPU contention the emitter thread can starve, so wait for the watch to land first"
-        ),
-    ]
-] = 0.5
 
 
 # FIXTURES
@@ -263,13 +251,13 @@ async def _random_events_in_path(
         await awaitable
 
 
-async def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
+async def _generate_event_burst(path: Path, subfolder: str | None = None, *, settle_s: float) -> None:
     event = asyncio.Event()
 
     def _worker() -> None:
         full_dir_path = path if subfolder is None else path / subfolder
         full_dir_path.mkdir(parents=True, exist_ok=True)
-        blocking_sleep(_SETTLE_FOR_WATCH_S)
+        blocking_sleep(settle_s)
         file_path_1 = full_dir_path / "file1.txt"
         file_path_2 = full_dir_path / "file2.txt"
 
@@ -303,6 +291,7 @@ async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
+    settle_for_watch_registration_s: PositiveFloat,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ) -> None:
     await _wait_for_events_to_trigger()
@@ -310,7 +299,9 @@ async def test_run_observer(
     await wait_for_command_delivered(outputs_watcher.outputs_context)
 
     # generates the first event chain
-    await _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[0])
+    await _generate_event_burst(
+        outputs_watcher.outputs_context.outputs_path, port_keys[0], settle_s=settle_for_watch_registration_s
+    )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -318,7 +309,9 @@ async def test_run_observer(
             assert mock_event_filter_upload_trigger.call_count == 1
 
     # generates the second event chain
-    await _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[1])
+    await _generate_event_burst(
+        outputs_watcher.outputs_context.outputs_path, port_keys[1], settle_s=settle_for_watch_registration_s
+    )
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
