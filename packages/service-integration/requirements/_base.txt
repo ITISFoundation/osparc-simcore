@@ -15,7 +15,7 @@ attrs==26.1.0
     #   referencing
 binaryornot==0.6.0
     # via cookiecutter
-certifi==2026.2.25
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -28,7 +28,7 @@ click==8.3.1
     #   typer
 cookiecutter==2.7.1
     # via -r requirements/_base.in
-dnspython==2.8.0
+dnspython==2.9.0
     # via email-validator
 docker==7.1.0
     # via -r requirements/_base.in

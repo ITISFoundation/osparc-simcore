@@ -24,7 +24,7 @@ async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 bokeh==3.9.0
     # via dask
-certifi==2025.11.12
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

@@ -16,7 +16,7 @@ celery==5.6.3
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-certifi==2026.2.25
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

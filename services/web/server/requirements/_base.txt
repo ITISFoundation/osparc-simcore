@@ -74,7 +74,7 @@ captcha==0.5.0
     # via -r requirements/_base.in
 celery==5.6.3
     # via -r requirements/../../../../packages/celery-library/requirements/_base.in
-certifi==2023.7.22
+certifi==2026.10.18
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   httpcore
@@ -104,7 +104,7 @@ cryptography==50.0.0
     #   aiohttp-session
 deepdiff==9.1.0
     # via -r requirements/_base.in
-dnspython==2.2.1
+dnspython==2.9.0
     # via email-validator
 email-validator==2.2.0
     # via pydantic
@@ -380,7 +380,7 @@ pygments==2.21.0
     # via rich
 pyinstrument==5.1.1
     # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
-pyjwt==2.4.0
+pyjwt==2.15.1
     # via twilio
 python-dateutil==2.8.2
     # via
