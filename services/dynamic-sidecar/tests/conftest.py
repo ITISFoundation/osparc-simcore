@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import simcore_service_dynamic_sidecar
+from _pytest.monkeypatch import MonkeyPatch
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.products import ProductName
@@ -30,9 +31,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_envfile,
 )
 from settings_library.redis import RedisSettings
-from simcore_service_dynamic_sidecar.core.reserved_space import (
-    free_reserved_disk_space,
-)
+from simcore_service_dynamic_sidecar.core import reserved_space
 
 logger = logging.getLogger(__name__)
 
@@ -399,8 +398,24 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def isolated_reserved_disk_space(tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Redirects the reserved disk space file to a per-xdist-worker path. The file lives on
+    a machine-global path that every app creation writes to and the disk tests delete, so
+    concurrent xdist workers would collide on it
+    """
+
+    worker_reserved_path = (
+        tmp_path_factory.mktemp("reserved_space") / reserved_space._RESERVED_DISK_SPACE_NAME.name  # noqa: SLF001
+    )
+    monkeypatch = MonkeyPatch()
+    monkeypatch.setattr(reserved_space, "_RESERVED_DISK_SPACE_NAME", worker_reserved_path)
+    yield
+    monkeypatch.undo()
+
+
 @pytest.fixture
 def cleanup_reserved_disk_space() -> Iterator[None]:
-    free_reserved_disk_space()
+    reserved_space.free_reserved_disk_space()
     yield
-    free_reserved_disk_space()
+    reserved_space.free_reserved_disk_space()
