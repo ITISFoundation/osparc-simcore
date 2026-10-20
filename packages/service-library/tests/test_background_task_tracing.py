@@ -22,6 +22,32 @@ _POLL_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(milliseconds=5)
 _WAIT_TIMEOUT: Final[float] = 5.0
 
 
+def _assert_each_tick_in_own_trace(memory_exporter: InMemorySpanExporter) -> None:
+    spans = memory_exporter.get_finished_spans()
+
+    startup_spans = [s for s in spans if s.name == "startup_span"]
+    assert len(startup_spans) == 1
+    startup_trace_id = startup_spans[0].context.trace_id
+
+    tick_spans = [s for s in spans if s.name == "instrumented_work"]
+    assert len(tick_spans) >= _TICKS_TO_RUN
+
+    chained = [s for s in tick_spans if s.context.trace_id == startup_trace_id]
+    assert not chained, f"{len(chained)} of {len(tick_spans)} ticks chained onto the startup trace"
+
+    tick_trace_ids = {s.context.trace_id for s in tick_spans}
+    assert len(tick_trace_ids) == len(tick_spans), "some ticks share a trace"
+
+
+async def _run_until(event: asyncio.Event, task: asyncio.Task) -> None:
+    try:
+        await asyncio.wait_for(event.wait(), timeout=_WAIT_TIMEOUT)
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
 async def test_periodic_ticks_do_not_chain_onto_one_trace(
     tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
 ) -> None:
@@ -33,9 +59,6 @@ async def test_periodic_ticks_do_not_chain_onto_one_trace(
     that span's trace ID, and all ticks accumulate in one trace that never
     completes. Tempo rejects such traces with TRACE_TOO_LARGE, see
     osparc-ops-environments#1116.
-
-    With the fix, each tick opens a root span that detaches from the startup span,
-    so each tick runs in its own trace.
     """
     tracing_config, memory_exporter = tracing_config_enabled
     assert tracing_config.tracer_provider is not None
@@ -61,27 +84,41 @@ async def test_periodic_ticks_do_not_chain_onto_one_trace(
     with log_context(_logger, logging.DEBUG, "startup", operation_name="startup_span"):
         background_task = asyncio.create_task(_tick(), name="periodic-tick-test")
 
-    try:
-        await asyncio.wait_for(three_ticks_ran.wait(), timeout=_WAIT_TIMEOUT)
-    finally:
-        background_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await background_task
+    await _run_until(three_ticks_ran, background_task)
 
-    spans = memory_exporter.get_finished_spans()
+    _assert_each_tick_in_own_trace(memory_exporter)
 
-    startup_spans = [s for s in spans if s.name == "startup_span"]
-    assert len(startup_spans) == 1
-    startup_trace_id = startup_spans[0].context.trace_id
 
-    tick_spans = [s for s in spans if s.name == "instrumented_work"]
-    assert len(tick_spans) == _TICKS_TO_RUN
+async def test_nested_periodic_ticks_do_not_chain_onto_one_trace(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+) -> None:
+    """Same as above for a `periodic` nested in a `periodic`, the `exclusive_periodic` shape.
 
-    # Before the fix, every tick inherited the startup span's trace ID through the
-    # copied contextvars, and all ticks landed in one trace that never completes.
-    chained = [s for s in tick_spans if s.context.trace_id == startup_trace_id]
-    assert not chained, f"{len(chained)} of {len(tick_spans)} ticks chained onto the startup trace"
+    The outer iteration never finishes while the inner loop runs, so anything it
+    leaves current is inherited by every inner tick.
+    """
+    tracing_config, memory_exporter = tracing_config_enabled
+    assert tracing_config.tracer_provider is not None
 
-    # Each tick ran in a distinct trace.
-    tick_trace_ids = {s.context.trace_id for s in tick_spans}
-    assert len(tick_trace_ids) == len(tick_spans)
+    three_ticks_ran = asyncio.Event()
+    tick_count = 0
+    instrumented_tracer = trace.get_tracer("test", tracer_provider=tracing_config.tracer_provider)
+
+    @periodic(interval=_POLL_INTERVAL)
+    async def _inner_tick() -> None:
+        nonlocal tick_count
+        with instrumented_tracer.start_as_current_span("instrumented_work"):
+            tick_count += 1
+            if tick_count >= _TICKS_TO_RUN:
+                three_ticks_ran.set()
+
+    @periodic(interval=_POLL_INTERVAL)
+    async def _outer_tick() -> None:
+        await _inner_tick()
+
+    with log_context(_logger, logging.DEBUG, "startup", operation_name="startup_span"):
+        background_task = asyncio.create_task(_outer_tick(), name="nested-periodic-tick-test")
+
+    await _run_until(three_ticks_ran, background_task)
+
+    _assert_each_tick_in_own_trace(memory_exporter)
