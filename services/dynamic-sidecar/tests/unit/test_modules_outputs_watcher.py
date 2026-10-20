@@ -413,18 +413,17 @@ async def test_port_key_sequential_event_generation(
 
 # KNOWN LIMITATIONS
 #
-# The tests below document notification losses which are currently inherent to
+# The tests below document notification gaps which are currently inherent to
 # the inotify-based outputs watcher. They are expected to start passing (XPASS)
-# once the watcher hardens, e.g. by rescanning directories after registering a
-# watch (inotify(7) scan-after-add-watch), handling queue overflow /
-# inotify_add_watch failures, and surfacing dead event threads.
+# once the watcher hardens, e.g. by bounding the per-port-key notification
+# state, retrying and surfacing failed inotify_add_watch calls, and stopping
+# the heart-beats when an event thread dies.
+#
+# Not listed here: writes that appear and disappear in a new port-key directory
+# before the emitter registers its watch are never seen by inotify. This is
+# accepted by design: notifications only trigger uploads, which read the current
+# directory contents, so a write that no longer exists has nothing to upload.
 
-
-# enough directory creations to keep the inotify emitter busy, so its watch
-# registration for the port-key directories lands after the writes below; this
-# also overflows the kernel event queue (fs.inotify.max_queued_events), dropping
-# the directory creation events themselves
-_WATCH_REGISTRATION_BACKLOG_DIRS: Final[int] = 50_000
 
 # enough files to overflow the notification path while its consumer is stalled
 _EVENT_STORM_FILES: Final[int] = 4_000
@@ -461,51 +460,6 @@ def _drain_queue(queue: multiprocessing.queues.Queue) -> None:
             queue.get_nowait()
         except QueueEmpty:
             return
-
-
-@pytest.mark.xfail(
-    strict=False,
-    reason="inotify generates no events for a new directory before the emitter "
-    "registers its watch; watchdog rescues the gap only by scanning what remains "
-    "when the watch lands, so files written and then moved/deleted inside the "
-    "window are never seen at all",
-)
-async def test_transient_writes_in_fresh_port_key_directories_are_not_missed(
-    mock_event_filter_upload_trigger: AsyncMock,
-    outputs_watcher: OutputsWatcher,
-    port_keys: list[str],
-    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
-) -> None:
-    await _wait_for_events_to_trigger()
-    await outputs_watcher.enable_event_propagation()
-    await wait_for_command_delivered(outputs_watcher.outputs_context)
-
-    outputs_path = outputs_watcher.outputs_context.outputs_path
-
-    def _flood_emitter_then_write_transient_files() -> None:
-        # synchronous bytes-path calls: the flood must outpace the inotify emitter,
-        # which pathlib would not do at the same rate
-        root = blocking_os.fsencode(outputs_path)
-        for i in range(_WATCH_REGISTRATION_BACKLOG_DIRS):
-            blocking_os.mkdir(root + b"/junk_" + str(i).encode())  # noqa: PTH102
-
-        for port_key in port_keys:
-            port_key_dir = root + b"/" + port_key.encode()
-            blocking_os.mkdir(port_key_dir)  # noqa: PTH102
-            # same event chain as _generate_event_burst: create, modify, move, delete
-            file_path_1 = port_key_dir + b"/file1.txt"
-            file_path_2 = port_key_dir + b"/file2.txt"
-            with open(file_path_1, "wb") as file:  # noqa: PTH123
-                file.write(b"lorem ipsum")
-            blocking_os.replace(file_path_1, file_path_2)  # noqa: PTH105
-            blocking_os.unlink(file_path_2)  # noqa: PTH108
-
-    await asyncio.to_thread(_flood_emitter_then_write_transient_files)
-
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-        with attempt:
-            await asyncio.sleep(0)
-            assert _get_notified_port_keys(mock_event_filter_upload_trigger) == set(port_keys)
 
 
 @pytest.mark.xfail(
