@@ -25,7 +25,7 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
-from pydantic import PositiveFloat, TypeAdapter
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
@@ -450,7 +450,6 @@ async def test_outputs_watcher_disabling(
     test_client: TestClient,
     mocked_port_key_events_queue_get: Mock,
     mock_event_filter_enqueue: AsyncMock,
-    settle_for_watch_registration_s: PositiveFloat,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
     assert isinstance(test_client.application, FastAPI)
@@ -466,11 +465,15 @@ async def test_outputs_watcher_disabling(
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
-        await asyncio.sleep(settle_for_watch_registration_s)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
-        EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 2
+        # one event is the minimum the watcher must deliver, and it is guaranteed
+        # under any timing: the kernel records the write when the directory's
+        # watch is already registered, and otherwise watchdog's scan when adding
+        # the watch reports the file, which persists here. Waiting for a second
+        # event instead would require the watch to land before the write
+        EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 1
 
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:

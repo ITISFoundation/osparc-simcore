@@ -265,13 +265,12 @@ async def _random_events_in_path(
         await awaitable
 
 
-async def _generate_event_burst(path: Path, subfolder: str | None = None, *, settle_s: float) -> None:
+async def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
     event = asyncio.Event()
 
     def _worker() -> None:
         full_dir_path = path if subfolder is None else path / subfolder
         full_dir_path.mkdir(parents=True, exist_ok=True)
-        blocking_sleep(settle_s)
         file_path_1 = full_dir_path / "file1.txt"
         file_path_2 = full_dir_path / "file2.txt"
 
@@ -305,31 +304,30 @@ async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
-    settle_for_watch_registration_s: PositiveFloat,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ) -> None:
     await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
     await wait_for_command_delivered(outputs_watcher.outputs_context)
 
+    outputs_path = outputs_watcher.outputs_context.outputs_path
+
     # generates the first event chain
-    await _generate_event_burst(
-        outputs_watcher.outputs_context.outputs_path, port_keys[0], settle_s=settle_for_watch_registration_s
-    )
+    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, port_keys[0])
+    await _generate_event_burst(outputs_path, port_keys[0])
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert mock_event_filter_upload_trigger.call_count == 1
+            assert _get_notified_port_keys(mock_event_filter_upload_trigger) == {port_keys[0]}
 
     # generates the second event chain
-    await _generate_event_burst(
-        outputs_watcher.outputs_context.outputs_path, port_keys[1], settle_s=settle_for_watch_registration_s
-    )
+    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, port_keys[1])
+    await _generate_event_burst(outputs_path, port_keys[1])
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
-            assert mock_event_filter_upload_trigger.call_count == 2
+            assert _get_notified_port_keys(mock_event_filter_upload_trigger) == {port_keys[1]}
 
 
 async def test_does_not_trigger_on_attribute_change(
@@ -433,6 +431,46 @@ def _get_notified_port_keys(mock_upload_trigger: AsyncMock) -> set[str]:
     return {call.args[0] for call in mock_upload_trigger.call_args_list}
 
 
+def _touch_watch_canary(outputs_path: Path, port_key: str, *, canary_name: str = ".watch_canary") -> None:
+    """Create a port-key directory and a file in it that stays on disk. The
+    emitter registers the inotify watch for a new directory only while it
+    processes the directory's creation event, and the kernel drops all earlier
+    events in it. The canary yields a notification under either timing: the
+    kernel records it when it lands after the watch, and watchdog's scan when
+    adding the watch reports it when it lands before. Observing the
+    notification proves the watch is active, which no amount of sleeping can
+    guarantee.
+    """
+    port_key_dir = outputs_path / port_key
+    port_key_dir.mkdir(parents=True, exist_ok=True)
+    (port_key_dir / canary_name).touch()
+
+
+async def _wait_for_watch_registration_trigger(
+    upload_trigger: AsyncMock, outputs_path: Path, port_key: str, *, canary_name: str = ".watch_canary"
+) -> None:
+    _touch_watch_canary(outputs_path, port_key, canary_name=canary_name)
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0.05)
+            assert port_key in _get_notified_port_keys(upload_trigger)
+    upload_trigger.reset_mock()
+
+
+async def _wait_for_watch_registration_queue(
+    queue: multiprocessing.queues.Queue[str | None],
+    outputs_path: Path,
+    port_key: str,
+    *,
+    canary_name: str = ".watch_canary",
+) -> None:
+    _touch_watch_canary(outputs_path, port_key, canary_name=canary_name)
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0.05)
+            assert port_key in _drain_nowait(queue)
+
+
 def _drain_nowait[T](queue: multiprocessing.queues.Queue[T]) -> list[T]:
     drained: list[T] = []
     while True:
@@ -473,7 +511,6 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     mocker: MockerFixture,
     outputs_watcher: OutputsWatcher,
     port_keys: list[str],
-    settle_for_watch_registration_s: PositiveFloat,
     drain_port_key_events_on_teardown: None,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ) -> None:
@@ -484,10 +521,9 @@ async def test_notification_queue_stays_bounded_under_event_storm(
     outputs_path = outputs_watcher.outputs_context.outputs_path
     noisy_port_key, quiet_port_key = port_keys[0], port_keys[1]
 
-    # create both directories and let the emitter register their watches first
-    (outputs_path / noisy_port_key).mkdir()
-    (outputs_path / quiet_port_key).mkdir()
-    await asyncio.sleep(settle_for_watch_registration_s)
+    # ensure the emitter registered the watches before generating any events
+    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, noisy_port_key)
+    await _wait_for_watch_registration_trigger(mock_event_filter_upload_trigger, outputs_path, quiet_port_key)
 
     # stall the consumer so nothing drains the queue while the storm runs
     block_enqueue = asyncio.Event()
@@ -548,7 +584,6 @@ def patch_watch_registration_enospc(mocker: MockerFixture) -> None:
 )
 async def test_watch_registration_failure_does_not_silently_kill_notifications(
     patch_watch_registration_enospc: None,
-    settle_for_watch_registration_s: PositiveFloat,
     tmp_path: Path,
 ) -> None:
     # NOTE: unlike in the sidecar, the observer here runs in the test process: with
@@ -569,27 +604,14 @@ async def test_watch_registration_failure_does_not_silently_kill_notifications(
     observer.schedule(event_handler, str(outputs_root), recursive=True)
     observer.start()
     try:
-        await asyncio.sleep(settle_for_watch_registration_s)
-
-        # sanity check: content changes in a regular port key directory are notified
-        await _generate_event_burst(outputs_root, regular_port_key, settle_s=settle_for_watch_registration_s)
-        notified: list[str | None] = []
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                await asyncio.sleep(0.1)
-                notified.extend(_drain_nowait(port_key_events_queue))
-                assert regular_port_key in notified
+        # sanity check: the canary of a regularly watched port key gets notified,
+        # which also proves its watch is registered before the next step
+        await _wait_for_watch_registration_queue(port_key_events_queue, outputs_root, regular_port_key)
 
         # the watch registration for this directory fails with ENOSPC: its content
         # changes must either still be delivered or surface a degraded watcher,
         # but today the directory is left permanently unwatched and they are lost
-        await _generate_event_burst(outputs_root, _WATCH_LIMIT_PORT_KEY, settle_s=settle_for_watch_registration_s)
-        seen: list[str | None] = []
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                await asyncio.sleep(0.1)
-                seen.extend(_drain_nowait(port_key_events_queue))
-                assert _WATCH_LIMIT_PORT_KEY in seen
+        await _wait_for_watch_registration_queue(port_key_events_queue, outputs_root, _WATCH_LIMIT_PORT_KEY)
     finally:
         observer.stop()
         observer.join()
@@ -607,7 +629,6 @@ _HEART_BEAT_INTERVAL_S: Final[PositiveFloat] = 0.1
     "check keeps receiving heart-beats and never restarts the watcher",
 )
 async def test_dead_event_thread_does_not_silently_stop_notifications(
-    settle_for_watch_registration_s: PositiveFloat,
     tmp_path: Path,
 ) -> None:
     # NOTE: in-process like the watch-registration test, reproducing the two
@@ -640,16 +661,9 @@ async def test_dead_event_thread_does_not_silently_stop_notifications(
     observer.start()
     heart_beat_thread.start()
     try:
-        await asyncio.sleep(settle_for_watch_registration_s)
-
-        # sanity check: notifications flow while everything is healthy
-        await _generate_event_burst(outputs_root, port_key, settle_s=settle_for_watch_registration_s)
-        notified: list[str | None] = []
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                await asyncio.sleep(0.1)
-                notified.extend(_drain_nowait(port_key_events_queue))
-                assert port_key in notified
+        # sanity check: notifications flow while everything is healthy, and the
+        # canary wait proves the watch is registered before the next steps
+        await _wait_for_watch_registration_queue(port_key_events_queue, outputs_root, port_key)
 
         # simulate an unhandled error in the inotify read loop: the read thread
         # dies and with it every further notification
@@ -678,13 +692,12 @@ async def test_dead_event_thread_does_not_silently_stop_notifications(
 
         # yet the watcher is dead: further changes must either still be delivered
         # or surface the degraded watcher, today they are lost silently
-        await _generate_event_burst(outputs_root, port_key, settle_s=settle_for_watch_registration_s)
-        seen_after_death: list[str | None] = []
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                await asyncio.sleep(0.1)
-                seen_after_death.extend(_drain_nowait(port_key_events_queue))
-                assert port_key in seen_after_death
+        await _wait_for_watch_registration_queue(
+            port_key_events_queue,
+            outputs_root,
+            port_key,
+            canary_name=".watch_canary_after_death",
+        )
     finally:
         stop_heart_beats.set()
         observer.stop()
