@@ -9,10 +9,8 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import DefaultFromEnvFactoryError
-from settings_library.r_clone import S3Provider
-from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy import (
-    EnvoyLogLevel,
-)
+from settings_library.egress_proxy import EnvoyLogLevel
+from settings_library.r_clone import RCloneProvider
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
     PlacementSettings,
@@ -22,7 +20,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 
 
 def _get_backend_type_options() -> set[str]:
-    return {x for x in S3Provider if not x.startswith("_")}
+    return {x for x in RCloneProvider if not x.startswith("_")}
 
 
 def test_supported_backends_did_not_change() -> None:
@@ -141,17 +139,16 @@ def test_expected_failure_dynamic_sidecar_settings(
     ],
 )
 def test_services_custom_constraints(
-    custom_constraints: str,
+    custom_constraints: list,
     expected: list[str],
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints)
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", f"{custom_constraints}")
     settings = AppSettings.create_from_envs()
     custom_constraints = (
         settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     )
-    assert isinstance(custom_constraints, list)
     assert expected == custom_constraints
 
 
@@ -237,8 +234,8 @@ def test_class_dynamicsidecarsettings_in_production(
 
 
 def test_envoy_log_level():
-    for enum in (EnvoyLogLevel("WARNING"), EnvoyLogLevel.WARNING):
-        assert enum.to_log_level() == "warning"
+    for enum in (EnvoyLogLevel("warning"), EnvoyLogLevel.WARNING):
+        assert enum == "warning"
 
 
 def test_placement_settings(monkeypatch: pytest.MonkeyPatch):

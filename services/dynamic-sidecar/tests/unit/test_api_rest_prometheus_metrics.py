@@ -7,6 +7,7 @@ from collections.abc import AsyncIterable
 from typing import Final
 
 import pytest
+import yaml
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
@@ -20,6 +21,7 @@ from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeY
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
+from pytest_simcore.helpers.faker_compose_specs import inject_container_resources
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
@@ -103,16 +105,18 @@ def http_client(app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyH
 
 @pytest.fixture
 def compose_spec() -> DockerComposeYamlStr:
-    return json.dumps(
-        {
-            "version": "3",
-            "services": {
-                "rt-web": {
-                    "image": "alpine:latest",
-                    "command": ["sh", "-c", "sleep 100000"],
-                }
-            },
-        }
+    return yaml.safe_dump(
+        inject_container_resources(
+            {
+                "version": "3",
+                "services": {
+                    "rt-web": {
+                        "image": "alpine:latest",
+                        "command": ["sh", "-c", "sleep 100000"],
+                    }
+                },
+            }
+        )
     )
 
 

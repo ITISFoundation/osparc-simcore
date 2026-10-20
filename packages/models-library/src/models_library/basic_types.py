@@ -36,6 +36,9 @@ PositiveDecimal: TypeAlias = Annotated[Decimal, Field(gt=0)]
 # before passing the value
 AmountDecimal: TypeAlias = Annotated[Decimal, Field(gt=0, lt=1e6)]
 
+# number of CPUs of a machine (e.g. an EC2 instance capacity), not a per-container CPU quota
+InstanceCPUCount: TypeAlias = Annotated[float, Field(gt=0)]
+
 # port number range
 PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
