@@ -6,7 +6,6 @@
 # Based on https://github.com/Stranger6667/pytest-click
 
 
-import shutil
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -21,13 +20,10 @@ def cli_runner() -> CliRunner:
 
 
 @pytest.fixture
-def isolated_cli_runner(cli_runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[CliRunner]:
+def isolated_cli_runner(cli_runner: CliRunner, tmp_path: Path) -> Iterator[CliRunner]:
     """Instance of `typer.testing.CliRunner` running under a temporary working
     directory for isolated filesystem tests.
     """
-    monkeypatch.chdir(tmp_path)
-    try:
+    with pytest.MonkeyPatch.context() as mp:
+        mp.chdir(tmp_path)
         yield cli_runner
-    finally:
-        monkeypatch.undo()
-        shutil.rmtree(tmp_path, ignore_errors=True)
