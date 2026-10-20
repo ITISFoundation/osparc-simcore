@@ -254,7 +254,8 @@ def _get_node_id_for_service_class(user_project: ProjectDict, service_class: str
         # service keys look like simcore/services/{comp|dynamic|frontend}/...
         if node["key"].count("/") >= 3 and f"/{service_class}/" in node["key"]:
             return node_id
-    pytest.fail(f"no /{service_class}/ node in the test project")
+    # pytest.fail raises, so this never returns
+    return pytest.fail(f"no /{service_class}/ node in the test project")
 
 
 @pytest.mark.parametrize(
