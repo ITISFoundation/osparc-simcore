@@ -31,10 +31,10 @@ from .helpers.xdist import get_worker_id, is_xdist_worker
 _logger = logging.getLogger(__name__)
 
 
-def _get_management_port() -> int:
+def _get_management_port(stack_name: str) -> int:
     # NOTE: no fallback port here: if the published management port cannot be resolved the
     # stack is broken and the run would fail confusingly later on, so fail loudly right here
-    published = get_service_published_port("rabbit", target_ports=15672)
+    published = get_service_published_port("rabbit", target_ports=15672, stack_name=stack_name)
     assert published.isdigit(), (
         f"RabbitMQ management API port is not published (got '{published}'): the deployed "
         "'rabbit' service must publish 15672 (see services/docker-compose.yml) — the per-worker "
@@ -105,7 +105,7 @@ def _rabbit_worker_vhost(
     worker_id = get_worker_id(request)
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
-    management_url = f"http://{get_localhost_ip()}:{_get_management_port()}"
+    management_url = f"http://{get_localhost_ip()}:{_get_management_port(prefix)}"
     user = env_vars_for_docker_compose["RABBIT_USER"]
     password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
     vhost = f"pytest_{worker_id}"
@@ -124,7 +124,7 @@ def rabbit_env_vars_dict(
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
 
-    port = get_service_published_port("rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"]))
+    port = get_service_published_port("rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"]), stack_name=prefix)
 
     return {
         "RABBIT_USER": env_vars_for_docker_compose["RABBIT_USER"],

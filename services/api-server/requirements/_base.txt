@@ -80,7 +80,7 @@ botocore-stubs==1.43.14
     # via types-aiobotocore
 celery==5.6.3
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
-certifi==2024.8.30
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -107,7 +107,7 @@ cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-dnspython==2.7.0
+dnspython==2.9.0
     # via email-validator
 email-validator==2.2.0
     # via
@@ -358,7 +358,7 @@ protobuf==5.29.6
     #   -c requirements/../../../requirements/constraints.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==6.1.0
+psutil==7.2.2
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.11
     # via sqlalchemy

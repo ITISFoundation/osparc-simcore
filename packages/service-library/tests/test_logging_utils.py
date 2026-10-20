@@ -259,9 +259,13 @@ def test_log_context(
 ):
     caplog.clear()
 
-    with log_context(_logger, logging.ERROR, msg, *args, extra=extra):
+    with (
+        caplog.filtering(logging.Filter(_logger.name)),
+        log_context(_logger, logging.ERROR, msg, *args, extra=extra),
+    ):
         ...
-    assert len(caplog.messages) == 2
+
+    assert len(caplog.records) == 2
 
 
 @pytest.fixture

@@ -8,6 +8,7 @@ import functools
 import io
 import json
 import textwrap
+import warnings
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
@@ -272,10 +273,14 @@ async def test_run_study_workflow(
         "InputFile": test_json_file,
     }
 
-    new_job: Job = await studies_api.create_study_job(
-        study_id=template_id,
-        job_inputs={"values": input_values},
-    )
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        new_job: Job = await studies_api.create_study_job(
+            study_id=template_id,
+            job_inputs={"values": input_values},
+        )
+    serializer_warnings = [w for w in caught_warnings if "Pydantic serializer" in str(w.message)]
+    assert not serializer_warnings, f"response serialization must be warning-free: {serializer_warnings}"
 
     # start & inspect job until done
     await studies_api.start_study_job(study_id=template_id, job_id=new_job.id)

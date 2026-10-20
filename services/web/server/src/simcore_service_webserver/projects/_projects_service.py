@@ -2199,15 +2199,13 @@ async def add_project_states_for_user(
             )
 
         # upgrade the project
-        # NOTE: copy&dump step avoids both alias and field-names to be keys in the dict
-        # e.g. "current_status" and "currentStatus"
         current_node_state = NodeState.model_validate(
             node.get("state") or {}  # NOTE: that node.get("state") can exists and be None!
         )
-        updated_node_state = current_node_state.model_copy(
-            update=computed_node_state.model_dump(mode="json", exclude_unset=True)
-        )
-        node["state"] = updated_node_state.model_dump(by_alias=True, exclude_unset=True)
+        node["state"] = {
+            **current_node_state.model_dump(mode="json", by_alias=True, exclude_unset=True),
+            **computed_node_state.model_dump(mode="json", by_alias=True, exclude_unset=True),
+        }
 
         if "progress" in node["state"] and node["state"]["progress"] is not None:
             # ensure progress is a percentage
