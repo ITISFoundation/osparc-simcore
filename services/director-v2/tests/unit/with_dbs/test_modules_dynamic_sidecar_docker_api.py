@@ -455,7 +455,10 @@ async def test_create_service(
     assert service_id
 
 
-@pytest.mark.docker_exclusive
+@pytest.mark.docker_exclusive(
+    reason="get_dynamic_sidecars_to_observe lists dy-sidecar services daemon-wide: concurrent "
+    "dy-sidecar services from other tests/workers break the exact-count assertion",
+)
 async def test_services_to_observe_exist(
     dynamic_sidecar_service_name: str,
     dynamic_sidecar_service_spec: dict[str, Any],
@@ -474,7 +477,10 @@ async def test_services_to_observe_exist(
     assert dynamic_services[0].service_name == dynamic_sidecar_service_name
 
 
-@pytest.mark.docker_exclusive
+@pytest.mark.docker_exclusive(
+    reason="creates a dy-sidecar service on the shared swarm: concurrent tests that assert exact "
+    "counts over daemon-wide service lists would see it (and vice versa)",
+)
 async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -493,7 +499,10 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     assert dynamic_sidecar_state == (ServiceState.RUNNING, "")
 
 
-@pytest.mark.docker_exclusive
+@pytest.mark.docker_exclusive(
+    reason="creates a dy-sidecar service on the shared swarm: concurrent tests that assert exact "
+    "counts over daemon-wide service lists would see it (and vice versa)",
+)
 async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
     dynamic_sidecar_service_spec: dict[str, Any],
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -620,7 +629,10 @@ async def test_remove_dynamic_sidecar_network_fails(simcore_services_network_nam
     assert delete_result is False
 
 
-@pytest.mark.docker_exclusive
+@pytest.mark.docker_exclusive(
+    reason="starts fake dy-sidecar stack services on the shared swarm: daemon-wide service lists in "
+    "concurrent tests would see them, and its own exact-count checks are subject to their services",
+)
 async def test_is_sidecar_running(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,

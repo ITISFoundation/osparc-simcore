@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Final
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -15,6 +16,7 @@ from models_library.rabbitmq_messages import (
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.faker_factories import deterministic_faker
 from simcore_service_dynamic_sidecar.modules.file_notification_subscriber import (
     _handle_file_notification,
     _resolve_local_path_from_storage_id,
@@ -145,16 +147,17 @@ async def test__handle_file_notification_skipped_cannot_process(
     mock_notify_path_change.assert_not_awaited()
 
 
+# fake values in @pytest.mark.parametrize must be worker-identical (see deterministic_faker)
+_COLLECTION_FAKER: Final[Faker] = deterministic_faker()
+
+
 @pytest.mark.parametrize("event_type", list(FileNotificationEventType))
-# NOTE: fixed ids instead of uuid4() so that all xdist workers collect identical test ids
 @pytest.mark.parametrize(
     "mocked_file_id, skipped",
     [
-        pytest.param("e9a2f4de-52aa-4a3a-b18e-9a15ad0d41f1/0dc6a5e2-7b0d-42cb-9c1e-42a30f0a17b2/path", True),
-        pytest.param("e9a2f4de-52aa-4a3a-b18e-9a15ad0d41f1/0dc6a5e2-7b0d-42cb-9c1e-42a30f0a17b2/path-with.dot", True),
-        pytest.param(
-            "e9a2f4de-52aa-4a3a-b18e-9a15ad0d41f1/0dc6a5e2-7b0d-42cb-9c1e-42a30f0a17b2/path/another-path", False
-        ),
+        pytest.param(f"{_COLLECTION_FAKER.uuid4()}/{_COLLECTION_FAKER.uuid4()}/path", True),
+        pytest.param(f"{_COLLECTION_FAKER.uuid4()}/{_COLLECTION_FAKER.uuid4()}/path-with.dot", True),
+        pytest.param(f"{_COLLECTION_FAKER.uuid4()}/{_COLLECTION_FAKER.uuid4()}/path/another-path", False),
     ],
 )
 async def test__handle_file_notification_skipped_ignored_root_directory(
