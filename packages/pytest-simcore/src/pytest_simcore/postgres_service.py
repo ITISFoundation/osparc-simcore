@@ -47,7 +47,8 @@ def _as_pg_config(postgres_dsn: Mapping[str, Any]) -> PostgresTestConfig:
 def postgres_dsn(
     docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
 ) -> PostgresTestConfig:
-    assert "pytest-simcore_postgres" in docker_stack["services"]
+    prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
+    assert f"{prefix}_postgres" in docker_stack["services"]
 
     # under xdist, each worker gets its own database clone name on the SAME postgres
     # container, so concurrent workers never DROP/CREATE the same database
@@ -60,7 +61,9 @@ def postgres_dsn(
         "password": env_vars_for_docker_compose["POSTGRES_PASSWORD"],
         "database": database,
         "host": get_localhost_ip(),
-        "port": get_service_published_port("postgres", int(env_vars_for_docker_compose["POSTGRES_PORT"])),
+        "port": get_service_published_port(
+            "postgres", int(env_vars_for_docker_compose["POSTGRES_PORT"]), stack_name=prefix
+        ),
     }
 
     return pg_config

@@ -157,6 +157,7 @@ def dynamic_sidecar_docker_image_name() -> str:
 def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
+    env_vars_for_docker_compose: EnvVarsDict,
     faker: Faker,
 ) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
@@ -190,7 +191,9 @@ def mock_env(
             "REGISTRY_URL": faker.url(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-            "SWARM_STACK_NAME": "pytest-simcore",
+            # NOTE: the checkout-scoped stack name, so that swarm services created by tests
+            # (fake sidecars, ...) are observed/cleaned per checkout and never per branch
+            "SWARM_STACK_NAME": env_vars_for_docker_compose["SWARM_STACK_NAME"],
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
             "DIRECTOR_V2_TRACING": "null",
         },

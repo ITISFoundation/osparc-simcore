@@ -21,9 +21,9 @@ def traefik_endpoints(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDi
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_traefik" in docker_stack["services"]
 
-    traefik_api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080)}"
-    webserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 80)}"
-    apiserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 10081)}"
+    traefik_api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080, stack_name=prefix)}"
+    webserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 80, stack_name=prefix)}"
+    apiserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 10081, stack_name=prefix)}"
     return (
         URL(f"http://{traefik_api_endpoint}"),
         URL(f"http://{webserver_endpoint}"),
