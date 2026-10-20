@@ -13,13 +13,14 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.authentication import TwoFactorAuthenticationMethod
+from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewInvitation, NewUser
 from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.db.models import UserStatus
+from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._twofa_service import (
     create_2fa_code,
@@ -31,6 +32,7 @@ from simcore_service_webserver.login._twofa_service import (
     verify_2fa_code,
 )
 from simcore_service_webserver.login.constants import (
+    CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE,
     MSG_LOGGED_IN,
@@ -297,6 +299,77 @@ async def test_workflow_register_and_login_with_2fa(  # noqa: PLR0915
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
+
+
+@pytest.mark.parametrize(
+    "role",
+    [UserRole.USER, UserRole.TESTER, UserRole.PRODUCT_OWNER, UserRole.ADMIN],
+)
+async def test_privileged_users_can_complete_2fa_login(
+    client: TestClient,
+    role: UserRole,
+    faker: Faker,
+    mocked_notifications_service_send_message_from_template: AsyncMock,
+    cleanup_db_tables: None,
+):
+    """A valid 2FA code must grant login to any role that is not exempted from 2FA.
+
+    Only TESTER users skip 2FA, therefore PRODUCT_OWNER/ADMIN users must be able to
+    complete it: `login_2fa` must not restrict itself to USER accounts.
+    """
+    assert client.app
+
+    user_password = faker.password(length=16, special_chars=True, digits=True, upper_case=True, lower_case=True)
+    async with NewUser(
+        user_data={
+            "email": faker.email(),
+            "password": user_password,
+            "role": role.name,
+            "status": UserStatus.ACTIVE.name,
+        },
+        app=client.app,
+    ) as user:
+        # force the e-mail 2FA method so that neither Twilio nor a phone number is needed
+        await user_preferences_service.set_frontend_user_preference(
+            client.app,
+            user_id=UserID(user["id"]),
+            product_name="osparc",
+            frontend_preference_identifier=TwoFAFrontendUserPreference().preference_identifier,
+            value=TwoFactorAuthenticationMethod.EMAIL,
+        )
+
+        # 1. email+password are accepted: TESTER users are exempted from 2FA and login
+        # immediately, while every other role receives a code by e-mail
+        url = client.app.router["auth_login"].url_for()
+        response = await client.post(f"{url}", json={"email": user["email"], "password": user_password})
+
+        if role == UserRole.TESTER:
+            data, _ = await assert_status(response, status.HTTP_200_OK)
+            assert MSG_LOGGED_IN in data["message"]
+            assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
+            return
+
+        data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert data["name"] == CODE_2FA_EMAIL_CODE_REQUIRED
+
+        code = _extract_code_from_sent_email(mocked_notifications_service_send_message_from_template)
+
+        # 2. the code is accepted and login granted
+        url = client.app.router["auth_login_2fa"].url_for()
+        response = await client.post(f"{url}", json={"email": user["email"], "code": code})
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
+        assert DEFAULT_SESSION_COOKIE_NAME in response.cookies
+
+        # the code is disposed after being used
+        assert await has_2fa_code(client.app, user["email"]) is False
+
+
+def _extract_code_from_sent_email(mock_send: AsyncMock) -> str:
+    """Returns the 2FA code out of the last `new_2fa_code` notification sent"""
+    code = mock_send.call_args.kwargs["context"]["code"]
+    assert isinstance(code, str)
+    return code
 
 
 async def test_can_register_same_phone_in_different_accounts(
