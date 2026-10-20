@@ -3,9 +3,14 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import errno
+import multiprocessing
+import multiprocessing.queues
+import os as blocking_os
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from queue import Empty as QueueEmpty
 from random import randbytes, shuffle
 from shutil import move, rmtree
 from threading import Thread
@@ -40,12 +45,19 @@ from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
 from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
 )
+from simcore_service_dynamic_sidecar.modules.outputs._event_handler import (
+    _PortKeysEventHandler,
+)
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
+from simcore_service_dynamic_sidecar.modules.outputs._watchdog_extensions import (
+    ExtendedInotifyObserver,
+)
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from watchdog.observers.inotify_c import Inotify
 
 _TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
     "reraise": True,
@@ -395,3 +407,233 @@ async def test_port_key_sequential_event_generation(
             for call_args in mock_long_running_upload_outputs.call_args_list:
                 uploaded_port_keys |= set(call_args.kwargs["port_keys"])
             assert uploaded_port_keys == set(port_keys)
+
+
+# KNOWN LIMITATIONS
+#
+# The tests below document notification losses which are currently inherent to
+# the inotify-based outputs watcher. They are expected to start passing (XPASS)
+# once the watcher hardens, e.g. by rescanning directories after registering a
+# watch (inotify(7) scan-after-add-watch) and handling queue overflow /
+# inotify_add_watch failures.
+
+
+# enough directory creations to keep the inotify emitter busy, so its watch
+# registration for the port-key directories lands after the writes below; this
+# also overflows the kernel event queue (fs.inotify.max_queued_events), dropping
+# the directory creation events themselves
+_WATCH_REGISTRATION_BACKLOG_DIRS: Final[int] = 50_000
+
+# enough files to overflow the notification path while its consumer is stalled
+_EVENT_STORM_FILES: Final[int] = 4_000
+
+
+def _get_notified_port_keys(mock_upload_trigger: AsyncMock) -> set[str]:
+    return {call.args[0] for call in mock_upload_trigger.call_args_list}
+
+
+def _drain_port_key_events(queue: multiprocessing.Queue[str | None]) -> list[str | None]:
+    seen: list[str | None] = []
+    while True:
+        try:
+            seen.append(queue.get_nowait())
+        except QueueEmpty:
+            return seen
+
+
+@pytest.fixture
+async def drain_port_key_events_on_teardown(outputs_watcher: OutputsWatcher) -> AsyncIterator[None]:
+    """prevents a teardown deadlock: with propagation left enabled the queues keep
+    backlogging notifications, and the multiprocessing queue feeder thread then
+    blocks forever at interpreter exit
+    """
+    yield
+    await outputs_watcher.disable_event_propagation()
+    queue = outputs_watcher.outputs_context.port_key_events_queue
+    await asyncio.to_thread(_drain_queue, queue)
+
+
+def _drain_queue(queue: multiprocessing.queues.Queue) -> None:
+    while True:
+        try:
+            queue.get_nowait()
+        except QueueEmpty:
+            return
+
+
+@pytest.mark.xfail(
+    strict=False,
+    reason="inotify generates no events for a new directory before the emitter "
+    "registers its watch; watchdog rescues the gap only by scanning what remains "
+    "when the watch lands, so files written and then moved/deleted inside the "
+    "window are never seen at all",
+)
+async def test_transient_writes_in_fresh_port_key_directories_are_not_missed(
+    mock_event_filter_upload_trigger: AsyncMock,
+    outputs_watcher: OutputsWatcher,
+    port_keys: list[str],
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
+) -> None:
+    await _wait_for_events_to_trigger()
+    await outputs_watcher.enable_event_propagation()
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
+
+    outputs_path = outputs_watcher.outputs_context.outputs_path
+
+    def _flood_emitter_then_write_transient_files() -> None:
+        # synchronous bytes-path calls: the flood must outpace the inotify emitter,
+        # which pathlib would not do at the same rate
+        root = blocking_os.fsencode(outputs_path)
+        for i in range(_WATCH_REGISTRATION_BACKLOG_DIRS):
+            blocking_os.mkdir(root + b"/junk_" + str(i).encode())  # noqa: PTH102
+
+        for port_key in port_keys:
+            port_key_dir = root + b"/" + port_key.encode()
+            blocking_os.mkdir(port_key_dir)  # noqa: PTH102
+            # same event chain as _generate_event_burst: create, modify, move, delete
+            file_path_1 = port_key_dir + b"/file1.txt"
+            file_path_2 = port_key_dir + b"/file2.txt"
+            with open(file_path_1, "wb") as file:  # noqa: PTH123
+                file.write(b"lorem ipsum")
+            blocking_os.replace(file_path_1, file_path_2)  # noqa: PTH105
+            blocking_os.unlink(file_path_2)  # noqa: PTH108
+
+    await asyncio.to_thread(_flood_emitter_then_write_transient_files)
+
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)
+            assert _get_notified_port_keys(mock_event_filter_upload_trigger) == set(port_keys)
+
+
+@pytest.mark.xfail(
+    strict=False,
+    reason="port_key_events_queue is unbounded and receives one entry per raw file "
+    "event: while the consumer is stalled it backlogs thousands of redundant "
+    "notifications for the same port key instead of coalescing them (OOM risk)",
+)
+async def test_notification_queue_stays_bounded_under_event_storm(
+    mock_event_filter_upload_trigger: AsyncMock,
+    mocker: MockerFixture,
+    outputs_watcher: OutputsWatcher,
+    port_keys: list[str],
+    settle_for_watch_registration_s: PositiveFloat,
+    drain_port_key_events_on_teardown: None,
+    wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
+) -> None:
+    await _wait_for_events_to_trigger()
+    await outputs_watcher.enable_event_propagation()
+    await wait_for_command_delivered(outputs_watcher.outputs_context)
+
+    outputs_path = outputs_watcher.outputs_context.outputs_path
+    noisy_port_key, quiet_port_key = port_keys[0], port_keys[1]
+
+    # create both directories and let the emitter register their watches first
+    (outputs_path / noisy_port_key).mkdir()
+    (outputs_path / quiet_port_key).mkdir()
+    await asyncio.sleep(settle_for_watch_registration_s)
+
+    # stall the consumer so nothing drains the queue while the storm runs
+    block_enqueue = asyncio.Event()
+    mocker.patch.object(
+        outputs_watcher._event_filter,  # noqa: SLF001
+        "enqueue",
+        AsyncMock(side_effect=block_enqueue.wait),
+    )
+
+    def _flood_with_files() -> None:
+        for i in range(_EVENT_STORM_FILES):
+            (outputs_path / noisy_port_key / f"file_{i}").touch()
+
+    await asyncio.to_thread(_flood_with_files)
+    (outputs_path / quiet_port_key / "output.dat").write_bytes(b"result")
+
+    # let the watcher process drain the kernel queue into its buffer
+    await asyncio.sleep(1)
+    backlog = outputs_watcher.outputs_context.port_key_events_queue.qsize()
+
+    block_enqueue.set()
+
+    # no notification may be lost while the queue is backed up
+    async for attempt in AsyncRetrying(**{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(30)}):
+        with attempt:
+            await asyncio.sleep(0)
+            notified_port_keys = _get_notified_port_keys(mock_event_filter_upload_trigger)
+            assert {noisy_port_key, quiet_port_key} <= notified_port_keys
+
+    # a sane design coalesces per port key, so the backlog must not grow with
+    # the number of raw file events
+    assert backlog < 2 * len(port_keys)
+
+
+_WATCH_LIMIT_PORT_KEY: Final[str] = "port_key_watch_limit"
+
+
+@pytest.fixture
+def patch_watch_registration_enospc(mocker: MockerFixture) -> None:
+    """makes watch registration for `_WATCH_LIMIT_PORT_KEY` fail with ENOSPC,
+    simulating an exhausted fs.inotify.max_user_watches quota
+    """
+    original_add_watch = Inotify._add_watch  # noqa: SLF001
+
+    def _raise_on_watch_limit(self: Inotify, path: bytes, mask: int) -> int:
+        if Path(path.decode()).name == _WATCH_LIMIT_PORT_KEY:
+            raise OSError(errno.ENOSPC, "inotify watch limit reached")
+        return original_add_watch(self, path, mask)
+
+    mocker.patch.object(Inotify, "_add_watch", autospec=True, side_effect=_raise_on_watch_limit)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="when inotify_add_watch fails watchdog skips the directory and never "
+    "retries it: the file changes inside stay invisible, no notification is ever "
+    "delivered for that port key, and the degraded watcher is never surfaced",
+)
+async def test_watch_registration_failure_does_not_silently_kill_notifications(
+    patch_watch_registration_enospc: None,
+    settle_for_watch_registration_s: PositiveFloat,
+    tmp_path: Path,
+) -> None:
+    # NOTE: unlike in the sidecar, the observer here runs in the test process: with
+    # the forkserver start method the watcher process re-imports modules, so the
+    # ENOSPC patch would never reach it. The port-key events queue is the same
+    # notification boundary the watcher process uses to reach the main process.
+    outputs_root = tmp_path / "outputs_root"
+    outputs_root.mkdir()
+
+    port_key_events_queue: multiprocessing.Queue[str | None] = multiprocessing.get_context().Queue()
+
+    event_handler = _PortKeysEventHandler(outputs_root, port_key_events_queue)
+    event_handler.handle_toggle_event_propagation(is_enabled=True)
+    regular_port_key = "regular_port_key"
+    event_handler.handle_set_outputs_port_keys(outputs_port_keys={_WATCH_LIMIT_PORT_KEY, regular_port_key})
+
+    observer = ExtendedInotifyObserver()
+    observer.schedule(event_handler, str(outputs_root), recursive=True)
+    observer.start()
+    try:
+        await asyncio.sleep(settle_for_watch_registration_s)
+
+        # sanity check: content changes in a regular port key directory are notified
+        await _generate_event_burst(outputs_root, regular_port_key, settle_s=settle_for_watch_registration_s)
+        notified: list[str | None] = []
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                await asyncio.sleep(0.1)
+                notified.extend(_drain_port_key_events(port_key_events_queue))
+                assert regular_port_key in notified
+
+        # the watch registration for this directory fails with ENOSPC: its content
+        # changes must either still be delivered or surface a degraded watcher,
+        # but today the directory is left permanently unwatched and they are lost
+        await _generate_event_burst(outputs_root, _WATCH_LIMIT_PORT_KEY, settle_s=settle_for_watch_registration_s)
+        seen: list[str | None] = []
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                await asyncio.sleep(0.1)
+                seen.extend(_drain_port_key_events(port_key_events_queue))
+                assert _WATCH_LIMIT_PORT_KEY in seen
+    finally:
+        observer.stop()
+        observer.join()
