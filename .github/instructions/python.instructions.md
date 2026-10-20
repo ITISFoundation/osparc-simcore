@@ -13,6 +13,10 @@ Target the Python version in `.python-version`.
   [Python Dependencies](../../requirements/python-dependencies.md).
 - Run Ruff, Pylint, and mypy through repository commands or pre-commit. Global
   tool configuration may differ from CI.
+- Pylint is not a pre-commit hook; CI runs it via `make pylint`. After editing
+  Python files, run `pylint --rcfile=.pylintrc <changed files>` before
+  finishing: a line-level `# noqa` satisfies ruff only, and pylint needs a
+  matching `# pylint: disable=` directive.
 
 ## Typing
 
