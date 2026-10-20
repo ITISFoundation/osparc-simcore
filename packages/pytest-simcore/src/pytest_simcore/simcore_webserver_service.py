@@ -18,7 +18,7 @@ def webserver_endpoint(docker_stack: dict, env_vars_for_docker_compose: EnvVarsD
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_webserver" in docker_stack["services"]
 
-    endpoint = f"127.0.0.1:{get_service_published_port('webserver', 8080)}"
+    endpoint = f"127.0.0.1:{get_service_published_port('webserver', 8080, stack_name=prefix)}"
     return URL(f"http://{endpoint}")
 
 

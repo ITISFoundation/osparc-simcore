@@ -210,6 +210,18 @@ def docker_swarm(
     assert _is_docker_swarm_init(docker_client) is keep_docker_up
 
 
+_MIGRATION_COMPOSE_SERVICE: Final[str] = "migration"  # services/docker-compose.yml key
+
+
+def _list_owned_migration_services(docker_client: docker.client.DockerClient, stack_name: str) -> list:
+    # NOTE: match the EXACT deployed name: the stack name embeds the branch, so a substring
+    # match on "migration" would select EVERY service of a checkout whose branch contains
+    # that word (e.g. 'fix/migration'). Other pytest runs may share the daemon with their
+    # own migration service, which must be left alone
+    migration_service_name = f"{stack_name}_{_MIGRATION_COMPOSE_SERVICE}"
+    return [service for service in docker_client.services.list() if str(service.name) == migration_service_name]
+
+
 @retry(
     wait=wait_fixed(0.3),
     retry=retry_if_exception_type(AssertionError),
@@ -217,24 +229,20 @@ def docker_swarm(
 )
 def _wait_for_migration_service_to_be_removed(
     docker_client: docker.client.DockerClient,
+    stack_name: str,
 ) -> None:
-    for service in docker_client.services.list():
-        if "migration" in service.name:  # type: ignore
-            raise TryAgain
+    if _list_owned_migration_services(docker_client, stack_name):
+        raise TryAgain
 
 
-def _force_remove_migration_service(docker_client: docker.client.DockerClient) -> None:
-    for migration_service in (
-        service
-        for service in docker_client.services.list()
-        if "migration" in service.name  # type: ignore
-    ):
+def _force_remove_migration_service(docker_client: docker.client.DockerClient, stack_name: str) -> None:
+    for migration_service in _list_owned_migration_services(docker_client, stack_name):
         _logger.warning(
             "migration service detected before updating stack, it will be force-removed now and re-deployed "
             "to ensure DB update"
         )
         migration_service.remove()  # type: ignore
-        _wait_for_migration_service_to_be_removed(docker_client)
+        _wait_for_migration_service_to_be_removed(docker_client, stack_name)
         _logger.info("forced updated %s", migration_service.name)  # type: ignore
 
 
@@ -438,6 +446,13 @@ def pytest_sessionfinish(session: pytest.Session) -> None:
         docker_client.close()
 
 
+def _module_service_selection(item: pytest.Item, attr_name: str) -> list[str]:
+    # only test functions live in a module able to declare the fixture config
+    if not isinstance(item, pytest.Function):
+        return []
+    return getattr(item.module, attr_name, [])
+
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def docker_stack(  # noqa: C901
     osparc_simcore_services_dir: Path,
@@ -460,10 +475,10 @@ async def docker_stack(  # noqa: C901
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
-    ops_stack_name = "pytest-ops"
+    ops_stack_name = env_vars_for_docker_compose["SWARM_OPS_STACK_NAME"]
 
-    assert core_stack_name
     assert core_stack_name.startswith("pytest-")
+    assert ops_stack_name.startswith("pytest-")
 
     def _collected_services_union(attr_name: str) -> list[str]:
         # NOTE: collection completes before any test runs, so `session.items` already lists
@@ -471,7 +486,7 @@ async def docker_stack(  # noqa: C901
         seen: set[str] = set()
         union: list[str] = []
         for item in request.session.items:
-            for name in getattr(item.module, attr_name, []):
+            for name in _module_service_selection(item, attr_name):
                 if name not in seen:
                     seen.add(name)
                     union.append(name)
@@ -555,7 +570,7 @@ async def docker_stack(  # noqa: C901
 
             # NOTE: if the migration service was already running prior to this call it must
             # be force updated so that it does its job. else it remains and tests will fail
-            _force_remove_migration_service(docker_client)
+            _force_remove_migration_service(docker_client, core_stack_name)
             _make_dask_sidecar_certificates(osparc_simcore_services_dir)
             # make up-version
             for _, stack_name, compose_file in stacks:

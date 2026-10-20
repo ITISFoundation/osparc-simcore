@@ -17,6 +17,8 @@ from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+from .stack_names import is_service_in_stack
+
 
 # NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status1 because some of the
 # packages tests installations do not include this library!!
@@ -69,7 +71,21 @@ def _pick_service(candidates: list[Service], service_name: str, target_ports: li
     stop=stop_after_attempt(10),
     after=after_log(log, logging.WARNING),
 )
-def get_service_published_port(service_name: str, target_ports: list[int] | int | None = None) -> str:
+def get_service_published_port(
+    service_name: str,
+    target_ports: list[int] | int | None = None,
+    *,
+    stack_name: str | None = None,
+) -> str:
+    return _get_service_published_port(service_name, target_ports, stack_name=stack_name)
+
+
+def _get_service_published_port(
+    service_name: str,
+    target_ports: list[int] | int | None,
+    *,
+    stack_name: str | None,
+) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
 
@@ -77,14 +93,26 @@ def get_service_published_port(service_name: str, target_ports: list[int] | int 
     client = docker.from_env()
 
     candidates = [s for s in client.services.list() if str(s.name).endswith(service_name)]
+    if stack_name is not None:
+        # other checkouts may share the daemon: only consider THIS checkout's stack
+        candidates = [s for s in candidates if is_service_in_stack(str(s.name), stack_name)]
     if not candidates:
-        msg = f"Cannot find published port for service '{service_name}'.Probably services still not started."
+        scope = f" in stack '{stack_name}'" if stack_name else ""
+        expected_prefix = f"{stack_name}_" if stack_name else "<any-stack>_"
+        same_suffix = sorted(str(s.name) for s in client.services.list() if str(s.name).endswith(service_name))
+        msg = (
+            f"Cannot find published port for service '{service_name}'{scope}: no service matching "
+            f"'{expected_prefix}{service_name}' is deployed. Probably services still not started. "
+            f"Services on this daemon ending in '{service_name}': {same_suffix or 'none'}."
+        )
         raise RuntimeError(msg)
 
-    service_ports = _pick_service(candidates, service_name, target_ports).attrs["Endpoint"].get("Ports")
+    service = _pick_service(candidates, service_name, target_ports)
+    service_ports = service.attrs["Endpoint"].get("Ports")
     if not service_ports:
         msg = (
-            f"Cannot find published port for service '{service_name}' in endpoint.Probably services still not started."
+            f"Cannot find published port for service '{service_name}' (resolved to '{service.name}') "
+            "in endpoint: it publishes no ports. Probably services still not started."
         )
         raise RuntimeError(msg)
 

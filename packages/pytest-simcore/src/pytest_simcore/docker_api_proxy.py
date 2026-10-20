@@ -43,7 +43,7 @@ async def docker_api_proxy_settings(
     assert f"{prefix}_docker-api-proxy" in docker_stack["services"]
 
     published_port = get_service_published_port(
-        "docker-api-proxy", int(env_vars_for_docker_compose["DOCKER_API_PROXY_PORT"])
+        "docker-api-proxy", int(env_vars_for_docker_compose["DOCKER_API_PROXY_PORT"]), stack_name=prefix
     )
 
     settings = TypeAdapter(DockerApiProxysettings).validate_python(
