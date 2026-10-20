@@ -1,5 +1,3 @@
-# pylint: disable=import-private-name
-
 from pathlib import Path
 
 from pytest_simcore.docker_swarm import _list_owned_migration_services
