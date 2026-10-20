@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from collections.abc import AsyncIterable, AsyncIterator
+from uuid import uuid4
 
 import aiodocker
 import pytest
@@ -36,7 +37,8 @@ async def volume_with_label(volume_name: str, service_run_id: ServiceRunID) -> A
     async with aiodocker.Docker() as docker_client:
         volume = await docker_client.volumes.create(
             {
-                "Name": "test_volume_name_1",
+                # NOTE: unique name so concurrent xdist workers never collide
+                "Name": f"test_volume_name_{uuid4().hex}",
                 "Labels": {"source": volume_name, "run_id": service_run_id},
             }
         )
@@ -53,7 +55,9 @@ def container_count(request: pytest.FixtureRequest) -> PositiveInt:
 
 @pytest.fixture
 def container_names(container_count: PositiveInt) -> list[str]:
-    return [f"container_test_{i}" for i in range(container_count)]
+    # NOTE: unique prefix so concurrent xdist workers never collide on fixed names
+    prefix = f"container_test_{uuid4().hex}"
+    return [f"{prefix}_{i}" for i in range(container_count)]
 
 
 @pytest.fixture

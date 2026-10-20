@@ -18,7 +18,7 @@ from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
@@ -54,6 +54,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
     "pytest_simcore.socketio",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

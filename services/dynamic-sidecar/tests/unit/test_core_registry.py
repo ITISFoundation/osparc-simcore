@@ -80,6 +80,9 @@ def mock_registry_settings_with_auth(
     )
 
 
+# NOTE: uses the session-scoped shared `docker_registry` container (fixed name/port)
+# and rewrites the machine-global `~/.docker/config.json`
+@pytest.mark.docker_exclusive
 async def test__login_registry(
     mock_registry_settings_with_auth: None,
     app: FastAPI,

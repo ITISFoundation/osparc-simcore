@@ -3,7 +3,6 @@
 import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
 from faker import Faker
@@ -40,7 +39,7 @@ def file_id(project_id: ProjectID, node_id: NodeID) -> str:
 
 @pytest.fixture()
 def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
+    return UserID(faker.pyint(min_value=1))
 
 
 @pytest.fixture()
@@ -147,12 +146,15 @@ async def test__handle_file_notification_skipped_cannot_process(
 
 
 @pytest.mark.parametrize("event_type", list(FileNotificationEventType))
+# NOTE: fixed ids instead of uuid4() so that all xdist workers collect identical test ids
 @pytest.mark.parametrize(
     "mocked_file_id, skipped",
     [
-        pytest.param(f"{uuid4()}/{uuid4()}/path", True),
-        pytest.param(f"{uuid4()}/{uuid4()}/path-with.dot", True),
-        pytest.param(f"{uuid4()}/{uuid4()}/path/another-path", False),
+        pytest.param("e9a2f4de-52aa-4a3a-b18e-9a15ad0d41f1/0dc6a5e2-7b0d-42cb-9c1e-42a30f0a17b2/path", True),
+        pytest.param("e9a2f4de-52aa-4a3a-b18e-9a15ad0d41f1/0dc6a5e2-7b0d-42cb-9c1e-42a30f0a17b2/path-with.dot", True),
+        pytest.param(
+            "e9a2f4de-52aa-4a3a-b18e-9a15ad0d41f1/0dc6a5e2-7b0d-42cb-9c1e-42a30f0a17b2/path/another-path", False
+        ),
     ],
 )
 async def test__handle_file_notification_skipped_ignored_root_directory(

@@ -961,7 +961,8 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        # ARM runners have 4 vCPUs (vs 2 on x64)
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
