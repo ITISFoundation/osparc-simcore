@@ -416,6 +416,7 @@ async def test_port_key_sequential_event_generation(
 # once the watcher hardens, e.g. by bounding the per-port-key notification
 # state, retrying and surfacing failed inotify_add_watch calls, and stopping
 # the heart-beats when an event thread dies.
+# Tracked in https://github.com/ITISFoundation/osparc-simcore/issues/9862
 #
 # Not listed here: writes that appear and disappear in a new port-key directory
 # before the emitter registers its watch are never seen by inotify. This is
@@ -504,7 +505,8 @@ def _drain_queue(queue: multiprocessing.queues.Queue) -> None:
     strict=False,
     reason="port_key_events_queue is unbounded and receives one entry per raw file "
     "event: while the consumer is stalled it backlogs thousands of redundant "
-    "notifications for the same port key instead of coalescing them (OOM risk)",
+    "notifications for the same port key instead of coalescing them (OOM risk). "
+    "See https://github.com/ITISFoundation/osparc-simcore/issues/9862",
 )
 async def test_notification_queue_stays_bounded_under_event_storm(
     mock_event_filter_upload_trigger: AsyncMock,
@@ -580,7 +582,8 @@ def patch_watch_registration_enospc(mocker: MockerFixture) -> None:
     strict=True,
     reason="when inotify_add_watch fails watchdog skips the directory and never "
     "retries it: the file changes inside stay invisible, no notification is ever "
-    "delivered for that port key, and the degraded watcher is never surfaced",
+    "delivered for that port key, and the degraded watcher is never surfaced. "
+    "See https://github.com/ITISFoundation/osparc-simcore/issues/9862",
 )
 async def test_watch_registration_failure_does_not_silently_kill_notifications(
     patch_watch_registration_enospc: None,
@@ -626,7 +629,8 @@ _HEART_BEAT_INTERVAL_S: Final[PositiveFloat] = 0.1
     strict=True,
     reason="the watcher heart-beats from its process main loop, so an unhandled "
     "error in the inotify read thread stops every notification while the health "
-    "check keeps receiving heart-beats and never restarts the watcher",
+    "check keeps receiving heart-beats and never restarts the watcher. "
+    "See https://github.com/ITISFoundation/osparc-simcore/issues/9862",
 )
 async def test_dead_event_thread_does_not_silently_stop_notifications(
     tmp_path: Path,
