@@ -4,7 +4,7 @@ alembic==1.18.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
-certifi==2026.7.22
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests

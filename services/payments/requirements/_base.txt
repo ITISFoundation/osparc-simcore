@@ -50,7 +50,7 @@ attrs==24.2.0
     #   referencing
 bidict==0.23.1
     # via python-socketio
-certifi==2024.8.30
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -67,7 +67,7 @@ cryptography==50.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-dnspython==2.7.0
+dnspython==2.9.0
     # via email-validator
 ecdsa==0.19.0
     # via python-jose

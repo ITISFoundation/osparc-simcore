@@ -85,7 +85,6 @@ def mock_env(
         {
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-            "SWARM_STACK_NAME": "pytest-simcore",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",

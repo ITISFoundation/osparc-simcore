@@ -66,7 +66,7 @@ botocore-stubs==1.43.14
     #   -c requirements/_base.txt
     #   types-aioboto3
     #   types-aiobotocore
-certifi==2025.11.12
+certifi==2026.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -135,7 +135,7 @@ jmespath==1.0.1
     #   aiobotocore
     #   boto3
     #   botocore
-joserfc==1.6.3
+joserfc==1.7.7
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -295,7 +295,7 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==82.0.1
+setuptools==84.0.0
     # via moto
 six==1.17.0
     # via

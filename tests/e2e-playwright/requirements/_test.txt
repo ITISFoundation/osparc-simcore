@@ -10,7 +10,7 @@ anyio==4.15.1
     #   httpx
 arrow==1.4.0
     # via -r requirements/_test_wo_playwright.txt
-certifi==2026.5.20
+certifi==2026.10.18
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   httpcore
@@ -18,7 +18,7 @@ certifi==2026.5.20
     #   requests
 charset-normalizer==3.4.7
     # via requests
-dnspython==2.8.0
+dnspython==2.9.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   email-validator
