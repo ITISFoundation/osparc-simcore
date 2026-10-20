@@ -10,7 +10,7 @@ from httpx import HTTPStatusError
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_enums import ServiceType
-from pydantic import ValidationError
+from pydantic import HttpUrl, ValidationError
 
 from ..._service_solvers import SolverService
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -71,7 +71,7 @@ async def list_solvers(
     solvers = [Solver.create_from_service(service=service) for service in services]
 
     for solver in solvers:
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
 
     return sorted(solvers, key=attrgetter("id"))
 
@@ -101,7 +101,7 @@ async def list_all_solvers_paginated(
     )
 
     for solver in solvers:
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
 
     assert page_params.limit == page_meta.limit  # nosec
     assert page_params.offset == page_meta.offset  # nosec
@@ -152,7 +152,7 @@ async def list_solvers_releases(
             all_solvers.extend(solvers)
 
     for solver in all_solvers:
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
 
     return sorted(all_solvers, key=attrgetter("id", "pep404_version"))
 
@@ -177,7 +177,7 @@ async def get_solver(
     # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
         solver = await solver_service.get_latest_release(solver_key=solver_key)
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
         assert solver.id == solver_key  # nosec
         return solver
 
@@ -215,7 +215,7 @@ async def list_solver_releases(
         all_releases.extend(solvers)
 
     for solver in all_releases:
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
 
     return sorted(all_releases, key=attrgetter("pep404_version"))
 
@@ -244,7 +244,7 @@ async def list_solver_releases_paginated(
     )
 
     for solver in solvers:
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
     page_params.limit = page_meta.limit
     page_params.offset = page_meta.offset
     return create_page(
@@ -277,7 +277,7 @@ async def get_solver_release(
             solver_version=version,
         )
 
-        solver.url = url_for("get_solver_release", solver_key=solver.id, version=solver.version)
+        solver.url = HttpUrl(url_for("get_solver_release", solver_key=solver.id, version=solver.version))
         return solver
 
     except (
