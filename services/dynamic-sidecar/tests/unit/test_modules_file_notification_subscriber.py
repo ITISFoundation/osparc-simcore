@@ -2,10 +2,11 @@
 
 import logging
 from pathlib import Path
-from typing import Final
+from typing import Annotated, Final
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from annotated_types import doc
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -147,8 +148,16 @@ async def test__handle_file_notification_skipped_cannot_process(
     mock_notify_path_change.assert_not_awaited()
 
 
-# fake values in @pytest.mark.parametrize must be worker-identical (see deterministic_faker)
-_COLLECTION_FAKER: Final[Faker] = deterministic_faker()
+_COLLECTION_FAKER: Final[
+    Annotated[
+        Faker,
+        doc(
+            "fake values used in @pytest.mark.parametrize must be identical across xdist "
+            "workers, so they come from deterministic_faker instead of the per-worker "
+            "faker fixture"
+        ),
+    ]
+] = deterministic_faker()
 
 
 @pytest.mark.parametrize("event_type", list(FileNotificationEventType))
