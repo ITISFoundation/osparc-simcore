@@ -9,12 +9,14 @@ from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
 from threading import Thread
-from typing import Any, Final
+from time import sleep as blocking_sleep
+from typing import Annotated, Any, Final
 from unittest.mock import AsyncMock
 
 import aiofiles
 import pytest
 from aiofiles import os
+from annotated_types import doc
 from faker import Faker
 from models_library.services import ServiceRunID
 from pydantic import (
@@ -56,6 +58,17 @@ _TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
 _TICK_INTERVAL: Final[PositiveFloat] = 0.001
 _WAIT_INTERVAL: Final[PositiveFloat] = _TICK_INTERVAL * 10
 _UPLOAD_DURATION: Final[PositiveFloat] = _TICK_INTERVAL * 10
+_SETTLE_FOR_WATCH_S: Final[
+    Annotated[
+        float,
+        doc(
+            "time to wait after creating a directory before generating events in it: the "
+            "inotify emitter registers its watch on a newly created directory on a later "
+            "processing tick, and events created inside it before that are lost. Under xdist "
+            "CPU contention the emitter thread can starve, so wait for the watch to land first"
+        ),
+    ]
+] = 0.5
 
 
 # FIXTURES
@@ -204,10 +217,10 @@ async def _random_events_in_path(
     Simulates some random user activity"""
 
     async def _empty_file(file_path: Path) -> None:
-        assert file_path.exists() is False
+        assert await os.path.exists(file_path) is False
         async with aiofiles.open(file_path, "wb"):
             pass
-        assert file_path.exists() is True
+        assert await os.path.exists(file_path) is True
 
     async def _random_file(
         file_path: Path,
@@ -219,19 +232,19 @@ async def _random_events_in_path(
             for _ in range(size // chunk_size):
                 await file.write(randbytes(chunk_size))  # noqa: S311
             await file.write(randbytes(size % chunk_size))  # noqa: S311
-        assert file_path.stat().st_size == size
+        assert (await os.stat(file_path)).st_size == size
 
     async def _move_existing_file(file_path: Path) -> None:
         await _empty_file(file_path)
         destination = file_path.parent / f"{file_path.name}_"
         await os.rename(file_path, destination)
-        assert file_path.exists() is False
-        assert destination.exists() is True
+        assert await os.path.exists(file_path) is False
+        assert await os.path.exists(destination) is True
 
     async def _remove_file(file_path: Path) -> None:
         await _empty_file(file_path)
         await os.remove(file_path)
-        assert file_path.exists() is False
+        assert await os.path.exists(file_path) is False
 
     event_awaitables: list[Awaitable] = [
         *(_empty_file(port_key_path / f"empty_file_{i}") for i in range(empty_files)),
@@ -256,6 +269,7 @@ async def _generate_event_burst(path: Path, subfolder: str | None = None) -> Non
     def _worker() -> None:
         full_dir_path = path if subfolder is None else path / subfolder
         full_dir_path.mkdir(parents=True, exist_ok=True)
+        blocking_sleep(_SETTLE_FOR_WATCH_S)
         file_path_1 = full_dir_path / "file1.txt"
         file_path_2 = full_dir_path / "file2.txt"
 

@@ -8,7 +8,7 @@ import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from inspect import signature
 from pathlib import Path
-from typing import Any, Final
+from typing import Annotated, Any, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -18,6 +18,7 @@ import pytest
 import yaml
 from aiodocker.volumes import DockerVolume
 from aiofiles.os import mkdir
+from annotated_types import doc
 from async_asgi_testclient import TestClient
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
@@ -54,6 +55,17 @@ pytest_simcore_core_services_selection = [
 
 _WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 _FAST_POLLING_INTERVAL: Final[float] = 0.1
+_SETTLE_FOR_WATCH_S: Final[
+    Annotated[
+        float,
+        doc(
+            "time to wait after creating a directory before generating events in it: the "
+            "inotify emitter registers its watch on a newly created directory on a later "
+            "processing tick, and events created inside it before that are lost. Under xdist "
+            "CPU contention the emitter thread can starve, so wait for the watch to land first"
+        ),
+    ]
+] = 0.5
 
 
 # UTILS
@@ -465,6 +477,7 @@ async def test_outputs_watcher_disabling(
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
+        await asyncio.sleep(_SETTLE_FOR_WATCH_S)
         async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
             await f.write("ok")
 
