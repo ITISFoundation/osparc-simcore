@@ -15,7 +15,6 @@ pytest_simcore_core_services_selection = [
 
 
 async def test_free_reserved_disk_space(cleanup_reserved_disk_space: None, app: FastAPI, rpc_client: RabbitMQRPCClient):
-    # NOTE: accessed via the module: tests/conftest.py redirects the path per xdist worker
     assert reserved_space._RESERVED_DISK_SPACE_NAME.exists()
 
     settings: ApplicationSettings = app.state.settings

@@ -15,7 +15,6 @@ async def test_reserved_disk_space_freed(
     cleanup_reserved_disk_space: None,
     test_client: TestClient,
 ):
-    # NOTE: accessed via the module: tests/conftest.py redirects the path per xdist worker
     assert reserved_space._RESERVED_DISK_SPACE_NAME.exists()
     response = await test_client.post(f"/{API_VTAG}/disk/reserved:free")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text

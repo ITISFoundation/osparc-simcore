@@ -11,7 +11,6 @@ from simcore_service_dynamic_sidecar.core.application import create_base_app
 
 
 def test_reserved_disk_space_workflow(cleanup_reserved_disk_space: None, mock_environment: EnvVarsDict):
-    # NOTE: accessed via the module: tests/conftest.py redirects the path per xdist worker
     assert not reserved_space._RESERVED_DISK_SPACE_NAME.exists()
     create_base_app()
 

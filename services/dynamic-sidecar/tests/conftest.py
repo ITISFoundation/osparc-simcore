@@ -399,11 +399,12 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     )
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def isolated_reserved_disk_space(tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
     """Redirects the reserved disk space file to a per-xdist-worker path. The file lives on
     a machine-global path that every app creation writes to and the disk tests delete, so
-    concurrent xdist workers would collide on it
+    concurrent xdist workers would collide on it. Requested through
+    ``cleanup_reserved_disk_space``, which only the disk tests use
     """
 
     worker_reserved_path = (
@@ -416,7 +417,7 @@ def isolated_reserved_disk_space(tmp_path_factory: pytest.TempPathFactory) -> It
 
 
 @pytest.fixture
-def cleanup_reserved_disk_space() -> Iterator[None]:
+def cleanup_reserved_disk_space(isolated_reserved_disk_space: None) -> Iterator[None]:
     reserved_space.free_reserved_disk_space()
     yield
     reserved_space.free_reserved_disk_space()
