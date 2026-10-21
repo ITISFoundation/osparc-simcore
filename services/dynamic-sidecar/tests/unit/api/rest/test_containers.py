@@ -465,18 +465,27 @@ async def test_outputs_watcher_disabling(
 
         dir_name = outputs_context.outputs_path / random_subdir
         await mkdir(dir_name)
-        async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
+        file_path = dir_name / f"file_{uuid4()}"
+        async with aiofiles.open(file_path, "w") as f:
             await f.write("ok")
 
-        # one event is the minimum the watcher must deliver, and it is guaranteed
-        # under any timing: the kernel records the write when the directory's
-        # watch is already registered, and otherwise watchdog's scan when adding
-        # the watch reports the file, which persists here. Waiting for a second
-        # event instead would require the watch to land before the write
+        # One event per port key is the minimum the watcher must deliver once its
+        # watch on the directory is live. A single write is not enough: waiting on
+        # the command queue's size only proves the commands left the main process,
+        # so under load the watcher process can apply them after the emitter
+        # already dispatched this directory's scan and write events, which the
+        # handler then silently discards. Re-writing the file on every attempt
+        # makes the delivery deterministic: any change after the commands are
+        # applied fires a new event on the live watch. A watch that failed to
+        # register is not masked this way and keeps failing the test.
         EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 1
 
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
+                if is_propagation_enabled:
+                    async with aiofiles.open(file_path, "a") as f:
+                        await f.write("x")
+
                 # check events were triggered after generation
                 events_in_dir: list[str] = [
                     c.args[0] for c in mocked_port_key_events_queue_get.call_args_list if c.args[0] == random_subdir
