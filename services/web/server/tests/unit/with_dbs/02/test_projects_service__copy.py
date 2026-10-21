@@ -21,6 +21,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 from aiohttp import web
@@ -33,9 +34,15 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
+from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.project_nodes_pricing import (
+    get_node_pricing_state,
+    set_node_pricing_link,
+    set_node_required_resources,
+    single_container_required_resources,
+)
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.projects import (
@@ -55,6 +62,7 @@ from simcore_service_webserver.projects._projects_service import (
 from simcore_service_webserver.projects.exceptions import ProjectCopyingTrashedProjectError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -156,7 +164,7 @@ async def _get_inserted_nodes(app, project_uuid: str) -> dict[NodeID, Any]:
     return {node.node_id: node for node in await db.list_project_nodes(ProjectID(project_uuid))}
 
 
-async def _fetch_source_project(app, project_uuid: str, user_id: int) -> ProjectDict:
+async def _fetch_source_project(app, project_uuid: str, user_id: UserID) -> ProjectDict:
     """Fetches a project the same way `_prepare_project_copy` does in `_crud_api_create.py`.
 
     NOTE: the `user_project`/`template_project` fixtures return a test-helper-only
@@ -180,7 +188,7 @@ def test_remap_port_links_in_inputs_with_none_or_empty():
 
 def test_remap_port_links_in_inputs_with_dict_form():
     # SETUP
-    nodes_map: NodesMap = {NodeIDStr("old-node-id"): NodeIDStr("new-node-id")}
+    nodes_map: NodesMap = {"old-node-id": "new-node-id"}
     inputs = {
         "input_1": {"nodeUuid": "old-node-id", "output": "out_1"},
         "input_2": {"nodeUuid": "unmapped-node-id", "output": "out_1"},
@@ -201,9 +209,9 @@ def test_remap_port_links_in_inputs_with_dict_form():
 
 def test_remap_port_links_in_inputs_with_portlink_form():
     # SETUP
-    old_node_id = NodeID("38a0d401-af4b-4ea7-ab4c-5005c712a546")
-    new_node_id = NodeID("13220a1d-a569-49de-b375-904301af9295")
-    nodes_map: NodesMap = {NodeIDStr(f"{old_node_id}"): NodeIDStr(f"{new_node_id}")}
+    old_node_id = UUID("38a0d401-af4b-4ea7-ab4c-5005c712a546")
+    new_node_id = UUID("13220a1d-a569-49de-b375-904301af9295")
+    nodes_map: NodesMap = {f"{old_node_id}": f"{new_node_id}"}
     inputs = {"input_1": PortLink(nodeUuid=old_node_id, output="out_1")}
 
     # ACT
@@ -248,7 +256,7 @@ async def test_clone_project_data_raises_if_source_is_trashed(
     assert client.app
 
     # SETUP: a trashed source project must never be duplicated
-    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
     source_project["trashed"] = "2026-07-21T00:00:00+00:00"
 
     # ACT & ASSERT
@@ -257,7 +265,7 @@ async def test_clone_project_data_raises_if_source_is_trashed(
             client.app,
             source_project=source_project,
             forced_copy_project_id=None,
-            user_id=logged_user["id"],
+            user_id=UserID(logged_user["id"]),
             product_name=osparc_product_name,
             product_api_base_url="http://product.testserver.io",
             task_progress=task_progress,
@@ -278,7 +286,7 @@ async def test_clone_project_data_from_standard_project(
 
     # SETUP
     # `shared_project` is owned by `logged_user` but also shared (read-only) with `all_group`
-    source_project = await _fetch_source_project(client.app, shared_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, shared_project["uuid"], UserID(logged_user["id"]))
     assert len(source_project["accessRights"]) > 1
 
     # ACT
@@ -286,7 +294,7 @@ async def test_clone_project_data_from_standard_project(
         client.app,
         source_project=source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -340,14 +348,14 @@ async def test_clone_project_data_with_forced_project_id(
     # SETUP
     assert client.app
     forced_project_id = ProjectID(faker.uuid4())
-    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
 
     # ACT
     cloned_project = await clone_project_data(
         client.app,
         source_project=source_project,
         forced_copy_project_id=forced_project_id,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -374,12 +382,12 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     spied_with_project_locked = mocker.spy(_projects_service, "with_project_locked")
 
     # ACT: cloning a STANDARD project locks the source while copying data
-    standard_source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    standard_source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
     await clone_project_data(
         client.app,
         source_project=standard_source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -391,12 +399,14 @@ async def test_clone_project_data_locks_source_project_only_if_not_template(
     spied_with_project_locked.reset_mock()
 
     # ACT: cloning a TEMPLATE does NOT lock it (templates are not "in use")
-    template_source_project = await _fetch_source_project(client.app, template_project["uuid"], logged_user["id"])
+    template_source_project = await _fetch_source_project(
+        client.app, template_project["uuid"], UserID(logged_user["id"])
+    )
     await clone_project_data(
         client.app,
         source_project=template_source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -418,14 +428,16 @@ async def test_clone_project_data_with_template_parameters(
 ):
     # SETUP
     assert client.app
-    source_project = await _fetch_source_project(client.app, template_project_with_params["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(
+        client.app, template_project_with_params["uuid"], UserID(logged_user["id"])
+    )
 
     # ACT
     cloned_project = await clone_project_data(
         client.app,
         source_project=source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -466,14 +478,14 @@ async def test_clone_project_data_reports_progress(
     # SETUP
     assert client.app
     assert task_progress.percent == 0
-    source_project = await _fetch_source_project(client.app, user_project["uuid"], logged_user["id"])
+    source_project = await _fetch_source_project(client.app, user_project["uuid"], UserID(logged_user["id"]))
 
     # ACT
     await clone_project_data(
         client.app,
         source_project=source_project,
         forced_copy_project_id=None,
-        user_id=logged_user["id"],
+        user_id=UserID(logged_user["id"]),
         product_name=osparc_product_name,
         product_api_base_url="http://product.testserver.io",
         task_progress=task_progress,
@@ -497,8 +509,7 @@ async def test_clone_project_nodes_remaps_port_links_and_input_nodes(
     assert client.app
 
     nodes_map: NodesMap = {
-        NodeIDStr(node_id): NodeIDStr(f"11111111-1111-1111-1111-{i:012d}")
-        for i, node_id in enumerate(user_project["workbench"])
+        node_id: f"11111111-1111-1111-1111-{i:012d}" for i, node_id in enumerate(user_project["workbench"])
     }
 
     # ACT
@@ -553,6 +564,117 @@ async def test_copy_allow_guests_to_push_states_and_output_ports_copies_flag_whe
         )
         is True
     )
+
+
+#
+# CHARACTERIZATION TESTS (pin the state of the DB, not the code that produces it)
+#
+
+
+# hand-computed: a computational node sized for r5.4xlarge (16 CPU / 128 GiB)
+# with the DASK-WORKER formula: cpu = 16 - 0.1 = 15.9,
+#                              ram = int(128 GiB * 0.9) = 123695058124
+_SOURCED_SIZED_RESOURCES: dict[str, Any] = single_container_required_resources(
+    "simcore/services/comp/itis/sleeper", cpu=15.9, ram_bytes=123695058124
+)
+_PRICING_PLAN_ID = 1
+_PRICING_UNIT_ID = 2
+
+
+def _sleeper_node(nodes: dict) -> Any:
+    # the workbench fixture has TWO comp sleepers; pin one deterministically by label
+    return next(node for node in nodes.values() if node.label == "sleeper")
+
+
+async def _price_and_size_one_computational_node(
+    app, engine: AsyncEngine, project_uuid: str
+) -> tuple[str, dict[str, Any]]:
+    """Directly (no endpoints) give the project's computational node a non-default
+    pricing-unit link and hand-sized `required_resources`.
+    """
+    nodes = await _get_inserted_nodes(app, project_uuid)
+    comp_node = _sleeper_node(nodes)
+    await set_node_pricing_link(
+        engine,
+        project_uuid,
+        f"{comp_node.node_id}",
+        pricing_plan_id=_PRICING_PLAN_ID,
+        pricing_unit_id=_PRICING_UNIT_ID,
+    )
+    await set_node_required_resources(engine, project_uuid, f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES)
+    return f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES
+
+
+async def _assert_clone_kept_resources_but_lost_pricing_links(
+    app, engine: AsyncEngine, cloned_project: ProjectDict, expected_resources: dict[str, Any]
+) -> None:
+    state = await get_node_pricing_state(engine, cloned_project["uuid"])
+    assert len(state) == len(cloned_project["workbench"])
+    for node_state in state.values():
+        # ⚠️ CURRENT BEHAVIOUR: the pricing link is NOT copied. The copy-and-template
+        # part of the pricing/resources ownership rework (PR 2) will copy the source
+        # links; when that lands, update this assertion for the computational node to
+        # expect (pricing_plan_id=_PRICING_PLAN_ID, pricing_unit_id=_PRICING_UNIT_ID).
+        assert node_state.pricing_plan_id is None
+        assert node_state.pricing_unit_id is None
+    # `required_resources` ARE copied verbatim from the source node
+    nodes = await _get_inserted_nodes(app, cloned_project["uuid"])
+    comp_node = _sleeper_node(nodes)
+    assert state[comp_node.node_id].required_resources == expected_resources
+
+
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
+@pytest.mark.parametrize("source_kind", ["standard_project", "template"])
+async def test_clone_project_data_copies_required_resources_but_not_pricing_links(
+    source_kind: str,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    template_project: ProjectDict,
+    osparc_product_name: ProductName,
+    task_progress: TaskProgress,
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mock_dynamic_scheduler: None,
+    storage_subsystem_mock_override: None,
+    asyncpg_engine: AsyncEngine,
+):
+    """W6/W7: cloning (a project or a template) copies `required_resources` but
+    drops the `projects_node_to_pricing_unit` links (director-v2 would later
+    re-link the DEFAULT unit on the first pipeline update, losing the user's choice).
+    """
+    assert client.app
+    source = template_project if source_kind == "template" else user_project
+    source_uuid = source["uuid"]
+
+    # SETUP: source computational node is linked to a non-default unit and sized
+    _, sourced_resources = await _price_and_size_one_computational_node(client.app, asyncpg_engine, source_uuid)
+
+    # ACT
+    source_project = await _fetch_source_project(client.app, source_uuid, UserID(logged_user["id"]))
+    cloned_project = await clone_project_data(
+        client.app,
+        source_project=source_project,
+        forced_copy_project_id=None,
+        user_id=UserID(logged_user["id"]),
+        product_name=osparc_product_name,
+        product_api_base_url="http://product.testserver.io",
+        task_progress=task_progress,
+    )
+
+    # ASSERT: the clone's DB state
+    await _assert_clone_kept_resources_but_lost_pricing_links(
+        client.app, asyncpg_engine, cloned_project, sourced_resources
+    )
+
+    # the SOURCE project keeps its link and resources untouched
+    source_state = await get_node_pricing_state(asyncpg_engine, source_uuid)
+    linked = {
+        node_id: node_state for node_id, node_state in source_state.items() if node_state.pricing_unit_id is not None
+    }
+    assert len(linked) == 1
+    (source_node_state,) = linked.values()
+    assert source_node_state.pricing_plan_id == _PRICING_PLAN_ID
+    assert source_node_state.required_resources == sourced_resources
 
 
 async def test_copy_allow_guests_to_push_states_and_output_ports_keeps_disabled_when_source_disabled(
