@@ -299,6 +299,7 @@ typer==0.27.3
 typing-extensions==4.16.0
     # via
     #   aiodebug
+    #   anyio
     #   fast-depends
     #   faststream
     #   grpcio

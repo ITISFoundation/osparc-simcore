@@ -150,6 +150,7 @@ typer==0.27.3
     #   fastapi-cloud-cli
 typing-extensions==4.16.0
     # via
+    #   anyio
     #   fastapi
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions

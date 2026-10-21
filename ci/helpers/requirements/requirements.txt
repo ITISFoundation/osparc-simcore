@@ -55,6 +55,7 @@ starlette==1.6.0
     #   fastapi
 typing-extensions==4.16.0
     # via
+    #   anyio
     #   fastapi
     #   pydantic
     #   pydantic-core
