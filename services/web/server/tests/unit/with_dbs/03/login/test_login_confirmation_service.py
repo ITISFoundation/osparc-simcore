@@ -1,3 +1,4 @@
+import ssl
 from datetime import timedelta
 
 from aiohttp import web
@@ -42,9 +43,10 @@ async def test_confirmation_token_workflow(
     app.router.add_get("/auth/confirmation/{code}", mock_handler, name="auth_confirmation")
     request = make_mocked_request(
         "GET",
-        "https://example.com/auth/confirmation/{code}",
+        "/auth/confirmation/{code}",
         app=app,
         headers={"Host": "example.com"},
+        sslcontext=ssl.create_default_context(),
     )
 
     # Create confirmation link
@@ -57,7 +59,7 @@ async def test_confirmation_token_workflow(
     # Step 5: Verify X-Forwarded-Proto header is respected
     request_behind_proxy = make_mocked_request(
         "GET",
-        "http://example.com/auth/confirmation/{code}",
+        "/auth/confirmation/{code}",
         app=app,
         headers={"Host": "example.com", "X-Forwarded-Proto": "https"},
     )
