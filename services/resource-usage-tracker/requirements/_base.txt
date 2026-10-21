@@ -21,7 +21,7 @@ aiofiles==25.1.0
     #   aioboto3
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
@@ -538,7 +538,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-yarl==1.24.5
+yarl==1.25.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
