@@ -38,7 +38,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -268,7 +268,6 @@ typer==0.27.3
 typing-extensions==4.16.0
     # via
     #   aiodebug
-    #   anyio
     #   fast-depends
     #   faststream
     #   grpcio

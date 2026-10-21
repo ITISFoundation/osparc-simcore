@@ -72,7 +72,7 @@ botocore==1.37.3
     #   s3transfer
 botocore-stubs==1.34.69
     # via types-aiobotocore
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -484,7 +484,6 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream

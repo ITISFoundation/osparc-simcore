@@ -50,7 +50,7 @@ attrs==24.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -360,7 +360,6 @@ types-python-dateutil==2.9.0.20241003
 typing-extensions==4.16.0
     # via
     #   aiodebug
-    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream

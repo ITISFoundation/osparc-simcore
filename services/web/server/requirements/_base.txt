@@ -76,7 +76,7 @@ captcha==0.5.0
     # via -r requirements/_base.in
 celery==5.6.3
     # via -r requirements/../../../../packages/celery-library/requirements/_base.in
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   httpcore
@@ -460,7 +460,6 @@ types-python-dateutil==2.9.0.20250516
 typing-extensions==4.16.0
     # via
     #   aiodebug
-    #   anyio
     #   fast-depends
     #   faststream
     #   flexcache

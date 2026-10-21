@@ -52,7 +52,7 @@ attrs==24.2.0
     #   referencing
 bidict==0.23.1
     # via python-socketio
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -406,7 +406,6 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream

@@ -15,7 +15,7 @@ asgi-lifespan==2.1.0
     # via -r requirements/_fastapi.in
 asgiref==3.11.1
     # via opentelemetry-instrumentation-asgi
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -150,7 +150,6 @@ typer==0.27.3
     #   fastapi-cloud-cli
 typing-extensions==4.16.0
     # via
-    #   anyio
     #   fastapi
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions

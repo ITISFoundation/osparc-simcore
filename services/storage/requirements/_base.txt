@@ -86,7 +86,7 @@ celery==5.6.3
     # via
     #   -r requirements/../../../packages/celery-library/requirements/_base.in
     #   -r requirements/_base.in
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -485,7 +485,6 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fast-depends
     #   fastapi
     #   fastapi-pagination
