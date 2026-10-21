@@ -153,7 +153,7 @@ def periodic(
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         @functools.wraps(async_fun)
-        async def _run_iteration(chain: _TickChain, *args: P.args, **kwargs: P.kwargs) -> None:
+        async def _run_iteration(chain: _TickChain, /, *args: P.args, **kwargs: P.kwargs) -> None:
             call = functools.partial(async_fun, *args, **kwargs)
             tracing_config = get_current_tracing_config()
             with log_catch(_logger, reraise=True):
