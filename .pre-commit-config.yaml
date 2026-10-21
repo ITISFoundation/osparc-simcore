@@ -77,11 +77,7 @@ repos:
   - repo: https://github.com/lycheeverse/lychee.git
     rev: lychee-v0.24.2
     hooks:
-      # lychee-docker runs the pinned image directly. The `lychee` script hook
-      # derives its version via `git describe` and breaks during `git commit`,
-      # because git exports GIT_DIR into hooks and describe then targets this
-      # repo instead of the hook's cache clone.
-      - id: lychee-docker
+      - id: lychee
         name: markdown-link-checker
-        args: ["--config", "/src/.lychee.toml"]
+        args: ["--config", ".lychee.toml"]
         types_or: [markdown]
