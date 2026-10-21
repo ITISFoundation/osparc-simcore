@@ -322,7 +322,7 @@ pamqp==4.0.1
     # via aiormq
 pandas==2.3.3
     # via prometheus-api-client
-pillow==12.3.0
+pillow==13.0.0
     # via matplotlib
 prometheus-api-client==0.6.0
     # via -r requirements/_base.in
@@ -483,7 +483,6 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream

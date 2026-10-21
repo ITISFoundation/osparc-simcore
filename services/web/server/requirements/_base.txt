@@ -323,7 +323,7 @@ passlib==1.7.4
     # via -r requirements/_base.in
 phonenumbers==9.0.9
     # via -r requirements/_base.in
-pillow==12.3.0
+pillow==13.0.0
     # via captcha
 pint==0.25
     # via
@@ -459,7 +459,6 @@ types-python-dateutil==2.9.0.20250516
 typing-extensions==4.16.0
     # via
     #   aiodebug
-    #   anyio
     #   fast-depends
     #   faststream
     #   flexcache

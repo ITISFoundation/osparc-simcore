@@ -162,7 +162,7 @@ partd==1.4.2
     #   dask
 pathspec==1.0.4
     # via mypy
-pillow==12.3.0
+pillow==13.0.0
     # via bokeh
 pluggy==1.6.0
     # via
@@ -260,7 +260,6 @@ typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   mypy
     #   sqlalchemy
 urllib3==2.8.0
