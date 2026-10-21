@@ -33,7 +33,9 @@ aiosignal==1.4.0
 alembic==1.15.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-doc==0.0.5
-    # via fastapi
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -69,7 +71,6 @@ certifi==2026.10.18
 click==8.2.1
     # via
     #   rich-toolkit
-    #   typer
     #   uvicorn
 dnspython==2.9.0
     # via email-validator
@@ -400,7 +401,7 @@ tqdm==4.67.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.16.1
+typer==0.27.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi-cli
@@ -429,7 +430,6 @@ typing-extensions==4.16.0
     #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via

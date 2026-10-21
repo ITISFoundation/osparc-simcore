@@ -13,6 +13,7 @@ from service_integration import cli
 from typer.testing import CliRunner
 
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",

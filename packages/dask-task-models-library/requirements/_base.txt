@@ -16,7 +16,6 @@ click==8.3.1
     # via
     #   dask
     #   distributed
-    #   typer
 cloudpickle==3.1.2
     # via
     #   dask
@@ -126,7 +125,7 @@ toolz==1.1.0
     #   partd
 tornado==6.5.10
     # via distributed
-typer==0.24.1
+typer==0.27.3
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.16.0
     # via

@@ -40,7 +40,9 @@ aiormq==7.2.1
 aiosignal==1.4.0
     # via aiohttp
 annotated-doc==0.0.4
-    # via fastapi
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -81,7 +83,6 @@ click==8.5.0
     # via
     #   dask
     #   distributed
-    #   typer
 cloudpickle==3.1.2
     # via
     #   dask
@@ -412,7 +413,7 @@ tornado==6.5.10
     #   distributed
 tqdm==4.67.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-typer==0.20.0
+typer==0.27.3
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 types-aiobotocore==3.8.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
@@ -442,7 +443,6 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via

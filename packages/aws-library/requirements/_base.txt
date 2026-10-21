@@ -67,8 +67,6 @@ certifi==2026.10.18
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
-click==8.3.1
-    # via typer
 dnspython==2.9.0
     # via email-validator
 email-validator==2.3.0
@@ -324,7 +322,7 @@ toolz==1.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.24.1
+typer==0.27.3
     # via -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 types-aiobotocore==3.8.0
     # via -r requirements/_base.in

@@ -39,7 +39,9 @@ alembic==1.14.1
 amqp==5.3.1
     # via kombu
 annotated-doc==0.0.5
-    # via fastapi
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -97,7 +99,6 @@ click==8.2.1
     #   click-plugins
     #   click-repl
     #   rich-toolkit
-    #   typer
     #   uvicorn
 click-didyoumean==0.3.1
     # via celery
@@ -458,7 +459,7 @@ toolz==1.0.0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-typer==0.16.1
+typer==0.27.3
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -500,7 +501,6 @@ typing-extensions==4.16.0
     #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via
