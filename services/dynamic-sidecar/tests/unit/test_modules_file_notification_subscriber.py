@@ -2,10 +2,11 @@
 
 import logging
 from pathlib import Path
+from typing import Annotated, Final
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
+from annotated_types import doc
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -16,6 +17,7 @@ from models_library.rabbitmq_messages import (
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.faker_factories import deterministic_faker
 from simcore_service_dynamic_sidecar.modules.file_notification_subscriber import (
     _handle_file_notification,
     _resolve_local_path_from_storage_id,
@@ -40,7 +42,7 @@ def file_id(project_id: ProjectID, node_id: NodeID) -> str:
 
 @pytest.fixture()
 def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
+    return UserID(faker.pyint(min_value=1))
 
 
 @pytest.fixture()
@@ -146,13 +148,25 @@ async def test__handle_file_notification_skipped_cannot_process(
     mock_notify_path_change.assert_not_awaited()
 
 
+_COLLECTION_FAKER: Final[
+    Annotated[
+        Faker,
+        doc(
+            "fake values used in @pytest.mark.parametrize must be identical across xdist "
+            "workers, so they come from deterministic_faker instead of the per-worker "
+            "faker fixture"
+        ),
+    ]
+] = deterministic_faker()
+
+
 @pytest.mark.parametrize("event_type", list(FileNotificationEventType))
 @pytest.mark.parametrize(
     "mocked_file_id, skipped",
     [
-        pytest.param(f"{uuid4()}/{uuid4()}/path", True),
-        pytest.param(f"{uuid4()}/{uuid4()}/path-with.dot", True),
-        pytest.param(f"{uuid4()}/{uuid4()}/path/another-path", False),
+        pytest.param(f"{_COLLECTION_FAKER.uuid4()}/{_COLLECTION_FAKER.uuid4()}/path", True),
+        pytest.param(f"{_COLLECTION_FAKER.uuid4()}/{_COLLECTION_FAKER.uuid4()}/path-with.dot", True),
+        pytest.param(f"{_COLLECTION_FAKER.uuid4()}/{_COLLECTION_FAKER.uuid4()}/path/another-path", False),
     ],
 )
 async def test__handle_file_notification_skipped_ignored_root_directory(

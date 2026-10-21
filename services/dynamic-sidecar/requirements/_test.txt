@@ -51,6 +51,8 @@ coverage==7.16.0
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
+execnet==2.1.2
+    # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
@@ -118,11 +120,14 @@ pytest==9.1.1
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
+    #   pytest-xdist
 pytest-asyncio==1.4.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-mock==3.15.1
+    # via -r requirements/_test.in
+pytest-xdist==3.8.0
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via

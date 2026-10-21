@@ -14,6 +14,7 @@ pytest
 pytest-asyncio
 pytest-cov
 pytest-mock
+pytest-xdist
 python-dotenv
 sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs.sqlalchemy.org/en/20/orm/extensions/mypy.html
 types_aiobotocore_s3
