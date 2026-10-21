@@ -271,7 +271,7 @@ urllib3==2.8.0
     #   requests
 xyzservices==2025.11.0
     # via bokeh
-yarl==1.24.5
+yarl==1.25.1
     # via
     #   -c requirements/_base.txt
     #   aio-pika

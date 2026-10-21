@@ -341,6 +341,7 @@ types-awscrt==0.31.3
 typing-extensions==4.16.0
     # via
     #   aiodebug
+    #   anyio
     #   fast-depends
     #   fastapi
     #   faststream
