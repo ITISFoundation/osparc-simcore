@@ -1,6 +1,11 @@
 from pathlib import Path
+from typing import Any
 
-from pytest_simcore.docker_swarm import _list_owned_migration_services, _swarm_membership_token
+from pytest_simcore.docker_swarm import (
+    _get_swarm_cluster_id,
+    _list_owned_migration_services,
+    _swarm_membership_token,
+)
 from pytest_simcore.helpers.stack_names import compute_stack_names, get_checkout_token
 
 
@@ -20,6 +25,14 @@ class _FakeServices:
 class _FakeClient:
     def __init__(self, services: list[_FakeService]) -> None:
         self.services = _FakeServices(services)
+
+
+class _FakeInfoClient:
+    def __init__(self, info: dict[str, Any]) -> None:
+        self._info = info
+
+    def info(self) -> dict[str, Any]:
+        return self._info
 
 
 def test_migration_services_are_selected_by_exact_name():
@@ -73,3 +86,18 @@ def test_swarm_membership_token_is_unique_for_distinct_basetemps_sharing_their_t
     token_b = _swarm_membership_token(tmp_path / "worktrees" / "b" / ".pytest" / "tmp", xdist_worker=False)
 
     assert token_a != token_b
+
+
+def test_swarm_cluster_id_is_read_from_the_api_shaped_info_response():
+    # regression: the docker /info response nests the swarm ID as Swarm.Cluster.ID; reading a
+    # flat Swarm.ClusterID always yielded "" (the field does not exist), silently disabling the
+    # lineage cluster-ID check. the fake-swarm unit tests cannot catch this as they inject their
+    # own id callable, so pin the lookup itself against the real API shape
+    active = _FakeInfoClient({"Swarm": {"LocalNodeState": "active", "Cluster": {"ID": "swarm-1"}}})
+    assert _get_swarm_cluster_id(active) == "swarm-1"  # type: ignore[arg-type]
+
+
+def test_swarm_cluster_id_is_empty_when_out_of_swarm_mode():
+    # out of swarm mode the daemon reports no Cluster at all
+    inactive = _FakeInfoClient({"Swarm": {"LocalNodeState": "inactive"}})
+    assert _get_swarm_cluster_id(inactive) == ""  # type: ignore[arg-type]

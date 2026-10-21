@@ -214,9 +214,12 @@ def _swarm_coordinator(docker_client: docker.client.DockerClient) -> SwarmCoordi
 
 def _get_swarm_cluster_id(docker_client: docker.client.DockerClient) -> str:
     # the swarm's cluster ID, empty when the daemon is out of swarm mode: identifies the exact
-    # swarm the lineage marker was written for (see helpers/swarm_coordination.py)
+    # swarm the lineage marker was written for (see helpers/swarm_coordination.py).
+    # NOTE: `/info` nests it as Swarm.Cluster.ID (docker models SwarmInfo.cluster ->
+    # ClusterInfo.id); a flat Swarm.ClusterID does NOT exist and would read as "" always
     swarm_info: dict[str, Any] = docker_client.info().get("Swarm", {})
-    cluster_id: str = swarm_info.get("ClusterID") or ""
+    cluster_info: dict[str, Any] = swarm_info.get("Cluster") or {}
+    cluster_id: str = cluster_info.get("ID") or ""
     return cluster_id
 
 
