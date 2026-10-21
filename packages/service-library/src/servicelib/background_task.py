@@ -29,19 +29,18 @@ _periodic_creator: Final[
     Annotated[
         ContextVar[SpanContext | None],
         doc(
-            "the span that was current when the periodic loop started; iterations running "
-            "without an ambient span link to it, so tasks created by an iteration keep a "
-            "traceable origin"
+            "fallback link target for iterations running without a valid ambient span, "
+            "so tasks created by such an iteration keep a traceable origin"
         ),
     ]
 ] = ContextVar("periodic_creator", default=None)
 
 
 def _get_creator_span_context() -> SpanContext | None:
-    if (creator := _periodic_creator.get()) is not None:
-        return creator
     ambient = trace.get_current_span().get_span_context()
-    return ambient if ambient.is_valid else None
+    if ambient.is_valid:
+        return ambient
+    return _periodic_creator.get()
 
 
 @dataclass
@@ -82,7 +81,9 @@ async def _run_with_span(
     try:
         with tracer.start_as_current_span(operation_name, context=otcontext.Context(), links=links) as span:
             chain.link_target = span.get_span_context()
-            await call()
+            # log inside the span so the error log and the span both carry the failing tick
+            with log_catch(_logger, reraise=True):
+                await call()
     finally:
         _periodic_creator.reset(creator_token)
 
@@ -156,12 +157,14 @@ def periodic(
         async def _run_iteration(chain: _TickChain, /, *args: P.args, **kwargs: P.kwargs) -> None:
             call = functools.partial(async_fun, *args, **kwargs)
             tracing_config = get_current_tracing_config()
-            with log_catch(_logger, reraise=True):
-                if tracing_config is None or not tracing_config.tracing_enabled:
+            if tracing_config is None or not tracing_config.tracing_enabled:
+                with log_catch(_logger, reraise=True):
                     await call()
-                elif trace_iterations:
-                    await _run_with_span(chain, call, operation_name=operation_name, tracing_config=tracing_config)
-                else:
+            elif trace_iterations:
+                # log_catch runs inside the tick span, see _run_with_span
+                await _run_with_span(chain, call, operation_name=operation_name, tracing_config=tracing_config)
+            else:
+                with log_catch(_logger, reraise=True):
                     await _run_without_span(chain, call)
             raise _InternalTryAgain
 

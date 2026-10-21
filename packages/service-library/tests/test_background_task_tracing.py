@@ -183,3 +183,62 @@ async def test_exclusive_periodic_runs_with_tracing_disabled(
     await _run_until(three_ticks_ran, background_task)
 
     assert tick_count >= _TICKS_TO_RUN
+
+
+async def test_periodic_child_in_detached_iteration_links_to_ambient_span(
+    tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+) -> None:
+    """A periodic task created under a span links its first tick to that span.
+
+    This must hold when the creator runs detached iterations
+    (`trace_iterations=False`) and opens its own span inside one. The child links
+    to the span that is current when the child is created, not to the detached
+    loop's own creator span.
+    """
+    tracing_config, memory_exporter = tracing_config_enabled
+    assert tracing_config.tracer_provider is not None
+    instrumented_tracer = trace.get_tracer("test", tracer_provider=tracing_config.tracer_provider)
+
+    child_tick_ran = asyncio.Event()
+    child_started = False
+    child_task: asyncio.Task[None] | None = None
+
+    @periodic(interval=_POLL_INTERVAL, trace_iterations=False)
+    async def _outer() -> None:
+        nonlocal child_started, child_task
+        if child_started:
+            return
+        child_started = True
+        with instrumented_tracer.start_as_current_span("creator_span"):
+            child_task = asyncio.create_task(_child(), name="periodic-child-test")
+
+    @periodic(interval=_POLL_INTERVAL)
+    async def _child() -> None:
+        child_tick_ran.set()
+
+    with log_context(_logger, logging.DEBUG, "startup", operation_name="startup_span"):
+        outer_task = asyncio.create_task(_outer(), name="detached-outer-test")
+
+    try:
+        await asyncio.wait_for(child_tick_ran.wait(), timeout=_WAIT_TIMEOUT)
+    finally:
+        outer_task.cancel()
+        if child_task is not None:
+            child_task.cancel()
+        for task in (outer_task, child_task):
+            if task is not None:
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+    spans = memory_exporter.get_finished_spans()
+    startup_span = _get_startup_span(spans)
+    creator_spans = [s for s in spans if s.name == "creator_span"]
+    assert len(creator_spans) == 1
+    creator_span = creator_spans[0]
+
+    child_ticks = _sorted_by_start([s for s in spans if s.name.endswith("._child")])
+    assert child_ticks
+    assert [link.context.span_id for link in child_ticks[0].links] == [creator_span.context.span_id], (
+        "the child's first tick must link to the span current at its creation"
+    )
+    assert creator_span.context.span_id != startup_span.context.span_id
