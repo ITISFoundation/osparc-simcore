@@ -123,9 +123,10 @@ async def test_exclusive_periodic_ticks_do_not_chain_onto_one_trace(
 ) -> None:
     """Same as above for `exclusive_periodic`, the decorator `Monitor.setup` uses.
 
-    It nests `periodic` in `periodic`, and while the lock is held the outer iteration
-    never finishes. The outer layer adds no span, so both tasks `exclusive` starts,
-    the user ticks and the lock reacquisition, chain back to the creator span.
+    `exclusive_periodic` nests `periodic` in `periodic`. While the lock is held, the outer
+    iteration never finishes, so the outer layer opens no span at all. Both tasks that
+    `exclusive` starts then link to the creator span instead: the user ticks and the lock
+    reacquisition.
     """
     tracing_config, memory_exporter = tracing_config_enabled
     assert tracing_config.tracer_provider is not None
@@ -155,3 +156,30 @@ async def test_exclusive_periodic_ticks_do_not_chain_onto_one_trace(
     # `exclusive` waits for the first reacquisition tick before starting the work
     reacquisition_ticks = _sorted_by_start([s for s in spans if s.name.endswith("._periodic_reacquisition")])
     _assert_linked_chain(reacquisition_ticks, creator=startup_span)
+
+
+async def test_exclusive_periodic_runs_with_tracing_disabled(
+    no_tracing_config: None,
+    redis_client_sdk: RedisClientSDK,
+) -> None:
+    """A service without tracing must keep running its periodic work.
+
+    `periodic` opens no span when there is no tracing config, so it cannot link either. The
+    loop still has to tick.
+    """
+    three_ticks_ran = asyncio.Event()
+    tick_count = 0
+
+    @exclusive_periodic(redis_client_sdk, task_interval=_POLL_INTERVAL, retry_after=_POLL_INTERVAL)
+    async def _tick() -> None:
+        nonlocal tick_count
+        tick_count += 1
+        if tick_count >= _TICKS_TO_RUN:
+            three_ticks_ran.set()
+
+    with log_context(_logger, logging.DEBUG, "startup"):
+        background_task = asyncio.create_task(_tick(), name="exclusive-periodic-untraced-test")
+
+    await _run_until(three_ticks_ran, background_task)
+
+    assert tick_count >= _TICKS_TO_RUN

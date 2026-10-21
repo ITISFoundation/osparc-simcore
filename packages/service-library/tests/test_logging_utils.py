@@ -27,7 +27,7 @@ from servicelib.logging_utils import (
     log_exceptions,
     set_parent_module_log_level,
 )
-from servicelib.tracing import TracingConfig, _current_tracing_config, get_current_tracing_config
+from servicelib.tracing import TracingConfig, get_current_tracing_config
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -295,19 +295,7 @@ def test_log_context_caller_is_included_in_log(
     assert Path(__file__).name in caplog.text
 
 
-@pytest.fixture
-def no_tracing_config() -> Iterable[None]:
-    # NOTE: `_current_tracing_config` is process-wide (set once by `setup_log_tracing` and never
-    # reset), so we explicitly force/restore it here to make this test independent of test order.
-    token = _current_tracing_config.set(None)
-    try:
-        yield
-    finally:
-        _current_tracing_config.reset(token)
-
-
-# NOTE: `tracing_config_enabled` is defined in tests/conftest.py (shared with
-# tests/test_background_task_tracing.py)
+# NOTE: `no_tracing_config` and `tracing_config_enabled` are defined in tests/conftest.py
 
 
 def test_log_context_without_tracing_config_creates_no_span(

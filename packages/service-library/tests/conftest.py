@@ -135,6 +135,18 @@ async def redis_client_sdk(
 
 
 @pytest.fixture
+def no_tracing_config() -> Iterable[None]:
+    # NOTE: `_current_tracing_config` is process-wide. `setup_log_tracing` sets it once and never
+    # resets it, so this fixture sets it to None and restores it afterwards. That keeps the test
+    # independent of the tests running before it.
+    token = _current_tracing_config.set(None)
+    try:
+        yield
+    finally:
+        _current_tracing_config.reset(token)
+
+
+@pytest.fixture
 def tracing_config_enabled(faker: Faker) -> Iterable[tuple[TracingConfig, InMemorySpanExporter]]:
     """Configure tracing with an in-memory span exporter and make it the current config.
 

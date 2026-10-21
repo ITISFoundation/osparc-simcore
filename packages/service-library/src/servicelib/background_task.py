@@ -4,14 +4,20 @@ import datetime
 import functools
 import logging
 from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
+from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Annotated, Any, Final, ParamSpec
 
 from annotated_types import doc
 from common_library.async_tools import cancel_wait_task, delayed_start
+from opentelemetry import context as otcontext
+from opentelemetry import trace
+from opentelemetry.trace import Link, SpanContext
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
 from .logging_utils import log_catch, log_context
+from .tracing import TracingConfig, get_current_tracing_config
 from .utils import get_callable_namespaced_name
 
 _logger = logging.getLogger(__name__)
@@ -19,11 +25,72 @@ _logger = logging.getLogger(__name__)
 
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
 
+_periodic_creator: Final[
+    Annotated[
+        ContextVar[SpanContext | None],
+        doc(
+            "the span that was current when the periodic loop started; iterations running "
+            "without an ambient span link to it, so tasks created by an iteration keep a "
+            "traceable origin"
+        ),
+    ]
+] = ContextVar("periodic_creator", default=None)
+
+
+def _get_creator_span_context() -> SpanContext | None:
+    if (creator := _periodic_creator.get()) is not None:
+        return creator
+    ambient = trace.get_current_span().get_span_context()
+    return ambient if ambient.is_valid else None
+
+
+@dataclass
+class _TickChain:
+    """Span context that the next iteration of one periodic call links to."""
+
+    started: bool = False
+    link_target: SpanContext | None = None
+
+    def start_once(self) -> None:
+        if not self.started:
+            self.started = True
+            self.link_target = _get_creator_span_context()
+
+
+async def _run_without_span(chain: _TickChain, call: Callable[[], Awaitable[None]]) -> None:
+    chain.start_once()
+    creator_token = _periodic_creator.set(chain.link_target)
+    otel_token = otcontext.attach(otcontext.Context())
+    try:
+        await call()
+    finally:
+        otcontext.detach(otel_token)
+        _periodic_creator.reset(creator_token)
+
+
+async def _run_with_span(
+    chain: _TickChain,
+    call: Callable[[], Awaitable[None]],
+    *,
+    operation_name: str,
+    tracing_config: TracingConfig,
+) -> None:
+    chain.start_once()
+    tracer = trace.get_tracer(__name__, tracer_provider=tracing_config.tracer_provider)
+    links = [Link(chain.link_target)] if chain.link_target else []
+    creator_token = _periodic_creator.set(None)
+    try:
+        with tracer.start_as_current_span(operation_name, context=otcontext.Context(), links=links) as span:
+            chain.link_target = span.get_span_context()
+            await call()
+    finally:
+        _periodic_creator.reset(creator_token)
+
 
 class SleepUsingAsyncioEvent:
     """Sleep strategy that waits on an event to be set or sleeps."""
 
-    def __init__(self, event: "asyncio.Event") -> None:
+    def __init__(self, event: asyncio.Event) -> None:
         self.event = event
 
     async def __call__(self, delay: float | None) -> None:
@@ -48,11 +115,24 @@ def periodic(
     early_wake_up_event: Annotated[
         asyncio.Event | None, doc("when set, wakes up the function before ``interval`` elapses")
     ] = None,
+    trace_iterations: Annotated[
+        bool,
+        doc(
+            "if False, an iteration opens no span and runs with an empty tracing context. "
+            "Use it when an iteration never ends, because a span that never ends keeps "
+            "collecting every span created below it in one trace"
+        ),
+    ] = True,
 ) -> Annotated[
     Callable[[Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]],
     doc("decorator that runs the wrapped coroutine function forever"),
 ]:
-    """Calls the wrapped function periodically, or earlier when ``early_wake_up_event`` is set."""
+    """Calls the wrapped function periodically, or earlier when ``early_wake_up_event`` is set.
+
+    With tracing enabled, every iteration runs in its own root span. The first iteration links
+    to the span that is current when the loop starts, and each later one links to the iteration
+    before it. A link does not make the linked span a parent, so it does not change sampling.
+    """
 
     def _decorator(
         async_fun: Callable[P, Coroutine[Any, Any, None]],
@@ -63,6 +143,7 @@ def periodic(
             ...
 
         nap = asyncio.sleep if early_wake_up_event is None else SleepUsingAsyncioEvent(early_wake_up_event)
+        operation_name = get_callable_namespaced_name(async_fun)
 
         @retry(
             sleep=nap,
@@ -72,10 +153,21 @@ def periodic(
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         @functools.wraps(async_fun)
-        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+        async def _run_iteration(chain: _TickChain, *args: P.args, **kwargs: P.kwargs) -> None:
+            call = functools.partial(async_fun, *args, **kwargs)
+            tracing_config = get_current_tracing_config()
             with log_catch(_logger, reraise=True):
-                await async_fun(*args, **kwargs)
+                if tracing_config is None or not tracing_config.tracing_enabled:
+                    await call()
+                elif trace_iterations:
+                    await _run_with_span(chain, call, operation_name=operation_name, tracing_config=tracing_config)
+                else:
+                    await _run_without_span(chain, call)
             raise _InternalTryAgain
+
+        @functools.wraps(async_fun)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+            await _run_iteration(_TickChain(), *args, **kwargs)
 
         return _wrapper
 
