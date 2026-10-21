@@ -9,7 +9,16 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-TARGETARCH="${TARGETARCH:-amd64}"
+# TARGETARCH is provided by docker buildx (see ENV TARGETARCH in the calling Dockerfiles).
+# When running directly on a host (e.g. CI runners) it is unset: derive it from the host
+# architecture, otherwise an ARM host would fetch the x64 binary and fail to execute it.
+if [ -z "${TARGETARCH:-}" ]; then
+  case "$(uname -m)" in
+    "x86_64") TARGETARCH="amd64" ;;
+    "aarch64" | "arm64") TARGETARCH="arm64" ;;
+    *) echo "Unsupported host architecture: $(uname -m)" && exit 1 ;;
+  esac
+fi
 
 case "${TARGETARCH}" in \
   "amd64") ARCH="x64" ;; \

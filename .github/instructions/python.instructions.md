@@ -13,6 +13,10 @@ Target the Python version in `.python-version`.
   [Python Dependencies](../../requirements/python-dependencies.md).
 - Run Ruff, Pylint, and mypy through repository commands or pre-commit. Global
   tool configuration may differ from CI.
+- Pylint is not a pre-commit hook; CI runs it via `make pylint`. After editing
+  Python files, run `pylint --rcfile=.pylintrc <changed files>` before
+  finishing: a line-level `# noqa` satisfies ruff only, and pylint needs a
+  matching `# pylint: disable=` directive.
 
 ## Typing
 
@@ -37,6 +41,10 @@ Target the Python version in `.python-version`.
 - Document only public or non-obvious behavior: contracts, side effects,
   invariants, concurrency constraints. Use `Raises:` only for domain exceptions
   callers must handle.
+- Rationale for a function, fixture, or test belongs in its docstring, not in
+  a `# NOTE:` comment.
+- Do not narrate bug history or incident stories in inline comments; a single
+  factual sentence about the constraint is enough.
 - Use `Annotated[..., doc(...)]` for non-obvious parameter or return semantics.
   Import `doc` with `from annotated_types import doc`.
 
