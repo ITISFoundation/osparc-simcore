@@ -57,6 +57,12 @@ that file type or service over a general rule.
   against `git show HEAD:<file> | ruff check --stdin-filename <file> -`) and
   fix every newly introduced violation before committing.
 
+## Pull requests
+
+- When creating or updating a pull request description, start from
+  `.github/PULL_REQUEST_TEMPLATE.md` and fill its sections. User length
+  preferences apply within the sections, not as a replacement for them.
+
 ## Documentation
 
 - Prefer clear code over comments that repeat it. Write comments in plain,
