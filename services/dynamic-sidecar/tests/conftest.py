@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-positional-arguments
@@ -14,11 +15,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 import simcore_service_dynamic_sidecar
+from _pytest.monkeypatch import MonkeyPatch
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
@@ -30,9 +32,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_envfile,
 )
 from settings_library.redis import RedisSettings
-from simcore_service_dynamic_sidecar.core.reserved_space import (
-    free_reserved_disk_space,
-)
+from simcore_service_dynamic_sidecar.core import reserved_space
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_service_library_fixtures",
     "pytest_simcore.simcore_services",
     "pytest_simcore.socketio",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -398,8 +399,25 @@ def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     )
 
 
-@pytest.fixture
-def cleanup_reserved_disk_space() -> Iterator[None]:
-    free_reserved_disk_space()
+@pytest.fixture(scope="session")
+def isolated_reserved_disk_space(tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Redirects the reserved disk space file to a per-xdist-worker path. The file lives on
+    a machine-global path that every app creation writes to and the disk tests delete, so
+    concurrent xdist workers would collide on it. Requested through
+    ``cleanup_reserved_disk_space``, which only the disk tests use
+    """
+
+    worker_reserved_path = (
+        tmp_path_factory.mktemp("reserved_space") / reserved_space._RESERVED_DISK_SPACE_NAME.name  # noqa: SLF001
+    )
+    monkeypatch = MonkeyPatch()
+    monkeypatch.setattr(reserved_space, "_RESERVED_DISK_SPACE_NAME", worker_reserved_path)
     yield
-    free_reserved_disk_space()
+    monkeypatch.undo()
+
+
+@pytest.fixture
+def cleanup_reserved_disk_space(isolated_reserved_disk_space: None) -> Iterator[None]:
+    reserved_space.free_reserved_disk_space()
+    yield
+    reserved_space.free_reserved_disk_space()

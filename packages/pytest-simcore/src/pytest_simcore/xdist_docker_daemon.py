@@ -2,7 +2,9 @@
 
 Load it (`pytest_plugins = ["pytest_simcore.xdist_docker_daemon"]`) ONLY in suites running under xdist
 against ONE shared docker stack: every test then holds the daemon lock, so tests marked
-`docker_exclusive` (e.g. those listing ALL swarm services) never overlap tests of other workers.
+`docker_exclusive(reason="...")` (e.g. those listing ALL swarm services) never overlap tests of
+other workers. The `reason` kwarg is mandatory: it states why the test needs exclusive access and
+is shown in the lock diagnostics while the exclusive section runs.
 """
 
 from collections.abc import Iterator
@@ -23,8 +25,9 @@ _EXCLUSIVE_LOCK_TIMEOUT: timedelta = timedelta(minutes=15)
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
-        "docker_exclusive: this test needs exclusive access to the shared docker daemon "
-        "(no other test using the docker_daemon_access fixture running concurrently in any xdist worker)",
+        "docker_exclusive(reason): this test needs exclusive access to the shared docker daemon "
+        "(no other test using the docker_daemon_access fixture running concurrently in any xdist worker). "
+        'Usage: @pytest.mark.docker_exclusive(reason="states why exclusivity is needed")',
     )
 
 
@@ -41,15 +44,30 @@ def docker_daemon_access(
     """Takes a "read" lock (tests run concurrently) or, for `@pytest.mark.docker_exclusive`,
     a "write" lock (no other test holding this fixture runs in any worker).
 
-    No-op outside xdist.
+    No-op outside xdist (but the marker is still validated, so a bad mark fails in any mode).
+
+    Raises:
+        ValueError: `@pytest.mark.docker_exclusive` used without a `reason=` kwarg
     """
+    exclusive_marker = request.node.get_closest_marker("docker_exclusive")
+    reason: str = ""
+    if exclusive_marker is not None:
+        reason = exclusive_marker.kwargs.get("reason", "")
+        if not isinstance(reason, str) or not reason.strip():
+            msg = (
+                f"{request.node.nodeid}: @pytest.mark.docker_exclusive requires a "
+                f'`reason="..."` kwarg stating why the test needs exclusive daemon access'
+            )
+            raise ValueError(msg)
+
     if not is_xdist_worker(request):
         yield
         return
 
     token = f"{get_worker_id(request)}-{uuid4().hex}"
-    if request.node.get_closest_marker("docker_exclusive") is not None:
-        with _xdist_docker_daemon_lock.write_lock(token=token, timeout=_EXCLUSIVE_LOCK_TIMEOUT):
+    if exclusive_marker is not None:
+        # the reason lands in the writer marker file: `cat <root>/docker_daemon.rw.writer` shows who holds it and why
+        with _xdist_docker_daemon_lock.write_lock(token=f"{token} ({reason})", timeout=_EXCLUSIVE_LOCK_TIMEOUT):
             yield
     else:
         with _xdist_docker_daemon_lock.read_lock(token):
