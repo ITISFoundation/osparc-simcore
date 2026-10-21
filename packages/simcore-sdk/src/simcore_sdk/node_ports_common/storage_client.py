@@ -32,7 +32,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from . import exceptions
-from .storage_endpoint import get_base_url, get_basic_auth
+from .storage_endpoint import get_base_url, get_basic_auth_headers
 
 _logger = logging.getLogger(__name__)
 
@@ -87,7 +87,8 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
 
 
 def _session_method(session: ClientSession, method: str, url: str, **kwargs) -> RequestContextManager:
-    return session.request(method, url, auth=get_basic_auth(), **kwargs)
+    headers = {**(kwargs.pop("headers", None) or {}), **get_basic_auth_headers()}
+    return session.request(method, url, headers=headers, **kwargs)
 
 
 @asynccontextmanager
