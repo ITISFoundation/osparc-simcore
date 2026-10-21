@@ -22,7 +22,7 @@ aiofiles==25.1.0
     #   -r requirements/_base.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
@@ -514,7 +514,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-threading
 wsproto==1.2.0
     # via simple-websocket
-yarl==1.24.5
+yarl==1.25.1
     # via
     #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
