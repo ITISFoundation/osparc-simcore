@@ -56,12 +56,19 @@ class _TickChain:
             self.link_target = _get_creator_span_context()
 
 
+async def _run_without_tracing(call: Callable[[], Awaitable[None]]) -> None:
+    with log_catch(_logger, reraise=True):
+        await call()
+
+
 async def _run_without_span(chain: _TickChain, call: Callable[[], Awaitable[None]]) -> None:
     chain.start_once()
     creator_token = _periodic_creator.set(chain.link_target)
     otel_token = otcontext.attach(otcontext.Context())
     try:
-        await call()
+        # log inside the empty tracing context, so an error log carries no stale trace
+        with log_catch(_logger, reraise=True):
+            await call()
     finally:
         otcontext.detach(otel_token)
         _periodic_creator.reset(creator_token)
@@ -158,14 +165,11 @@ def periodic(
             call = functools.partial(async_fun, *args, **kwargs)
             tracing_config = get_current_tracing_config()
             if tracing_config is None or not tracing_config.tracing_enabled:
-                with log_catch(_logger, reraise=True):
-                    await call()
+                await _run_without_tracing(call)
             elif trace_iterations:
-                # log_catch runs inside the tick span, see _run_with_span
                 await _run_with_span(chain, call, operation_name=operation_name, tracing_config=tracing_config)
             else:
-                with log_catch(_logger, reraise=True):
-                    await _run_without_span(chain, call)
+                await _run_without_span(chain, call)
             raise _InternalTryAgain
 
         @functools.wraps(async_fun)
