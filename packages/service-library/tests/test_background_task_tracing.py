@@ -10,6 +10,7 @@ import logging
 from typing import Final
 
 from opentelemetry import trace
+from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from servicelib.background_task import periodic
 from servicelib.background_task_utils import exclusive_periodic
@@ -24,21 +25,40 @@ _POLL_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(milliseconds=5)
 _WAIT_TIMEOUT: Final[float] = 5.0
 
 
-def _assert_each_tick_in_own_trace(memory_exporter: InMemorySpanExporter) -> None:
-    spans = memory_exporter.get_finished_spans()
-
+def _get_startup_span(spans: tuple[ReadableSpan, ...]) -> ReadableSpan:
     startup_spans = [s for s in spans if s.name == "startup_span"]
     assert len(startup_spans) == 1
-    startup_trace_id = startup_spans[0].context.trace_id
+    return startup_spans[0]
 
-    tick_spans = [s for s in spans if s.name == "instrumented_work"]
-    assert len(tick_spans) >= _TICKS_TO_RUN
 
-    chained = [s for s in tick_spans if s.context.trace_id == startup_trace_id]
-    assert not chained, f"{len(chained)} of {len(tick_spans)} ticks chained onto the startup trace"
+def _assert_startup_trace_holds_only_startup_span(spans: tuple[ReadableSpan, ...], startup_span: ReadableSpan) -> None:
+    in_startup_trace = [s.name for s in spans if s.context.trace_id == startup_span.context.trace_id]
+    assert in_startup_trace == ["startup_span"]
 
-    tick_trace_ids = {s.context.trace_id for s in tick_spans}
-    assert len(tick_trace_ids) == len(tick_spans), "some ticks share a trace"
+
+def _sorted_by_start(spans: list[ReadableSpan]) -> list[ReadableSpan]:
+    return sorted(spans, key=lambda s: s.start_time or 0)
+
+
+def _get_tick_spans(spans: tuple[ReadableSpan, ...]) -> list[ReadableSpan]:
+    spans_by_id = {s.context.span_id: s for s in spans}
+    work_spans = [s for s in spans if s.name == "instrumented_work"]
+    assert len(work_spans) >= _TICKS_TO_RUN
+
+    ticks = []
+    for work in work_spans:
+        assert work.parent is not None, "instrumented work must run inside a tick span"
+        ticks.append(spans_by_id[work.parent.span_id])
+    return _sorted_by_start(ticks)
+
+
+def _assert_linked_chain(ticks: list[ReadableSpan], *, creator: ReadableSpan) -> None:
+    assert ticks
+    assert all(t.parent is None for t in ticks), "every tick must be a root span"
+    assert len({t.context.trace_id for t in ticks}) == len(ticks), "some ticks share a trace"
+
+    for tick, expected_target in zip(ticks, [creator, *ticks[:-1]], strict=True):
+        assert [link.context.span_id for link in tick.links] == [expected_target.context.span_id]
 
 
 async def _run_until(event: asyncio.Event, task: asyncio.Task) -> None:
@@ -61,6 +81,9 @@ async def test_periodic_ticks_do_not_chain_onto_one_trace(
     that span's trace ID, and all ticks accumulate in one trace that never
     completes. Tempo rejects such traces with TRACE_TOO_LARGE, see
     osparc-ops-environments#1116.
+
+    Each tick must instead be a root span. The first tick links to the creator span,
+    and every later tick links to the previous one.
     """
     tracing_config, memory_exporter = tracing_config_enabled
     assert tracing_config.tracer_provider is not None
@@ -88,7 +111,10 @@ async def test_periodic_ticks_do_not_chain_onto_one_trace(
 
     await _run_until(three_ticks_ran, background_task)
 
-    _assert_each_tick_in_own_trace(memory_exporter)
+    spans = memory_exporter.get_finished_spans()
+    startup_span = _get_startup_span(spans)
+    _assert_startup_trace_holds_only_startup_span(spans, startup_span)
+    _assert_linked_chain(_get_tick_spans(spans), creator=startup_span)
 
 
 async def test_exclusive_periodic_ticks_do_not_chain_onto_one_trace(
@@ -98,7 +124,8 @@ async def test_exclusive_periodic_ticks_do_not_chain_onto_one_trace(
     """Same as above for `exclusive_periodic`, the decorator `Monitor.setup` uses.
 
     It nests `periodic` in `periodic`, and while the lock is held the outer iteration
-    never finishes, so anything it leaves current is inherited by every inner tick.
+    never finishes. The outer layer adds no span, so both tasks `exclusive` starts,
+    the user ticks and the lock reacquisition, chain back to the creator span.
     """
     tracing_config, memory_exporter = tracing_config_enabled
     assert tracing_config.tracer_provider is not None
@@ -120,4 +147,11 @@ async def test_exclusive_periodic_ticks_do_not_chain_onto_one_trace(
 
     await _run_until(three_ticks_ran, background_task)
 
-    _assert_each_tick_in_own_trace(memory_exporter)
+    spans = memory_exporter.get_finished_spans()
+    startup_span = _get_startup_span(spans)
+    _assert_startup_trace_holds_only_startup_span(spans, startup_span)
+    _assert_linked_chain(_get_tick_spans(spans), creator=startup_span)
+
+    # `exclusive` waits for the first reacquisition tick before starting the work
+    reacquisition_ticks = _sorted_by_start([s for s in spans if s.name.endswith("._periodic_reacquisition")])
+    _assert_linked_chain(reacquisition_ticks, creator=startup_span)
