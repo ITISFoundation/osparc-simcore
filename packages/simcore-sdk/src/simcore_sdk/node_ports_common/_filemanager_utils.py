@@ -27,7 +27,7 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from . import exceptions, storage_client
-from .storage_endpoint import get_basic_auth, is_storage_secure
+from .storage_endpoint import get_basic_auth_headers, is_storage_secure
 
 _logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ async def complete_upload(
     async with session.post(
         _get_https_link_if_storage_secure(f"{upload_completion_link}"),
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
-        auth=get_basic_auth(),
+        headers=get_basic_auth_headers(),
     ) as resp:
         resp.raise_for_status()
         # now poll for state
@@ -114,7 +114,7 @@ async def complete_upload(
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
             with attempt:
-                async with session.post(state_url, auth=get_basic_auth()) as resp:
+                async with session.post(state_url, headers=get_basic_auth_headers()) as resp:
                     resp.raise_for_status()
                     future_enveloped = TypeAdapter(Envelope[FileUploadCompleteFutureResponse]).validate_python(
                         await resp.json()
@@ -169,7 +169,7 @@ async def abort_upload(session: ClientSession, abort_upload_link: AnyUrl, *, rer
     try:
         async with session.post(
             _get_https_link_if_storage_secure(f"{abort_upload_link}"),
-            auth=get_basic_auth(),
+            headers=get_basic_auth_headers(),
         ) as resp:
             resp.raise_for_status()
     except ClientError:

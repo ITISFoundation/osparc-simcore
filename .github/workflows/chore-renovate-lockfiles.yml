@@ -29,6 +29,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+    env:
+      PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
     steps:
       - name: checkout PR branch
         uses: actions/checkout@v7.0.1
@@ -43,8 +45,6 @@ jobs:
           expose-github-runtime: 'false'
 
       - name: re-run make reqs per changed directory, pinning the versions Renovate chose
-        env:
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
