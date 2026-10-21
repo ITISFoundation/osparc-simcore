@@ -74,10 +74,24 @@ repos:
     hooks:
       - id: actionlint
         name: actionlint
+  - repo: local
+    hooks:
+      - id: check-lychee-version-sync
+        name: check lychee version sync
+        language: script
+        entry: scripts/precommit/check_lychee_version_sync.py
+        files: ^\.pre-commit-config\.yaml$
+        pass_filenames: false
   - repo: https://github.com/lycheeverse/lychee.git
     rev: lychee-v0.24.2
     hooks:
       - id: lychee
         name: markdown-link-checker
-        args: ["--config", ".lychee.toml"]
+        # LYCHEE_VERSION must stay the first argument and must match `rev`, so the
+        # script hook does not infer its version with `git describe`. That inference
+        # fails during `git commit` because git exports GIT_DIR into hooks and the
+        # describe then targets this repo instead of the hook's cache clone.
+        # `pre-commit autoupdate` does not bump this argument; the
+        # check-lychee-version-sync hook above keeps the two in sync.
+        args: ["LYCHEE_VERSION=0.24.2", "--config", ".lychee.toml"]
         types_or: [markdown]
