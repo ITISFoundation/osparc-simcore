@@ -75,7 +75,6 @@ charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via
-    #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   flask
 coverage==7.16.0

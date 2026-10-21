@@ -60,9 +60,7 @@ cfn-lint==1.41.0
 charset-normalizer==3.4.6
     # via requests
 click==8.3.1
-    # via
-    #   -c requirements/_base.txt
-    #   flask
+    # via flask
 coverage==7.16.0
     # via
     #   -r requirements/_test.in

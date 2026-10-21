@@ -55,7 +55,6 @@ click==8.3.1
     #   click-didyoumean
     #   click-plugins
     #   click-repl
-    #   typer
 click-didyoumean==0.3.1
     # via celery
 click-plugins==1.1.1.2
@@ -295,7 +294,7 @@ toolz==1.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.24.1
+typer==0.27.3
     # via -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.16.0
     # via

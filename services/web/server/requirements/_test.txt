@@ -20,7 +20,10 @@ alembic==1.8.1
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 annotated-doc==0.0.5
-    # via fastapi
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+    #   typer
 annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
@@ -61,7 +64,6 @@ click==8.2.1
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   rich-toolkit
-    #   typer
     #   uvicorn
 coverage==7.16.0
     # via
@@ -363,7 +365,7 @@ tenacity==8.5.0
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-typer==0.16.1
+typer==0.27.3
     # via
     #   -c requirements/_base.txt
     #   fastapi-cli
@@ -391,7 +393,6 @@ typing-extensions==4.16.0
     #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via
