@@ -11,9 +11,7 @@ bump2version==1.0.1
 cfgv==3.5.0
     # via pre-commit
 click==8.3.1
-    # via
-    #   black
-    #   typer
+    # via black
 dill==0.4.1
     # via pylint
 distlib==0.4.0
@@ -84,7 +82,7 @@ shellingham==1.5.4
     # via typer
 tomlkit==0.14.0
     # via pylint
-typer==0.24.1
+typer==0.27.3
     # via -r requirements/_tools.in
 typing-extensions==4.16.0
     # via

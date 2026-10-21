@@ -7,7 +7,7 @@ import json
 import os
 import shutil
 import subprocess
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -67,24 +67,21 @@ def jupytermath_repo(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture
-def run_program_in_repo(tmp_path: Path, jupytermath_repo: Path) -> Iterable[Callable]:
-    runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmp_path) as workdir:
-        shutil.copytree(jupytermath_repo, workdir, dirs_exist_ok=True)
-        os.system(f"ls -la {workdir}")
+def run_program_in_repo(isolated_cli_runner: CliRunner, tmp_path: Path, jupytermath_repo: Path) -> Callable:
+    shutil.copytree(jupytermath_repo, tmp_path, dirs_exist_ok=True)
 
-        def _invoke(*cmd) -> tuple[Path, Result]:
-            print(
-                "RUNNING",
-                "simcore-service-integrator",
-                " ".join(cmd),
-                f"at {workdir=}",
-            )
-            print("ENV:", runner.make_env())
-            result = runner.invoke(cli.app, list(cmd))
-            return Path(workdir), result
+    def _invoke(*cmd) -> tuple[Path, Result]:
+        print(
+            "RUNNING",
+            "simcore-service-integrator",
+            " ".join(cmd),
+            f"at {tmp_path=}",
+        )
+        print("ENV:", isolated_cli_runner.make_env())
+        result = isolated_cli_runner.invoke(cli.app, list(cmd))
+        return tmp_path, result
 
-        yield _invoke
+    return _invoke
 
 
 @pytest.fixture

@@ -6,14 +6,13 @@ import traceback
 from pprint import pprint
 
 import pytest
-from click.testing import Result
 from common_library.serialization import model_dump_with_secrets
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_sidecar.cli import main
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 pytest_simcore_core_services_selection = [
     "rabbit",

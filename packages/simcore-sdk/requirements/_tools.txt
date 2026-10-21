@@ -10,7 +10,6 @@ cfgv==3.5.0
     # via pre-commit
 click==8.3.1
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
 dill==0.4.1
