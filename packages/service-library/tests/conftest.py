@@ -127,6 +127,14 @@ async def get_in_process_redis_client_sdk(
 
 
 @pytest.fixture
+async def redis_client_sdk(
+    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
+) -> AsyncIterator[RedisClientSDK]:
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
+        yield client
+
+
+@pytest.fixture
 def tracing_config_enabled(faker: Faker) -> Iterable[tuple[TracingConfig, InMemorySpanExporter]]:
     """Configure tracing with an in-memory span exporter and make it the current config.
 

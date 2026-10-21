@@ -12,7 +12,9 @@ from typing import Final
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from servicelib.background_task import periodic
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
+from servicelib.redis import RedisClientSDK
 from servicelib.tracing import TracingConfig
 
 _logger = logging.getLogger(__name__)
@@ -89,13 +91,14 @@ async def test_periodic_ticks_do_not_chain_onto_one_trace(
     _assert_each_tick_in_own_trace(memory_exporter)
 
 
-async def test_nested_periodic_ticks_do_not_chain_onto_one_trace(
+async def test_exclusive_periodic_ticks_do_not_chain_onto_one_trace(
     tracing_config_enabled: tuple[TracingConfig, InMemorySpanExporter],
+    redis_client_sdk: RedisClientSDK,
 ) -> None:
-    """Same as above for a `periodic` nested in a `periodic`, the `exclusive_periodic` shape.
+    """Same as above for `exclusive_periodic`, the decorator `Monitor.setup` uses.
 
-    The outer iteration never finishes while the inner loop runs, so anything it
-    leaves current is inherited by every inner tick.
+    It nests `periodic` in `periodic`, and while the lock is held the outer iteration
+    never finishes, so anything it leaves current is inherited by every inner tick.
     """
     tracing_config, memory_exporter = tracing_config_enabled
     assert tracing_config.tracer_provider is not None
@@ -104,20 +107,16 @@ async def test_nested_periodic_ticks_do_not_chain_onto_one_trace(
     tick_count = 0
     instrumented_tracer = trace.get_tracer("test", tracer_provider=tracing_config.tracer_provider)
 
-    @periodic(interval=_POLL_INTERVAL)
-    async def _inner_tick() -> None:
+    @exclusive_periodic(redis_client_sdk, task_interval=_POLL_INTERVAL, retry_after=_POLL_INTERVAL)
+    async def _tick() -> None:
         nonlocal tick_count
         with instrumented_tracer.start_as_current_span("instrumented_work"):
             tick_count += 1
             if tick_count >= _TICKS_TO_RUN:
                 three_ticks_ran.set()
 
-    @periodic(interval=_POLL_INTERVAL)
-    async def _outer_tick() -> None:
-        await _inner_tick()
-
     with log_context(_logger, logging.DEBUG, "startup", operation_name="startup_span"):
-        background_task = asyncio.create_task(_outer_tick(), name="nested-periodic-tick-test")
+        background_task = asyncio.create_task(_tick(), name="exclusive-periodic-tick-test")
 
     await _run_until(three_ticks_ran, background_task)
 
