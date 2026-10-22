@@ -1,9 +1,7 @@
 """Names of the docker objects the integration tests deploy.
 
-Stack and service names are global inside a docker daemon, so two pytest sessions running
-from different checkouts of this repo on one machine (e.g. two git worktrees) must not deploy
-under the same names. Every checkout deploys its stacks under its dev slot
-(``pytest-s<N>-{core,ops}``, see pytest_simcore.helpers.dev_slot and scripts/dev_slot.py).
+Stack names are daemon-global, so each checkout deploys under its dev slot
+(``pytest-sN-{core,ops}``, see pytest_simcore.helpers.dev_slot).
 
 Stack names stay within ``MAX_STACK_NAME_LEN`` so that the names ``docker stack deploy``
 derives from them (``{stack}_{service}`` and ``{stack}_{network}``) each remain a valid

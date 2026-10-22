@@ -59,9 +59,8 @@ def env_vars_for_docker_compose(
     """
     Loads and extends .env-devel returning all environment variables key=value
 
-    The stacks deploy under this checkout's dev slot (see pytest_simcore.helpers.dev_slot): its
-    variables (host ports, ...) are defined ahead of .env-devel, whose ${VAR:-default} values
-    (e.g. S3_ENDPOINT) interpolate them.
+    The slot's variables (host ports, ...) are prepended to .env-devel so that
+    its ${VAR:-default} values (e.g. S3_ENDPOINT) resolve to this checkout's slot.
 
     NOTE: that these are then env-vars used in the services started in the
     integration tests!
@@ -80,7 +79,7 @@ def env_vars_for_docker_compose(
         verbose=True,
         interpolate=True,  # NOTE: This resolves expressions as VAR=$ENVVAR
     )
-    env_devel |= slot_env  # .env-devel re-defines some of them with their slot-0 defaults
+    env_devel |= slot_env  # .env-devel redefines some of them with slot-0 values
 
     # These are overrides to .env-devel or an extension to them
     env_devel["LOG_LEVEL"] = "DEBUG"
@@ -92,8 +91,7 @@ def env_vars_for_docker_compose(
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
 
-    # slot-scoped stack names: stack names are global inside the docker daemon, so
-    # every checkout deploys its own (see pytest_simcore.helpers.dev_slot)
+    # stack names are daemon-global: one pair per slot
     core_stack_name, ops_stack_name = dev_slot.pytest_stack_names(slot)
     env_devel["SWARM_STACK_NAME"] = core_stack_name
     env_devel["SWARM_OPS_STACK_NAME"] = ops_stack_name
@@ -133,7 +131,7 @@ def env_vars_for_docker_compose(
     if "DOCKER_REGISTRY" not in os.environ:
         env_devel["DOCKER_REGISTRY"] = "local"
     if "DOCKER_IMAGE_TAG" not in os.environ:
-        # images built by `make build` in this checkout's slot; CI loads plain 'production' images
+        # local builds are tagged per slot; CI loads plain 'production' images
         env_devel["DOCKER_IMAGE_TAG"] = "production" + ("" if is_ci else slot_env["LOCAL_IMAGE_TAG_SUFFIX"])
 
     # ensure we do not use the bucket of simcore or so
@@ -391,7 +389,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -
 def _fix_s3_endpoint_to_host(service_environs: dict[str, str]) -> dict[str, str]:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work.
 
-    Keeps the port: it is the host port of the dev slot the tests deploy in.
+    Keeps the port, which is the slot's S3 host port.
     """
     if "S3_ENDPOINT" in service_environs:
         port = urlsplit(service_environs["S3_ENDPOINT"]).port

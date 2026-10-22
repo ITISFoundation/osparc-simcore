@@ -86,9 +86,8 @@ export STATIC_WEBSERVER_API_VERSION := $(shell cat $(CURDIR)/services/static-web
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
-# swarm stacks, host ports and local image tags of this checkout's dev slot: several checkouts
-# (e.g. git worktrees) can deploy side by side on one docker daemon (see scripts/dev_slot.py).
-# The slot is cached in .env as OSPARC_DEV_SLOT; pass slot=N to move this checkout to slot N.
+# Stack names, host ports and image tag suffix of this checkout's dev slot
+# (see docs/parallel-worktrees.md). Pass slot=N to move the checkout to slot N.
 DEV_SLOT_SCRIPT := python3 $(CURDIR)/scripts/dev_slot.py
 $(foreach assignment,\
 	$(shell $(DEV_SLOT_SCRIPT) env $(if $(slot),--slot $(slot),--env-file $(CURDIR)/.env) --format make),\
@@ -527,7 +526,7 @@ up-latest:
 
 
 .PHONY: down leave
-down: ## Stops and removes the stacks of this checkout's dev slot (other checkouts' stacks are left running)
+down: ## Stops and removes this checkout's stacks
 	# Removing stacks of dev slot $(OSPARC_DEV_SLOT) in reverse order to creation
 	-@$(foreach stack,\
 		$(filter $(shell docker stack ls --format={{.Name}} 2>/dev/null),$(SWARM_STACK_NAME) $(SWARM_VENDORS_STACK_NAME) $(SWARM_OPS_STACK_NAME)),\
@@ -546,7 +545,7 @@ endif
 	-@docker network rm ${SWARM_STACK_NAME}_default 2>/dev/null || true
 	-@docker network rm ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
-leave: ## Forces to stop all services, networks, etc by the node leaving the swarm. Refuses while stacks of other checkouts run (pass force=1 to override)
+leave: ## Forces to stop all services, networks, etc by the node leaving the swarm. Refuses if other checkouts have stacks, unless force=1
 	@others=$$(docker stack ls --format '{{.Name}}' 2>/dev/null \
 		| grep --invert-match --line-regexp --fixed-strings \
 			-e $(SWARM_STACK_NAME) -e $(SWARM_OPS_STACK_NAME) -e $(SWARM_VENDORS_STACK_NAME) || true); \
@@ -683,14 +682,14 @@ node_modules: package.json
 nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
-.env: .env-devel ## creates .env file from defaults in .env-devel and leases this checkout's dev slot
+.env: .env-devel ## creates .env file from defaults in .env-devel and leases the dev slot
 	$(if $(wildcard $@), \
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 	@$(_lease_dev_slot)
 
-# Leases (or re-validates) this checkout's dev slot and caches it in .env. The slot-derived
-# variables of this make run were computed from the cached value: stop if the lease moved it.
+# Leases the dev slot and writes it to .env. This make run computed its variables
+# from the previous value, so it stops if the slot changed.
 define _lease_dev_slot
 leased=$$($(DEV_SLOT_SCRIPT) lease --checkout $(CURDIR) --env-file $(CURDIR)/.env $(if $(slot),--slot $(slot))); \
 if [ "$$leased" != "$(OSPARC_DEV_SLOT)" ]; then \

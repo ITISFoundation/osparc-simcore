@@ -1,14 +1,9 @@
-"""The per-checkout dev slot (scripts/dev_slot.py) as seen by the integration test fixtures.
+"""Dev slot of the checkout for the integration tests (see scripts/dev_slot.py).
 
-Several checkouts of this repo (e.g. git worktrees) share one docker daemon through numbered
-dev slots: stack names, host-published ports and local image tags are derived from the slot
-the checkout leases. The slot logic lives in a stdlib-only script at the repo root because the
-root Makefile runs it before any virtualenv exists; this module loads that very file, so make
-and pytest share one implementation.
+Loads scripts/dev_slot.py so that make and pytest use the same code.
 
-The integration tests deploy under the checkout's slot (stacks ``pytest-s<N>-{core,ops}``,
-the slot's host ports), so they cannot run while the dev stack of the *same* checkout is up
-(``make down`` first); they run side by side with any other checkout.
+The tests deploy ``pytest-sN-{core,ops}`` on the slot's host ports. They can
+run next to other checkouts, but not next to this checkout's dev stack.
 """
 
 import functools
@@ -25,7 +20,7 @@ _DEV_SLOT_SCRIPT: Final[Path] = Path("scripts") / "dev_slot.py"
 
 
 class DevSlotMismatchError(RuntimeError):
-    """The slot cached in .env (images built for it) is no longer the one this checkout holds"""
+    """Another checkout holds the slot cached in .env, which the images were built for"""
 
 
 @functools.cache
@@ -40,11 +35,10 @@ def load_dev_slot_module(repo_dir: Path) -> ModuleType:
 
 
 def lease_checkout_slot(repo_dir: Path, *, accept_moved_slot: bool, run_docker: Callable | None = None) -> int:
-    """Leases (or re-uses) the dev slot of this checkout
+    """Returns the checkout's slot, leasing one if needed
 
-    The slot cached in the repo-root .env by `make .env` is preferred. When the lease returns
-    another one, images built by make (tagged for the cached slot) would not match: this fails
-    unless ``accept_moved_slot`` (e.g. in CI, where no slot was cached beforehand).
+    Prefers the slot cached in .env. Getting a different slot fails unless
+    ``accept_moved_slot``, because the local images are tagged for the cached slot.
 
     Raises:
         DevSlotMismatchError: the cached slot is held by another checkout
@@ -54,8 +48,8 @@ def lease_checkout_slot(repo_dir: Path, *, accept_moved_slot: bool, run_docker: 
     slot: int = dev_slot.lease(repo_dir, preferred=cached, run=run_docker or dev_slot.run_docker)
     if cached is not None and slot != cached and not accept_moved_slot:
         msg = (
-            f"this checkout's dev slot {cached} (cached in .env) is now held by another checkout and "
-            f"the tests would run in slot {slot}: delete .env and run `make .env` to re-lease, then rebuild"
+            f"dev slot {cached} from .env is held by another checkout, the tests would use slot {slot}. "
+            "Delete .env, run `make .env` and rebuild the images"
         )
         raise DevSlotMismatchError(msg)
     return slot
@@ -64,9 +58,8 @@ def lease_checkout_slot(repo_dir: Path, *, accept_moved_slot: bool, run_docker: 
 def find_foreign_port_publishers(
     docker_client: docker.client.DockerClient, ports: Iterable[int], own_stack_names: Iterable[str]
 ) -> dict[int, str]:
-    """Maps each of ``ports`` already published on the host by anything else than the
-    ``own_stack_names`` stacks (e.g. this checkout's dev stack) to the publishing service or container
-    """
+    """Returns {port: publisher} for ``ports`` published by services or containers
+    outside ``own_stack_names``"""
     wanted = set(ports)
     own = set(own_stack_names)
     publishers: dict[int, str] = {}

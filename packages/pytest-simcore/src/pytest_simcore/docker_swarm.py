@@ -554,14 +554,13 @@ def _prepare_deploy(
 
 
 def _assert_host_ports_are_free(docker_client: docker.client.DockerClient, stacks: list[tuple[str, str, Path]]) -> None:
-    # the stacks publish the host ports of this checkout's dev slot: they are taken when this
-    # checkout's dev stack (`make up-*`) is still up
+    # the test stacks use the slot's host ports, so this checkout's dev stack must be down
     wanted = set().union(*(_published_host_ports(compose_file) for _, _, compose_file in stacks))
     if taken := find_foreign_port_publishers(docker_client, wanted, [stack_name for _, stack_name, _ in stacks]):
         details = ", ".join(f"{port} by {owner}" for port, owner in sorted(taken.items()))
         pytest.exit(
-            f"host ports of this checkout's dev slot are already published ({details}): stop this checkout's "
-            "dev stack (`make down`) or run the tests from another checkout (e.g. a git worktree)",
+            f"host ports of this checkout's dev slot are in use ({details}). "
+            "Run `make down` or run the tests from another worktree",
             returncode=pytest.ExitCode.USAGE_ERROR,
         )
 
