@@ -252,7 +252,12 @@ def test_hook_json_targets_copilot_contract() -> None:
     config = json.loads((SCRIPT.parent.parent / "block-secrets-access.json").read_text())
     assert config["version"] == 1
     (entry,) = config["hooks"]["preToolUse"]
-    assert entry["command"] == ".github/hooks/scripts/block-secrets-access.py"
+    # The Copilot harness process may lack uv on PATH, so the command must fall
+    # back to python3 instead of relying on the shebang alone.
+    repo_root = SCRIPT.parent.parent.parent.parent
+    for field in ("command", "bash"):
+        assert "command -v uv" in entry[field]
+        assert f"exec python3 {SCRIPT.relative_to(repo_root)}" in entry[field]
     assert "timeoutSec" in entry
     assert "timeout" not in entry
 
