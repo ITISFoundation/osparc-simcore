@@ -6,8 +6,9 @@
   ],
   "dependencyDashboard": true,
   "prCreation": "approval",
-  "platformAutomerge": true,
-  "automerge": true,
+  // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
+  // once approved (see .github/mergify.yml), like any other PR
+  "automerge": false,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   // Tools Renovate installs for pip-compile and its post-upgrade task; keep in sync
@@ -18,7 +19,8 @@
     "uv": "0.13.0"
   },
   "labels": [
-    "t:maintenance"
+    "t:maintenance",
+    "🤖-automerge"
   ],
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": true
@@ -91,8 +93,7 @@
       "groupName": "packages deps",
       "minimumReleaseAge": "3 days",
       "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "prCreation": "approval"
     },
     {
       "description": "Services: upgrade slower / more conservative",
@@ -102,8 +103,7 @@
       "groupName": "services deps",
       "minimumReleaseAge": "14 days",
       "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "prCreation": "approval"
     },
     {
       "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",
@@ -130,8 +130,7 @@
       ],
       "groupName": "docker images",
       "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "prCreation": "approval"
     }
   ]
 }
