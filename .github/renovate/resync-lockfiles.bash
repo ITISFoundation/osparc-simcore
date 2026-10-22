@@ -27,10 +27,17 @@ fi
 
 cd "$(git rev-parse --show-toplevel)"
 
-# Lines without a version (e.g. lock file maintenance) carry nothing to propagate
+# Lines without a version (e.g. lock file maintenance) carry nothing to propagate.
+# Renovate lists one upgrade per lockfile, so a branch can carry the same package at
+# several versions (e.g. a security fix: the lowest fixed version for vulnerable
+# lockfiles, a newer one for the others). uv cannot satisfy two exact pins of one
+# package, so only the highest version of each (PEP 503-normalized) name is kept.
 PINS=$(tr -d ' \r' <"$PINS_FILE" |
   { grep -E '^[A-Za-z0-9][A-Za-z0-9._-]*(\[[^]]+\])?==[A-Za-z0-9._+!-]+$' || true; } |
-  sort -u | tr '\n' ' ')
+  awk -F'==' '{ name = tolower($1); sub(/\[[^]]*\]/, "", name); gsub(/[-_.]+/, "-", name); print name "\t" $2 "\t" $0 }' |
+  sort -t "$(printf '\t')" -k1,1 -k2,2V |
+  awk -F'\t' '{ highest[$1] = $3 } END { for (name in highest) print highest[name] }' |
+  sort | tr '\n' ' ')
 PINS="${PINS% }"
 if [[ -z "$PINS" ]]; then
   echo "No version pins to propagate"
