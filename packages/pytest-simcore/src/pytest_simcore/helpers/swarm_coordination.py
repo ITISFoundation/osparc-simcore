@@ -35,24 +35,30 @@ import os
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import Final
+from typing import Annotated, Final
 
+from annotated_types import doc
 from filelock import FileLock
 
 _logger: Final[logging.Logger] = logging.getLogger(__name__)
 
-# values of the lineage marker: who is responsible for (leaving) this swarm
-_LINEAGE_PYTEST: Final[str] = "pytest"
-_LINEAGE_EXTERNAL: Final[str] = "external"
+_LINEAGE_PYTEST: Final[Annotated[str, doc("swarm lineage marker: pytest owns it and may leave it")]] = "pytest"
+_LINEAGE_EXTERNAL: Final[Annotated[str, doc("swarm lineage marker: the swarm is the user's, never leave it")]] = (
+    "external"
+)
 
 _MEMBERS_DIR_NAME: Final[str] = "members"
 _LINEAGE_FILE_NAME: Final[str] = "swarm_lineage"
 _LOCK_FILE_NAME: Final[str] = "swarm.lock"
 _COORDINATION_ROOT_NAME: Final[str] = "pytest-simcore"
 _DAEMON_DIR_PREFIX: Final[str] = "daemon-"
-_DAEMON_ID_HASH_LEN: Final[int] = 12
+_DAEMON_ID_HASH_LEN: Final[
+    Annotated[int, doc("hex chars of the daemon-ID hash naming the per-daemon coordination dir")]
+] = 12
 
-_DEFAULT_LOCK_TIMEOUT: Final[float] = 5 * 60  # a swarm init takes ~15 s max, so this is slack
+_DEFAULT_LOCK_TIMEOUT: Final[
+    Annotated[float, doc("lock wait budget: a swarm init takes ~15 s max, so this is slack")]
+] = 5 * 60
 
 
 def pid_is_alive(pid: int) -> bool:

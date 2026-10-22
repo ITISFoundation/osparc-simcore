@@ -12,7 +12,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterat
 from contextlib import suppress
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import aiodocker
 import docker
@@ -21,6 +21,7 @@ import docker.models.networks
 import pytest
 import pytest_asyncio
 import yaml
+from annotated_types import doc
 from common_library.dict_tools import copy_from_dict
 from docker.errors import APIError
 from faker import Faker
@@ -55,13 +56,19 @@ _logger: logging.Logger = logging.getLogger(__name__)
 _DOCKER_STACK_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=8)
 _DOCKER_SWARM_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=2)
 
-# set when this session joined the swarm, so `pytest_sessionfinish` releases membership only
-# for sessions that actually took it
-_SWARM_JOINED_STASH_KEY: Final[pytest.StashKey[bool]] = pytest.StashKey()
+_SWARM_JOINED_STASH_KEY: Final[
+    Annotated[
+        pytest.StashKey[bool],
+        doc("set when this session joined the swarm: sessionfinish releases membership only for sessions that took it"),
+    ]
+] = pytest.StashKey()
 
-# length of the run-dir digest in the swarm membership token (collision headroom for
-# file names of distinct runs while staying short)
-_MEMBERSHIP_TOKEN_HASH_LEN: Final[int] = 12
+_MEMBERSHIP_TOKEN_HASH_LEN: Final[
+    Annotated[
+        int,
+        doc("run-dir digest length in the swarm membership token: collision headroom, short names"),
+    ]
+] = 12
 
 
 class _ResourceStillNotRemovedError(Exception):
