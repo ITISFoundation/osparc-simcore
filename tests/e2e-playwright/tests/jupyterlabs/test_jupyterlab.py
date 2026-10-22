@@ -32,6 +32,7 @@ _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
 
 _DEFAULT_TAB_TO_WAIT_FOR: Final[str] = "README.ipynb"
 _SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {}
+_WAITING_FOR_TAB_TO_APPEAR: Final[int] = 1 * MINUTE
 
 
 @dataclass
@@ -109,7 +110,7 @@ def test_jupyterlab(
         iframe.get_by_role(
             "tab",
             name=_SERVICE_NAME_TAB_TO_WAIT_FOR.get(service_key, _DEFAULT_TAB_TO_WAIT_FOR),
-        ).wait_for(state="visible")
+        ).wait_for(state="visible", timeout=_WAITING_FOR_TAB_TO_APPEAR)
     if large_file_size:
         create_files_in_jupyter(iframe, large_file_size, large_file_block_size)
         # NOTE: this is to let some tester see something
