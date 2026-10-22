@@ -11,9 +11,10 @@
   "automerge": false,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
-  // Tools Renovate installs for pip-compile and its post-upgrade task; keep in sync
-  // with requirements/UV_VERSION and requirements/PYTHON_VERSION
-  // (checked by tests/environment-setup/test_used_{uv,python}.py)
+  // Tools Renovate installs for pip-compile and its post-upgrade task. uv is updated
+  // together with requirements/UV_VERSION by the "uv" group below; python is updated
+  // by hand with requirements/PYTHON_VERSION
+  // (both checked by tests/environment-setup/test_used_{uv,python}.py)
   "constraints": {
     "python": "~=3.14.0",
     "uv": "0.13.0"
@@ -22,6 +23,10 @@
     "t:maintenance",
     "🤖-automerge"
   ],
+  // GitHub's Dependabot alerts cover transitive dependencies but briefly vanish while
+  // GitHub rescans after a push; OSV covers direct dependencies only, independently
+  // of GitHub, and also blocks updates to known-malicious versions
+  "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": true
   },
@@ -37,6 +42,63 @@
       "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
     ]
   },
+  "customManagers": [
+    {
+      "description": "uv version used by the Makefile, CI and the base images. Read as the PyPI package 'uv' (like the constraints above), so normal and security updates (OSV knows PyPI, not the Docker image) change all of them together",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^requirements/UV_VERSION$/"
+      ],
+      "matchStrings": [
+        "(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "uv",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    },
+    {
+      "description": "Same uv version in the Dockerfiles (ARG UV_VERSION feeding FROM ghcr.io/astral-sh/uv:${UV_VERSION}), whose image tags follow the PyPI releases",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/"
+      ],
+      "matchStrings": [
+        "ARG UV_VERSION=\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)\"?"
+      ],
+      "depNameTemplate": "uv",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    },
+    {
+      "description": "Exact Python version in .python-version, versioned by the official python image tags (the Dockerfiles need the image)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.python-version$/"
+      ],
+      "matchStrings": [
+        "(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "description": "Same exact Python version in PYTHON_VERSION (Dockerfile ARG, Makefiles, scripts) and in literal python image tags",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/",
+        "/(^|/)Makefile$/",
+        "/\\.(bash|mk)$/"
+      ],
+      "matchStrings": [
+        "PYTHON_VERSION=\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "FROM python:(?<currentValue>\\d+\\.\\d+\\.\\d+)-"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
   "lockFileMaintenance": {
     "enabled": true,
     // any time that day: Renovate runs nightly at 03:17/04:17 Zurich time
@@ -133,6 +195,70 @@
       "groupName": "docker images",
       "dependencyDashboardApproval": true,
       "prCreation": "approval"
+    },
+    {
+      "description": "The uv image in the Dockerfiles is updated through its ARG UV_VERSION (see customManagers), not as a Docker image",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchDepNames": [
+        "ghcr.io/astral-sh/uv"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "uv is pinned in requirements/UV_VERSION, in the Dockerfiles (ARG UV_VERSION) and in the constraints above, which tests/environment-setup/test_used_uv.py requires to match: update them together, once a release has been out for a week (security fixes do not wait)",
+      "matchDepNames": [
+        "uv"
+      ],
+      "groupName": "uv",
+      "groupSlug": "uv",
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Python minor/major upgrades are done by hand across the whole repository (see requirements/how-to-upgrade-python.md): base images, .python-version, requires-python, actions/setup-python inputs and the constraints above are never touched by Renovate",
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "...except patch releases of the exact Python version (PYTHON_VERSION, .python-version, python image tags; see customManagers), updated together in one PR: tests/environment-setup/test_used_python.py only compares major.minor, so a partial update would go unnoticed. No minimumReleaseAge: Docker Hub gives the python tags no release date, so they would wait forever",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": true,
+      // otherwise Renovate only offers the newest version (a minor one, disabled below)
+      // and never the newest patch of the current minor
+      "separateMinorPatch": true,
+      "groupName": "python",
+      "groupSlug": "python"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The director service is frozen on its old Python (see FROZEN_SERVICES in tests/environment-setup/test_used_python.py)",
+      "matchDepNames": [
+        "python"
+      ],
+      "matchFileNames": [
+        "services/director/**"
+      ],
+      "enabled": false
     }
   ]
 }
