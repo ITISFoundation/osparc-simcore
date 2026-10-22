@@ -66,6 +66,15 @@ def get_xdist_root_tmp_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return tmp_path_factory.getbasetemp().parent
 
 
+def get_run_owner_pid(request: pytest.FixtureRequest) -> int:
+    """PID of the process whose death ends this pytest run
+
+    For a local xdist worker (a child process of the controller) that is the controller, since
+    the whole run dies with it; anywhere else it is this very process.
+    """
+    return os.getppid() if is_xdist_worker(request) else os.getpid()
+
+
 @contextmanager
 def run_once_across_workers(
     request: pytest.FixtureRequest,
