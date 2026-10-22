@@ -31,7 +31,7 @@ from pydantic.types import StringConstraints
 _RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
 
-type RelativeResourceName = Annotated[str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE)]
+RelativeResourceName = Annotated[str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE)]
 
 # NOTE: we quote parts in a single resource_name and unquote when split
 
