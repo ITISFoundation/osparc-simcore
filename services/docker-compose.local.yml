@@ -9,6 +9,8 @@
 # - Port bindings "300X:3000" reserved for remote debugging
 #   - debug mode can be activated if SC_BOOT_MODE=debug-ptvsd (this is the default in devel).
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
+# - Host ports are ${*_HOST_PORT:-<slot-0 port>}: each checkout's dev slot N shifts them by N*100 so
+#   several checkouts deploy side by side (see scripts/dev_slot.py, docs/parallel-worktrees.md)
 #
 x-common-environment: &common_environment
   SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore_local}
@@ -19,16 +21,16 @@ services:
       <<: *common_environment
       API_SERVER_REMOTE_DEBUG_PORT: 3000
     ports:
-      - "8006:8000"
-      - "3006:3000"
+      - "${API_SERVER_HOST_PORT:-8006}:8000"
+      - "${API_SERVER_DEBUG_HOST_PORT:-3006}:3000"
 
   autoscaling:
     environment:
       <<: *common_environment
       AUTOSCALING_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8007:8000"
-      - "3012:3000"
+      - "${AUTOSCALING_HOST_PORT:-8007}:8000"
+      - "${AUTOSCALING_DEBUG_HOST_PORT:-3012}:3000"
     networks:
       - default
 
@@ -37,16 +39,16 @@ services:
       <<: *common_environment
       CATALOG_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8005:8000"
-      - "3005:3000"
+      - "${CATALOG_HOST_PORT:-8005}:8000"
+      - "${CATALOG_DEBUG_HOST_PORT:-3005}:3000"
 
   clusters-keeper:
     environment:
       <<: *common_environment
       CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8010:8000"
-      - "3015:3000"
+      - "${CLUSTERS_KEEPER_HOST_PORT:-8010}:8000"
+      - "${CLUSTERS_KEEPER_DEBUG_HOST_PORT:-3015}:3000"
 
   director:
     environment:
@@ -54,7 +56,7 @@ services:
       DIRECTOR_REMOTE_DEBUGGING_PORT: 3000
     ports:
       - "8000"
-      - "3004:3000"
+      - "${DIRECTOR_DEBUG_HOST_PORT:-3004}:3000"
 
   director-v2:
     environment:
@@ -63,7 +65,7 @@ services:
       DIRECTOR_V2_REMOTE_DEBUGGING_PORT: 3000
     ports:
       - "8000"
-      - "3009:3000"
+      - "${DIRECTOR_V2_DEBUG_HOST_PORT:-3009}:3000"
 
   datcore-adapter:
     environment:
@@ -71,39 +73,39 @@ services:
       DATCORE_ADAPTER_REMOTE_DEBUG_PORT: 3000
     ports:
       - "8000"
-      - "3010:3000"
+      - "${DATCORE_ADAPTER_DEBUG_HOST_PORT:-3010}:3000"
 
   invitations:
     environment:
       <<: *common_environment
       INVITATIONS_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8008:8000"
-      - "3017:3000"
+      - "${INVITATIONS_HOST_PORT:-8008}:8000"
+      - "${INVITATIONS_DEBUG_HOST_PORT:-3017}:3000"
 
   notifications:
     environment:
       <<: *common_environment
       NOTIFICATIONS_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8015:8000"
-      - "3023:3000"
+      - "${NOTIFICATIONS_HOST_PORT:-8015}:8000"
+      - "${NOTIFICATIONS_DEBUG_HOST_PORT:-3023}:3000"
 
   notifications-worker:
     environment:
       <<: *common_environment
       NOTIFICATIONS_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8016:8000"
-      - "3026:3000"
+      - "${NOTIFICATIONS_WORKER_HOST_PORT:-8016}:8000"
+      - "${NOTIFICATIONS_WORKER_DEBUG_HOST_PORT:-3026}:3000"
 
   payments:
     environment:
       <<: *common_environment
       PAYMENTS_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8011:8000"
-      - "3018:3000"
+      - "${PAYMENTS_HOST_PORT:-8011}:8000"
+      - "${PAYMENTS_DEBUG_HOST_PORT:-3018}:3000"
 
   dynamic-schdlr:
     environment:
@@ -111,21 +113,21 @@ services:
       DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT: 3000
       DYNAMIC_SCHEDULER_UI_MOUNT_PATH: /
     ports:
-      - "8012:8000"
-      - "3016:3000"
+      - "${DYNAMIC_SCHEDULER_HOST_PORT:-8012}:8000"
+      - "${DYNAMIC_SCHEDULER_DEBUG_HOST_PORT:-3016}:3000"
     deploy:
       replicas: 2
 
   docker-api-proxy:
     ports:
-      - "8014:8888"
+      - "${DOCKER_API_PROXY_HOST_PORT:-8014}:8888"
 
   resource-usage-tracker:
     environment:
       RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT: 3000
     ports:
-      - "8009:8000"
-      - "3014:3000"
+      - "${RESOURCE_USAGE_TRACKER_HOST_PORT:-8009}:8000"
+      - "${RESOURCE_USAGE_TRACKER_DEBUG_HOST_PORT:-3014}:3000"
 
   storage:
     environment:
@@ -133,7 +135,7 @@ services:
       STORAGE_REMOTE_DEBUGGING_PORT: 3000
     ports:
       - "8080"
-      - "3003:3000"
+      - "${STORAGE_DEBUG_HOST_PORT:-3003}:3000"
 
   sto-worker:
     environment:
@@ -141,7 +143,7 @@ services:
       STORAGE_REMOTE_DEBUGGING_PORT: 3000
     ports:
       - "8080"
-      - "3021:3000"
+      - "${STO_WORKER_DEBUG_HOST_PORT:-3021}:3000"
 
   sto-worker-cpu-bound:
     environment:
@@ -149,7 +151,7 @@ services:
       STORAGE_REMOTE_DEBUGGING_PORT: 3000
     ports:
       - "8080"
-      - "3022:3000"
+      - "${STO_WORKER_CPU_BOUND_DEBUG_HOST_PORT:-3022}:3000"
 
   api-worker:
     environment:
@@ -157,7 +159,7 @@ services:
       API_SERVER_REMOTE_DEBUG_PORT: 3000
     ports:
       - "8080"
-      - "3025:3000"
+      - "${API_WORKER_DEBUG_HOST_PORT:-3025}:3000"
 
   webserver:
     environment: &webserver_environment_local
@@ -165,7 +167,7 @@ services:
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS}
     ports:
       - "8080"
-      - "3001:3000"
+      - "${WEBSERVER_DEBUG_HOST_PORT:-3001}:3000"
     deploy:
       labels:
         # locally webserver is accessible through http://
@@ -181,28 +183,28 @@ services:
       <<: *webserver_environment_local
     ports:
       - "8080"
-      - "3024:3000"
+      - "${WB_AUTH_DEBUG_HOST_PORT:-3024}:3000"
 
   wb-api-server:
     environment:
       <<: *webserver_environment_local
     ports:
       - "8080"
-      - "3019:3000"
+      - "${WB_API_SERVER_DEBUG_HOST_PORT:-3019}:3000"
 
   wb-db-event-listener:
     environment:
       <<: *webserver_environment_local
     ports:
       - "8080"
-      - "3013:3000"
+      - "${WB_DB_EVENT_LISTENER_DEBUG_HOST_PORT:-3013}:3000"
 
   wb-garbage-collector:
     environment:
       <<: *webserver_environment_local
     ports:
       - "8080"
-      - "3011:3000"
+      - "${WB_GARBAGE_COLLECTOR_DEBUG_HOST_PORT:-3011}:3000"
 
   agent:
     volumes:
@@ -221,13 +223,13 @@ services:
       <<: *common_environment
     ports:
       # dashboard UI
-      - "8787:8787"
+      - "${DASK_SCHEDULER_DASHBOARD_HOST_PORT:-8787}:8787"
       # scheduler API
-      - "8786:8786"
+      - "${DASK_SCHEDULER_HOST_PORT:-8786}:8786"
 
   postgres:
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
     command:
       [
@@ -263,7 +265,7 @@ services:
       - "5672"
       # NOTE: keep the management port mapping in sync with _MANAGEMENT_PORT in
       # packages/pytest-simcore/src/pytest_simcore/rabbit_service.py (its fallback value)
-      - "15672:15672"
+      - "${RABBIT_MANAGEMENT_HOST_PORT:-15672}:15672"
       - "15692"
 
   redis:
@@ -273,11 +275,11 @@ services:
   traefik:
     ports:
       - target: 80
-        published: 9081
+        published: ${TRAEFIK_HTTP_HOST_PORT:-9081}
       - target: 10081
-        published: 10081
+        published: ${TRAEFIK_API_HOST_PORT:-10081}
       - target: 8080
-        published: 8080
+        published: ${TRAEFIK_DASHBOARD_HOST_PORT:-8080}
     deploy:
       labels:
         # traefik dashboard UI accessible through http://127.0.0.1:8080/dashboard/

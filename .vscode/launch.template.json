@@ -118,7 +118,7 @@
       "type": "debugpy",
       "request": "attach",
       "connect": {
-        "port": 3006,
+        "port": 3015,
         "host": "127.0.0.1"
       },
       "pathMappings": [

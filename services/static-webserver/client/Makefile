@@ -14,11 +14,18 @@ export QOOXDOO_KIT_TAG=latest
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)
 export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clean')
 
-docker_compose := docker compose -f tools/docker-compose.yml
 docker_file    := tools/qooxdoo-kit/builder/Dockerfile
 docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 
-container_name := qooxdoo-compiler
+# compose project, container and serve port are daemon-global: scope them to this checkout's
+# dev slot so several checkouts compile side by side (see scripts/dev_slot.py)
+_dev_slot_env  := $(shell python3 $(REPO_BASE_DIR)/scripts/dev_slot.py env --env-file $(REPO_BASE_DIR)/.env)
+OSPARC_DEV_SLOT_SUFFIX ?= $(patsubst OSPARC_DEV_SLOT_SUFFIX=%,%,$(filter OSPARC_DEV_SLOT_SUFFIX=%,$(_dev_slot_env)))
+export QX_SERVE_HOST_PORT ?= $(patsubst QX_SERVE_HOST_PORT=%,%,$(filter QX_SERVE_HOST_PORT=%,$(_dev_slot_env)))
+
+docker_compose := docker compose --project-name tools$(OSPARC_DEV_SLOT_SUFFIX) -f tools/docker-compose.yml
+
+container_name := qooxdoo-compiler$(OSPARC_DEV_SLOT_SUFFIX)
 
 ##@ Compile
 
@@ -85,14 +92,14 @@ define qx_serve =
 endef
 
 .PHONY: serve-dev
-serve-dev: ## Compiles and watches host source, serving the site on 127.0.0.1:8080
-	# qx serve $(flags) 'source' --> 'source-output' --> 127.0.0.1:8080
+serve-dev: ## Compiles and watches host source, serving the site on 127.0.0.1:QX_SERVE_HOST_PORT (8080 in dev slot 0)
+	# qx serve $(flags) 'source' --> 'source-output' --> 127.0.0.1:$(QX_SERVE_HOST_PORT)
 	$(docker_compose) run $(if $(detached),--detach --name=$(detached),--rm) --service-ports qooxdoo-kit $(qx_serve)
 
 .PHONY: serve
-serve: compile ## Serves the site compiled in the image on 127.0.0.1:8080
-	# qx serve $(flags) 'build-output' within $(docker_image) image --> 127.0.0.1:8080
-	docker run --rm -p 8080:8080  $(docker_image) $(qx_serve) --target=build
+serve: compile ## Serves the site compiled in the image on 127.0.0.1:QX_SERVE_HOST_PORT (8080 in dev slot 0)
+	# qx serve $(flags) 'build-output' within $(docker_image) image --> 127.0.0.1:$(QX_SERVE_HOST_PORT)
+	docker run --rm -p $(QX_SERVE_HOST_PORT):8080  $(docker_image) $(qx_serve) --target=build
 
 
 define qx_translate_extract =
