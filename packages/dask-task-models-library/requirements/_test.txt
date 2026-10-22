@@ -14,7 +14,7 @@ icdiff==2.0.10
     # via pytest-icdiff
 iniconfig==2.3.0
     # via pytest
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
