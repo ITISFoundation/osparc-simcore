@@ -34,7 +34,7 @@ attrs==26.1.0
     #   referencing
 botocore==1.42.70
     # via -r requirements/_test.in
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

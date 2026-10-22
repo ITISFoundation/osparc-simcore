@@ -47,7 +47,7 @@ attrs==25.4.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
