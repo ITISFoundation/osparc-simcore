@@ -198,7 +198,7 @@ urllib3==2.8.0
     #   -c requirements/_base.txt
     #   docker
     #   requests
-yarl==1.25.1
+yarl==1.24.5
     # via
     #   -c requirements/_base.txt
     #   aiohttp

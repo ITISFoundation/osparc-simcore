@@ -191,7 +191,7 @@ wsproto==1.2.0
     # via
     #   -c requirements/_base.txt
     #   simple-websocket
-yarl==1.25.1
+yarl==1.24.5
     # via
     #   -c requirements/_base.txt
     #   aiohttp
