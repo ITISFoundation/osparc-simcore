@@ -8,8 +8,10 @@
 # scripts/makefiles/requirements.mk), so an update can leave the lockfiles
 # inconsistent or even unresolvable. This re-runs `make reqs upgrade="<pkg==ver ...>"`
 # in every requirements directory the update touches or that pins one of the updated
-# packages at another version. Exact pins are passed on purpose: a bare `make reqs`
-# upgrades everything and a bare package name lets uv pick the latest release.
+# packages at another version. Renovate's versions are passed as exact pins on purpose:
+# a bare `make reqs` upgrades everything and a bare package name lets uv pick the
+# latest release. Only packages that block the update are passed by name (see
+# resync_dir below).
 #
 # Usage: resync-lockfiles.bash [PINS_FILE]
 #   PINS_FILE: one "<package>==<version>" per line, defaults to the data file
@@ -95,47 +97,99 @@ restore() {
   cp -p "$BACKUP_DIR/$1"/*.txt "$1/"
 }
 
-# Regenerates one directory with the given pins or, when none are given, with a full
-# upgrade. The inputs are touched first so the rules run even though the lockfiles
-# may look newer than them (the Makefiles' own `touch` target is missing e.g. in api/tests).
-# The pinned attempt may not build source distributions: when the pins cannot be
-# satisfied, uv would otherwise backtrack through every old release of the dependents
-# (e.g. ancient pre-commit sdists) for tens of minutes before giving up, instead of
-# failing within seconds and letting the fallback below take over.
+# Regenerates one directory with the given upgrade list. The inputs are touched first so
+# the rules run even though the lockfiles may look newer than them (the Makefiles' own
+# `touch` target is missing e.g. in api/tests). Source distributions may not be built:
+# when the pins cannot be satisfied, uv would otherwise backtrack through every old
+# release of the dependents (e.g. ancient pre-commit sdists) for tens of minutes before
+# giving up, instead of failing within seconds.
 regenerate() {
   local dir="$1"
   find "$dir" -maxdepth 1 -name '*.in' -exec touch {} +
-  if [[ $# -gt 1 ]]; then
-    UV_NO_BUILD=1 make -C "$dir" reqs upgrade="$2"
-  else
-    make -C "$dir" reqs
-  fi
+  UV_NO_BUILD=1 make -C "$dir" reqs upgrade="$2"
 }
 
-# A lockfile is a hard constraint for uv, so a stale pin of an unrelated package can
-# leave the requested resolution without solution. Such a directory is re-resolved
-# from scratch and the pins are applied on top. This moves unrelated packages too,
-# which is why it is only a fallback.
-ESCALATED=""
+# Prints the (PEP 503-normalized) names of the packages uv's error output blames at
+# exactly the version the directory's lockfiles pin, e.g. "packaging" for
+# "virtualenv==21.14.10 depends on packaging>=26.3 and packaging==24.1", leaving out
+# those the upgrade list already lets move
+blamed_pins() {
+  local dir="$1" output="$2" upgrade="$3" blamed_file="$BACKUP_DIR/blamed"
+  printf '%s\n' "$output" | { grep -oE '[A-Za-z0-9][A-Za-z0-9._-]*==[A-Za-z0-9._+!-]*[A-Za-z0-9]' || true; } |
+    sort -u >"$blamed_file"
+  awk -v upgrade="$upgrade" '
+    function normalized(name) {
+      sub(/\[[^]]*\]/, "", name)
+      name = tolower(name)
+      gsub(/[-_.]+/, "-", name)
+      return name
+    }
+    BEGIN {
+      n = split(upgrade, entry, " ")
+      for (i = 1; i <= n; i++) {
+        split(entry[i], part, "==")
+        FREE[normalized(part[1])] = 1
+      }
+    }
+    FNR == NR {
+      e = index($0, "==")
+      BLAMED[normalized(substr($0, 1, e - 1)) "==" substr($0, e + 2)] = 1
+      next
+    }
+    match($0, /^[A-Za-z0-9][A-Za-z0-9._-]*(\[[^]]+\])?==[^ ;]+/) {
+      e = index($0, "==")
+      name = normalized(substr($0, 1, e - 1))
+      if ((name "==" substr($0, e + 2, RLENGTH - e - 1)) in BLAMED && !(name in FREE))
+        print name
+    }' "$blamed_file" "$dir"/*.txt | sort -u
+}
+
+# A lockfile is a hard constraint for uv, so a pin in another layer can leave Renovate's
+# pins without solution (e.g. the new virtualenv in _tools.txt needs packaging>=26.3
+# while _base.txt pins packaging==24.1). uv names such a pin in its error: that package
+# is then allowed to move as well and the directory regenerated again, at most
+# MAX_UNBLOCK_ROUNDS times. Only the packages that block the update move. A directory
+# that still has no solution is left as Renovate produced it and reported.
+MAX_UNBLOCK_ROUNDS=5
+resync_dir() {
+  local dir="$1" upgrade="$PINS" round output blamed
+  for ((round = 0; round <= MAX_UNBLOCK_ROUNDS; round++)); do
+    if output=$(regenerate "$dir" "$upgrade" 2>&1); then
+      printf '%s\n' "$output"
+      UNBLOCKED_BY="${upgrade#"$PINS"}"
+      return 0
+    fi
+    printf '%s\n' "$output"
+    restore "$dir"
+    blamed=$(blamed_pins "$dir" "$output" "$upgrade" | tr '\n' ' ')
+    blamed="${blamed% }"
+    if [[ -z "$blamed" ]]; then
+      return 1
+    fi
+    echo "warning: $dir: $blamed blocks \"$PINS\", letting it move too" >&2
+    upgrade="$upgrade $blamed"
+  done
+  return 1
+}
+
+UNBLOCKED=""
 FAILED=""
 while IFS= read -r dir; do
   echo "--- $dir"
   snapshot "$dir"
-  if regenerate "$dir" "$PINS"; then
-    continue
-  fi
-  echo "warning: $dir cannot resolve \"$PINS\" on top of its current pins, re-resolving it from scratch" >&2
-  restore "$dir"
-  if regenerate "$dir" && regenerate "$dir" "$PINS"; then
-    ESCALATED="$ESCALATED $dir"
+  UNBLOCKED_BY=""
+  if resync_dir "$dir"; then
+    if [[ -n "$UNBLOCKED_BY" ]]; then
+      UNBLOCKED="$UNBLOCKED $dir (${UNBLOCKED_BY# })"
+    fi
   else
     FAILED="$FAILED $dir"
     restore "$dir"
   fi
 done <<<"$DIRS"
 
-if [[ -n "$ESCALATED" ]]; then
-  echo "warning: re-resolved from scratch (unrelated packages moved too):$ESCALATED" >&2
+if [[ -n "$UNBLOCKED" ]]; then
+  echo "warning: these packages had to move too:$UNBLOCKED" >&2
 fi
 if [[ -n "$FAILED" ]]; then
   echo "error: could not regenerate the lockfiles in:$FAILED (left as Renovate produced them)" >&2
