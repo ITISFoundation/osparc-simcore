@@ -43,7 +43,7 @@ TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tes
 
 # Pattern rules (alphabetically ordered)
 
-# tag suffix of the local images built in this checkout's dev slot (see scripts/dev_slot.py)
+# image tag suffix of the dev slot (see docs/parallel-worktrees.md)
 LOCAL_IMAGE_TAG_SUFFIX ?= $(shell python3 $(REPO_BASE_DIR)/scripts/dev_slot.py env --env-file $(REPO_BASE_DIR)/.env | sed -n 's/^LOCAL_IMAGE_TAG_SUFFIX=//p')
 
 # CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)

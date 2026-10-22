@@ -9,8 +9,7 @@
 # - Port bindings "300X:3000" reserved for remote debugging
 #   - debug mode can be activated if SC_BOOT_MODE=debug-ptvsd (this is the default in devel).
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
-# - Host ports are ${*_HOST_PORT:-<slot-0 port>}: each checkout's dev slot N shifts them by N*100 so
-#   several checkouts deploy side by side (see scripts/dev_slot.py, docs/parallel-worktrees.md)
+# - Host ports are ${*_HOST_PORT:-<slot-0 port>}. Dev slot N adds N*100 (see docs/parallel-worktrees.md)
 #
 x-common-environment: &common_environment
   SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore_local}

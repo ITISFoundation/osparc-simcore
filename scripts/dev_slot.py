@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
-"""Per-checkout "slots" so several checkouts (e.g. git worktrees) share one docker daemon.
+"""Dev slots: lets several checkouts of this repo use one docker daemon.
 
-Stack, network, volume and image names and host-published ports are daemon-global. Every
-checkout therefore leases a slot number N in [0, SLOT_COUNT) and derives from it:
+Each checkout leases a slot N in [0, SLOT_COUNT). The slot sets:
 
-- stack names: slot 0 keeps the legacy names (``master-simcore``, ``ops``, ``vendors``),
-  slot N > 0 uses ``simcore-sN``, ``ops-sN``, ``vendors-sN``. They are short and
-  fixed-length, so every ``{stack}_{name}`` docker derives stays a valid DNS label.
-- host ports: ``legacy port + N * PORT_STRIDE`` (slot 0 keeps the legacy ports).
-- local image tags: ``local/<service>:production`` gets the ``-sN`` suffix.
+- stack names: ``master-simcore``, ``ops``, ``vendors`` in slot 0;
+  ``simcore-sN``, ``ops-sN``, ``vendors-sN`` otherwise
+- host ports: slot-0 port + N * PORT_STRIDE
+- local image tags: ``-sN`` suffix (none in slot 0)
 
-The registry of leased slots is the docker daemon itself: a slot is held by a config-only
-network ``osparc-dev-slot-<N>`` (null driver, no address space) labelled with the checkout
-path. Network names are unique in a daemon, so creating the marker is an atomic lease.
-Markers of checkouts that no longer exist (deleted worktrees) are removed on every lease.
+A slot is held by a config-only docker network ``osparc-dev-slot-N`` labelled
+with the checkout path. Network names are unique, so creating one is an atomic
+lease. Each lease removes the markers of checkouts that no longer exist.
 
-Stdlib only: the root Makefile runs it with the host ``python3`` (>= 3.14, see
-.python-version), before any virtualenv exists.
+Stdlib only, because the root Makefile runs it with the host python3 before
+any virtualenv exists.
 
 Usage:
     dev_slot.py lease --checkout DIR [--slot N] [--env-file PATH]
     dev_slot.py env [--slot N | --env-file PATH] [--format dotenv|make]
     dev_slot.py list
+    dev_slot.py shift-ports --env-file PATH < launch.template.json
 """
 
 import argparse
@@ -39,10 +37,9 @@ SLOT_ENV_VAR: Final[str] = "OSPARC_DEV_SLOT"
 MARKER_PREFIX: Final[str] = "osparc-dev-slot-"
 MARKER_LABEL: Final[str] = "io.simcore.dev-slot.checkout"
 
-# host ports published by services/docker-compose.local.yml, docker-compose-ops*.yml and
-# the frontend tools compose; the value is the slot-0 (legacy) port
+# Slot-0 host ports. The compose files read them as ${NAME:-<port>}.
 LEGACY_HOST_PORTS: Final[dict[str, int]] = {
-    # core stack: service APIs
+    # core stack
     "API_SERVER_HOST_PORT": 8006,
     "AUTOSCALING_HOST_PORT": 8007,
     "CATALOG_HOST_PORT": 8005,
@@ -61,7 +58,7 @@ LEGACY_HOST_PORTS: Final[dict[str, int]] = {
     "TRAEFIK_API_HOST_PORT": 10081,
     "TRAEFIK_DASHBOARD_HOST_PORT": 8080,
     "TRAEFIK_HTTP_HOST_PORT": 9081,
-    # core stack: remote debugging (container port 3000)
+    # core stack, remote debugging
     "API_SERVER_DEBUG_HOST_PORT": 3006,
     "API_WORKER_DEBUG_HOST_PORT": 3025,
     "AUTOSCALING_DEBUG_HOST_PORT": 3012,
@@ -97,7 +94,7 @@ LEGACY_HOST_PORTS: Final[dict[str, int]] = {
     "REDIS_COMMANDER_HOST_PORT": 18081,
     "S3_CONSOLE_HOST_PORT": 9090,
     "S3_HOST_PORT": 9001,
-    # frontend: `qx serve` (services/static-webserver/client)
+    # frontend `qx serve`
     "QX_SERVE_HOST_PORT": 8080,
 }
 
@@ -135,7 +132,7 @@ def host_ports(slot: int) -> dict[str, int]:
 
 
 def stack_names(slot: int) -> dict[str, str]:
-    """Dev stack names (SWARM_*) of a slot; slot 0 keeps the legacy names"""
+    """SWARM_* stack names of the slot"""
     _validate_slot(slot)
     if slot == 0:
         return {
@@ -151,13 +148,13 @@ def stack_names(slot: int) -> dict[str, str]:
 
 
 def pytest_stack_names(slot: int) -> tuple[str, str]:
-    """(core, ops) stack names the integration tests of a slot deploy"""
+    """(core, ops) stack names used by the integration tests"""
     _validate_slot(slot)
     return f"pytest-s{slot}-core", f"pytest-s{slot}-ops"
 
 
 def derive_env(slot: int) -> dict[str, str]:
-    """Every variable a slot defines, as consumed by the compose files and Makefiles"""
+    """All variables defined by the slot"""
     env = {SLOT_ENV_VAR: f"{_validate_slot(slot)}"}
     env |= stack_names(slot)
     env["TRAEFIK_SIMCORE_ZONE"] = f"internal_simcore_stack{_suffix(slot).replace('-', '_')}"
@@ -168,8 +165,7 @@ def derive_env(slot: int) -> dict[str, str]:
 
 
 def shift_ports(text: str, slot: int) -> str:
-    """Shifts every `"port": <slot-0 host port>` of a JSON text (e.g. VS Code launch configs)
-    to the slot's host port"""
+    """Replaces each `"port": <slot-0 host port>` in a JSON text with the slot's port"""
     _validate_slot(slot)
     legacy = set(LEGACY_HOST_PORTS.values())
 
@@ -181,7 +177,7 @@ def shift_ports(text: str, slot: int) -> str:
 
 
 def read_cached_slot(env_file: Path) -> int | None:
-    """The slot recorded in an env file (written by `lease --env-file`), if any"""
+    """OSPARC_DEV_SLOT from an env file, or None"""
     if not env_file.exists():
         return None
     matches = _SLOT_LINE.findall(env_file.read_text())
@@ -199,7 +195,7 @@ def write_cached_slot(env_file: Path, slot: int) -> None:
         env_file.write_text(new_content)
 
 
-# docker registry -----------------------------------------------------------------------
+# slot markers ----------------------------------------------------------------------------
 
 type RunDocker = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
@@ -217,7 +213,7 @@ def _checkout_key(checkout: Path) -> str:
 
 
 def list_markers(run: RunDocker = run_docker) -> dict[int, str]:
-    """Leased slots as {slot: checkout path}"""
+    """{slot: checkout path} of all leased slots"""
     result = run(
         [
             "network",
@@ -241,7 +237,7 @@ def list_markers(run: RunDocker = run_docker) -> dict[int, str]:
 
 
 def _create_marker(slot: int, checkout_key: str, run: RunDocker) -> bool:
-    """True when this call created the marker, False when the slot is already taken"""
+    """False if the slot is already taken"""
     result = run(
         ["network", "create", "--config-only", "--label", f"{MARKER_LABEL}={checkout_key}", _marker_name(slot)]
     )
@@ -284,11 +280,10 @@ def lease(
     preferred: int | None = None,
     run: RunDocker = run_docker,
 ) -> int:
-    """Returns the slot held by this checkout, leasing one when it holds none
+    """Returns the checkout's slot, leasing one if it has none
 
-    Idempotent: a checkout keeps its slot across calls. ``requested`` moves the checkout to
-    that slot (fails if another checkout holds it); otherwise ``preferred`` (typically the
-    slot cached in .env) is tried before the lowest free slot.
+    A checkout keeps its slot across calls. ``requested`` moves it to that slot.
+    Otherwise ``preferred`` is tried first, then the lowest free slot.
 
     Raises:
         SlotTakenError: ``requested`` is held by another checkout
@@ -316,12 +311,11 @@ def lease(
             continue
         if _create_marker(slot, key, run):
             return slot
-        # lost the race: when the winner is this very checkout (e.g. concurrent test workers
-        # or make runs of one checkout), its slot is ours too
+        # a concurrent lease of the same checkout may have created it
         if list_markers(run).get(slot) == key:
             return slot
 
-    msg = f"all {SLOT_COUNT} slots are held: {markers}. Remove unused worktrees to free slots"
+    msg = f"all {SLOT_COUNT} slots are held: {markers}. Remove unused worktrees to free one"
     raise NoFreeSlotError(msg)
 
 
@@ -330,7 +324,7 @@ def lease(
 
 def _format_env(env: Mapping[str, str], fmt: str) -> str:
     if fmt == "make":
-        # one `NAME?=value` token per variable: command-line/environment overrides win
+        # `?=` so that command-line and environment values win
         return "\n".join(f"{name}?={value}" for name, value in env.items())
     return "\n".join(f"{name}={value}" for name, value in env.items())
 
@@ -339,21 +333,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
 
-    lease_cmd = commands.add_parser("lease", help="lease (or keep) this checkout's slot and print it")
+    lease_cmd = commands.add_parser("lease", help="print this checkout's slot, leasing one if needed")
     lease_cmd.add_argument("--checkout", type=Path, default=Path.cwd())
     lease_cmd.add_argument("--slot", type=int, default=None, help="move this checkout to this slot")
-    lease_cmd.add_argument("--env-file", type=Path, default=None, help="caches the slot as OSPARC_DEV_SLOT here")
+    lease_cmd.add_argument("--env-file", type=Path, default=None, help="write the slot to this file as OSPARC_DEV_SLOT")
 
-    env_cmd = commands.add_parser("env", help="print the variables a slot defines (no docker access)")
+    env_cmd = commands.add_parser("env", help="print the slot's variables")
     source = env_cmd.add_mutually_exclusive_group()
     source.add_argument("--slot", type=int, default=None)
-    source.add_argument("--env-file", type=Path, default=None, help="read the slot cached in this file")
+    source.add_argument("--env-file", type=Path, default=None, help="read OSPARC_DEV_SLOT from this file")
     env_cmd.add_argument("--format", choices=("dotenv", "make"), default="dotenv")
 
-    commands.add_parser("list", help="print the leased slots and their checkouts")
+    commands.add_parser("list", help="print the leased slots")
 
-    shift_cmd = commands.add_parser("shift-ports", help='stdin -> stdout: shift `"port": N` to the slot (no docker)')
-    shift_cmd.add_argument("--env-file", type=Path, required=True, help="read the slot cached in this file")
+    shift_cmd = commands.add_parser("shift-ports", help='shift `"port": N` values from stdin to the slot\'s ports')
+    shift_cmd.add_argument("--env-file", type=Path, required=True, help="read OSPARC_DEV_SLOT from this file")
 
     args = parser.parse_args(argv)
     try:

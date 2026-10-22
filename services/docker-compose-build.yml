@@ -2,8 +2,7 @@
 # Build services to a specific target stage and tags them as 'local/{service}:${BUILD_TARGET}${LOCAL_IMAGE_TAG_SUFFIX}'
 #
 #  - BUILD_TARGET (build_target_required) must be set as 'production', 'development' or 'cache'. Used as image tag
-#  - LOCAL_IMAGE_TAG_SUFFIX ('-sN' in dev slot N > 0, empty otherwise) keeps the images of several checkouts
-#    on one docker daemon apart (see scripts/dev_slot.py)
+#  - LOCAL_IMAGE_TAG_SUFFIX is '-sN' in dev slot N > 0 and empty in slot 0 (see docs/parallel-worktrees.md)
 #
 # NOTE: linter error 'missing image' happens with the file is called 'docker-compose.build.yml'
 #

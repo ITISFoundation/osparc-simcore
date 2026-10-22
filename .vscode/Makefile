@@ -9,7 +9,7 @@ include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
 
 all: $(VSCODE_CONFIGS) ## creates all vscode config files from templates
 
-launch.json: launch.template.json ## creates launch.json from its template with the remote-debug ports of this checkout's dev slot
+launch.json: launch.template.json ## creates launch.json from its template, with the dev slot's debug ports
 	$(if $(wildcard $@), \
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, rendering $< as $@ ############"; \

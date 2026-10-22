@@ -17,8 +17,7 @@ export VCS_STATUS_CLIENT:=$(if $(shell git status -s),'modified/untracked','clea
 docker_file    := tools/qooxdoo-kit/builder/Dockerfile
 docker_image   := client/$(subst /Dockerfile,,$(docker_file)):latest
 
-# compose project, container and serve port are daemon-global: scope them to this checkout's
-# dev slot so several checkouts compile side by side (see scripts/dev_slot.py)
+# compose project, container name and serve port are per dev slot (see docs/parallel-worktrees.md)
 _dev_slot_env  := $(shell python3 $(REPO_BASE_DIR)/scripts/dev_slot.py env --env-file $(REPO_BASE_DIR)/.env)
 OSPARC_DEV_SLOT_SUFFIX ?= $(patsubst OSPARC_DEV_SLOT_SUFFIX=%,%,$(filter OSPARC_DEV_SLOT_SUFFIX=%,$(_dev_slot_env)))
 export QX_SERVE_HOST_PORT ?= $(patsubst QX_SERVE_HOST_PORT=%,%,$(filter QX_SERVE_HOST_PORT=%,$(_dev_slot_env)))

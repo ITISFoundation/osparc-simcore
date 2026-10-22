@@ -71,7 +71,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 @pytest.fixture(scope="module")
 def webserver_api_base_url(env_vars_for_docker_compose: EnvVarsDict) -> str:
-    """Web API through traefik, published on the host port of this checkout's dev slot"""
+    """Web API through traefik on the dev slot's host port"""
     return f"http://127.0.0.1:{env_vars_for_docker_compose['TRAEFIK_HTTP_HOST_PORT']}/v0"
 
 

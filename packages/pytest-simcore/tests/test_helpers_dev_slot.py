@@ -6,11 +6,12 @@ import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Final
+from typing import Annotated, Final
 from unittest import mock
 
 import docker.client
 import pytest
+from annotated_types import doc
 from pytest_simcore.helpers.dev_slot import (
     DevSlotMismatchError,
     find_foreign_port_publishers,
@@ -21,8 +22,9 @@ from pytest_simcore.helpers.stack_names import MAX_STACK_NAME_LEN
 
 _DOCKER_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _COMPOSE_HOST_PORT: Final[re.Pattern[str]] = re.compile(r"\$\{(?P<name>[A-Z0-9_]+_HOST_PORT):-(?P<port>\d+)\}")
-# both publish host port 8080 in slot 0 since before slots existed; they are not run together
-_KNOWN_LEGACY_OVERLAP: Final[frozenset[str]] = frozenset({"QX_SERVE_HOST_PORT", "TRAEFIK_DASHBOARD_HOST_PORT"})
+_KNOWN_LEGACY_OVERLAP: Final[
+    Annotated[frozenset[str], doc("Both already used host port 8080 before slots existed")]
+] = frozenset({"QX_SERVE_HOST_PORT", "TRAEFIK_DASHBOARD_HOST_PORT"})
 
 
 @pytest.fixture
@@ -31,7 +33,7 @@ def dev_slot(osparc_simcore_root_dir: Path) -> ModuleType:
 
 
 class _FakeDockerNetworks:
-    """Stands in for the `docker network` CLI the slot registry drives"""
+    """Fake `docker network` CLI"""
 
     def __init__(self) -> None:
         self.markers: dict[str, str] = {}
