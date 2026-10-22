@@ -71,8 +71,9 @@ that file type or service over a general rule.
 
 - Commit locally and stop. Do not push, force-push, create pull requests, or
   resolve review threads unless explicitly asked.
-- Address code-review comments in new commits (e.g. `fix(review): ...`), never
-  by amending the reviewed commit, so reviewers can see the incremental fix.
+- Address code-review comments in new commits prefixed with the reviewer's handle
+  (e.g. `@<reviewer> review: fix ...`), never by amending the reviewed commit, so
+  reviewers can see the incremental fix and identify responses to their reviews.
 - Create pull requests as drafts unless explicitly told otherwise. If intent
   is unclear, ask.
 
