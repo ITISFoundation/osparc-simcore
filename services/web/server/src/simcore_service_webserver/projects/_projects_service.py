@@ -8,7 +8,6 @@
 """
 
 import asyncio
-import collections
 import contextlib
 import datetime
 import logging
@@ -23,7 +22,6 @@ from aiohttp import web
 from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationRunStateRpcGet,
 )
@@ -78,7 +76,6 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
-    DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
     set_reservation_same_as_limit,
 )
@@ -87,21 +84,20 @@ from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
-from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.docker_utils import (
-    DYNAMIC_SIDECAR_MIN_CPUS,
-    estimate_dynamic_sidecar_resources_from_ec2_instance,
-)
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
-from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
-    get_instance_type_details,
+from servicelib.rabbitmq.rpc_interfaces.director_v2 import resources as director_v2_resources
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    ClustersKeeperNotAvailableRPCError,
+    EC2InstanceTypeNotFoundRPCError,
+    UnsupportedNodeClassRPCError,
 )
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -743,14 +739,6 @@ async def _get_default_pricing_and_hardware_info(
     raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}")
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
-_CPUS_SAFE_MARGIN: Final[float] = 1.4
-_MIN_NUM_CPUS: Final[float] = 0.5
-
-
 async def update_project_node_resources_from_hardware_info(
     app: web.Application,
     *,
@@ -762,81 +750,59 @@ async def update_project_node_resources_from_hardware_info(
     product_name: str,
     hardware_info: HardwareInfo,
 ) -> None:
+    """Resize the node's required resources for the EC2 machine of its pricing unit.
+
+    The sizing itself (formula per node class, EC2 machine selection) is computed by
+    director-v2; the web-server only persists the result.
+    """
     if not hardware_info.aws_ec2_instances:
         return
+
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
-        )
-
-        assert unordered_list_ec2_instance_types  # nosec
-
-        # NOTE: with the current implementation, there is no use to get the instance past the first one
-        def _by_type_name(ec2: EC2InstanceTypeGet) -> bool:
-            return bool(ec2.name == hardware_info.aws_ec2_instances[0])
-
-        selected_ec2_instance_type = next(iter(filter(_by_type_name, unordered_list_ec2_instance_types)))
-
-        # now update the project node required resources
-        # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
-        # less memory than the machine theoretical amount
         node_resources = await get_project_node_resources(
             app, user_id, project_id, node_id, service_key, service_version, product_name
         )
-        scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
-        new_cpus_value, new_ram_value = estimate_dynamic_sidecar_resources_from_ec2_instance(
-            selected_ec2_instance_type.cpus, selected_ec2_instance_type.ram
+        new_node_resources = await director_v2_resources.compute_node_resources_for_hardware(
+            rabbitmq_rpc_client,
+            service_key=service_key,
+            service_version=service_version,
+            resources=node_resources,
+            hardware_info=hardware_info,
         )
-
-        if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
-            # NOTE: we go for the largest sub-service and scale it up/down
-            scalable_service_name, hungry_service_resources = max(
-                node_resources.items(),
-                key=lambda service_to_resources: int(service_to_resources[1].resources["RAM"].limit),
-            )
-            _logger.debug(
-                "the most hungry service is %s",
-                f"{scalable_service_name=}:{hungry_service_resources}",
-            )
-            other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
-            for service_name, sub_service_resources in node_resources.items():
-                if service_name != scalable_service_name:
-                    other_services_resources.update(
-                        {
-                            "RAM": sub_service_resources.resources["RAM"].limit,
-                            "CPU": sub_service_resources.resources["CPU"].limit,
-                        }
-                    )
-            new_cpus_value = max(
-                new_cpus_value - other_services_resources["CPU"],
-                DYNAMIC_SIDECAR_MIN_CPUS,
-            )
-
-            new_ram_value = max(int(new_ram_value - other_services_resources["RAM"]), 128 * 1024 * 1024)
-
-        # scale the service
-        node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
-        node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
-        db = ProjectDBAPI.get_from_app_context(app)
-        await db.update_project_node(
-            user_id,
-            project_id,
+    except UnsupportedNodeClassRPCError:
+        # e.g. a frontend node: its resources are not derived from a machine, keep them
+        _logger.warning(
+            "Not resizing resources of node %s in project %s: service %s cannot be sized from an EC2 machine type",
             node_id,
-            product_name,
-            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
-                node_resources, mode="json"
-            ),
-            check_update_allowed=False,
+            project_id,
+            service_key,
         )
-    except StopIteration as exc:
+        return
+    except EC2InstanceTypeNotFoundRPCError as exc:
         raise InvalidEC2TypeInResourcesSpecsError(ec2_types=set(hardware_info.aws_ec2_instances)) from exc
 
     except KeyError as exc:
         raise InvalidKeysInResourcesSpecsError(missing_key=f"{exc}") from exc
-    except (TimeoutError, RemoteMethodNotRegisteredError, RPCServerError) as exc:
+    except (
+        ClustersKeeperNotAvailableRPCError,
+        TimeoutError,
+        RemoteMethodNotRegisteredError,
+        RPCServerError,
+    ) as exc:
         raise ClustersKeeperNotAvailableError from exc
+
+    db = ProjectDBAPI.get_from_app_context(app)
+    await db.update_project_node(
+        user_id,
+        project_id,
+        node_id,
+        product_name,
+        required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            new_node_resources, mode="json"
+        ),
+        check_update_allowed=False,
+    )
 
 
 async def _check_project_node_has_all_required_inputs(  # noqa: C901
