@@ -1,18 +1,50 @@
 # pylint: disable=redefined-outer-name
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
 
+# Stands in for `make -C <dir> reqs upgrade="<...>"` and answers like uv for a
+# virtualenv update that needs packaging>=26.3: the update only resolves once packaging
+# may move too. Until then it fails, naming FAKE_MAKE_BLOCKING_PIN as the blocker.
+_FAKE_MAKE = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$upgrade" >>"$FAKE_MAKE_CALLS"
+if [[ " $upgrade " != *" packaging "* ]]; then
+  echo "error: No solution found when resolving dependencies"
+  echo "  cause: Because virtualenv==21.14.10 depends on packaging>=26.3 and $FAKE_MAKE_BLOCKING_PIN,"
+  echo "         we can conclude that virtualenv==21.14.10 cannot be used."
+  exit 1
+fi
+printf 'packaging==26.3\\n' >"$dir/_base.txt"
+printf 'packaging==26.3\\nvirtualenv==21.14.10\\n' >"$dir/_tools.txt"
+"""
 
-def _run(program: str, *args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
+
+def _run(
+    program: str, *args: str, cwd: Path, env: dict[str, str] | None = None, check: bool = True
+) -> subprocess.CompletedProcess[str]:
     executable = shutil.which(program)
     assert executable, f"{program} not found"
     return subprocess.run(  # noqa: S603
-        [executable, *args], cwd=cwd, capture_output=True, text=True, check=True
+        [executable, *args], cwd=cwd, env=env, capture_output=True, text=True, check=check
     )
+
+
+def _make_git_repo(path: Path, lockfiles: dict[str, str]) -> Path:
+    for name, content in lockfiles.items():
+        lockfile = path / "requirements" / name
+        lockfile.parent.mkdir(parents=True, exist_ok=True)
+        lockfile.write_text(content)
+    identity = ("-c", "user.name=test", "-c", "user.email=test@example.com")
+    _run("git", *identity, "init", "--quiet", cwd=path)
+    _run("git", *identity, "add", ".", cwd=path)
+    _run("git", *identity, "commit", "--quiet", "--message", "init", cwd=path)
+    return path
 
 
 @pytest.fixture
@@ -23,14 +55,34 @@ def resync_lockfiles_script(osparc_simcore_root_dir: Path) -> Path:
 @pytest.fixture
 def git_repo_with_lockfile(tmp_path: Path) -> Path:
     """A repository whose only pip-compile lockfile already pins virtualenv==21.14.10"""
-    lockfile = tmp_path / "requirements" / "_tools.txt"
-    lockfile.parent.mkdir()
-    lockfile.write_text("virtualenv==21.14.10\n")
-    identity = ("-c", "user.name=test", "-c", "user.email=test@example.com")
-    _run("git", *identity, "init", "--quiet", cwd=tmp_path)
-    _run("git", *identity, "add", ".", cwd=tmp_path)
-    _run("git", *identity, "commit", "--quiet", "--message", "init", cwd=tmp_path)
-    return tmp_path
+    return _make_git_repo(tmp_path, {"_tools.txt": "virtualenv==21.14.10\n"})
+
+
+@pytest.fixture
+def git_repo_behind_on_virtualenv(tmp_path: Path) -> Path:
+    """A repository whose _base.txt pins a packaging too old for virtualenv==21.14.10"""
+    return _make_git_repo(
+        tmp_path / "repo",
+        {"_base.txt": "packaging==26.0\n", "_tools.txt": "packaging==26.0\nvirtualenv==21.14.5\n"},
+    )
+
+
+@pytest.fixture
+def fake_make_env(tmp_path: Path) -> dict[str, str]:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    fake_make = bin_dir / "make"
+    fake_make.write_text(_FAKE_MAKE)
+    fake_make.chmod(0o755)
+    return {
+        **os.environ,
+        "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+        "FAKE_MAKE_CALLS": f"{tmp_path / 'calls'}",
+    }
+
+
+def _make_calls(env: dict[str, str]) -> list[str]:
+    return Path(env["FAKE_MAKE_CALLS"]).read_text().splitlines()
 
 
 def test_resync_lockfiles_propagates_only_the_highest_pin_of_a_package(
@@ -48,3 +100,38 @@ def test_resync_lockfiles_propagates_only_the_highest_pin_of_a_package(
     assert set(pins_line.removeprefix("Propagating pins:").split()) == {"PyYAML==6.0.2", "virtualenv==21.14.10"}
     # the lockfile already has the highest version, so nothing is regenerated
     assert "No lockfile needs regenerating" in result.stdout
+
+
+def test_resync_lockfiles_lets_only_the_blocking_pin_move(
+    resync_lockfiles_script: Path, git_repo_behind_on_virtualenv: Path, fake_make_env: dict[str, str]
+):
+    pins_file = git_repo_behind_on_virtualenv / "pins.txt"
+    pins_file.write_text("virtualenv==21.14.10\n")
+    env = {**fake_make_env, "FAKE_MAKE_BLOCKING_PIN": "packaging==26.0"}
+
+    result = _run("bash", f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env)
+
+    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed
+    assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging"]
+    lockfiles = git_repo_behind_on_virtualenv / "requirements"
+    assert (lockfiles / "_tools.txt").read_text() == "packaging==26.3\nvirtualenv==21.14.10\n"
+    assert "these packages had to move too: requirements (packaging)" in result.stderr
+
+
+def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_it(
+    resync_lockfiles_script: Path, git_repo_behind_on_virtualenv: Path, fake_make_env: dict[str, str]
+):
+    pins_file = git_repo_behind_on_virtualenv / "pins.txt"
+    pins_file.write_text("virtualenv==21.14.10\n")
+    # uv blames a version the lockfiles do not pin, so nothing can be unblocked
+    env = {**fake_make_env, "FAKE_MAKE_BLOCKING_PIN": "packaging==99.0"}
+
+    result = _run(
+        "bash", f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env, check=False
+    )
+
+    assert result.returncode == 1
+    assert _make_calls(env) == ["virtualenv==21.14.10"]
+    lockfiles = git_repo_behind_on_virtualenv / "requirements"
+    assert (lockfiles / "_tools.txt").read_text() == "packaging==26.0\nvirtualenv==21.14.5\n"
+    assert "could not regenerate the lockfiles in: requirements" in result.stderr
