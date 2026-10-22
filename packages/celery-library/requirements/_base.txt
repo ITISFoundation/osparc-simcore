@@ -44,7 +44,7 @@ billiard==4.2.4
     # via celery
 celery==5.6.3
     # via -r requirements/_base.in
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore

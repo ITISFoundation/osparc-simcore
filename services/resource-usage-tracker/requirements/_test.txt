@@ -41,7 +41,7 @@ botocore==1.37.3
     #   boto3
     #   moto
     #   s3transfer
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

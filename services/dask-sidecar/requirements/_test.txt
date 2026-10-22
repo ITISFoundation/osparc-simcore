@@ -66,7 +66,7 @@ botocore-stubs==1.43.14
     #   -c requirements/_base.txt
     #   types-aioboto3
     #   types-aiobotocore
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -77,7 +77,7 @@ cffi==2.0.0
     #   cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.4.4
+charset-normalizer==3.5.2
     # via requests
 click==8.5.0
     # via
@@ -94,7 +94,7 @@ cryptography==50.0.0
     #   joserfc
     #   moto
     #   pyopenssl
-docker==7.1.0
+docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -282,7 +282,7 @@ requests==2.34.2
     #   jsonschema-path
     #   moto
     #   responses
-responses==0.26.0
+responses==0.26.3
     # via moto
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
