@@ -54,7 +54,7 @@ attrs==25.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
