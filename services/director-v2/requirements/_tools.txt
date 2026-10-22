@@ -15,7 +15,7 @@ click==8.5.0
     #   black
 dill==0.4.1
     # via pylint
-distlib==0.4.0
+distlib==0.4.4
     # via virtualenv
 filelock==4.0.12
     # via
@@ -127,7 +127,7 @@ typing-extensions==4.16.0
     #   -c requirements/_test.txt
     #   mypy
     #   textual
-virtualenv==21.14.5
+virtualenv==21.14.9
     # via pre-commit
 watchdog==6.0.0
     # via -r requirements/_tools.in
