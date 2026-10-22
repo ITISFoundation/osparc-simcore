@@ -1,0 +1,16 @@
+// Admin ("global") configuration of the self-hosted Renovate run by
+// .github/workflows/chore-renovate.yml. Repository settings live in .renovaterc.jsonc.
+// SEE https://docs.renovatebot.com/self-hosted-configuration/
+{
+  platform: "github",
+  repositories: ["ITISFoundation/osparc-simcore"],
+  onboarding: false,
+  requireConfig: "required",
+  // commits through the GitHub API, so they are signed by the GitHub App
+  platformCommit: "enabled",
+  // the only post-upgrade task allowed (see postUpgradeTasks in .renovaterc.jsonc)
+  allowedCommands: ["^bash scripts/renovate/resync-lockfiles\\.bash$"],
+  // minutes per child process (default 15); propagating a pin can regenerate every
+  // requirements directory, ~25s each when it needs a re-resolve from scratch
+  executionTimeout: 45,
+}
