@@ -14,8 +14,20 @@ name: Chore Renovate
 
 on:
   schedule:
-    # hourly, off the top of the hour when GitHub's scheduler is busiest
-    - cron: "17 * * * *"
+    # nightly at 02:17 UTC (03:17/04:17 in Zurich), off the top of the hour when
+    # GitHub's scheduler is busiest
+    - cron: "17 2 * * *"
+  issues:
+    # a person ticking a box on the Dependency Dashboard (approve an update, retry,
+    # ...) gets a run right away instead of waiting for the night
+    types:
+      - edited
+  pull_request_target:
+    # same for the "rebase/retry" box of a Renovate PR. pull_request_target (not
+    # pull_request) so that the workflow and the checkout always come from the base
+    # branch: no code of the PR is ever run
+    types:
+      - edited
   workflow_dispatch:
     inputs:
       log-level:
@@ -39,8 +51,19 @@ permissions:
 
 jobs:
   renovate:
-    # forks have no App credentials
-    if: github.repository == 'ITISFoundation/osparc-simcore'
+    # forks have no App credentials. Edits only count when a person (not Renovate,
+    # which rewrites its issue and PR bodies on every run) edits the Dependency
+    # Dashboard or ticks the rebase/retry box of a Renovate PR
+    if: >
+      github.repository == 'ITISFoundation/osparc-simcore' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+       (github.event.sender.type == 'User' &&
+        ((github.event_name == 'issues' &&
+          github.event.issue.user.login == 'osparc-simcore-renovate[bot]' &&
+          github.event.issue.title == 'Dependency Dashboard') ||
+         (github.event_name == 'pull_request_target' &&
+          github.event.pull_request.user.login == 'osparc-simcore-renovate[bot]' &&
+          contains(github.event.pull_request.body, '- [x] <!-- rebase-check -->')))))
     runs-on: ubuntu-latest
     # the App installation token expires after one hour
     timeout-minutes: 60

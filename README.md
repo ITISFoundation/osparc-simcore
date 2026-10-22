@@ -1,8 +1,11 @@
 # osparc-simcore platform
 
+<!-- markdownlint-disable MD013 MD033 -->
+<!-- The centered logo and footer need inline HTML, and badge and table lines cannot be wrapped -->
+
 <p align="center">
 <a href="https://osparc.io" target="_blank">
-<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="500">
+<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" alt="oSPARC" width="500">
 </a>
 </p>
 
@@ -14,7 +17,7 @@
 [![doc_badge]](https://itisfoundation.github.io/)
 [![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
 [![license_badge]](./LICENSE)
-[![renovate_badge]](https://github.com/ITISFoundation/osparc-simcore/issues/9336)
+[![renovate_badge]](https://github.com/ITISFoundation/osparc-simcore/issues/9879)
 [![sonarcloud_badge]](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
 [![osparc_status]](https://status.osparc.io)
 [![s4l_status]](https://s4llite.statuspage.io)
@@ -37,13 +40,12 @@ The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline *
 The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
 To achieve this, the platform will comprise both state-of-the art and highly detailed animal and human anatomical models with realistic tissue property distributions that make it possible to perform simulations ranging from the molecular scale up to the complexity of the human body.
 
-
 ## Getting Started
 
 A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at [oSPARC.io](https://osparc.io).
 
 If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended).
-Make sure you first install all the [requirements](#Requirements) mentioned in the section below.
+Make sure you first install all the [requirements](#requirements) mentioned in the section below.
 
 ```bash
   # clone code repository
@@ -96,7 +98,6 @@ If you want to verify if your system has all the necessary requirements:
 ```bash
     make info
 ```
-
 
 #### Setting up other Operating Systems
 
@@ -181,8 +182,6 @@ To enable this, the following commands should be used to build, instead of the o
 ## Contributing
 
 Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
-
-
 
 ## License
 
