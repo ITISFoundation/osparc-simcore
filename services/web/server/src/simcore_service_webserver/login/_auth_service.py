@@ -183,7 +183,7 @@ async def authenticate_user(
                 app,
                 email=email,
                 user_id=user["id"] if user else None,
-                settings=get_plugin_settings(app, product_name=product.name),
+                settings=get_plugin_settings(app, product_name=product.name).LOGIN_THROTTLE,
             )
             raise
 

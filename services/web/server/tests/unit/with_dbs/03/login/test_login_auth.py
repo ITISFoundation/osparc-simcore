@@ -398,7 +398,7 @@ def _free_failed_login_attempts(client: TestClient) -> int:
     assert client.app
     login_settings = client.app[APP_SETTINGS_APPKEY].WEBSERVER_LOGIN
     assert login_settings
-    return login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
+    return login_settings.LOGIN_THROTTLE.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
 
 
 async def test_login_is_throttled_after_repeated_wrong_passwords(client: TestClient, mocker: MockerFixture):

@@ -16,6 +16,39 @@ _YEARS: Final[float] = 365 * _DAYS
 _UNLIMITED: Final[float] = 99 * _YEARS
 
 
+class LoginThrottleSettings(BaseCustomSettings):
+    """Exponential back-off settings for repeated failed logins per email"""
+
+    LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS: Annotated[
+        NonNegativeInt,
+        Field(description="Failed logins per email before the back-off delays start"),
+    ] = 5
+
+    LOGIN_THROTTLE_BASE_DELAY_SEC: Annotated[
+        PositiveInt,
+        Field(
+            description="Delay [sec] after the first failure above the free ones. It doubles with each further failure"
+        ),
+    ] = 2
+
+    LOGIN_THROTTLE_MAX_DELAY_SEC: Annotated[
+        PositiveInt,
+        Field(description="Upper bound [sec] of the back-off delay"),
+    ] = 900
+
+    LOGIN_THROTTLE_WINDOW_SEC: Annotated[
+        PositiveInt,
+        Field(description="Failed logins are forgotten after this time [sec] without new failures"),
+    ] = 3600
+
+    @model_validator(mode="after")
+    def _max_delay_not_below_base(self):
+        if self.LOGIN_THROTTLE_MAX_DELAY_SEC < self.LOGIN_THROTTLE_BASE_DELAY_SEC:
+            msg = "LOGIN_THROTTLE_MAX_DELAY_SEC must not be smaller than LOGIN_THROTTLE_BASE_DELAY_SEC"
+            raise ValueError(msg)
+        return self
+
+
 class LoginSettings(BaseCustomSettings):
     LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: Annotated[
         PositiveInt,
@@ -57,34 +90,13 @@ class LoginSettings(BaseCustomSettings):
         ),
     ] = 12
 
-    LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS: Annotated[
-        NonNegativeInt,
-        Field(description="Failed logins per email before the back-off delays start"),
-    ] = 5
-
-    LOGIN_THROTTLE_BASE_DELAY_SEC: Annotated[
-        PositiveInt,
+    LOGIN_THROTTLE: Annotated[
+        LoginThrottleSettings,
         Field(
-            description="Delay [sec] after the first failure above the free ones. It doubles with each further failure"
+            json_schema_extra={"auto_default_from_env": True},
+            description="Exponential back-off settings for repeated failed logins",
         ),
-    ] = 2
-
-    LOGIN_THROTTLE_MAX_DELAY_SEC: Annotated[
-        PositiveInt,
-        Field(description="Upper bound [sec] of the back-off delay"),
-    ] = 900
-
-    LOGIN_THROTTLE_WINDOW_SEC: Annotated[
-        PositiveInt,
-        Field(description="Failed logins are forgotten after this time [sec] without new failures"),
-    ] = 3600
-
-    @model_validator(mode="after")
-    def _login_throttle_max_delay_not_below_base(self):
-        if self.LOGIN_THROTTLE_MAX_DELAY_SEC < self.LOGIN_THROTTLE_BASE_DELAY_SEC:
-            msg = "LOGIN_THROTTLE_MAX_DELAY_SEC must not be smaller than LOGIN_THROTTLE_BASE_DELAY_SEC"
-            raise ValueError(msg)
-        return self
+    ]
 
     @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod

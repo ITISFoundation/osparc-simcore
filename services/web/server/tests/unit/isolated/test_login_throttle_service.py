@@ -23,17 +23,15 @@ from simcore_service_webserver.login._login_throttle_service import (
     register_failed_login,
 )
 from simcore_service_webserver.login.errors import WrongPasswordError
-from simcore_service_webserver.login.settings import LoginSettings
+from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
 
 _EMAIL = Faker().email()
 
 
 @pytest.fixture
-def login_settings() -> LoginSettings:
-    return LoginSettings(
-        LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
-        LOGIN_TWILIO=None,
+def throttle_settings() -> LoginThrottleSettings:
+    return LoginThrottleSettings(
         LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS=3,
         LOGIN_THROTTLE_BASE_DELAY_SEC=2,
         LOGIN_THROTTLE_MAX_DELAY_SEC=60,
@@ -68,36 +66,36 @@ def app() -> web.Application:
         (10_000, 60),  # no overflow
     ],
 )
-def test_compute_delay_doubles_until_the_maximum(login_settings: LoginSettings, failures: int, expected_delay_sec: int):
-    assert compute_delay_sec(failures, settings=login_settings) == expected_delay_sec
+def test_compute_delay_doubles_until_the_maximum(
+    throttle_settings: LoginThrottleSettings, failures: int, expected_delay_sec: int
+):
+    assert compute_delay_sec(failures, settings=throttle_settings) == expected_delay_sec
 
 
 @pytest.mark.parametrize("base_delay_sec,max_delay_sec", [(10, 5)])
 def test_settings_reject_maximum_delay_below_base_delay(base_delay_sec: int, max_delay_sec: int):
     with pytest.raises(ValueError, match="LOGIN_THROTTLE_MAX_DELAY_SEC"):
-        LoginSettings(
-            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
-            LOGIN_TWILIO=None,
+        LoginThrottleSettings(
             LOGIN_THROTTLE_BASE_DELAY_SEC=base_delay_sec,
             LOGIN_THROTTLE_MAX_DELAY_SEC=max_delay_sec,
         )
 
 
 async def test_not_throttled_until_free_attempts_are_used(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings
 ):
-    for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS):
+    for _ in range(throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS):
         await raise_if_login_throttled(app, email=_EMAIL)
-        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     assert await get_login_retry_after_sec(app, email=_EMAIL) == 0
     await raise_if_login_throttled(app, email=_EMAIL)
 
     # the next failure starts the back-off
-    await register_failed_login(app, email=_EMAIL, settings=login_settings)
+    await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     retry_after_sec = await get_login_retry_after_sec(app, email=_EMAIL)
-    assert 0 < retry_after_sec <= login_settings.LOGIN_THROTTLE_BASE_DELAY_SEC
+    assert 0 < retry_after_sec <= throttle_settings.LOGIN_THROTTLE_BASE_DELAY_SEC
 
     with pytest.raises(web.HTTPTooManyRequests) as exc_info:
         await raise_if_login_throttled(app, email=_EMAIL)
@@ -105,31 +103,31 @@ async def test_not_throttled_until_free_attempts_are_used(
 
 
 async def test_back_off_doubles_with_every_failure(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings
 ):
-    free = login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
+    free = throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
     for _ in range(free + 2):
-        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     # second failure above the free ones: 2 * 2 seconds
     assert 2 < await get_login_retry_after_sec(app, email=_EMAIL) <= 4
 
 
 async def test_throttling_ignores_case_and_surrounding_spaces_of_the_email(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings
 ):
-    for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
-        await register_failed_login(app, email=f"  {_EMAIL.upper()} ", settings=login_settings)
+    for _ in range(throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
+        await register_failed_login(app, email=f"  {_EMAIL.upper()} ", settings=throttle_settings)
 
     assert await get_login_retry_after_sec(app, email=_EMAIL) > 0
     assert await get_login_retry_after_sec(app, email="other@example.com") == 0
 
 
 async def test_clearing_resets_failures_and_block(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings
 ):
-    for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
-        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+    for _ in range(throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
     assert await get_login_retry_after_sec(app, email=_EMAIL) > 0
 
     await clear_failed_logins(app, email=_EMAIL)
@@ -139,9 +137,9 @@ async def test_clearing_resets_failures_and_block(
 
 
 async def test_emails_are_not_stored_in_clear_text(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings
 ):
-    await register_failed_login(app, email=_EMAIL, settings=login_settings)
+    await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     keys = [key.decode() for key in await fake_redis.keys("*")]
     assert keys
@@ -165,12 +163,12 @@ async def test_login_guard_allows_emails_that_are_not_in_back_off(guard_client: 
 
 
 async def test_login_guard_rejects_emails_in_back_off(
-    guard_client: TestClient, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
+    guard_client: TestClient, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings
 ):
     app = guard_client.app
     assert app
-    for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
-        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+    for _ in range(throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     response = await guard_client.post("/v0/auth:login-guard", json={"email": _EMAIL.upper(), "password": "x"})
 
@@ -199,12 +197,12 @@ async def test_login_guard_answers_503_when_redis_fails(
 
 
 async def test_registering_a_failed_login_answers_503_when_redis_fails(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings, mocker: MockerFixture
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings, mocker: MockerFixture
 ):
     mocker.patch.object(fake_redis, "pipeline", side_effect=RedisConnectionError("down"))
 
     with pytest.raises(web.HTTPServiceUnavailable):
-        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
 
 async def test_clearing_failed_logins_ignores_redis_errors(
@@ -216,15 +214,15 @@ async def test_clearing_failed_logins_ignores_redis_errors(
 
 
 async def test_overlapping_failures_never_shorten_the_back_off(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings, mocker: MockerFixture
+    app: web.Application, fake_redis: FakeAsyncRedis, throttle_settings: LoginThrottleSettings, mocker: MockerFixture
 ):
     # failure #7 is handled before the slower failure #6 writes its block
     mocker.patch.object(_login_throttle_repository, "increment_failures", side_effect=[7, 6])
-    longest_delay_sec = compute_delay_sec(7, settings=login_settings)
-    assert compute_delay_sec(6, settings=login_settings) < longest_delay_sec
+    longest_delay_sec = compute_delay_sec(7, settings=throttle_settings)
+    assert compute_delay_sec(6, settings=throttle_settings) < longest_delay_sec
 
-    await register_failed_login(app, email=_EMAIL, settings=login_settings)
-    await register_failed_login(app, email=_EMAIL, settings=login_settings)
+    await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
+    await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
     assert await get_login_retry_after_sec(app, email=_EMAIL) == longest_delay_sec
 
@@ -247,10 +245,10 @@ async def test_guard_answers_503_when_redis_does_not_reply(guard_client: TestCli
 
 
 async def test_registering_a_failed_login_answers_503_when_redis_does_not_reply(
-    app: web.Application, login_settings: LoginSettings, unresponsive_redis: None
+    app: web.Application, throttle_settings: LoginThrottleSettings, unresponsive_redis: None
 ):
     with pytest.raises(web.HTTPServiceUnavailable):
-        await register_failed_login(app, email=_EMAIL, settings=login_settings)
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
 
 async def test_clearing_failed_logins_ignores_a_redis_that_does_not_reply(
@@ -266,7 +264,7 @@ async def test_login_guard_accepts_a_very_long_password(guard_client: TestClient
 
 
 @pytest.fixture
-def wrong_password_checks(mocker: MockerFixture, login_settings: LoginSettings) -> list[None]:
+def wrong_password_checks(mocker: MockerFixture, throttle_settings: LoginThrottleSettings) -> list[None]:
     calls: list[None] = []
 
     async def _wrong_password(*_args, **_kwargs):
@@ -276,12 +274,17 @@ def wrong_password_checks(mocker: MockerFixture, login_settings: LoginSettings) 
 
     mocker.patch.object(_auth_service, "get_user_or_none", return_value=None)
     mocker.patch.object(_auth_service, "check_authorized_user_credentials", side_effect=_wrong_password)
-    mocker.patch.object(_auth_service, "get_plugin_settings", return_value=login_settings)
+    mocker.patch.object(
+        _auth_service, "get_plugin_settings", return_value=SimpleNamespace(LOGIN_THROTTLE=throttle_settings)
+    )
     return calls
 
 
 async def test_concurrent_attempts_cannot_exceed_the_free_attempts(
-    app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings, wrong_password_checks: list[None]
+    app: web.Application,
+    fake_redis: FakeAsyncRedis,
+    throttle_settings: LoginThrottleSettings,
+    wrong_password_checks: list[None],
 ):
     num_attempts = 20
     product = SimpleNamespace(name="osparc")
@@ -294,7 +297,7 @@ async def test_concurrent_attempts_cannot_exceed_the_free_attempts(
         return_exceptions=True,
     )
 
-    allowed_checks = login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1
+    allowed_checks = throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1
     assert len(wrong_password_checks) == allowed_checks
     assert sum(isinstance(r, WrongPasswordError) for r in results) == allowed_checks
     assert sum(isinstance(r, web.HTTPTooManyRequests) for r in results) == num_attempts - allowed_checks

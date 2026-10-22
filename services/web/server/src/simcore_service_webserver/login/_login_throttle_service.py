@@ -19,7 +19,7 @@ from redis.exceptions import LockError, RedisError
 from ..utils_rate_limiting import create_too_many_requests_error
 from . import _login_throttle_repository as _repository
 from .constants import MSG_LOGIN_TOO_MANY_ATTEMPTS, MSG_LOGIN_UNAVAILABLE
-from .settings import LoginSettings
+from .settings import LoginThrottleSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ def _get_digest(email: str) -> str:
     return hashlib.sha256(email.strip().lower().encode()).hexdigest()
 
 
-def compute_delay_sec(failures: int, *, settings: LoginSettings) -> int:
+def compute_delay_sec(failures: int, *, settings: LoginThrottleSettings) -> int:
     """Delay after the `failures`-th consecutive failure: doubles with each failure, up to the maximum"""
     excess = failures - settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
     if excess <= 0:
@@ -116,7 +116,7 @@ async def raise_if_login_throttled(app: web.Application, *, email: str) -> None:
 
 
 async def register_failed_login(
-    app: web.Application, *, email: str, user_id: UserID | None = None, settings: LoginSettings
+    app: web.Application, *, email: str, user_id: UserID | None = None, settings: LoginThrottleSettings
 ) -> None:
     digest = _get_digest(email)
     async with _handle_redis_errors_as_503():
