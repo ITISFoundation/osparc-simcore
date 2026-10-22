@@ -627,3 +627,63 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     state_after = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
     assert state_after == state_before
     assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
+
+
+@pytest.mark.epic("sanderegg/T2", flips_in="PR2")
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_start_computation_forwards_every_runnable_project(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    faker: Faker,
+):
+    """W11: when the product's run policy returns several runnable projects (e.g. a
+    project that must be forked per variant), the web-server forwards ONE start request
+    to director-v2 per project, all of them with the SAME wallet_info, and still answers
+    with the pipeline_id of the project the user started.
+
+    ⚠️ The pricing/resources ownership rework (PR 2) keeps the one-request-per-runnable-
+    project forwarding and identical wallet_info asserted here, but additionally
+    repairs each project's pricing links/resources before forwarding, so extra
+    interactions may appear around these calls.
+    """
+    assert client.app
+
+    wallet = WalletInfo(wallet_id=WalletID(1), wallet_name="Test Wallet", wallet_credit_amount=Decimal(100))
+    mocker.patch(
+        "simcore_service_webserver.director_v2._controller.rest._director_v2_service.get_wallet_info",
+        autospec=True,
+        return_value=wallet,
+    )
+
+    # the run policy yields 2 runnable variants: the caller project and a fork
+    forked_project_id = f"{faker.uuid4()}"
+    runnable_project_ids = [user_project["uuid"], forked_project_id]
+    run_policy = mocker.Mock()
+    run_policy.get_or_create_runnable_projects = mocker.AsyncMock(return_value=(runnable_project_ids, []))
+    mocker.patch(
+        "simcore_service_webserver.director_v2._controller.rest.get_project_run_policy",
+        autospec=True,
+        return_value=run_policy,
+    )
+
+    async def _fake_start(self, project_id, *_args, **_kwargs):
+        return (f"{project_id}", status.HTTP_201_CREATED)
+
+    mocked_start = mocker.patch.object(
+        DirectorV2RestClient, "start_computation", autospec=True, side_effect=_fake_start
+    )
+
+    url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
+    rsp = await client.post(f"{url}")
+    data, _ = await assert_status(rsp, status.HTTP_201_CREATED)
+    assert data["pipeline_id"] == user_project["uuid"]
+
+    # one forwarded start per runnable project, all carrying the same wallet_info
+    assert mocked_start.call_count == len(runnable_project_ids)
+    forwarded_project_ids = {call.args[1] for call in mocked_start.call_args_list}
+    assert forwarded_project_ids == set(runnable_project_ids)
+    for call in mocked_start.call_args_list:
+        assert call.kwargs["wallet_info"] == wallet
