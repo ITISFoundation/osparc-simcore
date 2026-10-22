@@ -5,6 +5,7 @@
 
 
 import asyncio
+import contextlib
 import datetime
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -215,6 +216,29 @@ async def test_periodic_decorator():
         await task
 
     assert mock_func.call_count > 1
+
+
+async def test_periodic_forwards_kwargs_sharing_a_name_with_internals():
+    # A wrapped task may take a keyword whose name collides with a parameter the
+    # decorator threads internally, e.g. `chain`. It must reach the task, see
+    # https://github.com/ITISFoundation/osparc-simcore/pull/9863#issuecomment
+    received = []
+    done = asyncio.Event()
+
+    @periodic(interval=datetime.timedelta(milliseconds=5))
+    async def _func(*, chain: object) -> None:
+        received.append(chain)
+        done.set()
+
+    task = asyncio.create_task(_func(chain="user-chain"))
+    try:
+        await asyncio.wait_for(done.wait(), timeout=5)
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    assert received[:1] == ["user-chain"]
 
 
 class CustomError(Exception):

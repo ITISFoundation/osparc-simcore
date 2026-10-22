@@ -13,9 +13,7 @@ from typing import Any
 import pytest
 from common_library.logging.logging_base import get_log_record_extra
 from faker import Faker
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from pydantic import AnyUrl
 from servicelib.logging_utils import (
     _DEFAULT_FORMATTING,
     CustomFormatter,
@@ -29,8 +27,7 @@ from servicelib.logging_utils import (
     log_exceptions,
     set_parent_module_log_level,
 )
-from servicelib.tracing import TracingConfig, _current_tracing_config, get_current_tracing_config
-from settings_library.tracing import TracingSettings
+from servicelib.tracing import TracingConfig, get_current_tracing_config
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -298,36 +295,7 @@ def test_log_context_caller_is_included_in_log(
     assert Path(__file__).name in caplog.text
 
 
-@pytest.fixture
-def no_tracing_config() -> Iterable[None]:
-    # NOTE: `_current_tracing_config` is process-wide (set once by `setup_log_tracing` and never
-    # reset), so we explicitly force/restore it here to make this test independent of test order.
-    token = _current_tracing_config.set(None)
-    try:
-        yield
-    finally:
-        _current_tracing_config.reset(token)
-
-
-@pytest.fixture
-def tracing_config_enabled(faker: Faker) -> Iterable[tuple[TracingConfig, InMemorySpanExporter]]:
-    tracing_settings = TracingSettings(
-        TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION="0.144.0",
-        TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=AnyUrl("http://opentelemetry-collector"),
-        TRACING_OPENTELEMETRY_COLLECTOR_PORT=4318,
-        TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=1.0,
-    )
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-    assert tracing_config.tracer_provider is not None
-
-    memory_exporter = InMemorySpanExporter()
-    tracing_config.tracer_provider.add_span_processor(SimpleSpanProcessor(memory_exporter))
-
-    token = _current_tracing_config.set(tracing_config)
-    try:
-        yield tracing_config, memory_exporter
-    finally:
-        _current_tracing_config.reset(token)
+# NOTE: `no_tracing_config` and `tracing_config_enabled` are defined in tests/conftest.py
 
 
 def test_log_context_without_tracing_config_creates_no_span(
@@ -434,8 +402,11 @@ def test_log_context_span_has_code_lineno_attribute(
 ):
     _tracing_config, memory_exporter = tracing_config_enabled
 
-    with log_context(_logger, logging.INFO, "doing something"):  # <-- this line's number is expected below
-        expected_lineno = getframeinfo(currentframe()).lineno - 1
+    caller_frame = currentframe()
+    assert caller_frame is not None
+    expected_lineno = getframeinfo(caller_frame).lineno + 1  # the `with` line below is what log_context reports
+    with log_context(_logger, logging.INFO, "doing something"):
+        ...
 
     spans = memory_exporter.get_finished_spans()
     assert len(spans) == 1

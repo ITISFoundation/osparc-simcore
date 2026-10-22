@@ -33,7 +33,9 @@ Target the Python version in `.python-version`.
 - Declare module-level constants as `NAME: Final[T] = value` with an explicit
   type, including private ones and constants in test modules. Document
   non-obvious constant rationale with `Final[Annotated[T, doc(...)]]` instead
-  of a preceding comment.
+  of a preceding comment. A module-level `ContextVar` counts as one: its name is
+  never rebound even though its value changes per context, so declare it as
+  `Final[Annotated[ContextVar[T], doc(...)]]`.
 
 ## Documentation
 
