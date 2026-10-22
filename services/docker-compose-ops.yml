@@ -25,7 +25,7 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: postgres
     ports:
-      - "18080:8080"
+      - "${ADMINER_HOST_PORT:-18080}:8080"
     networks:
       - simcore_default
 
@@ -36,7 +36,7 @@ services:
     environment:
       CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}//
     ports:
-      - "5555:5555"
+      - "${FLOWER_HOST_PORT:-5555}:5555"
     networks:
       - simcore_default
     healthcheck:
@@ -59,14 +59,14 @@ services:
     networks:
       - simcore_default
     ports:
-      - "16686:16686" # Jaeger UI
-      - "43017:4317" # opentelemetry GRPC default port
-      - "43018:4318" # opentelemetry HTTP default port
+      - "${JAEGER_UI_HOST_PORT:-16686}:16686" # Jaeger UI
+      - "${JAEGER_OTLP_GRPC_HOST_PORT:-43017}:4317" # opentelemetry GRPC default port
+      - "${JAEGER_OTLP_HTTP_HOST_PORT:-43018}:4318" # opentelemetry HTTP default port
   portainer:
     image: portainer/portainer-ce
     init: true
     ports:
-      - "9000:9000"
+      - "${PORTAINER_HOST_PORT:-9000}:9000"
     command: ["-H", "unix:///var/run/docker.sock", "--no-setup-token"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -80,8 +80,8 @@ services:
       - --smtp-auth-accept-any
       - --smtp-auth-allow-insecure
     ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
+      - "${MAILPIT_SMTP_HOST_PORT:-1025}:1025" # SMTP
+      - "${MAILPIT_UI_HOST_PORT:-8025}:8025" # Web UI
     networks:
       - simcore_default
     healthcheck:
@@ -110,8 +110,8 @@ services:
       RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?secret_key_required}
       RUSTFS_CONSOLE_ENABLE: "true"
     ports:
-      - "9001:9000" # S3 API (host port kept from the previous minio service)
-      - "9090:9001" # web console
+      - "${S3_HOST_PORT:-9001}:9000" # S3 API (host port kept from the previous minio service)
+      - "${S3_CONSOLE_HOST_PORT:-9090}:9001" # web console
     volumes:
       - s3_storage_data:/data
     networks:
@@ -144,7 +144,7 @@ services:
         chatbox_usage:${REDIS_HOST}:${REDIS_PORT}:12:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
-      - "18081:8081"
+      - "${REDIS_COMMANDER_HOST_PORT:-18081}:8081"
     user: redis
     networks:
       - simcore_default
@@ -163,7 +163,7 @@ services:
     command:
       - "--config=/etc/otel/config.yaml"
     ports:
-      - "4318:4318" # OTLP HTTP receiver
+      - "${OPENTELEMETRY_COLLECTOR_HOST_PORT:-4318}:4318" # OTLP HTTP receiver
     networks:
       - simcore_default
       - interactive_services_subnet
@@ -172,9 +172,9 @@ services:
       TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}
 volumes:
   s3_storage_data:
-    name: ops_s3_storage_data
+    name: ${SWARM_OPS_STACK_NAME:-ops}_s3_storage_data
   portainer_data:
-    name: ops_portainer_data
+    name: ${SWARM_OPS_STACK_NAME:-ops}_portainer_data
 
 networks:
   simcore_default:

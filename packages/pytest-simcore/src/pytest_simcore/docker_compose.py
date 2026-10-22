@@ -16,8 +16,10 @@ import shutil
 from collections.abc import Iterator
 from copy import deepcopy
 from datetime import timedelta
+from io import StringIO
 from pathlib import Path
 from typing import Any, Final
+from urllib.parse import urlsplit
 
 import pytest
 import yaml
@@ -27,9 +29,9 @@ from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
+from .helpers.dev_slot import DevSlotMismatchError, lease_checkout_slot, load_dev_slot_module
 from .helpers.docker import filter_service_names_for_ci, run_docker_compose_config, save_docker_infos
 from .helpers.host import get_localhost_ip
-from .helpers.stack_names import compute_stack_names, get_checkout_token, get_git_ref
 from .helpers.typing_env import EnvVarsDict
 from .helpers.xdist import (
     is_xdist_controller,
@@ -57,15 +59,28 @@ def env_vars_for_docker_compose(
     """
     Loads and extends .env-devel returning all environment variables key=value
 
+    The stacks deploy under this checkout's dev slot (see pytest_simcore.helpers.dev_slot): its
+    variables (host ports, ...) are defined ahead of .env-devel, whose ${VAR:-default} values
+    (e.g. S3_ENDPOINT) interpolate them.
 
     NOTE: that these are then env-vars used in the services started in the
     integration tests!
     """
+    is_ci = "CI" in os.environ
+    try:
+        slot = lease_checkout_slot(osparc_simcore_root_dir, accept_moved_slot=is_ci)
+    except DevSlotMismatchError as err:
+        pytest.exit(f"{err}", returncode=pytest.ExitCode.USAGE_ERROR)
+    dev_slot = load_dev_slot_module(osparc_simcore_root_dir)
+    slot_env: dict[str, str] = dev_slot.derive_env(slot)
+
+    slot_lines = "".join(f"{key}={value}\n" for key, value in slot_env.items())
     env_devel = dotenv_values(
-        env_devel_file,
+        stream=StringIO(slot_lines + env_devel_file.read_text()),
         verbose=True,
         interpolate=True,  # NOTE: This resolves expressions as VAR=$ENVVAR
     )
+    env_devel |= slot_env  # .env-devel re-defines some of them with their slot-0 defaults
 
     # These are overrides to .env-devel or an extension to them
     env_devel["LOG_LEVEL"] = "DEBUG"
@@ -77,11 +92,9 @@ def env_vars_for_docker_compose(
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
 
-    # checkout-scoped stack names: stack names are global inside the docker daemon, so
-    # every checkout deploys its own (see pytest_simcore.helpers.stack_names)
-    core_stack_name, ops_stack_name = compute_stack_names(
-        get_git_ref(osparc_simcore_root_dir), get_checkout_token(osparc_simcore_root_dir)
-    )
+    # slot-scoped stack names: stack names are global inside the docker daemon, so
+    # every checkout deploys its own (see pytest_simcore.helpers.dev_slot)
+    core_stack_name, ops_stack_name = dev_slot.pytest_stack_names(slot)
     env_devel["SWARM_STACK_NAME"] = core_stack_name
     env_devel["SWARM_OPS_STACK_NAME"] = ops_stack_name
     env_devel.setdefault("SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_"))
@@ -120,7 +133,8 @@ def env_vars_for_docker_compose(
     if "DOCKER_REGISTRY" not in os.environ:
         env_devel["DOCKER_REGISTRY"] = "local"
     if "DOCKER_IMAGE_TAG" not in os.environ:
-        env_devel["DOCKER_IMAGE_TAG"] = "production"
+        # images built by `make build` in this checkout's slot; CI loads plain 'production' images
+        env_devel["DOCKER_IMAGE_TAG"] = "production" + ("" if is_ci else slot_env["LOCAL_IMAGE_TAG_SUFFIX"])
 
     # ensure we do not use the bucket of simcore or so
     env_devel["S3_BUCKET_NAME"] = "pytestbucket"
@@ -375,9 +389,14 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -
 
 
 def _fix_s3_endpoint_to_host(service_environs: dict[str, str]) -> dict[str, str]:
-    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
+    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work.
+
+    Keeps the port: it is the host port of the dev slot the tests deploy in.
+    """
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = f"http://{get_localhost_ip()}:9001"
+        port = urlsplit(service_environs["S3_ENDPOINT"]).port
+        assert port, f"S3_ENDPOINT={service_environs['S3_ENDPOINT']!r} has no host port"
+        service_environs["S3_ENDPOINT"] = f"http://{get_localhost_ip()}:{port}"
     return service_environs
 
 
