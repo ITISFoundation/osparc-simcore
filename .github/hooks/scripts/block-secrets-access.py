@@ -1,7 +1,4 @@
-#!/usr/bin/env -S uv run --no-cache --script
-# /// script
-# requires-python = ">=3.11"
-# ///
+#!/usr/bin/env python3
 # ruff: noqa: ERA001
 #
 # Hook: block-secrets-access
@@ -14,9 +11,9 @@
 # object on stdout carrying both contracts: top-level permissionDecision for the
 # Copilot harness plus a nested hookSpecificOutput copy for the legacy Local harness.
 # Exit 0 for allow and for deny; exit 2 would surface as a blocking error in Local
-# instead of the structured reason. No third-party dependencies, so the shebang runs
-# it with the interpreter only and --no-cache avoids writing to a cache directory the
-# hook sandbox may not expose.
+# instead of the structured reason. Stdlib-only on purpose: the hook command runs it
+# with plain python3, since the harness process may lack uv on PATH and a failing
+# preToolUse hook denies every tool call.
 
 from __future__ import annotations
 

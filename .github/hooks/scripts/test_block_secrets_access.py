@@ -3,20 +3,17 @@
 The hook must work for the legacy Local payload (tool_name/tool_input), the Copilot
 camelCase payload (toolName/toolArgs, with toolArgs possibly a JSON string), and the
 PascalCase alias that reports Claude tool names. Subprocess tests run the script via
-sys.executable so they do not need uv; one smoke test exercises the real shebang and
-is skipped when uv is absent.
+sys.executable; one smoke test exercises the real shebang, which must work with the
+plain interpreter environment a hook process sees.
 
 Run from the repo root:
     pytest .github/hooks/scripts/test_block_secrets_access.py -v
-or without a virtualenv:
-    uv run --with pytest pytest .github/hooks/scripts/test_block_secrets_access.py -q
 """
 
 from __future__ import annotations
 
 import importlib.util
 import json
-import shutil
 import stat
 import subprocess
 import sys
@@ -243,26 +240,25 @@ def test_script_is_executable() -> None:
     assert mode & stat.S_IXUSR, "shebang execution requires the owner exec bit"
 
 
-def test_script_uses_uv_shebang_without_cache() -> None:
+def test_script_uses_plain_python_shebang() -> None:
     first_line = SCRIPT.read_text().splitlines()[0]
-    assert first_line == "#!/usr/bin/env -S uv run --no-cache --script"
+    assert first_line == "#!/usr/bin/env python3"
 
 
 def test_hook_json_targets_copilot_contract() -> None:
     config = json.loads((SCRIPT.parent.parent / "block-secrets-access.json").read_text())
     assert config["version"] == 1
     (entry,) = config["hooks"]["preToolUse"]
-    # The Copilot harness process may lack uv on PATH, so the command must fall
-    # back to python3 instead of relying on the shebang alone.
+    # The hook is stdlib-only and must not depend on uv: the Copilot harness
+    # process may lack uv on PATH, and a failing preToolUse hook denies everything.
     repo_root = SCRIPT.parent.parent.parent.parent
     for field in ("command", "bash"):
-        assert "command -v uv" in entry[field]
-        assert f"exec python3 {SCRIPT.relative_to(repo_root)}" in entry[field]
+        assert "uv" not in entry[field]
+        assert entry[field] == f"python3 {SCRIPT.relative_to(repo_root)}"
     assert "timeoutSec" in entry
     assert "timeout" not in entry
 
 
-@pytest.mark.skipif(shutil.which("uv") is None, reason="uv is not installed")
 def test_script_runs_through_its_shebang() -> None:
     proc = subprocess.run(  # noqa: S603
         # fixed in-repo fixture payload piped to the repo's own hook script
