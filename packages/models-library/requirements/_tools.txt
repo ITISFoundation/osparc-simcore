@@ -8,20 +8,10 @@ black==26.3.1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
-cfgv==3.5.0
-    # via pre-commit
 click==8.3.1
     # via black
 dill==0.4.1
     # via pylint
-distlib==0.4.0
-    # via virtualenv
-filelock==4.0.12
-    # via
-    #   python-discovery
-    #   virtualenv
-identify==2.6.18
-    # via pre-commit
 isort==8.0.1
     # via
     #   -r requirements/../../../requirements/devenv.txt
@@ -40,13 +30,10 @@ mypy-extensions==1.1.0
     # via
     #   black
     #   mypy
-nodeenv==1.10.0
-    # via pre-commit
 packaging==26.0
     # via
     #   -c requirements/_test.txt
     #   black
-    #   virtualenv
 pathspec==1.0.4
     # via
     #   black
@@ -56,24 +43,14 @@ platformdirs==4.9.4
     #   -c requirements/_test.txt
     #   black
     #   pylint
-    #   virtualenv
-pre-commit==4.5.1
-    # via -r requirements/../../../requirements/devenv.txt
 pygments==2.21.0
     # via
     #   -c requirements/_test.txt
     #   rich
 pylint==4.0.5
     # via -r requirements/../../../requirements/devenv.txt
-python-discovery==1.6.1
-    # via virtualenv
 pytokens==0.4.1
     # via black
-pyyaml==6.0.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_test.txt
-    #   pre-commit
 rich==14.3.3
     # via typer
 ruff==0.15.6
@@ -89,5 +66,3 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==21.14.5
-    # via pre-commit

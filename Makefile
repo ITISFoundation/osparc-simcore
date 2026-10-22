@@ -661,6 +661,7 @@ export UV_VERSION := $(shell cat requirements/UV_VERSION)
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
+	@uv pip --quiet uninstall --python $< pre-commit 2>/dev/null || true
 	# Installing pre-commit hooks. All worktrees share them, so the hook runs a per-user
 	# pre-commit (uv tool) instead of the .venv of the worktree that installed it
 	@uv tool install --quiet --upgrade --force pre-commit

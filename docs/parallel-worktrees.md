@@ -50,8 +50,8 @@ Shared between slots: the swarm, the build cache and the test registry
 `pytest_registry_v3` on port 5000.
 
 All worktrees also share the git hooks. `make devenv` therefore installs
-pre-commit as a uv tool (`~/.local/bin/pre-commit`) and installs the hook from
-there, so the hook does not depend on the `.venv` of one worktree.
+pre-commit as a uv tool (`~/.local/bin/pre-commit`), not in `.venv`, and
+installs the hook from there. The hook then works in every worktree.
 
 If the marker is lost (e.g. `docker network prune`) and another checkout takes
 the slot, `make` stops with "this checkout now holds dev slot ...". Re-run it

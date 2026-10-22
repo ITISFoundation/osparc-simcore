@@ -6,8 +6,6 @@ black==26.3.1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
-cfgv==3.5.0
-    # via pre-commit
 change-case==0.5.2
     # via -r requirements/_tools.in
 click==8.2.1
@@ -17,14 +15,6 @@ click==8.2.1
     #   black
 dill==0.4.1
     # via pylint
-distlib==0.4.0
-    # via virtualenv
-filelock==4.0.12
-    # via
-    #   python-discovery
-    #   virtualenv
-identify==2.6.18
-    # via pre-commit
 isort==8.0.1
     # via
     #   -r requirements/../../../requirements/devenv.txt
@@ -55,14 +45,11 @@ mypy-extensions==1.1.0
     #   -c requirements/_test.txt
     #   black
     #   mypy
-nodeenv==1.10.0
-    # via pre-commit
 packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-    #   virtualenv
 pathspec==1.0.4
     # via
     #   -c requirements/_test.txt
@@ -73,13 +60,8 @@ platformdirs==4.3.6
     #   -c requirements/_base.txt
     #   black
     #   pylint
-    #   virtualenv
-pre-commit==4.5.1
-    # via -r requirements/../../../requirements/devenv.txt
 pylint==4.0.5
     # via -r requirements/../../../requirements/devenv.txt
-python-discovery==1.6.1
-    # via virtualenv
 pytokens==0.4.1
     # via black
 pyyaml==6.0.3
@@ -87,7 +69,6 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
-    #   pre-commit
     #   watchdog
 ruff==0.15.6
     # via -r requirements/../../../requirements/devenv.txt
@@ -98,7 +79,5 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==21.14.5
-    # via pre-commit
 watchdog==6.0.0
     # via -r requirements/_tools.in
