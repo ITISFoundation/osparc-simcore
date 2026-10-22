@@ -661,8 +661,10 @@ export UV_VERSION := $(shell cat requirements/UV_VERSION)
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json .vscode/mcp.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
-	# Installing pre-commit hooks in current .git repo
-	@$</bin/pre-commit install
+	# Installing pre-commit hooks. All worktrees share them, so the hook runs a per-user
+	# pre-commit (uv tool) instead of the .venv of the worktree that installed it
+	@uv tool install --quiet --upgrade --force pre-commit
+	@"$$(uv tool dir --bin)/pre-commit" install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
 
 
@@ -972,7 +974,7 @@ clean-venv: devenv ## Purges .venv into original configuration
 	@uv pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks
-	@-pre-commit uninstall 2> /dev/null || rm .git/hooks/pre-commit
+	@-"$$(uv tool dir --bin)/pre-commit" uninstall 2> /dev/null || rm -f "$$(git rev-parse --git-common-dir)/hooks/pre-commit"
 
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
