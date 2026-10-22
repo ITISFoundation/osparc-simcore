@@ -38,6 +38,7 @@ from simcore_service_webserver.login.constants import (
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,
+    LoginThrottleSettings,
     get_plugin_settings,
 )
 
@@ -175,7 +176,7 @@ async def test_registration_of_registered_user_is_throttled_like_login(
     async with NewUser(app=client.app) as user:
         wrong_password = f"{user['raw_password']}-wrong"
 
-        for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
+        for _ in range(login_settings.LOGIN_THROTTLE.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
             response = await client.post(
                 url.path, json={"email": user["email"], "password": wrong_password, "confirm": wrong_password}
             )
@@ -212,6 +213,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -297,6 +299,7 @@ async def test_registration_with_invalid_confirmation_code(
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -327,6 +330,7 @@ async def test_registration_without_confirmation(
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -388,6 +392,7 @@ async def test_registration_with_invitation(
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -448,6 +453,7 @@ async def test_registraton_with_invitation_for_trial_account(
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
