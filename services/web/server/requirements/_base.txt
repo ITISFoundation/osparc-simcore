@@ -324,7 +324,7 @@ passlib==1.7.4
     # via -r requirements/_base.in
 phonenumbers==9.0.9
     # via -r requirements/_base.in
-pillow==12.3.0
+pillow==13.0.0
     # via captcha
 pint==0.25
     # via
