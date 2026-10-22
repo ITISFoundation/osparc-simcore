@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from fakeredis import FakeAsyncRedis
 from pytest_mock import MockerFixture
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -25,7 +26,7 @@ from simcore_service_webserver.login.errors import WrongPasswordError
 from simcore_service_webserver.login.settings import LoginSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
 
-_EMAIL = "user@example.com"
+_EMAIL = Faker().email()
 
 
 @pytest.fixture
@@ -118,7 +119,7 @@ async def test_throttling_ignores_case_and_surrounding_spaces_of_the_email(
     app: web.Application, fake_redis: FakeAsyncRedis, login_settings: LoginSettings
 ):
     for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
-        await register_failed_login(app, email="  User@Example.COM ", settings=login_settings)
+        await register_failed_login(app, email=f"  {_EMAIL.upper()} ", settings=login_settings)
 
     assert await get_login_retry_after_sec(app, email=_EMAIL) > 0
     assert await get_login_retry_after_sec(app, email="other@example.com") == 0
@@ -171,7 +172,7 @@ async def test_login_guard_rejects_emails_in_back_off(
     for _ in range(login_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
         await register_failed_login(app, email=_EMAIL, settings=login_settings)
 
-    response = await guard_client.post("/v0/auth:login-guard", json={"email": "USER@example.com", "password": "x"})
+    response = await guard_client.post("/v0/auth:login-guard", json={"email": _EMAIL.upper(), "password": "x"})
 
     assert response.status == 429
     assert int(response.headers["Retry-After"]) > 0
