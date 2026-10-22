@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import functools
 import logging
-from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
+from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine, Iterator
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Annotated, Any, Final, ParamSpec
@@ -56,31 +56,13 @@ class _TickChain:
             self.link_target = _get_creator_span_context()
 
 
-async def _run_without_tracing(call: Callable[[], Awaitable[None]]) -> None:
-    with log_catch(_logger, reraise=True):
-        await call()
-
-
-async def _run_without_span(chain: _TickChain, call: Callable[[], Awaitable[None]]) -> None:
-    chain.start_once()
-    creator_token = _periodic_creator.set(chain.link_target)
-    otel_token = otcontext.attach(otcontext.Context())
-    try:
-        # log inside the empty tracing context, so an error log carries no stale trace
-        with log_catch(_logger, reraise=True):
-            await call()
-    finally:
-        otcontext.detach(otel_token)
-        _periodic_creator.reset(creator_token)
-
-
-async def _run_with_span(
+@contextlib.contextmanager
+def _tick_span_scope(
     chain: _TickChain,
-    call: Callable[[], Awaitable[None]],
     *,
     operation_name: str,
     tracing_config: TracingConfig,
-) -> None:
+) -> Iterator[None]:
     chain.start_once()
     tracer = trace.get_tracer(__name__, tracer_provider=tracing_config.tracer_provider)
     links = [Link(chain.link_target)] if chain.link_target else []
@@ -88,11 +70,40 @@ async def _run_with_span(
     try:
         with tracer.start_as_current_span(operation_name, context=otcontext.Context(), links=links) as span:
             chain.link_target = span.get_span_context()
-            # log inside the span so the error log and the span both carry the failing tick
-            with log_catch(_logger, reraise=True):
-                await call()
+            # the body runs inside the span, so its error log and the span both carry the failing tick
+            yield
     finally:
         _periodic_creator.reset(creator_token)
+
+
+@contextlib.contextmanager
+def _detached_scope(chain: _TickChain) -> Iterator[None]:
+    chain.start_once()
+    creator_token = _periodic_creator.set(chain.link_target)
+    otel_token = otcontext.attach(otcontext.Context())
+    try:
+        # the body runs inside the empty tracing context, so its error log carries no stale trace
+        yield
+    finally:
+        otcontext.detach(otel_token)
+        _periodic_creator.reset(creator_token)
+
+
+_TickScope = Callable[[], contextlib.AbstractContextManager[None]]
+
+
+def _select_tick_scope(
+    chain: _TickChain,
+    *,
+    operation_name: str,
+    tracing_config: TracingConfig | None,
+    trace_iterations: bool,
+) -> _TickScope:
+    if tracing_config is None or not tracing_config.tracing_enabled:
+        return contextlib.nullcontext
+    if trace_iterations:
+        return functools.partial(_tick_span_scope, chain, operation_name=operation_name, tracing_config=tracing_config)
+    return functools.partial(_detached_scope, chain)
 
 
 class SleepUsingAsyncioEvent:
@@ -161,20 +172,21 @@ def periodic(
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         @functools.wraps(async_fun)
-        async def _run_iteration(chain: _TickChain, /, *args: P.args, **kwargs: P.kwargs) -> None:
-            call = functools.partial(async_fun, *args, **kwargs)
-            tracing_config = get_current_tracing_config()
-            if tracing_config is None or not tracing_config.tracing_enabled:
-                await _run_without_tracing(call)
-            elif trace_iterations:
-                await _run_with_span(chain, call, operation_name=operation_name, tracing_config=tracing_config)
-            else:
-                await _run_without_span(chain, call)
+        async def _run_iteration(tick_scope: _TickScope, /, *args: P.args, **kwargs: P.kwargs) -> None:
+            # the scope is entered first, so log_catch runs with the tracing context of the tick
+            with tick_scope(), log_catch(_logger, reraise=True):
+                await async_fun(*args, **kwargs)
             raise _InternalTryAgain
 
         @functools.wraps(async_fun)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
-            await _run_iteration(_TickChain(), *args, **kwargs)
+            tick_scope = _select_tick_scope(
+                _TickChain(),
+                operation_name=operation_name,
+                tracing_config=get_current_tracing_config(),
+                trace_iterations=trace_iterations,
+            )
+            await _run_iteration(tick_scope, *args, **kwargs)
 
         return _wrapper
 
