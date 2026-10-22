@@ -39,7 +39,7 @@ from typing import Final
 
 from filelock import FileLock
 
-log = logging.getLogger(__name__)
+_logger: Final = logging.getLogger(__name__)
 
 # values of the lineage marker: who is responsible for (leaving) this swarm
 _LINEAGE_PYTEST: Final[str] = "pytest"
@@ -56,7 +56,12 @@ _DEFAULT_LOCK_TIMEOUT: Final[float] = 5 * 60  # a swarm init takes ~15 s max, so
 
 
 def pid_is_alive(pid: int) -> bool:
-    """True when a process with this PID currently exists (any other user counts too)"""
+    """True when a process with this PID currently exists (any other user counts too)
+
+    NOTE: signal 0 is the null signal: the kernel runs the usual permission/existence checks
+    but delivers nothing, so os.kill(pid, 0) is the POSIX liveness probe (see os.kill docs).
+    A PermissionError therefore means the process exists but belongs to another user.
+    """
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -70,7 +75,8 @@ def get_coordination_dir(daemon_id: str) -> Path:
     """Directory coordinating the pytest runs of ONE user against one docker daemon
 
     NOTE: keyed by the daemon ID (not DOCKER_HOST) so that runs pointing at the same daemon
-    through different URLs still coordinate, while runs against different daemons never do.
+    through different URLs (e.g. a remote daemon reachable over several endpoints) still
+    coordinate, while runs against different daemons never do.
     """
     digest = hashlib.sha1(daemon_id.encode(), usedforsecurity=False).hexdigest()[:_DAEMON_ID_HASH_LEN]
     root = f"{_COORDINATION_ROOT_NAME}-{getpass.getuser()}"
@@ -118,7 +124,7 @@ class SwarmCoordinator:
         with FileLock(str(self._lock_path), timeout=self._lock_timeout):
             self._prune_dead_members()
             if not swarm_is_up():
-                log.info("docker swarm is down: initializing it and marking it pytest-owned")
+                _logger.info("docker swarm is down: initializing it and marking it pytest-owned")
                 init_swarm()
                 self._write_lineage(_LINEAGE_PYTEST, swarm_id())
             else:
@@ -126,7 +132,7 @@ class SwarmCoordinator:
                 if lineage != _LINEAGE_PYTEST or lineage_id != swarm_id():
                     # unmarked, or pytest lineage naming a DIFFERENT cluster ID: the user replaced
                     # the swarm under a kept marker. assume it is theirs: never leave it
-                    log.info(
+                    _logger.info(
                         "joining a docker swarm pytest does not own (no matching lineage): "
                         "marking it external, it will never be left"
                     )
@@ -143,7 +149,7 @@ class SwarmCoordinator:
             (self._members_dir / token).unlink(missing_ok=True)
             self._prune_dead_members()
             if any(self._members_dir.iterdir()):
-                log.info("other pytest runs still use the docker swarm: leaving it up for them")
+                _logger.info("other pytest runs still use the docker swarm: leaving it up for them")
                 return False
 
             lineage, lineage_id = self._read_lineage()
@@ -153,7 +159,7 @@ class SwarmCoordinator:
             if lineage_id != swarm_id():
                 # the daemon's current swarm is NOT the one pytest created (e.g. the user
                 # replaced it while a kept marker survived): demark it and keep off
-                log.info("swarm cluster ID no longer matches the pytest lineage: marking it external")
+                _logger.info("swarm cluster ID no longer matches the pytest lineage: marking it external")
                 self._write_lineage(_LINEAGE_EXTERNAL, swarm_id())
                 return False
             if keep_up:
@@ -181,7 +187,9 @@ class SwarmCoordinator:
             except OSError, ValueError:
                 # unreadable token: drop it without a liveness check, since no sentinel PID can be
                 # passed to os.kill(): it reports success for -1 (the whole process group)
+                _logger.warning("dropping unreadable swarm member token %s", token_file)
                 token_file.unlink(missing_ok=True)
                 continue
             if not self._is_alive(watched_pid):
+                _logger.info("dropping swarm member token %s of dead process %s", token_file, watched_pid)
                 token_file.unlink(missing_ok=True)
