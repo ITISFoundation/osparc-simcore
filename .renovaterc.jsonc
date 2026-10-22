@@ -68,6 +68,35 @@
       "depNameTemplate": "uv",
       "datasourceTemplate": "pypi",
       "versioningTemplate": "pep440"
+    },
+    {
+      "description": "Exact Python version in .python-version, versioned by the official python image tags (the Dockerfiles need the image)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.python-version$/"
+      ],
+      "matchStrings": [
+        "(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "description": "Same exact Python version in PYTHON_VERSION (Dockerfile ARG, Makefiles, scripts) and in literal python image tags",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/",
+        "/(^|/)Makefile$/",
+        "/\\.(bash|mk)$/"
+      ],
+      "matchStrings": [
+        "PYTHON_VERSION=\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "FROM python:(?<currentValue>\\d+\\.\\d+\\.\\d+)-"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
     }
   ],
   "lockFileMaintenance": {
@@ -187,9 +216,47 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Python is upgraded by hand across the whole repository (see requirements/how-to-upgrade-python.md): base images, .python-version, requires-python, actions/setup-python inputs and the constraints above",
+      "description": "Python minor/major upgrades are done by hand across the whole repository (see requirements/how-to-upgrade-python.md): base images, .python-version, requires-python, actions/setup-python inputs and the constraints above are never touched by Renovate",
       "matchDepNames": [
         "python"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "...except patch releases of the exact Python version (PYTHON_VERSION, .python-version, python image tags; see customManagers), updated together in one PR: tests/environment-setup/test_used_python.py only compares major.minor, so a partial update would go unnoticed. No minimumReleaseAge: Docker Hub gives the python tags no release date, so they would wait forever",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": true,
+      // otherwise Renovate only offers the newest version (a minor one, disabled below)
+      // and never the newest patch of the current minor
+      "separateMinorPatch": true,
+      "groupName": "python",
+      "groupSlug": "python"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The director service is frozen on its old Python (see FROZEN_SERVICES in tests/environment-setup/test_used_python.py)",
+      "matchDepNames": [
+        "python"
+      ],
+      "matchFileNames": [
+        "services/director/**"
       ],
       "enabled": false
     }
