@@ -1,6 +1,8 @@
 .DEFAULT_GOAL := help
 
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),$(if $(clean),,--upgrade))
+# one --upgrade-package flag per entry, so `upgrade="a==1 b==2"` upgrades both (a single
+# flag followed by the remaining names would pass them to uv as extra input files)
+UPGRADE_OPTION := $(if $(upgrade),$(addprefix --upgrade-package ,$(upgrade)),$(if $(clean),,--upgrade))
 
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 include $(REPO_BASE_DIR)/scripts/makefiles/help.mk
