@@ -6,21 +6,6 @@
 # `make reqs` which upgrades everything, and never a bare package name which uv would
 # re-resolve to the latest release, overriding Renovate's pin) and pushes a fixup commit
 # if the Makefile-ordered recompile produced a diff.
-#
-# It also covers the two ways a lock file ends up keeping the version Renovate wanted to
-# get rid of (https://github.com/ITISFoundation/osparc-simcore/issues/9336):
-#
-#   - Propagation. A package is pinned in dozens of lock files, and Renovate only
-#     recompiles the ones it detected as out-dated. Every directory whose lock files pin
-#     one of the updated packages is recompiled here, not only the directories the branch
-#     already changed, so a version never stays behind in the rest of the monorepo.
-#   - Deadlock. A lock file is a hard constraint for uv (and for its own dependents), so a
-#     stale pin of some *other* package can make the requested resolution impossible
-#     (aiohttp 3.14.4 requires yarl>=1.25.1, a lock file pinning yarl==1.24.5 has no
-#     solution). uv then changes nothing, the branch commit ends up empty, Renovate
-#     aborts the push and no PR is ever created. When a targeted recompile fails, this
-#     re-resolves that directory from scratch, applies the requested pins on top of the
-#     fresh resolution and reports it, since unrelated packages move too.
 name: Chore Fix Renovate Lockfiles
 
 on:
@@ -41,8 +26,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'renovate/')
     runs-on: ubuntu-latest
-    # recompiling every lockfile that pins an updated package takes a while
-    timeout-minutes: 30
+    timeout-minutes: 10
     permissions:
       contents: write
     env:
