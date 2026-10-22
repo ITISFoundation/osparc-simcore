@@ -39,8 +39,10 @@
   },
   "lockFileMaintenance": {
     "enabled": true,
+    // any time that day: Renovate runs nightly at 03:17/04:17 Zurich time
+    // (see .github/workflows/chore-renovate.yml), so a narrower window can be missed
     "schedule": [
-      "before 3am on the first day of the month"
+      "on the first day of the month"
     ]
   },
   "packageRules": [
