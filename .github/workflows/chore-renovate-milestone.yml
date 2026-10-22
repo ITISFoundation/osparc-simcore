@@ -1,0 +1,37 @@
+# Puts every new Renovate PR into the current milestone: the open milestone with the
+# earliest due date, overdue or not, because a sprint milestone stays in use until it
+# is closed. Renovate's own `milestone` option only takes a fixed milestone number.
+name: Chore Renovate Milestone
+
+on:
+  pull_request_target:
+    types:
+      - opened
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  set-milestone:
+    # only PRs opened by the Renovate App; no code of the PR is checked out or run
+    if: >
+      github.event.pull_request.user.login == 'osparc-simcore-renovate[bot]' &&
+      github.event.pull_request.milestone == null
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: set the current milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          milestone=$(gh api "repos/${REPO}/milestones?state=open&per_page=100" \
+            --jq '[.[] | select(.due_on != null)] | sort_by(.due_on) | first | .number // empty')
+          if [ -z "$milestone" ]; then
+            echo "No open milestone with a due date, leaving PR #${PR_NUMBER} without milestone"
+            exit 0
+          fi
+          gh api --method PATCH "repos/${REPO}/issues/${PR_NUMBER}" -F "milestone=${milestone}" \
+            --jq '"PR #\(.number) added to milestone \(.milestone.title)"'
