@@ -76,3 +76,10 @@ def test_all_workflows_have_the_same_uv_version(osparc_simcore_root_dir: Path, e
             " Update it to match requirements/UV_VERSION"
             " or resolve the version from that file with a 'resolve uv version' step."
         )
+
+
+def test_renovate_installs_the_same_uv_version(renovate_constraints: dict[str, str], expected_uv_version: str):
+    assert renovate_constraints["uv"] == expected_uv_version, (
+        f"Expected uv {expected_uv_version} in the constraints of .renovaterc.jsonc,"
+        f" got {renovate_constraints['uv']}. Update it to match requirements/UV_VERSION."
+    )

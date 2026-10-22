@@ -6,14 +6,21 @@
   ],
   "dependencyDashboard": true,
   "prCreation": "approval",
-  "platformAutomerge": true,
-  "automerge": true,
-  // Pinned explicitly (matches the default) so CI can gate on this exact prefix,
-  // e.g. .github/workflows/chore-renovate-lockfiles.yml
+  // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
+  // once approved (see .github/mergify.yml), like any other PR
+  "automerge": false,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
+  // Tools Renovate installs for pip-compile and its post-upgrade task; keep in sync
+  // with requirements/UV_VERSION and requirements/PYTHON_VERSION
+  // (checked by tests/environment-setup/test_used_{uv,python}.py)
+  "constraints": {
+    "python": "~=3.14.0",
+    "uv": "0.13.0"
+  },
   "labels": [
-    "t:maintenance"
+    "t:maintenance",
+    "🤖-automerge"
   ],
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": true
@@ -56,6 +63,29 @@
       "groupSlug": "{{packageFileDir}}"
     },
     {
+      "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "bash .github/renovate/resync-lockfiles.bash"
+        ],
+        "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
+        "fileFilters": [
+          "**/requirements/_*.txt",
+          "api/tests/requirements.txt",
+          "ci/helpers/requirements/requirements.txt",
+          "tests/environment-setup/requirements/requirements.txt"
+        ],
+        "executionMode": "branch",
+        "installTools": {
+          "python": {},
+          "uv": {}
+        }
+      }
+    },
+    {
       "description": "Shared packages: upgrade faster (smaller blast radius)",
       "matchFileNames": [
         "packages/**/requirements/**"
@@ -63,8 +93,7 @@
       "groupName": "packages deps",
       "minimumReleaseAge": "3 days",
       "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "prCreation": "approval"
     },
     {
       "description": "Services: upgrade slower / more conservative",
@@ -74,8 +103,7 @@
       "groupName": "services deps",
       "minimumReleaseAge": "14 days",
       "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "prCreation": "approval"
     },
     {
       "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",
@@ -102,8 +130,7 @@
       ],
       "groupName": "docker images",
       "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "prCreation": "approval"
     }
   ]
 }
