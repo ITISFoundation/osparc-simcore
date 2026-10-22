@@ -39,7 +39,7 @@ from typing import Final
 
 from filelock import FileLock
 
-_logger: Final = logging.getLogger(__name__)
+_logger: Final[logging.Logger] = logging.getLogger(__name__)
 
 # values of the lineage marker: who is responsible for (leaving) this swarm
 _LINEAGE_PYTEST: Final[str] = "pytest"
