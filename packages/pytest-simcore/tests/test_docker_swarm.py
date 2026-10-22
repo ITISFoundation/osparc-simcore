@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -9,30 +10,34 @@ from pytest_simcore.docker_swarm import (
 from pytest_simcore.helpers.stack_names import compute_stack_names, get_checkout_token
 
 
+@dataclass
 class _FakeService:
-    def __init__(self, name: str) -> None:
-        self.name = name
+    name: str
 
 
+@dataclass
 class _FakeServices:
-    def __init__(self, services: list[_FakeService]) -> None:
-        self._services = services
+    services: list[_FakeService]
 
     def list(self) -> list[_FakeService]:
-        return self._services
+        return self.services
 
 
+@dataclass
 class _FakeClient:
-    def __init__(self, services: list[_FakeService]) -> None:
-        self.services = _FakeServices(services)
+    services: _FakeServices
 
 
+@dataclass
 class _FakeInfoClient:
-    def __init__(self, info: dict[str, Any]) -> None:
-        self._info = info
+    _info: dict[str, Any]
 
     def info(self) -> dict[str, Any]:
         return self._info
+
+
+def _fake_client(service_names: list[str]) -> _FakeClient:
+    return _FakeClient(_FakeServices([_FakeService(name) for name in service_names]))
 
 
 def test_migration_services_are_selected_by_exact_name():
@@ -45,7 +50,7 @@ def test_migration_services_are_selected_by_exact_name():
     # a co-tenant checkout on the same branch has its own migration service, which must
     # be left alone
     co_tenant = "pytest-fix-migration-core-ffff_migration"
-    client = _FakeClient([_FakeService(name) for name in (*own_services, co_tenant)])
+    client = _fake_client([*own_services, co_tenant])
 
     owned = _list_owned_migration_services(client, core_stack)  # type: ignore[arg-type]
 
