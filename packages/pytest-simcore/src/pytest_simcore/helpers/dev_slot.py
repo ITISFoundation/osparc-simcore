@@ -2,7 +2,7 @@
 
 Loads scripts/dev_slot.py so that make and pytest use the same code.
 
-The tests deploy ``pytest-sN-{core,ops}`` on the slot's host ports. They can
+The tests deploy ``pytest-sN-<branch>-{core,ops}`` on the slot's host ports. They can
 run next to other checkouts, but not next to this checkout's dev stack.
 """
 

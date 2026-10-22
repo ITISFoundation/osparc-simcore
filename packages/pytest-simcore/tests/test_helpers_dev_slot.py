@@ -99,7 +99,6 @@ def test_other_slots_get_short_numbered_names_and_shifted_ports(dev_slot: Module
     assert env["LOCAL_IMAGE_TAG_SUFFIX"] == "-s3"
     assert env["TRAEFIK_HTTP_HOST_PORT"] == "9381"
     assert env["S3_HOST_PORT"] == "9301"
-    assert dev_slot.pytest_stack_names(3) == ("pytest-s3-core", "pytest-s3-ops")
 
 
 def test_host_ports_never_collide_across_slots(dev_slot: ModuleType):
@@ -115,11 +114,7 @@ def test_host_ports_never_collide_across_slots(dev_slot: ModuleType):
 
 
 def test_stack_names_fit_the_dns_label_budget_and_are_unique(dev_slot: ModuleType):
-    names = [
-        name
-        for slot in range(dev_slot.SLOT_COUNT)
-        for name in (*dev_slot.stack_names(slot).values(), *dev_slot.pytest_stack_names(slot))
-    ]
+    names = [name for slot in range(dev_slot.SLOT_COUNT) for name in dev_slot.stack_names(slot).values()]
     assert len(set(names)) == len(names)
     for name in names:
         assert len(name) <= MAX_STACK_NAME_LEN, name

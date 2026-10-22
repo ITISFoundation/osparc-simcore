@@ -147,12 +147,6 @@ def stack_names(slot: int) -> dict[str, str]:
     }
 
 
-def pytest_stack_names(slot: int) -> tuple[str, str]:
-    """(core, ops) stack names used by the integration tests"""
-    _validate_slot(slot)
-    return f"pytest-s{slot}-core", f"pytest-s{slot}-ops"
-
-
 def derive_env(slot: int) -> dict[str, str]:
     """All variables defined by the slot"""
     env = {SLOT_ENV_VAR: f"{_validate_slot(slot)}"}

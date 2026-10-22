@@ -38,6 +38,7 @@ from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.dev_slot import find_foreign_port_publishers
 from .helpers.host import get_localhost_ip
 from .helpers.logging_tools import log_context
+from .helpers.stack_names import get_slot_stack_prefix
 from .helpers.swarm_coordination import SwarmCoordinator, get_coordination_dir
 from .helpers.typing_env import EnvVarsDict
 from .helpers.valkey_tools import get_valkey_databases_count, set_valkey_databases_count
@@ -540,12 +541,27 @@ def _published_host_ports(compose_file: Path) -> set[int]:
     return ports
 
 
+def _list_stale_slot_stacks(
+    docker_client: docker.client.DockerClient, slot_prefix: str, current_stack_names: Iterable[str]
+) -> list[str]:
+    """Test stacks of the slot deployed under another branch name (the checkout switched branch)"""
+    labels = [(service.attrs.get("Spec", {}).get("Labels") or {}) for service in docker_client.services.list()]
+    labels += [(network.attrs.get("Labels") or {}) for network in docker_client.networks.list()]
+    namespaces = {label.get("com.docker.stack.namespace", "") for label in labels}
+    current = set(current_stack_names)
+    return sorted(name for name in namespaces if name.startswith(slot_prefix) and name not in current)
+
+
 def _prepare_deploy(
     docker_client: docker.client.DockerClient,
     stacks: list[tuple[str, str, Path]],
     core_stack_name: str,
     osparc_simcore_services_dir: Path,
+    slot_prefix: str,
 ) -> None:
+    if stale := _list_stale_slot_stacks(docker_client, slot_prefix, [stack_name for _, stack_name, _ in stacks]):
+        _logger.info("removing test stacks of this slot left by another branch: %s", stale)
+        _remove_stacks(docker_client, stale)
     _assert_host_ports_are_free(docker_client, stacks)
     # NOTE: if the migration service was already running prior to this call it must
     # be force updated so that it does its job. else it remains and tests will fail
@@ -680,7 +696,13 @@ async def docker_stack(  # noqa: C901
             for _, stack_name, _ in stacks:
                 record_shared_resource(request, tmp_path_factory, kind="stack", name=stack_name)
 
-            _prepare_deploy(docker_client, stacks, core_stack_name, osparc_simcore_services_dir)
+            _prepare_deploy(
+                docker_client,
+                stacks,
+                core_stack_name,
+                osparc_simcore_services_dir,
+                slot_prefix=get_slot_stack_prefix(int(env_vars_for_docker_compose["OSPARC_DEV_SLOT"])),
+            )
             # make up-version
             for _, stack_name, compose_file in stacks:
                 _deploy_stack(compose_file, stack_name)

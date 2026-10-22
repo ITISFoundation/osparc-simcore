@@ -32,6 +32,7 @@ from .helpers import (
 from .helpers.dev_slot import DevSlotMismatchError, lease_checkout_slot, load_dev_slot_module
 from .helpers.docker import filter_service_names_for_ci, run_docker_compose_config, save_docker_infos
 from .helpers.host import get_localhost_ip
+from .helpers.stack_names import compute_stack_names, get_git_ref
 from .helpers.typing_env import EnvVarsDict
 from .helpers.xdist import (
     is_xdist_controller,
@@ -91,8 +92,8 @@ def env_vars_for_docker_compose(
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
 
-    # stack names are daemon-global: one pair per slot
-    core_stack_name, ops_stack_name = dev_slot.pytest_stack_names(slot)
+    # stack names are daemon-global: one pair per slot, named after the branch for humans
+    core_stack_name, ops_stack_name = compute_stack_names(slot, get_git_ref(osparc_simcore_root_dir))
     env_devel["SWARM_STACK_NAME"] = core_stack_name
     env_devel["SWARM_OPS_STACK_NAME"] = ops_stack_name
     env_devel.setdefault("SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_"))

@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
+import docker.client
 from pytest_simcore.docker_swarm import (
     _get_swarm_cluster_id,
     _list_owned_migration_services,
+    _list_stale_slot_stacks,
     _swarm_membership_token,
 )
 
@@ -103,3 +106,24 @@ def test_swarm_cluster_id_is_empty_when_out_of_swarm_mode():
     # out of swarm mode the daemon reports no Cluster at all
     inactive = _FakeInfoClient({"Swarm": {"LocalNodeState": "inactive"}})
     assert _get_swarm_cluster_id(inactive) == ""  # type: ignore[arg-type]
+
+
+def test_stale_slot_stacks_are_other_branches_of_the_same_slot():
+    def _service(stack: str) -> mock.Mock:
+        return mock.Mock(attrs={"Spec": {"Labels": {"com.docker.stack.namespace": stack}}})
+
+    def _network(stack: str | None) -> mock.Mock:
+        return mock.Mock(attrs={"Labels": {"com.docker.stack.namespace": stack} if stack else None})
+
+    client = mock.create_autospec(docker.client.DockerClient, instance=True)
+    client.services.list.return_value = [
+        _service("pytest-s1-feature-core"),
+        _service("pytest-s1-old-branch-core"),
+        _service("pytest-s2-old-branch-core"),
+        _service("simcore-s1"),
+    ]
+    client.networks.list.return_value = [_network("pytest-s1-old-branch-ops"), _network(None)]
+
+    stale = _list_stale_slot_stacks(client, "pytest-s1-", ["pytest-s1-feature-core", "pytest-s1-feature-ops"])
+
+    assert stale == ["pytest-s1-old-branch-core", "pytest-s1-old-branch-ops"]

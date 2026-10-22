@@ -8,7 +8,8 @@ Slot 0 uses the same names and ports as before slots existed. Slot `N > 0`
 uses:
 
 - dev stacks: `simcore-sN`, `ops-sN`, `vendors-sN`
-- test stacks: `pytest-sN-core`, `pytest-sN-ops` (also `pytest-s0-*` in slot 0)
+- test stacks: `pytest-sN-<branch>-core`, `pytest-sN-<branch>-ops` in every
+  slot, with the branch cut to 18 characters
 - traefik zone: `internal_simcore_stack_sN`
 - local images: `local/<service>:production-sN`, `development-sN`
 - frontend compiler container: `qooxdoo-compiler-sN`
@@ -35,7 +36,8 @@ In a new worktree, the first `make` stops after creating `.env` with
 
 The integration tests use the checkout's slot as well. They stop with an
 error while this checkout's dev stack is up (run `make down`). Tests of other
-checkouts are not affected.
+checkouts are not affected. Test stacks of the slot left from another branch
+are removed before deploying.
 
 ## Slot markers
 
