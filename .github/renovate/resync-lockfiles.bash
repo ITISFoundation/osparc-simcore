@@ -109,13 +109,16 @@ regenerate() {
   UV_NO_BUILD=1 make -C "$dir" reqs upgrade="$2"
 }
 
-# Prints the (PEP 503-normalized) names of the packages uv's error output blames at
+# Prints the (PEP 503-normalized) names of the packages uv's error message blames at
 # exactly the version the directory's lockfiles pin, e.g. "packaging" for
 # "virtualenv==21.14.10 depends on packaging>=26.3 and packaging==24.1", leaving out
-# those the upgrade list already lets move
+# those the upgrade list already lets move. Only the error message counts: before it,
+# the output holds the full lockfiles of the layers that did resolve, and every pin in
+# there would otherwise look blamed.
 blamed_pins() {
   local dir="$1" output="$2" upgrade="$3" blamed_file="$BACKUP_DIR/blamed"
-  printf '%s\n' "$output" | { grep -oE '[A-Za-z0-9][A-Za-z0-9._-]*==[A-Za-z0-9._+!-]*[A-Za-z0-9]' || true; } |
+  printf '%s\n' "$output" | awk '/^error:/ { in_error = 1 } /^make(\[[0-9]+\])?: / { in_error = 0 } in_error' |
+    { grep -oE '[A-Za-z0-9][A-Za-z0-9._-]*==[A-Za-z0-9._+!-]*[A-Za-z0-9]' || true; } |
     sort -u >"$blamed_file"
   awk -v upgrade="$upgrade" '
     function normalized(name) {
