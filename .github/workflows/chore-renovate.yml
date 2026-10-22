@@ -1,6 +1,6 @@
 # Self-hosted Renovate, replacing the Mend-hosted app.
 # It runs as the osparc Renovate GitHub App and executes
-# scripts/renovate/resync-lockfiles.bash as a post-upgrade task, so the layered
+# .github/renovate/resync-lockfiles.bash as a post-upgrade task, so the layered
 # pip-compile lockfiles are fixed inside Renovate's own commit (Mend-hosted Renovate
 # cannot run commands, and a fixup commit by another author blocks both CI, which
 # waits for approval, and Renovate, which stops updating an "edited" branch).

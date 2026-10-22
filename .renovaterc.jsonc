@@ -67,7 +67,7 @@
       ],
       "postUpgradeTasks": {
         "commands": [
-          "bash scripts/renovate/resync-lockfiles.bash"
+          "bash .github/renovate/resync-lockfiles.bash"
         ],
         "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
         "fileFilters": [
