@@ -2,7 +2,7 @@ from typing import Any
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, status
-from httpx import Response, Timeout
+from httpx2 import Response, Timeout
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl
@@ -23,7 +23,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`
-    - `ClientHttpError` wraps httpx.HttpError errors
+    - `ClientHttpError` wraps httpx2.HttpError errors
     """
 
     API_VERSION = "v1"

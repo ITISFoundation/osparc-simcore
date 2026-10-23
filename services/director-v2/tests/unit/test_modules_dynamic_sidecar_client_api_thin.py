@@ -4,10 +4,15 @@
 from collections.abc import AsyncIterable, Callable
 from typing import Any
 
+import httpx2
 import pytest
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
+
+# NOTE: respx validates `return_value=` against plain httpx.Response; the
+# pytest_simcore shim re-packs the mocked responses for the httpx2 client
+# at the httpcore2 layer, so the client still receives fork responses
 from httpx import Response
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
@@ -29,7 +34,7 @@ MockRequestType = Callable[[str, str, Response | None, SideEffectTypes | None], 
 # UTILS
 
 
-def assert_responses(mocked: Response, result: Response | None) -> None:
+def assert_responses(mocked: Response, result: httpx2.Response | None) -> None:
     assert result is not None
     assert mocked.status_code == result.status_code
     assert mocked.headers == result.headers
