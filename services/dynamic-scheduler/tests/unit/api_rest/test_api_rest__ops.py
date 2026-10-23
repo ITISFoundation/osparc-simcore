@@ -7,7 +7,7 @@ import pytest
 import respx
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
 )

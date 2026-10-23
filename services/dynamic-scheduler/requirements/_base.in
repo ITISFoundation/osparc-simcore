@@ -15,6 +15,7 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+httpx2 # director clients
 nicegui
 packaging
 python-socketio
