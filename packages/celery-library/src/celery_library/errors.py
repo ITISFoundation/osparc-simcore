@@ -216,7 +216,7 @@ def decode_celery_transferable_error(error: TransferableCeleryError) -> Exceptio
             result: Exception = pickle.loads(raw)  # noqa: S301
         except Exception as exc:  # pylint: disable=broad-except
             # The payload pickled fine on the worker but cannot be reconstructed here
-            # (e.g. httpx.HTTPStatusError.__init__ requires keyword-only request/response).
+            # (e.g. httpx2.HTTPStatusError.__init__ requires keyword-only request/response).
             # Degrade to a description extracted from the pickle stream so that callers
             # (get_job_result, webserver task APIs, __str__/__repr__) can still report
             # the original failure instead of raising a TypeError.
