@@ -8,7 +8,7 @@
 #   - Can be installed with UV
 #
 #
-ARG PYTHON_VERSION="3.14.8"
+ARG PYTHON_VERSION="3.14.9"
 ARG UV_VERSION="0.13.5"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
