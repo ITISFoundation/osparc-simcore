@@ -8,17 +8,17 @@
 import textwrap
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 import pytest
 import respx
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from servicelib.fastapi.httpx_utils import to_curl_command, to_httpx_command
 from servicelib.utils_secrets import _PLACEHOLDER
 
 
 @pytest.fixture
 async def client(mocked_server_api: respx.MockRouter, base_url: str) -> AsyncIterator[AsyncClient]:
-    async with httpx.AsyncClient(base_url=base_url) as client:
+    async with httpx2.AsyncClient(base_url=base_url) as client:
         yield client
 
 
@@ -36,8 +36,8 @@ async def test_to_curl_command(client: AsyncClient):
 
     assert (
         cmd_short == f'curl -X POST -H "host: test_base_http_api" -H "accept: */*" '
-        f'-H "accept-encoding: gzip, deflate" -H "connection: keep-alive" '
-        f'-H "user-agent: python-httpx/{httpx.__version__}" -H "x-secret: {_PLACEHOLDER}" '
+        f'-H "accept-encoding: gzip, deflate, zstd" -H "connection: keep-alive" '
+        f'-H "user-agent: python-httpx2/{httpx2.__version__}" -H "x-secret: {_PLACEHOLDER}" '
         f'-H "content-length: 8" -H "content-type: application/json" '
         f"-d '{{\"y\":12}}' https://test_base_http_api/foo?x=3"
     )
@@ -66,9 +66,9 @@ async def test_to_curl_command(client: AsyncClient):
         -X GET \\
         -H "host: test_base_http_api" \\
         -H "accept: */*" \\
-        -H "accept-encoding: gzip, deflate" \\
+        -H "accept-encoding: gzip, deflate, zstd" \\
         -H "connection: keep-alive" \\
-        -H "user-agent: python-httpx/{httpx.__version__}" \\
+        -H "user-agent: python-httpx2/{httpx2.__version__}" \\
         https://test_base_http_api/foo?x=3
         """
         ).strip()
@@ -94,10 +94,10 @@ async def test_to_httpx_command(client: AsyncClient):
 
     print(cmd_short)
     assert (
-        cmd_short == f"httpx -m POST -c '{{\"y\":12}}' "
+        cmd_short == f"httpx2 -m POST -c '{{\"y\":12}}' "
         f'-h "host" "test_base_http_api" -h "accept" "*/*" '
-        f'-h "accept-encoding" "gzip, deflate" -h "connection" "keep-alive" '
-        f'-h "user-agent" "python-httpx/{httpx.__version__}" -h "x-secret" "{_PLACEHOLDER}" '
+        f'-h "accept-encoding" "gzip, deflate, zstd" -h "connection" "keep-alive" '
+        f'-h "user-agent" "python-httpx2/{httpx2.__version__}" -h "x-secret" "{_PLACEHOLDER}" '
         f'-h "content-length" "8" -h "content-type" "application/json" '
         "https://test_base_http_api/foo?x=3"
     )

@@ -7,9 +7,9 @@ from typing import Final
 from unittest import mock
 
 import arrow
-import httpx
+import httpx2
 import pytest
-from httpx import HTTPError, PoolTimeout, Request, RequestError, Response, TransportError, codes
+from httpx2 import HTTPError, PoolTimeout, Request, RequestError, Response, TransportError, codes
 from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
@@ -164,7 +164,7 @@ def test_ssl_context_is_built_once_and_shared(request_timeout: int):
 
     with mock.patch(
         "servicelib.ssl_context.create_ssl_context",
-        wraps=httpx.create_ssl_context,
+        wraps=httpx2.create_ssl_context,
     ) as mocked_factory:
         clients = [ATestClient(total_retry_interval=request_timeout, tracing_config=tracing_config) for _ in range(3)]
 
@@ -174,13 +174,13 @@ def test_ssl_context_is_built_once_and_shared(request_timeout: int):
     assert contexts == {id(get_shared_ssl_context())}
 
 
-def test_shared_ssl_context_keeps_httpx_trust_store():
+def test_shared_ssl_context_keeps_httpx2_trust_store():
     get_shared_ssl_context.cache_clear()
 
     def _ca_serials(context: ssl.SSLContext) -> set[str]:
         return {cert["serialNumber"] for cert in context.get_ca_certs()}
 
-    assert _ca_serials(get_shared_ssl_context()) == _ca_serials(httpx.create_ssl_context())
+    assert _ca_serials(get_shared_ssl_context()) == _ca_serials(httpx2.create_ssl_context())
 
 
 async def test_methods_do_not_return_response(
@@ -233,8 +233,8 @@ async def test_expect_state_decorator(
         async def get_wrong_state(self) -> Response:
             return await self.client.get(get_wrong_state)
 
-    respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
-    respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
+    respx_mock.get(url_get_200_ok).respond(codes.OK)
+    respx_mock.get(get_wrong_state).respond(codes.OK)
 
     tracing_config = TracingConfig.create(service_name="test-client", tracing_settings=None)
     test_client = ATestClient(total_retry_interval=request_timeout, tracing_config=tracing_config)

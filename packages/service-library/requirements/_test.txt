@@ -37,7 +37,6 @@ botocore==1.42.70
 certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   httpcore
     #   httpx
@@ -77,13 +76,11 @@ h11==0.16.0
     #   httpcore
 httpcore==1.0.9
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   httpx
 httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   respx
 icdiff==2.0.10

@@ -11,7 +11,7 @@ import pytest
 import respx
 from fastapi import APIRouter, FastAPI, status
 from fastapi.params import Query
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic.types import PositiveFloat

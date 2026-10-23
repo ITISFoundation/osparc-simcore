@@ -5,7 +5,7 @@
 
 from collections.abc import Callable
 
-import httpx
+import httpx2
 import pytest
 import respx
 from asgi_lifespan import LifespanManager
@@ -42,7 +42,7 @@ async def test_lifespan_serves_mockable_client(
 
     async with LifespanManager(app, startup_timeout=None, shutdown_timeout=10):
         client = get_httpx_client(app)
-        assert isinstance(client, httpx.AsyncClient)  # nosec
+        assert isinstance(client, httpx2.AsyncClient)  # nosec
 
         # NOTE: the client has no `base_url`, hence callers pass absolute URLs
         response = await client.get(f"{base_url}{_URL_PATH}")

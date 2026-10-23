@@ -1,22 +1,22 @@
-import httpx
+import httpx2
 
 from ..utils_secrets import mask_sensitive_data
 
 
-def _get_headers_safely(request: httpx.Request) -> dict[str, str]:
+def _get_headers_safely(request: httpx2.Request) -> dict[str, str]:
     return mask_sensitive_data(dict(request.headers))
 
 
-def to_httpx_command(request: httpx.Request, *, use_short_options: bool = True, multiline: bool = False) -> str:
-    """Command with httpx CLI
+def to_httpx_command(request: httpx2.Request, *, use_short_options: bool = True, multiline: bool = False) -> str:
+    """Command with httpx2 CLI
 
-    $ httpx --help
+    $ httpx2 --help
 
     NOTE: Particularly handy as an alternative to curl (e.g. when docker exec in osparc containers)
-    SEE https://www.python-httpx.org/
+    SEE https://pydantic.dev/docs/httpx2/
     """
     cmd = [
-        "httpx",
+        "httpx2",
     ]
 
     #  -m, --method METHOD
@@ -37,7 +37,7 @@ def to_httpx_command(request: httpx.Request, *, use_short_options: bool = True, 
     return separator.join(cmd)
 
 
-def to_curl_command(request: httpx.Request, *, use_short_options: bool = True, multiline: bool = False) -> str:
+def to_curl_command(request: httpx2.Request, *, use_short_options: bool = True, multiline: bool = False) -> str:
     """Composes a curl command from a given request
 
     $ curl --help
