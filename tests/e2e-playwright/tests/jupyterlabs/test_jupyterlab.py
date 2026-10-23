@@ -14,13 +14,13 @@ from dataclasses import dataclass
 from typing import Any, Final, Literal
 
 from helpers_jupyter_code import create_files_in_jupyter
+from models_library.services_enums import ServiceType
 from playwright.sync_api import Page, WebSocket
 from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     RobustWebSocket,
-    ServiceType,
     wait_for_service_running,
 )
 
