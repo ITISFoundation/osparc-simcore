@@ -129,3 +129,13 @@ def test_tooling_mypy_ini(osparc_simcore_root_dir: Path, expected_python_version
     mypy_ini.read(mypy_ini_path)
 
     assert mypy_ini["mypy"]["python_version"] == to_str(expected_python_version)
+
+
+def test_renovate_installs_the_same_python_version(
+    renovate_constraints: dict[str, str], expected_python_version: tuple[int, ...]
+):
+    expected_constraint = f"~={to_str(expected_python_version)}.0"
+    assert renovate_constraints["python"] == expected_constraint, (
+        f"Expected python {expected_constraint} in the constraints of .renovaterc.jsonc,"
+        f" got {renovate_constraints['python']}. Update it to match requirements/PYTHON_VERSION."
+    )

@@ -92,7 +92,7 @@ kombu==5.6.2
     #   pytest-celery
 lupa==2.6
     # via fakeredis
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   kombu

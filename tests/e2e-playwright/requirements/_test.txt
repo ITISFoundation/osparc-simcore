@@ -57,7 +57,7 @@ markupsafe==3.0.3
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   jinja2
-packaging==26.2
+packaging==26.3
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest

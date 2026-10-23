@@ -58,7 +58,7 @@ multidict==6.9.1
     # via
     #   aiohttp
     #   yarl
-packaging==26.0
+packaging==26.3
     # via pytest
 pluggy==1.6.0
     # via pytest
