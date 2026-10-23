@@ -4,7 +4,7 @@ annotated-doc==0.0.4
     # via typer
 astroid==4.0.4
     # via pylint
-black==26.3.1
+black==26.10.1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
