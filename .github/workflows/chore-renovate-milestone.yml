@@ -21,6 +21,7 @@ jobs:
   set-milestone:
     # only PRs opened by the Renovate App; no code of the PR is checked out or run
     if: >
+      github.repository == 'ITISFoundation/osparc-simcore' &&
       github.event.pull_request.user.login == 'osparc-simcore-renovate[bot]' &&
       github.event.pull_request.milestone == null
     runs-on: ubuntu-latest
