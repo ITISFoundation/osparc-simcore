@@ -6,7 +6,7 @@ from typing import Final
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
-from httpx import HTTPError
+from httpx2 import HTTPError
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.background_task import create_periodic_task
