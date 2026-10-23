@@ -23,6 +23,11 @@ on:
         default: "master"
         type: environment
 
+# pull-requests: read is needed by dorny/paths-filter to list a PR's changed files
+permissions:
+  contents: read
+  pull-requests: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
