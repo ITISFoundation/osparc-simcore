@@ -116,7 +116,7 @@ fastar==0.11.0
     # via fastapi
 faststream==0.6.7
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-fonttools==4.50.0
+fonttools==4.67.0
     # via matplotlib
 frozenlist==1.4.1
     # via
