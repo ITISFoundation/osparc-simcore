@@ -211,7 +211,7 @@ lazy-object-proxy==1.12.0
     # via openapi-spec-validator
 librt==0.8.1
     # via mypy
-lupa==2.6
+lupa==2.8
     # via fakeredis
 markupsafe==3.0.2
     # via
