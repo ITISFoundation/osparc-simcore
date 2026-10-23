@@ -10,6 +10,11 @@
 # installed on this repository only; its client ID in the repository variable
 # RENOVATE_APP_CLIENT_ID and its private key in the repository secret
 # RENOVATE_APP_PRIVATE_KEY.
+#
+# Needs an Actions event policy that explicitly allows pull_request_target on
+# this file's path. GitHub blocks the event on public repositories by default,
+# and policies match file paths, so renaming this file means updating the
+# policy as well: https://gh.io/securely-using-pull_request_target
 name: Chore Renovate
 
 on:
