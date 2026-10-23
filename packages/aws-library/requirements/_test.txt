@@ -13,7 +13,7 @@ antlr4-python3-runtime==4.13.2
 anyio==4.15.1
     # via
     #   -c requirements/_base.txt
-    #   httpx
+    #   httpx2
     #   starlette
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
@@ -49,9 +49,6 @@ botocore-stubs==1.42.41
 certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   httpcore
-    #   httpx
     #   requests
 cffi==2.0.0
     # via cryptography
@@ -98,14 +95,13 @@ graphql-core==3.2.8
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
-    #   httpcore
-httpcore==1.0.9
+    #   httpcore2
+httpcore2==2.16.0
     # via
     #   -c requirements/_base.txt
-    #   httpx
-httpx==0.28.1
+    #   httpx2
+httpx2==2.16.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 icdiff==2.0.10
@@ -114,7 +110,7 @@ idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
-    #   httpx
+    #   httpx2
     #   requests
 iniconfig==2.3.0
     # via pytest
@@ -292,6 +288,11 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
+truststore==0.10.5
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore2
+    #   httpx2
 types-aioboto3==15.5.0
     # via -r requirements/_test.in
 types-aiobotocore==3.8.0
