@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from random import choice
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
@@ -78,9 +78,9 @@ async def initialized_app(
 
 
 @pytest.fixture()
-async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url="http://resource-usage-tracker.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
