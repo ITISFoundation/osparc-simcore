@@ -204,7 +204,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via -r requirements/_test.in
-packaging==24.1
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   aioresponses
