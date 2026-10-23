@@ -15,7 +15,7 @@
   // (both checked by tests/environment-setup/test_used_{uv,python}.py)
   "constraints": {
     "python": "~=3.14.0",
-    "uv": "0.13.0"
+    "uv": "0.13.5"
   },
   "labels": [
     "t:maintenance",
@@ -29,6 +29,10 @@
   // and ignore the PR limits below
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": false,
+    // on top of the labels above (addLabels appends, labels would replace)
+    "addLabels": [
+      "security"
+    ],
     // the newest version instead of the lowest fixed one: Renovate otherwise proposes
     // different versions for lockfiles below and above the fix in the same branch, the
     // PR title shows only one of them, and .github/renovate/resync-lockfiles.bash has to
@@ -196,10 +200,11 @@
       "enabled": false
     },
     {
+      "description": "Docker images: one PR per image (no grouping, so an update of one image does not block the others) and majors step only one major at a time (e.g. postgres 14 -> 15, never 14 -> 18). Majors still need approval on the Dependency Dashboard (see the major rule below)",
       "matchDatasources": [
         "docker"
       ],
-      "groupName": "docker images"
+      "maxMajorIncrement": 1
     },
     {
       "description": "Major updates usually need code changes: only on request, by ticking them on the Dependency Dashboard (security fixes excepted, see vulnerabilityAlerts)",
