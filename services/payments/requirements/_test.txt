@@ -29,7 +29,7 @@ bidict==0.23.1
     # via
     #   -c requirements/_base.txt
     #   python-socketio
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -95,7 +95,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-packaging==24.2
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest

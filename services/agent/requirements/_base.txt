@@ -16,7 +16,7 @@ aiofiles==25.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiohappyeyeballs==2.5.0
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
@@ -25,7 +25,9 @@ aiormq==7.2.1
 aiosignal==1.4.0
     # via aiohttp
 annotated-doc==0.0.5
-    # via fastapi
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -48,7 +50,7 @@ attrs==25.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -57,7 +59,6 @@ certifi==2026.10.18
 click==8.2.1
     # via
     #   rich-toolkit
-    #   typer
     #   uvicorn
 dnspython==2.9.0
     # via email-validator
@@ -239,7 +240,7 @@ orjson==3.11.9
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-packaging==24.2
+packaging==26.3
     # via
     #   -r requirements/_base.in
     #   opentelemetry-instrumentation
@@ -345,7 +346,7 @@ toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.16.1
+typer==0.27.3
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi-cli
@@ -369,7 +370,6 @@ typing-extensions==4.16.0
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via
@@ -401,7 +401,7 @@ wrapt==1.17.2
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-yarl==1.24.5
+yarl==1.25.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aio-pika

@@ -5,6 +5,9 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
 
+permissions:
+  contents: read
+
 env:
   # secrets can be set in settings/secrets on github
   DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}

@@ -406,6 +406,10 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
     return _mock
 
 
+@pytest.mark.docker_exclusive(
+    reason="_simulate_container_crash kills containers matched by a substring name filter on the "
+    "shared daemon, which can also hit other xdist workers' containers",
+)
 @pytest.mark.parametrize("expected_platform_state", SimcorePlatformStatus)
 async def test_user_services_crash_when_running(
     mock_post_rabbit_message: AsyncMock,

@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import Any
+from typing import Any, cast
 
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
@@ -32,6 +32,9 @@ from ....modules.catalog import CatalogClient
 from ..errors import DynamicSidecarError
 
 BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
+
+# a KEY=VALUE setting splits into exactly these many parts
+_ENV_KEY_VALUE_PARTS = 2
 
 
 log = logging.getLogger(__name__)
@@ -65,7 +68,7 @@ def _parse_env_settings(settings: list[str]) -> dict:
         log.debug("Retrieved env settings %s", s)
         if "=" in s:
             parts = s.split("=")
-            if len(parts) == 2:
+            if len(parts) == _ENV_KEY_VALUE_PARTS:
                 # will be forwarded to dynamic-sidecar spawned containers
                 envs[f"FORWARD_ENV_{parts[0]}"] = parts[1]
 
@@ -81,14 +84,15 @@ def extract_service_port_from_settings(
     for param in labels_service_settings:
         # publishing port on the ingress network.
         if param.name == "ports" and param.setting_type == "int":  # backward comp
-            return PortInt(param.value)
+            # NOTE: PortInt is an Annotated alias and cannot validate at runtime
+            return cast(PortInt, param.value)
         # REST-API compatible
         if (
             param.setting_type == "EndpointSpec"
             and "Ports" in param.value
             and (isinstance(param.value["Ports"], list) and "TargetPort" in param.value["Ports"][0])
         ):
-            return PortInt(param.value["Ports"][0]["TargetPort"])
+            return cast(PortInt, param.value["Ports"][0]["TargetPort"])
     msg = "service port not found!"
     raise ValueError(msg)
 
@@ -382,7 +386,7 @@ async def get_labels_for_involved_services(
     service_tag: ServiceVersion,
 ) -> dict[str, SimcoreServiceLabels]:
     simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(service_key, service_tag)
-    log.info("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels)
+    log.debug("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels)
 
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders

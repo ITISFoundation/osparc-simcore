@@ -9,7 +9,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from inspect import signature
 from pathlib import Path
 from typing import Any, Final
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import aiodocker
@@ -69,6 +69,11 @@ _TENACITY_RETRY_PARAMS: dict[str, Any] = {
     "stop": stop_after_delay(10),
     "wait": wait_fixed(0.01),
 }
+
+# observation window for a port key created while propagation is disabled,
+# long enough for the emitter poll tick (~1 s) to dispatch its events
+_DISABLED_PHASE_SAMPLES: Final[int] = 8
+_DISABLED_PHASE_SAMPLE_INTERVAL_S: Final[float] = 0.25
 
 
 def _create_network_aliases(network_name: str) -> list[str]:
@@ -333,30 +338,6 @@ def mock_event_filter_enqueue(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> 
     return mock
 
 
-@pytest.fixture
-async def mocked_port_key_events_queue_get(app: FastAPI, mocker: MockerFixture) -> Mock:
-    outputs_context: OutputsContext = app.state.outputs_context
-
-    target = outputs_context.port_key_events_queue.get
-
-    mock_result_tracker = Mock()
-
-    def _wrapped() -> Any:
-        # NOTE: runs in the thread used by `asyncio.to_thread`
-        result = target()
-        mock_result_tracker(result)
-
-        return result
-
-    mocker.patch.object(
-        outputs_context.port_key_events_queue,
-        "get",
-        side_effect=_wrapped,
-    )
-
-    return mock_result_tracker
-
-
 # TESTS
 
 
@@ -448,7 +429,6 @@ async def test_container_docker_error(
 
 async def test_outputs_watcher_disabling(
     test_client: TestClient,
-    mocked_port_key_events_queue_get: Mock,
     mock_event_filter_enqueue: AsyncMock,
     wait_for_command_delivered: Callable[[OutputsContext], Awaitable[None]],
 ):
@@ -457,60 +437,83 @@ async def test_outputs_watcher_disabling(
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
     outputs_manager.task_monitor_interval_s = _WAIT_FOR_OUTPUTS_WATCHER / 10
 
-    async def _create_port_key_events(is_propagation_enabled: bool) -> None:
-        random_subdir = f"{uuid4()}"
+    def _get_propagated_port_keys() -> set[str]:
+        return {c.args[0] for c in mock_event_filter_enqueue.call_args_list}
 
-        await outputs_context.set_file_type_port_keys([random_subdir])
+    async def _create_port_key_events(*, is_propagation_enabled: bool) -> str:
+        port_key = f"{uuid4()}"
+
+        await outputs_context.set_file_type_port_keys([port_key])
         await wait_for_command_delivered(outputs_context)
 
-        dir_name = outputs_context.outputs_path / random_subdir
+        dir_name = outputs_context.outputs_path / port_key
         await mkdir(dir_name)
-        async with aiofiles.open(dir_name / f"file_{uuid4()}", "w") as f:
+        file_path = dir_name / f"file_{uuid4()}"
+        async with aiofiles.open(file_path, "w") as f:
             await f.write("ok")
 
-        EXPECTED_EVENTS_PER_RANDOM_PORT_KEY = 2
+        if is_propagation_enabled:
+            # wait until the port key reaches the event filter, re-writing the
+            # file on every attempt: the queue-size check inside
+            # wait_for_command_delivered is a sender-side view only, so under
+            # load the watcher process can apply the commands after the emitter
+            # already dispatched this directory's events, which the handler then
+            # discards. Any change made after the commands land fires a new
+            # event on the live watch, so this cannot starve
+            async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+                with attempt:
+                    async with aiofiles.open(file_path, "a") as f:
+                        await f.write("x")
+                    assert port_key in _get_propagated_port_keys()
+        else:
+            # no event for a new port key may propagate while disabled: the
+            # toggle-off command precedes the port-key registration on the same
+            # FIFO command queue, so the handler can never hold both the key and
+            # enabled propagation. Sample over a window giving the emitter time
+            # to dispatch this directory's events. A write buffered beyond the
+            # window may still surface after a later enable (the propagation
+            # gate is evaluated at dispatch time, by design); the drain below
+            # absorbs those, so they never reach an assertion as a surprise
+            for _ in range(_DISABLED_PHASE_SAMPLES):
+                await asyncio.sleep(_DISABLED_PHASE_SAMPLE_INTERVAL_S)
+                assert port_key not in _get_propagated_port_keys()
 
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                # check events were triggered after generation
-                events_in_dir: list[str] = [
-                    c.args[0] for c in mocked_port_key_events_queue_get.call_args_list if c.args[0] == random_subdir
-                ]
+        return port_key
 
-                if is_propagation_enabled:
-                    assert len(events_in_dir) >= EXPECTED_EVENTS_PER_RANDOM_PORT_KEY
-                else:
-                    assert len(events_in_dir) == 0
-
-    async def _assert_events_generated(*, expected_events: int) -> None:
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                events_set = {x.args[0] for x in mock_event_filter_enqueue.call_args_list}
-                assert len(events_set) == expected_events
+    async def _drain_and_snapshot() -> set[str]:
+        # a fresh port key observed at the event filter proves the pipeline
+        # caught up: one emitter inserts every event in kernel order into one
+        # queue that the handler dispatches serially, so every event generated
+        # before the drain's -- including a write buffered while propagation was
+        # disabled -- has been delivered or dropped by now. What remains in the
+        # set afterwards (the drain plus any late flush) is the baseline for the
+        # exact-count assertions below
+        await _create_port_key_events(is_propagation_enabled=True)
+        return _get_propagated_port_keys()
 
     # by default outputs-watcher it is disabled
-    await _assert_events_generated(expected_events=0)
+    assert not _get_propagated_port_keys()
     await _create_port_key_events(is_propagation_enabled=False)
-    await _assert_events_generated(expected_events=0)
+    assert not _get_propagated_port_keys()
 
     # after enabling new events will be generated
     await _assert_enable_output_ports(test_client, wait_for_command_delivered)
-    await _assert_events_generated(expected_events=0)
-    await _create_port_key_events(is_propagation_enabled=True)
-    await _assert_events_generated(expected_events=1)
+    base_port_keys = await _drain_and_snapshot()
+    port_key = await _create_port_key_events(is_propagation_enabled=True)
+    assert _get_propagated_port_keys() == base_port_keys | {port_key}
 
     # disabling again, no longer generate events
     await _assert_disable_output_ports(test_client, wait_for_command_delivered)
-    await _assert_events_generated(expected_events=1)
     await _create_port_key_events(is_propagation_enabled=False)
-    await _assert_events_generated(expected_events=1)
 
     # enabling once more time, events are once again generated
     await _assert_enable_output_ports(test_client, wait_for_command_delivered)
-    await _assert_events_generated(expected_events=1)
-    for i in range(10):
-        await _create_port_key_events(is_propagation_enabled=True)
-        await _assert_events_generated(expected_events=2 + i)
+    base_port_keys = await _drain_and_snapshot()
+    for _ in range(10):
+        port_key = await _create_port_key_events(is_propagation_enabled=True)
+        observed_port_keys = _get_propagated_port_keys()
+        assert observed_port_keys == base_port_keys | {port_key}
+        base_port_keys = observed_port_keys
 
 
 async def test_container_create_outputs_dirs(

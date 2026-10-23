@@ -132,6 +132,10 @@ services/docker-compose.stack.*.yml
 *ignore*
 !.dockerignore
 !.gitignore
+# agent hook configuration and scripts are tracked code, not secrets
+!.github/hooks/**
+.github/hooks/**/__pycache__/
+.github/hooks/**/*.pyc
 
 # Any generated output folder (e.g. codegen, build, ...)
 out/

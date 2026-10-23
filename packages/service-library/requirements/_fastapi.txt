@@ -15,7 +15,7 @@ asgi-lifespan==2.1.0
     # via -r requirements/_fastapi.in
 asgiref==3.11.1
     # via opentelemetry-instrumentation-asgi
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -24,7 +24,6 @@ certifi==2026.10.18
 click==8.3.1
     # via
     #   rich-toolkit
-    #   typer
     #   uvicorn
 dnspython==2.9.0
     # via email-validator
@@ -97,7 +96,7 @@ opentelemetry-util-http==0.66b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
-packaging==26.0
+packaging==26.3
     # via opentelemetry-instrumentation
 prometheus-client==0.26.0
     # via -r requirements/_fastapi.in
@@ -145,7 +144,7 @@ starlette==1.6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-typer==0.24.1
+typer==0.27.3
     # via
     #   fastapi-cli
     #   fastapi-cloud-cli

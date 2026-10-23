@@ -16,7 +16,7 @@ celery==5.6.3
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -92,7 +92,7 @@ kombu==5.6.2
     #   pytest-celery
 lupa==2.6
     # via fakeredis
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   kombu

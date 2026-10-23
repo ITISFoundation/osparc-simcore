@@ -50,7 +50,12 @@ that file type or service over a general rule.
 - Run the narrowest relevant validation available. Report which tests or checks
   you did not run and why.
 - Run `pre-commit run --files <changed files>` and fix all
-  findings.
+  findings. Never commit with `--no-verify`. If a pre-commit hook fails, fix
+  the findings or explain them; do not bypass the hook.
+- If a hook fails on pre-existing violations in a touched file, verify that
+  your diff introduces zero new violations (compare `ruff check` output
+  against `git show HEAD:<file> | ruff check --stdin-filename <file> -`) and
+  fix every newly introduced violation before committing.
 
 ## Documentation
 
@@ -61,6 +66,26 @@ that file type or service over a general rule.
   workflows, deployment, or user-visible behavior.
 - Keep docs concise. Link to existing explanations rather than copying them.
   Retain brief local context where needed to understand or use the code.
+
+## Git workflow
+
+- Commit locally and stop. Do not push, force-push, create pull requests, or
+  resolve review threads unless explicitly asked.
+- Address code-review comments in new commits prefixed with the reviewer's handle
+  (e.g. `@<reviewer> review: fix ...`), never by amending the reviewed commit, so
+  reviewers can see the incremental fix and identify responses to their reviews.
+- Create pull requests as drafts unless explicitly told otherwise. If intent
+  is unclear, ask.
+
+## Pull request descriptions
+
+- Follow the structure of [PULL_REQUEST_TEMPLATE.md](../PULL_REQUEST_TEMPLATE.md).
+- Keep them compact: state the final solution, the facts, and the
+  measurements. No trial or process narrative, no step-by-step history of how
+  the branch evolved.
+- Performance PRs: include before/after measurements (e.g. CI step durations,
+  baseline mean vs. new value). If the measurement is not available yet, leave
+  an explicit placeholder and fill it in once CI completes.
 
 ## Ordering
 

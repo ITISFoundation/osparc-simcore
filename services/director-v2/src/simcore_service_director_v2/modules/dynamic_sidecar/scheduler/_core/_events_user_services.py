@@ -235,4 +235,4 @@ async def create_user_services(  # pylint: disable=too-many-statements
             **get_metrics_labels(scheduler_data)
         ).observe(start_duration)
 
-    _logger.info("Internal state after creating user services %s", scheduler_data)
+    _logger.debug("Internal state after creating user services %s", scheduler_data)

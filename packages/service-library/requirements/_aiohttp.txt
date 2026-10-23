@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/_aiohttp.txt requirements/_aiohttp.in
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_aiohttp.in
@@ -53,7 +53,7 @@ opentelemetry-util-http==0.66b0
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-packaging==26.0
+packaging==26.3
     # via opentelemetry-instrumentation
 prometheus-client==0.26.0
     # via -r requirements/_aiohttp.in
@@ -80,5 +80,5 @@ wrapt==1.17.3
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
-yarl==1.24.5
+yarl==1.25.1
     # via aiohttp

@@ -124,7 +124,7 @@ class DaskClient:
         authentication: ClusterAuthentication,
         tasks_file_link_type: FileLinkType,
         cluster_type: ClusterTypeInModel,
-    ) -> "DaskClient":
+    ) -> DaskClient:
         with log_context(
             _logger,
             logging.INFO,
@@ -156,7 +156,7 @@ class DaskClient:
                         f"dask-scheduler at {endpoint}",
                         json_dumps(attempt.retry_state.retry_object.statistics),
                     )
-                    _logger.info(
+                    _logger.debug(
                         "Scheduler info:\n%s",
                         json_dumps(await get_scheduler_details(backend.client), indent=2, sanitize_keys=True),
                     )
@@ -262,7 +262,7 @@ class DaskClient:
                 # NOTE: job_id (stable per run_id) was already published -> resubmission is a no-op.
                 _logger.info("dask task %s was already published, this should not happen but is harmless", f"{job_id=}")
 
-            _logger.info(
+            _logger.debug(
                 "Dask task %s started [%s] with encryption [%s]",
                 f"{job_id=}",
                 f"{node_image.command=}",

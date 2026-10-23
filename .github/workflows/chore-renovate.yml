@@ -1,0 +1,109 @@
+# Self-hosted Renovate, replacing the Mend-hosted app.
+# It runs as the osparc Renovate GitHub App and executes
+# .github/renovate/resync-lockfiles.bash as a post-upgrade task, so the layered
+# pip-compile lockfiles are fixed inside Renovate's own commit (Mend-hosted Renovate
+# cannot run commands, and a fixup commit by another author blocks both CI, which
+# waits for approval, and Renovate, which stops updating an "edited" branch).
+#
+# Setup (org owner): a GitHub App with the permissions listed in
+# https://docs.renovatebot.com/modules/platform/github/#running-as-a-github-app,
+# installed on this repository only; its client ID in the repository variable
+# RENOVATE_APP_CLIENT_ID and its private key in the repository secret
+# RENOVATE_APP_PRIVATE_KEY.
+#
+# Needs an Actions event policy that explicitly allows pull_request_target on
+# this file's path. GitHub blocks the event on public repositories by default,
+# and policies match file paths, so renaming this file means updating the
+# policy as well: https://gh.io/securely-using-pull_request_target
+name: Chore Renovate
+
+on:
+  schedule:
+    # nightly at 02:17 UTC (03:17/04:17 in Zurich), off the top of the hour when
+    # GitHub's scheduler is busiest
+    - cron: "17 2 * * *"
+  issues:
+    # a person ticking a box on the Dependency Dashboard (approve an update, retry,
+    # ...) gets a run right away instead of waiting for the night
+    types:
+      - edited
+  pull_request_target:
+    # same for the "rebase/retry" box of a Renovate PR. pull_request_target (not
+    # pull_request) so that the workflow and the checkout always come from the base
+    # branch: no code of the PR is ever run
+    types:
+      - edited
+  workflow_dispatch:
+    inputs:
+      log-level:
+        description: Renovate log level
+        type: choice
+        default: info
+        options:
+          - info
+          - debug
+      dry-run:
+        description: Only log what Renovate would do (no branches, PRs or issues)
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    # forks have no App credentials. Edits only count when a person (not Renovate,
+    # which rewrites its issue and PR bodies on every run) edits the Dependency
+    # Dashboard or ticks the rebase/retry box of a Renovate PR
+    if: >
+      github.repository == 'ITISFoundation/osparc-simcore' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+       (github.event.sender.type == 'User' &&
+        ((github.event_name == 'issues' &&
+          github.event.issue.user.login == 'osparc-simcore-renovate[bot]' &&
+          github.event.issue.title == 'Dependency Dashboard') ||
+         (github.event_name == 'pull_request_target' &&
+          github.event.pull_request.user.login == 'osparc-simcore-renovate[bot]' &&
+          contains(github.event.pull_request.body, '- [x] <!-- rebase-check -->')))))
+    runs-on: ubuntu-latest
+    # the App installation token expires after one hour
+    timeout-minutes: 60
+    steps:
+      - name: create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.3.0
+        with:
+          client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+          permission-administration: read
+          permission-checks: read
+          permission-contents: write
+          permission-issues: write
+          permission-metadata: read
+          permission-pull-requests: write
+          permission-statuses: write
+          permission-vulnerability-alerts: read
+          permission-workflows: write
+
+      - name: checkout Renovate configuration
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+
+      - name: run Renovate
+        uses: renovatebot/github-action@v46.3.9
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          configurationFile: .github/renovate/global-config.json5
+          docker-cmd-file: .github/renovate/entrypoint.bash
+          # the entrypoint installs system packages, then drops to the unprivileged user
+          docker-user: root
+        env:
+          LOG_LEVEL: ${{ inputs.log-level || 'info' }}
+          # empty (i.e. not set) unless requested
+          RENOVATE_DRY_RUN: ${{ inputs.dry-run && 'full' || '' }}

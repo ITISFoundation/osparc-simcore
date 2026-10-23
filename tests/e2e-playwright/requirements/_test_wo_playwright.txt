@@ -33,7 +33,7 @@ jinja2==3.1.6
     # via pytest-html
 markupsafe==3.0.3
     # via jinja2
-packaging==26.2
+packaging==26.3
     # via pytest
 pluggy==1.6.0
     # via pytest

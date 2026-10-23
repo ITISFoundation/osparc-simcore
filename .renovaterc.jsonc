@@ -1,25 +1,49 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    ":dependencyDashboardApproval"
+    "config:recommended"
   ],
   "dependencyDashboard": true,
-  "prCreation": "approval",
-  "platformAutomerge": true,
-  "automerge": true,
-  // Pinned explicitly (matches the default) so CI can gate on this exact prefix,
-  // e.g. .github/workflows/chore-renovate-lockfiles.yml
+  // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
+  // once approved (see .github/mergify.yml), like any other PR
+  "automerge": false,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
-  "labels": [
-    "t:maintenance"
-  ],
-  "vulnerabilityAlerts": {
-    "dependencyDashboardApproval": true
+  // Tools Renovate installs for pip-compile and its post-upgrade task. uv is updated
+  // together with requirements/UV_VERSION by the "uv" group below; python is updated
+  // by hand with requirements/PYTHON_VERSION
+  // (both checked by tests/environment-setup/test_used_{uv,python}.py)
+  "constraints": {
+    "python": "~=3.14.0",
+    "uv": "0.13.5"
   },
+  "labels": [
+    "t:maintenance",
+    "🤖-automerge"
+  ],
+  // GitHub's Dependabot alerts cover transitive dependencies but briefly vanish while
+  // GitHub rescans after a push; OSV covers direct dependencies only, independently
+  // of GitHub, and also blocks updates to known-malicious versions
+  "osvVulnerabilityAlerts": true,
+  // security PRs are created right away, without approval on the Dependency Dashboard,
+  // and ignore the PR limits below
+  "vulnerabilityAlerts": {
+    "dependencyDashboardApproval": false,
+    // on top of the labels above (addLabels appends, labels would replace)
+    "addLabels": [
+      "security"
+    ],
+    // the newest version instead of the lowest fixed one: Renovate otherwise proposes
+    // different versions for lockfiles below and above the fix in the same branch, the
+    // PR title shows only one of them, and .github/renovate/resync-lockfiles.bash has to
+    // pick one. This can be a new major version: the PR still needs two reviews
+    "vulnerabilityFixStrategy": "highest"
+  },
+  // regular PRs: at most 2 new ones per run (Renovate runs nightly, see
+  // .github/workflows/chore-renovate.yml) and at most 2 open at a time, so the next
+  // ones wait until one of them is merged or closed
   "prHourlyLimit": 2,
-  "prConcurrentLimit": 5,
+  "prConcurrentLimit": 2,
   "timezone": "Europe/Zurich",
   "pip-compile": {
     "managerFilePatterns": [
@@ -30,10 +54,72 @@
       "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
     ]
   },
+  "customManagers": [
+    {
+      "description": "uv version used by the Makefile, CI and the base images. Read as the PyPI package 'uv' (like the constraints above), so normal and security updates (OSV knows PyPI, not the Docker image) change all of them together",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^requirements/UV_VERSION$/"
+      ],
+      "matchStrings": [
+        "(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "uv",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    },
+    {
+      "description": "Same uv version in the Dockerfiles (ARG UV_VERSION feeding FROM ghcr.io/astral-sh/uv:${UV_VERSION}), whose image tags follow the PyPI releases",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/"
+      ],
+      "matchStrings": [
+        "ARG UV_VERSION=\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)\"?"
+      ],
+      "depNameTemplate": "uv",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    },
+    {
+      "description": "Exact Python version in .python-version, versioned by the official python image tags (the Dockerfiles need the image)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.python-version$/"
+      ],
+      "matchStrings": [
+        "(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "description": "Same exact Python version in PYTHON_VERSION (Dockerfile ARG, Makefiles, scripts) and in literal python image tags",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile[^/]*$/",
+        "/(^|/)Makefile$/",
+        "/\\.(bash|mk)$/"
+      ],
+      "matchStrings": [
+        "PYTHON_VERSION=\"?(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "FROM python:(?<currentValue>\\d+\\.\\d+\\.\\d+)-"
+      ],
+      "depNameTemplate": "python",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
   "lockFileMaintenance": {
     "enabled": true,
+    // re-resolves every package of a requirements directory, with no pin for
+    // .github/renovate/resync-lockfiles.bash to propagate: only on request
+    "dependencyDashboardApproval": true,
+    // any time that day: Renovate runs nightly at 03:17/04:17 Zurich time
+    // (see .github/workflows/chore-renovate.yml), so a narrower window can be missed
     "schedule": [
-      "before 3am on the first day of the month"
+      "on the first day of the month"
     ]
   },
   "packageRules": [
@@ -56,15 +142,35 @@
       "groupSlug": "{{packageFileDir}}"
     },
     {
+      "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "bash .github/renovate/resync-lockfiles.bash"
+        ],
+        "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
+        "fileFilters": [
+          "**/requirements/_*.txt",
+          "api/tests/requirements.txt",
+          "ci/helpers/requirements/requirements.txt",
+          "tests/environment-setup/requirements/requirements.txt"
+        ],
+        "executionMode": "branch",
+        "installTools": {
+          "python": {},
+          "uv": {}
+        }
+      }
+    },
+    {
       "description": "Shared packages: upgrade faster (smaller blast radius)",
       "matchFileNames": [
         "packages/**/requirements/**"
       ],
       "groupName": "packages deps",
-      "minimumReleaseAge": "3 days",
-      "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "minimumReleaseAge": "3 days"
     },
     {
       "description": "Services: upgrade slower / more conservative",
@@ -72,10 +178,7 @@
         "services/**/requirements/**"
       ],
       "groupName": "services deps",
-      "minimumReleaseAge": "14 days",
-      "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "minimumReleaseAge": "14 days"
     },
     {
       "description": "These requirements.txt are pip-compile outputs; let pip-compile own them (avoid double updates)",
@@ -97,13 +200,82 @@
       "enabled": false
     },
     {
+      "description": "Docker images: one PR per image (no grouping, so an update of one image does not block the others) and majors step only one major at a time (e.g. postgres 14 -> 15, never 14 -> 18). Majors still need approval on the Dependency Dashboard (see the major rule below)",
       "matchDatasources": [
         "docker"
       ],
-      "groupName": "docker images",
-      "dependencyDashboardApproval": true,
-      "prCreation": "approval",
-      "automerge": true
+      "maxMajorIncrement": 1
+    },
+    {
+      "description": "Major updates usually need code changes: only on request, by ticking them on the Dependency Dashboard (security fixes excepted, see vulnerabilityAlerts)",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "The uv image in the Dockerfiles is updated through its ARG UV_VERSION (see customManagers), not as a Docker image",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchDepNames": [
+        "ghcr.io/astral-sh/uv"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "uv is pinned in requirements/UV_VERSION, in the Dockerfiles (ARG UV_VERSION) and in the constraints above, which tests/environment-setup/test_used_uv.py requires to match: update them together, once a release has been out for a week (security fixes do not wait)",
+      "matchDepNames": [
+        "uv"
+      ],
+      "groupName": "uv",
+      "groupSlug": "uv",
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Python minor/major upgrades are done by hand across the whole repository (see requirements/how-to-upgrade-python.md): base images, .python-version, requires-python, actions/setup-python inputs and the constraints above are never touched by Renovate",
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "...except patch releases of the exact Python version (PYTHON_VERSION, .python-version, python image tags; see customManagers), updated together in one PR: tests/environment-setup/test_used_python.py only compares major.minor, so a partial update would go unnoticed. No minimumReleaseAge: Docker Hub gives the python tags no release date, so they would wait forever",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "enabled": true,
+      // otherwise Renovate only offers the newest version (a minor one, disabled below)
+      // and never the newest patch of the current minor
+      "separateMinorPatch": true,
+      "groupName": "python",
+      "groupSlug": "python"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "python"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The director service is frozen on its old Python (see FROZEN_SERVICES in tests/environment-setup/test_used_python.py)",
+      "matchDepNames": [
+        "python"
+      ],
+      "matchFileNames": [
+        "services/director/**"
+      ],
+      "enabled": false
     }
   ]
 }
