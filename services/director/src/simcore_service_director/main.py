@@ -15,7 +15,9 @@ _logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "httpcore",
+    "httpcore2",
     "httpx",
+    "httpx2",
     "werkzeug",
 )
 
