@@ -20,9 +20,11 @@ from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import setup_httpx_client_tracing
 from starlette import status
+from tenacity import retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_random
 
 from ..core.settings import ApplicationSettings, DirectorSettings
@@ -31,6 +33,9 @@ from ..errors import DirectorUnresponsiveError
 _logger = logging.getLogger(__name__)
 
 _MINUTE: Final[NonNegativeInt] = 60
+
+# errors raised when the director closes a pooled connection under our feet
+_DROPPED_CONNECTION_ERRORS: Final = (httpx.RemoteProtocolError, httpx.ReadError)
 
 
 _SERVICE_RUNTIME_SETTINGS: Final[str] = "simcore.service.settings"
@@ -159,6 +164,12 @@ class DirectorClient:
     #
 
     @_return_data_or_raise_error
+    @retry(
+        retry=retry_if_exception_type(_DROPPED_CONNECTION_ERRORS),
+        stop=stop_after_attempt(2),
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+        reraise=True,
+    )
     async def get(self, path: str) -> httpx.Response:
         return await self.client.get(path)
 
