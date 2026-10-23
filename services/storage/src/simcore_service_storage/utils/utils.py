@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 import aiofiles
-import httpx
+import httpx2
 from aiohttp.typedefs import StrOrURL
 from aws_library.s3 import UploadID
 
@@ -24,7 +24,7 @@ def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
 
 
 async def download_to_file_or_raise(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     url: StrOrURL,
     destination_path: Path,
     *,
