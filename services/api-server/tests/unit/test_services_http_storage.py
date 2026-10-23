@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Final
 from uuid import uuid4
 
 import httpx
@@ -19,7 +19,7 @@ def _empty_search_response() -> httpx.Response:
     return httpx.Response(status.HTTP_200_OK, json={"data": []})
 
 
-_SEARCHES: list[tuple[str, dict[str, Any]]] = [
+_SEARCHES: Final[list[tuple[str, dict[str, Any]]]] = [
     ("list_files", {"user_id": 1}),
     ("search_owned_files", {"user_id": 1, "file_id": uuid4()}),
 ]

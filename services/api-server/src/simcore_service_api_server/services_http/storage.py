@@ -1,10 +1,11 @@
 import logging
 import re
 import urllib.parse
+from collections.abc import Callable, Coroutine
 from datetime import timedelta
 from functools import partial
 from mimetypes import guess_type
-from typing import Final, Literal
+from typing import Any, Final, Literal
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -58,13 +59,18 @@ _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
+
 # NOTE: only for read-only calls. Storage closes idle pooled connections
-_retry_on_dropped_connection = retry(
-    retry=retry_if_exception_type((RemoteProtocolError, ReadError)),
-    stop=stop_after_attempt(2),
-    before_sleep=before_sleep_log(_logger, logging.WARNING),
-    reraise=True,
-)
+def _retry_on_dropped_connection[**P, R](
+    func: Callable[P, Coroutine[Any, Any, R]],
+) -> Callable[P, Coroutine[Any, Any, R]]:
+    return retry(
+        retry=retry_if_exception_type((RemoteProtocolError, ReadError)),
+        stop=stop_after_attempt(2),
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+        reraise=True,
+    )(func)
+
 
 AccessRight = Literal["read", "write"]
 

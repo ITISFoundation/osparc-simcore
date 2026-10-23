@@ -8,7 +8,7 @@
 
 import urllib.parse
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Final
 
 import httpx
 import pytest
@@ -178,7 +178,7 @@ async def test_requests_honor_configured_timeout(
     assert requested_timeouts == [httpx.USE_CLIENT_DEFAULT]
 
 
-_LABELS_PATH_REGEX = r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$"
+_LABELS_PATH_REGEX: Final[str] = r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$"
 
 
 @pytest.mark.parametrize(
