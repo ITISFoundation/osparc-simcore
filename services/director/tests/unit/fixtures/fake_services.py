@@ -14,7 +14,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Literal
 
-import httpx
+import httpx2
 import pytest
 from aiodocker import utils
 from aiodocker.docker import Docker
@@ -180,7 +180,7 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
             ]
         )
     }
-    with httpx.Client(headers=request_headers, timeout=10) as client:
+    with httpx2.Client(headers=request_headers, timeout=10) as client:
         for image in list_of_images:
             service_description = image["service_description"]
             tag = service_description["version"]
