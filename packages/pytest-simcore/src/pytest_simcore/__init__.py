@@ -3,8 +3,10 @@
 # auto-imported as a pytest11 plugin in EVERY environment installing pytest-simcore,
 # including minimal test suites that never use its docker/xdist fixtures. Import
 # optional dependencies lazily inside the fixtures that need them.
+import importlib.util
 import os
 from importlib.metadata import version
+from typing import Final
 
 import pytest
 
@@ -22,6 +24,33 @@ def pytest_addoption(parser: pytest.Parser):
         default=False,
         help="Keep stack/registry up after fixtures closes",
     )
+
+
+# NOTE: respx intercepts at the httpcore layer unless a router asks for another mocker, and it only
+# knows httpcore's module paths. Clients built from the httpx2 fork talk to httpcore2, so their
+# requests would bypass both the mocks and the assertion rejecting unmocked traffic.
+_HTTPCORE2_TARGETS: Final[tuple[str, ...]] = (
+    "httpcore2._sync.connection.HTTPConnection",
+    "httpcore2._sync.connection_pool.ConnectionPool",
+    "httpcore2._sync.http_proxy.HTTPProxy",
+    "httpcore2._async.connection.AsyncHTTPConnection",
+    "httpcore2._async.connection_pool.AsyncConnectionPool",
+    "httpcore2._async.http_proxy.AsyncHTTPProxy",
+)
+
+
+def pytest_configure() -> None:
+    """Points respx at httpcore2, the stack httpx2 clients use to reach the network.
+
+    Patching begins when a respx router registers, so this alone leaves a session untouched until
+    a test actually mocks.
+    """
+    if importlib.util.find_spec("respx") is None or importlib.util.find_spec("httpcore2") is None:
+        return
+
+    from respx.mocks import HTTPCoreMocker  # noqa: PLC0415
+
+    HTTPCoreMocker.add_targets(*_HTTPCORE2_TARGETS)
 
 
 @pytest.fixture(scope="session")
