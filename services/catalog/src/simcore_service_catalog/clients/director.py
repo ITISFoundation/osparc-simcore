@@ -35,7 +35,10 @@ _logger = logging.getLogger(__name__)
 _MINUTE: Final[NonNegativeInt] = 60
 
 # errors raised when the director closes a pooled connection under our feet
-_DROPPED_CONNECTION_ERRORS: Final = (httpx.RemoteProtocolError, httpx.ReadError)
+_DROPPED_CONNECTION_ERRORS: Final[tuple[type[httpx.RequestError], ...]] = (
+    httpx.RemoteProtocolError,
+    httpx.ReadError,
+)
 
 
 _SERVICE_RUNTIME_SETTINGS: Final[str] = "simcore.service.settings"
