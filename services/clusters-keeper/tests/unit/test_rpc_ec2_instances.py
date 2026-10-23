@@ -6,10 +6,11 @@ import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.errors import InvalidEC2InstanceTypesRPCError
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -60,8 +61,11 @@ async def test_get_instance_type_details_with_invalid_type_names(
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
-    with pytest.raises(RPCServerError):
+    # invalid names must be distinguishable from an outage (RPCServerError), so
+    # callers can translate them into a bad-request error
+    with pytest.raises(InvalidEC2InstanceTypesRPCError) as exc_info:
         await get_instance_type_details(
             clusters_keeper_rabbitmq_rpc_client,
             instance_type_names={"t2.micro", "g4dn.xlarge", "invalid.name"},
         )
+    assert exc_info.value.error_context()["ec2_types"] == {"t2.micro", "g4dn.xlarge", "invalid.name"}
