@@ -99,14 +99,11 @@ restore() {
 
 # Regenerates one directory with the given upgrade list. The inputs are touched first so
 # the rules run even though the lockfiles may look newer than them (the Makefiles' own
-# `touch` target is missing e.g. in api/tests). Source distributions may not be built:
-# when the pins cannot be satisfied, uv would otherwise backtrack through every old
-# release of the dependents (e.g. ancient pre-commit sdists) for tens of minutes before
-# giving up, instead of failing within seconds.
+# `touch` target is missing e.g. in api/tests).
 regenerate() {
   local dir="$1"
   find "$dir" -maxdepth 1 -name '*.in' -exec touch {} +
-  UV_NO_BUILD=1 make -C "$dir" reqs upgrade="$2"
+  make -C "$dir" reqs upgrade="$2"
 }
 
 # Prints the (PEP 503-normalized) names of the packages uv's error message blames at

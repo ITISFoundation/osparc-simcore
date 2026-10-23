@@ -23,3 +23,8 @@ Rules:
   (e.g. `cd-staging` vs `cd-release`).
 - Do not reuse a generic display name such as `CI`; exactly one workflow may
   own it, and status badges/branch protection reference it by string.
+- A workflow that triggers on `pull_request_target` needs an Actions event
+  policy that explicitly allows the event, and a policy matches workflows by
+  file path. Do not rename or move such a workflow without updating the
+  policy, or its runs stop. The workflows that rely on it say so at the top of
+  the file: <https://gh.io/securely-using-pull_request_target>.
