@@ -6,11 +6,18 @@
 # pylint: disable=unused-variable
 
 
+from typing import cast
+
+# NOTE: `httpx.Request` below only annotates the request respx hands to
+# side_effect handlers (plain-httpx until the respx seam is retired); the
+# raised exception must come from the fork the service client speaks: httpx2,
+# hence the cast when handing that request over to it.
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from httpx import TimeoutException
+from httpx2 import Request as Httpx2Request
+from httpx2 import TimeoutException
 from models_library.api_schemas_payments.errors import PaymentUnverifiedError
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,
@@ -339,7 +346,7 @@ async def test_webserver_pay_with_payment_method_timeout_workflow(
         def _timeout_payment(request: httpx.Request, pm_id: PaymentMethodID):
             # Simulate timeout by raising TimeoutException
             msg = f"Request timed out for {pm_id}"
-            raise TimeoutException(msg, request=request)
+            raise TimeoutException(msg, request=cast(Httpx2Request, request))
 
         mock_payments_gateway_service_api_base.post(
             path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",

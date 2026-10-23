@@ -7,7 +7,7 @@
 
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -66,7 +66,7 @@ def app(
 
 
 @pytest.fixture
-async def client(client: httpx.AsyncClient, external_envfile_dict: EnvVarsDict) -> AsyncIterator[httpx.AsyncClient]:
+async def client(client: httpx2.AsyncClient, external_envfile_dict: EnvVarsDict) -> AsyncIterator[httpx2.AsyncClient]:
     # EITHER tests against external payments API
     if external_base_url := external_envfile_dict.get("PAYMENTS_SERVICE_API_BASE_URL"):
         # If there are external secrets, build a new client and point to `external_base_url`
@@ -74,7 +74,7 @@ async def client(client: httpx.AsyncClient, external_envfile_dict: EnvVarsDict) 
             "🚨 EXTERNAL: tests running against external payment API at",
             external_base_url,
         )
-        async with httpx.AsyncClient(
+        async with httpx2.AsyncClient(
             base_url=external_base_url,
             headers={"Content-Type": "application/json"},
         ) as new_client:
@@ -86,7 +86,7 @@ async def client(client: httpx.AsyncClient, external_envfile_dict: EnvVarsDict) 
 
 async def test_payments_api_authentication(
     with_disabled_rabbitmq_and_rpc: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     faker: Faker,
     auth_headers: dict[str, str],
 ):
@@ -110,7 +110,7 @@ async def test_payments_api_authentication(
 
 async def test_payments_methods_api_authentication(
     with_disabled_rabbitmq_and_rpc: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     faker: Faker,
     auth_headers: dict[str, str],
 ):
