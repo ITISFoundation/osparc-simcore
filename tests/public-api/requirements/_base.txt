@@ -39,7 +39,7 @@ osparc==0.8.5
     # via -r requirements/_base.in
 osparc-client==0.8.5
     # via osparc
-packaging==26.0
+packaging==26.3
     # via osparc
 pydantic==2.13.5
     # via

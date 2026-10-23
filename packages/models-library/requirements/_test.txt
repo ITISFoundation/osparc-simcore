@@ -24,7 +24,7 @@ iniconfig==2.3.0
     # via pytest
 multidict==7.0.0
     # via yarl
-packaging==26.0
+packaging==26.3
     # via pytest
 pint==0.25.2
     # via -r requirements/_test.in

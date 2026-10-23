@@ -27,7 +27,6 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.project_nodes_pricing import (
     R5_4XLARGE_NAME,
     T3_MEDIUM_NAME,
-    get_fixed_ec2_instance_types,
     get_node_pricing_state,
     make_pricing_unit,
     regex_for_rut_pricing_unit,
@@ -234,19 +233,6 @@ def mock_rut_fixed_pricing_units(
             repeat=True,
         )
     return units
-
-
-@pytest.fixture
-def mocked_clusters_keeper_fixed_ec2_types(mocker: MockerFixture) -> mock.AsyncMock:
-    async def _fake_instance_type_details(rabbitmq_client, instance_type_names: set[str]) -> list[EC2InstanceTypeGet]:
-        return get_fixed_ec2_instance_types(instance_type_names)
-
-    mocked = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.get_instance_type_details",
-        autospec=True,
-    )
-    mocked.side_effect = _fake_instance_type_details
-    return mocked
 
 
 def _get_node_id_for_service_class(user_project: ProjectDict, service_class: str) -> str:

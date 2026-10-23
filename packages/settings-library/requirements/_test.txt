@@ -8,7 +8,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 iniconfig==2.3.0
     # via pytest
-packaging==26.0
+packaging==26.3
     # via pytest
 pluggy==1.6.0
     # via

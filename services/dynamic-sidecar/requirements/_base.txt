@@ -266,7 +266,7 @@ orjson==3.11.9
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-packaging==24.2
+packaging==26.3
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   opentelemetry-instrumentation
@@ -275,7 +275,7 @@ pamqp==4.0.1
     # via aiormq
 pint==0.25
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-platformdirs==4.3.6
+platformdirs==4.13.5
     # via pint
 prometheus-client==0.26.0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
