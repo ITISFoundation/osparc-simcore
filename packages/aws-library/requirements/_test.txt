@@ -46,7 +46,7 @@ botocore-stubs==1.42.41
     #   types-aioboto3
     #   types-aiobotocore
     #   types-boto3
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -60,9 +60,7 @@ cfn-lint==1.41.0
 charset-normalizer==3.4.6
     # via requests
 click==8.3.1
-    # via
-    #   -c requirements/_base.txt
-    #   flask
+    # via flask
 coverage==7.16.0
     # via
     #   -r requirements/_test.in
@@ -169,7 +167,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via moto
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest

@@ -26,3 +26,13 @@ queue_rules:
       - "#review-threads-unresolved=0"
 merge_protections_settings:
   reporting_method: check-runs
+
+pull_request_rules:
+  # Renovate labels its PRs 🤖-automerge (.renovaterc.jsonc) but never merges them itself:
+  # they enter the default queue as soon as they meet its queue_conditions (e.g. approvals).
+  # To hold one back, add 🤖-do-not-merge.
+  - name: queue Renovate PRs
+    conditions:
+      - author=osparc-simcore-renovate[bot]
+    actions:
+      queue:

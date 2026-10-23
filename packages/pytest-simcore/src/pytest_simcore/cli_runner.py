@@ -7,6 +7,7 @@
 
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -19,7 +20,10 @@ def cli_runner() -> CliRunner:
 
 
 @pytest.fixture
-def isolated_cli_runner(cli_runner: CliRunner) -> Iterator[CliRunner]:
-    """Instance of `typer.testing.CliRunner` running under a temporary working directory for isolated filesystem tests."""
-    with cli_runner.isolated_filesystem():
+def isolated_cli_runner(cli_runner: CliRunner, tmp_path: Path) -> Iterator[CliRunner]:
+    """Instance of `typer.testing.CliRunner` running under a temporary working
+    directory for isolated filesystem tests.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.chdir(tmp_path)
         yield cli_runner

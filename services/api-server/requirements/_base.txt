@@ -24,7 +24,7 @@ aiofiles==25.1.0
     #   aioboto3
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -41,7 +41,9 @@ alembic==1.14.0
 amqp==5.3.1
     # via kombu
 annotated-doc==0.0.5
-    # via fastapi
+    # via
+    #   fastapi
+    #   typer
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -80,7 +82,7 @@ botocore-stubs==1.43.14
     # via types-aiobotocore
 celery==5.6.3
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
@@ -95,7 +97,6 @@ click==8.2.1
     #   click-plugins
     #   click-repl
     #   rich-toolkit
-    #   typer
     #   uvicorn
 click-didyoumean==0.3.1
     # via celery
@@ -328,7 +329,7 @@ orjson==3.11.9
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
-packaging==24.2
+packaging==26.3
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
@@ -341,7 +342,7 @@ parse==1.20.2
     # via -r requirements/_base.in
 pint==0.25
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-platformdirs==4.3.6
+platformdirs==4.13.5
     # via pint
 prometheus-client==0.26.0
     # via
@@ -475,7 +476,7 @@ tqdm==4.67.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.16.1
+typer==0.27.3
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -518,7 +519,6 @@ typing-extensions==4.16.0
     #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
-    #   typer
     #   typing-inspection
 typing-inspection==0.4.2
     # via
@@ -564,7 +564,7 @@ wrapt==1.17.0
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-yarl==1.24.5
+yarl==1.25.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in

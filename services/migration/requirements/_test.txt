@@ -5,7 +5,7 @@ attrs==26.1.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2026.10.18
+certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -31,7 +31,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-packaging==26.0
+packaging==26.3
     # via pytest
 pathspec==1.0.4
     # via mypy

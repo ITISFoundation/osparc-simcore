@@ -72,7 +72,7 @@ markupsafe==3.0.3
     #   jinja2
 orjson==3.13.0
     # via -r requirements/_test_wo_playwright.txt
-packaging==26.2
+packaging==26.3
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest

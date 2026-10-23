@@ -45,6 +45,7 @@ from pydantic import AnyUrl, NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.project_nodes_pricing import get_node_pricing_state
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -61,6 +62,7 @@ from simcore_service_webserver.projects._controller.nodes_rest import (
 from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_NODE_UPDATED_EVENT
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import (
     AsyncRetrying,
     RetryError,
@@ -353,6 +355,7 @@ async def test_create_node_returns_422_if_body_is_missing(
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
+@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize(
     "node_class, expect_run_service_call",
     [("dynamic", True), ("comp", False), ("frontend", False)],
@@ -368,7 +371,9 @@ async def test_create_node(
     faker: Faker,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
     postgres_db: sa.engine.Engine,
+    asyncpg_engine: AsyncEngine,
 ):
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -398,6 +403,19 @@ async def test_create_node(
                 .limit(1)
             )
         assert result.scalar() is not None
+
+        # CHARACTERIZATION of the pricing/resources state at node creation:
+        # creating a node NEVER links a pricing unit and stores the catalog's
+        # default resources untouched (director-v2 links the default unit and
+        # resizes later, during create_or_update_pipeline).
+        # ⚠️ For node_class == "comp" the pricing/resources ownership rework (PR 2)
+        # intends to link the default pricing unit and size with the dask formula
+        # AT CREATION; when that lands, update the expectations for "comp".
+        state = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+        new_node_state = state[NodeID(node_id)]
+        assert new_node_state.pricing_plan_id is None
+        assert new_node_state.pricing_unit_id is None
+        assert new_node_state.required_resources == jsonable_encoder(mock_service_resources)
     else:
         assert error
 
