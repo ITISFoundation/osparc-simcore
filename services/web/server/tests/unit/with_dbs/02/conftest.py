@@ -21,7 +21,8 @@ from aioresponses import aioresponses
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
     SERVICE_RESOURCES_DICT_EXAMPLES,
@@ -31,6 +32,7 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.project_nodes_pricing import get_fixed_ec2_instance_types
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import SocketHandlers
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
@@ -48,6 +50,23 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
+
+
+@pytest.fixture
+def mocked_clusters_keeper_fixed_ec2_types(mocker: MockerFixture) -> mock.AsyncMock:
+    """clusters-keeper answers with FIXED machine types (see
+    `pytest_simcore.helpers.project_nodes_pricing`) so sizing assertions are
+    deterministic."""
+
+    async def _fake_instance_type_details(rabbitmq_client, instance_type_names: set[str]) -> list:
+        return get_fixed_ec2_instance_types(instance_type_names)
+
+    mocked = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.get_instance_type_details",
+        autospec=True,
+    )
+    mocked.side_effect = _fake_instance_type_details
+    return mocked
 
 
 @pytest.fixture
