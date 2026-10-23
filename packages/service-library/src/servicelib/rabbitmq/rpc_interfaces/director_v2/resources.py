@@ -15,7 +15,9 @@ from ... import RabbitMQRPCClient
 _logger = logging.getLogger(__name__)
 
 
-_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
+# the request nests a clusters-keeper lookup which itself allows
+# RPC_REMOTE_METHOD_TIMEOUT_S (30 s), so the outer deadline must exceed it
+_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 40
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 _SERVICE_RESOURCES_ADAPTER: TypeAdapter[ServiceResourcesDict] = TypeAdapter(ServiceResourcesDict)

@@ -33,6 +33,9 @@ from servicelib.rabbitmq import (
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.errors import (
+    InvalidEC2InstanceTypesRPCError,
+)
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ClustersKeeperNotAvailableRPCError,
     EC2InstanceTypeNotFoundRPCError,
@@ -144,6 +147,12 @@ async def compute_node_resources_for_hardware(
         UnsupportedNodeClassRPCError -- frontend (or unknown) service classes
 
     """
+    # reject unsupported classes first: their resources never depend on an EC2
+    # machine, so they must not depend on the clusters-keeper being reachable
+    node_class = to_node_class(service_key)
+    if node_class not in (NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE):
+        raise UnsupportedNodeClassRPCError(service_key=service_key, service_version=service_version)
+
     if not hardware_info.aws_ec2_instances:
         return resources
 
@@ -153,15 +162,15 @@ async def compute_node_resources_for_hardware(
             instance_type_names=set(hardware_info.aws_ec2_instances),
         )
         assert ec2_instance_types  # nosec
+    except InvalidEC2InstanceTypesRPCError as exc:
+        # the machine type is not a valid EC2 instance type: a bad request, not an
+        # outage (this error is a RPCServerError subclass, so catch it first)
+        raise EC2InstanceTypeNotFoundRPCError(ec2_types=set(hardware_info.aws_ec2_instances)) from exc
     except (TimeoutError, RemoteMethodNotRegisteredError, RPCServerError) as exc:
         raise ClustersKeeperNotAvailableRPCError from exc
 
     selected_ec2_instance_type = _select_ec2_instance_type(hardware_info, ec2_instance_types)
 
-    match to_node_class(service_key):
-        case NodeClass.COMPUTATIONAL:
-            return resize_computational_node_resources(resources, ec2_instance_type=selected_ec2_instance_type)
-        case NodeClass.INTERACTIVE:
-            return resize_dynamic_node_resources(resources, ec2_instance_type=selected_ec2_instance_type)
-        case _:
-            raise UnsupportedNodeClassRPCError(service_key=service_key, service_version=service_version)
+    if node_class == NodeClass.COMPUTATIONAL:
+        return resize_computational_node_resources(resources, ec2_instance_type=selected_ec2_instance_type)
+    return resize_dynamic_node_resources(resources, ec2_instance_type=selected_ec2_instance_type)

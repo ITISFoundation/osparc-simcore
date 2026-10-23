@@ -32,6 +32,7 @@ from pytest_simcore.helpers.project_nodes_pricing import (
     single_container_required_resources,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.errors import InvalidEC2InstanceTypesRPCError
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import resources as rpc_resources
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ClustersKeeperNotAvailableRPCError,
@@ -164,9 +165,12 @@ async def test_sizing_rpc_rejects_frontend_nodes(
     rpc_client: RabbitMQRPCClient,
     mocked_clusters_keeper: mock.AsyncMock,
 ):
+    # a frontend node is rejected even though clusters-keeper would answer: its
+    # resources do not depend on an EC2 machine
     resources = _RESOURCES_ADAPTER.validate_python(single_container_required_resources("library/nginx:latest"))
     with pytest.raises(UnsupportedNodeClassRPCError):
         await _request_sizing(rpc_client, service_key=_FRONTEND_KEY, resources=resources, machine=R5_4XLARGE_NAME)
+    mocked_clusters_keeper.assert_not_called()
 
 
 async def test_sizing_rpc_fails_on_ec2_type_unknown_to_clusters_keeper(
@@ -202,3 +206,21 @@ async def test_sizing_rpc_maps_clusters_keeper_unavailability(
     resources = _RESOURCES_ADAPTER.validate_python(single_container_required_resources("library/nginx:latest"))
     with pytest.raises(ClustersKeeperNotAvailableRPCError):
         await _request_sizing(rpc_client, service_key=_COMP_KEY, resources=resources, machine=T3_MEDIUM_NAME)
+
+
+async def test_sizing_rpc_maps_clusters_keeper_invalid_type_rejection(
+    rpc_client: RabbitMQRPCClient,
+    mocker: MockerFixture,
+):
+    # this is how the real clusters-keeper fails on an invalid machine type: it
+    # rejects the request with InvalidEC2InstanceTypesRPCError (a RPCServerError
+    # subclass), which must NOT be classified as an outage
+    mocked = mocker.patch(
+        "simcore_service_director_v2.modules.resources_sizing.get_instance_type_details",
+        autospec=True,
+    )
+    mocked.side_effect = InvalidEC2InstanceTypesRPCError(ec2_types={"not-a-known-type"})
+
+    resources = _RESOURCES_ADAPTER.validate_python(single_container_required_resources("library/nginx:latest"))
+    with pytest.raises(EC2InstanceTypeNotFoundRPCError):
+        await _request_sizing(rpc_client, service_key=_COMP_KEY, resources=resources, machine="not-a-known-type")
