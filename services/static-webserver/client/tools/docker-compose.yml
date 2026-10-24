@@ -7,7 +7,7 @@ services:
     volumes:
       - '../:/project'
     ports:
-      - '8080:8080'
+      - '${QX_SERVE_HOST_PORT:-8080}:8080'
     working_dir: /project
     environment:
       NODE_OPTIONS: "--max-old-space-size=5120"

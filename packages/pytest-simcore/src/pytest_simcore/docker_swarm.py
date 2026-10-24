@@ -35,6 +35,7 @@ from tenacity.wait import wait_fixed, wait_random_exponential
 from .docker_compose import _filter_services_and_dump
 from .helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION, FIXTURE_CONFIG_OPS_SERVICES_SELECTION
 from .helpers.constants import HEADER_STR, MINUTE
+from .helpers.dev_slot import find_foreign_port_publishers
 from .helpers.host import get_localhost_ip
 from .helpers.logging_tools import log_context
 from .helpers.swarm_coordination import SwarmCoordinator, get_coordination_dir
@@ -524,6 +525,46 @@ def _module_service_selection(item: pytest.Item, attr_name: str) -> list[str]:
     return getattr(item.module, attr_name, [])
 
 
+def _published_host_ports(compose_file: Path) -> set[int]:
+    content = yaml.safe_load(compose_file.read_text())
+    ports: set[int] = set()
+    for service in content.get("services", {}).values():
+        for entry in service.get("ports", []) or []:
+            if isinstance(entry, dict):
+                published = entry.get("published")
+            else:
+                host, _, _ = f"{entry}".rpartition(":")
+                published = host or None
+            if published:
+                ports.add(int(published))
+    return ports
+
+
+def _prepare_deploy(
+    docker_client: docker.client.DockerClient,
+    stacks: list[tuple[str, str, Path]],
+    core_stack_name: str,
+    osparc_simcore_services_dir: Path,
+) -> None:
+    _assert_host_ports_are_free(docker_client, stacks)
+    # NOTE: if the migration service was already running prior to this call it must
+    # be force updated so that it does its job. else it remains and tests will fail
+    _force_remove_migration_service(docker_client, core_stack_name)
+    _make_dask_sidecar_certificates(osparc_simcore_services_dir)
+
+
+def _assert_host_ports_are_free(docker_client: docker.client.DockerClient, stacks: list[tuple[str, str, Path]]) -> None:
+    # the test stacks use the slot's host ports, so this checkout's dev stack must be down
+    wanted = set().union(*(_published_host_ports(compose_file) for _, _, compose_file in stacks))
+    if taken := find_foreign_port_publishers(docker_client, wanted, [stack_name for _, stack_name, _ in stacks]):
+        details = ", ".join(f"{port} by {owner}" for port, owner in sorted(taken.items()))
+        pytest.exit(
+            f"host ports of this checkout's dev slot are in use ({details}). "
+            "Run `make down` or run the tests from another worktree",
+            returncode=pytest.ExitCode.USAGE_ERROR,
+        )
+
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def docker_stack(  # noqa: C901
     osparc_simcore_services_dir: Path,
@@ -639,10 +680,7 @@ async def docker_stack(  # noqa: C901
             for _, stack_name, _ in stacks:
                 record_shared_resource(request, tmp_path_factory, kind="stack", name=stack_name)
 
-            # NOTE: if the migration service was already running prior to this call it must
-            # be force updated so that it does its job. else it remains and tests will fail
-            _force_remove_migration_service(docker_client, core_stack_name)
-            _make_dask_sidecar_certificates(osparc_simcore_services_dir)
+            _prepare_deploy(docker_client, stacks, core_stack_name, osparc_simcore_services_dir)
             # make up-version
             for _, stack_name, compose_file in stacks:
                 _deploy_stack(compose_file, stack_name)

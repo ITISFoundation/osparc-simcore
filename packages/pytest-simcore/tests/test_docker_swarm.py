@@ -7,7 +7,6 @@ from pytest_simcore.docker_swarm import (
     _list_owned_migration_services,
     _swarm_membership_token,
 )
-from pytest_simcore.helpers.stack_names import compute_stack_names, get_checkout_token
 
 
 @dataclass
@@ -41,15 +40,13 @@ def _fake_client(service_names: list[str]) -> _FakeClient:
 
 
 def test_migration_services_are_selected_by_exact_name():
-    # the hazard: when the branch fragment itself contains "migration", a substring match
-    # would select EVERY service this checkout deployed (postgres, redis, ...)
-    core_stack, _ = compute_stack_names("fix/migration", get_checkout_token(Path("/home/dev/simcore")))
-    assert "migration" in core_stack
+    # a substring match on "migration" would also select services of other stacks
+    core_stack = "pytest-s1-core"
 
     own_services = [f"{core_stack}_{key}" for key in ("postgres", "redis", "migration")]
-    # a co-tenant checkout on the same branch has its own migration service, which must
+    # a co-tenant checkout in another slot has its own migration service, which must
     # be left alone
-    co_tenant = "pytest-fix-migration-core-ffff_migration"
+    co_tenant = "pytest-s2-core_migration"
     client = _fake_client([*own_services, co_tenant])
 
     owned = _list_owned_migration_services(client, core_stack)  # type: ignore[arg-type]

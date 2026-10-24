@@ -70,7 +70,13 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def registry_ready() -> None:
+def webserver_api_base_url(env_vars_for_docker_compose: EnvVarsDict) -> str:
+    """Web API through traefik on the dev slot's host port"""
+    return f"http://127.0.0.1:{env_vars_for_docker_compose['TRAEFIK_HTTP_HOST_PORT']}/v0"
+
+
+@pytest.fixture(scope="module")
+def registry_ready(webserver_api_base_url: str) -> None:
     for attempt in Retrying(
         wait=wait_fixed(1),
         stop=stop_after_delay(0.5 * _MINUTE),
@@ -78,7 +84,7 @@ def registry_ready() -> None:
         before_sleep=before_sleep_log(_logger, logging.INFO),
     ):
         with attempt:
-            resp = httpx.get("http://127.0.0.1:9081/v0/")
+            resp = httpx.get(f"{webserver_api_base_url}/")
             resp.raise_for_status()
             _logger.info(
                 "Connection to osparc-simcore web API succeeded [%s]",
@@ -87,7 +93,7 @@ def registry_ready() -> None:
 
 
 @pytest.fixture(scope="module")
-def registered_user(registry_ready: None) -> Iterator[RegisteredUserDict]:
+def registered_user(registry_ready: None, webserver_api_base_url: str) -> Iterator[RegisteredUserDict]:
     first_name = "john"
     last_name = "smith"
     user = RegisteredUserDict(
@@ -100,7 +106,7 @@ def registered_user(registry_ready: None) -> Iterator[RegisteredUserDict]:
         api_secret="",
     )
 
-    with httpx.Client(base_url="http://127.0.0.1:9081/v0") as client:
+    with httpx.Client(base_url=webserver_api_base_url) as client:
         # setup user via web-api
         resp = client.post(
             "/auth/login",
@@ -242,9 +248,12 @@ def services_registry(
 @pytest.fixture(scope="module")
 def api_client(
     registered_user: RegisteredUserDict,
+    env_vars_for_docker_compose: EnvVarsDict,
 ) -> Iterator[osparc.ApiClient]:
     cfg = osparc.Configuration(
-        host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
+        host=os.environ.get(
+            "OSPARC_API_URL", f"http://127.0.0.1:{env_vars_for_docker_compose['API_SERVER_HOST_PORT']}"
+        ),
         username=registered_user["api_key"],
         password=registered_user["api_secret"],
     )

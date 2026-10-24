@@ -1,7 +1,8 @@
 #
-# Build services to a specific target stage and tags them as 'local/{service}:${BUILD_TARGET}'
+# Build services to a specific target stage and tags them as 'local/{service}:${BUILD_TARGET}${LOCAL_IMAGE_TAG_SUFFIX}'
 #
 #  - BUILD_TARGET (build_target_required) must be set as 'production', 'development' or 'cache'. Used as image tag
+#  - LOCAL_IMAGE_TAG_SUFFIX is '-sN' in dev slot N > 0 and empty in slot 0 (see docs/parallel-worktrees.md)
 #
 # NOTE: linter error 'missing image' happens with the file is called 'docker-compose.build.yml'
 #
@@ -42,7 +43,7 @@ services:
         UV_VERSION: ${UV_VERSION:?UV_VERSION must be exported (see root Makefile)}
 
   service-integration:
-    image: local/service-integration:${BUILD_TARGET:?build_target_required}
+    image: local/service-integration:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: packages/service-integration/Dockerfile
@@ -66,7 +67,7 @@ services:
   # Services below are part of the osparc-simcore stack ---------------------------
 
   api-server:
-    image: local/api-server:${BUILD_TARGET:?build_target_required}
+    image: local/api-server:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/api-server/Dockerfile
@@ -88,7 +89,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   autoscaling:
-    image: local/autoscaling:${BUILD_TARGET:?build_target_required}
+    image: local/autoscaling:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/autoscaling/Dockerfile
@@ -110,7 +111,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   catalog:
-    image: local/catalog:${BUILD_TARGET:?build_target_required}
+    image: local/catalog:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/catalog/Dockerfile
@@ -132,7 +133,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   clusters-keeper:
-    image: local/clusters-keeper:${BUILD_TARGET:?build_target_required}
+    image: local/clusters-keeper:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/clusters-keeper/Dockerfile
@@ -154,7 +155,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   director:
-    image: local/director:${BUILD_TARGET:?build_target_required}
+    image: local/director:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/director/Dockerfile
@@ -176,7 +177,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   dask-sidecar: &build-dask-sidecar
-    image: local/dask-sidecar:${BUILD_TARGET:?build_target_required}
+    image: local/dask-sidecar:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/dask-sidecar/Dockerfile
@@ -198,7 +199,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   director-v2:
-    image: local/director-v2:${BUILD_TARGET:?build_target_required}
+    image: local/director-v2:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/director-v2/Dockerfile
@@ -220,7 +221,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   migration:
-    image: local/migration:${BUILD_TARGET:?build_target_required}
+    image: local/migration:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/migration/Dockerfile
@@ -242,7 +243,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   notifications:
-    image: local/notifications:${BUILD_TARGET:?build_target_required}
+    image: local/notifications:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/notifications/Dockerfile
@@ -264,7 +265,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   resource-usage-tracker:
-    image: local/resource-usage-tracker:${BUILD_TARGET:?build_target_required}
+    image: local/resource-usage-tracker:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/resource-usage-tracker/Dockerfile
@@ -286,7 +287,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   static-webserver:
-    image: local/static-webserver:${BUILD_TARGET:?build_target_required}
+    image: local/static-webserver:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ./static-webserver/client
       dockerfile: tools/qooxdoo-kit/builder/Dockerfile
@@ -314,7 +315,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   webserver:
-    image: local/webserver:${BUILD_TARGET:?build_target_required}
+    image: local/webserver:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/web/Dockerfile
@@ -340,7 +341,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   dynamic-sidecar:
-    image: local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}
+    image: local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/dynamic-sidecar/Dockerfile
@@ -362,7 +363,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   invitations:
-    image: local/invitations:${BUILD_TARGET:?build_target_required}
+    image: local/invitations:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/invitations/Dockerfile
@@ -384,7 +385,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   payments:
-    image: local/payments:${BUILD_TARGET:?build_target_required}
+    image: local/payments:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/payments/Dockerfile
@@ -406,7 +407,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   dynamic-scheduler:
-    image: local/dynamic-scheduler:${BUILD_TARGET:?build_target_required}
+    image: local/dynamic-scheduler:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/dynamic-scheduler/Dockerfile
@@ -428,7 +429,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   docker-api-proxy:
-    image: local/docker-api-proxy:${BUILD_TARGET:?build_target_required}
+    image: local/docker-api-proxy:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/docker-api-proxy/Dockerfile
@@ -450,7 +451,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   datcore-adapter:
-    image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}
+    image: local/datcore-adapter:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/datcore-adapter/Dockerfile
@@ -472,7 +473,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   storage:
-    image: local/storage:${BUILD_TARGET:?build_target_required}
+    image: local/storage:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/storage/Dockerfile
@@ -494,7 +495,7 @@ services:
         org.opencontainers.image.licenses: "MIT"
 
   agent:
-    image: local/agent:${BUILD_TARGET:?build_target_required}
+    image: local/agent:${BUILD_TARGET:?build_target_required}${LOCAL_IMAGE_TAG_SUFFIX:-}
     build:
       context: ../
       dockerfile: services/agent/Dockerfile

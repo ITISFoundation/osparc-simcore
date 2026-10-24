@@ -86,8 +86,12 @@ export STATIC_WEBSERVER_API_VERSION := $(shell cat $(CURDIR)/services/static-web
 export WEBSERVER_API_VERSION  := $(shell cat $(CURDIR)/services/web/server/VERSION)
 
 
-# swarm stacks
-export SWARM_STACK_NAME ?= master-simcore
+# Stack names, host ports and image tag suffix of this checkout's dev slot
+# (see docs/parallel-worktrees.md). Pass slot=N to move the checkout to slot N.
+DEV_SLOT_SCRIPT := python3 $(CURDIR)/scripts/dev_slot.py
+$(foreach assignment,\
+	$(shell $(DEV_SLOT_SCRIPT) env $(if $(slot),--slot $(slot),--env-file $(CURDIR)/.env) --format make),\
+	$(eval export $(assignment)))
 export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 
 # version tags
@@ -127,7 +131,7 @@ endif
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)
-S3_ENDPOINT := http://$(get_my_ip):9001
+S3_ENDPOINT := http://$(get_my_ip):$(S3_HOST_PORT)
 export S3_ENDPOINT
 endif
 
@@ -213,7 +217,7 @@ docker buildx bake --allow=fs.read=.. \
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
       --allow=fs.write=$(local-dest) \
-			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar$(comma)name=local/$(service):production") \
+			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar$(comma)name=local/$(service):production$(LOCAL_IMAGE_TAG_SUFFIX)") \
 			,$(if $(push),,--load)\
 		)\
 	)\
@@ -236,11 +240,11 @@ popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`. To push: `make push=true DOCKER_REGISTRY=... DOCKER_IMAGE_TAG=...`. To push untagged by digest instead (capturing the digest via a metadata file): `make push=true push-by-digest=true metadata-file=/tmp/metadata.json DOCKER_REGISTRY=...`
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production' (suffixed '-sN' in dev slot N > 0). For single target e.g. 'make target=webserver build'. To export to a folder: `make local-dest=/tmp/build`. To push: `make push=true DOCKER_REGISTRY=... DOCKER_IMAGE_TAG=...`. To push untagged by digest instead (capturing the digest via a metadata file): `make push=true push-by-digest=true metadata-file=/tmp/metadata.json DOCKER_REGISTRY=...`
 	# Building service$(if $(target),,s) $(target) $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
 	# List production images
-	@docker images --filter="reference=local/*:production"
+	@docker images --filter="reference=local/*:production$(LOCAL_IMAGE_TAG_SUFFIX)"
 
 load-images: guard-local-src ## loads images from local-src
 	# loading from any tar images from $(local-src)...
@@ -248,7 +252,7 @@ load-images: guard-local-src ## loads images from local-src
 	# all images loaded
 	@docker images
 
-build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development' (suffixed '-sN' in dev slot N > 0). For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services $(if $(exclude),excluding,) $(exclude)
 	@$(_docker_compose_build)
@@ -261,7 +265,7 @@ endif
 	@$(_docker_compose_build)
 endif
 	# List development images
-	@docker images --filter="reference=local/*:development"
+	@docker images --filter="reference=local/*:development$(LOCAL_IMAGE_TAG_SUFFIX)"
 
 
 $(CLIENT_WEB_OUTPUT):
@@ -271,7 +275,7 @@ $(CLIENT_WEB_OUTPUT):
 
 .PHONY: shell
 shell:
-	docker run -it local/$(target):production /bin/sh
+	docker run -it local/$(target):production$(LOCAL_IMAGE_TAG_SUFFIX) /bin/sh
 
 
 ##@ Docker Swarm
@@ -290,9 +294,9 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 # when upgrading the version of docker-compose
 
 .stack-simcore-development.yml: .env $(docker-compose-configs)
-	# Creating config for stack with 'local/{service}:development' to $@
+	# Creating config for stack with 'local/{service}:development$(LOCAL_IMAGE_TAG_SUFFIX)' to $@
 	@export DOCKER_REGISTRY=local && \
-	export DOCKER_IMAGE_TAG=development && \
+	export DOCKER_IMAGE_TAG=development$(LOCAL_IMAGE_TAG_SUFFIX) && \
 	export DEV_PC_CPU_COUNT=${CPU_COUNT} && \
 	scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose.yml \
@@ -301,9 +305,9 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 		> $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
-	# Creating config for stack with 'local/{service}:production' to $@
+	# Creating config for stack with 'local/{service}:production$(LOCAL_IMAGE_TAG_SUFFIX)' to $@
 	@export DOCKER_REGISTRY=local && \
-	export DOCKER_IMAGE_TAG=production && \
+	export DOCKER_IMAGE_TAG=production$(LOCAL_IMAGE_TAG_SUFFIX) && \
 	scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
@@ -313,7 +317,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 .stack-simcore-development-frontend.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:production' (except of static-webserver -> static-webserver:development) to $@
 	@export DOCKER_REGISTRY=local && \
-	export DOCKER_IMAGE_TAG=production && \
+	export DOCKER_IMAGE_TAG=production$(LOCAL_IMAGE_TAG_SUFFIX) && \
 	scripts/docker/docker-stack-config.bash -e $< \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
@@ -354,19 +358,19 @@ endif
 .PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops .deploy-vendors
 
 .deploy-vendors: .stack-vendor-services.yml
-	# Deploy stack 'vendors'
-	docker stack deploy --detach=true --with-registry-auth -c $< vendors
+	# Deploy stack '$(SWARM_VENDORS_STACK_NAME)'
+	docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_VENDORS_STACK_NAME)
 
 .deploy-ops: .stack-ops.yml
-	# Deploy stack 'ops'
+	# Deploy stack '$(SWARM_OPS_STACK_NAME)'
 ifndef ops_disabled
-	docker stack deploy --detach=true --with-registry-auth -c $< ops
+	docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_OPS_STACK_NAME)
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
 
 define _show_endpoints
-# The following endpoints are available
+# The following endpoints of dev slot $(OSPARC_DEV_SLOT) are available
 set -o allexport; \
 source $(CURDIR)/.env; \
 set +o allexport; \
@@ -376,27 +380,27 @@ rows="%-24s | %90s | %12s | %12s\n";\
 TableWidth=140;\
 printf "%24s | %90s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
-printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:9081";\
-printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc";\
-printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
-printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
-printf "$$rows" "Dy-scheduler Dashboard" "http://$(get_my_ip).nip.io:8012";\
-printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:5555";\
+printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:$(TRAEFIK_HTTP_HOST_PORT)";\
+printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:$(API_SERVER_HOST_PORT)/dev/doc";\
+printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:$(TRAEFIK_HTTP_HOST_PORT)/dev/doc";\
+printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:$(DASK_SCHEDULER_DASHBOARD_HOST_PORT)";\
+printf "$$rows" "Dy-scheduler Dashboard" "http://$(get_my_ip).nip.io:$(DYNAMIC_SCHEDULER_HOST_PORT)";\
+printf "$$rows" "Flower" "http://$(get_my_ip).nip.io:$(FLOWER_HOST_PORT)";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
-printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
-printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
-printf "$$rows" "Mailpit" "http://$(get_my_ip).nip.io:8025";\
-printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
-printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
-printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
-printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
-printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
-printf "$$rows" "Storage S3 (RustFS)" "http://$(get_my_ip).nip.io:9090/rustfs/console/" 12345678 12345678;\
-printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
-printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
+printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:$(INVITATIONS_HOST_PORT)/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
+printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:$(JAEGER_UI_HOST_PORT)";\
+printf "$$rows" "Mailpit" "http://$(get_my_ip).nip.io:$(MAILPIT_UI_HOST_PORT)";\
+printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:$(PAYMENTS_HOST_PORT)/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
+printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:$(PORTAINER_HOST_PORT)" admin adminadmin;\
+printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:$(ADMINER_HOST_PORT)/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
+printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:$(RABBIT_MANAGEMENT_HOST_PORT)" admin adminadmin;\
+printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:$(REDIS_COMMANDER_HOST_PORT)";\
+printf "$$rows" "Storage S3 (RustFS)" "http://$(get_my_ip).nip.io:$(S3_CONSOLE_HOST_PORT)/rustfs/console/" 12345678 12345678;\
+printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:$(TRAEFIK_DASHBOARD_HOST_PORT)/dashboard/";\
+printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:$(TRAEFIK_HTTP_HOST_PORT)";\
 
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
-echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
+echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:$(TRAEFIK_HTTP_HOST_PORT)";
 endef
 
 
@@ -522,10 +526,10 @@ up-latest:
 
 
 .PHONY: down leave
-down: ## Stops and removes stack
-	# Removing stacks in reverse order to creation
+down: ## Stops and removes this checkout's stacks
+	# Removing stacks of dev slot $(OSPARC_DEV_SLOT) in reverse order to creation
 	-@$(foreach stack,\
-		$(shell docker stack ls --format={{.Name}} | tac),\
+		$(filter $(shell docker stack ls --format={{.Name}} 2>/dev/null),$(SWARM_STACK_NAME) $(SWARM_VENDORS_STACK_NAME) $(SWARM_OPS_STACK_NAME)),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
 	-@$(MAKE_C) services/static-webserver/client down
@@ -533,13 +537,24 @@ down: ## Stops and removes stack
 ifneq ($(wildcard .stack-*), )
 	-@rm $(wildcard .stack-*)
 endif
+ifeq ($(OSPARC_DEV_SLOT),0)
 	# Removing local registry if any
 	-@docker ps --all --quiet --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs --no-run-if-empty docker rm --force
+endif
 	# Removing pre-created networks used by ops stack
 	-@docker network rm ${SWARM_STACK_NAME}_default 2>/dev/null || true
 	-@docker network rm ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
-leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
+leave: ## Forces to stop all services, networks, etc by the node leaving the swarm. Refuses if other checkouts have stacks, unless force=1
+	@others=$$(docker stack ls --format '{{.Name}}' 2>/dev/null \
+		| grep --invert-match --line-regexp --fixed-strings \
+			-e $(SWARM_STACK_NAME) -e $(SWARM_OPS_STACK_NAME) -e $(SWARM_VENDORS_STACK_NAME) || true); \
+	if [ -n "$$others" ] && [ -z "$(force)" ]; then \
+		echo "ERROR: leaving the swarm would also remove stacks of other checkouts or test runs:"; \
+		echo "$$others"; \
+		echo "Stop them first or pass force=1"; \
+		exit 1; \
+	fi
 	-docker swarm leave -f
 
 
@@ -547,6 +562,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 .init-swarm:
 	# Ensures swarm is initialized (careful we use a default pool of 172.20.0.0/14. Ensure you do not use private IPs in that range!)
 	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)
+	@$(_lease_dev_slot)
 	# Pre-create networks used by ops stack for ops-first deployment
 	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_default 2>/dev/null || true
 	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
@@ -556,16 +572,16 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 .PHONY: tag-local tag-version tag-latest
 
-tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production'
-	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production'
+tag-local: ## Tags version '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' images as 'local/{service}:production' (suffixed '-sN' in dev slot N > 0)
+	# Tagging all '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}' as 'local/{service}:production$(LOCAL_IMAGE_TAG_SUFFIX)'
 	@$(foreach service, $(SERVICES_NAMES_TO_BUILD)\
-		,docker tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production; \
+		,docker tag ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG} local/$(service):production$(LOCAL_IMAGE_TAG_SUFFIX); \
 	)
 
-tag-version: ## Tags 'local/{service}:production' images as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	# Tagging all 'local/{service}:production' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+tag-version: ## Tags 'local/{service}:production' images (suffixed '-sN' in dev slot N > 0) as versioned '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
+	# Tagging all 'local/{service}:production$(LOCAL_IMAGE_TAG_SUFFIX)' as '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
 	@$(foreach service, $(SERVICES_NAMES_TO_BUILD)\
-		,docker tag local/$(service):production ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
+		,docker tag local/$(service):production$(LOCAL_IMAGE_TAG_SUFFIX) ${DOCKER_REGISTRY}/$(service):${DOCKER_IMAGE_TAG}; \
 	)
 
 tag-latest: ## Tags last locally built production images as '${DOCKER_REGISTRY}/{service}:latest'
@@ -666,10 +682,21 @@ node_modules: package.json
 nodenv: node_modules ## builds node_modules local environ (TODO)
 
 
-.env: .env-devel ## creates .env file from defaults in .env-devel
+.env: .env-devel ## creates .env file from defaults in .env-devel and leases the dev slot
 	$(if $(wildcard $@), \
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+	@$(_lease_dev_slot)
+
+# Leases the dev slot and writes it to .env. This make run computed its variables
+# from the previous value, so it stops if the slot changed.
+define _lease_dev_slot
+leased=$$($(DEV_SLOT_SCRIPT) lease --checkout $(CURDIR) --env-file $(CURDIR)/.env $(if $(slot),--slot $(slot))); \
+if [ "$$leased" != "$(OSPARC_DEV_SLOT)" ]; then \
+	echo "ERROR: this checkout now holds dev slot $$leased (this make run used $(OSPARC_DEV_SLOT)): re-run make"; \
+	exit 1; \
+fi
+endef
 
 
 .vscode/%.json:
@@ -863,7 +890,11 @@ info-registry: ## info on local registry (if any)
 info: ## displays setup information
 	@echo setup info  --------------------------------
 	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
+	@echo ' OSPARC_DEV_SLOT      : $(OSPARC_DEV_SLOT)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
+	@echo ' SWARM_OPS_STACK_NAME : $(SWARM_OPS_STACK_NAME)'
+	@echo ' dev slots in use     :'
+	-@$(DEV_SLOT_SCRIPT) list | sed 's/^/   /'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo ' DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
 	@echo ' BUILD_DATE           : ${BUILD_DATE}'
@@ -915,8 +946,8 @@ ifneq ($(SWARM_HOSTS), )
 	-@docker stack ps $(SWARM_STACK_NAME)
 	# Services in '$(SWARM_STACK_NAME)' stack
 	-@docker stack services $(SWARM_STACK_NAME)
-	# Services in 'ops' stack
-	-@docker stack services ops
+	# Services in '$(SWARM_OPS_STACK_NAME)' stack
+	-@docker stack services $(SWARM_OPS_STACK_NAME)
 	# Networks
 	@docker network ls
 endif

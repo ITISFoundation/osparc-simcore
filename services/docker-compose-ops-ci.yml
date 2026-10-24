@@ -30,7 +30,7 @@ services:
       RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?secret_key_required}
       RUSTFS_CONSOLE_ENABLE: "false"
     ports:
-      - "9001:9000" # S3 API (host port kept from the previous minio service)
+      - "${S3_HOST_PORT:-9001}:9000" # S3 API (host port kept from the previous minio service)
     volumes:
       - s3_storage_data:/data
     networks:
@@ -44,7 +44,7 @@ services:
 
 volumes:
   s3_storage_data:
-    name: ops_s3_storage_data
+    name: ${SWARM_OPS_STACK_NAME:-ops}_s3_storage_data
 
 networks:
   simcore_default:

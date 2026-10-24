@@ -43,11 +43,14 @@ TEST_PATH := $(if $(test-path),/$(patsubst tests/integration/%,%, $(patsubst tes
 
 # Pattern rules (alphabetically ordered)
 
+# image tag suffix of the dev slot (see docs/parallel-worktrees.md)
+LOCAL_IMAGE_TAG_SUFFIX ?= $(shell python3 $(REPO_BASE_DIR)/scripts/dev_slot.py env --env-file $(REPO_BASE_DIR)/.env | sed -n 's/^LOCAL_IMAGE_TAG_SUFFIX=//p')
+
 # CI-CONTRACT: test-ci-integration is invoked by ci/github/**/*.bash (also test-dev-integration locally)
 test-%-integration: FORCE ## run app integration tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
-	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production images
+	# Targets tests/integration folder (or an explicit target= if provided) using local/$(image-name):production$(LOCAL_IMAGE_TAG_SUFFIX) images
 	@export DOCKER_REGISTRY=local; \
-	export DOCKER_IMAGE_TAG=production; \
+	export DOCKER_IMAGE_TAG=production$(LOCAL_IMAGE_TAG_SUFFIX); \
 	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
 
 # CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
@@ -109,7 +112,7 @@ logs tail: ## tails log of $(APP_NAME) container
 
 
 DOCKER_REGISTRY ?=local
-DOCKER_IMAGE_TAG?=production
+DOCKER_IMAGE_TAG?=production$(LOCAL_IMAGE_TAG_SUFFIX)
 
 .PHONY: settings-schema.json
 settings-schema.json: ## dumps json-shcema of this service settings
