@@ -10,9 +10,10 @@
 from collections.abc import Callable
 from typing import Any
 
+from models_library.services_enums import ServiceType
 from playwright.sync_api import Page
 from pydantic import AnyUrl
-from pytest_simcore.helpers.playwright import RobustWebSocket, ServiceType
+from pytest_simcore.helpers.playwright import RobustWebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
