@@ -112,7 +112,7 @@ locket==1.0.0
     #   -c requirements/_base.txt
     #   distributed
     #   partd
-lupa==2.6
+lupa==2.8
     # via fakeredis
 mako==1.4.3
     # via

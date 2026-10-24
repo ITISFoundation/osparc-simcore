@@ -4,7 +4,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.14.4
+aiohttp==3.14.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -135,7 +135,7 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.8
+graphql-core==3.3.0
     # via moto
 greenlet==3.2.4
     # via
@@ -211,7 +211,7 @@ lazy-object-proxy==1.12.0
     # via openapi-spec-validator
 librt==0.8.1
     # via mypy
-lupa==2.6
+lupa==2.8
     # via fakeredis
 markupsafe==3.0.2
     # via
