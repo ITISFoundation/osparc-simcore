@@ -22,7 +22,10 @@ from simcore_service_webserver.login._controller.rest.registration import (
     InvitationCheck,
     InvitationInfo,
 )
-from simcore_service_webserver.login.settings import LoginSettingsForProduct
+from simcore_service_webserver.login.settings import (
+    LoginSettingsForProduct,
+    LoginThrottleSettings,
+)
 from yarl import URL
 
 
@@ -36,6 +39,7 @@ async def test_check_registration_invitation_when_not_required(
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -124,6 +128,7 @@ async def test_registration_to_different_product(
         return_value=LoginSettingsForProduct(
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
+            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
