@@ -4,10 +4,6 @@ amqp==5.3.1
     # via
     #   -c requirements/_base.txt
     #   kombu
-anyio==4.15.1
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
@@ -26,8 +22,6 @@ certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   httpcore
-    #   httpx
     #   requests
 charset-normalizer==3.4.1
     # via requests
@@ -69,24 +63,9 @@ greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.16.0
-    # via
-    #   -c requirements/_base.txt
-    #   httpcore
-httpcore==1.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
-httpx==0.28.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -r requirements/_test.in
 idna==3.19
     # via
     #   -c requirements/_base.txt
-    #   anyio
-    #   httpx
     #   requests
 iniconfig==2.3.0
     # via pytest
@@ -180,7 +159,6 @@ tenacity==9.0.0
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   mypy
     #   sqlalchemy
 tzdata==2025.2

@@ -3,14 +3,15 @@
 # pylint: disable=unused-variable
 
 import socket
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from typing import cast
 
 import arrow
 import pytest
-from fastapi import APIRouter, FastAPI
+import respx
+from fastapi import APIRouter, FastAPI, status
 from fastapi.params import Query
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic.types import PositiveFloat
@@ -39,6 +40,28 @@ def app() -> FastAPI:
 async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
+
+
+@pytest.fixture
+def base_url() -> str:
+    return "https://test_base_http_api"
+
+
+@pytest.fixture
+def mocked_server_api(base_url: str) -> Iterator[respx.MockRouter]:
+    """Mocks a remote HTTP API at `base_url` and rejects any request not routed here."""
+    with respx.mock(
+        base_url=base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.get("/").respond(status.HTTP_200_OK)
+
+        mock.post(path__startswith="/foo").respond(status.HTTP_200_OK)
+        mock.get(path__startswith="/foo").respond(status.HTTP_200_OK)
+        mock.delete(path__startswith="/foo").respond(status.HTTP_200_OK)
+
+        yield mock
 
 
 @pytest.fixture(params=["", "/base-path", "/nested/path"])

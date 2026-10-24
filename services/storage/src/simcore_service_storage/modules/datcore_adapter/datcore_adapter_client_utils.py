@@ -3,7 +3,7 @@ from collections.abc import Callable
 from math import ceil
 from typing import Any
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_storage.storage_schemas import (
@@ -55,14 +55,14 @@ async def request(
         assert isinstance(response_data, dict | list)  # nosec
         return response_data
 
-    except httpx.HTTPStatusError as exc:
+    except httpx2.HTTPStatusError as exc:
         raise DatcoreAdapterResponseError(status=exc.response.status_code, reason=f"{exc}") from exc
 
     except TimeoutError as exc:
         msg = f"datcore-adapter server timed-out: {exc}"
         raise DatcoreAdapterTimeoutError(msg) from exc
 
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         msg = f"unexpected request error: {exc}"
         raise DatcoreAdapterClientError(msg) from exc
 

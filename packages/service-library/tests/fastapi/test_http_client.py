@@ -5,14 +5,13 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Iterator
 from typing import ClassVar
 
-import httpx
+import httpx2
 import pytest
 import respx
 from asgi_lifespan import LifespanManager
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from models_library.healthchecks import IsResponsive
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -60,28 +59,12 @@ def test_using_app_state_mixin():
     assert SomeData(32).set_to_app_state(app) == SomeData.get_from_app_state(app)
 
 
-@pytest.fixture
-def base_url() -> str:
-    return "https://test_base_http_api"
-
-
-@pytest.fixture
-def mock_server_api(base_url: str) -> Iterator[respx.MockRouter]:
-    with respx.mock(
-        base_url=base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as mock:
-        mock.get("/").respond(status.HTTP_200_OK)
-        yield mock
-
-
-async def test_base_http_api(mock_server_api: respx.MockRouter, base_url: str):
+async def test_base_http_api(mocked_server_api: respx.MockRouter, base_url: str):
     class MyClientApi(BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin):
         app_state_name: ClassVar[str] = "my_client_api"
 
     # create
-    api = MyClientApi(client=httpx.AsyncClient(base_url=base_url))
+    api = MyClientApi(client=httpx2.AsyncClient(base_url=base_url))
 
     app_lifespan = AppLifespanManager[FastAPI]()
     api.attach_lifespan_to(app_lifespan)

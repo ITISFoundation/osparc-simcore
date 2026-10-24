@@ -26,6 +26,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     __captchaField: null,
     __requestButton: null,
     __cancelButton: null,
+    __submitting: false,
 
     // overrides base
     _buildPage: function() {

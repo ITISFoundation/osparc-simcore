@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, status
 from models_library.services_metadata_published import ServiceMetaDataPublished
@@ -160,19 +161,19 @@ async def test_requests_honor_configured_timeout(
     assert settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT == 3
 
     director_api = get_director_client(app)
-    assert director_api.client.timeout == httpx.Timeout(3.0)
+    assert director_api.client.timeout == httpx2.Timeout(3.0)
 
     requested_timeouts: list[Any] = []
-    original_request = httpx.AsyncClient.request
+    original_request = httpx2.AsyncClient.request
 
-    async def _capture_request(self: httpx.AsyncClient, method: str, url, **kwargs):
+    async def _capture_request(self: httpx2.AsyncClient, method: str, url, **kwargs):
         requested_timeouts.append(kwargs.get("timeout"))
         return await original_request(self, method, url, **kwargs)
 
-    monkeypatch.setattr(httpx.AsyncClient, "request", _capture_request)
+    monkeypatch.setattr(httpx2.AsyncClient, "request", _capture_request)
 
     key, version = service_key_and_version
     await director_api.get_service_labels(key, version)
 
     # no per-request override: the client's configured timeout applies
-    assert requested_timeouts == [httpx.USE_CLIENT_DEFAULT]
+    assert requested_timeouts == [httpx2.USE_CLIENT_DEFAULT]

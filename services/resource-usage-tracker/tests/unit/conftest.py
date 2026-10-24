@@ -11,7 +11,7 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import httpx
+import httpx2
 import pytest
 import requests_mock
 from asgi_lifespan import LifespanManager
@@ -136,9 +136,9 @@ def client(app_settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
 
 @pytest.fixture
-async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url=f"http://{initialized_app.title}.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

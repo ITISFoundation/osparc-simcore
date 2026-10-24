@@ -21,7 +21,7 @@ asgi_lifespan
 asyncpg # database
 celery[redis]
 fastapi-pagination
-httpx
+httpx2
 opentelemetry-instrumentation-celery
 opentelemetry-instrumentation-botocore
 orjson

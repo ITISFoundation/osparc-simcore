@@ -18,7 +18,7 @@ from random import choice
 from typing import Any, Literal
 from uuid import uuid4
 
-import httpx
+import httpx2
 import pytest
 from aiohttp import ClientSession
 from aws_library.s3 import S3KeyNotFoundError, S3ObjectKey, SimcoreS3API
@@ -193,7 +193,7 @@ async def test_create_upload_file_with_file_size_0_returns_single_link(
 @pytest.fixture
 async def create_upload_file_link_v1(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
 ) -> AsyncIterator[Callable[..., Awaitable[PresignedLink]]]:
@@ -435,7 +435,7 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
 )
 async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     sqlalchemy_async_engine: AsyncEngine,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     with_versioning_enabled: None,
@@ -505,7 +505,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
 )
 async def test_upload_same_file_uuid_aborts_previous_upload(
     sqlalchemy_async_engine: AsyncEngine,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     simcore_file_id: SimcoreS3FileID,
@@ -608,7 +608,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
@@ -651,7 +651,7 @@ async def test_upload_real_file_with_s3_client(
     sqlalchemy_async_engine: AsyncEngine,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
@@ -754,7 +754,7 @@ async def test_upload_real_file_with_s3_client(
 )
 async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     sqlalchemy_async_engine: AsyncEngine,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     with_versioning_enabled: None,
@@ -786,7 +786,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     # 3. upload part of the file to simulate a network issue in the upload
     new_file = create_file_of_size(file_size, file_name)
     with pytest.raises(RuntimeError):
-        async with httpx.AsyncClient() as session:
+        async with httpx2.AsyncClient() as session:
             await upload_file_part(
                 session,
                 new_file,
@@ -837,7 +837,7 @@ async def _assert_file_downloaded(faker: Faker, tmp_path: Path, link: AnyUrl, up
 
 async def test_download_file_no_file_was_uploaded(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -871,7 +871,7 @@ async def test_download_file_no_file_was_uploaded(
 )
 async def test_download_file_1_to_1_with_file_meta_data(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: LocationID,
@@ -908,7 +908,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
 )
 async def test_download_file_from_inside_a_directory(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     file_size: ByteSize,
     location_id: LocationID,
     user_id: UserID,
@@ -963,7 +963,7 @@ async def test_download_file_from_inside_a_directory(
 )
 async def test_download_file_the_file_is_missing_from_the_directory(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     project_id: ProjectID,
@@ -998,7 +998,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
 )
 async def test_download_file_access_rights(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     storage_s3_client: SimcoreS3API,
@@ -1042,7 +1042,7 @@ async def test_delete_file(
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: LocationID,
@@ -1094,7 +1094,7 @@ async def test_delete_parent_folder_path_removes_descendants_from_db(
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     file_size: ByteSize,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: LocationID,
@@ -1163,7 +1163,7 @@ async def test_delete_parent_folder_path_removes_descendants_from_db(
 )
 async def test_copy_as_soft_link(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -1202,7 +1202,7 @@ async def test_copy_as_soft_link(
 
 async def _list_files(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,
@@ -1228,7 +1228,7 @@ async def _list_files(
 
 async def _list_files_legacy(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,
@@ -1245,7 +1245,7 @@ async def _list_files_legacy(
 
 async def _list_files_and_directories(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,
@@ -1281,7 +1281,7 @@ async def test_is_directory_link_forces_link_type_and_size(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -1321,7 +1321,7 @@ async def test_is_directory_link_forces_link_type_and_size(
 async def test_ensure_expand_dirs_defaults_true(
     initialized_app: FastAPI,
     mocker: MockerFixture,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     location_id: LocationID,
@@ -1359,7 +1359,7 @@ async def test_upload_file_is_directory_and_remove_content(
         Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
     ],
     delete_directory: Callable[..., Awaitable[None]],
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -1508,7 +1508,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
         Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     files_count: int,
 ):
@@ -1552,7 +1552,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
 )
 async def test_listing_with_project_id_filter(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,

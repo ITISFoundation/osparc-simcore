@@ -206,4 +206,47 @@ async def test_request_an_account(
         assert user.status is None
         assert user.account_request_status == AccountRequestStatus.PENDING
 
-    # NOTE add a test for reregistration `AlreadyPreRegisteredError`
+
+@pytest.fixture
+def mocked_valid_captcha_on_every_request(mocker: MockerFixture) -> MagicMock:
+    """The controller consumes the captcha, so each request needs a fresh session"""
+    return mocker.patch(
+        f"{_controller_rest.__name__}.session_service.get_session",
+        spec=True,
+        side_effect=lambda *_args, **_kwargs: {"captcha": "123456"},
+    )
+
+
+async def test_request_an_account_twice(
+    client: TestClient,
+    faker: Faker,
+    mocked_send_notification: MagicMock,
+    mocked_valid_captcha_on_every_request: MagicMock,
+):
+    assert client.app
+
+    user_data = {
+        **AccountRequestInfo.model_json_schema()["example"]["form"],
+        "firstName": faker.first_name(),
+        "lastName": faker.last_name(),
+        "email": faker.email(),
+        "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace("\n", ", "),
+        "country": faker.country(),
+    }
+
+    response = await client.post(
+        "/v0/auth/request-account",
+        json={"form": user_data, "captcha": "123456"},
+    )
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+    # submitting twice (e.g. double-clicking the submit button) must be reported as a
+    # duplicate request and not as an unexpected server error
+    response = await client.post(
+        "/v0/auth/request-account",
+        json={"form": user_data, "captcha": "123456"},
+    )
+    _, error = await assert_status(response, status.HTTP_409_CONFLICT)
+    assert user_data["email"] in error["message"]
+
+    assert mocked_send_notification.call_count == 1

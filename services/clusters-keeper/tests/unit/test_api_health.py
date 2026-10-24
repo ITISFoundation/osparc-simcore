@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import httpx
+import httpx2
 import pytest
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -27,7 +27,7 @@ def app_environment(
     return app_environment
 
 
-async def test_healthcheck(async_client: httpx.AsyncClient):
+async def test_healthcheck(async_client: httpx2.AsyncClient):
     response = await async_client.get("/")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
@@ -36,7 +36,7 @@ async def test_healthcheck(async_client: httpx.AsyncClient):
 
 async def test_status_no_rabbit(
     disabled_rabbitmq: None,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     response = await async_client.get("/status")
     response.raise_for_status()
@@ -53,7 +53,7 @@ async def test_status_no_rabbit(
 
 async def test_status(
     mocked_aws_server: ThreadedMotoServer,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     # stop the aws server...
     mocked_aws_server.stop()

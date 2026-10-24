@@ -38,7 +38,6 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 #
 # Bugs
 #
-httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pull/278
 
 
 
