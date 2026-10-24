@@ -111,7 +111,7 @@ frozenlist==1.8.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.8
+graphql-core==3.3.0
     # via moto
 icdiff==2.0.10
     # via pytest-icdiff
