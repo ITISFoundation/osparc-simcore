@@ -10,8 +10,8 @@ from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
 from ._base import InputSchema, OutputSchema
 
-ServiceInputKey: TypeAlias = ServicePortKey
-ServiceOutputKey: TypeAlias = ServicePortKey
+ServiceInputKey: TypeAlias = ServicePortKey  # noqa: UP040
+ServiceOutputKey: TypeAlias = ServicePortKey  # noqa: UP040
 
 
 class _BaseCommonApiExtension(BaseModel):
@@ -98,9 +98,9 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     )
 
 
-ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
-ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
-ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet
+ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]  # noqa: UP040
+ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]  # noqa: UP040
+ServiceResourcesGet: TypeAlias = api_schemas_catalog_services.ServiceResourcesGet  # noqa: UP040
 
 
 class CatalogLatestServiceGet(api_schemas_catalog_services.LatestServiceGet):

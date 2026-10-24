@@ -1,8 +1,42 @@
+from typing import Any
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
-from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
+from pydantic import (
+    AnyUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+    ValidationError,
+)
+from simcore_sdk.node_ports_v2.links import (
+    DataItemValue,
+    DownloadLink,
+    FileLink,
+    PortLink,
+)
+
+
+def test_data_item_value_members_are_pinned():
+    # Early warning if `DataItemValue` (links.py) changes: it used to be
+    # documented as needing to stay "in sync" with
+    # models_library.projects_nodes.InputTypes/OutputTypes, but it deliberately
+    # deviates (StrictStr instead of str/Json, sdk-local PortLink/FileLink).
+    # If this test fails, update it *and* the NOTE in links.py.
+    assert DataItemValue.__args__ == (
+        StrictBool,
+        StrictInt,
+        StrictFloat,
+        StrictStr,
+        DownloadLink,
+        PortLink,
+        FileLink,
+        list[Any],  # arrays
+        dict[str, Any],  # object
+    )
+    # sanity: AnyUrl is NOT part of DataItemValue (it appears in ItemValue)
+    assert AnyUrl not in DataItemValue.__args__
 
 
 def test_valid_port_link():

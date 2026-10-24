@@ -57,41 +57,27 @@ __all__ = [
     "FunctionBase",
     "FunctionClass",
     "FunctionClassSpecificData",
-    "FunctionClassSpecificData",
     "FunctionID",
-    "FunctionID",
-    "FunctionIDNotFoundError",
     "FunctionIDNotFoundError",
     "FunctionIDString",
     "FunctionInputSchema",
     "FunctionInputs",
-    "FunctionInputs",
     "FunctionInputsList",
-    "FunctionInputsList",
-    "FunctionInputsValidationError",
     "FunctionInputsValidationError",
     "FunctionJob",
     "FunctionJobClassSpecificData",
-    "FunctionJobClassSpecificData",
     "FunctionJobCollection",
     "FunctionJobCollectionID",
-    "FunctionJobCollectionID",
     "FunctionJobCollectionIDNotFoundError",
-    "FunctionJobCollectionIDNotFoundError",
-    "FunctionJobCollectionStatus",
     "FunctionJobCollectionStatus",
     "FunctionJobCollectionsListFilters",
     "FunctionJobID",
-    "FunctionJobID",
     "FunctionJobIDNotFoundError",
-    "FunctionJobIDNotFoundError",
-    "FunctionJobStatus",
     "FunctionJobStatus",
     "FunctionOutputSchema",
     "FunctionOutputs",
     "FunctionReadAccessDeniedError",
     "FunctionSchemaClass",
-    "FunctionToRegister",
     "FunctionToRegister",
     "JSONFunctionInputSchema",
     "JSONFunctionOutputSchema",
@@ -188,12 +174,12 @@ class SolverFunctionToRegister(SolverFunction, InputSchema): ...
 class ProjectFunctionToRegister(ProjectFunction, InputSchema): ...
 
 
-FunctionToRegister: TypeAlias = Annotated[
+type FunctionToRegister = Annotated[
     ProjectFunctionToRegister | SolverFunctionToRegister,
     Field(discriminator="function_class"),
 ]
 
-RegisteredFunctionGet: TypeAlias = Annotated[
+RegisteredFunctionGet: TypeAlias = Annotated[  # noqa: UP040
     RegisteredProjectFunctionGet | RegisteredSolverFunctionGet,
     Field(discriminator="function_class"),
 ]

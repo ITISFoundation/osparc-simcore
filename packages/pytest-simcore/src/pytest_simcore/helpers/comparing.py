@@ -2,12 +2,11 @@ import asyncio
 import hashlib
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import TypeAlias
 
 import aiofiles
 from servicelib.file_utils import create_sha256_checksum
 
-_FilesInfo: TypeAlias = dict[str, Path]
+type _FilesInfo = dict[str, Path]
 
 
 def get_relative_to(folder: Path, file: Path) -> str:

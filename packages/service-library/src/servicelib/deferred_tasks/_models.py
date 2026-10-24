@@ -3,8 +3,8 @@ from typing import Any, Literal, TypeAlias
 from models_library.basic_types import IDStr
 from pydantic import BaseModel
 
-TaskUID: TypeAlias = IDStr  # Unique identifier provided by the TaskTracker
-ClassUniqueReference: TypeAlias = str
+TaskUID: TypeAlias = IDStr  # noqa: UP040 # Unique identifier provided by the TaskTracker
+ClassUniqueReference: TypeAlias = str  # noqa: UP040
 
 
 class TaskResultSuccess(BaseModel):
@@ -26,4 +26,4 @@ class TaskResultCancelledError(BaseModel):
     result_type: Literal["cancelled"] = "cancelled"
 
 
-TaskExecutionResult: TypeAlias = TaskResultSuccess | TaskResultError | TaskResultCancelledError
+TaskExecutionResult: TypeAlias = TaskResultSuccess | TaskResultError | TaskResultCancelledError  # noqa: UP040

@@ -33,7 +33,8 @@ def make_http_error_handler_for_exception(
         if is_5xx_server_error(status_code):
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
-                    f"HTTP error handler caught an {exception_cls.__name__} exception and responds with {status_code} status code",
+                    f"HTTP error handler caught an {exception_cls.__name__} exception "
+                    f"and responds with {status_code} status code",
                     error=exc,
                     error_context={"request": request, "status_code": status_code},
                 )

@@ -13,32 +13,30 @@ Please preserve the following behaviors when implementing batch operations:
 
 
 - `BatchGet` is semantically distinct from `List`.
-  - `List` means “give me everything you have, maybe filtered.”
-  - `BatchGet` means “give me these specific known resources.”
-- Passing an empty list means you’re not actually identifying anything to fetch — so it’s a client error (bad request), not a legitimate “empty result.”
-- This aligns with the principle: If the request parameters are syntactically valid but semantically meaningless, return 400 Bad Request.
+  - `List` means "give me everything you have, maybe filtered."
+  - `BatchGet` means "give me these specific known resources."
+- Passing an empty list means you're not actually identifying anything to fetch -- so it's a client error (bad
+  request), not a legitimate "empty result."
+- This aligns with the principle: If the request parameters are syntactically valid
+  but semantically meaningless, return 400 Bad Request.
 
 # References:
     - https://google.aip.dev/130
     - https://google.aip.dev/231
 """
 
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter
 
-ResourceT = TypeVar("ResourceT")
-IdentifierT = TypeVar("IdentifierT")
-SchemaT = TypeVar("SchemaT")
 
-
-def _deduplicate_preserving_order(identifiers: list[IdentifierT]) -> list[IdentifierT]:
+def _deduplicate_preserving_order[IdentifierT](identifiers: list[IdentifierT]) -> list[IdentifierT]:
     """Remove duplicates while preserving order of first occurrence."""
     return list(dict.fromkeys(identifiers))
 
 
-def create_batch_ids_validator(identifier_type: type[IdentifierT]) -> TypeAdapter:
+def create_batch_ids_validator[IdentifierT](identifier_type: type[IdentifierT]) -> TypeAdapter:
     """Create a TypeAdapter for validating batch identifiers.
 
     This validator ensures:
@@ -63,7 +61,7 @@ def create_batch_ids_validator(identifier_type: type[IdentifierT]) -> TypeAdapte
     )
 
 
-class BatchGetEnvelope(BaseModel, Generic[ResourceT, IdentifierT]):
+class BatchGetEnvelope[ResourceT, IdentifierT](BaseModel):
     """Generic envelope model for batch-get operations that can contain partial results.
 
     This model represents the result of a batch operation where some items might be found
@@ -87,7 +85,7 @@ class BatchGetEnvelope(BaseModel, Generic[ResourceT, IdentifierT]):
     ] = DEFAULT_FACTORY
 
 
-class BatchCreateEnvelope(BaseModel, Generic[SchemaT]):
+class BatchCreateEnvelope[SchemaT](BaseModel):
     """Generic envelope model for batch-create operations.
 
     This model represents the result of a strict batch create operation,
@@ -104,7 +102,7 @@ class BatchCreateEnvelope(BaseModel, Generic[SchemaT]):
     ]
 
 
-class BatchUpdateEnvelope(BaseModel, Generic[SchemaT]):
+class BatchUpdateEnvelope[SchemaT](BaseModel):
     """Generic envelope model for batch-update operations.
 
     This model represents the result of a strict batch update operation,

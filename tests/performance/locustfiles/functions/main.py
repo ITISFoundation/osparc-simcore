@@ -6,7 +6,6 @@ import pathlib as pl
 import time
 from pathlib import Path
 
-import numpy
 import numpy as np
 import s4l_v1 as s4l
 import XCoreModeling as xcm
@@ -57,12 +56,12 @@ def Creates_EM_Simulation():
     # Mapping the components and entities
     component__plane_x = simulation.AllComponents["Plane X+"]
     component__plane_x = simulation.AllComponents["Plane X-"]
-    component__background = simulation.AllComponents["Background"]
+    _ = simulation.AllComponents["Background"]
     component__plane_y = simulation.AllComponents["Plane Y+"]
     component__plane_y = simulation.AllComponents["Plane Y-"]
     component__plane_z = simulation.AllComponents["Plane Z+"]
     component__plane_z = simulation.AllComponents["Plane Z-"]
-    component__overall_field = simulation.AllComponents["Overall Field"]
+    _ = simulation.AllComponents["Overall Field"]
     entity__contact1 = model.AllEntities()["Contact 1"]
     entity__blood2 = model.AllEntities()["Blood 2"]
     entity__fascicle1 = model.AllEntities()["Fascicle 1"]
@@ -130,7 +129,7 @@ def Creates_EM_Simulation():
     ]
     material_settings.Name = "Fascicles"
     material_settings.ElectricProps.ConductivityAnisotropic = True
-    material_settings.ElectricProps.ConductivityDiagonalElements = numpy.array([0.16, 0.16, 0.57]), Unit("S/m")
+    material_settings.ElectricProps.ConductivityDiagonalElements = np.array([0.16, 0.16, 0.57]), Unit("S/m")
     simulation.Add(material_settings, components)
 
     # Adding a new MaterialSettings
@@ -169,9 +168,9 @@ def Creates_EM_Simulation():
     simulation.Add(material_settings, components)
 
     # Editing BoundarySettings "Boundary Settings
-    boundary_settings = [
+    boundary_settings = next(
         x for x in simulation.AllSettings if isinstance(x, emlf.BoundarySettings) and x.Name == "Boundary Settings"
-    ][0]
+    )
     components = [
         component__plane_x,
         component__plane_x,
@@ -200,14 +199,14 @@ def Creates_EM_Simulation():
     # Editing GlobalGridSettings "Grid (Empty)
     global_grid_settings = simulation.GlobalGridSettings
     global_grid_settings.DiscretizationMode = global_grid_settings.DiscretizationMode.enum.Manual
-    global_grid_settings.MaxStep = numpy.array([0.05, 0.05, 0.05]), units.MilliMeters
+    global_grid_settings.MaxStep = np.array([0.05, 0.05, 0.05]), units.MilliMeters
     global_grid_settings.Resolution = (
-        numpy.array([0.625, 0.625, 0.625]),
+        np.array([0.625, 0.625, 0.625]),
         units.MilliMeters,
     )
     global_grid_settings.PaddingMode = global_grid_settings.PaddingMode.enum.Manual
-    global_grid_settings.BottomPadding = numpy.array([0.1, 0.1, 0.1]), units.MilliMeters
-    global_grid_settings.TopPadding = numpy.array([0.1, 0.1, 0.1]), units.MilliMeters
+    global_grid_settings.BottomPadding = np.array([0.1, 0.1, 0.1]), units.MilliMeters
+    global_grid_settings.TopPadding = np.array([0.1, 0.1, 0.1]), units.MilliMeters
 
     # Adding a new ManualGridSettings
     manual_grid_settings = simulation.AddManualGridSettings(
@@ -230,7 +229,7 @@ def Creates_EM_Simulation():
         ]
     )
     manual_grid_settings.Name = "Nerve"
-    manual_grid_settings.MaxStep = numpy.array([0.01, 0.01, 0.05]), units.MilliMeters
+    manual_grid_settings.MaxStep = np.array([0.01, 0.01, 0.05]), units.MilliMeters
     manual_grid_settings.Priority = 0.0
 
     # Adding a new ManualGridSettings
@@ -238,7 +237,7 @@ def Creates_EM_Simulation():
         [entity__contact1, entity__contact2, entity__saline, entity__silicone]
     )
     manual_grid_settings.Name = "Else"
-    manual_grid_settings.MaxStep = numpy.array([0.05, 0.05, 0.05]), units.MilliMeters
+    manual_grid_settings.MaxStep = np.array([0.05, 0.05, 0.05]), units.MilliMeters
     manual_grid_settings.Priority = 0.0
 
     # Adding a new ManualVoxelerSettings
@@ -331,9 +330,7 @@ def Creates_Electrode(length, gap, angle, radius, silicone_length):
     arc = xcm.CreateArc(center, radius, start, end)
     vertices = [v.Position for v in xcm.GetVertices(arc)]
 
-    verts = [arc]
-    for v in vertices:
-        verts.append(s4l.model.CreatePolyLine([center, v]))
+    verts = [arc, *[s4l.model.CreatePolyLine([center, v]) for v in vertices]]
 
     s1 = s4l.model.Unite(verts)
     xcm.CoverWireBody(s1)
@@ -385,9 +382,7 @@ def Gets_Flux(em_sensor_extractor):
     current_extractor = analysis.extractors.CurrentExtractor(inputs=inputs)
     current_extractor.UpdateAttributes()
     current_extractor.Update()
-    flux = np.real(current_extractor.GetOutput(0).GetComponent(0))[0]
-
-    return flux
+    return np.real(current_extractor.GetOutput(0).GetComponent(0))[0]
 
 
 def ExtractThresholdsInfo(sim):
@@ -399,12 +394,7 @@ def ExtractThresholdsInfo(sim):
     titration_evaluator = s4l.analysis.neuron_evaluators.TitrationEvaluator()
     titration_evaluator.Inputs[0].Connect(results["Titration Sensor"]["Titration"])
     titration_evaluator.Update(0)
-    tf = list(titration_evaluator.TitrationFactor)  # titration factor
-    tl = list(titration_evaluator.LocationOfFirstSpike)  # section of the first spike
-    ts = list(titration_evaluator.TimeOfFirstSpike)  # latency, in [ms]
-    nnames = list(titration_evaluator.NeuronName)  # name of the neuron spiking
-
-    return tf
+    return list(titration_evaluator.TitrationFactor)  # titration factor
 
 
 def ExtractsResults(simulation):
@@ -471,8 +461,6 @@ def CreatesNeuroCache(axonlist):
     automatic_axon_neuron_settings.Temperature = 37
 
     # Neuron Settings
-    diams = []
-    cnt = 0
     for axon in axonlist:
         sim.Add(automatic_axon_neuron_settings, [axon])
 
@@ -504,7 +492,6 @@ def Create_Axon_Distribution():
     options.MinEdgeLength = 0.011
     ns = 1  # downsampling factor
 
-    cnt = 0
     cn = 0
     axonn = 0
     axons = []
@@ -545,9 +532,8 @@ def Create_Axon_Distribution():
         target_grid = faceter.GetOutput(0)
         # L=86
 
-        cm = 0
         # Creates the axon trajectories
-        for i in range(0, target_grid.NumberOfCells, ns):
+        for cm, i in enumerate(range(0, target_grid.NumberOfCells, ns)):
             p = 1e3 * target_grid.GetCellCenter(i)
             point = s4l.model.CreatePoint(p)
             point.Name = "P_" + name + "_" + str(cm) + "_Random"
@@ -557,17 +543,13 @@ def Create_Axon_Distribution():
             L1 = L * np.random.normal(1, 0.025)
             x = p[0]
             y = p[1]
-            z = p[2]
             a = s4l.model.CreateSpline([Vec3(x, y, z0 - 0.5 * L1), Vec3(x, y, z0 + 0.5 * L1)])
             a.Name = name + "_Spline_" + str(cm) + "_Random"
             splines.Add(a)
             axons.append(a)
 
-            cm += 1
             cn += 1
             axonn += 1
-
-        cnt += 1
 
         # Adds the axon trajectories and the point in the folders
         axon_ent.Add(splines)

@@ -1,4 +1,4 @@
-from typing import Final, Self, TypeAlias, TypedDict
+from typing import Final, Self, TypedDict
 
 from models_library.basic_types import UUIDStr
 from models_library.users import UserID
@@ -7,7 +7,7 @@ from pydantic.config import JsonDict
 
 ALIVE_SUFFIX: Final[str] = "alive"  # points to a string type
 RESOURCE_SUFFIX: Final[str] = "resources"  # points to a hash (like a dict) type
-RedisHashKey: TypeAlias = str
+type RedisHashKey = str
 
 
 class UserSession(BaseModel):
@@ -54,5 +54,5 @@ class ResourcesDict(TypedDict, total=False):
     socket_id: str
 
 
-AliveSessions: TypeAlias = list[UserSession]
-DeadSessions: TypeAlias = list[UserSession]
+type AliveSessions = list[UserSession]
+type DeadSessions = list[UserSession]

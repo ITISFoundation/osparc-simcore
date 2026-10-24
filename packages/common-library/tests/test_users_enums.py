@@ -4,7 +4,13 @@
 # pylint: disable=unused-variable
 
 
-from common_library.users_enums import _USER_ROLE_TO_LEVEL, UserRole
+import pytest
+from common_library.users_enums import (
+    _USER_ROLE_TO_LEVEL,
+    AccountRequestStatus,
+    UserRole,
+    UserStatus,
+)
 
 
 def test_user_role_to_level_map_in_sync():
@@ -77,3 +83,25 @@ def test_user_roles_compares():
 
     assert UserRole.ADMIN <= UserRole.ADMIN
     assert UserRole.ADMIN == UserRole.ADMIN
+
+
+@pytest.mark.parametrize(
+    "member",
+    [pytest.param(m, id=m.name) for m in UserStatus],
+)
+def test_user_status_str_enum_semantics(member: UserStatus):
+    # migrated from (str, Enum) to StrEnum: str()/f-strings now render the value
+    # (e.g. "ACTIVE") instead of "UserStatus.ACTIVE"
+    assert str(member) == member.value
+    assert f"{member}" == member.value
+    assert member == member.value
+
+
+@pytest.mark.parametrize(
+    "member",
+    [pytest.param(m, id=m.name) for m in AccountRequestStatus],
+)
+def test_account_request_status_str_enum_semantics(member: AccountRequestStatus):
+    assert str(member) == member.value
+    assert f"{member}" == member.value
+    assert member == member.value

@@ -59,7 +59,8 @@ def mock_directorv2_service_api_responses(
                     "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa": {
                         "output_1": {
                             "store": 0,
-                            "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
+                            "path": "e08316a8-5afc-11ed-bab7-02420a00002b"
+                            "/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
                             "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
                         },
                         "output_2": 6,

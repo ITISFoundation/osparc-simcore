@@ -21,7 +21,9 @@ projects_tags = sa.Table(
             name="project_tags_project_id_fkey",
         ),
         nullable=True,  # <-- NULL means that project was deleted
-        doc="NOTE that project.c.id != project.c.uuid. If project is deleted, we do not delete project in this table, we just set this column to NULL. Why? Because the `project_uuid_for_rut` is still used by resource usage tracker",
+        doc="NOTE that project.c.id != project.c.uuid. If project is deleted, we do not delete project in this "
+        "table, we just set this column to NULL. Why? Because the `project_uuid_for_rut` is still used by resource "
+        "usage tracker",
     ),
     sa.Column(
         "tag_id",
