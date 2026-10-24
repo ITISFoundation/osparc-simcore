@@ -13,15 +13,11 @@ from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
-from faker import Faker
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingUnitGet,
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.project_nodes_pricing import (
@@ -125,24 +121,6 @@ def mock_rut_api_responses(client: TestClient, aioresponses_mocker: AioResponses
     return aioresponses_mocker
 
 
-@pytest.fixture
-def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixture, faker: Faker) -> mock.Mock:
-    def _fake_instance_type_details(rabbitmq_client, instance_type_names: set[str]) -> list[EC2InstanceTypeGet]:
-        assert len(instance_type_names) > 0
-        return [
-            EC2InstanceTypeGet(
-                name=next(iter(instance_type_names)),
-                cpus=faker.pyfloat(min_value=0.1),
-                ram=ByteSize(faker.pyint(min_value=1024)),
-            )
-        ]
-
-    return mocker.patch(
-        "simcore_service_webserver.projects._projects_service.get_instance_type_details",
-        side_effect=_fake_instance_type_details,
-    )
-
-
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_wallets_full_workflow(
     client: TestClient,
@@ -150,7 +128,7 @@ async def test_project_wallets_full_workflow(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_rut_api_responses: AioResponsesMock,
-    mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
@@ -170,7 +148,7 @@ async def test_project_wallets_full_workflow(
     )
     resp = await client.put(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
-    mocked_clusters_keeper_service_get_instance_type_details.assert_called_once()
+    mocked_director_v2_node_sizing.assert_called_once()
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
@@ -204,9 +182,14 @@ async def test_project_wallets_full_workflow(
 # All expected CPU/RAM numbers are hand-computed literals from the fixed EC2
 # specs in `pytest_simcore.helpers.project_nodes_pricing`:
 #   r5.4xlarge = 16 CPU / 128 GiB
-#   dynamic-sidecar formula: cpu = max(0.5, 16 - 1.4) = 14.6
-#                          ram = int(137438953472 - 0.1*137438953472 - 1 GiB)
-#                              = 122621316300
+#   computational node, dask-worker formula:
+#     cpu = 16 - 0.1 = 15.9,  ram = int(137438953472 * 0.9) = 123695058124
+#   dynamic node, dynamic-sidecar formula:
+#     cpu = max(0.5, 16 - 1.4) = 14.6
+#     ram = int(137438953472 - 0.1*137438953472 - 1 GiB) = 122621316300
+# The sizing itself is computed by director-v2 (RPC `compute_node_resources_for_hardware`),
+# pinned by its own tests; here director-v2 is replaced by the fixed test double
+# `mocked_director_v2_node_sizing`.
 #
 
 
@@ -245,30 +228,30 @@ def _get_node_id_for_service_class(user_project: ProjectDict, service_class: str
 
 
 @pytest.mark.parametrize(
-    "user_role,service_class",
-    [(UserRole.USER, "comp"), (UserRole.USER, "dynamic")],
+    "user_role,service_class,expected_cpu,expected_ram",
+    [
+        (UserRole.USER, "comp", 15.9, 123695058124),
+        (UserRole.USER, "dynamic", 14.6, 122621316300),
+    ],
     ids=["computational", "dynamic"],
 )
-@pytest.mark.epic("sanderegg/9851", flips_in="PR1")
 async def test_connect_pricing_unit_persists_link_and_sizes_node(
     service_class: str,
+    expected_cpu: float,
+    expected_ram: int,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     asyncpg_engine: AsyncEngine,
     mock_rut_fixed_pricing_units: dict[int, RutPricingUnitGet],
-    mocked_clusters_keeper_fixed_ec2_types: mock.AsyncMock,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
     """W3 (comp) / W4 (dynamic): connecting a pricing unit creates the link and
     resizes `required_resources` for the unit's EC2 machine.
 
-    NOTE: today `update_project_node_resources_from_hardware_info` sizes EVERY
-    node class (also computational) with the DYNAMIC-SIDECAR formula.
-    ⚠️ For computational nodes this is intended to change to the DASK-WORKER
-    formula (cpu 15.9, ram 123695058124) in the "director-v2 sizing RPC" PR
-    (PR 1 of the pricing/resources ownership rework). If that PR makes this test
-    fail on the "comp" parameter, that is the intended change — update the
-    expected numbers, do not revert the production change.
+    The sizing formula is picked by director-v2 according to the node class:
+    computational nodes get the DASK-WORKER formula, dynamic nodes the
+    DYNAMIC-SIDECAR one (see the hand-computed values in the section header).
     """
     assert client.app
     node_id = _get_node_id_for_service_class(user_project, service_class)
@@ -304,7 +287,7 @@ async def test_connect_pricing_unit_persists_link_and_sizes_node(
 
     assert node_state.required_resources
     resources = node_state.required_resources["container"]["resources"]
-    assert resources["CPU"]["limit"] == pytest.approx(14.6)
-    assert resources["CPU"]["reservation"] == pytest.approx(14.6)
-    assert resources["RAM"]["limit"] == 122621316300
-    assert resources["RAM"]["reservation"] == 122621316300
+    assert resources["CPU"]["limit"] == pytest.approx(expected_cpu)
+    assert resources["CPU"]["reservation"] == pytest.approx(expected_cpu)
+    assert resources["RAM"]["limit"] == expected_ram
+    assert resources["RAM"]["reservation"] == expected_ram

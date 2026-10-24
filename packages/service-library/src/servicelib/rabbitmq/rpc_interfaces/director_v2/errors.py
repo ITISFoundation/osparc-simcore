@@ -11,3 +11,17 @@ class ComputationRunStatesRetrievalError(BaseRpcError):  # pylint: disable=too-m
 
 class ComputationalTaskMissingError(BaseRpcError):  # pylint: disable=too-many-ancestors
     msg_template = "Computational run not found for project {project_id}"
+
+
+class EC2InstanceTypeNotFoundRPCError(BaseRpcError):  # pylint: disable=too-many-ancestors
+    msg_template = "None of the EC2 instance types {ec2_types} is known to the clusters-keeper"
+
+
+class ClustersKeeperNotAvailableRPCError(BaseRpcError):  # pylint: disable=too-many-ancestors
+    msg_template = "The clusters-keeper service is currently unavailable"
+
+
+class UnsupportedNodeClassRPCError(BaseRpcError):  # pylint: disable=too-many-ancestors
+    msg_template = (
+        "The resources of service '{service_key}:{service_version}' cannot be derived from an EC2 machine type"
+    )
