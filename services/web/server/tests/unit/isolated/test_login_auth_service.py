@@ -8,7 +8,6 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from aiohttp import web
 from faker import Faker
 from models_library.products import ProductName
 from pydantic import HttpUrl
@@ -20,7 +19,7 @@ from simcore_postgres_database.models.products import (
     products as products_table,
 )
 from simcore_service_webserver.login import _auth_service, _login_throttle_service
-from simcore_service_webserver.login.errors import WrongPasswordError
+from simcore_service_webserver.login.errors import LoginThrottledError, WrongPasswordError
 from simcore_service_webserver.products.models import Product
 
 
@@ -125,11 +124,11 @@ async def test_authenticate_user_does_not_check_credentials_while_throttled(
     mock_throttle: dict[str, AsyncMock],
     mock_login_settings: MagicMock,
 ):
-    mock_throttle["raise_if_login_throttled"].side_effect = web.HTTPTooManyRequests()
+    mock_throttle["raise_if_login_throttled"].side_effect = LoginThrottledError(retry_after_sec=1)
     mock_get_user = mocker.patch.object(_auth_service, "get_user_or_none")
     mock_check = mocker.patch.object(_auth_service, "check_authorized_user_credentials")
 
-    with pytest.raises(web.HTTPTooManyRequests):
+    with pytest.raises(LoginThrottledError):
         await _auth_service.authenticate_user(
             MagicMock(),
             email=faker.email(),

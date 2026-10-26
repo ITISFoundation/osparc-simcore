@@ -16,9 +16,8 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.users import UserID
 from redis.exceptions import LockError, RedisError
 
-from ..utils_rate_limiting import create_too_many_requests_error
 from . import _login_throttle_repository as _repository
-from .constants import MSG_LOGIN_TOO_MANY_ATTEMPTS, MSG_LOGIN_UNAVAILABLE
+from .errors import LoginThrottledError, LoginThrottleUnavailableError
 from .settings import LoginThrottleSettings
 
 _logger = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ _LOGIN_ATTEMPT_LOCK_WAIT_SEC = 3  # below _REDIS_TIMEOUT_SEC
 
 
 @contextlib.asynccontextmanager
-async def _handle_redis_errors_as_503() -> AsyncIterator[None]:
+async def _handle_redis_errors() -> AsyncIterator[None]:
     try:
         async with asyncio.timeout(_REDIS_TIMEOUT_SEC):
             yield
@@ -42,7 +41,7 @@ async def _handle_redis_errors_as_503() -> AsyncIterator[None]:
                 tip="Check redis connection",
             )
         )
-        raise web.HTTPServiceUnavailable(text=MSG_LOGIN_UNAVAILABLE) from err
+        raise LoginThrottleUnavailableError from err
 
 
 @contextlib.asynccontextmanager
@@ -51,7 +50,8 @@ async def exclusive_login_attempt(app: web.Application, *, email: str) -> AsyncI
     cannot slip past a back-off that an earlier attempt triggers.
 
     Raises:
-        web.HTTPTooManyRequests: if other attempts for this email keep the lock for too long
+        LoginThrottledError: if other attempts for this email keep the lock for too long
+        LoginThrottleUnavailableError: if redis fails
     """
     lock = _repository.get_login_attempt_lock(
         app,
@@ -59,10 +59,10 @@ async def exclusive_login_attempt(app: web.Application, *, email: str) -> AsyncI
         ttl_sec=_LOGIN_ATTEMPT_LOCK_TTL_SEC,
         wait_sec=_LOGIN_ATTEMPT_LOCK_WAIT_SEC,
     )
-    async with _handle_redis_errors_as_503():
+    async with _handle_redis_errors():
         acquired = await lock.acquire()
     if not acquired:
-        raise create_too_many_requests_error(retry_after_sec=1, error_msg=MSG_LOGIN_TOO_MANY_ATTEMPTS)
+        raise LoginThrottledError(retry_after_sec=1)
 
     try:
         yield
@@ -97,7 +97,7 @@ def compute_delay_sec(failures: int, *, settings: LoginThrottleSettings) -> int:
 
 async def get_login_retry_after_sec(app: web.Application, *, email: str) -> int:
     """Seconds until the next login attempt is allowed for this email (0 if allowed now)"""
-    async with _handle_redis_errors_as_503():
+    async with _handle_redis_errors():
         ttl_ms = await _repository.get_block_ttl_ms(app, digest=_get_digest(email))
     return math.ceil(ttl_ms / 1000)
 
@@ -105,21 +105,19 @@ async def get_login_retry_after_sec(app: web.Application, *, email: str) -> int:
 async def raise_if_login_throttled(app: web.Application, *, email: str) -> None:
     """
     Raises:
-        web.HTTPTooManyRequests: while the email is in back-off
+        LoginThrottledError: while the email is in back-off
+        LoginThrottleUnavailableError: if redis fails
     """
     retry_after_sec = await get_login_retry_after_sec(app, email=email)
     if retry_after_sec > 0:
-        raise create_too_many_requests_error(
-            retry_after_sec=retry_after_sec,
-            error_msg=MSG_LOGIN_TOO_MANY_ATTEMPTS,
-        )
+        raise LoginThrottledError(retry_after_sec=retry_after_sec)
 
 
 async def register_failed_login(
     app: web.Application, *, email: str, user_id: UserID | None = None, settings: LoginThrottleSettings
 ) -> None:
     digest = _get_digest(email)
-    async with _handle_redis_errors_as_503():
+    async with _handle_redis_errors():
         failures = await _repository.increment_failures(
             app, digest=digest, window_sec=settings.LOGIN_THROTTLE_WINDOW_SEC
         )

@@ -168,7 +168,8 @@ async def authenticate_user(
     """Checks login credentials, with exponential back-off after repeated failures per email
 
     Raises:
-        web.HTTPTooManyRequests: while the email is in back-off
+        LoginThrottledError: while the email is in back-off
+        LoginThrottleUnavailableError: if the throttle storage fails
         WrongPasswordError: when the password is invalid or the user does not exist
         web.HTTPUnauthorized: 401
     """

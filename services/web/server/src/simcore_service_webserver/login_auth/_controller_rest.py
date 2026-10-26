@@ -2,12 +2,13 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, ValidationError
 from servicelib.aiohttp import status
+from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from .._meta import API_VTAG
 from ..login import login_service
+from ..login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
+from ..login._controller.rest.auth_schemas import LoginBody
 from .decorators import login_required
 
 _logger = logging.getLogger(__name__)
@@ -33,11 +34,8 @@ async def check_auth(request: web.Request) -> web.Response:
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-class _LoginGuardBody(BaseModel):
-    email: LowerCaseEmailStr
-
-
 @routes.post(f"/{API_VTAG}/auth:login-guard", name="auth_login_guard")
+@handle_rest_requests_exceptions
 async def login_guard(request: web.Request) -> web.Response:
     """Checks whether a login attempt is currently allowed for the submitted email
 
@@ -45,11 +43,7 @@ async def login_guard(request: web.Request) -> web.Response:
     to reject attempts during the back-off before any password hashing happens.
     SEE https://doc.traefik.io/traefik/middlewares/http/forwardauth
     """
-    try:
-        body = _LoginGuardBody.model_validate_json(await request.read())
-    except ValidationError:
-        # NOTE: the login endpoint itself reports invalid bodies
-        return web.Response(status=status.HTTP_204_NO_CONTENT)
+    body = await parse_request_body_as(LoginBody, request)
 
     await login_service.raise_if_login_throttled(request.app, email=body.email)
 

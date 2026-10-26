@@ -22,7 +22,12 @@ from simcore_service_webserver.login._login_throttle_service import (
     raise_if_login_throttled,
     register_failed_login,
 )
-from simcore_service_webserver.login.errors import WrongPasswordError
+from simcore_service_webserver.login.constants import MSG_LOGIN_TOO_MANY_ATTEMPTS
+from simcore_service_webserver.login.errors import (
+    LoginThrottledError,
+    LoginThrottleUnavailableError,
+    WrongPasswordError,
+)
 from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
 
@@ -97,9 +102,9 @@ async def test_not_throttled_until_free_attempts_are_used(
     retry_after_sec = await get_login_retry_after_sec(app, email=_EMAIL)
     assert 0 < retry_after_sec <= throttle_settings.LOGIN_THROTTLE_BASE_DELAY_SEC
 
-    with pytest.raises(web.HTTPTooManyRequests) as exc_info:
+    with pytest.raises(LoginThrottledError) as exc_info:
         await raise_if_login_throttled(app, email=_EMAIL)
-    assert int(exc_info.value.headers["Retry-After"]) == retry_after_sec
+    assert exc_info.value.error_context()["retry_after_sec"] == retry_after_sec
 
 
 async def test_back_off_doubles_with_every_failure(
@@ -174,16 +179,25 @@ async def test_login_guard_rejects_emails_in_back_off(
 
     assert response.status == 429
     assert int(response.headers["Retry-After"]) > 0
+    assert MSG_LOGIN_TOO_MANY_ATTEMPTS in (await response.json())["error"]["message"]
 
     other = await guard_client.post("/v0/auth:login-guard", json={"email": "other@example.com", "password": "x"})
     assert other.status == 204
 
 
-@pytest.mark.parametrize("body", [b"", b"not json", b'{"password": "no email"}', b'{"email": "not-an-email"}'])
-async def test_login_guard_lets_invalid_bodies_through_to_the_login_endpoint(guard_client: TestClient, body: bytes):
+@pytest.mark.parametrize(
+    "body,expected_status",
+    [
+        (b"", 422),
+        (b"not json", 400),
+        (b'{"password": "no email"}', 422),
+        (b'{"email": "not-an-email", "password": "x"}', 422),
+    ],
+)
+async def test_login_guard_rejects_invalid_bodies(guard_client: TestClient, body: bytes, expected_status: int):
     response = await guard_client.post("/v0/auth:login-guard", data=body)
 
-    assert response.status == 204
+    assert response.status == expected_status
 
 
 async def test_login_guard_answers_503_when_redis_fails(
@@ -201,7 +215,7 @@ async def test_registering_a_failed_login_answers_503_when_redis_fails(
 ):
     mocker.patch.object(fake_redis, "pipeline", side_effect=RedisConnectionError("down"))
 
-    with pytest.raises(web.HTTPServiceUnavailable):
+    with pytest.raises(LoginThrottleUnavailableError):
         await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
 
@@ -247,7 +261,7 @@ async def test_guard_answers_503_when_redis_does_not_reply(guard_client: TestCli
 async def test_registering_a_failed_login_answers_503_when_redis_does_not_reply(
     app: web.Application, throttle_settings: LoginThrottleSettings, unresponsive_redis: None
 ):
-    with pytest.raises(web.HTTPServiceUnavailable):
+    with pytest.raises(LoginThrottleUnavailableError):
         await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
 
 
@@ -300,7 +314,7 @@ async def test_concurrent_attempts_cannot_exceed_the_free_attempts(
     allowed_checks = throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1
     assert len(wrong_password_checks) == allowed_checks
     assert sum(isinstance(r, WrongPasswordError) for r in results) == allowed_checks
-    assert sum(isinstance(r, web.HTTPTooManyRequests) for r in results) == num_attempts - allowed_checks
+    assert sum(isinstance(r, LoginThrottledError) for r in results) == num_attempts - allowed_checks
 
 
 async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
@@ -313,7 +327,7 @@ async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
     assert await held.acquire()
     product = SimpleNamespace(name="osparc")
 
-    with pytest.raises(web.HTTPTooManyRequests):
+    with pytest.raises(LoginThrottledError):
         await _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # type: ignore[arg-type]  # noqa: S106
 
     assert not wrong_password_checks

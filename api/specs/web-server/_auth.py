@@ -63,6 +63,10 @@ async def check_registration_invitation(check: InvitationCheck):
     "/auth/register",
     response_model=Envelope[Log],
     operation_id="auth_register",
+    responses={
+        status.HTTP_429_TOO_MANY_REQUESTS: {"model": EnvelopedError},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
+    },
 )
 async def register(_body: RegisterBody):
     """User registration"""
@@ -101,11 +105,12 @@ async def phone_confirmation(_body: PhoneConfirmationBody):
     status_code=status.HTTP_201_CREATED,
     operation_id="auth_login",
     responses={
-        # status.HTTP_503_SERVICE_UNAVAILABLE
         status.HTTP_401_UNAUTHORIZED: {
             "model": EnvelopedError,
             "description": "unauthorized reset due to invalid token code",
-        }
+        },
+        status.HTTP_429_TOO_MANY_REQUESTS: {"model": EnvelopedError},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
     },
 )
 async def login(_body: LoginBody):
