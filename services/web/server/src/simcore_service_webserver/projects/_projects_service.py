@@ -75,6 +75,7 @@ from models_library.resource_tracker import (
     PricingInfo,
 )
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_constants import FRONTEND_SERVICE_KEY_PREFIX
 from models_library.services_resources import (
     ServiceResourcesDict,
     set_reservation_same_as_limit,
@@ -758,6 +759,12 @@ async def update_project_node_resources_from_hardware_info(
     if not hardware_info.aws_ec2_instances:
         return
 
+    if f"{service_key}".startswith(FRONTEND_SERVICE_KEY_PREFIX):
+        # frontend nodes are owned by the frontend and never run on a machine:
+        # their resources are not sized from an EC2 type, there is nothing to ask
+        # director-v2 about
+        return
+
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         node_resources = await get_project_node_resources(
@@ -771,7 +778,8 @@ async def update_project_node_resources_from_hardware_info(
             hardware_info=hardware_info,
         )
     except UnsupportedNodeClassRPCError:
-        # e.g. a frontend node: its resources are not derived from a machine, keep them
+        # director-v2 refuses to size node classes it does not know (frontend nodes
+        # are already filtered out above); keep their resources as they are
         _logger.warning(
             "Not resizing resources of node %s in project %s: service %s cannot be sized from an EC2 machine type",
             node_id,

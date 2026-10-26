@@ -130,7 +130,8 @@ async def test_project_wallets_full_workflow(
     mock_rut_api_responses: AioResponsesMock,
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
-    node_id = next(iter(user_project["workbench"]))
+    # a comp node: frontend nodes are never sized (see frontend test below)
+    node_id = _get_node_id_for_service_class(user_project, "comp")
     assert client.app
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
@@ -291,3 +292,39 @@ async def test_connect_pricing_unit_persists_link_and_sizes_node(
     assert resources["CPU"]["reservation"] == pytest.approx(expected_cpu)
     assert resources["RAM"]["limit"] == expected_ram
     assert resources["RAM"]["reservation"] == expected_ram
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_connect_pricing_unit_to_frontend_node_does_not_size_it(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    asyncpg_engine: AsyncEngine,
+    mock_rut_fixed_pricing_units: dict[int, RutPricingUnitGet],
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """A frontend node is owned by the frontend and never runs on a machine: the
+    web-server must not even ask director-v2 to size it.
+    """
+    assert client.app
+    node_id = _get_node_id_for_service_class(user_project, "frontend")
+    project_id = user_project["uuid"]
+
+    initial_resources = single_container_required_resources(user_project["workbench"][node_id]["key"])
+    await set_node_required_resources(asyncpg_engine, project_id, node_id, initial_resources)
+
+    base_url = client.app.router["connect_pricing_unit_to_project_node"].url_for(
+        project_id=project_id,
+        node_id=node_id,
+        pricing_plan_id=f"{_PRICING_PLAN_ID}",
+        pricing_unit_id=f"{_PRICING_UNIT_ID_2}",
+    )
+    resp = await client.put(f"{base_url}")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    mocked_director_v2_node_sizing.assert_not_called()
+
+    state = await get_node_pricing_state(asyncpg_engine, project_id)
+    node_state = state[NodeID(node_id)]
+    assert node_state.pricing_unit_id == _PRICING_UNIT_ID_2
+    assert node_state.required_resources == initial_resources
