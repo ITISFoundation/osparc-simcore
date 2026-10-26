@@ -50,9 +50,6 @@ MAKE_LOG: Final[re.Pattern[str]] = re.compile(r"^make(\[\d+\])?: ")
 # rounds of letting uv's blamed packages move before giving up on a directory
 MAX_UNBLOCK_ROUNDS: Final[int] = 5
 
-# uv.toml that makes `uv pip compile` resolve from wheel metadata only
-UV_NO_BUILD_CONFIG: Final[str] = "[pip]\nno-build = true\n"
-
 
 def normalized(name: str) -> str:
     """PEP 503-normalized name, without extras (`uvicorn[standard]` -> `uvicorn`)"""
@@ -137,7 +134,7 @@ class DirectorySnapshot:
             shutil.copy2(lockfile, Path(directory) / lockfile.name)
 
 
-def regenerate(directory: str, upgrade: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+def regenerate(directory: str, upgrade: str) -> subprocess.CompletedProcess[str]:
     """Regenerates one directory with the given upgrade list. The inputs are touched first
     so the rules run even though the lockfiles may look newer than them (the Makefiles'
     own `touch` target is missing e.g. in api/tests)."""
@@ -145,7 +142,6 @@ def regenerate(directory: str, upgrade: str, env: dict[str, str] | None = None) 
         os.utime(template, None)
     return subprocess.run(  # noqa: S603
         ["make", "-C", directory, "reqs", f"upgrade={upgrade}"],  # noqa: S607
-        env=env,
         check=False,
         stdout=subprocess.PIPE,
         # uv writes its errors to stderr; keep them interleaved with the layer output
@@ -191,9 +187,7 @@ def blamed_packages(output: str, directory: str, upgrade: str) -> set[str]:
     return names
 
 
-def resync_dir(
-    directory: str, pins: str, snapshot: DirectorySnapshot, no_build_env: dict[str, str]
-) -> tuple[bool, str, bool]:
+def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot) -> tuple[bool, str]:
     """Regenerates one directory.
 
     uv treats a lockfile as a hard constraint, so a pin in another layer can leave
@@ -202,29 +196,19 @@ def resync_dir(
     error, so up to MAX_UNBLOCK_ROUNDS rounds let the blamed packages move as well.
     Only packages that block the update move.
 
-    If the error names no pin the lockfiles hold, uv most likely aborted while building
-    the metadata of a candidate it then discarded. Retry the directory once with source
-    builds disabled, which answers the same request from wheel metadata alone.
-
-    Returns (solved, the extra pins that had to move, whether the no-build retry was
-    needed).
+    Returns (solved, the extra pins that had to move).
     """
     upgrade = pins
     for _ in range(MAX_UNBLOCK_ROUNDS + 1):
         process = regenerate(directory, upgrade)
         print(process.stdout, end="")
         if process.returncode == 0:
-            return True, upgrade.removeprefix(pins).strip(), False
+            return True, upgrade.removeprefix(pins).strip()
         snapshot.restore(directory)
 
         names = blamed_packages(process.stdout, directory, upgrade)
         if not names:
-            process = regenerate(directory, upgrade, env=no_build_env)
-            print(process.stdout, end="")
-            if process.returncode == 0:
-                return True, upgrade.removeprefix(pins).strip(), True
-            print(f"warning: {directory}: no solution even with source builds disabled", file=sys.stderr)
-            return False, "", False
+            return False, ""
 
         print(
             f'warning: {directory}: {" ".join(sorted(names))} blocks "{pins}", letting it move too',
@@ -232,17 +216,10 @@ def resync_dir(
         )
         upgrade = f"{upgrade} {' '.join(sorted(names))}"
 
-    return False, "", False
+    return False, ""
 
 
-def report(unblocked: list[str], no_build_used: list[str], failed: list[str]) -> int:
-    if no_build_used:
-        print(
-            "warning: these directories only resolved with source builds disabled:"
-            f" {' '.join(no_build_used)}"
-            " (uv aborted the resolution while building the metadata of a discarded candidate)",
-            file=sys.stderr,
-        )
+def report(unblocked: list[str], failed: list[str]) -> int:
     if unblocked:
         print(f"warning: these packages had to move too: {' '.join(unblocked)}", file=sys.stderr)
     if failed:
@@ -293,28 +270,22 @@ def main() -> int:
     backup_dir = Path(tempfile.mkdtemp())
     try:
         snapshot = DirectorySnapshot(backup_dir)
-        no_build_config = backup_dir / "uv.toml"
-        no_build_config.write_text(UV_NO_BUILD_CONFIG)
-        no_build_env = {**os.environ, "UV_CONFIG_FILE": f"{no_build_config}"}
 
         upgrade = " ".join(pins)
         unblocked: list[str] = []
-        no_build_used: list[str] = []
         failed: list[str] = []
         for directory in directories:
             print(f"--- {directory}")
             snapshot.snapshot(directory)
-            solved, moved, needed_no_build = resync_dir(directory, upgrade, snapshot, no_build_env)
+            solved, moved = resync_dir(directory, upgrade, snapshot)
             if solved:
-                if needed_no_build:
-                    no_build_used.append(directory)
                 if moved:
                     unblocked.append(f"{directory} ({moved})")
             else:
                 snapshot.restore(directory)
                 failed.append(directory)
 
-        return report(unblocked, no_build_used, failed)
+        return report(unblocked, failed)
     finally:
         shutil.rmtree(backup_dir, ignore_errors=True)
 

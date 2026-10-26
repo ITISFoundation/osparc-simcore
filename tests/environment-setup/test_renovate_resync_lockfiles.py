@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from packaging.specifiers import SpecifierSet
 
 # Stands in for `make -C <dir> reqs upgrade="<...>"` and answers like uv for a
 # virtualenv update that needs packaging>=26.3: the update only resolves once packaging
@@ -30,25 +31,6 @@ if [[ " $upgrade " != *" packaging "* ]]; then
 fi
 printf 'click==8.1.0\\npackaging==26.3\\n' >"$dir/_base.txt"
 printf 'click==8.1.0\\npackaging==26.3\\nvirtualenv==21.14.10\\n' >"$dir/_tools.txt"
-"""
-
-# Answers like uv when the update is solvable but uv aborts the resolution because the
-# metadata of a merely-discarded candidate needs building (the aiodocker 0.6 sdist case):
-# the error names no pin the lockfiles carry, and the retry succeeds once source builds
-# are disabled (the script points UV_CONFIG_FILE at a no-build uv.toml then).
-_FAKE_MAKE_NEEDS_NO_BUILD = """#!/bin/bash
-dir="$2"
-upgrade="${4#upgrade=}"
-echo "$upgrade" >>"$FAKE_MAKE_CALLS"
-if [[ -z "${UV_CONFIG_FILE:-}" || ! -f "$UV_CONFIG_FILE" ]]; then
-  echo "Resolved 1 package in 1ms"
-  echo "error: Failed to build aiodocker==0.6"
-  echo "  cause: The build backend returned an error"
-  echo "make: *** [requirements.mk:58: _base.txt] Error 1"
-  exit 1
-fi
-cp "$UV_CONFIG_FILE" "$FAKE_MAKE_UV_TOML"
-printf 'aiodocker==0.27.0\\naiohttp==3.14.5\\n' >"$dir/_base.txt"
 """
 
 # Answers like uv when the blocker is an extras-bracketed pin (`python-socketio[...]`):
@@ -135,7 +117,6 @@ def _fake_make_env(tmp_path: Path, script: str) -> dict[str, str]:
         **os.environ,
         "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
         "FAKE_MAKE_CALLS": f"{tmp_path / 'calls'}",
-        "FAKE_MAKE_UV_TOML": f"{tmp_path / 'uv.toml'}",
     }
 
 
@@ -212,30 +193,24 @@ def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_
     )
 
     assert result.returncode == 1
-    # the extra attempt resolves with source builds disabled and fails the same way,
-    # without blaming anything the lockfiles pin
-    assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10"]
+    # an error that names no pin the lockfiles carry is not a version to unblock
+    # (it would just loop), so the directory fails after the first attempt
+    assert _make_calls(env) == ["virtualenv==21.14.10"]
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.0\nvirtualenv==21.14.5\n"
     assert "could not regenerate the lockfiles in: requirements" in result.stderr
 
 
-def test_resync_lockfiles_retries_with_source_builds_disabled(resync_lockfiles_script: Path, tmp_path: Path):
-    # uv aborts the whole resolution when the metadata of a discarded candidate needs
-    # building (the aiodocker 0.6 sdist), although the solution resolves from wheels:
-    # the directory is then retried once with source builds disabled
-    repo = _make_git_repo(tmp_path / "repo", {"_base.txt": "aiodocker==0.27.0\naiohttp==3.14.3\n"})
-    env = _fake_make_env(tmp_path, _FAKE_MAKE_NEEDS_NO_BUILD)
-    pins_file = repo / "pins.txt"
-    pins_file.write_text("aiohttp==3.14.5\n")
-
-    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env)
-
-    assert _make_calls(env) == ["aiohttp==3.14.5", "aiohttp==3.14.5"]
-    # the retry ran under the no-build uv config
-    assert Path(env["FAKE_MAKE_UV_TOML"]).read_text() == "[pip]\nno-build = true\n"
-    assert (repo / "requirements" / "_base.txt").read_text() == "aiodocker==0.27.0\naiohttp==3.14.5\n"
-    assert "only resolved with source builds disabled: requirements" in result.stderr
+def test_requirements_constraints_forbid_the_unbuildable_aiodocker_sdist(osparc_simcore_root_dir: Path):
+    # the bare `aiodocker` requests let uv's resolver backtrack into the 2015 aiodocker
+    # 0.6 sdist, whose metadata build aborts the whole resolution (it imports code with
+    # `asyncio.async(...)`, invalid since Python 3.7): the global constraints file must
+    # keep a floor that makes every such version ineligible before uv ever fetches it
+    constraints = (osparc_simcore_root_dir / "requirements" / "constraints.txt").read_text()
+    line = next(entry for entry in constraints.splitlines() if entry.strip().startswith("aiodocker"))
+    specifier = SpecifierSet(line.split("#")[0].strip().removeprefix("aiodocker"))
+    assert "0.6" not in specifier
+    assert "0.27.0" in specifier
 
 
 def test_resync_lockfiles_blames_a_blocking_pin_with_extras(resync_lockfiles_script: Path, tmp_path: Path):
