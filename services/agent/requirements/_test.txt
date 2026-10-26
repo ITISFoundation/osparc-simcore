@@ -12,7 +12,7 @@ aiohappyeyeballs==2.5.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.14.4
+aiohttp==3.14.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -102,7 +102,7 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.8
+graphql-core==3.3.0
     # via moto
 h11==0.16.0
     # via
