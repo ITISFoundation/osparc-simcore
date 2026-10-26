@@ -17,6 +17,7 @@ dask[distributed,diagnostics]
 docker
 Faker
 fakeredis[lua]
+filelock
 flaky
 pytest
 pytest-asyncio

@@ -6,6 +6,8 @@ coverage==7.16.0
     #   pytest-cov
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 iniconfig==2.3.0
     # via pytest
 packaging==26.3
@@ -38,6 +40,10 @@ pytest-sugar==1.1.1
 python-dotenv==1.2.3
     # via
     #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+pyyaml==6.0.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar

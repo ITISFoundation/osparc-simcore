@@ -94,6 +94,8 @@ execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 flask==3.1.3

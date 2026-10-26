@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import json
 import re
 from pathlib import Path
 
@@ -83,3 +84,24 @@ def test_renovate_installs_the_same_uv_version(renovate_constraints: dict[str, s
         f"Expected uv {expected_uv_version} in the constraints of .renovaterc.jsonc,"
         f" got {renovate_constraints['uv']}. Update it to match requirements/UV_VERSION."
     )
+
+
+def test_renovate_tracks_its_installed_uv_version(osparc_simcore_root_dir: Path, expected_uv_version: str):
+    config_path = osparc_simcore_root_dir / ".renovaterc.jsonc"
+    config_text = config_path.read_text()
+    config = json.loads(re.sub(r"^\s*//.*$", "", config_text, flags=re.MULTILINE))
+    manager = next(
+        (
+            custom_manager
+            for custom_manager in config["customManagers"]
+            if custom_manager["depNameTemplate"] == "uv"
+            and any(re.fullmatch(pattern[1:-1], config_path.name) for pattern in custom_manager["managerFilePatterns"])
+        ),
+        None,
+    )
+
+    assert manager is not None, "Renovate must track its uv constraint as an updateable dependency."
+    match_string = manager["matchStrings"][0].replace("(?<currentValue>", "(?P<currentValue>")
+    match = re.search(match_string, config_text)
+    assert match is not None
+    assert match["currentValue"] == expected_uv_version
