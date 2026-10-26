@@ -31,6 +31,7 @@ from pytest_simcore.helpers.project_nodes_pricing import (
 )
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import EC2InstanceTypeNotFoundRPCError
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -328,3 +329,32 @@ async def test_connect_pricing_unit_to_frontend_node_does_not_size_it(
     node_state = state[NodeID(node_id)]
     assert node_state.pricing_unit_id == _PRICING_UNIT_ID_2
     assert node_state.required_resources == initial_resources
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_connect_pricing_unit_with_unknown_ec2_type_fails_as_422(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    asyncpg_engine: AsyncEngine,
+    mock_rut_fixed_pricing_units: dict[int, RutPricingUnitGet],
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """An EC2 machine unknown to clusters-keeper is an invalid pricing-unit
+    configuration (422 with the invalid-type message), not a server error.
+    """
+    assert client.app
+    node_id = _get_node_id_for_service_class(user_project, "comp")
+    project_id = user_project["uuid"]
+
+    mocked_director_v2_node_sizing.side_effect = EC2InstanceTypeNotFoundRPCError(ec2_types={R5_4XLARGE_NAME})
+
+    base_url = client.app.router["connect_pricing_unit_to_project_node"].url_for(
+        project_id=project_id,
+        node_id=node_id,
+        pricing_plan_id=f"{_PRICING_PLAN_ID}",
+        pricing_unit_id=f"{_PRICING_UNIT_ID_2}",
+    )
+    resp = await client.put(f"{base_url}")
+    _data, errors = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_CONTENT)
+    assert R5_4XLARGE_NAME in errors["message"]

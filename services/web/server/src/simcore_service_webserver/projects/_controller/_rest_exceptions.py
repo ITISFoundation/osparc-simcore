@@ -42,6 +42,7 @@ from ..exceptions import (
     ProjectInvalidRightsError,
     ProjectInvalidUsageError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesInvalidError,
     ProjectNodeResourcesSetByPricingUnitError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
@@ -87,6 +88,12 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
             "The resources of this node are defined by its selected pricing unit and cannot be changed manually.",
             _version=1,
         ),
+    ),
+    # NOTE: renders the error's own message (e.g. which EC2 types were invalid),
+    # same as the explicit handling in nodes_rest for the manual-resources endpoint
+    ProjectNodeResourcesInvalidError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        user_message("{message}", _version=1),
     ),
 }
 
