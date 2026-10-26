@@ -98,6 +98,7 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2 import resources as director
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ClustersKeeperNotAvailableRPCError,
     EC2InstanceTypeNotFoundRPCError,
+    MultiContainerOverrideNotSupportedRPCError,
     UnsupportedNodeClassRPCError,
 )
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
@@ -786,6 +787,11 @@ async def update_project_node_resources_from_hardware_info(
             project_id,
             service_key,
         )
+        return
+    except MultiContainerOverrideNotSupportedRPCError as exc:
+        # per-sub-service sizing of a multi-container service is not implemented:
+        # keep the node's resources as they are
+        _logger.warning("Not resizing resources of node %s in project %s: %s", node_id, project_id, exc)
         return
     except EC2InstanceTypeNotFoundRPCError as exc:
         raise InvalidEC2TypeInResourcesSpecsError(ec2_types=set(hardware_info.aws_ec2_instances)) from exc

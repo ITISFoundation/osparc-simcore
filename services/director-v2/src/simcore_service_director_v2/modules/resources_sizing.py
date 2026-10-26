@@ -40,6 +40,7 @@ from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.errors import (
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ClustersKeeperNotAvailableRPCError,
     EC2InstanceTypeNotFoundRPCError,
+    MultiContainerOverrideNotSupportedRPCError,
     UnsupportedNodeClassRPCError,
 )
 
@@ -71,12 +72,15 @@ def resize_computational_node_resources(
 ) -> ServiceResourcesDict:
     """Sizes a single-container computational node as a dask worker on the machine.
 
-    Multi-container services are returned unchanged (override not implemented yet).
+    Raises:
+        MultiContainerOverrideNotSupportedRPCError -- multi-container services: sizing
+            their sub-services from a machine is not implemented, so they are never
+            machine-derived (rather than silently left unsized)
+
     """
     resized_resources = _SERVICE_RESOURCES_ADAPTER.validate_python(resources)
     if DEFAULT_SINGLE_SERVICE_NAME not in resized_resources:
-        _logger.warning("Services resource override not implemented yet for multi-container services!!!")
-        return resized_resources
+        raise MultiContainerOverrideNotSupportedRPCError(sub_service_names=set(resized_resources))
 
     adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
         float(ec2_instance_type.cpus),
@@ -148,6 +152,8 @@ async def compute_node_resources_for_hardware(
         EC2InstanceTypeNotFoundRPCError -- machine type unknown to clusters-keeper
         ClustersKeeperNotAvailableRPCError -- clusters-keeper could not be reached
         UnsupportedNodeClassRPCError -- frontend (or unknown) service classes
+        MultiContainerOverrideNotSupportedRPCError -- multi-container computational
+            services (their per-sub-service sizing is not implemented)
 
     """
     # reject unsupported classes first: their resources never depend on an EC2

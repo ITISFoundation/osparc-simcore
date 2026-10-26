@@ -7,6 +7,7 @@ from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ClustersKeeperNotAvailableRPCError,
     EC2InstanceTypeNotFoundRPCError,
+    MultiContainerOverrideNotSupportedRPCError,
     UnsupportedNodeClassRPCError,
 )
 
@@ -21,6 +22,7 @@ router = RPCRouter()
         EC2InstanceTypeNotFoundRPCError,
         ClustersKeeperNotAvailableRPCError,
         UnsupportedNodeClassRPCError,
+        MultiContainerOverrideNotSupportedRPCError,
         KeyError,
     )
 )

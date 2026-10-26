@@ -43,6 +43,7 @@ from models_library.services_resources import (
 )
 from pydantic import ByteSize, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    MultiContainerOverrideNotSupportedRPCError,
     UnsupportedNodeClassRPCError,
 )
 from simcore_postgres_database.models.projects_node_to_pricing_unit import (
@@ -279,7 +280,7 @@ async def fake_compute_node_resources_for_hardware(
 
     if node_type == "comp":
         if DEFAULT_SINGLE_SERVICE_NAME not in resized:
-            return resized  # multi-container computational services are not resized
+            raise MultiContainerOverrideNotSupportedRPCError(sub_service_names=set(resized))
         cpu, ram = _dask_worker_resources(ec2)
         resized[DEFAULT_SINGLE_SERVICE_NAME].resources["CPU"].set_value(cpu)
         resized[DEFAULT_SINGLE_SERVICE_NAME].resources["RAM"].set_value(ram)

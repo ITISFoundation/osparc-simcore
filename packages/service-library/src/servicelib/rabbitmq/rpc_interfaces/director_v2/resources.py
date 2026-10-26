@@ -49,6 +49,8 @@ async def compute_node_resources_for_hardware(
         ClustersKeeperNotAvailableRPCError -- clusters-keeper could not be reached
         UnsupportedNodeClassRPCError -- the service class cannot be sized from a machine
             (e.g. frontend services)
+        MultiContainerOverrideNotSupportedRPCError -- sizing a multi-container service's
+            sub-services is not implemented
         KeyError -- a container's resources are missing the RAM/CPU keys
 
     """

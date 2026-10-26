@@ -39,6 +39,7 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2 import resources as rpc_reso
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     ClustersKeeperNotAvailableRPCError,
     EC2InstanceTypeNotFoundRPCError,
+    MultiContainerOverrideNotSupportedRPCError,
     UnsupportedNodeClassRPCError,
 )
 from simcore_service_director_v2.modules import resources_sizing
@@ -139,13 +140,17 @@ async def test_sizing_rpc_scales_largest_sub_service_of_multi_container_dynamic_
     assert resized["sidecar"].resources["RAM"].limit == 1536 * 1024**2
 
 
-async def test_sizing_rpc_leaves_multi_container_computational_node_unchanged(
+async def test_sizing_rpc_rejects_multi_container_computational_node(
     rpc_client: RabbitMQRPCClient,
     mocked_clusters_keeper: mock.AsyncMock,
 ):
+    # per-sub-service sizing of a multi-container service is not implemented: the
+    # call fails with a dedicated error (reraised here through the real RPC) and
+    # the resources are never silently left unsized
     resources = _RESOURCES_ADAPTER.validate_python(_multi_container_resources())
-    resized = await _request_sizing(rpc_client, service_key=_COMP_KEY, resources=resources, machine=R5_4XLARGE_NAME)
-    assert resized == resources
+    with pytest.raises(MultiContainerOverrideNotSupportedRPCError) as exc_info:
+        await _request_sizing(rpc_client, service_key=_COMP_KEY, resources=resources, machine=R5_4XLARGE_NAME)
+    assert exc_info.value.error_context()["sub_service_names"] == {"main", "sidecar"}
 
 
 async def test_sizing_rpc_returns_resources_unchanged_without_ec2_machine(
@@ -263,12 +268,26 @@ async def test_sizing_test_double_does_not_drift_from_the_implementation(
     resources = _RESOURCES_ADAPTER.validate_python(resources_payload())
     ec2_instance_type = get_fixed_ec2_instance_types({machine})[0]
 
-    expected = resize_implementation(resources, ec2_instance_type=ec2_instance_type)
-    actual = await fake_compute_node_resources_for_hardware(
-        None,
-        service_key=service_key,
-        service_version=_VERSION,
-        resources=resources,
-        hardware_info=HardwareInfo(aws_ec2_instances=[machine]),
-    )
-    assert actual == expected
+    # an outcome is either the resized resources or the error type both sides must raise
+    expected: ServiceResourcesDict | type[Exception]
+    try:
+        expected = resize_implementation(resources, ec2_instance_type=ec2_instance_type)
+    except MultiContainerOverrideNotSupportedRPCError:
+        expected = MultiContainerOverrideNotSupportedRPCError
+
+    actual: ServiceResourcesDict | type[Exception]
+    try:
+        actual = await fake_compute_node_resources_for_hardware(
+            None,
+            service_key=service_key,
+            service_version=_VERSION,
+            resources=resources,
+            hardware_info=HardwareInfo(aws_ec2_instances=[machine]),
+        )
+    except MultiContainerOverrideNotSupportedRPCError:
+        actual = MultiContainerOverrideNotSupportedRPCError
+
+    if isinstance(expected, type):
+        assert actual is expected, f"fake must raise {expected.__name__} where the implementation raises it"
+    else:
+        assert actual == expected
