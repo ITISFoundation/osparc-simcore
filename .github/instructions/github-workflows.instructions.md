@@ -15,4 +15,6 @@ applyTo: '.github/workflows/**'
   `uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`.
   Do not use a floating tag. Keep the SHA and its comment in sync; Renovate
   updates both. When adding an action, resolve the tag to its commit with
-  `gh api repos/<owner>/<repo>/commits/<tag> --jq .sha`.
+  `gh api repos/<owner>/<repo>/commits/<tag> --jq .sha`. The pre-commit hook
+  `check-action-pins` (scripts/precommit/check-action-pins.bash) enforces this
+  for workflows and composite actions.
