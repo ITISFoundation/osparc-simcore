@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout source branch
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # setup-simcore-env installs Python 3.13 + uv (version from requirements/UV_VERSION)
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
