@@ -12,6 +12,7 @@
 
 # installs this repo's packages
 --editable ../common-library/
+--editable ../models-library/
 --editable ../postgres-database/[migration]
 --editable ../service-library/
 --editable ../settings-library/

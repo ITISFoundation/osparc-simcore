@@ -13,6 +13,7 @@ import re
 from collections.abc import Callable
 from typing import Any, Final
 
+from models_library.services_enums import ServiceType
 from packaging.version import Version
 from packaging.version import parse as parse_version
 from playwright.sync_api import APIRequestContext, Page
@@ -27,7 +28,6 @@ from pytest_simcore.helpers.playwright import (
     SECOND,
     PipelineStageTimeouts,
     RobustWebSocket,
-    ServiceType,
     SocketIOEvent,
     check_node_outputs,
     retrieve_project_state_from_decoded_message,
@@ -142,7 +142,7 @@ def test_sleepers(
         # NOTE: covers every autoscaling stage (cold cluster/worker scale-up), not just STARTED
         timeout=stage_timeouts.total_ms,
     ):
-        socket_io_event = start_and_stop_pipeline()
+        socket_io_event = start_and_stop_pipeline(project_data["uuid"])
         current_state = retrieve_project_state_from_decoded_message(socket_io_event)
         test_logger.info("pipeline is in %s", f"{current_state=}")
 
@@ -151,6 +151,7 @@ def test_sleepers(
         current_state = wait_for_computation_done(
             current_state,
             websocket=log_in_and_out,
+            project_uuid=project_data["uuid"],
             stage_timeouts=stage_timeouts,
         )
 
