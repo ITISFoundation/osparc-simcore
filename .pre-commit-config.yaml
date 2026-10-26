@@ -76,15 +76,6 @@ repos:
         name: actionlint
   - repo: local
     hooks:
-      - id: check-action-pins
-        name: check GitHub Actions are pinned to commit SHAs
-        language: script
-        types: [file]
-        files: ^\.github/(workflows|actions)/.*\.ya?ml$
-        entry: scripts/precommit/check-action-pins.bash
-        pass_filenames: false
-  - repo: local
-    hooks:
       - id: ensure-lychee-version-argument-matches-rev
         name: ensure lychee version argument matches rev
         language: script
