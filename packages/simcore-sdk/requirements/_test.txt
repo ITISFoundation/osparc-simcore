@@ -12,7 +12,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.14.4
+aiohttp==3.14.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -94,6 +94,8 @@ execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 flask==3.1.3
@@ -107,7 +109,7 @@ frozenlist==1.8.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.8
+graphql-core==3.3.0
     # via moto
 greenlet==3.3.2
     # via
@@ -190,7 +192,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via moto
-packaging==26.0
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   aioresponses
@@ -297,7 +299,7 @@ rpds-py==0.30.0
     #   referencing
 s3transfer==0.14.0
     # via boto3
-setuptools==84.0.0
+setuptools==84.2.1
     # via moto
 six==1.17.0
     # via

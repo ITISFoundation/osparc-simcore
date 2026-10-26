@@ -70,7 +70,7 @@ markupsafe==3.0.3
     #   werkzeug
 msgpack==1.2.2
     # via locust
-packaging==26.0
+packaging==26.3
     # via pytest
 pluggy==1.6.0
     # via pytest

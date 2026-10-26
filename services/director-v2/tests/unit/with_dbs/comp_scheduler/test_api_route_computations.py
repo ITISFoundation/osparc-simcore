@@ -11,6 +11,7 @@ import datetime as dt
 import re
 import urllib.parse
 from collections.abc import Awaitable, Callable, Iterator
+from decimal import Decimal
 from typing import Any
 from unittest import mock
 
@@ -49,7 +50,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.wallets import WalletInfo
+from models_library.wallets import WalletID, WalletInfo
 from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.project_nodes_pricing import (
@@ -1280,3 +1281,175 @@ async def test_stop_computation_that_was_never_run_does_not_fail(
     assert returned_computation.started is None
     assert returned_computation.stopped is None
     assert returned_computation.submitted is None
+
+
+#
+# CHARACTERIZATION TESTS (pin the state of the DB, not the code that produces it)
+#
+
+
+@pytest.mark.parametrize(
+    "default_pricing_plan",
+    [RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0])],
+)
+async def test_start_computation_with_zero_credit_wallet_aborts_published_tasks(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
+    mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
+    product_name: str,
+    product_api_base_url: AnyHttpUrl,
+    fake_workbench_without_outputs: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+    fake_collection_run_id: CollectionRunID,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # CHARACTERIZATION (D7): starting a pipeline in a billed product with a wallet that has
+    # zero credits and a non-zero-cost pricing unit must (a) return 402, (b) persist every
+    # task that would have been published as ABORTED and (c) never create a run.
+    # The pricing/resources ownership rework (PRs 1-3) must keep this behavior.
+    zero_credit_wallet = WalletInfo(
+        wallet_id=WalletID(faker.pyint()),
+        wallet_name=faker.name(),
+        wallet_credit_amount=Decimal(0),
+    )
+    assert mocked_resource_usage_tracker_service_fcts  # the default unit has cost > 0
+
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+
+    response = await async_client.post(
+        httpx.URL("/v2/computations"),
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
+                collection_run_id=fake_collection_run_id,
+                wallet_info=zero_credit_wallet,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_402_PAYMENT_REQUIRED, response.text
+
+    async with sqlalchemy_async_engine.connect() as connection:
+        task_rows = (
+            await connection.execute(
+                sqlalchemy.select(comp_tasks.c.node_id, comp_tasks.c.state).where(
+                    comp_tasks.c.project_id == f"{proj.uuid}"
+                )
+            )
+        ).all()
+        assert task_rows
+        for node_id, state in task_rows:
+            node_key = proj.workbench[f"{node_id}"].key
+            if to_node_class(node_key) == NodeClass.COMPUTATIONAL:
+                # it was selected for the run (PUBLISHED) and aborted for insufficient credits
+                assert state == StateType.ABORTED, f"node {node_id} (comp) must be ABORTED, got {state}"
+            else:
+                # never published -> never aborted
+                assert state != StateType.PUBLISHED, f"node {node_id} must not be PUBLISHED"
+
+        runs = (
+            await connection.execute(
+                sqlalchemy.select(comp_runs.c.run_id).where(comp_runs.c.project_uuid == f"{proj.uuid}")
+            )
+        ).all()
+    assert not runs, "no run may be created when the start is rejected for insufficient credits"
+
+
+@pytest.mark.parametrize(
+    "default_pricing_plan",
+    [RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0])],
+)
+async def test_run_metadata_keeps_the_wallet_of_the_start(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    mocked_resource_usage_tracker_service_fcts: respx.MockRouter,
+    mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
+    product_name: str,
+    product_api_base_url: AnyHttpUrl,
+    fake_workbench_without_outputs: dict[str, Any],
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    async_client: httpx.AsyncClient,
+    wallet_info: WalletInfo,
+    faker: Faker,
+    fake_collection_run_id: CollectionRunID,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    # CHARACTERIZATION (D8): the wallet a run is billed to is a SNAPSHOT taken at start time and
+    # persisted in `comp_runs.metadata`. A later computation that carries a DIFFERENT wallet must
+    # not be able to change it: while the pipeline is running, it is rejected (409) and the
+    # metadata of the started run stays the same. The pricing/resources ownership rework
+    # (PRs 1-3) must keep this behavior.
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    await create_pipeline(project_id=f"{proj.uuid}", dag_adjacency_list=fake_workbench_adjacency)
+
+    response = await async_client.post(
+        httpx.URL("/v2/computations"),
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                start_pipeline=True,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
+                collection_run_id=fake_collection_run_id,
+                wallet_info=wallet_info,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+
+    async def _get_run_metadata() -> dict[str, Any]:
+        async with sqlalchemy_async_engine.connect() as connection:
+            metadata = (
+                await connection.execute(
+                    sqlalchemy.select(comp_runs.c.metadata)
+                    .where(comp_runs.c.project_uuid == f"{proj.uuid}")
+                    .order_by(comp_runs.c.iteration.desc())
+                    .limit(1)
+                )
+            ).scalar_one()
+        assert metadata
+        return metadata
+
+    run_metadata = await _get_run_metadata()
+    assert run_metadata["wallet_id"] == wallet_info.wallet_id
+    assert run_metadata["wallet_name"] == wallet_info.wallet_name
+
+    # another computation, now pointing to a DIFFERENT wallet, while the run is still publishing
+    other_wallet = WalletInfo(
+        wallet_id=WalletID(faker.pyint(min_value=10)),
+        wallet_name=faker.name(),
+        wallet_credit_amount=Decimal(100),
+    )
+    response = await async_client.post(
+        httpx.URL("/v2/computations"),
+        json=jsonable_encoder(
+            ComputationCreate(
+                user_id=user["id"],
+                project_id=proj.uuid,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
+                wallet_info=other_wallet,
+            )
+        ),
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text
+
+    # the started run still bills to the wallet of its start
+    run_metadata = await _get_run_metadata()
+    assert run_metadata["wallet_id"] == wallet_info.wallet_id
+    assert run_metadata["wallet_name"] == wallet_info.wallet_name

@@ -16,6 +16,8 @@ cryptography==50.0.0
     #   types-paramiko
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 greenlet==3.3.2
     # via
     #   -c requirements/_base.txt
@@ -29,7 +31,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-packaging==26.0
+packaging==26.3
     # via pytest
 pathspec==1.0.4
     # via mypy

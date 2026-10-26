@@ -27,6 +27,8 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 greenlet==3.2.4
@@ -75,13 +77,13 @@ iniconfig==2.3.0
     # via pytest
 librt==0.8.1
     # via mypy
-lupa==2.6
+lupa==2.8
     # via fakeredis
 mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-packaging==24.2
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest

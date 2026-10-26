@@ -16,6 +16,8 @@ coverage==7.16.0
     #   pytest-cov
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
@@ -38,7 +40,7 @@ idna==3.19
     #   httpx
 iniconfig==2.3.0
     # via pytest
-packaging==24.2
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest

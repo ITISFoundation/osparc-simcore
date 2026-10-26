@@ -4,7 +4,7 @@ aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.14.4
+aiohttp==3.14.5
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -102,6 +102,8 @@ fastar==0.11.0
     # via
     #   fastapi
     #   fastapi-cloud-cli
+filelock==4.2.4
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.4.1
@@ -171,7 +173,7 @@ lazy-object-proxy==1.12.0
     # via openapi-spec-validator
 librt==0.8.1
     # via mypy
-lupa==2.6
+lupa==2.8
     # via fakeredis
 mako==1.4.3
     # via
@@ -204,7 +206,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via -r requirements/_test.in
-packaging==24.1
+packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   aioresponses
