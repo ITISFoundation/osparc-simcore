@@ -157,7 +157,8 @@ class _FakePage:
         # NOTE: the real call passes the node id as `arg`: the iframe src must contain it
         # once the UI navigated it
         if not self._iframe_src_set:
-            raise PlaywrightTimeoutError()  # raised by Playwright when the timeout elapses
+            timeout_message = "timeout"  # what Playwright raises when the timeout elapses
+            raise PlaywrightTimeoutError(timeout_message)
 
     def wait_for_timeout(self, _milliseconds) -> None:
         pass
