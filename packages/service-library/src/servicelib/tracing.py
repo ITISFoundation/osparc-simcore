@@ -39,7 +39,7 @@ _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 # NOTE: holds the TracingConfig set up for this process/context so that utilities such as
 # `log_context` can automatically create spans without threading `TracingConfig` through every
 # call site. Set once by `setup_log_tracing()` (see `logging_utils.setup_loggers`/`async_loggers`).
-_current_tracing_config: ContextVar["TracingConfig | None"] = ContextVar("current_tracing_config", default=None)
+_current_tracing_config: ContextVar[TracingConfig | None] = ContextVar("current_tracing_config", default=None)
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
 _OTEL_NAMESPACE: Final[str] = "simcore"
@@ -110,7 +110,7 @@ def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: Tra
     # upstream annotates the client with whichever httpx namespace it imported first,
     # so an httpx2 client is rejected even though instrumentation only needs its attributes
     HTTPX2ClientInstrumentor.instrument_client(
-        client,  # pyright: ignore[reportArgumentType]
+        client,  # type: ignore[arg-type]
         tracer_provider=tracing_config.tracer_provider,
     )
 
@@ -359,7 +359,7 @@ def _resolve_tracing_config_aiohttp(app: Any) -> TracingConfig | None:
         config = app[AIOHTTP_TRACING_CONFIG_KEY]
         assert isinstance(config, TracingConfig)  # nosec
         return config
-    except (KeyError, TypeError):
+    except KeyError, TypeError:
         return None
 
 
