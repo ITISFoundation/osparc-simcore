@@ -9,6 +9,7 @@ async-asgi-testclient # replacement for fastapi.testclient.TestClient [see b) be
 docker
 faker
 fakeredis[lua]
+filelock
 flaky
 pytest
 pytest-asyncio

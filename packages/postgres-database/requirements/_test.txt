@@ -16,6 +16,8 @@ cryptography==50.0.0
     #   types-paramiko
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 greenlet==3.3.2
     # via
     #   -c requirements/_base.txt

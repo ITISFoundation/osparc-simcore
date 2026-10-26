@@ -23,6 +23,8 @@ email-validator==2.3.0
     # via pydantic
 faker==40.38.0
     # via -r requirements/_test_wo_playwright.in
+filelock==4.2.4
+    # via -r requirements/_test_wo_playwright.in
 h11==0.16.0
     # via httpcore
 httpcore==1.0.9

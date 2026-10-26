@@ -5,6 +5,7 @@ aiodocker
 aiohttp
 docker
 faker
+filelock
 httpx
 jsonschema
 pytest
