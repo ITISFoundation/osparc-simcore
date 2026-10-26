@@ -28,3 +28,10 @@ Rules:
   file path. Do not rename or move such a workflow without updating the
   policy, or its runs stop. The workflows that rely on it say so at the top of
   the file: <https://gh.io/securely-using-pull_request_target>.
+- Third-party actions are pinned to a full commit SHA, with the release it
+  resolves to kept in a trailing comment, e.g.
+  `uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`.
+  Never use a floating tag (`@v7`, or a tag alone). Dependabot owns the
+  `github-actions` ecosystem in `.github/dependabot.yml` and bumps the SHA and
+  its comment together, so do not hand-edit a pin to a newer version. Local
+  actions (`uses: ./.github/actions/...`) are already pinned by path.
