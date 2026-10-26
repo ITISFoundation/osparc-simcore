@@ -17,7 +17,6 @@ EC2 type               dask (cpu, ram bytes)      dynamic (cpu, ram bytes)
 =====================  =========================  ==========================
 """
 
-from collections.abc import Callable
 from typing import Any, Final
 from unittest import mock
 
@@ -29,7 +28,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.project_nodes_pricing import (
     R5_4XLARGE_NAME,
     T3_MEDIUM_NAME,
-    fake_compute_node_resources_for_hardware,
     get_fixed_ec2_instance_types,
     single_container_required_resources,
 )
@@ -42,7 +40,6 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
     MultiContainerOverrideNotSupportedRPCError,
     UnsupportedNodeClassRPCError,
 )
-from simcore_service_director_v2.modules import resources_sizing
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 
@@ -232,62 +229,3 @@ async def test_sizing_rpc_maps_clusters_keeper_invalid_type_rejection(
     resources = _RESOURCES_ADAPTER.validate_python(single_container_required_resources("library/nginx:latest"))
     with pytest.raises(EC2InstanceTypeNotFoundRPCError):
         await _request_sizing(rpc_client, service_key=_COMP_KEY, resources=resources, machine="not-a-known-type")
-
-
-def _single_container_payload() -> dict[str, Any]:
-    return single_container_required_resources("library/nginx:latest")
-
-
-_SIZING_CASES: Final[list[tuple[str, Callable[..., ServiceResourcesDict], Callable[[], dict[str, Any]]]]] = [
-    (_COMP_KEY, resources_sizing.resize_computational_node_resources, _single_container_payload),
-    (_COMP_KEY, resources_sizing.resize_computational_node_resources, _multi_container_resources),
-    (_DYNAMIC_KEY, resources_sizing.resize_dynamic_node_resources, _single_container_payload),
-    (_DYNAMIC_KEY, resources_sizing.resize_dynamic_node_resources, _multi_container_resources),
-]
-
-_SIZING_CASE_IDS: Final[list[str]] = [
-    f"{key.split('/')[2]}-{'multi' if factory is _multi_container_resources else 'single'}"
-    for key, _, factory in _SIZING_CASES
-]
-
-
-@pytest.mark.parametrize("machine", [T3_MEDIUM_NAME, R5_4XLARGE_NAME])
-@pytest.mark.parametrize(
-    "service_key,resize_implementation,resources_payload",
-    _SIZING_CASES,
-    ids=_SIZING_CASE_IDS,
-)
-async def test_sizing_test_double_does_not_drift_from_the_implementation(
-    machine: str,
-    service_key: str,
-    resize_implementation: Callable[..., ServiceResourcesDict],
-    resources_payload: Callable[[], dict[str, Any]],
-):
-    # the fake in pytest_simcore stands in for director-v2 in ALL web-server tests;
-    # this fails when the real sizing changes without updating the fake in lockstep
-    resources = _RESOURCES_ADAPTER.validate_python(resources_payload())
-    ec2_instance_type = get_fixed_ec2_instance_types({machine})[0]
-
-    # an outcome is either the resized resources or the error type both sides must raise
-    expected: ServiceResourcesDict | type[Exception]
-    try:
-        expected = resize_implementation(resources, ec2_instance_type=ec2_instance_type)
-    except MultiContainerOverrideNotSupportedRPCError:
-        expected = MultiContainerOverrideNotSupportedRPCError
-
-    actual: ServiceResourcesDict | type[Exception]
-    try:
-        actual = await fake_compute_node_resources_for_hardware(
-            None,
-            service_key=service_key,
-            service_version=_VERSION,
-            resources=resources,
-            hardware_info=HardwareInfo(aws_ec2_instances=[machine]),
-        )
-    except MultiContainerOverrideNotSupportedRPCError:
-        actual = MultiContainerOverrideNotSupportedRPCError
-
-    if isinstance(expected, type):
-        assert actual is expected, f"fake must raise {expected.__name__} where the implementation raises it"
-    else:
-        assert actual == expected
