@@ -16,7 +16,6 @@ from packaging.version import Version
 PIP_INSTALL_UPGRADE_PATTERN = re.compile(r"pip .* install\s+--upgrade .* pip([=~><]+)([\d\.]+)", re.DOTALL)
 
 PYTHON_VERSION_DOCKER_PATTERN = re.compile(r"ARG PYTHON_VERSION=\"([\d\.]+)\"")
-FROZEN_SERVICES = ["director"]
 
 
 type VersionTuple = tuple[int, ...]
@@ -89,15 +88,14 @@ def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[PathVersionTupl
     return res
 
 
-def test_all_images_have_the_same_python_version(python_in_dockerfiles, expected_python_version: tuple[int, ...]):
+def test_all_images_have_the_same_python_version(
+    python_in_dockerfiles: list[PathVersionTuple], expected_python_version: tuple[int, ...]
+):
     for dockerfile, python_version in python_in_dockerfiles:
-        if dockerfile.parent.name not in FROZEN_SERVICES:
-            current_version, expected_version = make_versions_comparable(python_version, expected_python_version)
-            assert current_version == expected_version, (
-                f"Expected python {expected_python_version} in {dockerfile}, got {python_version}"
-            )
-        else:
-            print(f"Skipping check on {dockerfile} since this service/package development was frozen ")
+        current_version, expected_version = make_versions_comparable(python_version, expected_python_version)
+        assert current_version == expected_version, (
+            f"Expected python {expected_python_version} in {dockerfile}, got {python_version}"
+        )
 
 
 def test_running_python_version(expected_python_version: tuple[int, ...]):
