@@ -38,8 +38,9 @@ _COMPUTATIONAL_KEY: Final[str] = "simcore/services/comp/itis/sleeper"
 _DYNAMIC_KEY: Final[str] = "simcore/services/dynamic/jupyter-mock"
 
 
-async def _update(mocker: MockerFixture, node_key: str, required_resources: dict[str, Any] = _MULTI):
+async def _update(mocker: MockerFixture, node_key: str, required_resources: dict[str, Any] | None = None):
     repo_cls = mocker.patch.object(_utils, "ProjectNodesRepo")
+    required_resources = _MULTI if required_resources is None else required_resources
     repo_cls.return_value.get = mock.AsyncMock(return_value=mock.Mock(required_resources=required_resources))
     await _utils._update_project_node_resources_from_hardware_info(  # noqa: SLF001
         mock.Mock(),
