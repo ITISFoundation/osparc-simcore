@@ -6,6 +6,7 @@
 
 
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 from aiohttp import ClientResponseError
@@ -229,7 +230,10 @@ async def test_request_an_account_twice(
         **AccountRequestInfo.model_json_schema()["example"]["form"],
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
-        "email": faker.email(),
+        # the faker plugin re-seeds each test identically, so faker.email() would repeat the
+        # one from test_request_an_account and its still-pending request would make the
+        # *first* submission below fail with 409 whenever both tests share a xdist worker
+        "email": f"account-request+{uuid4()}@example.com",
         "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace("\n", ", "),
         "country": faker.country(),
     }
