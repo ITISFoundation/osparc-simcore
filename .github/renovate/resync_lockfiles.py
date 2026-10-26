@@ -16,7 +16,8 @@ in every requirements directory the update touches or that pins one of the updat
 packages at another version. Renovate's versions are passed as exact pins on purpose:
 a bare `make reqs` upgrades everything and a bare package name lets uv pick the
 latest release. Only packages that block the update are passed by name (see
-resync_dir below).
+resync_dir below). A directory that cannot be regenerated is restored and listed in
+renovate-resync-report.md, which Renovate commits to its PR (fileFilters).
 
 Usage: resync_lockfiles.py [PINS_FILE]
   PINS_FILE: one "<package>==<version>" per line, defaults to
@@ -49,6 +50,11 @@ MAKE_LOG: Final[re.Pattern[str]] = re.compile(r"^make(\[\d+\])?: ")
 
 # rounds of letting uv's blamed packages move before giving up on a directory
 MAX_UNBLOCK_ROUNDS: Final[int] = 5
+
+# failure report of the last resync, committed to the PR through
+# postUpgradeTasks.fileFilters so reviewers cannot miss it; removed once a
+# resync runs clean again
+REPORT_FILE: Final[Path] = Path("renovate-resync-report.md")
 
 
 def normalized(name: str) -> str:
@@ -219,7 +225,28 @@ def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot) -> tuple[
     return False, ""
 
 
-def report(unblocked: list[str], failed: list[str]) -> int:
+def report(pins: str, unblocked: list[str], failed: list[str]) -> int:
+    """Writes/removes the PR-visible report file and prints the same summary"""
+    if failed:
+        directories = "\n".join(f"- `{directory}`" for directory in failed)
+        REPORT_FILE.write_text(
+            "# Renovate lockfile resync: FAILED\n"
+            "\n"
+            "The post-upgrade resync (`.github/renovate/resync_lockfiles.py`)"
+            " could not\nregenerate these lockfile directories for the pins"
+            f" `{pins}`:\n\n{directories}\n\n"
+            "They are committed as the pip-compile manager produced them, so they"
+            " may\nstill pin older, possibly vulnerable, versions of the updated"
+            " packages.\nFix them before merging, e.g. by freeing the blocking"
+            " pins and running\n"
+            '`make -C <directory> reqs upgrade="<package>==<version> ..."`,'
+            " or by running\nthe resync script in a scratch `git worktree` and"
+            " cherry-picking the result.\nThe uv resolution error of each"
+            " directory is in the Renovate run log.\n"
+        )
+    elif REPORT_FILE.is_file():
+        # a clean resync supersedes a report left over from an earlier branch
+        REPORT_FILE.unlink()
     if unblocked:
         print(f"warning: these packages had to move too: {' '.join(unblocked)}", file=sys.stderr)
     if failed:
@@ -261,6 +288,7 @@ def main() -> int:
 
     directories = directories_to_resync(pins)
     if not directories:
+        REPORT_FILE.unlink(missing_ok=True)
         print("No lockfile needs regenerating")
         return 0
     print("Regenerating lockfiles in:")
@@ -285,7 +313,7 @@ def main() -> int:
                 snapshot.restore(directory)
                 failed.append(directory)
 
-        return report(unblocked, failed)
+        return report(upgrade, unblocked, failed)
     finally:
         shutil.rmtree(backup_dir, ignore_errors=True)
 

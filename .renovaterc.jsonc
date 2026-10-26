@@ -169,7 +169,9 @@
           "**/requirements/_*.txt",
           "api/tests/requirements.txt",
           "ci/helpers/requirements/requirements.txt",
-          "tests/environment-setup/requirements/requirements.txt"
+          "tests/environment-setup/requirements/requirements.txt",
+          // the resync's failure report, so a lockfile left on a vulnerable version is visible in the PR and not only in the run log (the script removes it once a resync runs clean)
+          "renovate-resync-report.md"
         ],
         "executionMode": "branch",
         "installTools": {

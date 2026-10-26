@@ -163,6 +163,8 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
     pins_file = git_repo_behind_on_virtualenv / "pins.txt"
     pins_file.write_text("virtualenv==21.14.10\n")
     env = {**fake_make_env, "FAKE_MAKE_BLOCKING_PIN": "packaging==26.0"}
+    # a report left over from an earlier failed branch must not survive a clean resync
+    (git_repo_behind_on_virtualenv / "renovate-resync-report.md").write_text("stale\n")
 
     result = _run(
         sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env
@@ -173,6 +175,7 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.3\nvirtualenv==21.14.10\n"
     assert "these packages had to move too: requirements (packaging)" in result.stderr
+    assert not (git_repo_behind_on_virtualenv / "renovate-resync-report.md").exists()
 
 
 def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_it(
@@ -199,6 +202,10 @@ def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.0\nvirtualenv==21.14.5\n"
     assert "could not regenerate the lockfiles in: requirements" in result.stderr
+    # the failure is committed to the Renovate PR through postUpgradeTasks.fileFilters
+    report = (git_repo_behind_on_virtualenv / "renovate-resync-report.md").read_text()
+    assert "`requirements`" in report
+    assert "virtualenv==21.14.10" in report
 
 
 def test_requirements_constraints_forbid_the_unbuildable_aiodocker_sdist(osparc_simcore_root_dir: Path):
