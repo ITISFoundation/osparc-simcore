@@ -6,8 +6,8 @@ from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
 # Limits metadata values
-MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str
-MetadataDict: TypeAlias = dict[str, MetaValueType]
+MetaValueType: TypeAlias = StrictBool | StrictInt | StrictFloat | str  # noqa: UP040
+MetadataDict: TypeAlias = dict[str, MetaValueType]  # noqa: UP040
 
 
 class ProjectMetadataGet(OutputSchema):

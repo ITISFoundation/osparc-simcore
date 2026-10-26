@@ -1,10 +1,13 @@
 import csv
 import json
 from pathlib import Path
+from typing import Final
 
 import typer
 from models_library.projects import ProjectAtDB
 from pydantic import ConfigDict, Json, ValidationError, field_validator
+
+_DUMP_MODEL_JSON_VERBOSITY: Final[int] = 2
 
 
 class ProjectFromCsv(ProjectAtDB):
@@ -61,7 +64,7 @@ def validate_csv_exported_pg_project(csvpath: Path, verbose: int = typer.Option(
 
                 if verbose > 1:
                     typer.secho(f"{pid} OK", fg=typer.colors.GREEN)
-                    if verbose > 2:
+                    if verbose > _DUMP_MODEL_JSON_VERBOSITY:
                         typer.echo(model.model_dump_json(indent=2))
             except ValidationError as err:
                 failed.append(pid)

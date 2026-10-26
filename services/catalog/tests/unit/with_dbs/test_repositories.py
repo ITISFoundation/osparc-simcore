@@ -1096,7 +1096,7 @@ async def test_list_all_services_deprecated_versions(
     total_all, all_services = await services_repo.list_all_services(product_name=target_product, user_id=user_id)
 
     # Get latest services - should only show latest non-deprecated
-    total_latest, latest_services = await services_repo.list_latest_services(
+    _total_latest, latest_services = await services_repo.list_latest_services(
         product_name=target_product, user_id=user_id
     )
 

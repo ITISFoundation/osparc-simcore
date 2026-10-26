@@ -56,7 +56,8 @@ def app_environment(
         {
             "LICENSES_ITIS_VIP_API_URL": f"{fake_api_base_url}/PD_DirectDownload/getDownloadableItems/{{category}}",
             # NOTE: ItisVipSettings will decode with json.dumps(). Use " and not ' the json keys!!
-            "LICENSES_ITIS_VIP_CATEGORIES": '{"ComputationalPantom": "Phantoms", "HumanBodyRegion": "Humans (Regions)"}',
+            "LICENSES_ITIS_VIP_CATEGORIES": '{"ComputationalPantom": "Phantoms", '
+            '"HumanBodyRegion": "Humans (Regions)"}',
         },
     )
 
@@ -183,7 +184,8 @@ async def test_sync_itis_vip_as_licensed_resources(
                 )
                 assert state3 == RegistrationState.DIFFERENT_RESOURCE
                 assert licensed_resource2 == licensed_item3
-                # {'values_changed': {"root['features']['functionality']": {'new_value': 'Non-Posable', 'old_value': 'Posable'}}}
+                # {'values_changed': {"root['features']['functionality']":
+                #   {'new_value': 'Non-Posable', 'old_value': 'Posable'}}}
                 assert "functionality" in msg
 
 

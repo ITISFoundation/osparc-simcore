@@ -324,7 +324,9 @@ class EC2InstanceBootSpecific(BaseModel):
                 temp_file.writelines(v)
                 temp_file.flush()
                 # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash(
+                # NOTE: sh is untyped so pylint cannot infer its variadic call
+                # signature and falsely reports too-many-function-args here
+                sh.bash(  # pylint: disable=too-many-function-args
                     "-n",
                     temp_file.name,  # pyright: ignore[reportCallIssue] - sh is untyped but safe for bash syntax checking
                 )

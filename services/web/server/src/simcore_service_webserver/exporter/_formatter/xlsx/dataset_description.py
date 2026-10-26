@@ -97,7 +97,7 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
             ("C7", T("spinal cord, electrophysiology, RNA-seq, mouse")),
             ("A8", TB("    Funding")),
             ("B8", T("Funding sources")),
-            ("C8", T("OT2OD025349")),
+            ("C8", T("OT2OD025349")),  # spellchecker:disable-line
             ("A9", TB("    Acknowledgments")),
             ("B9", T("Acknowledgments beyond funding and contributors")),
             ("C9", T("Thank you everyone!")),
@@ -187,8 +187,10 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
                 "B22",
                 T(
                     "Contributor role. At most one PrincipalInvestigator and at least one CorrespondingAuthor "
-                    "are required. These roles are provided by the Data Cite schema. Options are: PrincipalInvestigator, "
-                    "Creator, CoInvestigator, CorrespondingAuthor, DataCollector, DataCurator, DataManager, Distributor, "
+                    "are required. These roles are provided by the Data Cite schema. Options are: "
+                    "PrincipalInvestigator, "
+                    "Creator, CoInvestigator, CorrespondingAuthor, DataCollector, DataCurator, "
+                    "DataManager, Distributor, "
                     "Editor, Producer, ProjectLeader, ProjectManager, ProjectMember, RelatedPerson, Researcher, "
                     "ResearchGroup, Sponsor, Supervisor, WorkPackageLeader, Other."
                 ),
@@ -208,7 +210,8 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
                     "IsSupplementTo, IsSupplementedBy, IsContinuedByContinues, IsDescribedBy, Describes, HasMetadata, "
                     "IsMetadataFor, HasVersion, IsVersionOf, IsNewVersionOf, IsPreviousVersionOf, IsPartOf, HasPart, "
                     "IsPublishedIn, IsReferencedBy, References, IsDocumentedBy, Documents, IsCompiledBy, Compiles, "
-                    "IsVariantFormOf, IsOriginalFormOf, IsIdenticalTo, IsReviewedBy, Reviews, IsDerivedFrom, IsSourceOf, "
+                    "IsVariantFormOf, IsOriginalFormOf, IsIdenticalTo, IsReviewedBy, Reviews, "
+                    "IsDerivedFrom, IsSourceOf, "
                     "IsRequiredBy, Requires, IsObsoletedBy, Obsoletes."
                 ),
             ),

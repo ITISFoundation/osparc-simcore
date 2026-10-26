@@ -171,7 +171,7 @@ async def test_metadata_inheritance_variations(
     target_product: ProductName,
 ):
     """Test different variations of metadata inheritance with complete previous release."""
-    app, services_repo = app_with_repo
+    _app, services_repo = app_with_repo
 
     # Set up a previous release with all metadata fields
     latest_release_service = await create_latest_release(
@@ -230,7 +230,7 @@ async def test_metadata_inheritance_with_incomplete_previous_release(
     target_product: ProductName,
 ):
     """Test metadata inheritance when previous release has incomplete metadata fields."""
-    app, services_repo = app_with_repo
+    _app, services_repo = app_with_repo
 
     # Case 4: Previous release missing some fields
     latest_release_service = await create_latest_release(
@@ -261,7 +261,7 @@ async def test_service_upgrade_metadata_inheritance_old_service(
     create_latest_release: CreateLatetReleaseCallable,
 ):
     """Test inheritance behavior when the service is considered old"""
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    everyone_gid, user_gid, _team_gid = user_groups_ids
     app, services_repo = app_with_repo
 
     # Mock to make the service appear as old
@@ -331,7 +331,7 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
     create_latest_release: CreateLatetReleaseCallable,
 ):
     """Test inheritance behavior when the service is new and latest version exists in multiple products"""
-    everyone_gid, user_gid, team_gid = user_groups_ids
+    _everyone_gid, user_gid, team_gid = user_groups_ids
     app, services_repo = app_with_repo
 
     # Avoids calls to director API - service is new

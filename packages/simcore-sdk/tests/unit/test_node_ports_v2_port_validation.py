@@ -30,7 +30,7 @@ def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
         return [_replace_value_in_dict(i, original_schema) for i in item]
 
     if isinstance(item, dict):
-        if "$ref" in item.keys():
+        if "$ref" in item:
             # Limited to something like "$ref": "#/definitions/Engine"
             definitions = item["$ref"][2:].split("/")
             res = original_schema.copy()
@@ -77,7 +77,7 @@ def test_validate_port_content():
 
 def test_validate_port_content_fails():
     with pytest.raises(PortUnitError) as err_info:
-        value, unit = validate_port_content(
+        _value, _unit = validate_port_content(
             "port_1",
             value=3.0,
             unit="seconds",
@@ -329,4 +329,4 @@ def test_incident__port_validator_check_value():
         port_meta = comp_tasks_schema["outputs"][f"output_{i}"]
         value = comp_tasks_outputs[f"output_{i}"]
 
-        p = Port(key="port-name-goes-here", value=value, **port_meta)
+        Port(key="port-name-goes-here", value=value, **port_meta)

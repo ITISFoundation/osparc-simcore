@@ -17,7 +17,10 @@ class LicensedResourceNotFoundError(LicensesValueError):
 
 
 class LicensedItemPricingPlanMatchError(LicensesValueError):
-    msg_template = "The provided pricing plan {pricing_plan_id} does not match the one associated with the licensed item {licensed_item_id}."
+    msg_template = (
+        "The provided pricing plan {pricing_plan_id} does not match the one associated with the "
+        "licensed item {licensed_item_id}."
+    )
 
 
 class LicensedItemPricingPlanConfigurationError(LicensesValueError):
@@ -25,4 +28,7 @@ class LicensedItemPricingPlanConfigurationError(LicensesValueError):
 
 
 class LicensedItemNumOfSeatsMatchError(LicensesValueError):
-    msg_template = "Num of seats provided by frontend client {num_of_seats} does not match the one associated to pricing unit {pricing_unit_id}"
+    msg_template = (
+        "Num of seats provided by frontend client {num_of_seats} does not match the one associated "
+        "to pricing unit {pricing_unit_id}"
+    )

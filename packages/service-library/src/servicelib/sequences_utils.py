@@ -1,14 +1,11 @@
 import itertools
 from collections.abc import Generator, Iterable
-from typing import TypeVar
 
 import toolz  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 
-T = TypeVar("T")
 
-
-def partition_gen(input_list: Iterable[T], *, slice_size: NonNegativeInt) -> Generator[tuple[T, ...]]:
+def partition_gen[T](input_list: Iterable[T], *, slice_size: NonNegativeInt) -> Generator[tuple[T, ...]]:
     """
     Given an iterable and the slice_size yields tuples containing
     slice_size elements in them.
@@ -24,7 +21,7 @@ def partition_gen(input_list: Iterable[T], *, slice_size: NonNegativeInt) -> Gen
     yield from toolz.partition_all(slice_size, input_list)
 
 
-def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
+def pairwise[T](iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
     """
     s -> (s0,s1), (s1,s2), (s2, s3), ...
     NOTE: it requires at least 2 elements to produce a pair,

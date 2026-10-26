@@ -24,7 +24,8 @@ def upgrade():
             "trashed",
             sa.DateTime(timezone=True),
             nullable=True,
-            comment="The date and time when the workspace was marked as trashed. Null if the workspace has not been trashed [default].",
+            comment="The date and time when the workspace was marked as trashed. Null if the workspace has not "
+            "been trashed [default].",
         ),
     )
     op.add_column(

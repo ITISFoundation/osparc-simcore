@@ -91,7 +91,7 @@ def user_last_name(faker: Faker) -> str:
 
 @pytest.fixture
 def user_name(user_email: str) -> IDStr:
-    return TypeAdapter(IDStr).validate_python(user_email.split("@")[0])
+    return TypeAdapter(IDStr).validate_python(user_email.split("@", maxsplit=1)[0])
 
 
 @pytest.fixture

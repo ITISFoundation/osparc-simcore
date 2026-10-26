@@ -62,4 +62,7 @@ class ProjectWithFilesParams:
             object.__setattr__(self, "allowed_file_checksums", checksums)
 
     def __repr__(self) -> str:
-        return f"ProjectWithFilesParams: #nodes={self.num_nodes}, file sizes={[_.human_readable() for _ in self.allowed_file_sizes]}"
+        return (
+            f"ProjectWithFilesParams: #nodes={self.num_nodes}, "
+            f"file sizes={[_.human_readable() for _ in self.allowed_file_sizes]}"
+        )

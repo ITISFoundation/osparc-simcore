@@ -16,9 +16,9 @@ class SimcoreRetryPolicyUponInitialization:
     def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
-        self.kwargs = dict(
-            wait=wait_fixed(self.WAIT_SECS),
-            stop=stop_after_attempt(self.ATTEMPTS_COUNT),
-            before_sleep=before_sleep_log(logger, logging.INFO),
-            reraise=True,
-        )
+        self.kwargs = {
+            "wait": wait_fixed(self.WAIT_SECS),
+            "stop": stop_after_attempt(self.ATTEMPTS_COUNT),
+            "before_sleep": before_sleep_log(logger, logging.INFO),
+            "reraise": True,
+        }

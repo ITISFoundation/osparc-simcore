@@ -72,7 +72,8 @@ class Viewer(BaseModel):
     file_type: str = Field(..., description="Identifier for the file type")
     view_url: HttpUrl = Field(
         ...,
-        description="Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters",
+        description="Base url to execute viewer. Needs appending file_size,[file_name] and "
+        "download_link as query parameters",
     )
 
     @classmethod

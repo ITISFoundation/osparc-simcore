@@ -1,12 +1,10 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Generic, TypeVar
-
-ItemT = TypeVar("ItemT")
+from typing import Any
 
 
 @dataclass
-class LimitedOrderedStack(Generic[ItemT]):
+class LimitedOrderedStack[ItemT]:
     """Container designed only to keep the most
     relevant items (i.e called max) and drop
     everything else

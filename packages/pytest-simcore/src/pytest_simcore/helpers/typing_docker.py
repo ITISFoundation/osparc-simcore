@@ -1,5 +1,6 @@
 """
-Adds type hints to data structures in responses from docker daemon (typically included in docker sdk and aiodocker libraries)
+Adds type hints to data structures in responses from docker daemon (typically included in
+docker sdk and aiodocker libraries)
 
 """
 

@@ -339,7 +339,10 @@ async def test_search_file(
 
 
 async def test_download_file_openapi_specs(openapi_dev_specs: dict[str, Any]):
-    """Test that openapi-specs for download file entrypoint specifies a binary file is returned in case of return status 200"""
+    """
+    Test that openapi-specs for download file entrypoint specifies a binary file is returned in case
+    of return status 200
+    """
     file_download_responses: dict[str, Any] = openapi_dev_specs["paths"][f"/{API_VTAG}/files/{{file_id}}/content"][
         "get"
     ]["responses"]

@@ -50,7 +50,7 @@ def test_invalid_json_schema():
             },
         ]
     }
-    assert error.context  # [<ValidationError: "'this_is_a_wrong_type' is not one of ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']">, <ValidationError: "'this_is_a_wrong_type' is not of type 'array'">]
+    assert error.context  # two ValidationErrors: not one of the simple types / not of type 'array'
     assert error.cause is None
     assert error.validator == "anyOf"
     assert error.validator_value == error.schema["anyOf"]
@@ -87,7 +87,7 @@ def test_jsonschema_validate_data_error(valid_schema):
     error = err_info.value
     assert isinstance(error, JsonSchemaValidationError)
     assert error.message == "'s' is a required property"
-    assert error.path == deque([])
+    assert error.path == deque()
     assert error.schema_path == deque(["required"])
     assert error.schema == schema
     assert error.context == []

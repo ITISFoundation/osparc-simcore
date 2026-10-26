@@ -48,7 +48,8 @@ def upgrade():
         sa.DDL(
             """
 INSERT INTO tags_to_groups (tag_id, group_id) SELECT tags.id, user_to_groups.gid
-FROM tags JOIN users ON users.id = tags.user_id JOIN user_to_groups ON users.id = user_to_groups.uid JOIN groups ON groups.gid = user_to_groups.gid AND groups.type = 'PRIMARY'
+FROM tags JOIN users ON users.id = tags.user_id JOIN user_to_groups ON users.id = user_to_groups.uid
+JOIN groups ON groups.gid = user_to_groups.gid AND groups.type = 'PRIMARY'
             """
         )
     )

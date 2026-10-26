@@ -1,9 +1,9 @@
 import functools
-from enum import Enum, unique
+from enum import Enum, StrEnum, unique
 
 
 @unique
-class ServiceBootType(str, Enum):
+class ServiceBootType(StrEnum):
     V0 = "V0"
     V2 = "V2"
 
@@ -47,7 +47,7 @@ class ServiceState(Enum):
         }
 
 
-class ServiceType(str, Enum):
+class ServiceType(StrEnum):
     COMPUTATIONAL = "computational"
     DYNAMIC = "dynamic"
     FRONTEND = "frontend"
@@ -56,13 +56,13 @@ class ServiceType(str, Enum):
 
 # NOTE on services:
 #
-# | service name    | defininition | implementation | runs                    | ``ServiceType``               |                 |
-# | --------------- | ------------ | -------------- | ----------------------- | ----------------------------- | --------------- |
-# | ``file-picker`` | BE           | FE             | FE                      | ``ServiceType.FRONTEND``      | function        |
-# | ``isolve``      | DI-labels    | DI             | Dask-BE (own container) | ``ServiceType.COMPUTATIONAL`` | container       |
-# | ``jupyter-*``   | DI-labels    | DI             | DySC-BE (own container) | ``ServiceType.DYNAMIC``       | container       |
-# | ``iterator-*``  | BE           | BE             | BE    (webserver)       | ``ServiceType.BACKEND``       | function        |
-# | ``pyfun-*``     | BE           | BE             | Dask-BE  (dask-sidecar) | ``ServiceType.COMPUTATIONAL`` | function        |
+# | service name | definition | implementation | runs | ``ServiceType`` | --- |
+# | --- | --- | --- | --- | --- | --- |
+# | ``file-picker`` | BE | FE | FE | ``ServiceType.FRONTEND`` | function |
+# | ``isolve`` | DI-labels | DI | Dask-BE (own container) | ``ServiceType.COMPUTATIONAL`` | container |
+# | ``jupyter-*`` | DI-labels | DI | DySC-BE (own container) | ``ServiceType.DYNAMIC`` | container |
+# | ``iterator-*`` | BE | BE | BE (webserver) | ``ServiceType.BACKEND`` | function |
+# | ``pyfun-*`` | BE | BE | Dask-BE (dask-sidecar) | ``ServiceType.COMPUTATIONAL`` | function |
 #
 #
 # where FE (front-end), DI (docker image), Dask/DySC (dask/dynamic sidecar), BE (backend).

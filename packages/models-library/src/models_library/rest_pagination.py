@@ -1,4 +1,4 @@
-from typing import Annotated, Final, Generic, TypeAlias, TypeVar
+from typing import Annotated, Final, TypeAlias, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
@@ -22,7 +22,7 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 MINIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 1
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
-PageLimitInt: TypeAlias = Annotated[
+PageLimitInt: TypeAlias = Annotated[  # noqa: UP040
     int,
     Field(
         ge=MINIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -30,14 +30,14 @@ PageLimitInt: TypeAlias = Annotated[
         description="The maximum number of items to return in a single page.",
     ),
 ]
-PageOffsetInt: TypeAlias = Annotated[
+PageOffsetInt: TypeAlias = Annotated[  # noqa: UP040
     int,
     Field(
         ge=0,
         description="The number of items to skip before starting to collect the items for the current pag",
     ),
 ]
-PageTotalCount: TypeAlias = NonNegativeInt
+PageTotalCount: TypeAlias = NonNegativeInt  # noqa: UP040
 
 
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(PageLimitInt).validate_python(20)
@@ -93,7 +93,10 @@ class PageMetaInfoLimitOffset(BaseModel):
             msg = f"count {v} bigger than expected total {info.data['total']}, please check"
             raise ValueError(msg)
         if "offset" in info.data and (info.data["offset"] + v) > info.data["total"]:
-            msg = f"offset {info.data['offset']} + count {v} is bigger than allowed total {info.data['total']}, please check"
+            msg = (
+                f"offset {info.data['offset']} + count {v} is bigger than "
+                f"allowed total {info.data['total']}, please check"
+            )
             raise ValueError(msg)
         return v
 
@@ -110,7 +113,7 @@ class PageMetaInfoLimitOffset(BaseModel):
 RefT = TypeVar("RefT")
 
 
-class PageRefs(BaseModel, Generic[RefT]):
+class PageRefs[RefT](BaseModel):
     self: RefT
     first: RefT
     prev: RefT | None
@@ -133,7 +136,7 @@ class PageLinks(
 ItemT = TypeVar("ItemT")
 
 
-class Page(BaseModel, Generic[ItemT]):
+class Page[ItemT](BaseModel):
     """
     Paginated response model of ItemTs
     """
