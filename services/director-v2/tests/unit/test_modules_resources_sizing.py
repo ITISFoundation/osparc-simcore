@@ -50,28 +50,35 @@ def _multi_container_resources() -> dict[str, Any]:
     return {"main": main, "sidecar": sidecar}
 
 
-_SIZING_CASES: Final[list[tuple[str, Callable[..., ServiceResourcesDict], Callable[[], dict[str, Any]]]]] = [
-    (_COMP_KEY, resources_sizing.resize_computational_node_resources, _single_container_payload),
-    (_COMP_KEY, resources_sizing.resize_computational_node_resources, _multi_container_resources),
-    (_DYNAMIC_KEY, resources_sizing.resize_dynamic_node_resources, _single_container_payload),
-    (_DYNAMIC_KEY, resources_sizing.resize_dynamic_node_resources, _multi_container_resources),
+def _mixed_container_resources() -> dict[str, Any]:
+    # multi-container payload that also has an entry named "container"
+    resources = _multi_container_resources()
+    resources["container"] = resources.pop("main")
+    return resources
+
+
+_SIZING_CASES: Final[list[tuple[str, str, Callable[..., ServiceResourcesDict], Callable[[], dict[str, Any]]]]] = [
+    (_COMP_KEY, "single", resources_sizing.resize_computational_node_resources, _single_container_payload),
+    (_COMP_KEY, "multi", resources_sizing.resize_computational_node_resources, _multi_container_resources),
+    (_COMP_KEY, "mixed", resources_sizing.resize_computational_node_resources, _mixed_container_resources),
+    (_DYNAMIC_KEY, "single", resources_sizing.resize_dynamic_node_resources, _single_container_payload),
+    (_DYNAMIC_KEY, "multi", resources_sizing.resize_dynamic_node_resources, _multi_container_resources),
+    (_DYNAMIC_KEY, "mixed", resources_sizing.resize_dynamic_node_resources, _mixed_container_resources),
 ]
 
-_SIZING_CASE_IDS: Final[list[str]] = [
-    f"{key.split('/')[2]}-{'multi' if factory is _multi_container_resources else 'single'}"
-    for key, _, factory in _SIZING_CASES
-]
+_SIZING_CASE_IDS: Final[list[str]] = [f"{key.split('/')[2]}-{label}" for key, label, _, _ in _SIZING_CASES]
 
 
 @pytest.mark.parametrize("machine", [T3_MEDIUM_NAME, R5_4XLARGE_NAME])
 @pytest.mark.parametrize(
-    "service_key,resize_implementation,resources_payload",
+    "service_key,_case_label,resize_implementation,resources_payload",
     _SIZING_CASES,
     ids=_SIZING_CASE_IDS,
 )
 async def test_sizing_test_double_does_not_drift_from_the_implementation(
     machine: str,
     service_key: str,
+    _case_label: str,
     resize_implementation: Callable[..., ServiceResourcesDict],
     resources_payload: Callable[[], dict[str, Any]],
 ):

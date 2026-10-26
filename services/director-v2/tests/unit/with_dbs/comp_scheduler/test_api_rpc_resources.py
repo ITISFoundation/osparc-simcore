@@ -137,17 +137,33 @@ async def test_sizing_rpc_scales_largest_sub_service_of_multi_container_dynamic_
     assert resized["sidecar"].resources["RAM"].limit == 1536 * 1024**2
 
 
+def _mixed_container_resources() -> dict[str, Any]:
+    # multi-container payload that also has an entry named "container"
+    resources = _multi_container_resources()
+    resources["container"] = resources.pop("main")
+    return resources
+
+
+@pytest.mark.parametrize(
+    "payload_factory,expected_names",
+    [
+        pytest.param(_multi_container_resources, {"main", "sidecar"}, id="multi"),
+        pytest.param(_mixed_container_resources, {"container", "sidecar"}, id="mixed-with-container"),
+    ],
+)
 async def test_sizing_rpc_rejects_multi_container_computational_node(
     rpc_client: RabbitMQRPCClient,
     mocked_clusters_keeper: mock.AsyncMock,
+    payload_factory: Any,
+    expected_names: set[str],
 ):
     # per-sub-service sizing of a multi-container service is not implemented: the
     # call fails with a dedicated error (reraised here through the real RPC) and
     # the resources are never silently left unsized
-    resources = _RESOURCES_ADAPTER.validate_python(_multi_container_resources())
+    resources = _RESOURCES_ADAPTER.validate_python(payload_factory())
     with pytest.raises(MultiContainerOverrideNotSupportedRPCError) as exc_info:
         await _request_sizing(rpc_client, service_key=_COMP_KEY, resources=resources, machine=R5_4XLARGE_NAME)
-    assert exc_info.value.error_context()["sub_service_names"] == {"main", "sidecar"}
+    assert exc_info.value.error_context()["sub_service_names"] == expected_names
 
 
 async def test_sizing_rpc_returns_resources_unchanged_without_ec2_machine(

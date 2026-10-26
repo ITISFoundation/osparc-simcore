@@ -42,6 +42,7 @@ from models_library.services_resources import (
     BootMode,
     ImageResources,
     ServiceResourcesDict,
+    is_single_container_service,
 )
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS, WalletInfo
@@ -314,7 +315,7 @@ async def _update_project_node_resources_from_hardware_info(
             # multi-container service, and `_generate_task_image` will fall back to the
             # catalog resources, so there is nothing to size here
             return
-        if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
+        if is_single_container_service(node_resources):
             image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
             adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
                 float(selected_ec2_instance_type.cpus),

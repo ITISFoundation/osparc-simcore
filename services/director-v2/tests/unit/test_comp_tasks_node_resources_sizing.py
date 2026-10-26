@@ -66,6 +66,17 @@ async def test_node_resources_update_rejects_multi_container_computational_servi
     assert exc_info.value.error_context()["sub_service_names"] == {"main", "sidecar"}
 
 
+async def test_node_resources_update_rejects_mixed_container_computational_service(
+    mocker: MockerFixture,
+):
+    # `container` mixed with other services is not a single-container service
+    mixed = {"container": _MULTI["main"], "sidecar": _MULTI["sidecar"]}
+    with pytest.raises(MultiContainerOverrideNotSupportedError) as exc_info:
+        await _update(mocker, _COMPUTATIONAL_KEY, required_resources=mixed)
+
+    assert exc_info.value.error_context()["sub_service_names"] == {"container", "sidecar"}
+
+
 async def test_node_resources_update_keeps_multi_container_dynamic_node_unsized(
     mocker: MockerFixture,
 ):

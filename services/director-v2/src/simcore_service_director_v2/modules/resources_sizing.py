@@ -20,6 +20,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
+    is_single_container_service,
 )
 from pydantic import ByteSize, TypeAdapter
 from servicelib.docker_utils import (
@@ -79,7 +80,7 @@ def resize_computational_node_resources(
 
     """
     resized_resources = _SERVICE_RESOURCES_ADAPTER.validate_python(resources)
-    if DEFAULT_SINGLE_SERVICE_NAME not in resized_resources:
+    if not is_single_container_service(resized_resources):
         raise MultiContainerOverrideNotSupportedRPCError(sub_service_names=set(resized_resources))
 
     adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(

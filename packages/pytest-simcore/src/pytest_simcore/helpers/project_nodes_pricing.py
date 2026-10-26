@@ -40,6 +40,7 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
+    is_single_container_service,
 )
 from pydantic import ByteSize, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
@@ -279,7 +280,7 @@ async def fake_compute_node_resources_for_hardware(
     node_type = key_parts[2] if len(key_parts) >= 3 else ""
 
     if node_type == "comp":
-        if DEFAULT_SINGLE_SERVICE_NAME not in resized:
+        if not is_single_container_service(resized):
             raise MultiContainerOverrideNotSupportedRPCError(sub_service_names=set(resized))
         cpu, ram = _dask_worker_resources(ec2)
         resized[DEFAULT_SINGLE_SERVICE_NAME].resources["CPU"].set_value(cpu)

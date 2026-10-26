@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final
 
 from pydantic import (
     BaseModel,
@@ -55,7 +55,7 @@ class ResourceValue(BaseModel, validate_assignment=True):
         self.limit = self.reservation = value
 
 
-ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
+type ResourcesDict = dict[ResourceName, ResourceValue]
 
 
 class BootMode(StrAutoEnum):
@@ -173,6 +173,11 @@ type ServiceResourcesDict = Annotated[
         examples=SERVICE_RESOURCES_DICT_EXAMPLES,
     ),
 ]
+
+
+def is_single_container_service(service_resources: ServiceResourcesDict) -> bool:
+    """True only when the resources describe exactly one container named `container`"""
+    return set(service_resources) == {DEFAULT_SINGLE_SERVICE_NAME}
 
 
 def create_service_resources_from_single_service(
