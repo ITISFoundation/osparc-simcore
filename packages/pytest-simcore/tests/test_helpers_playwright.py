@@ -2,11 +2,13 @@
 
 import json
 from datetime import timedelta
+from types import SimpleNamespace
 
 from pytest_simcore.helpers.playwright import (
     SOCKETIO_MESSAGE_PREFIX,
     NodeProgressType,
     SocketIONodeProgressCompleteWaiter,
+    _ensure_service_iframe_attached,
 )
 
 _NODE_ID = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
@@ -105,3 +107,52 @@ def test_node_progress_reaching_completion_marks_success():
 
     assert done is True
     assert waiter.success is True
+
+
+_SERVICE_FRAME_URL = f"https://{_NODE_ID}.services.example.org/lab"
+
+
+class _FakeIframeLocator:
+    def __init__(self, page: _FakePage) -> None:
+        self._page = page
+
+    @property
+    def first(self) -> _FakeIframeLocator:
+        return self
+
+    def evaluate(self, _script) -> None:
+        self._page.navigations += 1
+        self._page.frames.append(SimpleNamespace(url=_SERVICE_FRAME_URL))
+
+
+class _FakePage:
+    """Duck-typed subset of `playwright.sync_api.Page` used by `_ensure_service_iframe_attached`"""
+
+    def __init__(self, *, frame_attached: bool) -> None:
+        self.frames: list[SimpleNamespace] = (
+            [SimpleNamespace(url=_SERVICE_FRAME_URL)]
+            if frame_attached
+            else [SimpleNamespace(url="https://osparc.example.org/")]
+        )
+        self.navigations = 0
+
+    def locator(self, _selector) -> _FakeIframeLocator:
+        return _FakeIframeLocator(self)
+
+
+def test_healthy_service_iframe_is_left_untouched():
+    page = _FakePage(frame_attached=True)
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+
+    assert page.navigations == 0
+
+
+def test_unattached_service_iframe_is_re_navigated():
+    # NOTE: regression test for microsoft/playwright#43007: the service UI is rendered
+    # but its content frame is missing from page.frames, so queries hang forever
+    page = _FakePage(frame_attached=False)
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+
+    assert page.navigations == 1

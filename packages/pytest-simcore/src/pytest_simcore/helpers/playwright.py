@@ -93,7 +93,7 @@ class NodeProgressType(StrEnum):
     PROJECT_CLOSING = "PROJECT_CLOSING"
 
     @classmethod
-    def required_types_for_started_service(cls) -> set["NodeProgressType"]:
+    def required_types_for_started_service(cls) -> set[NodeProgressType]:
         return {
             NodeProgressType.SERVICE_INPUTS_PULLING,
             NodeProgressType.SIDECARS_PULLING,
@@ -146,7 +146,7 @@ class _ReconnectableEventWaiter:
     reconnections instead of raising a stale ``Socket closed`` error.
     """
 
-    robust_websocket: "RobustWebSocket"
+    robust_websocket: RobustWebSocket
     event: str
     predicate: typing.Callable | None
     timeout: float | None
@@ -609,7 +609,7 @@ def _check_service_endpoint(
                 f"{service_url}",
                 timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds() * SECOND,
             )
-        except (PlaywrightTimeoutError, TimeoutError):
+        except PlaywrightTimeoutError, TimeoutError:
             logger.exception(
                 "❌ Timed-out requesting service endpoint after %ds ❌",
                 _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
@@ -1002,9 +1002,13 @@ class ServiceRunning:
 _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
 
 
+def _service_iframe_selector(node_id: str) -> str:
+    return f'[osparc-test-id="iframe_{node_id}"]'
+
+
 def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
     """Returns the service iframe for ``node_id``, resilient to duplicate iframes."""
-    iframe_selector = f'[osparc-test-id="iframe_{node_id}"]'
+    iframe_selector = _service_iframe_selector(node_id)
     iframe_count = page.locator(iframe_selector).count()
     if iframe_count > 1:
         _logger.warning(
@@ -1014,6 +1018,26 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
             node_id,
         )
     return page.frame_locator(iframe_selector).first
+
+
+def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
+    """Works around microsoft/playwright#43007
+
+    Firefox intermittently never attaches the content frame of the rendered service
+    iframe, which makes every query on its `FrameLocator` hang until timeout even though
+    the service UI is fully shown. Re-navigating the iframe makes the driver attach it.
+    """
+    # NOTE: only the service frame URL carries the node id (see `_get_service_url`)
+    if any(node_id in frame.url for frame in page.frames):
+        return
+    _logger.warning(
+        "Service iframe content frame of node %s is not attached (suspected "
+        "microsoft/playwright#43007): re-navigating the iframe to force the driver to attach it",
+        node_id,
+    )
+    # NOTE: re-setting src re-loads the iframe, which re-triggers the frame lifecycle
+    # events the driver needs to attach the content frame
+    page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
 
 
 @contextlib.contextmanager
@@ -1067,6 +1091,7 @@ def expected_service_running(
             _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
         ),
     )
+    _ensure_service_iframe_attached(page, node_id)
     service_running.iframe_locator = _service_iframe_locator(page, node_id)
 
 
@@ -1123,6 +1148,7 @@ def wait_for_service_running(
         ),
     )
 
+    _ensure_service_iframe_attached(page, node_id)
     return _service_iframe_locator(page, node_id)
 
 
@@ -1138,7 +1164,7 @@ def app_mode_trigger_next_app(page: Page) -> None:
             with page.expect_request(_node_started_predicate, timeout=_APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT):
                 # Move to next step (this auto starts the next service)
                 page.get_by_test_id("AppMode_NextBtn").click()
-        except (PlaywrightTimeoutError, TimeoutError):
+        except PlaywrightTimeoutError, TimeoutError:
             ctx.logger.info(
                 "⚠️ no start request detected within %s ms: the next service was likely already started ⚠️",
                 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT,
