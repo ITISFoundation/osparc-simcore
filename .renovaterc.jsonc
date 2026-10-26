@@ -214,6 +214,13 @@
       "enabled": false
     },
     {
+      "description": "GitHub Actions: wait a week before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
       "description": "Docker images: one PR per image (no grouping, so an update of one image does not block the others) and majors step only one major at a time (e.g. postgres 14 -> 15, never 14 -> 18). Majors still need approval on the Dependency Dashboard (see the major rule below)",
       "matchDatasources": [
         "docker"

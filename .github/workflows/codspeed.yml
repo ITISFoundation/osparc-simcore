@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -50,7 +50,7 @@ jobs:
       - name: install
         run: ./ci/github/benchmarks/codspeed.bash install
       - name: benchmark
-        uses: CodSpeedHQ/action@v5.5.0
+        uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # v5.5.0
         with:
           mode: simulation
           run: ./ci/github/benchmarks/codspeed.bash benchmark
