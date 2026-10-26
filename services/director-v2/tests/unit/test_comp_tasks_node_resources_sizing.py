@@ -38,9 +38,9 @@ _COMPUTATIONAL_KEY: Final[str] = "simcore/services/comp/itis/sleeper"
 _DYNAMIC_KEY: Final[str] = "simcore/services/dynamic/jupyter-mock"
 
 
-async def _update(mocker: MockerFixture, node_key: str):
+async def _update(mocker: MockerFixture, node_key: str, required_resources: dict[str, Any] = _MULTI):
     repo_cls = mocker.patch.object(_utils, "ProjectNodesRepo")
-    repo_cls.return_value.get = mock.AsyncMock(return_value=mock.Mock(required_resources=_MULTI))
+    repo_cls.return_value.get = mock.AsyncMock(return_value=mock.Mock(required_resources=required_resources))
     await _utils._update_project_node_resources_from_hardware_info(  # noqa: SLF001
         mock.Mock(),
         is_wallet=True,
@@ -72,4 +72,14 @@ async def test_node_resources_update_keeps_multi_container_dynamic_node_unsized(
     # multi-container one unsized is harmless, so the previous no-op is preserved
     # (it must NOT abort the whole computation, e.g. when a comp node is the only one started)
     repo_cls = await _update(mocker, _DYNAMIC_KEY)
+    repo_cls.return_value.update.assert_not_called()
+
+
+async def test_node_resources_update_skips_node_without_stored_resources(
+    mocker: MockerFixture,
+):
+    # {} is the DB default (no override stored yet), not a multi-container service:
+    # the node keeps its previous behavior (task image falls back to the catalog
+    # resources) and must not abort the computation start
+    repo_cls = await _update(mocker, _COMPUTATIONAL_KEY, required_resources={})
     repo_cls.return_value.update.assert_not_called()

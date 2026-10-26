@@ -309,6 +309,11 @@ async def _update_project_node_resources_from_hardware_info(
         node = await project_nodes_repo.get(connection, node_id=node_id)
         resources_adapter = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict)
         node_resources = resources_adapter.validate_python(node.required_resources)
+        if not node_resources:
+            # no resources stored for the node (the DB default is {}): this is not a
+            # multi-container service, and `_generate_task_image` will fall back to the
+            # catalog resources, so there is nothing to size here
+            return
         if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
             image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
             adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
