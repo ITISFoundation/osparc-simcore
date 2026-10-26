@@ -50,6 +50,7 @@ def test_kember(
     run_pipeline_and_wait_done(
         page,
         opened_study.websocket,
+        project_uuid=project_data["uuid"],
         run_button_test_id="AppMode_RunBtn",
         timeout_ms=run_pipeline_timeout,
     )

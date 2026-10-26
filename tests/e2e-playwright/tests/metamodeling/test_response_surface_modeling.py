@@ -23,11 +23,12 @@ from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
 import pytest
+from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
+from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, wait_for_service_running
 from tenacity import (
     RetryError,
     before_sleep_log,
