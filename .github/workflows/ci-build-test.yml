@@ -87,9 +87,9 @@ jobs:
       anything-py: ${{ steps.filter.outputs.anything-py }}
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # For pull requests it's not necessary to checkout the code
-      - uses: dorny/paths-filter@v4.0.3
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -356,7 +356,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -370,13 +370,13 @@ jobs:
         run: ./ci/github/unit-testing/agent.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/agent/junit.xml
@@ -396,7 +396,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -406,13 +406,13 @@ jobs:
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: api/tests/junit.xml
@@ -432,7 +432,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -446,13 +446,13 @@ jobs:
         run: ./ci/github/unit-testing/api-server.bash test
       - name: OAS backwards compatibility check
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/api-server/junit.xml
@@ -472,7 +472,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -484,13 +484,13 @@ jobs:
         run: ./ci/github/unit-testing/autoscaling.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/autoscaling/junit.xml
@@ -510,7 +510,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -522,13 +522,13 @@ jobs:
         run: ./ci/github/unit-testing/aws-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/aws-library.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/aws-library/junit.xml
@@ -549,7 +549,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -563,17 +563,17 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/catalog/junit.xml
@@ -593,7 +593,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -605,13 +605,13 @@ jobs:
         run: ./ci/github/unit-testing/celery-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/celery-library.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/celery-library/junit.xml
@@ -631,7 +631,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -654,13 +654,13 @@ jobs:
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/clusters-keeper/junit.xml
@@ -680,7 +680,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -692,13 +692,13 @@ jobs:
         run: ./ci/github/unit-testing/common-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/common-library/junit.xml
@@ -718,7 +718,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -730,13 +730,13 @@ jobs:
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/dask-sidecar/junit.xml
@@ -756,7 +756,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -768,13 +768,13 @@ jobs:
         run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/dask-task-models-library/junit.xml
@@ -794,7 +794,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -808,17 +808,17 @@ jobs:
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/datcore-adapter/junit.xml
@@ -838,7 +838,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -852,17 +852,17 @@ jobs:
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/director/junit.xml
@@ -883,7 +883,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -897,17 +897,17 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/director-v2/junit.xml
@@ -927,7 +927,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -939,13 +939,13 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/dynamic-scheduler/junit.xml
@@ -966,7 +966,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -978,13 +978,13 @@ jobs:
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/dynamic-sidecar/junit.xml
@@ -1004,7 +1004,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1016,13 +1016,13 @@ jobs:
         run: ./ci/github/unit-testing/invitations.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/invitations/junit.xml
@@ -1042,7 +1042,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1054,13 +1054,13 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/models-library/junit.xml
@@ -1080,7 +1080,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1092,13 +1092,13 @@ jobs:
         run: ./ci/github/unit-testing/notifications.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/notifications.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/notifications/junit.xml
@@ -1118,7 +1118,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1130,13 +1130,13 @@ jobs:
         run: ./ci/github/unit-testing/payments.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/payments.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/payments/junit.xml
@@ -1156,7 +1156,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1168,13 +1168,13 @@ jobs:
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/postgres-database/junit.xml
@@ -1194,7 +1194,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1204,13 +1204,13 @@ jobs:
         run: ./ci/github/unit-testing/pytest-simcore.bash install
       - name: test
         run: ./ci/github/unit-testing/pytest-simcore.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/pytest-simcore/junit.xml
@@ -1231,7 +1231,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1255,7 +1255,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1277,13 +1277,13 @@ jobs:
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/resource-usage-tracker/junit.xml
@@ -1303,7 +1303,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1315,13 +1315,13 @@ jobs:
         run: ./ci/github/unit-testing/service-integration.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/service-integration/junit.xml
@@ -1341,7 +1341,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1353,13 +1353,13 @@ jobs:
         run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/service-library/junit.xml
@@ -1379,7 +1379,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1391,13 +1391,13 @@ jobs:
         run: ./ci/github/unit-testing/settings-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/settings-library/junit.xml
@@ -1417,7 +1417,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1431,13 +1431,13 @@ jobs:
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: packages/simcore-sdk/junit.xml
@@ -1458,7 +1458,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1470,13 +1470,13 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/storage.bash test_01
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/storage/junit.xml
@@ -1497,7 +1497,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1509,13 +1509,13 @@ jobs:
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/storage.bash test_02
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/storage/junit.xml
@@ -1535,7 +1535,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1549,13 +1549,13 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/web/server/junit.xml,services/web/server/junit-isolated.xml
@@ -1575,7 +1575,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1585,13 +1585,13 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/web/server/junit.xml
@@ -1611,7 +1611,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1621,13 +1621,13 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/web/server/junit.xml
@@ -1647,7 +1647,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1657,13 +1657,13 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
           files: services/web/server/junit.xml
@@ -1732,7 +1732,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1748,18 +1748,18 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1783,7 +1783,7 @@ jobs:
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1801,18 +1801,18 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1832,7 +1832,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1848,18 +1848,18 @@ jobs:
         run: ./ci/github/integration-testing/docker-api-proxy.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1879,7 +1879,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1897,18 +1897,18 @@ jobs:
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1928,7 +1928,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1946,18 +1946,18 @@ jobs:
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1977,7 +1977,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1993,18 +1993,18 @@ jobs:
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests # optional
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2051,7 +2051,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -2076,13 +2076,13 @@ jobs:
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
@@ -2097,7 +2097,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -2120,7 +2120,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -2138,19 +2138,19 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/public-api/test_failures
       - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.job }}_tracing
           path: tests/public-api/test-results
@@ -2199,19 +2199,19 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v4.4.1
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> "$GITHUB_ENV"
       - name: download amd64 digests
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: digests-*-amd64
           path: /tmp/digests/amd64
           merge-multiple: true
       - name: download arm64 digests
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: digests-*-arm64
           path: /tmp/digests/arm64
