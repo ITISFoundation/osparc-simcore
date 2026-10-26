@@ -6,11 +6,15 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 from common_library.json_serialization import json_loads
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
@@ -26,7 +30,7 @@ from simcore_service_api_server.models.schemas.programs import Program
 
 
 async def test_get_program_release(
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
     mocker: MockerFixture,
@@ -57,7 +61,7 @@ async def test_get_program_release(
 )
 @pytest.mark.parametrize("capture_name", ["create_program_job_success.json"])
 async def test_create_program_job(  # pylint: disable=too-many-positional-arguments
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     client: AsyncClient,
     mocked_webserver_rest_api_base,
     mocked_webserver_rpc_api: dict[str, MockType],
@@ -144,7 +148,7 @@ async def test_create_program_job(  # pylint: disable=too-many-positional-argume
 
 
 async def test_list_latest_programs(
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
 ):
@@ -154,7 +158,7 @@ async def test_list_latest_programs(
 
 
 async def test_list_program_history(
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
 ):
@@ -166,7 +170,7 @@ async def test_list_program_history(
 
 @pytest.mark.parametrize("catalog_rpc_side_effects", [ZeroListingCatalogRpcSideEffects()], indirect=True)
 async def test_list_program_history_no_program(
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     client: AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
 ):

@@ -11,7 +11,11 @@ from collections.abc import Iterable
 from pprint import pprint
 from typing import Final
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 from attr import dataclass
 from faker import Faker
@@ -87,8 +91,8 @@ def fake_project_for_streaming(app: FastAPI, mocker: MockFixture, faker: Faker) 
 @pytest.mark.parametrize("disconnect", [True, False])
 async def test_log_streaming(
     app: FastAPI,
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     fake_log_distributor,
@@ -131,8 +135,8 @@ async def mock_job_not_found(
 
 async def test_logstreaming_job_not_found_exception(
     app: FastAPI,
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     fake_log_distributor,

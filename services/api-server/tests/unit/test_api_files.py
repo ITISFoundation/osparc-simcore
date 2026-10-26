@@ -10,14 +10,18 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 import respx
 import yarl
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompletionBody,
@@ -172,7 +176,7 @@ async def test_delete_file(
     client: AsyncClient,
     mocked_storage_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
 ):
     def search_side_effect(
@@ -213,7 +217,7 @@ async def test_download_content(client: AsyncClient, mocked_storage_rest_api_bas
 async def test_get_upload_links(
     follow_up_request: str,
     client: AsyncClient,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     mocked_storage_rest_api_base: MockRouter,
 ):
     """Test that we can get data needed for performing multipart upload directly to S3"""
@@ -259,13 +263,13 @@ async def test_get_upload_links(
 
 async def test_get_upload_links_timeout(
     client: AsyncClient,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     mocked_storage_rest_api_base: MockRouter,
     mocker: MockerFixture,
 ):
     mocked_endpoint = mocked_storage_rest_api_base.put(
         re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
-    ).mock(side_effect=httpx.ReadTimeout("Mocked timeout error"))
+    ).mock(side_effect=httpx2.ReadTimeout("Mocked timeout error"))
 
     msg = {
         "filename": DummyFileData.file().filename,
@@ -296,7 +300,7 @@ async def test_search_file(
     client: AsyncClient,
     mocked_storage_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
 ):
     def side_effect_callback(

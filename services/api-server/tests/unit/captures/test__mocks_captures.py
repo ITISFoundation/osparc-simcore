@@ -10,7 +10,11 @@ import sys
 from pathlib import Path
 from typing import Any, TypeAlias
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so the
+# side_effect handler in test_capture_respx_api_server must keep building a plain
+# httpx.Response (respx repacks it before delivering to the httpx2 client).
 import httpx
+import httpx2
 import jsonref
 import pytest
 import respx
@@ -94,7 +98,7 @@ def test_openapion_capture_mock(
     for capture in captures:
         # SEE https://openapi-core.readthedocs.io/en/latest/
 
-        request = httpx.Request(
+        request = httpx2.Request(
             method=capture.method,
             url=f"http://{capture.host}/{capture.path}",
             params=capture.query,
@@ -102,7 +106,7 @@ def test_openapion_capture_mock(
         )
         openapi_request = StarletteOpenAPIRequest(request)
 
-        response = httpx.Response(
+        response = httpx2.Response(
             status_code=capture.status_code,
             json=capture.response_body,
         )
@@ -256,7 +260,7 @@ def test_capture_respx_api_server(params: tuple[str, Path, str]):
         return httpx.Response(status_code=200, json=kwargs)
 
     my_route = respx.get(url__regex="https://example.org" + path_pattern).mock(side_effect=side_effect)
-    response = httpx.get("https://example.org" + example)
+    response = httpx2.get("https://example.org" + example)
     assert my_route.called
     assert response.status_code == 200
     assert all(param.name in response.json() for param in url_path.path_parameters)

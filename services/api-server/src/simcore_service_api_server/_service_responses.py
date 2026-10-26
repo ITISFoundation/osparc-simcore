@@ -11,7 +11,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import anyio
-import httpx
+import httpx2
 from celery_library.async_jobs import submit_job
 from common_library.json_serialization import json_loads
 from fastapi import Request
@@ -82,7 +82,7 @@ async def _release_reservation(
             await ledger.release(reservation, reason=reason)
 
 
-async def _relay_sse_response(response: httpx.Response, request: Request) -> AsyncIterator[bytes]:
+async def _relay_sse_response(response: httpx2.Response, request: Request) -> AsyncIterator[bytes]:
     try:
         async for chunk in response.aiter_bytes():
             if await request.is_disconnected():
@@ -92,7 +92,7 @@ async def _relay_sse_response(response: httpx.Response, request: Request) -> Asy
         await response.aclose()
 
 
-def _relay_downstream_client_error(response: httpx.Response) -> JSONResponse:
+def _relay_downstream_client_error(response: httpx2.Response) -> JSONResponse:
     """The chatbot service already validated the request and returned a client-facing
     error body (e.g. FastAPI's `{"detail": [...]}`) -- relay it as-is, with the same
     status code, instead of masking it behind a generic backend error."""
@@ -212,7 +212,7 @@ async def _settle_reservation(
 
 def _make_metered_sse_relay(
     *,
-    response: httpx.Response,
+    response: httpx2.Response,
     request: Request,
     ledger: ChatboxUsageLedger,
     reservation: Reservation,
@@ -231,7 +231,7 @@ def _make_metered_sse_relay(
             else:
                 accumulator.close()
                 completed = True
-        except (anyio.get_cancelled_exc_class(), GeneratorExit):
+        except anyio.get_cancelled_exc_class(), GeneratorExit:
             # the consumer side went away mid-stream: a client disconnect reaches the
             # generator as task cancellation at the `yield` or as aclose() -> GeneratorExit
             raise
@@ -307,12 +307,12 @@ async def create_streaming_chat_response(
         await _release_reservation(ledger, reservation, reason="request_rejected")
         # relay validation errors to caller to provide hints in the UI
         return await http422_error_handler(request, exc)
-    except httpx.HTTPStatusError as exc:
+    except httpx2.HTTPStatusError as exc:
         await _release_reservation(ledger, reservation, reason="chatbox_error")
         if is_4xx_client_error(exc.response.status_code):
             return _relay_downstream_client_error(exc.response)
         raise ChatbotRequestError from exc
-    except httpx.HTTPError as exc:
+    except httpx2.HTTPError as exc:
         await _release_reservation(ledger, reservation, reason="chatbox_error")
         raise ChatbotRequestError from exc
     except BaseException:

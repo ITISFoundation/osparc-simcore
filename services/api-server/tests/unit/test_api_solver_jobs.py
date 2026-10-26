@@ -13,13 +13,17 @@ from pathlib import Path
 from typing import Any, Final
 from uuid import UUID, uuid4
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.generics import Envelope
 from models_library.projects_nodes import Node
 from models_library.projects_state import RunningState
@@ -70,7 +74,7 @@ async def test_get_solver_job_wallet(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     capture: str,
 ):
@@ -142,7 +146,7 @@ async def test_get_solver_job_pricing_unit(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     capture_file: str,
 ):
@@ -216,7 +220,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     faker: Faker,
     capture_name: str,
@@ -294,7 +298,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
 ):
@@ -330,7 +334,7 @@ async def test_start_solver_job_conflict(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
 ):
@@ -384,7 +388,7 @@ async def test_start_solver_job_storage_data_missing(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
 ):
@@ -416,7 +420,7 @@ async def test_stop_job(
     client: AsyncClient,
     mocked_directorv2_rest_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
 ):
     _solver_key: Final[str] = "simcore/services/comp/isolve"
@@ -463,7 +467,7 @@ async def test_get_solver_job_outputs(
     mocked_solver_job_outputs: None,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     sufficient_credits: bool,
     expected_status_code: int,
@@ -548,7 +552,7 @@ async def test_get_solver_job_outputs_assets_deleted(
     mocked_solver_job_outputs: None,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
     mock_dependency_get_celery_task_manager: MockType,
@@ -597,7 +601,7 @@ async def test_start_solver_job_with_encryption(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
     mock_dependency_get_kms_client: MockType,
@@ -643,7 +647,7 @@ async def test_start_solver_job_with_invalid_encryption(
     mocked_webserver_rest_api_base: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_dependency_get_celery_task_manager: MockType,
     mock_dependency_get_kms_client: MockType,

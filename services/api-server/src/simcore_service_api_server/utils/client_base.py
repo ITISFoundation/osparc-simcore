@@ -3,10 +3,10 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from typing import ClassVar, Final
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
-from httpx import AsyncClient, Timeout
+from httpx2 import AsyncClient, Timeout
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
@@ -28,7 +28,7 @@ class BaseServiceClientApi(AppDataMixin):
     - helpers to create a unique client instance per application and service
     """
 
-    client: httpx.AsyncClient
+    client: httpx2.AsyncClient
     service_name: str
     health_check_path: str = "/"
 
@@ -37,7 +37,7 @@ class BaseServiceClientApi(AppDataMixin):
             resp = await self.client.get(self.health_check_path, timeout=1)
             resp.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError):
+        except httpx2.HTTPStatusError, httpx2.RequestError:
             return False
 
     ping: ClassVar[Callable[..., Awaitable[bool]]] = is_responsive  # alias

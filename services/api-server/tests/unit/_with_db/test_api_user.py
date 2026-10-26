@@ -7,7 +7,11 @@
 import json
 from unittest.mock import MagicMock
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -59,8 +63,8 @@ def mocked_webserver_rest_api(app: FastAPI):
 
 
 async def test_get_profile(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):
@@ -84,8 +88,8 @@ async def test_get_profile(
 
 
 async def test_update_profile(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):

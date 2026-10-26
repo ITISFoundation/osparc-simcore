@@ -19,12 +19,17 @@ from typing import Any, NoReturn
 from unittest.mock import AsyncMock, MagicMock
 
 import anyio
+
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 import redis.asyncio as aioredis
 import respx
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from models_library.users import UserID
 from redis.exceptions import WatchError
 from servicelib.celery.task_manager import TaskManager
@@ -66,7 +71,7 @@ def app(app: FastAPI) -> Iterator[FastAPI]:
 _REDIS_DOWN = "redis is down"
 
 
-async def _post_stream(client: AsyncClient, auth: BasicAuth, body: dict[str, object]) -> httpx.Response:
+async def _post_stream(client: AsyncClient, auth: BasicAuth, body: dict[str, object]) -> httpx2.Response:
     return await client.post(f"/{API_VTAG}/responses", auth=auth, json=body)
 
 
@@ -675,7 +680,7 @@ async def test_client_abort_bills_estimate_instead_of_refund(
     first_event = b'data: {"id": "r", "choices": [{"index": 0, "delta": {"content": "hello world"}}]}\n\n'
     abandoned_event = b'data: {"id": "r", "choices": [{"index": 0, "delta": {"content": "more text"}}]}\n\n'
 
-    response = MagicMock(spec=httpx.Response)
+    response = MagicMock(spec=httpx2.Response)
 
     async def _aiter_bytes() -> AsyncIterator[bytes]:
         yield first_event
@@ -739,7 +744,7 @@ async def test_task_cancel_mid_stream_still_settles_reservation(
     first_event = b'data: {"id": "r", "choices": [{"index": 0, "delta": {"content": "hello world"}}]}\n\n'
     stream_open = anyio.Event()
 
-    response = MagicMock(spec=httpx.Response)
+    response = MagicMock(spec=httpx2.Response)
 
     async def _aiter_bytes() -> AsyncIterator[bytes]:
         yield first_event

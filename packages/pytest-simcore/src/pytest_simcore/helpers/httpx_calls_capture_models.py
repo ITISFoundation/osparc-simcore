@@ -3,7 +3,11 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so as_response() and the
+# side-effect handlers must keep building plain httpx.Response (respx repacks them before
+# delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import respx
 from fastapi import status
 from pydantic import BaseModel, Field
@@ -30,12 +34,12 @@ class HttpApiCallCaptureModel(BaseModel):
     @classmethod
     def create_from_response(
         cls,
-        response: httpx.Response,
+        response: httpx2.Response,
         *,
         name: str,
         description: str = "",
         enhance_from_openapi_specs: bool = True,
-    ) -> "HttpApiCallCaptureModel":
+    ) -> HttpApiCallCaptureModel:
         request = response.request
 
         path: PathDescription | str
@@ -67,7 +71,7 @@ class HttpApiCallCaptureModel(BaseModel):
         return httpx.Response(status_code=self.status_code, json=self.response_body)
 
 
-def get_captured_model(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
+def get_captured_model(name: str, response: httpx2.Response) -> HttpApiCallCaptureModel:
     return HttpApiCallCaptureModel.create_from_response(response, name=name)
 
 

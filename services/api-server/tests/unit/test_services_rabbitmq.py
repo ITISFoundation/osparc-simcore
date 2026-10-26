@@ -16,7 +16,11 @@ from typing import Final, Literal, cast
 from unittest.mock import AsyncMock
 from uuid import UUID
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
+import httpx2
 import pytest
 import respx
 from attr import dataclass
@@ -177,7 +181,7 @@ def produce_logs(
 
 
 async def test_multiple_producers_and_single_consumer(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
@@ -308,7 +312,7 @@ async def test_log_distributor_multiple_streams(
 
 @pytest.fixture
 async def create_log_streamer_with_distributor(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     app: FastAPI,
     project_id: ProjectID,
     user_id: UserID,
@@ -463,7 +467,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
 @pytest.mark.parametrize("is_healthy", [True, False])
 async def test_logstreaming_health_checker(
-    mocker: MockFixture, client: httpx.AsyncClient, app: FastAPI, is_healthy: bool
+    mocker: MockFixture, client: httpx2.AsyncClient, app: FastAPI, is_healthy: bool
 ):
     health_checker = get_health_checker(app)
     health_checker._timeout_seconds = 0.5
