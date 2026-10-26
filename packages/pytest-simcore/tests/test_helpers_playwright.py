@@ -116,6 +116,19 @@ def test_node_progress_reaching_completion_marks_success():
 _SERVICE_FRAME_URL = f"https://{_NODE_ID}.services.example.org/lab"
 
 
+class _FakeContentFrame:
+    def __init__(self, url: str) -> None:
+        self.url = url
+
+
+class _FakeIframeElement:
+    def __init__(self, page: _FakePage) -> None:
+        self._page = page
+
+    def content_frame(self) -> _FakeContentFrame | None:
+        return self._page.first_iframe_content
+
+
 class _FakeIframeLocator:
     def __init__(self, page: _FakePage) -> None:
         self._page = page
@@ -124,11 +137,15 @@ class _FakeIframeLocator:
     def first(self) -> _FakeIframeLocator:
         return self
 
+    def element_handle(self) -> _FakeIframeElement:
+        return _FakeIframeElement(self._page)
+
     def evaluate(self, _script) -> None:
         if self._page.evaluate_error is not None:
             raise self._page.evaluate_error
         self._page.navigations += 1
-        self._page.frames.append(SimpleNamespace(url=_SERVICE_FRAME_URL))
+        # NOTE: re-navigating the iframe makes the driver attach its content frame
+        self._page.first_iframe_content = _FakeContentFrame(_SERVICE_FRAME_URL)
 
 
 class _FakePage:
@@ -137,18 +154,18 @@ class _FakePage:
     def __init__(
         self,
         *,
-        frame_attached: bool,
+        first_iframe_content: _FakeContentFrame | None = None,
         iframe_src_set: bool = True,
         evaluate_error: Exception | None = None,
+        attached_duplicate: bool = False,
     ) -> None:
-        self.frames: list[SimpleNamespace] = (
-            [SimpleNamespace(url=_SERVICE_FRAME_URL)]
-            if frame_attached
-            else [SimpleNamespace(url="https://osparc.example.org/")]
-        )
+        self.first_iframe_content = first_iframe_content
         self.navigations = 0
         self._iframe_src_set = iframe_src_set
         self.evaluate_error = evaluate_error
+        # NOTE: some tests hold an attached duplicate iframe's frame here: the helper must
+        # not consult `page.frames`, since that would mask the first iframe's state
+        self.frames: list[SimpleNamespace] = [SimpleNamespace(url=_SERVICE_FRAME_URL)] if attached_duplicate else []
 
     def locator(self, _selector) -> _FakeIframeLocator:
         return _FakeIframeLocator(self)
@@ -171,7 +188,7 @@ def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_healthy_service_iframe_is_left_untouched():
-    page = _FakePage(frame_attached=True)
+    page = _FakePage(first_iframe_content=_FakeContentFrame(_SERVICE_FRAME_URL))
 
     _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
 
@@ -179,9 +196,23 @@ def test_healthy_service_iframe_is_left_untouched():
 
 
 def test_unattached_service_iframe_is_re_navigated(_no_frame_attach_grace):
-    # NOTE: regression test for microsoft/playwright#43007: the service UI is rendered
-    # but its content frame is missing from page.frames, so queries hang forever
-    page = _FakePage(frame_attached=False)
+    # NOTE: regression test for microsoft/playwright#43007: the service UI is rendered but
+    # its content frame never attaches, so the driver keeps exposing the stale frame of the
+    # previous navigation and queries hang forever
+    page = _FakePage(first_iframe_content=_FakeContentFrame("about:blank"))
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+
+    assert page.navigations == 1
+
+
+def test_unattached_first_service_iframe_is_re_navigated_despite_attached_duplicate(
+    _no_frame_attach_grace,
+):
+    # NOTE: regression test: with duplicate service iframes (ITISFoundation/osparc-simcore#9541),
+    # an attached duplicate must not mask the unattached first iframe, since that is the one
+    # the returned `FrameLocator` queries
+    page = _FakePage(attached_duplicate=True)
 
     _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
 
@@ -191,7 +222,7 @@ def test_unattached_service_iframe_is_re_navigated(_no_frame_attach_grace):
 def test_service_iframe_not_navigated_yet_is_left_untouched():
     # NOTE: regression test: the UI sets the iframe src asynchronously (IframeHandler.js),
     # so an iframe that never navigated must not be treated as the attach bug nor reloaded
-    page = _FakePage(frame_attached=False, iframe_src_set=False)
+    page = _FakePage(iframe_src_set=False)
 
     _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
 
@@ -201,6 +232,6 @@ def test_service_iframe_not_navigated_yet_is_left_untouched():
 def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace):
     # NOTE: the recovery is best-effort: a Playwright error while re-navigating must not
     # abort the service-ready helpers, which must fail with their own original error
-    page = _FakePage(frame_attached=False, evaluate_error=PlaywrightError("boom"))
+    page = _FakePage(evaluate_error=PlaywrightError("boom"))
 
     _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]

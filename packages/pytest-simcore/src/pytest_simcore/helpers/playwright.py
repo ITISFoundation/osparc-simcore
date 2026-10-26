@@ -22,7 +22,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from playwright._impl._sync_base import EventContextManager, EventInfo
-from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request, WebSocket
+from playwright.sync_api import APIRequestContext, ElementHandle, FrameLocator, Locator, Page, Request, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
@@ -1030,9 +1030,15 @@ _SERVICE_FRAME_ATTACH_TIMEOUT: Final[int] = 10 * SECOND
 _SERVICE_FRAME_POLL_INTERVAL: Final[int] = 250  # ms
 
 
-def _service_frame_attached(page: Page, node_id: str) -> bool:
-    # NOTE: only the service frame URL carries the node id (see `_get_service_url`)
-    return any(node_id in frame.url for frame in page.frames)
+def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool:
+    # NOTE: probe the content frame of the given iframe element and not `page.frames`: an
+    # attached duplicate iframe (see the ones warned about in ITISFoundation/osparc-simcore#9541)
+    # must not mask the unattached first one, which is the iframe the locator selects.
+    # While the service frame failed to attach, the driver may still expose the stale frame
+    # of the iframe's previous navigation (e.g. `about:blank`); only the service frame URL
+    # carries the node id (see `_get_service_url`)
+    content_frame = iframe_element.content_frame()
+    return content_frame is not None and node_id in content_frame.url
 
 
 def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
@@ -1059,11 +1065,17 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
             timeout=_SERVICE_IFRAME_SRC_TIMEOUT,
         )
 
+        # NOTE: resolve the first iframe element, i.e. the same one `_service_iframe_locator`
+        # selects and the recovery re-navigates
+        iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
+        if iframe_element is None:
+            return
+
         # NOTE: give the driver a window to attach the frame of an in-flight navigation
         deadline = time.monotonic() + _SERVICE_FRAME_ATTACH_TIMEOUT / 1000
-        while not _service_frame_attached(page, node_id) and time.monotonic() < deadline:
+        while not _service_frame_attached(iframe_element, node_id) and time.monotonic() < deadline:
             page.wait_for_timeout(_SERVICE_FRAME_POLL_INTERVAL)
-        if _service_frame_attached(page, node_id):
+        if _service_frame_attached(iframe_element, node_id):
             return
 
         _logger.warning(
