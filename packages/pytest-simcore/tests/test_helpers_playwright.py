@@ -153,9 +153,9 @@ class _FakePage:
     def locator(self, _selector) -> _FakeIframeLocator:
         return _FakeIframeLocator(self)
 
-    def wait_for_function(self, _expression, *, _arg=None, _timeout=None) -> None:
-        # NOTE: the real call passes the node id as `arg`: the src must contain it once
-        # the UI navigated the iframe
+    def wait_for_function(self, _expression, **_kwargs) -> None:
+        # NOTE: the real call passes the node id as `arg`: the iframe src must contain it
+        # once the UI navigated it
         if not self._iframe_src_set:
             raise PlaywrightTimeoutError("iframe src not set")
 
