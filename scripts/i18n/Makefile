@@ -418,8 +418,8 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 # ---------------------------------------------------------------------------
 test:  ## Run unit tests for the i18n tools (uv-managed deps, self-skips gated tests)
 	cd $(I18N_TOOLS) && \
-	  uv export --script i18n_translator.py --locked --no-hashes --no-header --quiet \
-	  | uv run --with-requirements - \
+	  requirements=$$(uv export --script i18n_translator.py --locked --no-hashes --no-header --quiet) && \
+	  printf '%s\n' "$$requirements" | uv run --with-requirements - \
 	  --with pytest \
 	  --with rich \
 	  --with Babel \
