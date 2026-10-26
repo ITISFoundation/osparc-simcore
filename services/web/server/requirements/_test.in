@@ -18,6 +18,7 @@ Faker
 fakeredis[lua]
 fastapi-pagination
 fastapi[standard]
+filelock
 flaky
 hypothesis
 jsonref

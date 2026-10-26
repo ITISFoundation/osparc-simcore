@@ -33,7 +33,7 @@ services:
       - "-c"
       - "fsync=off"
   redis:
-    image: "valkey/valkey:7.2@sha256:1bbb912679bea3ec2c1b21af3860beb4397774e9118eddad4ae50d8e97fabb99"
+    image: "valkey/valkey:7.2.14@sha256:1bbb912679bea3ec2c1b21af3860beb4397774e9118eddad4ae50d8e97fabb99"
     init: true
     ports:
       - "6379:6379"

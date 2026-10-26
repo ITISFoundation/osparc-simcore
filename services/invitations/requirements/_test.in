@@ -13,6 +13,7 @@
 
 coverage
 faker
+filelock
 httpx
 hypothesis
 pytest
