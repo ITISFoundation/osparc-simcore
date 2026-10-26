@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
   ],
   "dependencyDashboard": true,
   // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
@@ -63,6 +64,19 @@
       ],
       "matchStrings": [
         "(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "uv",
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    },
+    {
+      "description": "uv version used by Renovate's installed tool, kept in sync with requirements/UV_VERSION",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.renovaterc\\.jsonc$/"
+      ],
+      "matchStrings": [
+        "\"constraints\"\\s*:\\s*\\{[^}]*\"uv\"\\s*:\\s*\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "uv",
       "datasourceTemplate": "pypi",
@@ -264,16 +278,6 @@
       "matchUpdateTypes": [
         "minor",
         "major"
-      ],
-      "enabled": false
-    },
-    {
-      "description": "The director service is frozen on its old Python (see FROZEN_SERVICES in tests/environment-setup/test_used_python.py)",
-      "matchDepNames": [
-        "python"
-      ],
-      "matchFileNames": [
-        "services/director/**"
       ],
       "enabled": false
     }
