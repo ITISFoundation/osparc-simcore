@@ -21,7 +21,7 @@ from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
 )
-from pydantic import TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from servicelib.docker_utils import (
     DYNAMIC_SIDECAR_MIN_CPUS,
     estimate_dynamic_sidecar_resources_from_ec2_instance,
@@ -50,9 +50,9 @@ _logger = logging.getLogger(__name__)
 
 _SERVICE_RESOURCES_ADAPTER: Final[TypeAdapter[ServiceResourcesDict]] = TypeAdapter(ServiceResourcesDict)
 
-_MIN_RAM_PER_SUB_SERVICE: Final[Annotated[int, doc("smallest RAM a sub-service container may be resized down to")]] = (
-    128 * 1024 * 1024
-)  # bytes
+_MIN_RAM_PER_SUB_SERVICE: Final[
+    Annotated[ByteSize, doc("smallest RAM a sub-service container may be resized down to")]
+] = ByteSize(128 * 1024 * 1024)
 
 
 def _select_ec2_instance_type(
