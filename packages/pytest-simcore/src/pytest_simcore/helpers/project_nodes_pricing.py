@@ -290,7 +290,7 @@ async def fake_compute_node_resources_for_hardware(
     if node_type == "dynamic":
         cpu, ram = _dynamic_sidecar_resources(ec2)
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
-        if scalable_service_name not in resized:
+        if not is_single_container_service(resized):
             # scale up/down the largest sub-service so all containers fit the machine
             scalable_service_name, _ = max(resized.items(), key=lambda s_r: int(s_r[1].resources["RAM"].limit))
             other_cpus = sum(

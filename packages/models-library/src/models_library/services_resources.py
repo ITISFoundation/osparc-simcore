@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -55,7 +55,10 @@ class ResourceValue(BaseModel, validate_assignment=True):
         self.limit = self.reservation = value
 
 
-type ResourcesDict = dict[ResourceName, ResourceValue]
+# NOTE: must stay a callable TypeAlias assignment: services-catalog builds
+# _DEFAULT_RESOURCES via ResourcesDict(...) at import time, and a PEP 695
+# `type` alias is a non-callable TypeAliasType
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]  # noqa: UP040
 
 
 class BootMode(StrAutoEnum):

@@ -144,6 +144,25 @@ def _mixed_container_resources() -> dict[str, Any]:
     return resources
 
 
+async def test_sizing_rpc_scales_largest_sub_service_of_mixed_name_dynamic_node(
+    rpc_client: RabbitMQRPCClient,
+    mocked_clusters_keeper: mock.AsyncMock,
+):
+    # a payload with "container" plus another service is multi-container: the
+    # largest sub-service ("container", 2 GiB) absorbs what the other one
+    # ("sidecar": 0.1 CPU / 1.5 GiB) does not use, exactly like a named multi
+    # t3.medium: base cpu 0.6 / ram 2791728742
+    #   cpu = max(0.6 - 0.1, 0.5) = 0.5
+    #   ram = 2791728742 - 1610612736 = 1181116006
+    resources = _RESOURCES_ADAPTER.validate_python(_mixed_container_resources())
+    resized = await _request_sizing(rpc_client, service_key=_DYNAMIC_KEY, resources=resources, machine=T3_MEDIUM_NAME)
+    assert resized["container"].resources["CPU"].limit == pytest.approx(0.5)
+    assert resized["container"].resources["RAM"].limit == 1181116006
+    # the small sub-service keeps its original (requested) resources
+    assert resized["sidecar"].resources["CPU"].limit == pytest.approx(0.1)
+    assert resized["sidecar"].resources["RAM"].limit == 1536 * 1024**2
+
+
 @pytest.mark.parametrize(
     "payload_factory,expected_names",
     [

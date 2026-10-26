@@ -107,7 +107,7 @@ def resize_dynamic_node_resources(
     )
 
     scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
-    if DEFAULT_SINGLE_SERVICE_NAME not in resized_resources:
+    if not is_single_container_service(resized_resources):
         # NOTE: we go for the largest sub-service and scale it up/down
         scalable_service_name, hungry_service_resources = max(
             resized_resources.items(),
