@@ -109,9 +109,13 @@ h11==0.16.0
     #   -c requirements/_base.txt
     #   httpcore2
 httpcore2==2.16.0
-    # via httpx2
+    # via
+    #   -c requirements/_base.txt
+    #   httpx2
 httpx2==2.16.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 idna==3.19
     # via
     #   -c requirements/_base.txt
@@ -282,6 +286,7 @@ sympy==1.14.0
     # via cfn-lint
 truststore==0.10.5
     # via
+    #   -c requirements/_base.txt
     #   httpcore2
     #   httpx2
 types-aiofiles==25.1.0.20260409
