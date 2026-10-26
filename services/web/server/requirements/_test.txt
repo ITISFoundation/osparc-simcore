@@ -121,15 +121,12 @@ h11==0.16.0
     #   httpcore
     #   uvicorn
 httpcore==1.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
+    # via httpx
 httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-cloud-cli
     #   respx

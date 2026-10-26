@@ -7,6 +7,9 @@
 import json
 from collections.abc import Iterator
 
+# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
+# module's handlers must keep building plain httpx.Response (respx repacks them
+# before delivering to the httpx2 clients) until the respx seam is retired.
 import httpx
 import pytest
 import respx
