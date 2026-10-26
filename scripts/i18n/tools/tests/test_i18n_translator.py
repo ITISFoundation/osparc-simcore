@@ -24,8 +24,7 @@ snippet handling:
 No real LLM is contacted: a fake provider (duck-typed `_generate_json`) is injected.
 
 Run:
-    uv run --with pytest --with litellm==1.106.1 --with polib --with typer \
-        pytest scripts/i18n/tools/tests/test_i18n_translator.py -v
+    make -C scripts/i18n test
 """
 
 import importlib.util
