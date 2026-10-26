@@ -160,7 +160,7 @@ multidict==6.9.1
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-http-transport
@@ -195,7 +195,7 @@ opentelemetry-exporter-otlp-proto-grpc==1.45.0
     # via opentelemetry-exporter-otlp
 opentelemetry-exporter-otlp-proto-http==1.45.0
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.66b0
+opentelemetry-instrumentation==0.66b1
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
@@ -207,38 +207,38 @@ opentelemetry-instrumentation==0.66b0
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
-opentelemetry-instrumentation-aio-pika==0.66b0
+opentelemetry-instrumentation-aio-pika==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-asgi==0.66b0
+opentelemetry-instrumentation-asgi==0.66b1
     # via opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-asyncpg==0.66b0
+opentelemetry-instrumentation-asyncpg==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-fastapi==0.66b0
+opentelemetry-instrumentation-fastapi==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-opentelemetry-instrumentation-httpx==0.66b0
+opentelemetry-instrumentation-httpx==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-logging==0.66b0
+opentelemetry-instrumentation-logging==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.66b0
+opentelemetry-instrumentation-redis==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.66b0
+opentelemetry-instrumentation-requests==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-sqlalchemy==0.66b0
+opentelemetry-instrumentation-sqlalchemy==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-threading==0.66b0
+opentelemetry-instrumentation-threading==0.66b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-proto==1.45.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.45.0
+opentelemetry-sdk==1.45.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.66b0
+opentelemetry-semantic-conventions==0.66b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
@@ -251,7 +251,7 @@ opentelemetry-semantic-conventions==0.66b0
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-sdk
-opentelemetry-util-http==0.66b0
+opentelemetry-util-http==0.66b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi

@@ -55,6 +55,8 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 flexcache==0.3
     # via pint
 flexparser==0.4
@@ -86,7 +88,7 @@ kombu==5.6.2
     #   -c requirements/_base.txt
     #   celery
     #   pytest-celery
-lupa==2.6
+lupa==2.8
     # via fakeredis
 packaging==26.3
     # via

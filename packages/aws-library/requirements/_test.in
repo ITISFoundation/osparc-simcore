@@ -13,6 +13,7 @@ coverage
 faker
 fastapi-lifespan-manager
 fastapi
+filelock
 httpx2
 asgi-lifespan
 moto[server]

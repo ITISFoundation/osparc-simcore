@@ -14,6 +14,7 @@ aioresponses
 docker
 faker
 fakeredis[lua]
+filelock
 jsonref
 pytest
 pytest-asyncio

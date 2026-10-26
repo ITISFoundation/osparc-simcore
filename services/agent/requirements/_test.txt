@@ -12,7 +12,7 @@ aiohappyeyeballs==2.5.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-aiohttp==3.14.4
+aiohttp==3.14.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -89,6 +89,8 @@ docker==7.1.0
     # via moto
 faker==40.38.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 flask==3.1.3
     # via
     #   flask-cors
@@ -100,7 +102,7 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.8
+graphql-core==3.3.0
     # via moto
 h11==0.16.0
     # via
@@ -265,7 +267,7 @@ rpds-py==0.28.0
     #   referencing
 s3transfer==0.14.0
     # via boto3
-setuptools==84.0.0
+setuptools==84.2.1
     # via moto
 six==1.17.0
     # via

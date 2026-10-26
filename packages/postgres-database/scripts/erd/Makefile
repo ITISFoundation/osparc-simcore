@@ -3,7 +3,7 @@
 #
 .DEFAULT_GOAL := help
 
-PYTHON_VERSION=3.14.8
+PYTHON_VERSION=3.14.9
 
 # locations
 REPODIR := $(shell git rev-parse --show-toplevel)

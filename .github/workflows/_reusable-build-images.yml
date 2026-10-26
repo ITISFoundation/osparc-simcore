@@ -47,6 +47,10 @@ on:
       DOCKER_PASSWORD:
         required: false
 
+# must stay within the permissions granted by the calling workflow
+permissions:
+  contents: read
+
 jobs:
   build-test-images:
     timeout-minutes: 30

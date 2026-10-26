@@ -14,6 +14,7 @@ aioboto3
 asgi-lifespan
 coverage
 faker
+filelock
 httpx2
 moto[server] # mock out tests based on AWS-S3
 pytest

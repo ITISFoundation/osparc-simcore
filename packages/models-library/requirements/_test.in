@@ -10,6 +10,7 @@
 
 coverage
 faker
+filelock
 pint
 psutil
 pytest

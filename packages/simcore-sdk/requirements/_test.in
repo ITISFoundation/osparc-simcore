@@ -16,6 +16,7 @@ click
 coverage
 docker
 faker
+filelock
 flaky
 moto[server]
 pytest
