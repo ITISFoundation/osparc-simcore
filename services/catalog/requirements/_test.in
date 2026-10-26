@@ -17,6 +17,7 @@ asgi_lifespan
 click
 docker
 Faker
+filelock
 jsonschema # 'services/catalog/tests/unit' dependencies
 ptvsd
 pytest

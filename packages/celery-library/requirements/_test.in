@@ -12,6 +12,7 @@
 coverage
 faker
 fakeredis[lua]
+filelock
 httpx
 pint
 pytest

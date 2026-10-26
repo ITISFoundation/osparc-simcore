@@ -44,6 +44,8 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.36.0
     # via -r requirements/_test.in
+filelock==4.2.4
+    # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
     #   -c requirements/_base.txt
