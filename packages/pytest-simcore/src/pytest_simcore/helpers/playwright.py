@@ -9,6 +9,7 @@ import json
 import logging
 import re
 import threading
+import time
 import typing
 from collections import defaultdict
 from collections.abc import Generator
@@ -1020,24 +1021,65 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
     return page.frame_locator(iframe_selector).first
 
 
+# NOTE: the UI navigates the service iframe only once the service became ready (its own
+# endpoint ping in `IframeHandler.js`), independently of the test's endpoint check, so
+# both the navigation and the frame attachment must be given a bounded window before
+# concluding that the driver failed to attach the frame (microsoft/playwright#43007)
+_SERVICE_IFRAME_SRC_TIMEOUT: Final[int] = 10 * SECOND
+_SERVICE_FRAME_ATTACH_TIMEOUT: Final[int] = 10 * SECOND
+_SERVICE_FRAME_POLL_INTERVAL: Final[int] = 250  # ms
+
+
+def _service_frame_attached(page: Page, node_id: str) -> bool:
+    # NOTE: only the service frame URL carries the node id (see `_get_service_url`)
+    return any(node_id in frame.url for frame in page.frames)
+
+
 def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
     """Works around microsoft/playwright#43007
 
     Firefox intermittently never attaches the content frame of the rendered service
     iframe, which makes every query on its `FrameLocator` hang until timeout even though
     the service UI is fully shown. Re-navigating the iframe makes the driver attach it.
+
+    Best-effort: it first waits for the UI to navigate the iframe and for the driver to
+    attach its content frame, and only then re-navigates the iframe once. Playwright
+    errors are logged and swallowed, so that the caller still fails with its own
+    original error.
     """
-    # NOTE: only the service frame URL carries the node id (see `_get_service_url`)
-    if any(node_id in frame.url for frame in page.frames):
-        return
-    _logger.warning(
-        "Service iframe content frame of node %s is not attached (suspected "
-        "microsoft/playwright#43007): re-navigating the iframe to force the driver to attach it",
-        node_id,
-    )
-    # NOTE: re-setting src re-loads the iframe, which re-triggers the frame lifecycle
-    # events the driver needs to attach the content frame
-    page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
+    try:
+        # NOTE: the iframe src is set by the UI, not by the test: waiting for it here
+        # avoids re-navigating an iframe that is blank or normally still navigating
+        page.wait_for_function(
+            """nodeId => {
+                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
+                return !!iframe && iframe.src.includes(nodeId);
+            }""",
+            arg=node_id,
+            timeout=_SERVICE_IFRAME_SRC_TIMEOUT,
+        )
+
+        # NOTE: give the driver a window to attach the frame of an in-flight navigation
+        deadline = time.monotonic() + _SERVICE_FRAME_ATTACH_TIMEOUT / 1000
+        while not _service_frame_attached(page, node_id) and time.monotonic() < deadline:
+            page.wait_for_timeout(_SERVICE_FRAME_POLL_INTERVAL)
+        if _service_frame_attached(page, node_id):
+            return
+
+        _logger.warning(
+            "Service iframe content frame of node %s is not attached (suspected "
+            "microsoft/playwright#43007): re-navigating the iframe to force the driver to attach it",
+            node_id,
+        )
+        # NOTE: re-setting src re-loads the iframe, which re-triggers the frame lifecycle
+        # events the driver needs to attach the content frame
+        page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
+    except PlaywrightError:
+        _logger.exception(
+            "Could not ensure the service iframe content frame of node %s is attached; "
+            "continuing so that the caller reports its own original error",
+            node_id,
+        )
 
 
 @contextlib.contextmanager

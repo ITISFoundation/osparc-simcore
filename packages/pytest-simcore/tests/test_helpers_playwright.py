@@ -4,6 +4,10 @@ import json
 from datetime import timedelta
 from types import SimpleNamespace
 
+import pytest
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from pytest_simcore.helpers import playwright as playwright_helpers
 from pytest_simcore.helpers.playwright import (
     SOCKETIO_MESSAGE_PREFIX,
     NodeProgressType,
@@ -121,6 +125,8 @@ class _FakeIframeLocator:
         return self
 
     def evaluate(self, _script) -> None:
+        if self._page.evaluate_error is not None:
+            raise self._page.evaluate_error
         self._page.navigations += 1
         self._page.frames.append(SimpleNamespace(url=_SERVICE_FRAME_URL))
 
@@ -128,16 +134,39 @@ class _FakeIframeLocator:
 class _FakePage:
     """Duck-typed subset of `playwright.sync_api.Page` used by `_ensure_service_iframe_attached`"""
 
-    def __init__(self, *, frame_attached: bool) -> None:
+    def __init__(
+        self,
+        *,
+        frame_attached: bool,
+        iframe_src_set: bool = True,
+        evaluate_error: Exception | None = None,
+    ) -> None:
         self.frames: list[SimpleNamespace] = (
             [SimpleNamespace(url=_SERVICE_FRAME_URL)]
             if frame_attached
             else [SimpleNamespace(url="https://osparc.example.org/")]
         )
         self.navigations = 0
+        self._iframe_src_set = iframe_src_set
+        self.evaluate_error = evaluate_error
 
     def locator(self, _selector) -> _FakeIframeLocator:
         return _FakeIframeLocator(self)
+
+    def wait_for_function(self, _expression, *, _arg=None, _timeout=None) -> None:
+        # NOTE: the real call passes the node id as `arg`: the src must contain it once
+        # the UI navigated the iframe
+        if not self._iframe_src_set:
+            raise PlaywrightTimeoutError("iframe src not set")
+
+    def wait_for_timeout(self, _milliseconds) -> None:
+        pass
+
+
+@pytest.fixture()
+def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch):
+    # NOTE: keep the unattached-frame tests from waiting out the real grace window
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", 0)
 
 
 def test_healthy_service_iframe_is_left_untouched():
@@ -148,7 +177,7 @@ def test_healthy_service_iframe_is_left_untouched():
     assert page.navigations == 0
 
 
-def test_unattached_service_iframe_is_re_navigated():
+def test_unattached_service_iframe_is_re_navigated(_no_frame_attach_grace):
     # NOTE: regression test for microsoft/playwright#43007: the service UI is rendered
     # but its content frame is missing from page.frames, so queries hang forever
     page = _FakePage(frame_attached=False)
@@ -156,3 +185,21 @@ def test_unattached_service_iframe_is_re_navigated():
     _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
 
     assert page.navigations == 1
+
+
+def test_service_iframe_not_navigated_yet_is_left_untouched():
+    # NOTE: regression test: the UI sets the iframe src asynchronously (IframeHandler.js),
+    # so an iframe that never navigated must not be treated as the attach bug nor reloaded
+    page = _FakePage(frame_attached=False, iframe_src_set=False)
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+
+    assert page.navigations == 0
+
+
+def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace):
+    # NOTE: the recovery is best-effort: a Playwright error while re-navigating must not
+    # abort the service-ready helpers, which must fail with their own original error
+    page = _FakePage(frame_attached=False, evaluate_error=PlaywrightError("boom"))
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
