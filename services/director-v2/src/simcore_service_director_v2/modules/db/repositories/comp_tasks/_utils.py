@@ -61,6 +61,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
     EC2InstanceTypeNotFoundError,
+    MultiContainerOverrideNotSupportedError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....models.pricing import PricingInfo
@@ -328,7 +329,13 @@ async def _update_project_node_resources_from_hardware_info(
 
             await project_nodes_repo.update(connection, node_id=node_id, required_resources=new_resources)
         else:
-            _logger.warning("Services resource override not implemented yet for multi-container services!!!")
+            # sizing a multi-container service per sub-service is not implemented: the
+            # computation cannot run machine-sized, so it must not start at all
+            raise MultiContainerOverrideNotSupportedError(
+                sub_service_names=set(node_resources),
+                node_id=f"{node_id}",
+                project_id=f"{project_id}",
+            )
     except StopIteration as exc:
         raise EC2InstanceTypeNotFoundError(
             ec2_instance_types=f"{set(hardware_info.aws_ec2_instances)}",
