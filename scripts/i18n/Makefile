@@ -424,7 +424,7 @@ test:  ## Run unit tests for the i18n tools (uv-managed deps, self-skips gated t
 	  --with rich \
 	  --with Babel \
 	  --with Jinja2 \
-	  --with litellm \
+	  --with litellm==1.106.1 \
 	  pytest tests -v
 
 # ---------------------------------------------------------------------------

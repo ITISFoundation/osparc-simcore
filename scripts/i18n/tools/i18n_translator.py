@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#   "litellm>=1.67.0",
+#   "litellm==1.106.1",
 #   "polib>=1.2.0",
 #   "typer>=0.12.0",
 # ]

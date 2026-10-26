@@ -10,7 +10,7 @@ bidict==0.23.1
     # via python-socketio
 blinker==1.9.0
     # via flask
-brotli==1.2.0
+brotli==1.2.1
     # via geventhttpclient
 certifi==2026.10.18
     # via

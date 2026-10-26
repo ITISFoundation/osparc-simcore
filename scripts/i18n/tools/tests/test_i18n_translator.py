@@ -24,7 +24,7 @@ snippet handling:
 No real LLM is contacted: a fake provider (duck-typed `_generate_json`) is injected.
 
 Run:
-    uv run --with pytest --with litellm --with polib --with typer \
+    uv run --with pytest --with litellm==1.106.1 --with polib --with typer \
         pytest scripts/i18n/tools/tests/test_i18n_translator.py -v
 """
 
@@ -494,6 +494,12 @@ def test_non_ollama_no_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "Ollama runs one local model instance" not in result.output
 
 
+def _entry(po: polib.POFile, msgid: str) -> polib.POEntry:
+    entry = po.find(msgid)
+    assert entry is not None, f"{msgid!r} not found"
+    return entry
+
+
 def _write_pot_and_po_with_identical_entry(tmp_path: Path) -> tuple[Path, Path]:
     """pot + pre-existing po where one entry's msgstr is verbatim-equal to its msgid."""
     pot = tmp_path / "messages.pot"
@@ -507,7 +513,7 @@ def _write_pot_and_po_with_identical_entry(tmp_path: Path) -> tuple[Path, Path]:
     po.save(str(pot))
 
     merged = polib.pofile(str(pot))
-    merged.find("Producers").msgstr = "Producers"  # stuck bad translation
+    _entry(merged, "Producers").msgstr = "Producers"  # stuck bad translation
     out_seed = tmp_path / "seed.po"
     merged.save(str(out_seed))
     return pot, out_seed
@@ -527,7 +533,7 @@ def test_translate_cli_identical_stuck_entry_skipped_by_default(
 
     first = runner.invoke(tr.app, _base_translate_args(pot, gloss, out, "openai/gpt-4o"), catch_exceptions=False)
     assert first.exit_code == 0, first.output
-    assert polib.pofile(str(out)).find("Producers").msgstr == "Producers"
+    assert _entry(polib.pofile(str(out)), "Producers").msgstr == "Producers"
 
     fake.calls.clear()
     result = runner.invoke(
@@ -537,7 +543,7 @@ def test_translate_cli_identical_stuck_entry_skipped_by_default(
     )
     assert result.exit_code == 0, result.output
     assert fake.calls == []  # default change-detection cannot see the stuck entry
-    assert polib.pofile(str(out)).find("Producers").msgstr == "Producers"
+    assert _entry(polib.pofile(str(out)), "Producers").msgstr == "Producers"
 
 
 def test_translate_cli_retranslate_identical_flag_fixes_stuck_entry(
@@ -557,7 +563,7 @@ def test_translate_cli_retranslate_identical_flag_fixes_stuck_entry(
     )
     assert result.exit_code == 0, result.output
     assert len(fake.calls) == 1
-    assert polib.pofile(str(out)).find("Producers").msgstr == "Hola"
+    assert _entry(polib.pofile(str(out)), "Producers").msgstr == "Hola"
     assert "1 UPDATE" in result.output  # counted as an update in the pre-flight plan
 
 

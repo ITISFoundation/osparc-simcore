@@ -34,5 +34,5 @@ jobs:
         working-directory: scripts/i18n/tools
       - name: Run i18n tools tests
         run: |
-          uv run --with Babel --with Jinja2 --with litellm --with polib --with pytest --with rich --with typer \
+          uv run --with Babel --with Jinja2 --with litellm==1.106.1 --with polib --with pytest --with rich --with typer \
             pytest scripts/i18n/tools/tests -v
