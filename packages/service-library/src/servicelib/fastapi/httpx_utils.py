@@ -1,6 +1,45 @@
+import logging
+from collections.abc import Callable, Coroutine
+from typing import Any, Final
+
 import httpx
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from ..utils_secrets import mask_sensitive_data
+
+_logger = logging.getLogger(__name__)
+
+DROPPED_CONNECTION_ERRORS: Final[tuple[type[httpx.RequestError], ...]] = (
+    httpx.RemoteProtocolError,
+    httpx.ReadError,
+)
+
+
+def retry_on_dropped_connection[**P, R](
+    func: Callable[P, Coroutine[Any, Any, R]],
+) -> Callable[P, Coroutine[Any, Any, R]]:
+    """Retries once, after a jitter of at most ~200 ms, if the server dropped the connection
+
+    A server closing an idle pooled keep-alive connection surfaces as
+    `RemoteProtocolError` or `ReadError` on the next request. The dead
+    connection is evicted from the pool, so a single retry opens a new one.
+    Timeouts are not retried.
+
+    NOTE: only for idempotent (e.g. read-only) calls
+    """
+    return retry(
+        retry=retry_if_exception_type(DROPPED_CONNECTION_ERRORS),
+        stop=stop_after_attempt(2),
+        wait=wait_random_exponential(multiplier=0.1, max=1),
+        before_sleep=before_sleep_log(_logger, logging.WARNING),
+        reraise=True,
+    )(func)
 
 
 def _get_headers_safely(request: httpx.Request) -> dict[str, str]:

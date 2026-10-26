@@ -7,8 +7,7 @@
 
 
 import urllib.parse
-from collections.abc import Callable
-from typing import Any, Final
+from typing import Any, Final, Protocol
 
 import httpx
 import pytest
@@ -19,6 +18,10 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
+
+
+class _ServiceLabelsFactory(Protocol):
+    def __call__(self, service_key: str, service_version: str, *, include_org_labels: bool = True) -> dict: ...
 
 
 @pytest.fixture
@@ -116,7 +119,7 @@ async def test_director_client_get_service_extras_without_org_labels(
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api_base: MockRouter,
     service_key_and_version: tuple[str, str],
-    get_mocked_service_labels: Callable[..., dict],
+    get_mocked_service_labels: _ServiceLabelsFactory,
     app: FastAPI,
 ):
     # Setup mock without org.label-schema labels

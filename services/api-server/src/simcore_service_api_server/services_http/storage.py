@@ -1,17 +1,16 @@
 import logging
 import re
 import urllib.parse
-from collections.abc import Callable, Coroutine
 from datetime import timedelta
 from functools import partial
 from mimetypes import guess_type
-from typing import Any, Final, Literal
+from typing import Final, Literal
 from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi_lifespan_manager import LifespanManager
-from httpx import QueryParams, ReadError, RemoteProtocolError
+from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataArray,
@@ -31,15 +30,14 @@ from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from pydantic import AnyUrl
+from servicelib.fastapi.httpx_utils import retry_on_dropped_connection
 from settings_library.storage import StorageSettings
 from settings_library.tracing import TracingSettings
 from tenacity import (
     AsyncRetrying,
     TryAgain,
     before_sleep_log,
-    retry,
     retry_if_exception_type,
-    stop_after_attempt,
     stop_after_delay,
     wait_fixed,
 )
@@ -58,18 +56,6 @@ _EXPECTED_S3_PATH_PARTS: Final[int] = 3
 _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
-
-
-# NOTE: only for read-only calls. Storage closes idle pooled connections
-def _retry_on_dropped_connection[**P, R](
-    func: Callable[P, Coroutine[Any, Any, R]],
-) -> Callable[P, Coroutine[Any, Any, R]]:
-    return retry(
-        retry=retry_if_exception_type((RemoteProtocolError, ReadError)),
-        stop=stop_after_attempt(2),
-        before_sleep=before_sleep_log(_logger, logging.WARNING),
-        reraise=True,
-    )(func)
 
 
 AccessRight = Literal["read", "write"]
@@ -102,7 +88,7 @@ class StorageApi(BaseServiceClientApi):
     SIMCORE_S3_ID = 0
 
     @_exception_mapper(http_status_map={})
-    @_retry_on_dropped_connection
+    @retry_on_dropped_connection
     async def list_files(
         self,
         *,
@@ -126,7 +112,7 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     @_exception_mapper(http_status_map={})
-    @_retry_on_dropped_connection
+    @retry_on_dropped_connection
     async def search_owned_files(
         self,
         *,
