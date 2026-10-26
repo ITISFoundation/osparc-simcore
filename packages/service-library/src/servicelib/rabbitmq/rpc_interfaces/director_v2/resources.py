@@ -1,7 +1,8 @@
 # pylint: disable=too-many-arguments
 import logging
-from typing import Final
+from typing import Annotated, Final
 
+from annotated_types import doc
 from models_library.api_schemas_directorv2 import DIRECTOR_V2_RPC_NAMESPACE
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.resource_tracker import HardwareInfo
@@ -15,12 +16,18 @@ from ... import RabbitMQRPCClient
 _logger = logging.getLogger(__name__)
 
 
-# the request nests a clusters-keeper lookup which itself allows
-# RPC_REMOTE_METHOD_TIMEOUT_S (30 s), so the outer deadline must exceed it
-_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 40
+_DEFAULT_TIMEOUT_S: Final[
+    Annotated[
+        NonNegativeInt,
+        doc(
+            "the request nests a clusters-keeper lookup which itself allows "
+            "RPC_REMOTE_METHOD_TIMEOUT_S (30 s), so the outer deadline must exceed it"
+        ),
+    ]
+] = 40
 
-_RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
-_SERVICE_RESOURCES_ADAPTER: TypeAdapter[ServiceResourcesDict] = TypeAdapter(ServiceResourcesDict)
+_RPC_METHOD_NAME_ADAPTER: Final[TypeAdapter[RPCMethodName]] = TypeAdapter(RPCMethodName)
+_SERVICE_RESOURCES_ADAPTER: Final[TypeAdapter[ServiceResourcesDict]] = TypeAdapter(ServiceResourcesDict)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

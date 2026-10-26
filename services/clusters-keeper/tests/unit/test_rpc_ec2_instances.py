@@ -61,8 +61,6 @@ async def test_get_instance_type_details_with_invalid_type_names(
     _base_configuration: None,
     clusters_keeper_rabbitmq_rpc_client: RabbitMQRPCClient,
 ):
-    # invalid names must be distinguishable from an outage (RPCServerError), so
-    # callers can translate them into a bad-request error
     with pytest.raises(InvalidEC2InstanceTypesRPCError) as exc_info:
         await get_instance_type_details(
             clusters_keeper_rabbitmq_rpc_client,

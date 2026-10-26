@@ -8,8 +8,9 @@ services request it through the director-v2 RPC
 
 import collections
 import logging
-from typing import Final
+from typing import Annotated, Final
 
+from annotated_types import doc
 from dask_task_models_library.resource_constraints import (
     estimate_dask_worker_resources_from_ec2_instance,
 )
@@ -47,9 +48,11 @@ from .db.tables import NodeClass
 
 _logger = logging.getLogger(__name__)
 
-_SERVICE_RESOURCES_ADAPTER: TypeAdapter[ServiceResourcesDict] = TypeAdapter(ServiceResourcesDict)
+_SERVICE_RESOURCES_ADAPTER: Final[TypeAdapter[ServiceResourcesDict]] = TypeAdapter(ServiceResourcesDict)
 
-_MIN_RAM_PER_SUB_SERVICE: Final = 128 * 1024 * 1024  # bytes
+_MIN_RAM_PER_SUB_SERVICE: Final[Annotated[int, doc("smallest RAM a sub-service container may be resized down to")]] = (
+    128 * 1024 * 1024
+)  # bytes
 
 
 def _select_ec2_instance_type(

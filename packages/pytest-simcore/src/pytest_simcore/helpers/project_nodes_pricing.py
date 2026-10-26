@@ -26,9 +26,10 @@ EC2 type               dask (cpu, ram bytes)      dynamic (cpu, ram bytes)
 
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any, Final
 
 import sqlalchemy as sa
+from annotated_types import doc
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingUnitGet,
@@ -54,15 +55,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 # Fixed EC2 instance types (never random: expected values are literals)
 # ---------------------------------------------------------------------------
 
-T3_MEDIUM_NAME: str = "t3.medium"  # used as the DEFAULT pricing unit machine
-T3_MEDIUM_CPUS: float = 2.0
-T3_MEDIUM_RAM_BYTES: int = 4 * 1024**3  # 4 GiB
+T3_MEDIUM_NAME: Final[Annotated[str, doc("machine of the DEFAULT pricing unit in tests")]] = "t3.medium"
+T3_MEDIUM_CPUS: Final[float] = 2.0
+T3_MEDIUM_RAM_BYTES: Final[int] = 4 * 1024**3
 
-R5_4XLARGE_NAME: str = "r5.4xlarge"  # used as a NON-DEFAULT pricing unit machine
-R5_4XLARGE_CPUS: float = 16.0
-R5_4XLARGE_RAM_BYTES: int = 128 * 1024**3  # 128 GiB
+R5_4XLARGE_NAME: Final[Annotated[str, doc("machine of a NON-DEFAULT pricing unit in tests")]] = "r5.4xlarge"
+R5_4XLARGE_CPUS: Final[float] = 16.0
+R5_4XLARGE_RAM_BYTES: Final[int] = 128 * 1024**3
 
-_EC2_REGISTRY: dict[str, EC2InstanceTypeGet] = {
+_EC2_REGISTRY: Final[dict[str, EC2InstanceTypeGet]] = {
     T3_MEDIUM_NAME: EC2InstanceTypeGet(name=T3_MEDIUM_NAME, cpus=T3_MEDIUM_CPUS, ram=ByteSize(T3_MEDIUM_RAM_BYTES)),
     R5_4XLARGE_NAME: EC2InstanceTypeGet(name=R5_4XLARGE_NAME, cpus=R5_4XLARGE_CPUS, ram=ByteSize(R5_4XLARGE_RAM_BYTES)),
 }
@@ -233,7 +234,7 @@ async def set_node_required_resources(
 # (`modules/resources_sizing.py`) and is pinned by its own RPC tests.
 # ---------------------------------------------------------------------------
 
-_SERVICE_RESOURCES_ADAPTER: TypeAdapter[ServiceResourcesDict] = TypeAdapter(ServiceResourcesDict)
+_SERVICE_RESOURCES_ADAPTER: Final[TypeAdapter[ServiceResourcesDict]] = TypeAdapter(ServiceResourcesDict)
 
 
 def _dask_worker_resources(ec2: EC2InstanceTypeGet) -> tuple[float, int]:
