@@ -287,6 +287,7 @@ async def _update_project_node_resources_from_hardware_info(
     is_wallet: bool,
     project_id: ProjectID,
     node_id: NodeID,
+    node_key: ServiceKey,
     hardware_info: HardwareInfo,
     ec2_instance_types: list[EC2InstanceTypeGet],
 ) -> None:
@@ -329,12 +330,22 @@ async def _update_project_node_resources_from_hardware_info(
 
             await project_nodes_repo.update(connection, node_id=node_id, required_resources=new_resources)
         else:
-            # sizing a multi-container service per sub-service is not implemented: the
-            # computation cannot run machine-sized, so it must not start at all
-            raise MultiContainerOverrideNotSupportedError(
-                sub_service_names=set(node_resources),
-                node_id=f"{node_id}",
-                project_id=f"{project_id}",
+            if to_node_class(node_key) == NodeClass.COMPUTATIONAL:
+                # a computational node runs as a dask worker sized for the machine:
+                # sizing a multi-container service per sub-service is not implemented,
+                # so the computation must not start it silently unsized
+                raise MultiContainerOverrideNotSupportedError(
+                    sub_service_names=set(node_resources),
+                    node_id=f"{node_id}",
+                    project_id=f"{project_id}",
+                )
+            # dynamic nodes bring their own per-container resources: leaving them
+            # unsized here is harmless, so keep the previous no-op
+            _logger.warning(
+                "Services resource override not implemented yet for multi-container "
+                "services!!! (node %s in project %s)",
+                node_id,
+                project_id,
             )
     except StopIteration as exc:
         raise EC2InstanceTypeNotFoundError(
@@ -509,6 +520,7 @@ async def generate_tasks_list_from_project(
             is_wallet=is_wallet,
             project_id=project.uuid,
             node_id=prepared.node_id,
+            node_key=prepared.node.key,
             hardware_info=prepared.hardware_info,
             ec2_instance_types=ec2_instance_types,
         )

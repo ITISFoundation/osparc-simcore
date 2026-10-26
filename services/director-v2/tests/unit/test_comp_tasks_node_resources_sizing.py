@@ -34,24 +34,42 @@ def _multi_container_resources() -> dict[str, Any]:
 
 _MULTI: Final[dict[str, Any]] = _multi_container_resources()
 
+_COMPUTATIONAL_KEY: Final[str] = "simcore/services/comp/itis/sleeper"
+_DYNAMIC_KEY: Final[str] = "simcore/services/dynamic/jupyter-mock"
 
-async def test_node_resources_update_rejects_multi_container_service(
-    mocker: MockerFixture,
-):
-    # a multi-container computational node cannot be sized per sub-service: the
-    # computation start must fail instead of running it silently unsized
+
+async def _update(mocker: MockerFixture, node_key: str):
     repo_cls = mocker.patch.object(_utils, "ProjectNodesRepo")
     repo_cls.return_value.get = mock.AsyncMock(return_value=mock.Mock(required_resources=_MULTI))
+    await _utils._update_project_node_resources_from_hardware_info(  # noqa: SLF001
+        mock.Mock(),
+        is_wallet=True,
+        project_id=ProjectID(f"{uuid4()}"),
+        node_id=NodeID(f"{uuid4()}"),
+        node_key=node_key,
+        hardware_info=HardwareInfo(aws_ec2_instances=[T3_MEDIUM_NAME]),
+        ec2_instance_types=get_fixed_ec2_instance_types({T3_MEDIUM_NAME}),
+    )
+    return repo_cls
 
+
+async def test_node_resources_update_rejects_multi_container_computational_service(
+    mocker: MockerFixture,
+):
+    # a multi-container computational node runs as a dask worker sized for the
+    # machine: per-sub-service sizing is not implemented, so the computation start
+    # must fail instead of running it silently unsized
     with pytest.raises(MultiContainerOverrideNotSupportedError) as exc_info:
-        await _utils._update_project_node_resources_from_hardware_info(  # noqa: SLF001
-            mock.Mock(),
-            is_wallet=True,
-            project_id=ProjectID(f"{uuid4()}"),
-            node_id=NodeID(f"{uuid4()}"),
-            hardware_info=HardwareInfo(aws_ec2_instances=[T3_MEDIUM_NAME]),
-            ec2_instance_types=get_fixed_ec2_instance_types({T3_MEDIUM_NAME}),
-        )
+        await _update(mocker, _COMPUTATIONAL_KEY)
 
     assert exc_info.value.error_context()["sub_service_names"] == {"main", "sidecar"}
+
+
+async def test_node_resources_update_keeps_multi_container_dynamic_node_unsized(
+    mocker: MockerFixture,
+):
+    # a dynamic node brings its own per-container resources: leaving a
+    # multi-container one unsized is harmless, so the previous no-op is preserved
+    # (it must NOT abort the whole computation, e.g. when a comp node is the only one started)
+    repo_cls = await _update(mocker, _DYNAMIC_KEY)
     repo_cls.return_value.update.assert_not_called()
