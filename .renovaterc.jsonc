@@ -16,7 +16,7 @@
   // (both checked by tests/environment-setup/test_used_{uv,python}.py)
   "constraints": {
     "python": "~=3.14.0",
-    "uv": "0.13.5"
+    "uv": "0.13.6"
   },
   "labels": [
     "t:maintenance",
