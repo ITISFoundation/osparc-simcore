@@ -87,14 +87,17 @@ def create_victoria_logs_permalinks(environment: dict[str, str | None], instance
         return "[dim]n/a (K8S_MONITORING_FQDN not set)[/dim]"
     host_name = instance.private_ip_address.replace(".", "-")
     now = arrow.utcnow()
-    time_span = now.datetime - instance.launch_time + datetime.timedelta(hours=1)
-    total_seconds = int(time_span.total_seconds())
+    # cover the instance lifetime plus a small margin around launch
+    total_seconds = int((now.datetime - instance.launch_time + datetime.timedelta(minutes=10)).total_seconds())
+    hours, minutes = divmod(total_seconds, 3600)
+    minutes //= 60
+    range_input = f"{hours}h{minutes}m" if hours else f"{max(minutes, 1)}m"
     # vmui keeps its state in the URL fragment, not in query parameters
     params = urlencode(
         {
             "groupBy": "_stream",
             "g0.end_input": now.format("YYYY-MM-DDTHH:mm:ss.SSS") + "Z",
-            "g0.range_input": f"{total_seconds // 3600}h{(total_seconds % 3600) // 60}m",
+            "g0.range_input": range_input,
             "query": f'host:"ip-{host_name}"',
         }
     )
