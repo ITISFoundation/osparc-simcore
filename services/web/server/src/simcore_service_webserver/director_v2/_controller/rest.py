@@ -24,6 +24,7 @@ from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
+from ...projects.api import repair_projects_nodes_pricing_and_resources
 from ...projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
 )
@@ -148,6 +149,15 @@ async def start_computation(request: web.Request) -> web.Response:
     assert (  # nosec
         len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
     )
+
+    if wallet_info is not None:
+        # billed product: repair the pricing links/sizes the run will be billed on
+        await repair_projects_nodes_pricing_and_resources(
+            request.app,
+            user_id=req_ctx.user_id,
+            project_ids=running_project_ids,
+            product_name=req_ctx.product_name,
+        )
 
     computations = DirectorV2RestClient(request.app)
     _started_results: list[tuple[str, int]] = await asyncio.gather(

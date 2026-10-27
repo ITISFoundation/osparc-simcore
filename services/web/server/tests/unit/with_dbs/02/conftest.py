@@ -32,9 +32,6 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.project_nodes_pricing import (
-    fake_compute_node_resources_for_hardware,
-)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import SocketHandlers
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
@@ -52,20 +49,6 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
-
-
-@pytest.fixture
-def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
-    """director-v2's sizing RPC answers with FIXED machine types (see
-    `pytest_simcore.helpers.project_nodes_pricing`) so sizing assertions are
-    deterministic. The real RPC implementation is pinned by director-v2's own tests."""
-
-    mocked = mocker.patch(
-        "servicelib.rabbitmq.rpc_interfaces.director_v2.resources.compute_node_resources_for_hardware",
-        autospec=True,
-    )
-    mocked.side_effect = fake_compute_node_resources_for_hardware
-    return mocked
 
 
 @pytest.fixture

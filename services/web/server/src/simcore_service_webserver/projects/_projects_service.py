@@ -580,6 +580,22 @@ async def clone_project_data(
 
     new_project["accessRights"] = inserted_project["accessRights"]
 
+    # keep the source project's pricing choices: copy its links (when valid in
+    # this product), then link + size the remaining computational nodes
+    await copy_pricing_links(
+        app,
+        source_project_id=ProjectID(source_project["uuid"]),
+        destination_project_id=ProjectID(new_project["uuid"]),
+        nodes_map=nodes_map,
+        product_name=product_name,
+    )
+    await link_default_pricing_units_and_size_computational_nodes(
+        app,
+        user_id=user_id,
+        project_id=ProjectID(new_project["uuid"]),
+        product_name=product_name,
+    )
+
     needs_lock_source_project = (
         await db.get_project_type(TypeAdapter(ProjectID).validate_python(source_project["uuid"]))
         != ProjectType.TEMPLATE
@@ -817,6 +833,206 @@ async def update_project_node_resources_from_hardware_info(
         ),
         check_update_allowed=False,
     )
+
+
+def _is_node_computational(service_key: ServiceKey) -> bool:
+    return "/dynamic/" not in f"{service_key}" and not f"{service_key}".startswith(FRONTEND_SERVICE_KEY_PREFIX)
+
+
+async def _link_pricing_unit_and_size_node(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: str,
+) -> None:
+    """Ensures the node has a pricing link (the service's default unit when it has
+    none) and that its ``required_resources`` are sized for the machine of its
+    pricing unit."""
+    db = ProjectDBAPI.get_from_app_context(app)
+    link = await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id)
+    if link is not None:
+        pricing_plan_id, pricing_unit_id = link
+        pricing_unit_get = await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
+        aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
+    else:
+        (
+            pricing_plan_id,
+            pricing_unit_id,
+            _,
+            aws_ec2_instances,
+        ) = await _get_default_pricing_and_hardware_info(
+            app, product_name, service_key, service_version, project_id, node_id
+        )
+        await db.connect_pricing_unit_to_project_node(project_id, node_id, pricing_plan_id, pricing_unit_id)
+
+    await update_project_node_resources_from_hardware_info(
+        app,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=product_name,
+        hardware_info=HardwareInfo(aws_ec2_instances=aws_ec2_instances),
+    )
+
+
+async def _link_pricing_unit_and_size_node_best_effort(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: str,
+) -> None:
+    """Never fails: an unreachable resource-usage-tracker or director-v2 must not
+    break project/node creation. The node is then left to a later repair."""
+    try:
+        await _link_pricing_unit_and_size_node(
+            app,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
+    except Exception:  # pylint: disable=broad-exception-caught
+        _logger.exception(
+            "Could not link a pricing unit to node %s of project %s: it will be repaired later",
+            node_id,
+            project_id,
+        )
+
+
+async def link_default_pricing_units_and_size_computational_nodes(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+    product_name: str,
+) -> None:
+    """Links the default pricing unit and sizes every not-yet-linked computational
+    node of the project. Call after the project's nodes were inserted (creation
+    or copy)."""
+    db = ProjectDBAPI.get_from_app_context(app)
+    nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_id)
+
+    to_link: list[NodeID] = []
+    for node_id, node in nodes.items():
+        if not _is_node_computational(node.key):
+            continue
+        if await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id):
+            continue
+        to_link.append(node_id)
+
+    await logged_gather(
+        *[
+            _link_pricing_unit_and_size_node_best_effort(
+                app,
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                service_key=nodes[node_id].key,
+                service_version=nodes[node_id].version,
+                product_name=product_name,
+            )
+            for node_id in to_link
+        ],
+        reraise=False,
+    )
+
+
+async def repair_projects_nodes_pricing_and_resources(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_ids: list[ProjectID],
+    product_name: str,
+) -> None:
+    """Best-effort repair before starting computations (billed products): every
+    computational or dynamic node of the runnable projects gets a pricing unit
+    (its linked one, or the default) and is resized for that unit's machine."""
+    projects_nodes = await _projects_nodes_repository.get_by_projects(app, project_ids=set(project_ids))
+
+    repairs = []
+    for project_id, nodes in projects_nodes.items():
+        for node_id, node in nodes.items():
+            if f"{node.key}".startswith(FRONTEND_SERVICE_KEY_PREFIX):
+                continue
+            repairs.append(
+                _link_pricing_unit_and_size_node_best_effort(
+                    app,
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                    service_key=node.key,
+                    service_version=node.version,
+                    product_name=product_name,
+                )
+            )
+
+    await logged_gather(*repairs, reraise=False)
+
+
+async def copy_pricing_links(
+    app: web.Application,
+    *,
+    source_project_id: ProjectID,
+    destination_project_id: ProjectID,
+    nodes_map: NodesMap,
+    product_name: str,
+) -> None:
+    """Copies the source project's pricing links onto the copied nodes.
+
+    A link is dropped when the resource-usage-tracker does not know that plan/unit
+    in the destination product (e.g. cross-product template instantiation);
+    when the tracker cannot be reached, the link is copied unvalidated rather than
+    lost.
+    """
+    db = ProjectDBAPI.get_from_app_context(app)
+
+    for source_node_id, destination_node_id in nodes_map.items():
+        link = await db.get_project_node_pricing_unit_id(
+            project_uuid=source_project_id, node_uuid=NodeID(source_node_id)
+        )
+        if link is None:
+            continue
+        pricing_plan_id, pricing_unit_id = link
+        try:
+            await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
+        except web.HTTPNotFound:
+            _logger.warning(
+                "Pricing plan %s/unit %s of node %s of project %s does not exist in product %s: not copying the link",
+                pricing_plan_id,
+                pricing_unit_id,
+                source_node_id,
+                source_project_id,
+                product_name,
+            )
+            continue
+        except Exception:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                "Cannot validate pricing plan %s/unit %s of node %s of project %s"
+                " in product %s: copying it unvalidated",
+                pricing_plan_id,
+                pricing_unit_id,
+                source_node_id,
+                source_project_id,
+                product_name,
+            )
+        await db.connect_pricing_unit_to_project_node(
+            destination_project_id,
+            NodeID(destination_node_id),
+            pricing_plan_id,
+            pricing_unit_id,
+        )
 
 
 async def _check_project_node_has_all_required_inputs(  # noqa: C901
@@ -1119,6 +1335,17 @@ async def add_project_node(
         ),
         required_resources=jsonable_encoder(default_resources),
     )
+
+    if _is_node_computational(service_key):
+        await _link_pricing_unit_and_size_node_best_effort(
+            request.app,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_uuid,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
+        )
 
     await create_project_document_and_notify(
         request.app,

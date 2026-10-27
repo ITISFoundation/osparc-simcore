@@ -26,6 +26,9 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    RutPricingUnitGet,
+)
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     PresignedLink,
@@ -355,7 +358,9 @@ async def test_create_node_returns_422_if_body_is_missing(
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
-@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
+_DEFAULT_PRICING_PLAN_ID = 1  # see `mock_rut_default_pricing_unit`
+
+
 @pytest.mark.parametrize(
     "node_class, expect_run_service_call",
     [("dynamic", True), ("comp", False), ("frontend", False)],
@@ -372,6 +377,8 @@ async def test_create_node(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_catalog_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
     postgres_db: sa.engine.Engine,
     asyncpg_engine: AsyncEngine,
 ):
@@ -405,17 +412,25 @@ async def test_create_node(
         assert result.scalar() is not None
 
         # CHARACTERIZATION of the pricing/resources state at node creation:
-        # creating a node NEVER links a pricing unit and stores the catalog's
-        # default resources untouched (director-v2 links the default unit and
-        # resizes later, during create_or_update_pipeline).
-        # ⚠️ For node_class == "comp" the pricing/resources ownership rework (PR 2)
-        # intends to link the default pricing unit and size with the dask formula
-        # AT CREATION; when that lands, update the expectations for "comp".
+        # a COMPUTATIONAL node is linked to the default pricing unit and sized with
+        # the dask formula (t3.medium: 1.9 CPU / 3865470566 B) right away; dynamic
+        # and frontend nodes are stored with the catalog's default resources and no
+        # link (a dynamic node links at start).
         state = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
         new_node_state = state[NodeID(node_id)]
-        assert new_node_state.pricing_plan_id is None
-        assert new_node_state.pricing_unit_id is None
-        assert new_node_state.required_resources == jsonable_encoder(mock_service_resources)
+        if node_class == "comp":
+            mocked_director_v2_node_sizing.assert_called_once()
+            assert new_node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+            assert new_node_state.pricing_unit_id == mock_rut_default_pricing_unit.pricing_unit_id
+            assert new_node_state.required_resources
+            resources = new_node_state.required_resources["container"]["resources"]
+            assert resources["CPU"]["limit"] == pytest.approx(1.9)
+            assert resources["RAM"]["limit"] == 3865470566
+        else:
+            mocked_director_v2_node_sizing.assert_not_called()
+            assert new_node_state.pricing_plan_id is None
+            assert new_node_state.pricing_unit_id is None
+            assert new_node_state.required_resources == jsonable_encoder(mock_service_resources)
     else:
         assert error
 

@@ -36,9 +36,15 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.project_nodes_pricing import (
+    R5_4XLARGE_NAME,
     get_node_pricing_state,
+    make_pricing_unit,
+    regex_for_rut_pricing_unit,
+    resources_limits,
     set_node_pricing_link,
     set_node_required_resources,
     single_container_required_resources,
@@ -62,6 +68,9 @@ from simcore_service_webserver.projects._projects_service import (
 from simcore_service_webserver.projects.exceptions import ProjectCopyingTrashedProjectError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.resource_usage.settings import (
+    get_plugin_settings as get_rut_plugin_settings,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -580,6 +589,11 @@ _SOURCED_SIZED_RESOURCES: dict[str, Any] = single_container_required_resources(
 _PRICING_PLAN_ID = 1
 _PRICING_UNIT_ID = 2
 
+# the DEFAULT unit mocked by `mock_rut_default_pricing_unit` (t3.medium):
+# hand-computed dask-worker sizing: cpu = 2.0 - 0.1 = 1.9, ram = int(4 GiB * 0.9) = 3865470566
+_DEFAULT_PRICING_PLAN_ID = 1
+_DEFAULT_PRICING_UNIT_ID = 1
+
 
 def _sleeper_node(nodes: dict) -> Any:
     # the workbench fixture has TWO comp sleepers; pin one deterministically by label
@@ -605,27 +619,42 @@ async def _price_and_size_one_computational_node(
     return f"{comp_node.node_id}", _SOURCED_SIZED_RESOURCES
 
 
-async def _assert_clone_kept_resources_but_lost_pricing_links(
+async def _assert_clone_pricing_state(
     app, engine: AsyncEngine, cloned_project: ProjectDict, expected_resources: dict[str, Any]
 ) -> None:
     state = await get_node_pricing_state(engine, cloned_project["uuid"])
     assert len(state) == len(cloned_project["workbench"])
-    for node_state in state.values():
-        # ⚠️ CURRENT BEHAVIOUR: the pricing link is NOT copied. The copy-and-template
-        # part of the pricing/resources ownership rework (PR 2) will copy the source
-        # links; when that lands, update this assertion for the computational node to
-        # expect (pricing_plan_id=_PRICING_PLAN_ID, pricing_unit_id=_PRICING_UNIT_ID).
-        assert node_state.pricing_plan_id is None
-        assert node_state.pricing_unit_id is None
-    # `required_resources` ARE copied verbatim from the source node
     nodes = await _get_inserted_nodes(app, cloned_project["uuid"])
+
+    # the source's pricing link is copied (validated against this product) and the
+    # source's hand-sized `required_resources` are kept verbatim — NOT re-sized
     comp_node = _sleeper_node(nodes)
-    assert state[comp_node.node_id].required_resources == expected_resources
+    priced_state = state[comp_node.node_id]
+    assert priced_state.pricing_plan_id == _PRICING_PLAN_ID
+    assert priced_state.pricing_unit_id == _PRICING_UNIT_ID
+    assert priced_state.required_resources == expected_resources
+
+    # a computational node without a source link gets the DEFAULT unit and is
+    # sized with the dask-worker formula of that unit's machine
+    second_comp_node = next(node for node in nodes.values() if node.label == "sleeper_2")
+    default_state = state[second_comp_node.node_id]
+    assert default_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert default_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    # sizing rewrites the resources and keeps the rest of the payload (image...)
+    assert default_state.required_resources
+    sized = default_state.required_resources["container"]["resources"]
+    assert sized == resources_limits(cpu=1.9, ram_bytes=3865470566)
+
+    # frontend nodes get no link
+    for node in nodes.values():
+        if f"{node.key}".startswith("simcore/services/frontend/"):
+            node_state = state[node.node_id]
+            assert node_state.pricing_plan_id is None
+            assert node_state.pricing_unit_id is None
 
 
-@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("source_kind", ["standard_project", "template"])
-async def test_clone_project_data_copies_required_resources_but_not_pricing_links(
+async def test_clone_project_data_copies_pricing_links_and_sizes_unlinked_comp_nodes(
     source_kind: str,
     client: TestClient,
     logged_user: UserInfoDict,
@@ -637,10 +666,15 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
     mock_dynamic_scheduler: None,
     storage_subsystem_mock_override: None,
     asyncpg_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    mock_rut_default_pricing_unit: None,
+    mocked_director_v2_node_sizing: MockType,
 ):
-    """W6/W7: cloning (a project or a template) copies `required_resources` but
-    drops the `projects_node_to_pricing_unit` links (director-v2 would later
-    re-link the DEFAULT unit on the first pipeline update, losing the user's choice).
+    """W6/W7: cloning (a project or a template) copies the source pricing links
+    (validated against the destination product) and keeps the source
+    `required_resources` verbatim. A computational node WITHOUT a source link
+    gets the DEFAULT unit and is sized with its machine's dask-worker formula.
+    Frontend nodes keep no link.
     """
     assert client.app
     source = template_project if source_kind == "template" else user_project
@@ -648,6 +682,20 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
 
     # SETUP: source computational node is linked to a non-default unit and sized
     _, sourced_resources = await _price_and_size_one_computational_node(client.app, asyncpg_engine, source_uuid)
+
+    # RUT knows the source's non-default unit (copy validation asks for it)
+    settings = get_rut_plugin_settings(client.app)
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID),
+        payload=jsonable_encoder(
+            make_pricing_unit(
+                pricing_unit_id=_PRICING_UNIT_ID,
+                default=False,
+                aws_ec2_instance=R5_4XLARGE_NAME,
+            )
+        ),
+        repeat=True,
+    )
 
     # ACT
     source_project = await _fetch_source_project(client.app, source_uuid, UserID(logged_user["id"]))
@@ -661,10 +709,12 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
         task_progress=task_progress,
     )
 
+    # only the newly default-linked computational node is sized (the copied link
+    # keeps the source's resources verbatim)
+    mocked_director_v2_node_sizing.assert_called_once()
+
     # ASSERT: the clone's DB state
-    await _assert_clone_kept_resources_but_lost_pricing_links(
-        client.app, asyncpg_engine, cloned_project, sourced_resources
-    )
+    await _assert_clone_pricing_state(client.app, asyncpg_engine, cloned_project, sourced_resources)
 
     # the SOURCE project keeps its link and resources untouched
     source_state = await get_node_pricing_state(asyncpg_engine, source_uuid)
