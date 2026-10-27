@@ -3,6 +3,7 @@
 import datetime
 from pathlib import Path
 from typing import Any, Final
+from urllib.parse import urlencode
 
 import arrow
 import orjson
@@ -80,10 +81,12 @@ def _format_disk_usage_lines(disk_usage: list[DiskUsage], *, indent: str = "") -
     return lines
 
 
-def create_graylog_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
+def create_victoria_logs_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
     source_name = instance.private_ip_address.replace(".", "-")
     time_span = int((arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)).total_seconds())
-    return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
+    query = f'* AND source:"ip-{source_name}" | sort by (_time) desc'
+    params = urlencode({"query": query, "period": f"{time_span}s"})
+    return f"https://monitoring.{environment['MACHINE_FQDN']}/logs/select/vmui/?{params}"
 
 
 def format_cluster_identity(
@@ -179,7 +182,7 @@ def build_cluster_tasks_table(  # noqa: C901
         label = (job_to_worker or {}).get(r.job_id, "")
         try:
             return (int(label.rsplit(None, 1)[-1]), r.job_id)
-        except (ValueError, IndexError):
+        except ValueError, IndexError:
             return (999, r.job_id)
 
     sorted_rows = sorted(rows, key=_worker_sort_key)
@@ -262,7 +265,7 @@ def build_cluster_tasks_table(  # noqa: C901
 
 def build_worker_metrics_table(
     metrics: dict[str, Any] | str,
-    graylog_link: str,
+    logs_link: str,
 ) -> Table:
     table = Table(
         Column(""),
@@ -272,7 +275,7 @@ def build_worker_metrics_table(
         box=None,
         expand=True,
     )
-    table.add_row("Graylog", graylog_link)
+    table.add_row("Logs", logs_link)
     resources: dict[str, Any] = metrics.get("resources", {}) if isinstance(metrics, dict) else {}
     if resources:
         resources_str = " | ".join(f"{k}: {format_resource_value(k, v)}" for k, v in sorted(resources.items()))
@@ -322,7 +325,7 @@ def build_cluster_links_table(
         expand=True,
     )
     ip = cluster.primary.ec2_instance.public_ip_address
-    table.add_row("Graylog", create_graylog_permalinks(environment, cluster.primary.ec2_instance))
+    table.add_row("Logs", create_victoria_logs_permalinks(environment, cluster.primary.ec2_instance))
     table.add_row("Dask Scheduler", f"http://{ip}:8787 — {dask_state_display}")
     table.add_row("Prometheus", f"http://{ip}:9090")
     return table
@@ -489,8 +492,8 @@ async def print_dynamic_instances(  # noqa: C901, PLR0912, PLR0915
         )
         if not instance.running_services:
             instance_info = f"[dim]{instance_info}[/dim]"
-        graylog_line = f"Graylog: {create_graylog_permalinks(environment, instance.ec2_instance)}"
-        right_content = Group(graylog_line, service_table)
+        logs_line = f"Logs: {create_victoria_logs_permalinks(environment, instance.ec2_instance)}"
+        right_content = Group(logs_line, service_table)
         table.add_row(
             instance_info,
             right_content,
@@ -702,8 +705,8 @@ async def print_computational_clusters(  # noqa: C901, PLR0912, PLR0915
                 )
                 if worker.is_warm_buffer:
                     worker_info = f"[dim]{worker_info}[/dim]"
-                worker_graylog = create_graylog_permalinks(environment, worker.ec2_instance)
-                metrics_table = build_worker_metrics_table(worker_dask_metrics, worker_graylog)
+                worker_logs_link = create_victoria_logs_permalinks(environment, worker.ec2_instance)
+                metrics_table = build_worker_metrics_table(worker_dask_metrics, worker_logs_link)
                 worker_tasks = build_worker_tasks_table(
                     worker_processing_jobs, cluster.task_resources, cluster.task_worker_states
                 )
