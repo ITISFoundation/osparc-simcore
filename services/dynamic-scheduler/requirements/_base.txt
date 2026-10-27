@@ -7,14 +7,16 @@ aiocache==0.12.3
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.27.0
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==25.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   nicegui
 aiohappyeyeballs==2.5.0
     # via aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   aiodocker
@@ -485,7 +487,7 @@ wrapt==1.17.2
     #   opentelemetry-instrumentation-threading
 wsproto==1.2.0
     # via simple-websocket
-yarl==1.24.5
+yarl==1.25.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in

@@ -7,19 +7,22 @@
 
 
 import urllib.parse
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Final, Protocol
 
 import httpx
 import httpx2
 import pytest
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
+
+
+class _ServiceLabelsFactory(Protocol):
+    def __call__(self, service_key: str, service_version: str, *, include_org_labels: bool = True) -> dict: ...
 
 
 @pytest.fixture
@@ -117,7 +120,7 @@ async def test_director_client_get_service_extras_without_org_labels(
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api_base: MockRouter,
     service_key_and_version: tuple[str, str],
-    get_mocked_service_labels: Callable[[str, str, bool], dict],
+    get_mocked_service_labels: _ServiceLabelsFactory,
     app: FastAPI,
 ):
     # Setup mock without org.label-schema labels
@@ -177,3 +180,65 @@ async def test_requests_honor_configured_timeout(
 
     # no per-request override: the client's configured timeout applies
     assert requested_timeouts == [httpx2.USE_CLIENT_DEFAULT]
+
+
+_LABELS_PATH_REGEX: Final[str] = r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$"
+
+
+@pytest.mark.parametrize(
+    "dropped_connection_error",
+    [
+        httpx2.RemoteProtocolError("Server disconnected without sending a response."),
+        httpx2.ReadError("Connection reset by peer"),
+    ],
+    ids=lambda e: type(e).__name__,
+)
+async def test_director_client_retries_once_when_connection_is_dropped(
+    repository_lifespan_disabled: None,
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api_base: MockRouter,
+    service_key_and_version: tuple[str, str],
+    app: FastAPI,
+    dropped_connection_error: Exception,
+):
+    labels = {"io.simcore.name": "some-service"}
+    # NOTE: respx isinstance-checks side_effect responses against plain httpx, so the
+    # success response must stay a plain httpx.Response (respx repacks it for the httpx2 client)
+    labels_route = mocked_director_rest_api_base.get(path__regex=_LABELS_PATH_REGEX, name="labels_flaky").mock(
+        side_effect=[dropped_connection_error, httpx.Response(status.HTTP_200_OK, json={"data": labels})]
+    )
+
+    key, version = service_key_and_version
+    assert await get_director_client(app).get_service_labels(key, version) == labels
+    assert labels_route.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "error, expected_calls",
+    [
+        (httpx2.RemoteProtocolError("Server disconnected without sending a response."), 2),
+        (httpx2.ReadTimeout("timed out"), 1),
+    ],
+    ids=["dropped-connection-retried-once", "timeout-not-retried"],
+)
+async def test_director_client_gives_up_after_failed_attempts(
+    repository_lifespan_disabled: None,
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api_base: MockRouter,
+    service_key_and_version: tuple[str, str],
+    app: FastAPI,
+    error: Exception,
+    expected_calls: int,
+):
+    labels_route = mocked_director_rest_api_base.get(path__regex=_LABELS_PATH_REGEX, name="labels_down").mock(
+        side_effect=error
+    )
+
+    key, version = service_key_and_version
+    with pytest.raises(HTTPException) as exc_info:
+        await get_director_client(app).get_service_labels(key, version)
+
+    assert exc_info.value.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert labels_route.call_count == expected_calls

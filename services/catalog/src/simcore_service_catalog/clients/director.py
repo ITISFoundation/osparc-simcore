@@ -16,6 +16,7 @@ from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, TypeAdapter
+from servicelib.fastapi.httpx_utils import retry_on_dropped_connection
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import setup_httpx_client_tracing
@@ -159,6 +160,7 @@ class DirectorClient:
     #
 
     @_return_data_or_raise_error
+    @retry_on_dropped_connection
     async def get(self, path: str) -> httpx2.Response:
         return await self.client.get(path)
 

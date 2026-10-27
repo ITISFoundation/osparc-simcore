@@ -62,3 +62,4 @@ cMIS = "cMIS"
 showLeafs = "showLeafs" # a qooxdoo property
 getShowLeafs = "getShowLeafs" # a qooxdoo property
 postro = "postro" # it was wrongly spelled in the Rocket
+certifi = "certifi" # the PyPI CA bundle package, not the verb "certify"

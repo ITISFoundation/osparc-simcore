@@ -37,5 +37,7 @@ jobs:
         working-directory: scripts/i18n/tools
       - name: Run i18n tools tests
         run: |
-          uv run --with Babel --with Jinja2 --with litellm --with polib --with pytest --with rich --with typer \
+          set -o pipefail
+          uv export --script scripts/i18n/tools/i18n_translator.py --locked --no-hashes --no-header --quiet \
+            | uv run --with-requirements - --with Babel --with Jinja2 --with pytest --with rich \
             pytest scripts/i18n/tools/tests -v

@@ -38,6 +38,7 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 #
 # Bugs
 #
+aiodocker>0.6  # uv aborts the whole resolution when it backtracks into this 2015 sdist and metadata-builds it: its code contains `asyncio.async(...)`, invalid syntax since Python 3.7 made `async` a keyword
 
 
 
