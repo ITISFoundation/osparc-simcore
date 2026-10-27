@@ -42,6 +42,7 @@ from models_library.services_resources import (
     BootMode,
     ImageResources,
     ServiceResourcesDict,
+    is_single_container_service,
 )
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS, WalletInfo
@@ -61,6 +62,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from .....core.errors import (
     ClustersKeeperNotAvailableError,
     EC2InstanceTypeNotFoundError,
+    MultiContainerOverrideNotSupportedError,
 )
 from .....models.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from .....models.pricing import PricingInfo
@@ -286,6 +288,7 @@ async def _update_project_node_resources_from_hardware_info(
     is_wallet: bool,
     project_id: ProjectID,
     node_id: NodeID,
+    node_key: ServiceKey,
     hardware_info: HardwareInfo,
     ec2_instance_types: list[EC2InstanceTypeGet],
 ) -> None:
@@ -307,7 +310,12 @@ async def _update_project_node_resources_from_hardware_info(
         node = await project_nodes_repo.get(connection, node_id=node_id)
         resources_adapter = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict)
         node_resources = resources_adapter.validate_python(node.required_resources)
-        if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
+        if not node_resources:
+            # no resources stored for the node (the DB default is {}): this is not a
+            # multi-container service, and `_generate_task_image` will fall back to the
+            # catalog resources, so there is nothing to size here
+            return
+        if is_single_container_service(node_resources):
             image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
             adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
                 float(selected_ec2_instance_type.cpus),
@@ -328,7 +336,23 @@ async def _update_project_node_resources_from_hardware_info(
 
             await project_nodes_repo.update(connection, node_id=node_id, required_resources=new_resources)
         else:
-            _logger.warning("Services resource override not implemented yet for multi-container services!!!")
+            if to_node_class(node_key) == NodeClass.COMPUTATIONAL:
+                # a computational node runs as a dask worker sized for the machine:
+                # sizing a multi-container service per sub-service is not implemented,
+                # so the computation must not start it silently unsized
+                raise MultiContainerOverrideNotSupportedError(
+                    sub_service_names=set(node_resources),
+                    node_id=f"{node_id}",
+                    project_id=f"{project_id}",
+                )
+            # dynamic nodes bring their own per-container resources: leaving them
+            # unsized here is harmless, so keep the previous no-op
+            _logger.warning(
+                "Services resource override not implemented yet for multi-container "
+                "services!!! (node %s in project %s)",
+                node_id,
+                project_id,
+            )
     except StopIteration as exc:
         raise EC2InstanceTypeNotFoundError(
             ec2_instance_types=f"{set(hardware_info.aws_ec2_instances)}",
@@ -502,6 +526,7 @@ async def generate_tasks_list_from_project(
             is_wallet=is_wallet,
             project_id=project.uuid,
             node_id=prepared.node_id,
+            node_key=prepared.node.key,
             hardware_info=prepared.hardware_info,
             ec2_instance_types=ec2_instance_types,
         )
