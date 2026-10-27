@@ -15,12 +15,13 @@ from typing import Any, Final, Literal
 
 from helpers_jupyter_code import create_files_in_jupyter
 from models_library.services_enums import ServiceType
-from playwright.sync_api import Page, WebSocket
+from playwright.sync_api import Page, WebSocket, expect
 from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     RobustWebSocket,
+    _get_service_url,
     wait_for_service_running,
 )
 
@@ -129,3 +130,30 @@ def test_jupyterlab(
         _jupyterlab_ui.press("Shift+Enter")
 
     page.wait_for_timeout(1000)
+
+    # Adding a file to outputs/output_1 must add it to the node's Outputs, and deleting
+    # it must remove it again without a page refresh
+    # (regression test for https://github.com/ITISFoundation/osparc-simcore/issues/9918)
+    _output_filename = "e2e-output-check.txt"
+    _service_url = f"{_get_service_url(node_ids[0], product_url, is_legacy_service=False)}"
+    _xsrf = next(
+        (c["value"] for c in page.context.cookies(_service_url) if c["name"] == "_xsrf"),
+        "",
+    )
+    _headers = {"Referer": f"{_service_url}/", "_xsrf": _xsrf}
+    with log_context(logging.INFO, f"Creating {_output_filename} in outputs/output_1"):
+        page.get_by_test_id("outputsBtn").click()
+        response = page.request.put(
+            f"{_service_url}/api/contents/outputs/output_1/{_output_filename}",
+            headers=_headers,
+            data={"type": "file", "format": "text", "content": "created by the e2e test"},
+        )
+        assert response.ok, f"failed to create file in outputs: {response.status} {response.text()}"
+        expect(page.get_by_text(_output_filename)).to_be_visible(timeout=5 * MINUTE)
+    with log_context(logging.INFO, f"Deleting {_output_filename} from outputs/output_1"):
+        response = page.request.delete(
+            f"{_service_url}/api/contents/outputs/output_1/{_output_filename}",
+            headers=_headers,
+        )
+        assert response.ok, f"failed to delete file in outputs: {response.status} {response.text()}"
+        expect(page.get_by_text(_output_filename)).to_be_hidden(timeout=2 * MINUTE)
