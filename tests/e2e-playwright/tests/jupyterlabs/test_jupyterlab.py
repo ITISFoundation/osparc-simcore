@@ -20,8 +20,12 @@ from pydantic import AnyUrl, ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    SECOND,
     RobustWebSocket,
     _get_service_url,
+    _select_node,
+    wait_for_node_output_link,
+    wait_for_node_output_link_cleared,
     wait_for_service_running,
 )
 
@@ -32,6 +36,7 @@ _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
 }
 
 _DEFAULT_TAB_TO_WAIT_FOR: Final[str] = "README.ipynb"
+_OUTPUT_PORT_KEY: Final[str] = "output_1"  # jupyter-math file output port
 _SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {}
 _WAITING_FOR_TAB_TO_APPEAR: Final[int] = 1 * MINUTE
 
@@ -131,29 +136,72 @@ def test_jupyterlab(
 
     page.wait_for_timeout(1000)
 
-    # Adding a file to outputs/output_1 must add it to the node's Outputs, and deleting
-    # it must remove it again without a page refresh
-    # (regression test for https://github.com/ITISFoundation/osparc-simcore/issues/9918)
-    _output_filename = "e2e-output-check.txt"
-    _service_url = f"{_get_service_url(node_ids[0], product_url, is_legacy_service=False)}"
-    _xsrf = next(
-        (c["value"] for c in page.context.cookies(_service_url) if c["name"] == "_xsrf"),
+    _check_outputs_refresh(page, node_ids[0], product_url)
+
+
+def _check_outputs_refresh(page: Page, node_id: str, product_url: AnyUrl) -> None:
+    """Adding a file to outputs/output_1 must add it to the node's Outputs, and deleting it
+    must remove it again without a page refresh
+    (regression test for https://github.com/ITISFoundation/osparc-simcore/issues/9918).
+    """
+    output_filename = "e2e-output-check.txt"
+    service_url = f"{_get_service_url(node_id, product_url, is_legacy_service=False)}"
+    contents_url = f"{service_url}/api/contents/outputs/{_OUTPUT_PORT_KEY}/{output_filename}"
+    xsrf = next(
+        (c["value"] for c in page.context.cookies(service_url) if c["name"] == "_xsrf"),
         "",
     )
-    _headers = {"Referer": f"{_service_url}/", "_xsrf": _xsrf}
-    with log_context(logging.INFO, f"Creating {_output_filename} in outputs/output_1"):
-        page.get_by_test_id("outputsBtn").click()
+    assert xsrf, f"no _xsrf cookie found for {service_url}, cannot call the Jupyter contents API"
+    headers = {"Referer": f"{service_url}/", "_xsrf": xsrf}
+
+    with log_context(
+        logging.INFO,
+        "Converting the single-node study to Pipeline mode (the node Outputs only show in the "
+        "workbench pipeline view; the menu is the three-dot button next to the study title)",
+    ):
+        page.get_by_test_id("studyOptionsMenuBtn").click()
+        page.get_by_test_id("studyMenuConvertToPipelineBtn").click()
+        confirmation_win = page.locator('[qxclass*="ui.window.Confirmation"]')
+        expect(confirmation_win.first).to_be_visible(timeout=30 * SECOND)
+        page.get_by_test_id("confirmationModalOkBtn").click(timeout=30 * SECOND)
+        expect(page.get_by_test_id("newNodeBtn")).to_be_visible(timeout=30 * SECOND)
+
+    with log_context(logging.INFO, f"Selecting node {node_id} to show its Outputs panel"):
+        _select_node(page, node_id=node_id)
+        # the value widget of the node's output_1 port is only rendered when the
+        # Outputs panel is shown; it starts out as "-" (no value)
+        output_value = page.get_by_test_id(f"nodeOutputValue_{_OUTPUT_PORT_KEY}")
+        expect(output_value.first).to_be_visible(timeout=30 * SECOND)
+
+    with log_context(logging.INFO, f"Creating {output_filename} in outputs/{_OUTPUT_PORT_KEY}"):
         response = page.request.put(
-            f"{_service_url}/api/contents/outputs/output_1/{_output_filename}",
-            headers=_headers,
-            data={"type": "file", "format": "text", "content": "created by the e2e test"},
+            contents_url,
+            headers=headers,
+            data={
+                "type": "file",
+                "format": "text",
+                "content": "created by the e2e test",
+            },
         )
         assert response.ok, f"failed to create file in outputs: {response.status} {response.text()}"
-        expect(page.get_by_text(_output_filename)).to_be_visible(timeout=5 * MINUTE)
-    with log_context(logging.INFO, f"Deleting {_output_filename} from outputs/output_1"):
+
+    with log_context(
+        logging.INFO,
+        f"Waiting for {output_filename} to appear in the Outputs of node {node_id} "
+        "(dy-sidecar must upload it and the workbench must show it)",
+    ):
+        wait_for_node_output_link(page, port_key=_OUTPUT_PORT_KEY, filename=output_filename)
+
+    with log_context(logging.INFO, f"Deleting {output_filename} from outputs/{_OUTPUT_PORT_KEY}"):
         response = page.request.delete(
-            f"{_service_url}/api/contents/outputs/output_1/{_output_filename}",
-            headers=_headers,
+            contents_url,
+            headers=headers,
         )
-        assert response.ok, f"failed to delete file in outputs: {response.status} {response.text()}"
-        expect(page.get_by_text(_output_filename)).to_be_hidden(timeout=2 * MINUTE)
+        assert response.ok, f"failed to delete file in output: {response.status} {response.text()}"
+
+    with log_context(
+        logging.INFO,
+        f"Waiting for {output_filename} to disappear from the Outputs of node {node_id} "
+        "without a page reload (fails if cleared outputs are not refreshed: issue #9918)",
+    ):
+        wait_for_node_output_link_cleared(page, port_key=_OUTPUT_PORT_KEY, filename=output_filename)
