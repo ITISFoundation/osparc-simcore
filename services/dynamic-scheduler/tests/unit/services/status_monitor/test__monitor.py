@@ -17,9 +17,8 @@ import respx
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 
-# NOTE: respx isinstance-checks side_effect results against plain httpx, so this
-# module's handlers must keep building plain httpx.Response (respx repacks them
-# before delivering to the httpx2 client) until the respx seam is retired.
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for the httpx2
+# client) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 from httpx import Request, Response
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (

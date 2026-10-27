@@ -2,7 +2,9 @@
 
 import logging
 
-import httpx  # NOTE: respx only accepts plain httpx.Response values in mock(return_value=...)
+# NOTE: respx only accepts plain httpx.Response values, also in mock(return_value=...), see
+# https://github.com/ITISFoundation/osparc-simcore/issues/9927
+import httpx
 import pytest
 import respx
 from fastapi import HTTPException, status

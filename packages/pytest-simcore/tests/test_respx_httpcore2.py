@@ -1,3 +1,12 @@
+"""Pins the respx-to-httpcore2 interception seam set up by `pytest_simcore.pytest_configure`.
+
+respx only knows httpcore's module paths, so httpx2 clients (which speak httpcore2) are only
+mocked because `pytest_simcore` registers the httpcore2 classes as extra mocker targets. These
+tests fail if that wiring breaks — e.g. after an httpcore2 internal rename, which respx would
+otherwise skip silently and let httpx2 traffic escape the mocks — until upstream respx supports
+httpx2 and the seam can be retired: https://github.com/ITISFoundation/osparc-simcore/issues/9927
+"""
+
 import importlib
 import importlib.util
 from typing import Final

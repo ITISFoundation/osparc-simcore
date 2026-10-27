@@ -10,9 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any, TypeAlias
 
-# NOTE: respx isinstance-checks side_effect results against plain httpx, so the
-# side_effect handler in test_capture_respx_api_server must keep building a plain
-# httpx.Response (respx repacks it before delivering to the httpx2 client).
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for the httpx2
+# client) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import httpx2
 import jsonref

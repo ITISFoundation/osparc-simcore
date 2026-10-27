@@ -10,9 +10,8 @@ from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
 
-# NOTE: respx validates `return_value=` against plain httpx.Response; the
-# pytest_simcore shim re-packs the mocked responses for the httpx2 client
-# at the httpcore2 layer, so the client still receives fork responses
+# NOTE: respx only accepts plain httpx.Response values, also in `return_value=` (it
+# repacks them for httpx2 clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 from httpx import Response
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus

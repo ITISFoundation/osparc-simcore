@@ -3,9 +3,8 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
-# NOTE: respx isinstance-checks side_effect results against plain httpx, so as_response() and the
-# side-effect handlers must keep building plain httpx.Response (respx repacks them before
-# delivering to the httpx2 clients) until the respx seam is retired.
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import httpx2
 import respx

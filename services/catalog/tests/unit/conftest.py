@@ -459,9 +459,8 @@ def mocked_director_rest_api(
         path__regex=r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9.]+)$",
         name="get_service",
     )
-    # NOTE: respx isinstance-checks side_effect results against plain httpx, so these
-    # handlers must keep building plain httpx.Response (respx repacks them before
-    # handing the response to the httpx2 client)
+    # NOTE: respx only accepts plain httpx.Response values (it repacks them for the
+    # httpx2 client) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
     def _get_service(request: httpx.Request, service_key, service_version):
         if found := _search(service_key, service_version):
             # NOTE: this is a defect in director's API

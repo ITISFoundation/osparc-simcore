@@ -4,16 +4,23 @@
 # including minimal test suites that never use its docker/xdist fixtures. Import
 # optional dependencies lazily inside the fixtures that need them.
 import importlib.util
+import logging
 import os
 from importlib.metadata import version
-from typing import Final
+from typing import Annotated, Final
 
 import pytest
+from annotated_types import doc
 
 # NOTE: this ensures that assertion printouts are nicely formatted and complete see https://lorepirri.com/pytest-register-assert-rewrite.html
 pytest.register_assert_rewrite("pytest_simcore.helpers")
 
 __version__: str = version("pytest-simcore")
+
+_logger = logging.getLogger(__name__)
+
+# last respx release the httpcore2 interception seam below was verified against
+_RESPX_SEAM_VERIFIED_VERSION: Final[str] = "0.22.0"
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -26,10 +33,18 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
 
-# NOTE: respx intercepts at the httpcore layer unless a router asks for another mocker, and it only
-# knows httpcore's module paths. Clients built from the httpx2 fork talk to httpcore2, so their
-# requests would bypass both the mocks and the assertion rejecting unmocked traffic.
-_HTTPCORE2_TARGETS: Final[tuple[str, ...]] = (
+_HTTPCORE2_TARGETS: Final[
+    Annotated[
+        tuple[str, ...],
+        doc(
+            "httpcore2 classes respx must also patch to intercept httpx2 clients: respx intercepts "
+            "at the httpcore layer and only knows httpcore's module paths, so without these the "
+            "requests of clients built from the httpx2 fork would bypass both the mocks and the "
+            "assertion rejecting unmocked traffic. respx silently skips paths it cannot import, "
+            "see https://github.com/ITISFoundation/osparc-simcore/issues/9927"
+        ),
+    ]
+] = (
     "httpcore2._sync.connection.HTTPConnection",
     "httpcore2._sync.connection_pool.ConnectionPool",
     "httpcore2._sync.http_proxy.HTTPProxy",
@@ -43,12 +58,22 @@ def pytest_configure() -> None:
     """Points respx at httpcore2, the stack httpx2 clients use to reach the network.
 
     Patching begins when a respx router registers, so this alone leaves a session untouched until
-    a test actually mocks.
+    a test actually mocks. A no-op when respx or httpcore2 is not installed. Tracked, with its
+    exit criteria, in https://github.com/ITISFoundation/osparc-simcore/issues/9927
     """
     if importlib.util.find_spec("respx") is None or importlib.util.find_spec("httpcore2") is None:
         return
 
     from respx.mocks import HTTPCoreMocker  # noqa: PLC0415
+
+    if (respx_version := version("respx")) != _RESPX_SEAM_VERIFIED_VERSION:
+        _logger.warning(
+            "respx %s differs from %s, the version the httpcore2 interception seam was verified "
+            "with (https://github.com/ITISFoundation/osparc-simcore/issues/9927): re-run "
+            "packages/pytest-simcore/tests/test_respx_httpcore2.py when updating respx/httpcore2",
+            respx_version,
+            _RESPX_SEAM_VERIFIED_VERSION,
+        )
 
     HTTPCoreMocker.add_targets(*_HTTPCORE2_TARGETS)
 

@@ -8,10 +8,9 @@
 
 from typing import cast
 
-# NOTE: `httpx.Request` below only annotates the request respx hands to
-# side_effect handlers (plain-httpx until the respx seam is retired); the
-# raised exception must come from the fork the service client speaks: httpx2,
-# hence the cast when handing that request over to it.
+# NOTE: respx hands plain httpx.Request to side_effect handlers, see
+# https://github.com/ITISFoundation/osparc-simcore/issues/9927; the raised exception must
+# come from the fork the client speaks (httpx2), hence the cast when passing it over.
 import httpx
 import pytest
 from faker import Faker

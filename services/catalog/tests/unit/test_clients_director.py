@@ -203,8 +203,8 @@ async def test_director_client_retries_once_when_connection_is_dropped(
     dropped_connection_error: Exception,
 ):
     labels = {"io.simcore.name": "some-service"}
-    # NOTE: respx isinstance-checks side_effect responses against plain httpx, so the
-    # success response must stay a plain httpx.Response (respx repacks it for the httpx2 client)
+    # NOTE: respx only accepts plain httpx.Response values (it repacks them for the
+    # httpx2 client) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
     labels_route = mocked_director_rest_api_base.get(path__regex=_LABELS_PATH_REGEX, name="labels_flaky").mock(
         side_effect=[dropped_connection_error, httpx.Response(status.HTTP_200_OK, json={"data": labels})]
     )

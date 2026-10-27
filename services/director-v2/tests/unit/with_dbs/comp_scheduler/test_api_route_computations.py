@@ -15,9 +15,8 @@ from decimal import Decimal
 from typing import Any
 from unittest import mock
 
-# NOTE: respx mock handlers must keep returning plain httpx.Response (respx
-# validates them against plain httpx); the pytest_simcore shim re-packs the
-# responses for the httpx2 clients at the httpcore2 layer
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import httpx2
 import pytest
