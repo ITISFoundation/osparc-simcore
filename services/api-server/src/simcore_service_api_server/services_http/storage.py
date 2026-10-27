@@ -30,6 +30,8 @@ from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from pydantic import AnyUrl
+from servicelib.fastapi.httpx_utils import retry_on_dropped_connection
+from settings_library.storage import StorageSettings
 from settings_library.tracing import TracingSettings
 from tenacity import (
     AsyncRetrying,
@@ -44,7 +46,6 @@ from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutE
 from simcore_service_api_server.models.schemas.files import UserFile
 from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 
-from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, configure_client_instance
@@ -55,6 +56,7 @@ _EXPECTED_S3_PATH_PARTS: Final[int] = 3
 _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
+
 
 AccessRight = Literal["read", "write"]
 
@@ -86,6 +88,7 @@ class StorageApi(BaseServiceClientApi):
     SIMCORE_S3_ID = 0
 
     @_exception_mapper(http_status_map={})
+    @retry_on_dropped_connection
     async def list_files(
         self,
         *,
@@ -109,6 +112,7 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     @_exception_mapper(http_status_map={})
+    @retry_on_dropped_connection
     async def search_owned_files(
         self,
         *,
@@ -240,7 +244,7 @@ class StorageApi(BaseServiceClientApi):
 
         # define api-prefixed object-path for link
         file_id: str = f"{as_file_id}"
-        file_name = target_s3_path.split("/")[-1]
+        file_name = target_s3_path.rsplit("/", maxsplit=1)[-1]
         link_path = f"api/{file_id}/{file_name}"
 
         file_id = urllib.parse.quote_plus(target_s3_path)
