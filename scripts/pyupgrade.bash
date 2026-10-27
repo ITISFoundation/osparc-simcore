@@ -18,7 +18,7 @@ Build() {
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
     - <<EOF
-FROM python:${PYTHON_VERSION}-slim-bookworm
+FROM python:${PYTHON_VERSION}-slim-trixie
 
 RUN uv pip install \
   pyupgrade
