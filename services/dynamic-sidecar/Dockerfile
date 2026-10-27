@@ -20,8 +20,8 @@ FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 LABEL maintainer=GitHK
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
-ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
-ENV DOCKER_COMPOSE_APT_VERSION="2.27.1-1~debian.12~bookworm"
+ENV DOCKER_APT_VERSION="5:29.6.2-1~debian.13~trixie"
+ENV DOCKER_COMPOSE_APT_VERSION="5.2.0-1~debian.13~trixie"
 
 RUN \
   --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
