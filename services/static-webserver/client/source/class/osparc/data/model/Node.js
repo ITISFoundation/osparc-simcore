@@ -570,7 +570,7 @@ qx.Class.define("osparc.data.model.Node", {
     nodeUpdated: function(nodeUpdatedData) {
       const nodeData = nodeUpdatedData["data"];
       if (nodeData && !osparc.data.model.Node.isFrontend(this.getMetadata())) {
-        this.setOutputData(nodeData.outputs);
+        this.setFullOutputData(nodeData.outputs);
         this.__populateProgress(nodeData);
         this.__populateState(nodeData);
       }
@@ -830,6 +830,31 @@ qx.Class.define("osparc.data.model.Node", {
         if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
+      }
+    },
+
+    // Same as setOutputData but for payloads that carry the complete outputs of the
+    // node (e.g. the "nodeUpdated" socket event): outputs missing from the payload are
+    // cleared, otherwise files deleted in a dynamic service would remain listed
+    setFullOutputData: function(outputsData) {
+      const data = outputsData || {};
+      let hasOutputs = false;
+      this.getOutputs().forEach(output => {
+        const outputValue = output.getPortKey() in data ? data[output.getPortKey()] : null;
+        // make sure outputValue is not undefined
+        if (outputValue !== undefined) {
+          output.setValue(outputValue);
+        }
+      });
+      Object.keys(data).forEach(outputKey => {
+        if (data[outputKey] !== null && data[outputKey] !== undefined && this.getOutput(outputKey)) {
+          hasOutputs = true;
+        }
+      });
+      this.getStatus().setHasOutputs(hasOutputs);
+
+      if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
+        this.getStatus().setModified(false);
       }
     },
 
