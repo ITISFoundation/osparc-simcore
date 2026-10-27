@@ -12,7 +12,7 @@ ARG PYTHON_VERSION="3.14.9"
 ARG UV_VERSION="0.13.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+FROM python:${PYTHON_VERSION}-slim-trixie AS base
 
 ENV VIRTUAL_ENV=/home/scu/.venv
 
