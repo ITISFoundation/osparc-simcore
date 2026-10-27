@@ -55,7 +55,10 @@ class ResourceValue(BaseModel, validate_assignment=True):
         self.limit = self.reservation = value
 
 
-ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
+# NOTE: must stay a callable TypeAlias assignment: services-catalog builds
+# _DEFAULT_RESOURCES via ResourcesDict(...) at import time, and a PEP 695
+# `type` alias is a non-callable TypeAliasType
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]  # noqa: UP040
 
 
 class BootMode(StrAutoEnum):
@@ -173,6 +176,11 @@ type ServiceResourcesDict = Annotated[
         examples=SERVICE_RESOURCES_DICT_EXAMPLES,
     ),
 ]
+
+
+def is_single_container_service(service_resources: ServiceResourcesDict) -> bool:
+    """True only when the resources describe exactly one container named `container`"""
+    return set(service_resources) == {DEFAULT_SINGLE_SERVICE_NAME}
 
 
 def create_service_resources_from_single_service(
