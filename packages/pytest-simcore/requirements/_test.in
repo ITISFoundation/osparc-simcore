@@ -3,6 +3,8 @@
 #
 --constraint ../../../requirements/constraints.txt
 
+# intra-repo required dependencies
+--requirement ../../../packages/models-library/requirements/_base.in
 
 aiodocker
 alembic

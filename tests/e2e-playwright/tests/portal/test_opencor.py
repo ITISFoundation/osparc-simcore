@@ -20,7 +20,7 @@ def test_opencor(
     project_data = opened_study.project_data
     study_id = project_data["uuid"]
 
-    run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
+    run_pipeline_and_wait_done(page, opened_study.websocket, project_uuid=study_id, timeout_ms=run_pipeline_timeout)
 
     check_node_outputs(
         page,

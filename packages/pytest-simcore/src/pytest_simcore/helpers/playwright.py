@@ -14,13 +14,15 @@ from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum, unique
+from enum import StrEnum
 from types import TracebackType
 from typing import Annotated, Any, Final
 
 import arrow
 import pytest
 from annotated_types import doc
+from models_library.projects_state import ProjectStatus, RunningState
+from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
 from playwright.sync_api import APIRequestContext, ElementHandle, FrameLocator, Locator, Page, Request, WebSocket
 from playwright.sync_api import Error as PlaywrightError
@@ -51,66 +53,17 @@ NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/projects/[^/]
 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
-@unique
-class RunningState(StrEnum):
-    # NOTE: this is a duplicate of models-library/project_states.py
-    # It must remain as such until that module is pydantic V2 compatible
-    """State of execution of a project's computational workflow
-
-    SEE StateType for task state
-    """
-
-    UNKNOWN = "UNKNOWN"
-    PUBLISHED = "PUBLISHED"
-    NOT_STARTED = "NOT_STARTED"
-    PENDING = "PENDING"
-    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    ABORTED = "ABORTED"
-    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
-
-    def is_running(self) -> bool:
-        return self in (
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.WAITING_FOR_CLUSTER,
-        )
-
-
-@unique
-class NodeProgressType(StrEnum):
-    # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
-    # It must remain as such until that module is pydantic V2 compatible
-    CLUSTER_UP_SCALING = "CLUSTER_UP_SCALING"
-    SIDECARS_PULLING = "SIDECARS_PULLING"
-    SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
-    SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
-    SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
-    SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
-    SERVICE_CONTAINERS_STARTING = "SERVICE_CONTAINERS_STARTING"
-    SERVICE_STATE_PUSHING = "SERVICE_STATE_PUSHING"
-    SERVICE_OUTPUTS_PUSHING = "SERVICE_OUTPUTS_PUSHING"
-    PROJECT_CLOSING = "PROJECT_CLOSING"
-
-    @classmethod
-    def required_types_for_started_service(cls) -> set[NodeProgressType]:
-        return {
-            NodeProgressType.SERVICE_INPUTS_PULLING,
-            NodeProgressType.SIDECARS_PULLING,
-            NodeProgressType.SERVICE_OUTPUTS_PULLING,
-            NodeProgressType.SERVICE_STATE_PULLING,
-            NodeProgressType.SERVICE_IMAGES_PULLING,
-            NodeProgressType.SERVICE_CONTAINERS_STARTING,
-        }
-
-
-class ServiceType(StrEnum):
-    DYNAMIC = "DYNAMIC"
-    COMPUTATIONAL = "COMPUTATIONAL"
+# Progress types a starting dynamic service is expected to report before its start is complete
+REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset(
+    {
+        ProgressType.SERVICE_INPUTS_PULLING,
+        ProgressType.SIDECARS_PULLING,
+        ProgressType.SERVICE_OUTPUTS_PULLING,
+        ProgressType.SERVICE_STATE_PULLING,
+        ProgressType.SERVICE_IMAGES_PULLING,
+        ProgressType.SERVICE_CONTAINERS_STARTING,
+    }
+)
 
 
 class _OSparcMessages(StrEnum):
@@ -179,6 +132,11 @@ class _ReconnectableEventWaiter:
         if exc_val is not None:
             if self._ctx is not None:
                 self._ctx.__exit__(exc_type, exc_val, exc_tb)
+        elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
+            # The predicate saw its event but could not report it as a match at the time (e.g. its
+            # project uuid was still unknown): cancel the pending wait.
+            if self._ctx is not None:
+                self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
         else:
             _ = self.value
 
@@ -405,10 +363,16 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
     return RunningState(event.obj["data"]["state"]["value"])
 
 
+def retrieve_project_id_from_decoded_message(event: SocketIOEvent) -> str:
+    assert event.name == _OSparcMessages.PROJECT_STATE_UPDATED.value
+    assert "project_uuid" in event.obj
+    return event.obj["project_uuid"]
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NodeProgressEvent:
     node_id: str
-    progress_type: NodeProgressType
+    progress_type: ProgressType
     current_progress: float
     total_progress: float
 
@@ -421,7 +385,7 @@ def retrieve_node_progress_from_decoded_message(
     assert "progress_report" in event.obj
     return NodeProgressEvent(
         node_id=event.obj["node_id"],
-        progress_type=NodeProgressType(event.obj["progress_type"]),
+        progress_type=ProgressType(event.obj["progress_type"]),
         current_progress=float(event.obj["progress_report"]["actual_value"]),
         total_progress=float(event.obj["progress_report"]["total"]),
     )
@@ -429,6 +393,10 @@ def retrieve_node_progress_from_decoded_message(
 
 @dataclass
 class SocketIOProjectClosedWaiter:
+    """Waits for `project_uuid` to close, ignoring the closing of other projects"""
+
+    project_uuid: str
+
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
@@ -437,10 +405,11 @@ class SocketIOProjectClosedWaiter:
                 decoded_message = decode_socketio_42_message(message)
                 if (
                     (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
-                    and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
+                    and (retrieve_project_id_from_decoded_message(decoded_message) == self.project_uuid)
+                    and (decoded_message.obj["data"]["shareState"]["status"] == ProjectStatus.CLOSED)
                     and (decoded_message.obj["data"]["shareState"]["locked"] is False)
                 ):
-                    ctx.logger.info("project successfully closed")
+                    ctx.logger.info("project %s successfully closed", self.project_uuid)
                     return True
 
         return False
@@ -448,18 +417,55 @@ class SocketIOProjectClosedWaiter:
 
 @dataclass
 class SocketIOProjectStateUpdatedWaiter:
+    """Waits for `project_uuid` to reach one of `expected_states`, ignoring other projects"""
+
     expected_states: tuple[RunningState, ...]
+    # None for as long as the caller has not learned the uuid yet, see `is_done`
+    project_uuid: str | None
+
+    # every (uuid, state) seen so far, since a frame received while `project_uuid` was still
+    # unknown may well be the awaited update and will not be sent again
+    _seen_states: list[tuple[str, RunningState]] = field(init=False, default_factory=list, repr=False)
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
-                    return retrieve_project_state_from_decoded_message(decoded_message) in self.expected_states
+                    event_project_uuid = retrieve_project_id_from_decoded_message(decoded_message)
+                    event_state = retrieve_project_state_from_decoded_message(decoded_message)
+                    self._seen_states.append((event_project_uuid, event_state))
+
+                    if self.project_uuid is None:
+                        ctx.logger.debug(
+                            "remembering %s of project %s until the expected project uuid is known",
+                            event_state,
+                            event_project_uuid,
+                        )
+                        return False
+
+                    if event_project_uuid != self.project_uuid:
+                        # a different project (e.g. a previous test/job's project still open or
+                        # closing on the shared user): ignore it and keep waiting for ours
+                        ctx.logger.debug(
+                            "ignoring projectStateUpdated for other project %s (waiting for %s)",
+                            event_project_uuid,
+                            self.project_uuid,
+                        )
+                        return False
+                    return event_state in self.expected_states
 
             return False
+
+    def is_done(self) -> bool:
+        """Whether an earlier frame already met the expectation, e.g. one delivered while
+        `project_uuid` was still unknown and hence unmatchable at the time"""
+        return self.project_uuid is not None and any(
+            event_project_uuid == self.project_uuid and event_state in self.expected_states
+            for event_project_uuid, event_state in self._seen_states
+        )
 
 
 @dataclass
@@ -699,7 +705,7 @@ class SocketIONodeProgressCompleteWaiter:
     node_id: str
     max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
     min_idle_before_fail_fast: timedelta = _MIN_IDLE_DURATION_BEFORE_FAIL_FAST
-    _current_progress: dict[NodeProgressType, float] = field(default_factory=defaultdict)
+    _current_progress: dict[ProgressType, float] = field(default_factory=defaultdict)
     _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
 
@@ -737,7 +743,7 @@ class SocketIONodeProgressCompleteWaiter:
 
                             ctx.logger.info(
                                 "Current startup progress [expected %d types]: %s",
-                                len(NodeProgressType.required_types_for_started_service()),
+                                len(REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE),
                                 f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                             )
 
@@ -762,8 +768,7 @@ class SocketIONodeProgressCompleteWaiter:
 
     def _completed_successfully(self) -> bool:
         return all(
-            progress_type in self._current_progress
-            for progress_type in NodeProgressType.required_types_for_started_service()
+            progress_type in self._current_progress for progress_type in REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE
         ) and all(round(progress, 1) == 1.0 for progress in self._current_progress.values())
 
     @property
@@ -814,6 +819,7 @@ def wait_for_pipeline_state(
     current_state: RunningState,
     *,
     websocket: RobustWebSocket,
+    project_uuid: str,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -828,7 +834,8 @@ def wait_for_pipeline_state(
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
-                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES
+                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES,
+                project_uuid=project_uuid,
             )
             with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
                 current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
@@ -880,6 +887,7 @@ def wait_for_computation_done(
     current_state: RunningState,
     *,
     websocket: RobustWebSocket,
+    project_uuid: str,
     stage_timeouts: PipelineStageTimeouts | int,
 ) -> RunningState:
     """Waits for an already-started computational pipeline to reach a final state.
@@ -892,6 +900,7 @@ def wait_for_computation_done(
         return wait_for_pipeline_state(
             current_state,
             websocket=websocket,
+            project_uuid=project_uuid,
             if_in_states=_RUNNING_STATES,
             expected_states=(RunningState.SUCCESS,),
             timeout_ms=stage_timeouts,
@@ -900,6 +909,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.PUBLISHED, RunningState.PENDING),
         expected_states=(
             RunningState.WAITING_FOR_CLUSTER,
@@ -912,6 +922,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
         expected_states=(
             RunningState.WAITING_FOR_RESOURCES,
@@ -923,6 +934,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
         expected_states=(
             RunningState.STARTED,
@@ -933,6 +945,7 @@ def wait_for_computation_done(
     return wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.STARTED,),
         expected_states=(RunningState.SUCCESS,),
         timeout_ms=stage_timeouts.started_ms,
@@ -943,6 +956,7 @@ def run_pipeline_and_wait_done(
     page: Page,
     websocket: RobustWebSocket,
     *,
+    project_uuid: str,
     run_button_test_id: str = "runStudyBtn",
     timeout_ms: int = _RUN_PIPELINE_MAX_WAIT_TIME,
     stage_timeouts: PipelineStageTimeouts | None = None,
@@ -960,7 +974,7 @@ def run_pipeline_and_wait_done(
     # `projectStateUpdated` frame still reporting the pre-run state can't race with the actual run
     # trigger and be mistaken for a final state; the `POST /computations` request is also checked
     # to confirm the click really triggered a computation.
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES)
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES, project_uuid=project_uuid)
     with log_context(
         logging.INFO,
         f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
@@ -980,6 +994,7 @@ def run_pipeline_and_wait_done(
         current_state = wait_for_computation_done(
             current_state,
             websocket=websocket,
+            project_uuid=project_uuid,
             stage_timeouts=stage_timeouts if stage_timeouts is not None else timeout_ms,
         )
         assert current_state == RunningState.SUCCESS, f"❌ Pipeline finished with {current_state} ❌"
