@@ -85,11 +85,20 @@ def create_victoria_logs_permalinks(environment: dict[str, str | None], instance
     monitoring_fqdn = environment.get("K8S_MONITORING_FQDN")
     if not monitoring_fqdn:
         return "[dim]n/a (K8S_MONITORING_FQDN not set)[/dim]"
-    source_name = instance.private_ip_address.replace(".", "-")
-    time_span = int((arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)).total_seconds())
-    query = f'* AND source:"ip-{source_name}" | sort by (_time) desc'
-    params = urlencode({"query": query, "period": f"{time_span}s"})
-    url = f"https://{monitoring_fqdn}/logs/select/vmui/?{params}"
+    host_name = instance.private_ip_address.replace(".", "-")
+    now = arrow.utcnow()
+    time_span = now.datetime - instance.launch_time + datetime.timedelta(hours=1)
+    total_seconds = int(time_span.total_seconds())
+    # vmui keeps its state in the URL fragment, not in query parameters
+    params = urlencode(
+        {
+            "groupBy": "_stream",
+            "g0.end_input": now.format("YYYY-MM-DDTHH:mm:ss.SSS") + "Z",
+            "g0.range_input": f"{total_seconds // 3600}h{(total_seconds % 3600) // 60}m",
+            "query": f'host:"ip-{host_name}"',
+        }
+    )
+    url = f"https://{monitoring_fqdn}/logs/select/vmui/?#/?{params}"
     # rich renders this as an OSC 8 hyperlink: Ctrl+click works even when the
     # link text is folded across several lines
     return f"[link={url}]{url}[/link]"
