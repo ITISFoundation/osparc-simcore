@@ -102,7 +102,9 @@ async def running_service_tasks(
     async_docker_client: aiodocker.Docker,
 ) -> Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]]:
     async def _(labels: dict[DockerLabelKey, str]) -> list[Task]:
-        # Simulate a running service
+        """Returns only the newest task (by swarm object index): concurrent xdist workers
+        draining the shared node make swarm reschedule and leave stale tasks around.
+        """
         service = await create_service(
             task_template,
             labels,
@@ -114,8 +116,8 @@ async def running_service_tasks(
             await async_docker_client.tasks.list(filters={"service": service.spec.name})
         )
         assert docker_tasks
-        assert len(docker_tasks) == 1
-        return docker_tasks
+        newest_task = max(docker_tasks, key=lambda task: (task.version.index or 0) if task.version else 0)
+        return [newest_task]
 
     return _
 

@@ -28,6 +28,7 @@ pytest-asyncio
 pytest-cov
 pytest-mock
 pytest-runner
+pytest-xdist
 python-dotenv
 pytest-icdiff
 pytest-sugar

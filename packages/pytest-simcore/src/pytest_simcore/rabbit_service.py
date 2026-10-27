@@ -11,16 +11,19 @@ import urllib.error
 import urllib.request
 from base64 import b64encode
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Annotated, Final
 from urllib.parse import quote
 
 import aio_pika
 import pytest
 import tenacity
+from annotated_types import doc
 from servicelib.rabbitmq import QueueName, RabbitMQClient, RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
+from tenacity.retry import retry_if_exception
+from tenacity.stop import stop_after_attempt, stop_after_delay
+from tenacity.wait import wait_fixed, wait_random_exponential
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
@@ -29,6 +32,14 @@ from .helpers.typing_env import EnvVarsDict
 from .helpers.xdist import get_worker_id, is_xdist_worker
 
 _logger = logging.getLogger(__name__)
+
+_MGMT_API_TIMEOUT_S: Final[Annotated[int, doc("per-request timeout of the RabbitMQ management API")]] = 10
+_MGMT_API_RETRY_MAX_WAIT_S: Final[
+    Annotated[int, doc("cap of the jittered exponential backoff between management-API retries")]
+] = 10
+_MGMT_API_RETRY_TIMEOUT_S: Final[
+    Annotated[int, doc("time budget to ride out a transient broker stall before failing")]
+] = 120
 
 
 def _get_management_port(stack_name: str) -> int:
@@ -54,14 +65,27 @@ async def wait_till_rabbit_responsive(url: str) -> None:
         ...
 
 
+def _is_transient_network_error(exc: BaseException) -> bool:
+    """Any connection-level OSError is transient: an HTTPError means the broker answered"""
+    return isinstance(exc, OSError) and not isinstance(exc, urllib.error.HTTPError)
+
+
+@tenacity.retry(
+    retry=retry_if_exception(_is_transient_network_error),
+    wait=wait_random_exponential(max=_MGMT_API_RETRY_MAX_WAIT_S),
+    stop=stop_after_delay(_MGMT_API_RETRY_TIMEOUT_S),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+    reraise=True,
+)
 def _management_api_request(method: str, url: str, user: str, password: str, body: dict | None = None) -> None:
+    """Retries transient connection errors: the broker can stall briefly under concurrent xdist load."""
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(url, data=data, method=method)  # noqa: S310
     request.add_header("Content-Type", "application/json")
     credentials = b64encode(f"{user}:{password}".encode()).decode()
     request.add_header("Authorization", f"Basic {credentials}")
     try:
-        urllib.request.urlopen(request, timeout=10)  # noqa: S310
+        urllib.request.urlopen(request, timeout=_MGMT_API_TIMEOUT_S)  # noqa: S310
     except urllib.error.HTTPError as exc:
         if exc.code == 404 and method == "DELETE":
             return
