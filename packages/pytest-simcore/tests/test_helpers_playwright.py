@@ -2,9 +2,11 @@
 
 import json
 from datetime import timedelta
-from types import SimpleNamespace
+from typing import Final
+from unittest import mock
 
 import pytest
+from playwright.sync_api import ElementHandle, Frame, Locator, Page
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pytest_simcore.helpers import playwright as playwright_helpers
@@ -15,7 +17,7 @@ from pytest_simcore.helpers.playwright import (
     _ensure_service_iframe_attached,
 )
 
-_NODE_ID = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
+_NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
 
 
 def _socketio_message(name: str, obj: dict) -> str:
@@ -75,11 +77,11 @@ def test_idle_state_grace_period_is_anchored_on_first_status_message():
 
 
 def test_idle_within_grace_period_still_triggers_stale_progress_fallback():
-    # NOTE: regression test — an idle SERVICE_STATUS message that stays within
-    # its own idle grace period must not bypass the general stale-progress
-    # fallback check (`max_idle_timeout`), otherwise the waiter could wait
-    # forever if the backend keeps reporting "idle" but never emits any
-    # nodeProgress message.
+    """An idle status within its idle grace period must not bypass the stale-progress fallback.
+
+    Regression test: otherwise the waiter could wait forever if the backend
+    keeps reporting "idle" but never emits any nodeProgress message.
+    """
     waiter = SocketIONodeProgressCompleteWaiter(
         node_id=_NODE_ID,
         max_idle_timeout=timedelta(seconds=0),
@@ -113,125 +115,111 @@ def test_node_progress_reaching_completion_marks_success():
     assert waiter.success is True
 
 
-_SERVICE_FRAME_URL = f"https://{_NODE_ID}.services.example.org/lab"
+_SERVICE_FRAME_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/lab"
 
 
-class _FakeContentFrame:
-    def __init__(self, url: str) -> None:
-        self.url = url
+def _frame(url: str) -> Frame:
+    frame = mock.create_autospec(Frame, instance=True)
+    frame.url = url
+    return frame
 
 
-class _FakeIframeElement:
-    def __init__(self, page: _FakePage) -> None:
-        self._page = page
+def _page_with_service_iframe(
+    *,
+    first_iframe_content: Frame | None,
+    iframe_src_set: bool = True,
+    evaluate_error: Exception | None = None,
+    attached_duplicate: bool = False,
+) -> tuple[Page, mock.Mock]:
+    """Autospecced `Page` whose service iframe element attaches ``first_iframe_content``.
 
-    def content_frame(self) -> _FakeContentFrame | None:
-        return self._page.first_iframe_content
+    Returns the page and the `Locator` the helper uses to reach the iframe
+    element, so that tests can observe the recovery re-navigation. With
+    ``attached_duplicate``, an attached duplicate frame is visible only through
+    ``page.frames``, never on the first iframe element.
+    """
+    page = mock.create_autospec(Page, instance=True)
+    iframe_locator = mock.create_autospec(Locator, instance=True)
+    iframe_element = mock.create_autospec(ElementHandle, instance=True)
 
-
-class _FakeIframeLocator:
-    def __init__(self, page: _FakePage) -> None:
-        self._page = page
-
-    @property
-    def first(self) -> _FakeIframeLocator:
-        return self
-
-    def element_handle(self) -> _FakeIframeElement:
-        return _FakeIframeElement(self._page)
-
-    def evaluate(self, _script) -> None:
-        if self._page.evaluate_error is not None:
-            raise self._page.evaluate_error
-        self._page.navigations += 1
-        # NOTE: re-navigating the iframe makes the driver attach its content frame
-        self._page.first_iframe_content = _FakeContentFrame(_SERVICE_FRAME_URL)
-
-
-class _FakePage:
-    """Duck-typed subset of `playwright.sync_api.Page` used by `_ensure_service_iframe_attached`"""
-
-    def __init__(
-        self,
-        *,
-        first_iframe_content: _FakeContentFrame | None = None,
-        iframe_src_set: bool = True,
-        evaluate_error: Exception | None = None,
-        attached_duplicate: bool = False,
-    ) -> None:
-        self.first_iframe_content = first_iframe_content
-        self.navigations = 0
-        self._iframe_src_set = iframe_src_set
-        self.evaluate_error = evaluate_error
-        # NOTE: some tests hold an attached duplicate iframe's frame here: the helper must
-        # not consult `page.frames`, since that would mask the first iframe's state
-        self.frames: list[SimpleNamespace] = [SimpleNamespace(url=_SERVICE_FRAME_URL)] if attached_duplicate else []
-
-    def locator(self, _selector) -> _FakeIframeLocator:
-        return _FakeIframeLocator(self)
-
-    def wait_for_function(self, _expression, **_kwargs) -> None:
-        # NOTE: the real call passes the node id as `arg`: the iframe src must contain it
-        # once the UI navigated it
-        if not self._iframe_src_set:
-            timeout_message = "timeout"  # what Playwright raises when the timeout elapses
-            raise PlaywrightTimeoutError(timeout_message)
-
-    def wait_for_timeout(self, _milliseconds) -> None:
-        pass
+    iframe_locator.first = iframe_locator
+    iframe_locator.element_handle.return_value = iframe_element
+    iframe_element.content_frame.return_value = first_iframe_content
+    if evaluate_error is not None:
+        iframe_locator.evaluate.side_effect = evaluate_error
+    if not iframe_src_set:
+        page.wait_for_function.side_effect = PlaywrightTimeoutError("Timeout")
+    if attached_duplicate:
+        page.frames = [_frame(_SERVICE_FRAME_URL)]
+    page.locator.return_value = iframe_locator
+    return page, iframe_locator
 
 
 @pytest.fixture()
-def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch):
-    # NOTE: keep the unattached-frame tests from waiting out the real grace window
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", 0)
+def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Drop the content-frame attachment grace window of the helper."""
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
 
 
 def test_healthy_service_iframe_is_left_untouched():
-    page = _FakePage(first_iframe_content=_FakeContentFrame(_SERVICE_FRAME_URL))
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame(_SERVICE_FRAME_URL))
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+    _ensure_service_iframe_attached(page, _NODE_ID)
 
-    assert page.navigations == 0
+    iframe_locator.evaluate.assert_not_called()
 
 
-def test_unattached_service_iframe_is_re_navigated(_no_frame_attach_grace):
-    # NOTE: regression test for microsoft/playwright#43007: the service UI is rendered but
-    # its content frame never attaches, so the driver keeps exposing the stale frame of the
-    # previous navigation and queries hang forever
-    page = _FakePage(first_iframe_content=_FakeContentFrame("about:blank"))
+def test_unattached_service_iframe_is_re_navigated(_no_frame_attach_grace: None):
+    """Regression test for microsoft/playwright#43007.
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+    The service UI is rendered but its content frame never attaches, so the
+    driver keeps exposing the stale frame of the previous navigation and
+    queries hang forever.
+    """
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame("about:blank"))
 
-    assert page.navigations == 1
+    _ensure_service_iframe_attached(page, _NODE_ID)
+
+    iframe_locator.evaluate.assert_called_once()
 
 
 def test_unattached_first_service_iframe_is_re_navigated_despite_attached_duplicate(
-    _no_frame_attach_grace,
+    _no_frame_attach_grace: None,
 ):
-    # NOTE: regression test: with duplicate service iframes (ITISFoundation/osparc-simcore#9541),
-    # an attached duplicate must not mask the unattached first iframe, since that is the one
-    # the returned `FrameLocator` queries
-    page = _FakePage(attached_duplicate=True)
+    """An attached duplicate must not mask the unattached first iframe.
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+    Regression test: with duplicate service iframes, the first one is what the
+    returned `FrameLocator` queries.
+    """
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None, attached_duplicate=True)
 
-    assert page.navigations == 1
+    _ensure_service_iframe_attached(page, _NODE_ID)
+
+    iframe_locator.evaluate.assert_called_once()
 
 
 def test_service_iframe_not_navigated_yet_is_left_untouched():
-    # NOTE: regression test: the UI sets the iframe src asynchronously (IframeHandler.js),
-    # so an iframe that never navigated must not be treated as the attach bug nor reloaded
-    page = _FakePage(iframe_src_set=False)
+    """An iframe the UI has not navigated yet must not be treated as the attach failure.
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+    Regression test: the UI assigns the iframe src asynchronously, so reloading
+    it here would restart a healthy navigation.
+    """
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None, iframe_src_set=False)
 
-    assert page.navigations == 0
+    _ensure_service_iframe_attached(page, _NODE_ID)
+
+    iframe_locator.evaluate.assert_not_called()
 
 
-def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace):
-    # NOTE: the recovery is best-effort: a Playwright error while re-navigating must not
-    # abort the service-ready helpers, which must fail with their own original error
-    page = _FakePage(evaluate_error=PlaywrightError("boom"))
+def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace: None):
+    """A Playwright error during the best-effort recovery must not propagate.
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # type: ignore[arg-type]
+    The service-ready helpers must fail with their own original error, not with
+    an error from the recovery attempt.
+    """
+    page, _ = _page_with_service_iframe(
+        first_iframe_content=_frame("about:blank"),
+        evaluate_error=PlaywrightError("boom"),
+    )
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # must not raise

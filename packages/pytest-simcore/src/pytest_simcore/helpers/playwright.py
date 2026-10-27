@@ -9,7 +9,6 @@ import json
 import logging
 import re
 import threading
-import time
 import typing
 from collections import defaultdict
 from collections.abc import Generator
@@ -17,19 +16,23 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum, unique
 from types import TracebackType
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import arrow
 import pytest
+from annotated_types import doc
 from playwright._impl._sync_base import EventContextManager, EventInfo
 from playwright.sync_api import APIRequestContext, ElementHandle, FrameLocator, Locator, Page, Request, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
 from tenacity import (
+    RetryError,
+    Retrying,
     before_sleep_log,
     retry,
     retry_if_exception_type,
+    retry_if_result,
     stop_after_attempt,
     stop_after_delay,
     wait_exponential,
@@ -1000,7 +1003,9 @@ class ServiceRunning:
     iframe_locator: FrameLocator | None
 
 
-_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
+_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[
+    Annotated[timedelta, doc("floor left to the endpoint check after the start waits")]
+] = timedelta(seconds=30)
 
 
 def _service_iframe_selector(node_id: str) -> str:
@@ -1021,70 +1026,74 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
     return page.frame_locator(iframe_selector).first
 
 
-# NOTE: the UI navigates the service iframe only once the service became ready (its own
-# endpoint ping in `IframeHandler.js`), independently of the test's endpoint check, so
-# both the navigation and the frame attachment must be given a bounded window before
-# concluding that the driver failed to attach the frame (microsoft/playwright#43007)
-_SERVICE_IFRAME_SRC_TIMEOUT: Final[int] = 10 * SECOND
-_SERVICE_FRAME_ATTACH_TIMEOUT: Final[int] = 10 * SECOND
-_SERVICE_FRAME_POLL_INTERVAL: Final[int] = 250  # ms
+_SERVICE_IFRAME_SRC_TIMEOUT: Final[
+    Annotated[
+        timedelta,
+        doc("the UI navigates the service iframe to its service URL only once the service became ready"),
+    ]
+] = timedelta(seconds=10)
+_SERVICE_FRAME_ATTACH_TIMEOUT: Final[
+    Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
+] = timedelta(seconds=10)
+_SERVICE_FRAME_POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=250)
 
 
 def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool:
-    # NOTE: probe the content frame of the given iframe element and not `page.frames`: an
-    # attached duplicate iframe (see the ones warned about in ITISFoundation/osparc-simcore#9541)
-    # must not mask the unattached first one, which is the iframe the locator selects.
-    # While the service frame failed to attach, the driver may still expose the stale frame
-    # of the iframe's previous navigation (e.g. `about:blank`); only the service frame URL
-    # carries the node id (see `_get_service_url`)
+    """Whether the driver attached the content frame of the given iframe element.
+
+    Only the service frame URL carries the node id, so the stale frame left by
+    the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
+    """
     content_frame = iframe_element.content_frame()
     return content_frame is not None and node_id in content_frame.url
 
 
 def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
-    """Works around microsoft/playwright#43007
+    """Re-navigates the service iframe when the driver never attached its content frame.
 
-    Firefox intermittently never attaches the content frame of the rendered service
-    iframe, which makes every query on its `FrameLocator` hang until timeout even though
-    the service UI is fully shown. Re-navigating the iframe makes the driver attach it.
+    Firefox intermittently does not attach the content frame of a rendered
+    cross-origin iframe (microsoft/playwright#43007), which makes every query on
+    its ``FrameLocator`` hang until timeout even though the service UI is fully
+    shown. Re-setting the iframe source reloads it and re-triggers the frame
+    lifecycle events the driver needs to attach the content frame.
 
-    Best-effort: it first waits for the UI to navigate the iframe and for the driver to
-    attach its content frame, and only then re-navigates the iframe once. Playwright
-    errors are logged and swallowed, so that the caller still fails with its own
-    original error.
+    Best-effort: it first waits for the UI to navigate the iframe and for the
+    driver to attach its content frame, and only then re-navigates the iframe
+    once. Playwright errors are logged and swallowed, so that the caller still
+    fails with its own original error.
     """
     try:
-        # NOTE: the iframe src is set by the UI, not by the test: waiting for it here
-        # avoids re-navigating an iframe that is blank or normally still navigating
         page.wait_for_function(
             """nodeId => {
                 const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
                 return !!iframe && iframe.src.includes(nodeId);
             }""",
             arg=node_id,
-            timeout=_SERVICE_IFRAME_SRC_TIMEOUT,
+            timeout=int(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds() * SECOND),
         )
 
-        # NOTE: resolve the first iframe element, i.e. the same one `_service_iframe_locator`
-        # selects and the recovery re-navigates
         iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
         if iframe_element is None:
             return
 
-        # NOTE: give the driver a window to attach the frame of an in-flight navigation
-        deadline = time.monotonic() + _SERVICE_FRAME_ATTACH_TIMEOUT / 1000
-        while not _service_frame_attached(iframe_element, node_id) and time.monotonic() < deadline:
-            page.wait_for_timeout(_SERVICE_FRAME_POLL_INTERVAL)
-        if _service_frame_attached(iframe_element, node_id):
+        frame_attached = Retrying(
+            stop=stop_after_delay(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds()),
+            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+            retry=retry_if_result(lambda attached: not attached),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        )
+        try:
+            attached = frame_attached(lambda: _service_frame_attached(iframe_element, node_id))
+        except RetryError:
+            attached = False
+        if attached:
             return
 
         _logger.warning(
-            "Service iframe content frame of node %s is not attached (suspected "
-            "microsoft/playwright#43007): re-navigating the iframe to force the driver to attach it",
+            "Service iframe content frame of node %s is not attached: "
+            "re-navigating the iframe to force the driver to attach it",
             node_id,
         )
-        # NOTE: re-setting src re-loads the iframe, which re-triggers the frame lifecycle
-        # events the driver needs to attach the content frame
         page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
     except PlaywrightError:
         _logger.exception(
@@ -1142,7 +1151,7 @@ def expected_service_running(
         is_legacy_service=is_service_legacy,
         timeout=max(
             timeout - int(elapsed_time.total_seconds() * SECOND),
-            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+            int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
     _ensure_service_iframe_attached(page, node_id)
@@ -1198,7 +1207,7 @@ def wait_for_service_running(
         is_legacy_service=is_service_legacy,
         timeout=max(
             timeout - int(elapsed_time.total_seconds() * SECOND),
-            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+            int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
 
@@ -1219,8 +1228,8 @@ def app_mode_trigger_next_app(page: Page) -> None:
                 # Move to next step (this auto starts the next service)
                 page.get_by_test_id("AppMode_NextBtn").click()
         except PlaywrightTimeoutError, TimeoutError:
-            ctx.logger.info(
-                "⚠️ no start request detected within %s ms: the next service was likely already started ⚠️",
+            ctx.logger.exception(
+                "❌ no start request detected within %s ms: the next service was likely already started ❌",
                 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT,
             )
 
