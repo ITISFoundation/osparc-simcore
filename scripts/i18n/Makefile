@@ -151,7 +151,7 @@ else
 endif
 
 EXTRACTOR  := uv run $(I18N_TOOLS)/i18n_extractor.py
-TRANSLATOR := uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
+TRANSLATOR := uv run --locked --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
 
 # ---------------------------------------------------------------------------
 # Step header — bold-yellow "[TAG] message" banner printed before each
@@ -218,7 +218,7 @@ backend-plan:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, 
 	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
-	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
+	  uv run --locked $(I18N_TOOLS)/i18n_translator.py translate \
 	    --dry-run --pot $(POT) $$in_po_flag --lang $$lang --out $$po \
 	    $(RETRANSLATE_IDENTICAL_FLAG); \
 	done
@@ -313,7 +313,7 @@ frontend-plan:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call
 	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
-	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
+	  uv run --locked $(I18N_TOOLS)/i18n_translator.py translate \
 	    --dry-run --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po \
 	    $(RETRANSLATE_IDENTICAL_FLAG); \
 	done
@@ -341,7 +341,7 @@ frontend-translate: $(TRANSLATE_DEPS)  ## msgmerge + AI translate frontend .po f
 	  else \
 	    msginit --no-translator --input="$(FRONTEND_POT)" --locale="$$out_lang" --output-file="$$out"; \
 	  fi; \
-	  uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py translate \
+	  uv run --locked --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py translate \
 	    --pot $(FRONTEND_POT) \
 	    --in-po $$out \
 	    --lang $$lang \
@@ -417,14 +417,13 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 # local typescript) self-skip when those are unavailable.
 # ---------------------------------------------------------------------------
 test:  ## Run unit tests for the i18n tools (uv-managed deps, self-skips gated tests)
-	cd $(I18N_TOOLS) && uv run \
+	cd $(I18N_TOOLS) && \
+	  requirements=$$(uv export --script i18n_translator.py --locked --no-hashes --no-header --quiet) && \
+	  printf '%s\n' "$$requirements" | uv run --with-requirements - \
 	  --with pytest \
-	  --with polib \
-	  --with typer \
 	  --with rich \
 	  --with Babel \
 	  --with Jinja2 \
-	  --with litellm \
 	  pytest tests -v
 
 # ---------------------------------------------------------------------------
