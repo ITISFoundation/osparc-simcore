@@ -81,6 +81,12 @@ def _format_disk_usage_lines(disk_usage: list[DiskUsage], *, indent: str = "") -
     return lines
 
 
+def clickable_link(url: str) -> str:
+    # rich renders this as an OSC 8 hyperlink: Ctrl+click works even when the
+    # link text is folded across several lines
+    return f"[link={url}]{url}[/link]"
+
+
 def create_victoria_logs_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
     monitoring_fqdn = environment.get("K8S_MONITORING_FQDN")
     if not monitoring_fqdn:
@@ -102,9 +108,7 @@ def create_victoria_logs_permalinks(environment: dict[str, str | None], instance
         }
     )
     url = f"https://{monitoring_fqdn}/logs/select/vmui/?#/?{params}"
-    # rich renders this as an OSC 8 hyperlink: Ctrl+click works even when the
-    # link text is folded across several lines
-    return f"[link={url}]{url}[/link]"
+    return clickable_link(url)
 
 
 def format_cluster_identity(
@@ -344,8 +348,8 @@ def build_cluster_links_table(
     )
     ip = cluster.primary.ec2_instance.public_ip_address
     table.add_row("Logs", create_victoria_logs_permalinks(environment, cluster.primary.ec2_instance))
-    table.add_row("Dask Scheduler", f"http://{ip}:8787 — {dask_state_display}")
-    table.add_row("Prometheus", f"http://{ip}:9090")
+    table.add_row("Dask Scheduler", f"{clickable_link(f'http://{ip}:8787')} — {dask_state_display}")
+    table.add_row("Prometheus", clickable_link(f"http://{ip}:9090"))
     return table
 
 
