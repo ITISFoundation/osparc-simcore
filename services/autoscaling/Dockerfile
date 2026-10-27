@@ -19,7 +19,7 @@ FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 LABEL maintainer=sanderegg
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
-ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
+ENV DOCKER_APT_VERSION="5:29.6.2-1~debian.13~trixie"
 
 # Installs the docker CLI (only the cli is needed) on top of the shared runtime base
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
