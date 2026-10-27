@@ -82,11 +82,17 @@ def _format_disk_usage_lines(disk_usage: list[DiskUsage], *, indent: str = "") -
 
 
 def create_victoria_logs_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
+    monitoring_fqdn = environment.get("K8S_MONITORING_FQDN")
+    if not monitoring_fqdn:
+        return "[dim]n/a (K8S_MONITORING_FQDN not set)[/dim]"
     source_name = instance.private_ip_address.replace(".", "-")
     time_span = int((arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)).total_seconds())
     query = f'* AND source:"ip-{source_name}" | sort by (_time) desc'
     params = urlencode({"query": query, "period": f"{time_span}s"})
-    return f"https://monitoring.{environment['MACHINE_FQDN']}/logs/select/vmui/?{params}"
+    url = f"https://{monitoring_fqdn}/logs/select/vmui/?{params}"
+    # rich renders this as an OSC 8 hyperlink: Ctrl+click works even when the
+    # link text is folded across several lines
+    return f"[link={url}]{url}[/link]"
 
 
 def format_cluster_identity(
@@ -269,7 +275,7 @@ def build_worker_metrics_table(
 ) -> Table:
     table = Table(
         Column(""),
-        Column(""),
+        Column("", overflow="fold"),
         padding=(0, 1),
         show_header=False,
         box=None,
@@ -318,7 +324,7 @@ def build_cluster_links_table(
 ) -> Table:
     table = Table(
         Column(""),
-        Column(""),
+        Column("", overflow="fold"),
         padding=(0, 1),
         show_header=False,
         box=None,
@@ -384,6 +390,7 @@ async def print_dynamic_instances(  # noqa: C901, PLR0912, PLR0915
         Column("Instance"),
         Column(
             "Running services",
+            overflow="fold",
             footer="[red]Intervention detection might show false positive"
             " if in transient state, be careful and always double-check!![/red]",
         ),
