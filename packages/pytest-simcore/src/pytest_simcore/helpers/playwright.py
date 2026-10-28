@@ -24,7 +24,16 @@ from annotated_types import doc
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
-from playwright.sync_api import APIRequestContext, ElementHandle, FrameLocator, Locator, Page, Request, WebSocket
+from playwright.sync_api import (
+    APIRequestContext,
+    ElementHandle,
+    FrameLocator,
+    Locator,
+    Page,
+    Request,
+    WebSocket,
+    expect,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
@@ -558,8 +567,8 @@ def wait_for_nodes_outputs_updated(
 ) -> Generator[None]:
     """Asserts that a `NodeUpdated` websocket message with the expected number of outputs is
     received for every node in `node_id_to_expected_number_of_outputs` while the wrapped block
-    runs. Unlike `check_node_outputs` (which only polls the REST API after the fact), this
-    verifies the websocket push actually happened.
+    runs. Unlike checking the UI after the fact, this verifies the websocket push actually
+    happened.
     """
     waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
     with (
@@ -1350,7 +1359,7 @@ def _read_output_file_names(
     wait=wait_exponential_jitter(max=_OUTPUT_FILE_NAMES_WAIT_INTERVAL.total_seconds()),
     before_sleep=before_sleep_log(_logger, logging.INFO),
 )
-def _check_node_outputs_dialog(
+def _check_node_files_panel(
     page: Page,
     *,
     study_id: str,
@@ -1359,7 +1368,7 @@ def _check_node_outputs_dialog(
     open_outputs_folder: bool,
     app_mode: bool,
 ) -> None:
-    with log_context(logging.INFO, "Opening node outputs panel"):
+    with log_context(logging.INFO, "Opening node files panel"):
         path_filter = f"{study_id}/{node_id}"
         with page.expect_response(
             re.compile(r"storage/locations/0/paths\?file_filter="),
@@ -1378,11 +1387,11 @@ def _check_node_outputs_dialog(
             open_outputs_folder=open_outputs_folder,
         )
     finally:
-        with log_context(logging.INFO, "Closing node outputs panel"):
+        with log_context(logging.INFO, "Closing node files panel"):
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
 
 
-def check_node_outputs(
+def check_node_files_panel(
     page: Page,
     *,
     study_id: str,
@@ -1416,8 +1425,8 @@ def check_node_outputs(
     assert node_id in workbench, f"node {node_id!r} not found in workbench"
     _select_node(page, node_id=node_id)
 
-    with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
-        _check_node_outputs_dialog(
+    with log_context(logging.INFO, f"Checking node {node_id=} files panel"):
+        _check_node_files_panel(
             page,
             study_id=study_id,
             node_id=node_id,
@@ -1425,3 +1434,58 @@ def check_node_outputs(
             open_outputs_folder=open_outputs_folder,
             app_mode=app_mode,
         )
+
+
+_NODE_OUTPUT_LINK_MAX_WAITING_TIME: Final[timedelta] = timedelta(minutes=10)
+_NODE_OUTPUT_LINK_CLEARED_MAX_WAITING_TIME: Final[timedelta] = timedelta(minutes=5)
+_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME: Final[timedelta] = timedelta(seconds=30)
+_NODE_OUTPUT_LINK_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=2)
+
+
+def _visible_output_link(page: Page, *, port_key: str) -> Locator:
+    """Visible value widget of the node output ``port_key`` in the Outputs panel.
+
+    Only visible matches are considered: removed qooxdoo widgets can leave hidden
+    nodes with the same test id in the DOM.
+    """
+    return page.get_by_test_id(f"nodeOutputValue_{port_key}").filter(visible=True).first
+
+
+def wait_for_node_output_link(page: Page, *, port_key: str, filename: str) -> None:
+    """Waits until the output ``port_key`` shows a link to the file ``filename``.
+
+    The node must already be selected so that its Outputs panel is shown.
+    """
+    expect(_visible_output_link(page, port_key=port_key)).to_contain_text(
+        filename, timeout=_NODE_OUTPUT_LINK_MAX_WAITING_TIME.total_seconds() * 1000
+    )
+
+
+@retry(
+    stop=stop_after_delay(_NODE_OUTPUT_LINK_CLEARED_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_fixed(_NODE_OUTPUT_LINK_POLL_INTERVAL.total_seconds()),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+)
+def wait_for_node_output_link_cleared(page: Page, *, port_key: str, filename: str) -> None:
+    """Waits until the output ``port_key`` no longer links to ``filename`` and stays that way.
+
+    The widget must first stop linking to ``filename``, then keep doing so for
+    ``_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME``. A single pass is not enough: the row is
+    re-rendered on updates, so the check could transiently succeed while an old widget is
+    detached even if the file is then listed again. A regression raises and is retried.
+    """
+
+    def _read_link_text() -> str | None:
+        value = _visible_output_link(page, port_key=port_key)
+        return value.text_content() if value.count() > 0 else None
+
+    text = _read_link_text()
+    assert text is not None, f"no visible output link widget for port {port_key!r}"
+    assert filename not in text, f"output {port_key!r} still links to {filename!r} (text: {text!r})"
+
+    page.wait_for_timeout(_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME.total_seconds() * 1000)
+    text = _read_link_text()
+    assert text is not None, f"no visible output link widget for port {port_key!r}"
+    assert filename not in text, f"output {port_key!r} links to {filename!r} again (text: {text!r})"
