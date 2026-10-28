@@ -1,0 +1,20 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "simcore-service.name" . }}
+  labels:
+    {{- include "simcore-service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "simcore-service.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    {{- tpl (toYaml .Values.networkPolicy.ingress) . | nindent 4 }}
+  egress:
+    {{- tpl (toYaml .Values.networkPolicy.egress) . | nindent 4 }}
+{{- end }}

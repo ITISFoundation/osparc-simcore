@@ -1,0 +1,61 @@
+replicaCount: 1
+
+image:
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+command: []
+args: []
+
+containerPort: 8000
+service:
+  port: 8000
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 8004
+  runAsGroup: 8004
+  fsGroup: 8004
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+probes:
+  startup:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+
+envFrom: []
+env: {}
+
+networkPolicy:
+  enabled: true
+  ingress: []
+  egress: []
+
+resources: {}
