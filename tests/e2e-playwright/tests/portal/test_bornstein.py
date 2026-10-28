@@ -11,7 +11,11 @@ from typing import Any
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import check_node_outputs, get_node_id_from_service_key, wait_for_service_running
+from pytest_simcore.helpers.playwright import (
+    check_node_files_panel,
+    get_node_id_from_service_key,
+    wait_for_service_running,
+)
 from pytest_simcore.helpers.playwright_portal import restore_iframe
 
 # NOTE: bornstein-viewer is a legacy dynamic service (port of the legacy Bornstein.js, which calls
@@ -62,7 +66,7 @@ def test_bornstein(
             loading_callback.wait_for(state="attached", timeout=_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)
         loading_callback.wait_for(state="detached", timeout=_DASH_LOADING_CALLBACK_APPEAR_TIMEOUT)
 
-    check_node_outputs(
+    check_node_files_panel(
         page,
         study_id=project_data["uuid"],
         workbench=project_data["workbench"],

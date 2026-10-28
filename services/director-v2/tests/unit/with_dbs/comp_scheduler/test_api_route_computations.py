@@ -460,6 +460,27 @@ async def test_create_computation_with_wallet(
             )
         ),
     )
+    # a computational node is sized as a dask worker on the pricing unit's machine:
+    # sizing a multi-container service per sub-service is not implemented, so with
+    # EC2 hardware the whole creation is refused (and the transaction rolled back)
+    if default_pricing_plan_aws_ec2_type and DEFAULT_SINGLE_SERVICE_NAME not in project_nodes_overrides:
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, response.text
+        assert "multi-container" in response.text
+        # nothing was persisted: the lazy pricing links and the tasks are rolled back
+        pricing_state = await get_node_pricing_state(sqlalchemy_async_engine, proj.uuid)
+        assert pricing_state
+        for node_state in pricing_state.values():
+            assert node_state.pricing_plan_id is None
+            assert node_state.pricing_unit_id is None
+        async with sqlalchemy_async_engine.connect() as connection:
+            task_rows = (
+                await connection.execute(
+                    sqlalchemy.select(comp_tasks.c.node_id).where(comp_tasks.c.project_id == f"{proj.uuid}")
+                )
+            ).all()
+        assert not task_rows
+        return
+
     assert response.status_code == status.HTTP_201_CREATED, response.text
     if default_pricing_plan_aws_ec2_type:
         # clusters-keeper is asked once for all the nodes together
@@ -476,34 +497,18 @@ async def test_create_computation_with_wallet(
             for node in await project_nodes_repo.list(connection):
                 if to_node_class(proj.workbench[f"{node.node_id}"].key) != NodeClass.FRONTEND:
                     assert node.required_resources
-                    if DEFAULT_SINGLE_SERVICE_NAME in node.required_resources:
-                        assert node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"] == {
-                            "CPU": {
-                                "limit": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
-                                "reservation": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
-                            },
-                            "RAM": {
-                                "limit": int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram),
-                                "reservation": int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram),
-                            },
-                        }
-                    elif "s4l-core" in node.required_resources:
-                        # multi-container service, currently not supported
-                        # hard-coded sim4life
-                        assert "s4l-core" in node.required_resources
-                        assert node.required_resources["s4l-core"]["resources"] == {
-                            "CPU": {"limit": 4.0, "reservation": 0.1},
-                            "RAM": {"limit": 17179869184, "reservation": 536870912},
-                            "VRAM": {"limit": 1, "reservation": 1},
-                        }
-                    else:
-                        # multi-container service, currently not supported
-                        # hard-coded jupyterlab
-                        assert "jupyter-lab" in node.required_resources
-                        assert node.required_resources["jupyter-lab"]["resources"] == {
-                            "CPU": {"limit": 0.1, "reservation": 0.1},
-                            "RAM": {"limit": 2147483648, "reservation": 2147483648},
-                        }
+                    # here the override is always the single-container example: the
+                    # multi-container ones are rejected above when EC2 hardware is set
+                    assert node.required_resources[DEFAULT_SINGLE_SERVICE_NAME]["resources"] == {
+                        "CPU": {
+                            "limit": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
+                            "reservation": fake_ec2_cpus - _CPUS_SAFE_MARGIN,
+                        },
+                        "RAM": {
+                            "limit": int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram),
+                            "reservation": int(fake_ec2_ram - _RAM_SAFE_MARGIN_RATIO * fake_ec2_ram),
+                        },
+                    }
 
     else:
         mocked_clusters_keeper_service_get_instance_type_details.assert_not_called()
