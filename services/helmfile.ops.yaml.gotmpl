@@ -10,6 +10,10 @@ helmDefaults:
   # passes --disable-validation to helm 3 diff plugin
   disableValidation: true
 
+repositories:
+  - name: headlamp
+    url: https://kubernetes-sigs.github.io/headlamp/
+
 releases:
   - name: postgres
     namespace: ops
@@ -19,3 +23,24 @@ releases:
       - db: {{ requiredEnv "POSTGRES_DB" | quote }}
         user: {{ requiredEnv "POSTGRES_USER" | quote }}
         password: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+
+  - name: redis
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/redis
+    values:
+      - password: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+
+  - name: rabbit
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/rabbit
+    values:
+      - user: {{ requiredEnv "RABBIT_USER" | quote }}
+        password: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+
+  - name: headlamp # Portainer alternative for Kubernetes
+    namespace: ops
+    createNamespace: true
+    chart: headlamp/headlamp
+    version: 0.46.0
