@@ -25,7 +25,7 @@ nodes:
         protocol: TCP
       # headlamp
       - containerPort: 30080
-        hostPort: 8080
+        hostPort: 9000
         listenAddress: 127.0.0.1
         protocol: TCP
       # adminer
@@ -56,5 +56,25 @@ nodes:
       # rustfs console
       - containerPort: 32001
         hostPort: 9090
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # jaeger UI
+      - containerPort: 31686
+        hostPort: 16686
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # jaeger OTLP gRPC
+      - containerPort: 31417
+        hostPort: 43017
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # jaeger OTLP HTTP
+      - containerPort: 31418
+        hostPort: 43018
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # OpenTelemetry Collector OTLP HTTP
+      - containerPort: 31431
+        hostPort: 4318
         listenAddress: 127.0.0.1
         protocol: TCP
