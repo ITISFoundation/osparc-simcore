@@ -13,6 +13,11 @@ nodes:
         hostPort: 6379
         listenAddress: 127.0.0.1
         protocol: TCP
+      # redis-commander
+      - containerPort: 31881
+        hostPort: 18081
+        listenAddress: 127.0.0.1
+        protocol: TCP
       # rabbit AMQP
       - containerPort: 30672
         hostPort: 5672

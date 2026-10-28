@@ -123,6 +123,13 @@ releases:
     values:
       - password: {{ requiredEnv "REDIS_PASSWORD" | quote }}
 
+  - name: redis-commander
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/redis-commander
+    values:
+      - password: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+
   - name: rabbit
     namespace: ops
     createNamespace: true
