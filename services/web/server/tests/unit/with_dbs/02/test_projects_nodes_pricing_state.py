@@ -164,17 +164,18 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     billed_product: None,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mock_project_wallet_with_credits: None,
-    mocked_clusters_keeper_fixed_ec2_types: mock.AsyncMock,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
 ):
     """W2b: starting a dynamic service in a billed product, on a node without any
     pricing link, lazily links the DEFAULT plan/unit of the service and resizes
-    `required_resources` with the DYNAMIC-SIDECAR formula of that unit's machine.
+    `required_resources` with the DYNAMIC-SIDECAR formula of that unit's machine
+    (the sizing is computed by director-v2).
 
     ⚠️ The pricing/resources ownership rework (PR 2) moves link/size creation to
     project creation and node addition, keeping the start only as a repair: the END
-    state asserted here is intended to stay, but the RUT/clusters-keeper calls below
-    may disappear once the link is already in place.
+    state asserted here is intended to stay, but the RUT/sizing calls below may
+    disappear once the link is already in place.
     """
     assert client.app
 
@@ -197,7 +198,7 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     assert rsp.status == status.HTTP_204_NO_CONTENT, await rsp.text()
 
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
-    mocked_clusters_keeper_fixed_ec2_types.assert_called_once()
+    mocked_director_v2_node_sizing.assert_called_once()
 
     state_after = await get_node_pricing_state(asyncpg_engine, project_id)
     node_state = state_after[NodeID(dynamic_node_id)]

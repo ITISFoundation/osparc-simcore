@@ -20,8 +20,8 @@ FROM ${DOCKER_REGISTRY}/simcore-runtime-base:${BASE_TAG} AS base
 LABEL maintainer=GitHK
 
 # NOTE: to list the latest version run `make` inside `scripts/apt-packages-versions`
-ENV DOCKER_APT_VERSION="5:26.1.4-1~debian.12~bookworm"
-ENV DOCKER_COMPOSE_APT_VERSION="2.27.1-1~debian.12~bookworm"
+ENV DOCKER_APT_VERSION="5:29.6.2-1~debian.13~trixie"
+ENV DOCKER_COMPOSE_APT_VERSION="5.2.0-1~debian.13~trixie"
 
 RUN \
   --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
@@ -164,12 +164,20 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 #  + /devel         WORKDIR
 #    + services  (mounted volume)
 #
-FROM build AS development
+FROM base AS development
 
 ENV SC_BUILD_TARGET=development \
   SC_BOOT_MODE=development
 
 WORKDIR /devel
+
+# The sidecar needs its runtime system tools (docker CLI + compose plugin,
+# libmagic1, xz-utils, rclone, 7zip) in every boot mode, so this stage builds on
+# ``base`` like ``production`` does. The Python toolchain comes from the build
+# branch: uv/uvx plus the virtualenv pre-populated with the runtime
+# requirements (boot.sh syncs the dev requirements on top at container start).
+COPY --from=build /bin/uv /bin/uvx /bin/
+COPY --chown=scu:scu --from=prod-only-deps ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 RUN chown -R scu:scu "${VIRTUAL_ENV}" \
   && chown -R scu:scu "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
