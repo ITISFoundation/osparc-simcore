@@ -44,3 +44,7 @@ releases:
     createNamespace: true
     chart: headlamp/headlamp
     version: 0.46.0
+    values:
+      - service:
+          type: NodePort
+          nodePort: 30080

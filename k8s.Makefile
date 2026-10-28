@@ -50,7 +50,7 @@ destroy-cluster: .require-kind
 
 .PHONY: up-devel
 up-devel: create-cluster
-	$(MAKE) helmfile-apply
+	$(MAKE) -f k8s.Makefile helmfile-apply
 
 .PHONY: down-devel
 down-devel: destroy-cluster
