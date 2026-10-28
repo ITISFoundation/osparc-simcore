@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Final
 
 import pytest
 from packaging.specifiers import SpecifierSet
@@ -52,6 +53,27 @@ printf 'aiohttp==3.14.5\\npython-socketio[asyncio-client]==5.17.0\\n' >"$dir/_te
 """
 
 
+# Answers like uv when a directory consumes another directory's lockfile as a
+# --constraint: the consumer only resolves once the source pin moved, mirroring
+# autoscaling/clusters-keeper consuming dask-sidecar's _dask-distributed.txt.
+_FAKE_MAKE_CONSTRAINT_ORDER: Final[str] = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$dir" >>"$FAKE_MAKE_CALLS"
+new=$(echo "$upgrade" | tr ' ' '\\n' | grep -m1 '^msgish==' | cut -d= -f3)
+if [[ "$dir" == *zzz* ]]; then
+  printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
+  exit 0
+fi
+if ! grep -q "msgish==$new" services/zzz/requirements/_base.txt; then
+  echo "error: No solution found when resolving dependencies"
+  echo "  cause: Because you require msgish==1.0.0 and msgish==$new, they are unsatisfiable."
+  exit 1
+fi
+printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
+"""
+
+
 def _run(
     program: str, *args: str, cwd: Path, env: dict[str, str] | None = None, check: bool = True
 ) -> subprocess.CompletedProcess[str]:
@@ -62,16 +84,20 @@ def _run(
     )
 
 
-def _make_git_repo(path: Path, lockfiles: dict[str, str]) -> Path:
-    for name, content in lockfiles.items():
-        lockfile = path / "requirements" / name
-        lockfile.parent.mkdir(parents=True, exist_ok=True)
-        lockfile.write_text(content)
+def _init_git_repo(path: Path) -> Path:
     identity = ("-c", "user.name=test", "-c", "user.email=test@example.com")
     _run("git", *identity, "init", "--quiet", cwd=path)
     _run("git", *identity, "add", ".", cwd=path)
     _run("git", *identity, "commit", "--quiet", "--message", "init", cwd=path)
     return path
+
+
+def _make_git_repo(path: Path, lockfiles: dict[str, str]) -> Path:
+    for name, content in lockfiles.items():
+        lockfile = path / "requirements" / name
+        lockfile.parent.mkdir(parents=True, exist_ok=True)
+        lockfile.write_text(content)
+    return _init_git_repo(path)
 
 
 @pytest.fixture
@@ -218,6 +244,34 @@ def test_requirements_constraints_forbid_the_unbuildable_aiodocker_sdist(osparc_
     specifier = SpecifierSet(line.split("#")[0].strip().removeprefix("aiodocker"))
     assert "0.6" not in specifier
     assert "0.27.0" in specifier
+
+
+def test_resync_lockfiles_regenerates_a_constraint_source_before_its_consumers(
+    resync_lockfiles_script: Path, tmp_path: Path
+):
+    # the msgpack 1.2.4 security update left autoscaling and clusters-keeper behind:
+    # they consume dask-sidecar's _dask-distributed.txt as a --constraint, and regenerating
+    # them before that source moved made them need its old pin and the new pin at once
+    repo = tmp_path / "repo"
+    for directory, template in (
+        ("services/aaa/requirements", "--constraint ../../zzz/requirements/_base.txt\n"),
+        ("services/zzz/requirements", "msgish\n"),
+    ):
+        (repo / directory).mkdir(parents=True)
+        (repo / directory / "_base.in").write_text(template)
+        (repo / directory / "_base.txt").write_text("msgish==1.0.0\n")
+    _init_git_repo(repo)
+    env = _fake_make_env(tmp_path, _FAKE_MAKE_CONSTRAINT_ORDER)
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("msgish==2.0.0\n")
+
+    _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env)
+
+    # the constraint source runs first even though it sorts last
+    assert _make_calls(env) == ["services/zzz/requirements", "services/aaa/requirements"]
+    assert (repo / "services/aaa/requirements/_base.txt").read_text() == "msgish==2.0.0\n"
+    assert (repo / "services/zzz/requirements/_base.txt").read_text() == "msgish==2.0.0\n"
+    assert not (repo / "renovate-resync-report.md").exists()
 
 
 def test_resync_lockfiles_blames_a_blocking_pin_with_extras(resync_lockfiles_script: Path, tmp_path: Path):
