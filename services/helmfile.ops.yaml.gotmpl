@@ -13,6 +13,8 @@ helmDefaults:
 repositories:
   - name: headlamp
     url: https://kubernetes-sigs.github.io/headlamp/
+  - name: rustfs
+    url: https://charts.rustfs.com
 
 releases:
   - name: adminer
@@ -56,6 +58,30 @@ releases:
     values:
       - user: {{ requiredEnv "RABBIT_USER" | quote }}
         password: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+
+  - name: rustfs
+    namespace: ops
+    createNamespace: true
+    chart: rustfs/rustfs
+    version: 1.0.4
+    values:
+      - mode:
+          standalone:
+            enabled: true
+          distributed:
+            enabled: false
+        replicaCount: 1
+        ingress:
+          enabled: false
+        service:
+          type: NodePort
+        storageclass:
+          name: standard
+          dataStorageSize: 10Gi
+        secret:
+          rustfs:
+            access_key: {{ requiredEnv "S3_ACCESS_KEY" | quote }}
+            secret_key: {{ requiredEnv "S3_SECRET_KEY" | quote }}
 
   - name: headlamp # Portainer alternative for Kubernetes
     namespace: ops

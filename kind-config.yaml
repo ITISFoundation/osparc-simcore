@@ -48,3 +48,13 @@ nodes:
         hostPort: 8025
         listenAddress: 127.0.0.1
         protocol: TCP
+      # rustfs S3 API
+      - containerPort: 32000
+        hostPort: 9001
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # rustfs console
+      - containerPort: 32001
+        hostPort: 9090
+        listenAddress: 127.0.0.1
+        protocol: TCP
