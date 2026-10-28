@@ -33,6 +33,8 @@ spec:
       labels:
         app: flower
     spec:
+      # Kubernetes injects FLOWER_PORT from this Service, but Flower expects a numeric value.
+      enableServiceLinks: false
       containers:
         - name: flower
           image: mher/flower:2.0.1
