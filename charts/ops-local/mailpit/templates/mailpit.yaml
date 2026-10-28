@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+spec:
+  type: NodePort
+  ports:
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+      nodePort: 31025
+    - name: web
+      port: 8025
+      targetPort: 8025
+      nodePort: 31825
+  selector:
+    app: mailpit
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailpit
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:v1.29.3
+          args:
+            - --smtp-auth-accept-any
+            - --smtp-auth-allow-insecure
+          ports:
+            - name: smtp
+              containerPort: 1025
+            - name: web
+              containerPort: 8025
+          readinessProbe:
+            httpGet:
+              path: /
+              port: web

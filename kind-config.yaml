@@ -28,3 +28,23 @@ nodes:
         hostPort: 8080
         listenAddress: 127.0.0.1
         protocol: TCP
+      # adminer
+      - containerPort: 31808
+        hostPort: 18080
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # flower
+      - containerPort: 30555
+        hostPort: 5555
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # mailpit SMTP
+      - containerPort: 31025
+        hostPort: 1025
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # mailpit web UI
+      - containerPort: 31825
+        hostPort: 8025
+        listenAddress: 127.0.0.1
+        protocol: TCP

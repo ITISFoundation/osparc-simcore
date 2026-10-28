@@ -15,10 +15,28 @@ repositories:
     url: https://kubernetes-sigs.github.io/headlamp/
 
 releases:
+  - name: adminer
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/adminer
+
+  - name: flower
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/flower
+    values:
+      - user: {{ requiredEnv "RABBIT_USER" | quote }}
+        password: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+
+  - name: mailpit
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/mailpit
+
   - name: postgres
     namespace: ops
     createNamespace: true
-    chart: ../charts/postgres
+    chart: ../charts/ops-local/postgres
     values:
       - db: {{ requiredEnv "POSTGRES_DB" | quote }}
         user: {{ requiredEnv "POSTGRES_USER" | quote }}
@@ -27,14 +45,14 @@ releases:
   - name: redis
     namespace: ops
     createNamespace: true
-    chart: ../charts/redis
+    chart: ../charts/ops-local/redis
     values:
       - password: {{ requiredEnv "REDIS_PASSWORD" | quote }}
 
   - name: rabbit
     namespace: ops
     createNamespace: true
-    chart: ../charts/rabbit
+    chart: ../charts/ops-local/rabbit
     values:
       - user: {{ requiredEnv "RABBIT_USER" | quote }}
         password: {{ requiredEnv "RABBIT_PASSWORD" | quote }}

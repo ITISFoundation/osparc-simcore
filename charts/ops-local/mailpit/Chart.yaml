@@ -1,0 +1,4 @@
+apiVersion: v2
+name: mailpit
+description: Simple chart for running Mailpit locally; not for production use.
+version: 0.1.0
