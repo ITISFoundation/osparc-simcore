@@ -35,7 +35,7 @@ FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # -------------------------- runtime-base -------------------
 # Minimal runtime shared by every service production stage
 #
-FROM python:${PYTHON_VERSION}-slim-bookworm AS runtime-base
+FROM python:${PYTHON_VERSION}-slim-trixie AS runtime-base
 
 LABEL maintainer="osparc-simcore"
 

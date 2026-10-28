@@ -193,7 +193,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
             return;
           }
         }
-        this.__valueToGrid(value, idx);
+        this.__valueToGrid(value, idx, output.getPortKey());
       });
     },
 
@@ -212,7 +212,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       return null;
     },
 
-    __valueToGrid: function(value, row) {
+    __valueToGrid: function(value, row, portKey) {
       let valueWidget = null;
       if (value && typeof value === "object") {
         valueWidget = new osparc.ui.basic.LinkLabel();
@@ -249,6 +249,10 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
       // remove first if any
       this.__removeEntry(row, this.self().POS.VALUE);
+
+      if (portKey && valueWidget) {
+        osparc.utils.Utils.setIdToWidget(valueWidget, "nodeOutputValue_" + portKey);
+      }
 
       this.__gridLayout.add(valueWidget, {
         row: row,

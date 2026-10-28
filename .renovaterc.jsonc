@@ -55,6 +55,23 @@
       "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
     ]
   },
+  // docker-compose: config:recommended ignores **/test/** and **/tests/**, so the fixture
+  // compose files under the tests directories were never scanned and fell behind the main
+  // stack on image digests (see the partial valkey update of PR #9915, guarded since by
+  // services/web/server/tests/unit/isolated/test__consistency.py). Scan them together with
+  // the rest, so Renovate moves every file sharing an image in one PR, except the fixtures
+  // of the service-integration tests, which pin an old image version on purpose
+  "docker-compose": {
+    "ignorePaths": [
+      "**/node_modules/**",
+      "**/bower_components/**",
+      "**/vendor/**",
+      "**/examples/**",
+      "**/__tests__/**",
+      "**/__fixtures__/**",
+      "**/packages/service-integration/tests/data/**"
+    ]
+  },
   "customManagers": [
     {
       "description": "uv version used by the Makefile, CI and the base images. Read as the PyPI package 'uv' (like the constraints above), so normal and security updates (OSV knows PyPI, not the Docker image) change all of them together",
