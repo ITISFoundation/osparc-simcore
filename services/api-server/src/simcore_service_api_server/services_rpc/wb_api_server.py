@@ -144,24 +144,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         )
         return _create_licensed_items_get_page(licensed_items_page=licensed_items_page, page_params=page_params)
 
-    @_exception_mapper(rpc_exception_map={})
-    async def get_available_licensed_items_for_wallet(
-        self,
-        *,
-        product_name: ProductName,
-        wallet_id: WalletID,
-        user_id: UserID,
-        page_params: PaginationParams,
-    ) -> Page[LicensedItemGet]:
-        licensed_items_page = await self._rpc_client.licenses.get_available_licensed_items_for_wallet(
-            product_name=product_name,
-            wallet_id=wallet_id,
-            user_id=user_id,
-            offset=page_params.offset,
-            limit=page_params.limit,
-        )
-        return _create_licensed_items_get_page(licensed_items_page=licensed_items_page, page_params=page_params)
-
     @_exception_mapper(
         rpc_exception_map={
             NotEnoughAvailableSeatsError: InsufficientNumberOfSeatsError,
