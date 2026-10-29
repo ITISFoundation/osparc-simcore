@@ -764,6 +764,74 @@ async def test_path_compute_size(
     assert workspace_total_size == accumulated_subfolder_size
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=5,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=10,
+        )
+    ],
+    ids=str,
+)
+async def test_path_compute_size_with_file_under_upload(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    product_name: ProductName,
+    project_with_seeded_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    project_params: ProjectWithFilesParams,
+    start_upload_without_completing: Callable[..., Awaitable[None]],
+):
+    assert len(project_params.allowed_file_sizes) == 1, (
+        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    )
+    project, list_of_files = project_with_seeded_files
+    single_file_size = project_params.allowed_file_sizes[0]
+    all_file_ids = [file_id for files_in_node in list_of_files.values() for file_id in files_in_node]
+    in_flight_file_id = all_file_ids[0]
+
+    # handing out the upload links deletes the object, so this file cannot be sized yet
+    await start_upload_without_completing(
+        location_id=location_id,
+        file_id=in_flight_file_id,
+        user_id=user_id,
+        product_name=product_name,
+        file_size=single_file_size,
+    )
+
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name,
+        path=Path(project["uuid"]),
+        expected_total_size=single_file_size * (len(all_file_ids) - 1),
+    )
+
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name,
+        path=Path(in_flight_file_id),
+        expected_total_size=0,
+    )
+
+
 async def test_path_compute_size_inexistent_path(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
