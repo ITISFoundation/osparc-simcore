@@ -1,7 +1,8 @@
 name: Chore Rerun Flaky Jobs
 # CI Build Test has flaky test jobs. Today one failed job means an extra push or a
 # manual "Re-run failed jobs" click, and both restart the whole workflow. On a failed
-# pull request run, re-trigger only the failed jobs; green jobs keep their results.
+# pull request run of a non-draft PR, re-trigger only the failed jobs; green jobs
+# keep their results, and a draft PR is left alone since nobody waits on its checks.
 # Do this once per commit, and only for failures that look flaky. Runs with more
 # than 3 failed jobs, a failed python-linting (pylint) job, or a failed typecheck
 # step are deterministic, and those runs stay red. The second failure of the same
@@ -38,8 +39,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
           PR_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
         run: |
+          # skip draft PRs: a draft PR is not waiting to merge, so nobody is
+          # waiting on its red checks (the payload has no draft flag, so ask the API)
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .draft)" = "true" ]; then
+            echo "PR #$PR_NUMBER is a draft; not rerunning"
+            exit 0
+          fi
+
           # skip stale runs: the PR head moved to a newer commit while this run was
           # still failing, and that newer commit has its own run
           if [ "$HEAD_SHA" != "$PR_HEAD_SHA" ]; then
