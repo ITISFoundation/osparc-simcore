@@ -1,3 +1,4 @@
+# pyright: reportAttributeAccessIssue=false
 # pylint:disable=no-member
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
@@ -941,3 +942,38 @@ async def test_old_file_link_of_other_node_is_not_deleted(
     await port.set(new_file)
 
     mock_delete_file.assert_not_awaited()
+
+
+async def test_set_still_succeeds_when_deletion_log_callback_fails(
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    tmp_path: Path,
+    project_id: str,
+    node_uuid: str,
+):
+    mock_delete_file.side_effect = RuntimeError("storage unreachable")
+
+    async def _failing_log_cb(msg: str) -> None:
+        err_msg = "cannot redirect logs"
+        raise RuntimeError(err_msg)
+
+    old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
+    port = Port(
+        **create_valid_port_config(
+            "data:*/*",
+            key="output_1",
+            value=_own_node_file_link_file_value(old_path, simcore_store_id()),
+        )
+    )
+    node_ports = _create_node_ports_with_outputs(project_id, node_uuid, user_id(), OutputsList(root={"output_1": port}))
+    node_ports.io_log_redirect_cb = _failing_log_cb
+    port._node_ports = node_ports  # noqa: SLF001
+    new_file = tmp_path / "new_file.txt"
+    new_file.write_text("some new data")
+
+    # the value was persisted: neither the failed deletion nor the broken log
+    # callback may fail the set
+    await port.set(new_file)
+
+    assert isinstance(port.value, FileLink)
+    mock_delete_file.assert_awaited_once()
