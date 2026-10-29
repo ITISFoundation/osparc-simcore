@@ -1053,9 +1053,12 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
 _SERVICE_IFRAME_SRC_TIMEOUT: Final[
     Annotated[
         timedelta,
-        doc("the UI navigates the service iframe to its service URL only once the service became ready"),
+        doc(
+            "the UI navigates the service iframe to its service URL only once its own readiness "
+            "polling notices the service is up, which can trail the backend-side checks by tens of seconds"
+        ),
     ]
-] = timedelta(seconds=10)
+] = timedelta(seconds=90)
 _SERVICE_FRAME_ATTACH_TIMEOUT: Final[
     Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
 ] = timedelta(seconds=10)
@@ -1072,6 +1075,18 @@ def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool
     return content_frame is not None and node_id in content_frame.url
 
 
+def _service_iframe_src_set(page: Page, node_id: str) -> bool:
+    return bool(
+        page.evaluate(
+            """nodeId => {
+                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
+                return !!iframe && iframe.src.includes(nodeId);
+            }""",
+            node_id,
+        )
+    )
+
+
 def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
     """Re-navigates the service iframe when the driver never attached its content frame.
 
@@ -1081,20 +1096,35 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
     shown. Re-setting the iframe source reloads it and re-triggers the frame
     lifecycle events the driver needs to attach the content frame.
 
-    Best-effort: it first waits for the UI to navigate the iframe and for the
-    driver to attach its content frame, and only then re-navigates the iframe
-    once. Playwright errors are logged and swallowed, so that the caller still
-    fails with its own original error.
+    The UI navigates the iframe only once its own readiness polling notices the
+    service is up, which can trail the backend-side checks by tens of seconds.
+    The iframe source is therefore waited on, by polling, before the content
+    frame attachment is checked: a navigation that is merely late must still get
+    the attachment check, while reloading the iframe before the UI navigated it
+    would restart a healthy navigation.
+
+    Best-effort: it re-navigates the iframe at most once. Playwright errors are
+    logged and swallowed, so that the caller still fails with its own original
+    error.
     """
     try:
-        page.wait_for_function(
-            """nodeId => {
-                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
-                return !!iframe && iframe.src.includes(nodeId);
-            }""",
-            arg=node_id,
-            timeout=int(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds() * SECOND),
+        src_set = Retrying(
+            stop=stop_after_delay(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds()),
+            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+            retry=retry_if_result(lambda navigated: not navigated),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
+        try:
+            navigated = src_set(lambda: _service_iframe_src_set(page, node_id))
+        except RetryError:
+            navigated = False
+        if not navigated:
+            _logger.warning(
+                "Service iframe of node %s was not navigated by the UI within %s: leaving it untouched",
+                node_id,
+                _SERVICE_IFRAME_SRC_TIMEOUT,
+            )
+            return
 
         iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
         if iframe_element is None:
