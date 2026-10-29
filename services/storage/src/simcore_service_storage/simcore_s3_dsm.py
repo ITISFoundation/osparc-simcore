@@ -1202,7 +1202,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         2. if nothing exists in S3, deletes the file metadata entry and aborts the multipart
            upload, if any.
         """
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
 
         list_of_expired_uploads = [
             fmd async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(expired_after=now)
@@ -1280,7 +1280,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         older than `STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL` and removes them, S3 object first then the
         file_meta_data entry.
         """
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
         retention = get_application_settings(self.app).STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL
         threshold = now - retention
 
@@ -1446,7 +1446,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
         upload_expiration_date = now + datetime.timedelta(
             seconds=get_application_settings(self.app).STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )
