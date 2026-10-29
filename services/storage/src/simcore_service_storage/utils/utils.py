@@ -1,9 +1,12 @@
+import datetime
 import logging
 from pathlib import Path
+from typing import Annotated
 
 import aiofiles
 import httpx
 from aiohttp.typedefs import StrOrURL
+from annotated_types import doc
 from aws_library.s3 import UploadID
 
 from ..constants import MAX_CHUNK_SIZE, S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
@@ -63,6 +66,34 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
         and file_metadata.upload_id is None
         and file_metadata.upload_expires_at is None
     )
+
+
+def _to_utc(value: datetime.datetime) -> datetime.datetime:
+    """Timestamps stored without a time zone in this table are UTC instants."""
+    return value.astimezone(datetime.UTC) if value.tzinfo is not None else value.replace(tzinfo=datetime.UTC)
+
+
+def is_upload_in_progress(
+    file_metadata: FileMetaData | FileMetaDataAtDB,
+    *,
+    now: Annotated[
+        datetime.datetime | None,
+        doc("reference instant, defaults to the current time; naive values are read as UTC"),
+    ] = None,
+) -> bool:
+    """True while upload links handed out for this entry have not expired.
+
+    upload_expires_at is set when the links are handed out and cleared once the entry is
+    resynchronized, so it marks the window in which an upload is expected to land. It is
+    armed for single and multipart uploads alike: only multipart uploads also get an
+    upload_id, so that column cannot be used to tell the window apart.
+    The object is removed from S3 before the links are created, hence a missing object is
+    expected while this is true and must not be reported as lost data.
+    """
+    if file_metadata.upload_expires_at is None:
+        return False
+    reference_time = datetime.datetime.now(tz=datetime.UTC) if now is None else _to_utc(now)
+    return _to_utc(file_metadata.upload_expires_at) > reference_time
 
 
 def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:
