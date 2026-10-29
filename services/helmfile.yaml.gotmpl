@@ -1,0 +1,31 @@
+environments:
+  default:
+    values:
+      # namespace of the ops stack, see helmfile.ops.yaml.gotmpl
+      - opsNamespace: ops
+      # host of the database. `postgres` is a Swarm alias, which CoreDNS resolves
+      # only inside the namespace that holds the service, so this is its
+      # cluster-wide name. It repeats the namespace above because the state file
+      # is templated before the environment values are read.
+      - postgresHost: postgres.ops.svc.cluster.local
+---
+helmDefaults:
+  # wait for all resources to be ready before marking the release as successful
+  # this makes sure that releases are properly installed before continuing with
+  # dependent (via `needs`) releases. Read more via `helm install --help`
+  wait: true
+  waitForJobs: true
+  timeout: 600
+
+  # avoid errors on first installation
+  # passes --disable-validation to helm 3 diff plugin
+  disableValidation: true
+
+releases:
+  # applies the database schema migrations, then idles
+  - name: migration
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - migration/helm-values.yaml.gotmpl

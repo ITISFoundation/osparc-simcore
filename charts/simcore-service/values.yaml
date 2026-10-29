@@ -10,6 +10,7 @@ args: []
 
 containerPort: 8000
 service:
+  enabled: true
   port: 8000
 
 podSecurityContext:
@@ -53,6 +54,8 @@ probes:
 envFrom: []
 env: {}
 
+# ingress/egress rules are additions to the DNS egress that the chart always
+# allows. An empty egress list still denies everything else.
 networkPolicy:
   enabled: true
   ingress: []

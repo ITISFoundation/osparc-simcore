@@ -1,0 +1,60 @@
+helmDefaults:
+  # wait for all resources to be ready before marking the release as successful
+  # this makes sure that releases are properly installed before continuing with
+  # dependent (via `needs`) releases. Read more via `helm install --help`
+  wait: true
+  waitForJobs: true
+  timeout: 600
+
+  # avoid errors on first installation
+  # passes --disable-validation to helm 3 diff plugin
+  disableValidation: true
+
+repositories:
+  - name: projectcalico
+    url: https://docs.tigera.io/calico/charts
+
+{{ $calicoVersion := "v3.33.0" }}
+{{ $tigeraOperatorNamespace := "tigera-operator" }}
+
+releases:
+  - name: calico # network cni
+    namespace: {{ $tigeraOperatorNamespace }}
+    createNamespace: true
+    chart: projectcalico/tigera-operator
+    version: {{ $calicoVersion }}
+    values:
+      - calico/values.yaml.gotmpl
+    hooks:
+      # see https://docs.tigera.io/calico/latest/getting-started/kubernetes/helm
+      - name: install-crds
+        events: [presync]
+        showlogs: true
+        command: bash
+        args:
+          - -o
+          - pipefail
+          - -ec
+          - >-
+            helm template calico-crds projectcalico/projectcalico.org.v3
+            --version {{ $calicoVersion }}
+            --api-versions admissionregistration.k8s.io/v1/MutatingAdmissionPolicy
+            | kubectl apply --server-side --force-conflicts -f -
+      - name: wait-for-calico-full-initialization
+        events: [postsync]
+        showlogs: true
+        command: bash
+        args:
+          - -ec
+          - |
+            kubectl wait --for=create tigerastatus/calico --timeout=300s
+            kubectl wait --for=create tigerastatus/apiserver --timeout=300s
+            kubectl wait --for=condition=Available tigerastatus/calico tigerastatus/apiserver --timeout=300s
+
+  - name: security-hardening
+    namespace: kube-system
+    chart: ../charts/cluster-local/security-hardening
+    values:
+      - ../charts/cluster-local/security-hardening/values.yaml.gotmpl
+    needs:
+      - {{ $tigeraOperatorNamespace }}/calico

@@ -1,0 +1,86 @@
+# Values of the `migration` release for `charts/simcore-service`. The Swarm
+# definition of this service is `migration` in `services/docker-compose.yml`.
+
+# The image reports a finished migration through its $SC_DONE_MARK_FILE, which
+# defaults to a file in the workdir. That is not writable under a read-only root
+# filesystem, so it moves to the mounted /tmp volume; the healthcheck script of
+# the image reads the same variable.
+{{- $doneMarkFile := "/tmp/migration.done" }}
+
+# follows `${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG}` of
+# docker-compose.yml. `.env-devel` leaves both unset because the images are built
+# locally; `master-github-latest` is the moving tag published by CI, so this also
+# works without local images.
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/migration
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# the service exposes no port, its only signal is the done-mark file
+service:
+  enabled: false
+
+# docker-compose.yml sets no resources for this service. The request stays small
+# because the container only idles after migrating, the limit covers the peak while
+# alembic loads every revision script
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  # `sc-pg` caches the database it discovers under $HOME and treats a failed cache
+  # write as a failed discovery, which makes it fall back to looking the port up in
+  # Swarm and retry forever. Hence a writable HOME.
+  HOME: /tmp
+  # database connection settings, see x-postgres-settings in docker-compose.yml
+  POSTGRES_DB: {{ requiredEnv "POSTGRES_DB" | quote }}
+  POSTGRES_HOST: {{ required "postgresHost must be set in the environment values" .Environment.Values.postgresHost | quote }}
+  POSTGRES_MAX_OVERFLOW: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
+  POSTGRES_MAX_POOLSIZE: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
+  POSTGRES_PASSWORD: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+  POSTGRES_PORT: {{ requiredEnv "POSTGRES_PORT" | quote }}
+  POSTGRES_USER: {{ requiredEnv "POSTGRES_USER" | quote }}
+  SC_DONE_MARK_FILE: {{ $doneMarkFile | quote }}
+
+# Helm merges values, so the chart's http probes are dropped with `null` here:
+# readiness then reports a migrated schema, which lets dependent releases gate on
+# it via `needs: [migration]`. There is no liveness probe: after migrating the
+# container only idles, and a restart would run the migrations against a live
+# schema again.
+probes:
+  startup:
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
+    periodSeconds: 5
+    timeoutSeconds: 5
+    # 100 * 5s stays below the helmfile timeout
+    failureThreshold: 100
+  readiness:
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness: null
+
+# egress is the database port inside the private ranges, i.e. inside the pod, node
+# and service networks of any cluster. Everything else is blocked, the other ops
+# services and the internet included; DNS on port 53 is allowed by the chart itself
+networkPolicy:
+  enabled: true
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+        - ipBlock:
+            cidr: 172.16.0.0/12
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: {{ requiredEnv "POSTGRES_PORT" | int }}

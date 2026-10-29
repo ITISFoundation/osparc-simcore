@@ -34,10 +34,12 @@ spec:
           args:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if .Values.service.enabled }}
           ports:
             - name: http
               containerPort: {{ .Values.containerPort }}
               protocol: TCP
+          {{- end }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- if or .Values.env .Values.envFrom }}
@@ -50,12 +52,18 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
+          {{- with .Values.probes.startup }}
           startupProbe:
-            {{- toYaml .Values.probes.startup | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.readiness }}
           readinessProbe:
-            {{- toYaml .Values.probes.readiness | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.liveness }}
           livenessProbe:
-            {{- toYaml .Values.probes.liveness | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
