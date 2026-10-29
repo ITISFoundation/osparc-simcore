@@ -657,7 +657,7 @@ async def test_list_fmds_filters_by_created_before(
     file_size: ByteSize,
 ):
     """an entry created before the threshold must be included, one created after it must be excluded"""
-    now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+    now = datetime.datetime.now(tz=datetime.UTC)
     threshold = now - datetime.timedelta(days=30)
 
     _, included_file_id = await upload_file(file_size, "old_file.dat")
