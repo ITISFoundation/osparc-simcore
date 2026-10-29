@@ -148,7 +148,7 @@ markupsafe==3.0.2
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.2
+msgpack==1.2.4
     # via aiocache
 multidict==6.9.1
     # via

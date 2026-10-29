@@ -14,6 +14,7 @@ aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.27.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 aiofiles==25.1.0
@@ -192,7 +193,7 @@ markupsafe==3.0.3
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.3
+msgpack==1.2.4
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   aiocache

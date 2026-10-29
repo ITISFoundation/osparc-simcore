@@ -40,7 +40,7 @@ markupsafe==3.0.3
     # via
     #   -c requirements/./_base.txt
     #   jinja2
-msgpack==1.2.3
+msgpack==1.2.4
     # via
     #   -c requirements/./_base.txt
     #   distributed
