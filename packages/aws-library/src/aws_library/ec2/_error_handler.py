@@ -42,10 +42,10 @@ _INSUFFICIENT_CAPACITY_ERROR_MSG_PATTERN: Final[re.Pattern] = re.compile(
 )
 
 
-def _map_botocore_client_exception(
+def _map_botocore_client_exception(  # pylint: disable=unused-argument
     botocore_error: botocore_exc.ClientError,
-    *args,  # pylint: disable=unused-argument # noqa: ARG001
-    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
+    *args,  # noqa: ARG001
+    **kwargs,  # noqa: ARG001
 ) -> EC2AccessError:
     # see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html#parsing-error-responses-and-catching-exceptions-from-aws-services
     status_code = cast(
