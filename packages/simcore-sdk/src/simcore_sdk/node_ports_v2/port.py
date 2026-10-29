@@ -86,25 +86,24 @@ async def delete_replaced_file_link(
     old_value: DataItemValue | None,
     new_value: DataItemValue | None,
 ) -> None:
-    """Remove from storage the object previously referenced by a port whose value got replaced
+    """Delete the storage object a port referenced before its value was replaced
 
-    The old object is only removed when all of the following hold:
-    - the old value was a ``FileLink`` whose path differs from the new value's
-      (the same path means the object was re-uploaded in place and must be kept),
-    - it lives in the simcore store and its path is owned by this very node
-      (never delete objects owned by other nodes, e.g. user-picked links),
-    - no other port of this node still references the same object.
+    Deletes only when all of these hold:
+    - the old value is a ``FileLink`` with a different ``(store, path)`` than the
+      new value. The same path means the object was re-uploaded in place.
+    - the object lives in the simcore store and its path starts with this node's
+      prefix. Objects owned by other nodes, e.g. user-picked links, stay.
+    - no other port of this node references the same object.
 
-    Removal is best-effort: it happens only after the new value was uploaded and
-    persisted, and failures are logged without being raised so that a successful
-    upload is never reported as failed.
+    Runs only after the new value was uploaded and persisted. It logs errors
+    instead of raising them, so a successful upload never fails.
     """
     if not isinstance(old_value, FileLink):
         return
     if isinstance(new_value, FileLink) and (new_value.store, new_value.path) == (old_value.store, old_value.path):
-        return  # re-upload of the same object, it was overwritten in place
+        return  # same object re-uploaded, overwritten in place
 
-    # NOTE: only simcore-managed objects owned by this node may be deleted
+    # only simcore-managed objects under this node's prefix may be deleted
     s3_prefix = f"{node_ports.project_id}/{node_ports.node_uuid}/"
     if old_value.store != SIMCORE_LOCATION or not old_value.path.startswith(s3_prefix):
         return
@@ -117,8 +116,8 @@ async def delete_replaced_file_link(
         return  # another port of this node still references the same object
 
     try:
-        # NOTE: deleting as the project owner since the user triggering the replacement
-        # may lack delete rights on the project (e.g. when it is shared with them)
+        # delete as the project owner: the user triggering the replacement may
+        # lack delete rights on a shared project
         owner_id = await node_ports.db_manager.get_project_owner_user_id(
             TypeAdapter(ProjectID).validate_python(node_ports.project_id)
         )
@@ -405,9 +404,9 @@ class Port(BaseServiceIOModel):
     ) -> None:
         """sets a value to the port, by default it is also stored in the database
 
-        When this replaces a previously uploaded file, the old object is removed
-        from storage after the new value has been persisted (best-effort, see
-        ``delete_replaced_file_link``).
+        If the new value replaces a previously uploaded file, this deletes the
+        old object from storage after the database update. Best-effort, see
+        ``delete_replaced_file_link``.
 
         :raises InvalidItemTypeError
         :raises ValidationError

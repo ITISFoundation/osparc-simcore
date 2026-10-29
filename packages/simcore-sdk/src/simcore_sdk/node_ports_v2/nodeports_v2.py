@@ -188,9 +188,9 @@ class Nodeports(BaseModel):
         Only supports port_key by name, not able to distinguish between inputs
         and outputs using the index.
 
-        When a port's file value gets replaced, the old object is removed from
-        storage after the new values have been persisted (best-effort, see
-        ``delete_replaced_file_link``).
+        If a port's file value is replaced, this deletes the old object from
+        storage after the new values are persisted. Best-effort, see
+        ``delete_replaced_file_link``.
 
         raises ValidationError
         """
