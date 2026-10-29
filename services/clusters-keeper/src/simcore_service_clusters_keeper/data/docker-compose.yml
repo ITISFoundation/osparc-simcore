@@ -150,7 +150,7 @@ services:
 
   redis:
     # NOTE: currently autoscaling requires redis to run
-    image: "valkey/valkey:7.2.14@sha256:1bbb912679bea3ec2c1b21af3860beb4397774e9118eddad4ae50d8e97fabb99"
+    image: "valkey/valkey:7.2.14@sha256:ef0f9fb533b1f06fb7aba6478d758ca1c077d49e2bcb2b4365a4ea7f50b6d42e"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     healthcheck:
