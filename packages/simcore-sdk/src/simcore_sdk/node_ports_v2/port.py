@@ -20,6 +20,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
 from ..node_ports_common import filemanager
@@ -126,7 +127,9 @@ async def delete_replaced_file_link(
         msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
         log.warning("%s", msg, exc_info=True)
         if node_ports.io_log_redirect_cb:
-            await node_ports.io_log_redirect_cb(f"Something went wrong while removing outdated data: {msg}")
+            # never let a failing log callback break the best-effort deletion
+            with log_catch(log, reraise=False):
+                await node_ports.io_log_redirect_cb(f"Something went wrong while removing outdated data: {msg}")
 
 
 class Port(BaseServiceIOModel):
