@@ -80,9 +80,18 @@ that file type or service over a general rule.
 ## Pull request descriptions
 
 - Follow the structure of [PULL_REQUEST_TEMPLATE.md](../PULL_REQUEST_TEMPLATE.md).
+- Always unslop before posting, whoever drafted the text. Run it through
+  [`unslop`](../skills/unslop/SKILL.md) so the description carries only what
+  changed, why, and how it was verified.
 - Keep them compact: state the final solution, the facts, and the
   measurements. No trial or process narrative, no step-by-step history of how
   the branch evolved.
+- Unslop means cutting filler openers and closers (`This PR aims to ...`,
+  `Feel free to ask ...`), evaluative adjectives (`robust`, `seamless`,
+  `comprehensive`), extra headings or summaries that duplicate the template
+  sections, prose that restates the diff, and empty or placeholder sections.
+- Keep the caveats. Do not dress a known limitation in optimistic prose, and do
+  not claim more than the measurements support.
 - Performance PRs: include before/after measurements (e.g. CI step durations,
   baseline mean vs. new value). If the measurement is not available yet, leave
   an explicit placeholder and fill it in once CI completes.
