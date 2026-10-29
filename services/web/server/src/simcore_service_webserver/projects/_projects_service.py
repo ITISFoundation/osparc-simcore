@@ -2331,9 +2331,10 @@ async def run_project_dynamic_services(
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"]) and service_uuid not in running_services_uuids
     }
-    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        (len(services_to_start_uuids) + len(running_services_uuids))
-        > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+    if (
+        0
+        < project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+        < (len(services_to_start_uuids) + len(running_services_uuids))
     ):
         # we cannot start so many services so we are done
         raise ProjectStartsTooManyDynamicNodesError(user_id=user_id, project_uuid=ProjectID(project["uuid"]))

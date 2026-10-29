@@ -8,7 +8,6 @@ from typing import Final, NamedTuple
 from aiohttp import web
 from aiohttp.client import ClientError
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
-from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
@@ -56,9 +55,7 @@ def check_num_service_per_projects_limit(
     """
     project_settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert project_settings  # nosec
-    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        number_of_services >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
-    ):
+    if 0 < project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES <= number_of_services:
         raise ProjectStartsTooManyDynamicNodesError(user_id=user_id, project_uuid=project_uuid)
 
 
@@ -248,7 +245,7 @@ async def get_node_screenshots(
 
             assert node.outputs is not None  # nosec
 
-            filelink = SimCoreFileLink.model_validate(node.outputs[KeyIDStr("outFile")])
+            filelink = SimCoreFileLink.model_validate(node.outputs["outFile"])
 
             file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(
