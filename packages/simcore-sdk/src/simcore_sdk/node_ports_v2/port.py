@@ -147,7 +147,7 @@ class Port(BaseServiceIOModel):
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
     # Reference to the `NodePorts` instance that contains this port
-    _node_ports: Any = PrivateAttr()
+    _node_ports: Nodeports = PrivateAttr()
 
     # flags
     _used_default_value: bool = PrivateAttr(False)  # noqa: FBT003
