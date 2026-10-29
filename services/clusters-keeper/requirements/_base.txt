@@ -449,7 +449,7 @@ toolz==1.2.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.10
+tornado==6.6
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
