@@ -1,4 +1,6 @@
 {
+  // How a PR gets from here to master (labels, CI, who may approve, who merges) is
+  // documented in docs/renovate.md
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
