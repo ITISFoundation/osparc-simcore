@@ -28,17 +28,18 @@ merge_protections_settings:
   reporting_method: check-runs
 
 pull_request_rules:
-  # Every pull request targeting master is a merge-queue candidate; nobody has to
-  # add the 🤖-automerge label or type `@mergify queue` by hand anymore:
-  #  1. 🤖-automerge is added automatically (Renovate PRs already carry it from
-  #     .renovaterc.jsonc, so this is a no-op for them).
-  #  2. The PR enters the default queue on its own as soon as it leaves draft —
-  #     the queue only starts checking it once its queue_conditions match (2
-  #     approvals, code-owner approval, checks green, ...), Mergify just waits
-  #     for those instead of waiting for a human to queue it.
-  #  3. Going back to draft, adding 🤖-do-not-merge, removing the label, or losing
-  #     an approval unmatches queue_conditions and dequeues the PR automatically.
-  # To hold one back, add 🤖-do-not-merge.
+  # Nobody adds the 🤖-automerge label or types `@mergify queue` by hand anymore.
+  #  1. Every PR targeting master gets 🤖-automerge, unless it has
+  #     🤖-do-not-merge. Renovate PRs already carry the label from
+  #     .renovaterc.jsonc, so rule 1 is a no-op for them.
+  #  2. A labeled PR enters the default queue as soon as it leaves draft. The
+  #     queue only starts checking a PR once its queue_conditions match (2
+  #     approvals, code-owner approval, checks green, ...), so Mergify waits
+  #     for those conditions instead of for a human to queue the PR.
+  #  3. The PR leaves the queue automatically when it goes back to draft, gets
+  #     🤖-do-not-merge, loses the label, or loses an approval, because then it
+  #     unmatches the queue_conditions.
+  # To hold a PR back from the queue, add 🤖-do-not-merge.
   - name: label every pull request for the merge queue
     conditions:
       - base=master

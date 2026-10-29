@@ -1,11 +1,12 @@
 name: Chore Rerun Flaky Jobs
-# CI Build Test has flaky test jobs; a single failed job forces a push or a
-# manual "Re-run failed jobs" click, which restarts everything. On a failed
-# pull request run, re-trigger ONLY the failed jobs (green jobs keep their
-# results), once per commit, and only for failures that look flaky: runs with
-# more than 3 failed jobs, or with python-linting (pylint) or a typecheck step
-# failing, are deterministic and left red. A second failure of the same commit
-# is assumed real and left red for Mergify to dequeue and a human to look at.
+# CI Build Test has flaky test jobs. Today one failed job means an extra push or a
+# manual "Re-run failed jobs" click, and both restart the whole workflow. On a failed
+# pull request run, re-trigger only the failed jobs; green jobs keep their results.
+# Do this once per commit, and only for failures that look flaky. Runs with more
+# than 3 failed jobs, a failed python-linting (pylint) job, or a failed typecheck
+# step are deterministic, and those runs stay red. The second failure of the same
+# commit is assumed real and stays red for Mergify to dequeue and a human to
+# investigate.
 # NOTE: GitHub only fires workflow_run for workflows that exist on the default
 # branch, so this file takes effect only once merged to master.
 on:
@@ -39,8 +40,8 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           PR_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
         run: |
-          # skip stale runs: a newer commit was pushed while this one was still red,
-          # its own run already supersedes it
+          # skip stale runs: the PR head moved to a newer commit while this run was
+          # still failing, and that newer commit has its own run
           if [ "$HEAD_SHA" != "$PR_HEAD_SHA" ]; then
             echo "run $RUN_ID is on $HEAD_SHA, PR head is now $PR_HEAD_SHA; not rerunning"
             exit 0
@@ -57,7 +58,8 @@ jobs:
             exit 0
           fi
 
-          # lint failures are deterministic: the pylint job is "[unit] python-linting"
+          # lint failures never disappear on a retry; the pylint job is named
+          # "[unit] python-linting"
           if jq -e 'any(.[]; .name | test("python-linting"))' <<<"$FAILED_JOBS" >/dev/null; then
             echo "python-linting failed; not rerunning"
             exit 0

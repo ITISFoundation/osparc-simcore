@@ -157,7 +157,7 @@
   },
   "packageRules": [
     {
-      "description": "Deps in .in files are unconstrained (no version specifier), so no range strategy would ever propose an update for them and the lockfiles silently rot. update-lockfile bumps the pin in the .txt lockfiles to the latest version the .in range allows (the .in files themselves are never edited); the post-upgrade resync propagates the pin to dependent lockfiles",
+      "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [
         "pip-compile"
       ],
