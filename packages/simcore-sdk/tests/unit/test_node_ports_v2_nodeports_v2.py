@@ -8,16 +8,21 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from faker import Faker
+from models_library.users import UserID
 from pydantic import ValidationError
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.dbmanager import DBManager
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
+from simcore_sdk.node_ports_v2.links import FileLink
+from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
-from utils_port_v2 import create_valid_port_mapping
+from utils_port_v2 import create_valid_port_config, create_valid_port_mapping
 
 
 @pytest.mark.parametrize(
@@ -218,7 +223,7 @@ async def test_node_ports_v2_packages(
     node_uuid: str,
 ):
     db_manager = mock_db_manager(default_configuration)
-    await ports(user_id, project_id, node_uuid, db_manager=db_manager)
+    await ports(UserID(user_id), project_id, node_uuid, db_manager=db_manager)
 
 
 @pytest.fixture
@@ -268,3 +273,79 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
                 progress_bar=progress_bar,
                 outputs_callbacks=None,
             )
+
+
+async def test_set_multiple_deletes_replaced_output_files(
+    mock_db_manager: Callable,
+    default_configuration: dict[str, Any],
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    mock_upload_path: MockFixture,
+    mocker: MockFixture,
+    faker: Faker,
+    tmp_path: Path,
+):
+    db_manager = mock_db_manager(default_configuration)
+    mocker.patch.object(DBManager, "get_project_owner_user_id", autospec=True, return_value=user_id)
+    mock_delete_file = mocker.patch("simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True)
+
+    original_inputs = create_valid_port_mapping(InputsList, suffix="delete")
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="delete")
+
+    # output port replaced by a new file
+    replaced_port_key = "output_file_delete"
+    old_replaced_path = f"{project_id}/{node_uuid}/output_file_delete/old_single_file.txt"
+    original_outputs.root[replaced_port_key].value = FileLink(store=0, path=old_replaced_path)
+
+    # output port cleared (all files removed from the output folder)
+    cleared_port_key = "output_cleared_delete"
+    old_cleared_path = f"{project_id}/{node_uuid}/output_cleared_delete/output_cleared_delete.zip"
+    original_outputs.root[cleared_port_key] = Port(
+        **create_valid_port_config("data:*/*", key=cleared_port_key, value={"store": 0, "path": old_cleared_path})
+    )
+
+    # input port holding a file link owned by another node must not delete anything
+    input_port_key = "input_file_delete"
+    upstream_path = f"{uuid4()}/{uuid4()}/output_file_upstream/file.txt"
+    original_inputs.root[input_port_key].value = FileLink(store=0, path=upstream_path)
+
+    async def mock_save_db_cb(*args, **kwargs):
+        pass
+
+    async def mock_node_port_creator_cb(*args, **kwargs):
+        return None
+
+    node_ports = Nodeports(
+        inputs=original_inputs,
+        outputs=original_outputs,
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        io_log_redirect_cb=None,
+        save_to_db_cb=mock_save_db_cb,
+        node_port_creator_cb=mock_node_port_creator_cb,
+        auto_update=False,
+    )
+
+    new_file = tmp_path / "output_cleared_delete.zip"
+    new_file.write_text("some data")
+
+    port_values: dict[str, tuple[Any, Any]] = {
+        replaced_port_key: (new_file, None),
+        cleared_port_key: (None, None),
+        input_port_key: (None, None),
+    }
+    async with ProgressBarData(num_steps=len(port_values), description=faker.pystr()) as progress_bar:
+        await node_ports.set_multiple(
+            port_values,
+            progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
+        )
+
+    deleted_s3_objects = {call.kwargs["s3_object"] for call in mock_delete_file.await_args_list}
+    assert deleted_s3_objects == {old_replaced_path, old_cleared_path}
+    for call in mock_delete_file.await_args_list:
+        assert call.kwargs["user_id"] == user_id
+        assert call.kwargs["store_id"] == 0
