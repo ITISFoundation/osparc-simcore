@@ -6,7 +6,7 @@
 
 from collections.abc import AsyncGenerator, Callable
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
@@ -185,8 +185,8 @@ async def create_fake_api_keys(
 @pytest.fixture
 async def auth(
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
-) -> httpx.BasicAuth:
+) -> httpx2.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
-        return httpx.BasicAuth(key.api_key, key.api_secret)
+        return httpx2.BasicAuth(key.api_key, key.api_secret)
     pytest.fail("Did not generate authentication")

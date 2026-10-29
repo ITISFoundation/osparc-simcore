@@ -65,7 +65,6 @@ botocore-stubs==1.42.41
 certifi==2026.10.19
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   requests
 cffi==2.0.0
     # via cryptography

@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import httpx
+import httpx2
 import pytest
 import simcore_service_payments.api.rest._health as health_module
 from fastapi import status
@@ -26,7 +26,7 @@ def _mock_health_client(mocker: MockerFixture, healthy: bool, target_function: s
 async def test_healthcheck(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocker: MockerFixture,
 ):
     _mock_health_client(mocker, healthy=True, target_function="get_rabbitmq_client")
@@ -44,7 +44,7 @@ async def test_healthcheck(
 async def test_healthcheck__unhealthy(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocker: MockerFixture,
     rabbit_client_healthy: bool,
     rabbitmq_rpc_client_healthy: bool,
@@ -59,7 +59,7 @@ async def test_healthcheck__unhealthy(
 async def test_meta(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     auth_headers: dict[str, str],
 ):
     response = await client.get(f"/{API_VTAG}/meta", headers=auth_headers)

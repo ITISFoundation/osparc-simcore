@@ -55,7 +55,6 @@ tomlkit==0.14.0
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   mypy
 watchdog==6.0.0
     # via -r requirements/_tools.in

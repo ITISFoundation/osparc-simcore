@@ -6,7 +6,6 @@
 import json
 from collections.abc import Iterator
 
-import httpx
 import pytest
 from fastapi.testclient import TestClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -32,7 +31,7 @@ def client(app_environment: EnvVarsDict) -> Iterator[TestClient]:
 @pytest.fixture(params=["username", "password", "both", None])
 def invalid_basic_auth(
     request: pytest.FixtureRequest, fake_user_name: str, fake_password: str
-) -> httpx.BasicAuth | None:
+) -> tuple[str, str] | None:
     invalid_case = request.param
 
     if invalid_case is None:
@@ -45,9 +44,11 @@ def invalid_basic_auth(
     else:
         kwargs[invalid_case] = "wronggg"
 
-    return httpx.BasicAuth(**kwargs)
+    # TestClient builds on httpx, which accepts a (username, password) tuple as
+    # HTTP Basic credentials -- the same bytes an httpx.BasicAuth would send
+    return (kwargs["username"], kwargs["password"])
 
 
 @pytest.fixture
-def basic_auth(fake_user_name: str, fake_password: str) -> httpx.BasicAuth:
-    return httpx.BasicAuth(username=fake_user_name, password=fake_password)
+def basic_auth(fake_user_name: str, fake_password: str) -> tuple[str, str]:
+    return (fake_user_name, fake_password)

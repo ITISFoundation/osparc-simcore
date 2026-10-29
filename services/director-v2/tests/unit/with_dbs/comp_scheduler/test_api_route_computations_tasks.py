@@ -8,7 +8,7 @@ from typing import Any, NamedTuple
 from unittest import mock
 from uuid import uuid4
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -58,10 +58,10 @@ def mock_env(
 
 
 @pytest.fixture
-def client(async_client: httpx.AsyncClient) -> httpx.AsyncClient:
+def client(async_client: httpx2.AsyncClient) -> httpx2.AsyncClient:
     # overrides client
-    # WARNING: this is an httpx.AsyncClient and not a TestClient!!
-    def _get_app(async_client: httpx.AsyncClient) -> FastAPI:
+    # WARNING: this is an httpx2.AsyncClient and not a TestClient!!
+    def _get_app(async_client: httpx2.AsyncClient) -> FastAPI:
         app = async_client._transport.app  # type: ignore
         assert app
         assert isinstance(app, FastAPI)
@@ -152,7 +152,7 @@ def node_id(fake_workbench_adjacency: dict[str, Any]) -> NodeID:
 
 async def test_get_all_tasks_log_files(
     mocked_nodeports_storage_client: dict[str, mock.MagicMock],
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     project_id: ProjectID,
 ):
@@ -174,7 +174,7 @@ async def test_get_task_logs_file(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
 ):
     resp = await client.get(
         f"/v2/computations/{project_id}/tasks/{node_id}/logfile",
@@ -186,7 +186,7 @@ async def test_get_task_logs_file(
     assert log_file.download_link
 
 
-async def test_get_tasks_outputs(project_id: ProjectID, node_id: NodeID, client: httpx.AsyncClient):
+async def test_get_tasks_outputs(project_id: ProjectID, node_id: NodeID, client: httpx2.AsyncClient):
     selection = {
         node_id,
     }
@@ -204,7 +204,7 @@ async def test_get_tasks_outputs(project_id: ProjectID, node_id: NodeID, client:
     assert outputs == {}
 
 
-async def test_get_tasks_outputs_not_found(node_id: NodeID, client: httpx.AsyncClient):
+async def test_get_tasks_outputs_not_found(node_id: NodeID, client: httpx2.AsyncClient):
     invalid_project = uuid4()
     resp = await client.post(
         f"/v2/computations/{invalid_project}/tasks/-/outputs:batchGet",

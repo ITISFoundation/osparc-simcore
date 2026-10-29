@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI, status
-from httpx import Response
+from httpx2 import Response
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID

@@ -24,7 +24,7 @@ from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
 from .settings import ApplicationSettings
 
-_NOISY_LOGGERS = ("httpcore",)
+_NOISY_LOGGERS = ("httpcore", "httpcore2")
 
 _logger = logging.getLogger(__name__)
 

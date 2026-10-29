@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 from typing import Any
 
 import pytest
@@ -18,6 +19,7 @@ from simcore_postgres_database.models.users_details import (
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _accounts_repository
 from simcore_service_webserver.users._models_pre_registration_extras import PreRegistrationExtraKey
+from simcore_service_webserver.users.errors import AlreadyPreRegisteredError
 
 
 async def test_create_user_pre_registration(
@@ -319,3 +321,89 @@ async def test_create_pre_registration_auto_approves_if_existing_user_in_request
     assert reg["account_request_status"] == AccountRequestStatus.APPROVED
     assert reg["account_request_reviewed_by"] == existing_user_id
     assert reg["account_request_reviewed_at"] is not None
+
+
+async def test_create_user_pre_registration_rejects_duplicate(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
+):
+    # Arrange
+    asyncpg_engine = get_asyncpg_engine(app)
+    test_email = "duplicate.user@example.com"
+
+    pre_registration_id = await _accounts_repository.create_user_pre_registration(
+        asyncpg_engine,
+        email=test_email,
+        created_by=product_owner_user["id"],
+        product_name=product_name,
+    )
+    pre_registration_details_db_cleanup.append(pre_registration_id)
+
+    # Act & Assert
+    with pytest.raises(AlreadyPreRegisteredError) as err_info:
+        await _accounts_repository.create_user_pre_registration(
+            asyncpg_engine,
+            email=test_email,
+            created_by=product_owner_user["id"],
+            product_name=product_name,
+        )
+
+    assert err_info.value.email == test_email
+    assert err_info.value.product_name == product_name
+
+    async with asyncpg_engine.connect() as conn:
+        count = await conn.scalar(
+            sa.select(sa.func.count())
+            .select_from(users_pre_registration_details)
+            .where(
+                (users_pre_registration_details.c.pre_email == test_email)
+                & (users_pre_registration_details.c.product_name == product_name)
+            )
+        )
+    assert count == 1
+
+
+async def test_create_user_pre_registration_on_concurrent_submissions(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
+):
+    """e.g. an account request submitted twice by double-clicking the submit button"""
+    # Arrange
+    asyncpg_engine = get_asyncpg_engine(app)
+    test_email = "double.submit@example.com"
+
+    async def _submit() -> BaseException | int:
+        try:
+            return await _accounts_repository.create_user_pre_registration(
+                asyncpg_engine,
+                email=test_email,
+                created_by=product_owner_user["id"],
+                product_name=product_name,
+            )
+        except AlreadyPreRegisteredError as err:
+            return err
+
+    # Act
+    results = await asyncio.gather(_submit(), _submit())
+
+    # Assert: a single pre-registration is created and the loser reports it as a duplicate
+    created_ids = [r for r in results if isinstance(r, int)]
+    duplicates = [r for r in results if isinstance(r, AlreadyPreRegisteredError)]
+    assert len(created_ids) == 1, f"{results}"
+    assert len(duplicates) == 1, f"{results}"
+    pre_registration_details_db_cleanup.extend(created_ids)
+
+    async with asyncpg_engine.connect() as conn:
+        count = await conn.scalar(
+            sa.select(sa.func.count())
+            .select_from(users_pre_registration_details)
+            .where(
+                (users_pre_registration_details.c.pre_email == test_email)
+                & (users_pre_registration_details.c.product_name == product_name)
+            )
+        )
+    assert count == 1

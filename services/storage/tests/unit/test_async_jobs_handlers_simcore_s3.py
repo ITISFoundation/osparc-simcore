@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Literal
 from unittest.mock import Mock
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from celery.worker.worker import WorkController
@@ -343,7 +343,7 @@ async def test_copy_folders_from_valid_project(
 
 async def _create_and_delete_folders_from_project(
     task_manager: TaskManager,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     project: dict[str, Any],
@@ -427,7 +427,7 @@ async def _create_and_delete_folders_from_project(
 
 
 @pytest.fixture
-def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> None:
+def mock_datcore_download(mocker: MockerFixture, client: httpx2.AsyncClient) -> None:
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
         with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
@@ -465,7 +465,7 @@ async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,
     task_manager: TaskManager,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     project_with_seeded_files: tuple[

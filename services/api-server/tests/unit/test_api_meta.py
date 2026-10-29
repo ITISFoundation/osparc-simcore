@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas__common.meta import BaseMeta
 from simcore_service_api_server._meta import API_VERSION, API_VTAG
 

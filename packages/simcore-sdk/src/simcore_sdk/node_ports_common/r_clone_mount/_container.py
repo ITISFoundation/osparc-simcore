@@ -7,7 +7,7 @@ from textwrap import dedent
 from typing import Annotated, Final, Self
 
 from attr import dataclass
-from httpx import AsyncClient, HTTPError
+from httpx2 import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
 from models_library.docker import DockerLabelKey

@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
+import httpx2
 import pytest
 from common_library.gettext_support import DEFAULT_LOCALE
 from faker import Faker
@@ -380,7 +380,7 @@ async def test_email_provider_propagates_bcc(
 )
 def test_extract_file_name(url: str, content_disposition: str, expected: str):
     headers = {"content-disposition": content_disposition} if content_disposition else {}
-    response = httpx.Response(status_code=200, headers=headers)
+    response = httpx2.Response(status_code=200, headers=headers)
     assert _extract_file_name(response, url) == expected
 
 
@@ -392,7 +392,7 @@ async def test_download_invoice_pdf_returns_none_on_http_error(
         notifier_email,
         "_get_invoice_pdf",
         new_callable=AsyncMock,
-        side_effect=httpx.ConnectError("boom"),
+        side_effect=httpx2.ConnectError("boom"),
     )
     assert (
         await _download_invoice_pdf(
@@ -409,7 +409,7 @@ async def test_download_invoice_pdf_returns_content_and_filename(
     mocker: MockerFixture,
 ):
     pdf_bytes = b"%PDF-1.4 ..."
-    response = httpx.Response(
+    response = httpx2.Response(
         status_code=200,
         content=pdf_bytes,
         headers={"content-disposition": 'attachment; filename="receipt.pdf"'},

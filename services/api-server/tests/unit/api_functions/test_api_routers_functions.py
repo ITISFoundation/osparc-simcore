@@ -9,14 +9,17 @@ from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 import respx
 from celery import Task
 from celery_library import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.celery import TaskKey
 from models_library.functions import (
@@ -67,7 +70,7 @@ async def test_register_function(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], MockType],
     fake_function: ProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     fake_registered_project_function: RegisteredProjectFunction,
 ) -> None:
     mock = mock_handler_in_functions_rpc_interface("register_function", fake_registered_project_function)
@@ -84,7 +87,7 @@ async def test_register_function(
 async def test_register_function_invalid(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     invalid_function = {
         "title": "test_function",
@@ -100,7 +103,7 @@ async def test_get_function(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     function_id = str(uuid4())
 
@@ -114,7 +117,7 @@ async def test_get_function(
 async def test_get_function_not_found(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any, Exception | None], None],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     non_existent_function_id = str(uuid4())
 
@@ -131,7 +134,7 @@ async def test_get_function_read_access_denied(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any, Exception | None], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     unauthorized_user_id = "unauthorized user"
     mock_handler_in_functions_rpc_interface(
@@ -153,7 +156,7 @@ async def test_list_functions(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "list_functions",
@@ -174,7 +177,7 @@ async def test_update_function_title(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "update_function_title",
@@ -202,7 +205,7 @@ async def test_update_function_description(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "update_function_description",
@@ -230,7 +233,7 @@ async def test_get_function_input_schema(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("get_function", fake_registered_project_function)
 
@@ -248,7 +251,7 @@ async def test_get_function_output_schema(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("get_function", fake_registered_project_function)
 
@@ -267,7 +270,7 @@ async def test_validate_function_inputs(
     mocked_app_rpc_dependencies: None,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     mock_dependency_get_celery_task_manager: MockType,
 ) -> None:
     mock_handler_in_functions_rpc_interface("get_function", fake_registered_project_function)
@@ -288,7 +291,7 @@ async def test_delete_function(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("delete_function", None)
 
@@ -301,7 +304,7 @@ async def test_delete_function_with_jobs_returns_conflict(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any, Exception | None], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "delete_function",
@@ -324,7 +327,7 @@ async def test_run_map_function_not_allowed(
     mock_dependency_get_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
@@ -397,7 +400,7 @@ async def test_run_project_function(
     mock_handler_in_functions_rpc_interface: Callable,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_identity: Identity,
     user_email: EmailStr,
     fake_job_links: JobLinks,
@@ -520,7 +523,7 @@ async def test_export_logs_project_function_job(
     fake_registered_project_function: RegisteredFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mock_dependency_get_celery_task_manager: MockType,
 ):
@@ -542,7 +545,7 @@ async def test_export_logs_solver_function_job(
     fake_registered_solver_function: RegisteredFunction,
     fake_registered_solver_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     user_id: UserID,
     mock_dependency_get_celery_task_manager: MockType,
 ):

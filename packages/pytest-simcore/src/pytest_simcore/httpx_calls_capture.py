@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by instances of httpx.AsyncClient
+The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by instances of httpx2.AsyncClient
 when interacting with a real backend. These captures can then be used to create a respx.MockRouter, which emulates the backend while running
 your tests.
 
@@ -12,7 +12,7 @@ This module ensures a reliable reproduction and maintenance of mock responses th
 
 ## Setting Up the Module and Spy in Your Test Suite (once)
 - Include 'pytest_simcore.httpx_calls_capture' in your `pytest_plugins`.
-- Implement `create_httpx_async_client_spy_if_enabled("module.name.httpx.AsyncClient")` within your codebase.
+- Implement `create_httpx_async_client_spy_if_enabled("module.name.httpx2.AsyncClient")` within your codebase.
 
 ## Creating Mock Captures (every time you want to create/update the mock)
 - Initialize the real backend.
@@ -34,6 +34,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, get_args
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import pytest
 import respx
@@ -190,7 +192,7 @@ def create_respx_mock_from_capture(
     if spy_httpx_calls_enabled=False  otherwise it skips this fixture
     """
 
-    # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
+    # NOTE: multiple improvements on this function planned in https://github.com/ITISFoundation/osparc-simcore/issues/5705
     def _(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,

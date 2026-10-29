@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from simcore_service_dynamic_scheduler._meta import API_VTAG
 from simcore_service_dynamic_scheduler.models.schemas.meta import Meta
 

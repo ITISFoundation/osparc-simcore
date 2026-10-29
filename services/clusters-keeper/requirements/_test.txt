@@ -27,6 +27,7 @@ anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
+    #   httpx2
 asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
@@ -114,21 +115,30 @@ h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+    #   httpcore2
 httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
+httpcore2==2.16.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpx2
 httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -r requirements/_test.in
     #   respx
+httpx2==2.16.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
     #   httpx
+    #   httpx2
     #   requests
     #   yarl
 iniconfig==2.3.0
@@ -313,6 +323,11 @@ sortedcontainers==2.4.0
     #   fakeredis
 sympy==1.14.0
     # via cfn-lint
+truststore==0.10.5
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore2
+    #   httpx2
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
 typing-extensions==4.16.0

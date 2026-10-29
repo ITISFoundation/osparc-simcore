@@ -8,7 +8,7 @@ from contextlib import suppress
 from pprint import pformat
 from typing import Any, Final
 
-import httpx
+import httpx2
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI, HTTPException
 from fastapi_lifespan_manager import LifespanManager, State
@@ -64,7 +64,7 @@ _director_startup_retry_policy: dict[str, Any] = {
 
 
 def _return_data_or_raise_error(
-    request_func: Callable[..., Awaitable[httpx.Response]],
+    request_func: Callable[..., Awaitable[httpx2.Response]],
 ) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
     Creates a context for safe inter-process communication (IPC)
@@ -72,7 +72,7 @@ def _return_data_or_raise_error(
     assert inspect.iscoroutinefunction(request_func)
 
     def _unenvelope_or_raise_error(
-        resp: httpx.Response,
+        resp: httpx2.Response,
     ) -> list[Any] | dict[str, Any]:
         """
         Director responses are enveloped
@@ -85,7 +85,7 @@ def _return_data_or_raise_error(
         data = body.get("data")
         error = body.get("error")
 
-        if httpx.codes.is_server_error(resp.status_code):
+        if httpx2.codes.is_server_error(resp.status_code):
             _logger.error(
                 "director error %d [%s]: %s",
                 resp.status_code,
@@ -94,7 +94,7 @@ def _return_data_or_raise_error(
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if httpx.codes.is_client_error(resp.status_code):
+        if httpx2.codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
@@ -136,7 +136,7 @@ class DirectorClient:
         settings: ApplicationSettings = app.state.settings
 
         assert settings.CATALOG_CLIENT_REQUEST  # nosec
-        self.client = httpx.AsyncClient(
+        self.client = httpx2.AsyncClient(
             base_url=base_url,
             timeout=settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
@@ -161,7 +161,7 @@ class DirectorClient:
 
     @_return_data_or_raise_error
     @retry_on_dropped_connection
-    async def get(self, path: str) -> httpx.Response:
+    async def get(self, path: str) -> httpx2.Response:
         return await self.client.get(path)
 
     #
@@ -175,7 +175,7 @@ class DirectorClient:
             response = await self.client.head(health_check_path, timeout=1.0)
             response.raise_for_status()
             return True
-        except httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException:
+        except httpx2.HTTPStatusError, httpx2.RequestError, httpx2.TimeoutException:
             return False
 
     async def get_service(self, service_key: ServiceKey, service_version: ServiceVersion) -> ServiceMetaDataPublished:

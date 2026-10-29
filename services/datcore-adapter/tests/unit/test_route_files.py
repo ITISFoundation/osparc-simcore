@@ -4,14 +4,14 @@
 
 from unittest.mock import Mock
 
-import httpx
+import httpx2
 from pydantic import TypeAdapter
 from simcore_service_datcore_adapter.models.files import FileDownloadOut
 from starlette import status
 
 
 async def test_download_file_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_subsystem_mock: Mock,
     pennsieve_api_headers: dict[str, str],
     pennsieve_file_id: str,
@@ -27,7 +27,7 @@ async def test_download_file_entrypoint(
 
 
 async def test_delete_file_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_subsystem_mock: Mock,
     pennsieve_api_headers: dict[str, str],
     pennsieve_file_id: str,
@@ -41,7 +41,7 @@ async def test_delete_file_entrypoint(
 
 
 async def test_package_file_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_subsystem_mock: Mock,
     pennsieve_api_headers: dict[str, str],
     pennsieve_file_id: str,

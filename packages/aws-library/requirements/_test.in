@@ -14,7 +14,7 @@ faker
 fastapi-lifespan-manager
 fastapi
 filelock
-httpx
+httpx2
 asgi-lifespan
 moto[server]
 pint

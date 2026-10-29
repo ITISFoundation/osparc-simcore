@@ -41,7 +41,7 @@ anyio==4.15.1
     # via
     #   fast-depends
     #   faststream
-    #   httpx
+    #   httpx2
     #   starlette
 arrow==1.4.0
     # via
@@ -62,11 +62,6 @@ botocore==1.40.61
     #   s3transfer
 botocore-stubs==1.42.41
     # via types-aiobotocore
-certifi==2026.10.19
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   httpcore
-    #   httpx
 dnspython==2.9.0
     # via email-validator
 email-validator==2.3.0
@@ -92,24 +87,22 @@ googleapis-common-protos==1.73.0
 grpcio==1.78.0
     # via opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
-    # via httpcore
+    # via httpcore2
 h2==4.4.1
-    # via httpx
+    # via httpx2
 hpack==4.2.0
     # via h2
-httpcore==1.0.9
-    # via httpx
-httpx==0.28.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.in
+httpcore2==2.16.0
+    # via httpx2
+httpx2==2.16.0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 hyperframe==6.1.0
     # via h2
 idna==3.19
     # via
     #   anyio
     #   email-validator
-    #   httpx
+    #   httpx2
     #   yarl
 jmespath==1.1.0
     # via
@@ -322,6 +315,10 @@ toolz==1.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+truststore==0.10.5
+    # via
+    #   httpcore2
+    #   httpx2
 typer==0.27.3
     # via -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 types-aiobotocore==3.8.0

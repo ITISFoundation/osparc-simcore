@@ -9,11 +9,11 @@ from datetime import datetime
 from typing import Any
 from unittest.mock import ANY
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
@@ -50,7 +50,7 @@ async def test_delete_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("delete_function_job", None)
 
@@ -66,7 +66,7 @@ async def test_register_function_job(
     mock_handler_in_functions_rpc_interface: Callable,
     fake_project_function_job: ProjectFunctionJob,
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     """Test the register_function_job endpoint."""
 
@@ -93,7 +93,7 @@ async def test_get_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("get_function_job", fake_registered_project_function_job)
 
@@ -113,7 +113,7 @@ async def test_list_function_jobs(
     mock_dependency_get_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
@@ -137,7 +137,7 @@ async def test_list_function_jobs_with_status(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     mocker: MockerFixture,
     status_str: str,
 ) -> None:
@@ -185,7 +185,7 @@ async def test_list_function_jobs_with_job_id_filter(
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     user_id: UserID,
     product_name: ProductName,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
 ) -> None:
     PAGE_SIZE = 3
     TOTAL_SIZE = 10
@@ -254,7 +254,7 @@ async def test_get_function_job_status(
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     fake_registered_project_function: RegisteredProjectFunction,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     job_status: str,
     project_job_id: ProjectID,
     job_creation_task_id: TaskID | None,
@@ -362,7 +362,7 @@ async def test_get_function_job_outputs(
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     fake_registered_project_function: RegisteredProjectFunction,
     mocked_webserver_rpc_api: dict[str, MockType],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     job_outputs: dict[str, Any] | None,
     project_job_id: ProjectID | None,
     job_status: str,

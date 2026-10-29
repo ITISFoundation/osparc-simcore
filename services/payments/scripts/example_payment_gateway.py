@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any, cast
 from uuid import uuid4
 
-import httpx
+import httpx2
 import uvicorn
 from fastapi import (
     APIRouter,
@@ -123,7 +123,7 @@ class PaymentForm:
     expiration_date: Annotated[str, Form(alias="expirationDate")]
 
 
-class PaymentsAuth(httpx.Auth):
+class PaymentsAuth(httpx2.Auth):
     requires_response_body = True
 
     def __init__(self, username: str, password: str, base_url: str):
@@ -133,7 +133,7 @@ class PaymentsAuth(httpx.Auth):
     def auth_flow(self, request):
         response = yield request
         if response.status_code == status.HTTP_401_UNAUTHORIZED:
-            token_response = yield httpx.Request(
+            token_response = yield httpx2.Request(
                 "POST",
                 f"{self.base_url}/v1/token",
                 data=self.form_data,
@@ -150,7 +150,7 @@ async def _ack_request(path: str, body: dict, settings: Settings):
         settings.PAYMENTS_PASSWORD.get_secret_value(),
         base_url=f"{settings.PAYMENTS_SERVICE_API_BASE_URL}",
     )
-    async with httpx.AsyncClient(
+    async with httpx2.AsyncClient(
         base_url=f"{settings.PAYMENTS_SERVICE_API_BASE_URL}",
         auth=auth,
     ) as client:

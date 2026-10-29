@@ -10,6 +10,7 @@ import urllib.parse
 from typing import Any, Final, Protocol
 
 import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI, HTTPException, status
 from models_library.services_metadata_published import ServiceMetaDataPublished
@@ -163,22 +164,22 @@ async def test_requests_honor_configured_timeout(
     assert settings.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT == 3
 
     director_api = get_director_client(app)
-    assert director_api.client.timeout == httpx.Timeout(3.0)
+    assert director_api.client.timeout == httpx2.Timeout(3.0)
 
     requested_timeouts: list[Any] = []
-    original_request = httpx.AsyncClient.request
+    original_request = httpx2.AsyncClient.request
 
-    async def _capture_request(self: httpx.AsyncClient, method: str, url, **kwargs):
+    async def _capture_request(self: httpx2.AsyncClient, method: str, url, **kwargs):
         requested_timeouts.append(kwargs.get("timeout"))
         return await original_request(self, method, url, **kwargs)
 
-    monkeypatch.setattr(httpx.AsyncClient, "request", _capture_request)
+    monkeypatch.setattr(httpx2.AsyncClient, "request", _capture_request)
 
     key, version = service_key_and_version
     await director_api.get_service_labels(key, version)
 
     # no per-request override: the client's configured timeout applies
-    assert requested_timeouts == [httpx.USE_CLIENT_DEFAULT]
+    assert requested_timeouts == [httpx2.USE_CLIENT_DEFAULT]
 
 
 _LABELS_PATH_REGEX: Final[str] = r"^/services/(?P<service_key>[/\w-]+)/(?P<service_version>[0-9\.]+)/labels$"
@@ -187,8 +188,8 @@ _LABELS_PATH_REGEX: Final[str] = r"^/services/(?P<service_key>[/\w-]+)/(?P<servi
 @pytest.mark.parametrize(
     "dropped_connection_error",
     [
-        httpx.RemoteProtocolError("Server disconnected without sending a response."),
-        httpx.ReadError("Connection reset by peer"),
+        httpx2.RemoteProtocolError("Server disconnected without sending a response."),
+        httpx2.ReadError("Connection reset by peer"),
     ],
     ids=lambda e: type(e).__name__,
 )
@@ -202,6 +203,8 @@ async def test_director_client_retries_once_when_connection_is_dropped(
     dropped_connection_error: Exception,
 ):
     labels = {"io.simcore.name": "some-service"}
+    # NOTE: respx only accepts plain httpx.Response values (it repacks them for the
+    # httpx2 client) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
     labels_route = mocked_director_rest_api_base.get(path__regex=_LABELS_PATH_REGEX, name="labels_flaky").mock(
         side_effect=[dropped_connection_error, httpx.Response(status.HTTP_200_OK, json={"data": labels})]
     )
@@ -214,8 +217,8 @@ async def test_director_client_retries_once_when_connection_is_dropped(
 @pytest.mark.parametrize(
     "error, expected_calls",
     [
-        (httpx.RemoteProtocolError("Server disconnected without sending a response."), 2),
-        (httpx.ReadTimeout("timed out"), 1),
+        (httpx2.RemoteProtocolError("Server disconnected without sending a response."), 2),
+        (httpx2.ReadTimeout("timed out"), 1),
     ],
     ids=["dropped-connection-retried-once", "timeout-not-retried"],
 )

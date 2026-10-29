@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-import httpx
+import httpx2
 import respx
 from fastapi_pagination import LimitOffsetPage
 from models_library.api_schemas_datcore_adapter.datasets import (
@@ -15,7 +15,7 @@ from starlette import status
 
 
 async def test_get_dataset_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_dataset_id: str,
     pennsieve_subsystem_mock: respx.MockRouter | None,
     pennsieve_api_headers: dict[str, str],
@@ -32,7 +32,7 @@ async def test_get_dataset_entrypoint(
 
 
 async def test_list_datasets_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_subsystem_mock: respx.MockRouter | None,
     pennsieve_api_headers: dict[str, str],
 ):
@@ -48,7 +48,7 @@ async def test_list_datasets_entrypoint(
 
 
 async def test_list_dataset_files_legacy_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_dataset_id: str,
     pennsieve_subsystem_mock,
     pennsieve_api_headers: dict[str, str],
@@ -66,7 +66,7 @@ async def test_list_dataset_files_legacy_entrypoint(
 
 
 async def test_list_dataset_top_level_files_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_dataset_id: str,
     pennsieve_subsystem_mock,
     pennsieve_api_headers: dict[str, str],
@@ -84,7 +84,7 @@ async def test_list_dataset_top_level_files_entrypoint(
 
 
 async def test_list_dataset_collection_files_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_dataset_id: str,
     pennsieve_collection_id: str,
     pennsieve_subsystem_mock,

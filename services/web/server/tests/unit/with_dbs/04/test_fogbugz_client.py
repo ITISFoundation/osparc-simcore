@@ -7,6 +7,8 @@
 import json
 from collections.abc import Iterator
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import pytest
 import respx
