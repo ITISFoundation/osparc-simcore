@@ -55,12 +55,6 @@ To hold a PR back, add the `🤖-do-not-merge` label; remove it to let it go aga
 Reviewers outside the owner set are still welcome — they just cannot satisfy the
 code-owner gate.
 
-Those four logins could be replaced by `@ITISFoundation/dev-team`, whose members
-would each satisfy the gate. A code-owner team must be visible and hold write
-access, so make it visible first: it has `push` on this repository today but is
-`closed`, and an owner GitHub cannot resolve leaves the gate impossible to
-satisfy.
-
 When the resync task cannot propagate a pin to every directory that constrains it,
 it leaves `renovate-resync-report.md` in the PR and Renovate reports a failing
 `renovate/artifacts` check. Neither is a required check, so read them before
