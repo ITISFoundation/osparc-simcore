@@ -5,7 +5,6 @@ from typing import Annotated, Any, Literal, cast
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -288,25 +287,6 @@ class FunctionsRpcApi(BaseRpcApi):
                 user_id=user_id,
                 function_id=function_id,
                 description=description,
-            ),
-        )
-
-    async def run_function(
-        self,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> RegisteredFunctionJob:
-        """Run a function."""
-        return TypeAdapter(RegisteredFunctionJob).validate_python(
-            await self._request(
-                "run_function",
-                product_name=product_name,
-                user_id=user_id,
-                function_id=function_id,
-                inputs=inputs,
             ),
         )
 
