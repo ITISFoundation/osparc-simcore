@@ -7,7 +7,9 @@ aiocache==0.12.3
 aiodebug==2.3.0
     # via -r requirements/_base.in
 aiodocker==0.27.0
-    # via -r requirements/_base.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 aiofiles==25.1.0
     # via -r requirements/_base.in
 aiohappyeyeballs==2.6.1
