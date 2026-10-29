@@ -1,21 +1,16 @@
+{{- $calicoVersion := "v3.33.0" }}
+{{- $tigeraOperatorNamespace := "tigera-operator" }}
+
 helmDefaults:
-  # wait for all resources to be ready before marking the release as successful
-  # this makes sure that releases are properly installed before continuing with
-  # dependent (via `needs`) releases. Read more via `helm install --help`
   wait: true
   waitForJobs: true
   timeout: 600
 
-  # avoid errors on first installation
-  # passes --disable-validation to helm 3 diff plugin
   disableValidation: true
 
 repositories:
   - name: projectcalico
     url: https://docs.tigera.io/calico/charts
-
-{{ $calicoVersion := "v3.33.0" }}
-{{ $tigeraOperatorNamespace := "tigera-operator" }}
 
 releases:
   - name: calico # network cni
@@ -23,8 +18,8 @@ releases:
     createNamespace: true
     chart: projectcalico/tigera-operator
     version: {{ $calicoVersion }}
-    values:
-      - calico/values.yaml.gotmpl
+    # no values: the operator's default IP pool, 192.168.0.0/16, is the `podSubnet`
+    # of kind-config.yaml
     hooks:
       # see https://docs.tigera.io/calico/latest/getting-started/kubernetes/helm
       - name: install-crds

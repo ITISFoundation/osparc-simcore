@@ -21,9 +21,9 @@ HELMFILE_VERSION := 1.1.6
 
 .helmfile-%: .require-helmfile .require-kubectl
 	set -a; source .env-devel; set +a; \
-	helmfile -f ./services/00-helmfile.local-cluster.yaml.gotmpl $* && \
-	helmfile -f ./services/01-helmfile.local-ops.yaml.gotmpl $* && \
-	helmfile -f ./services/02-helmfile.yaml.gotmpl $*
+	helmfile -f ./services/helmfile.local-cluster.yaml.gotmpl $* && \
+	helmfile -f ./services/helmfile.local-ops.yaml.gotmpl $* && \
+	helmfile -f ./services/helmfile.yaml.gotmpl $*
 
 #
 # Kubernetes Targets
