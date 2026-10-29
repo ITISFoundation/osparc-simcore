@@ -17,6 +17,7 @@ aiodebug==2.3.0
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.27.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 aiofiles==25.1.0
@@ -407,7 +408,7 @@ toolz==1.2.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.10
+tornado==6.6
     # via
     #   bokeh
     #   distributed
