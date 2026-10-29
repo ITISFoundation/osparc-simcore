@@ -460,7 +460,7 @@ async def test_delete_paths_of_invalid_short_path_fails(
             paths={path},
         )
 
-    assert exc.value.exc_type == "ValueError"
+    assert exc.value.exc_type == "ValueError"  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize(

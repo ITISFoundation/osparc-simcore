@@ -19,10 +19,10 @@ import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_storage.storage_schemas import (
+    MAX_NUMBER_OF_PATHS_PER_PAGE,
     PathMetaDataGet,
     PathTotalSizeCreate,
 )
-from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
