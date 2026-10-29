@@ -54,7 +54,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.2
+msgpack==1.2.4
     # via distributed
 orjson==3.11.9
     # via

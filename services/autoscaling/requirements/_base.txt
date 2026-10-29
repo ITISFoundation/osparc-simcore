@@ -193,7 +193,7 @@ markupsafe==3.0.3
     #   jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.3
+msgpack==1.2.4
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
