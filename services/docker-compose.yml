@@ -1085,8 +1085,7 @@ services:
         - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
         # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode. the middleware must be attached to the right connection.
         - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
-        # response headers: no MIME sniffing, no referrer leaks across origins, no server version disclosure
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_security_headers.headers.contenttypenosniff=true
+        # response headers: no referrer leaks across origins, no server version disclosure
         - traefik.http.middlewares.${SWARM_STACK_NAME}_security_headers.headers.referrerpolicy=strict-origin-when-cross-origin
         - traefik.http.middlewares.${SWARM_STACK_NAME}_security_headers.headers.customresponseheaders.Server=
         - traefik.enable=true
