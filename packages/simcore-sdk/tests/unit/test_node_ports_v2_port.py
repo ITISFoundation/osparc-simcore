@@ -7,7 +7,7 @@
 # pylint:disable=unused-variable
 
 # legacy tests construct `FileLink` via a dynamic alias whose kwargs pyright
-# cannot resolve, producing false-positive call-issue reports
+# cannot resolve, so its reportCallIssue errors here are false positives
 # pyright: reportCallIssue=false
 
 
