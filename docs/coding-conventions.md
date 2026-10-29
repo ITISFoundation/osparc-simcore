@@ -125,7 +125,7 @@ In short we use the following naming convention ( roughly  [PEP8](https://peps.p
 
 In general the `qooxdoo` naming convention/style is followed. The [Access](http://qooxdoo.org/docs/#/core/oo_feature_summary?id=access) paragraph is the most notable. It is recommended to read the entire document.
 
-Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) and [.eslintignore](.eslintignore).
+See the `ESLint` configuration file [eslint.config.js](eslint.config.js).
 
 
 
