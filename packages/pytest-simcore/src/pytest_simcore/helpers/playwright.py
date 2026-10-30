@@ -1098,10 +1098,10 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
 
     The UI navigates the iframe only once its own readiness polling notices the
     service is up, which can trail the backend-side checks by tens of seconds.
-    The iframe source is therefore waited on, by polling, before the content
-    frame attachment is checked: a navigation that is merely late must still get
-    the attachment check, while reloading the iframe before the UI navigated it
-    would restart a healthy navigation.
+    The helper therefore polls the iframe source before checking the content
+    frame attachment: a navigation that is merely late must still get the
+    attachment check, while re-navigating an iframe the UI has not pointed at
+    the service yet would restart a healthy navigation.
 
     Best-effort: it re-navigates the iframe at most once. Playwright errors are
     logged and swallowed, so that the caller still fails with its own original

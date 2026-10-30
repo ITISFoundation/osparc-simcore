@@ -197,7 +197,7 @@ def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture()
 def _no_src_wait_grace(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Drop the iframe-source waiting grace window of the helper."""
+    """Drop the iframe-source wait window of the helper."""
     monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_SRC_TIMEOUT", timedelta(0))
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
 
@@ -243,16 +243,17 @@ def test_late_service_iframe_navigation_is_still_rescued(
     _no_frame_attach_grace: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Regression test: the UI navigated the iframe only ~13 s after the service
-    endpoint was already responding (its own readiness polling trails the
-    backend), and the driver then never attached the content frame. Timing out
-    while waiting for the iframe src must not abort the helper, or the
-    re-navigation recovery never runs.
+    """Regression test: the UI set the iframe src only after the old 10 s src wait
+    had expired (its own readiness polling trails the backend), and the driver
+    then never attached the content frame. Timing out while waiting for the
+    iframe src must not abort the helper, or the re-navigation recovery never
+    runs.
     """
     page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame("about:blank"))
     mock_page = cast("mock.Mock", page)
     mock_page.evaluate.side_effect = [False, False, True]
-    # the iframe src only appears after the old 10 s wait_for_function grace window
+    # the pre-fix helper waited on wait_for_function and aborted on its timeout;
+    # fail it so this test reproduces that path
     mock_page.wait_for_function.side_effect = PlaywrightTimeoutError("Timeout")
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
 
