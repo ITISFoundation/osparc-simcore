@@ -1,9 +1,8 @@
 #!/bin/bash
 #
-#  Re-triggers the failed jobs of a CI Build Test run for a pull request from
-#  a fork into this repository, once per commit, and only for failures that
-#  look flaky (see chore-rerun-flaky-jobs.yml for when this runs).
-#  Deterministic failures (lint, typecheck, many failed jobs) stay red.
+#  Re-triggers the failed jobs of a CI Build Test run on a pull request from a
+#  fork into this repository, once per commit. Which runs it acts on, and what
+#  counts as flaky, is in chore-rerun-flaky-jobs.yml.
 #
 #  Required environment: GITHUB_REPOSITORY, RUN_ID, HEAD_SHA, PR_HEAD_REPO,
 #  PR_HEAD_BRANCH, PR_NUMBER (may be empty: for a fork's PR the payload omits
@@ -16,7 +15,7 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-# fall back to the head-repo:branch lookup (see the header)
+# a fork's PR carries no number in the payload: look it up by head repo:branch
 if [ -z "$PR_NUMBER" ]; then
   PR_NUMBER="$(gh api --paginate \
     "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100&head=$PR_HEAD_REPO:$PR_HEAD_BRANCH" \
@@ -31,8 +30,8 @@ fi
 
 PR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
 
-# skip draft PRs: a draft PR is not waiting to merge, so nobody is
-# waiting on its red checks (the payload has no draft flag, so ask the API)
+# skip draft PRs: nobody waits on a draft's red checks. The payload has no
+# draft flag, so it comes from the API fetch above.
 if [ "$(jq -r '.draft' <<<"$PR")" = "true" ]; then
   echo "PR #$PR_NUMBER is a draft; not rerunning"
   exit 0
@@ -65,7 +64,7 @@ if jq -e 'any(.[]; .name | test("python-linting"))' <<<"$FAILED_JOBS" >/dev/null
   exit 0
 fi
 
-# a failed "typecheck" step (pyright) is deterministic too
+# a failed "typecheck" step (pyright) does not disappear on a retry either
 if jq -e 'any(.[]; .steps[]? | select(.name == "typecheck" and .conclusion == "failure"))' \
   <<<"$FAILED_JOBS" >/dev/null; then
   echo "a typecheck step failed; not rerunning"
