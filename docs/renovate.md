@@ -32,8 +32,11 @@ touching a branch that someone else wrote last.
 - **Regular updates are throttled.** Two new pull requests per run, two open at
   a time. The Dependency Dashboard holds the rest. It is also where you tick
   majors and the monthly `lockFileMaintenance` runs.
-- **Cool-downs.** 7 days for GitHub Actions and `uv`, 3 days for `packages/**`
-  dependencies, 14 days for `services/**`. Security fixes skip them.
+- **Cool-downs.** 14 days for every dependency: pip-compile lockfiles, GitHub
+  Actions, and `uv`. Security fixes skip them.
+- **One PR per dependency.** A pip-compile package gets a single PR that moves
+  its pin in every `requirements/` directory at once (the resync post-upgrade
+  task propagates it). No PRs grouped per directory or per area.
 
 ## From pull request to merge
 
