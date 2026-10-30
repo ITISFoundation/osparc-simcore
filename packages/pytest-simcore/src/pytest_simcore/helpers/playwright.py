@@ -63,16 +63,14 @@ _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
 # Progress types a starting dynamic service is expected to report before its start is complete
-REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset(
-    {
-        ProgressType.SERVICE_INPUTS_PULLING,
-        ProgressType.SIDECARS_PULLING,
-        ProgressType.SERVICE_OUTPUTS_PULLING,
-        ProgressType.SERVICE_STATE_PULLING,
-        ProgressType.SERVICE_IMAGES_PULLING,
-        ProgressType.SERVICE_CONTAINERS_STARTING,
-    }
-)
+REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset({
+    ProgressType.SERVICE_INPUTS_PULLING,
+    ProgressType.SIDECARS_PULLING,
+    ProgressType.SERVICE_OUTPUTS_PULLING,
+    ProgressType.SERVICE_STATE_PULLING,
+    ProgressType.SERVICE_IMAGES_PULLING,
+    ProgressType.SERVICE_CONTAINERS_STARTING,
+})
 
 
 class _OSparcMessages(StrEnum):
@@ -1053,9 +1051,12 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
 _SERVICE_IFRAME_SRC_TIMEOUT: Final[
     Annotated[
         timedelta,
-        doc("the UI navigates the service iframe to its service URL only once the service became ready"),
+        doc(
+            "the UI sets the service iframe src only once its own readiness polling has seen "
+            "the service, tens of seconds after the backend-side checks pass"
+        ),
     ]
-] = timedelta(seconds=10)
+] = timedelta(seconds=90)
 _SERVICE_FRAME_ATTACH_TIMEOUT: Final[
     Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
 ] = timedelta(seconds=10)
@@ -1067,9 +1068,33 @@ def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool
 
     Only the service frame URL carries the node id, so the stale frame left by
     the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
+    Polled, so a failed read counts as unattached and the next poll retries it.
     """
-    content_frame = iframe_element.content_frame()
+    try:
+        content_frame = iframe_element.content_frame()
+    except PlaywrightError:
+        return False
     return content_frame is not None and node_id in content_frame.url
+
+
+def _is_service_iframe_src_set(page: Page, node_id: str) -> bool:
+    """Whether the UI navigated the service iframe to the given node.
+
+    Polled while the page may be busy, so a failed read counts as not set yet
+    and the next poll retries it, instead of aborting the best-effort helper.
+    """
+    try:
+        return bool(
+            page.evaluate(
+                """nodeId => {
+                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
+                return !!iframe && iframe.src.includes(nodeId);
+            }""",
+                node_id,
+            )
+        )
+    except PlaywrightError:
+        return False
 
 
 def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
@@ -1081,20 +1106,35 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
     shown. Re-setting the iframe source reloads it and re-triggers the frame
     lifecycle events the driver needs to attach the content frame.
 
-    Best-effort: it first waits for the UI to navigate the iframe and for the
-    driver to attach its content frame, and only then re-navigates the iframe
-    once. Playwright errors are logged and swallowed, so that the caller still
-    fails with its own original error.
+    The UI sets the iframe source only once its own readiness polling has seen
+    the service, tens of seconds after the backend-side checks pass. This
+    helper therefore polls the iframe source first and checks the attachment
+    afterwards, so that a late navigation still gets the recovery. An iframe
+    the UI never navigated is left alone: re-navigating it would restart a
+    healthy navigation.
+
+    Best-effort: failed reads while polling are retried, the iframe is
+    re-navigated at most once, and Playwright errors are logged and swallowed,
+    so that the caller still fails with its own original error.
     """
     try:
-        page.wait_for_function(
-            """nodeId => {
-                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
-                return !!iframe && iframe.src.includes(nodeId);
-            }""",
-            arg=node_id,
-            timeout=int(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds() * SECOND),
+        src_set = Retrying(
+            stop=stop_after_delay(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds()),
+            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+            retry=retry_if_result(lambda navigated: not navigated),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
+        try:
+            navigated = src_set(lambda: _is_service_iframe_src_set(page, node_id))
+        except RetryError:
+            navigated = False
+        if not navigated:
+            _logger.warning(
+                "Service iframe of node %s was not navigated by the UI within %s: leaving it untouched",
+                node_id,
+                _SERVICE_IFRAME_SRC_TIMEOUT,
+            )
+            return
 
         iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
         if iframe_element is None:

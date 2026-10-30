@@ -182,8 +182,7 @@ def _page_with_service_iframe(
     iframe_element.content_frame.return_value = first_iframe_content
     if evaluate_error is not None:
         iframe_locator.evaluate.side_effect = evaluate_error
-    if not iframe_src_set:
-        page.wait_for_function.side_effect = PlaywrightTimeoutError("Timeout")
+    page.evaluate.return_value = iframe_src_set
     if attached_duplicate:
         page.frames = [_frame(_SERVICE_FRAME_URL)]
     page.locator.return_value = iframe_locator
@@ -194,6 +193,13 @@ def _page_with_service_iframe(
 def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch) -> None:
     """Drop the content-frame attachment grace window of the helper."""
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
+
+
+@pytest.fixture()
+def _no_src_wait_grace(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Drop the iframe-source wait window of the helper."""
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_SRC_TIMEOUT", timedelta(0))
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
 
 
 def test_healthy_service_iframe_is_left_untouched():
@@ -233,7 +239,30 @@ def test_unattached_first_service_iframe_is_re_navigated_despite_attached_duplic
     iframe_locator.evaluate.assert_called_once()
 
 
-def test_service_iframe_not_navigated_yet_is_left_untouched():
+def test_late_service_iframe_navigation_is_still_rescued(
+    _no_frame_attach_grace: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Regression test: timing out on the iframe src must not abort the helper.
+
+    The UI sets the src late here (its readiness polling trails the backend)
+    and the frame never attaches, so only the re-navigation can recover it.
+    Pre-fix, the src wait raised TimeoutError and the recovery never ran.
+    """
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame("about:blank"))
+    mock_page = cast("mock.Mock", page)
+    mock_page.evaluate.side_effect = [False, False, True]
+    # the pre-fix helper waited on wait_for_function and aborted on its timeout;
+    # fail it so this test reproduces that path
+    mock_page.wait_for_function.side_effect = PlaywrightTimeoutError("Timeout")
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+
+    _ensure_service_iframe_attached(page, _NODE_ID)
+
+    iframe_locator.evaluate.assert_called_once()
+
+
+def test_service_iframe_not_navigated_yet_is_left_untouched(_no_src_wait_grace: None):
     """An iframe the UI has not navigated yet must not be treated as the attach failure.
 
     Regression test: the UI assigns the iframe src asynchronously, so reloading
@@ -244,6 +273,28 @@ def test_service_iframe_not_navigated_yet_is_left_untouched():
     _ensure_service_iframe_attached(page, _NODE_ID)
 
     iframe_locator.evaluate.assert_not_called()
+
+
+def test_transient_errors_during_polling_still_run_the_recovery(
+    _no_frame_attach_grace: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Transient Playwright errors while polling must not abort the helper.
+
+    The polls run while the page is busy; a failed read counts as not yet and
+    the next poll retries it, so the recovery still runs rather than an error
+    escaping to the caller and the log.
+    """
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None)
+    mock_page = cast("mock.Mock", page)
+    mock_page.evaluate.side_effect = [PlaywrightError("Execution context was destroyed"), True]
+    iframe_element = cast("mock.Mock", iframe_locator.element_handle.return_value)
+    iframe_element.content_frame.side_effect = PlaywrightError("Element is not attached to the DOM")
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # must not raise
+
+    iframe_locator.evaluate.assert_called_once()
 
 
 def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace: None):
