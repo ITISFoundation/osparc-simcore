@@ -221,9 +221,6 @@ async def login_2fa(request: web.Request):
 
     user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=login_2fa_.email))
 
-    # NOTE: a privilege user should not have called this entrypoint
-    assert UserRole(user["role"]) <= UserRole.USER  # nosec
-
     # dispose since code was used
     await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)
 
