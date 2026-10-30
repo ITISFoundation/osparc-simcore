@@ -1,4 +1,6 @@
 {
+  // How a PR gets from here to master (labels, CI, who may approve, who merges) is
+  // documented in docs/renovate.md
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
@@ -53,6 +55,23 @@
       "/(^|/)ci/helpers/requirements/requirements\\.txt$/",
       "/(^|/)tests/e2e-playwright/requirements/_[^/]+\\.txt$/",
       "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
+    ]
+  },
+  // docker-compose: config:recommended ignores **/test/** and **/tests/**, so the fixture
+  // compose files under the tests directories were never scanned and fell behind the main
+  // stack on image digests (see the partial valkey update of PR #9915, guarded since by
+  // services/web/server/tests/unit/isolated/test__consistency.py). Scan them together with
+  // the rest, so Renovate moves every file sharing an image in one PR, except the fixtures
+  // of the service-integration tests, which pin an old image version on purpose
+  "docker-compose": {
+    "ignorePaths": [
+      "**/node_modules/**",
+      "**/bower_components/**",
+      "**/vendor/**",
+      "**/examples/**",
+      "**/__tests__/**",
+      "**/__fixtures__/**",
+      "**/packages/service-integration/tests/data/**"
     ]
   },
   "customManagers": [
@@ -138,14 +157,11 @@
   },
   "packageRules": [
     {
-      "description": "pip-compile lockfiles (e.g. _test.txt, _tools.txt) reference _base.txt as a --constraint, so packages only pinned there (not required directly by their own .in file) are classified by Renovate as 'indirect' deps and ignored by default. Force-enable them so they don't silently drift out of sync (e.g. stay on an old, vulnerable version) whenever _base.txt is bumped.",
+      "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [
         "pip-compile"
       ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "enabled": true
+      "rangeStrategy": "update-lockfile"
     },
     {
       "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",

@@ -10,7 +10,6 @@ from fastapi_pagination import create_page
 from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -401,21 +400,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filters=filters,
-        )
-
-    async def run_function(
-        self,
-        *,
-        user_id: UserID,
-        product_name: ProductName,
-        function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> RegisteredFunctionJob:
-        return await self._rpc_client.functions.run_function(
-            user_id=user_id,
-            product_name=product_name,
-            function_id=function_id,
-            inputs=inputs,
         )
 
     async def get_function_job(

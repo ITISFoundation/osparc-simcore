@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import check_node_outputs, run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright import check_node_files_panel, run_pipeline_and_wait_done
 
 
 def test_opencor(
@@ -22,7 +22,7 @@ def test_opencor(
 
     run_pipeline_and_wait_done(page, opened_study.websocket, project_uuid=study_id, timeout_ms=run_pipeline_timeout)
 
-    check_node_outputs(
+    check_node_files_panel(
         page,
         study_id=study_id,
         workbench=project_data["workbench"],

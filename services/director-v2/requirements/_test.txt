@@ -126,7 +126,7 @@ markupsafe==3.0.3
     #   -c requirements/_base.txt
     #   jinja2
     #   mako
-msgpack==1.2.3
+msgpack==1.2.4
     # via
     #   -c requirements/_base.txt
     #   distributed
@@ -247,7 +247,7 @@ toolz==1.2.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.10
+tornado==6.6
     # via
     #   -c requirements/_base.txt
     #   bokeh

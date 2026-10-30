@@ -29,7 +29,7 @@ from pytest_simcore.helpers.playwright import (
     PipelineStageTimeouts,
     RobustWebSocket,
     SocketIOEvent,
-    check_node_outputs,
+    check_node_files_panel,
     retrieve_project_state_from_decoded_message,
     wait_for_computation_done,
     wait_for_nodes_outputs_updated,
@@ -174,7 +174,7 @@ def test_sleepers(
             node_id = sleeper.get_attribute("osparc-test-key")
             assert node_id
             sleeper.click()
-            check_node_outputs(
+            check_node_files_panel(
                 page,
                 study_id=project_data["uuid"],
                 workbench=workbench,
