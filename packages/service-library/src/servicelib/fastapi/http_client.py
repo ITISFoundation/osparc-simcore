@@ -27,7 +27,7 @@ class HasClientSetupInterface(ABC):
     async def teardown_client(self) -> None: ...
 
 
-class AttachLifespanMixin(HasClientSetupInterface):
+class AttachLifespanMixin(HasClientSetupInterface):  # pylint: disable=abstract-method
     @contextlib.asynccontextmanager
     async def lifespan(self) -> AsyncIterator[None]:
         try:
@@ -67,7 +67,7 @@ class BaseHTTPApi(HasClientSetupInterface):
             await self._exit_stack.aclose()
 
 
-class HealthMixinMixin(HasClientInterface):
+class HealthMixinMixin(HasClientInterface):  # pylint: disable=abstract-method
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:

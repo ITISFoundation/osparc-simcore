@@ -157,11 +157,9 @@ qx.Class.define("osparc.utils.Utils", {
         });
         switch (widget.classname) {
           case "qx.ui.menu.Button":
-            // eslint-disable-next-line no-underscore-dangle
             widget._add(thumbnail, {column: 0});
             break;
           case "qx.ui.toolbar.RadioButton":
-            // eslint-disable-next-line no-underscore-dangle
             widget._addAt(thumbnail, 0);
             break;
         }
@@ -448,7 +446,6 @@ qx.Class.define("osparc.utils.Utils", {
     hardRefresh: function() {
       // https://stackoverflow.com/questions/5721704/window-location-reload-with-clear-cache
       // No cigar. Tried:
-      // eslint-disable-next-line no-self-assign
       // window.location.href = window.location.href;
       // window.location.href = window.location.origin + window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "reloadTime=" + Date.now().toString() + window.location.hash;
       // window.location.href = window.location.href.replace(/#.*$/, "");
@@ -1249,7 +1246,6 @@ qx.Class.define("osparc.utils.Utils", {
           res = res.concat(capitalized);
         } else if (typeof arguments[i] === "object" && "classname" in arguments[i] && arguments[i]["classname"] === "qx.locale.LocalizedString") {
           // qx.locale.Manager
-          // eslint-disable-next-line no-underscore-dangle
           const capitalized = arguments[i].__txt.charAt(0).toUpperCase() + arguments[i].__txt.slice(1);
           res = res.concat(capitalized);
         }
@@ -1520,7 +1516,6 @@ qx.Class.define("osparc.utils.Utils", {
         alignX: "center",
         alignY: "middle"
       });
-      // eslint-disable-next-line no-underscore-dangle
       const btnLayout = button._getLayout();
       btnLayout.setColumnFlex(0, 1); // icon
       btnLayout.setColumnAlign(0, "center", "middle"); // icon

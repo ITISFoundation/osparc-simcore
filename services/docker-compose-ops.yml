@@ -74,7 +74,7 @@ services:
 
   mailpit:
     # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:v1.29.3
+    image: axllent/mailpit:v1.32.0
     init: true
     command:
       - --smtp-auth-accept-any
@@ -103,7 +103,7 @@ services:
     # S3-compatible object storage (https://rustfs.com). The image runs as
     # non-root UID/GID 10001; the named volume inherits /data's ownership
     # from the image at creation time.
-    image: rustfs/rustfs:1.0.0@sha256:ba0a1b53e36f321c0d46f3867104abef169f7bc59c467c664ddac87e7ddc9a8b
+    image: rustfs/rustfs:1.0.4@sha256:e287e99762a4a3e7b706526e01f2ff755f67db165e9be9f6b907adc6fb6d6ee1
     init: true
     environment:
       RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?access_key_required}
