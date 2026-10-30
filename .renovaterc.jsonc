@@ -157,14 +157,11 @@
   },
   "packageRules": [
     {
-      "description": "pip-compile lockfiles (e.g. _test.txt, _tools.txt) reference _base.txt as a --constraint, so packages only pinned there (not required directly by their own .in file) are classified by Renovate as 'indirect' deps and ignored by default. Force-enable them so they don't silently drift out of sync (e.g. stay on an old, vulnerable version) whenever _base.txt is bumped.",
+      "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [
         "pip-compile"
       ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "enabled": true
+      "rangeStrategy": "update-lockfile"
     },
     {
       "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",
