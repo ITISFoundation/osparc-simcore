@@ -123,6 +123,13 @@ def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def disable_t_scheduler_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_EVENTS_MODULE}.t_scheduler_registry_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.t_scheduler_register_workflows_lifespan")
+    mocker.patch(f"{_EVENTS_MODULE}.t_scheduler_lifespan_manager")
+
+
+@pytest.fixture
 def disable_postgres_lifespan(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     setenvs_from_dict(
         monkeypatch,

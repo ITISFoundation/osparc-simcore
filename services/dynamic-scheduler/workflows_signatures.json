@@ -1,0 +1,9 @@
+{
+  "activities": {
+    "HEALTHCHECK.healthcheck_activity": "48b4c83ab3426bae",
+    "HEALTHCHECK.undo_healthcheck_activity": "947d4220a9e03711"
+  },
+  "workflows": {
+    "HEALTHCHECK": "1bbf9f8f22e51379"
+  }
+}

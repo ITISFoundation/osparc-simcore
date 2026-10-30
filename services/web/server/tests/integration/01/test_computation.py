@@ -73,6 +73,7 @@ pytest_simcore_core_services_selection = [
     "dask-sidecar",
     "docker-api-proxy",
     "dynamic-schdlr",
+    "temporal",
     "director-v2",
     "director",
     "migration",

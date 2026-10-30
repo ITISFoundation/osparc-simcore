@@ -18,5 +18,6 @@
 nicegui
 packaging
 python-socketio
+temporalio
 typer
 u-msgpack-python

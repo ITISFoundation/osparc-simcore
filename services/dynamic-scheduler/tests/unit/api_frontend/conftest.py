@@ -35,7 +35,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def use_internal_scheduler() -> bool:
+def use_internal_scheduler() -> None:
     pytest.fail("please define use_internal_scheduler fixture in your tests folder")
 
 
@@ -50,6 +50,7 @@ def app_environment(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     remove_redis_data: None,
+    disable_t_scheduler_lifespan: None,
 ) -> EnvVarsDict:
     to_set = {
         "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
@@ -65,8 +66,12 @@ def server_host_port() -> str:
 
 @pytest.fixture
 def reset_nicegui_app() -> None:
-    from nicegui import Client, app
-    from starlette.routing import Route
+    # forces rebuild of middleware stack on next test
+
+    # below is based on nicegui.testing.general_fixtures.nicegui_reset_globals
+
+    from nicegui import Client, app  # noqa: PLC0415
+    from starlette.routing import Route  # noqa: PLC0415
 
     for route in list(app.routes):
         if isinstance(route, Route) and route.path.startswith("/_nicegui/auto/static/"):
@@ -79,7 +84,7 @@ def reset_nicegui_app() -> None:
 
     app.routes[:] = [route for route in app.routes if not isinstance(route, _IncludedRouter)]
     # FastAPI 0.141 caches lazy included routes; direct route removal must invalidate that cache.
-    app.router._mark_routes_changed()  # pylint: disable=protected-access
+    app.router._mark_routes_changed()  # pylint: disable=protected-access  # noqa: SLF001
 
     for route in list(app.routes):
         if (
@@ -142,7 +147,7 @@ async def app_runner(
 @pytest.fixture
 def download_playwright_browser() -> None:
     subprocess.run(
-        ["playwright", "install", "chromium"],
+        ["playwright", "install", "chromium"],  # noqa: S607
         check=True,
     )
 

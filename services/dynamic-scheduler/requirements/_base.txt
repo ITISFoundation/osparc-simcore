@@ -169,6 +169,8 @@ multidict==6.9.1
     # via
     #   aiohttp
     #   yarl
+nexus-rpc==1.4.0
+    # via temporalio
 nicegui==3.16.0
     # via -r requirements/_base.in
 opentelemetry-api==1.45.1
@@ -292,6 +294,7 @@ protobuf==5.29.6
     #   -c requirements/../../../requirements/constraints.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
+    #   temporalio
 psutil==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.11
@@ -399,6 +402,8 @@ starlette==1.6.0
     #   nicegui
 stream-zip==0.0.84
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+temporalio==1.35.0
+    # via -r requirements/_base.in
 tenacity==9.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tinycss2==1.5.1
@@ -413,6 +418,8 @@ typer==0.27.3
     #   -r requirements/_base.in
     #   fastapi-cli
     #   fastapi-cloud-cli
+types-protobuf==7.35.1.20260906
+    # via temporalio
 types-python-dateutil==2.9.0.20241206
     # via arrow
 typing-extensions==4.16.0
@@ -424,6 +431,7 @@ typing-extensions==4.16.0
     #   fastapi
     #   faststream
     #   grpcio
+    #   nexus-rpc
     #   nicegui
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -435,6 +443,7 @@ typing-extensions==4.16.0
     #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
+    #   temporalio
     #   typing-inspection
 typing-inspection==0.4.2
     # via
