@@ -243,11 +243,11 @@ def test_late_service_iframe_navigation_is_still_rescued(
     _no_frame_attach_grace: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Regression test: the UI set the iframe src only after the old 10 s src wait
-    had expired (its own readiness polling trails the backend), and the driver
-    then never attached the content frame. Timing out while waiting for the
-    iframe src must not abort the helper, or the re-navigation recovery never
-    runs.
+    """Regression test: timing out on the iframe src must not abort the helper.
+
+    The UI sets the src late here (its readiness polling trails the backend)
+    and the frame never attaches, so only the re-navigation can recover it.
+    Pre-fix, the src wait raised TimeoutError and the recovery never ran.
     """
     page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame("about:blank"))
     mock_page = cast("mock.Mock", page)

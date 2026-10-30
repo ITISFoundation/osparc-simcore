@@ -1052,8 +1052,8 @@ _SERVICE_IFRAME_SRC_TIMEOUT: Final[
     Annotated[
         timedelta,
         doc(
-            "the UI navigates the service iframe to its service URL only once its own readiness "
-            "polling notices the service is up, which can trail the backend-side checks by tens of seconds"
+            "the UI sets the service iframe src only once its own readiness polling has seen "
+            "the service, tens of seconds after the backend-side checks pass"
         ),
     ]
 ] = timedelta(seconds=90)
@@ -1094,12 +1094,12 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
     shown. Re-setting the iframe source reloads it and re-triggers the frame
     lifecycle events the driver needs to attach the content frame.
 
-    The UI navigates the iframe only once its own readiness polling notices the
-    service is up, which can trail the backend-side checks by tens of seconds.
-    The helper therefore polls the iframe source before checking the content
-    frame attachment: a navigation that is merely late must still get the
-    attachment check, while re-navigating an iframe the UI has not pointed at
-    the service yet would restart a healthy navigation.
+    The UI sets the iframe source only once its own readiness polling has seen
+    the service, tens of seconds after the backend-side checks pass. This
+    helper therefore polls the iframe source first and checks the attachment
+    afterwards, so that a late navigation still gets the recovery. An iframe
+    the UI never navigated is left alone: re-navigating it would restart a
+    healthy navigation.
 
     Best-effort: it re-navigates the iframe at most once. Playwright errors are
     logged and swallowed, so that the caller still fails with its own original
