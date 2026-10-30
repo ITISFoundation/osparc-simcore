@@ -55,8 +55,7 @@ probes:
     timeoutSeconds: 5
     failureThreshold: 5
 
-envFrom: []
-env: {}
+env: []
 
 networkPolicy:
   enabled: false

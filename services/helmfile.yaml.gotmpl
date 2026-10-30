@@ -7,6 +7,13 @@ helmDefaults:
   disableValidation: true
 
 releases:
+  - name: datcore-adapter
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - datcore-adapter/helm-values.yaml.gotmpl
+
   - name: invitations
     namespace: simcore
     createNamespace: true

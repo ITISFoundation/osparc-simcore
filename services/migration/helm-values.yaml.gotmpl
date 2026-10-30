@@ -26,15 +26,25 @@ resources:
     memory: 512Mi
 
 env:
-  HOME: /tmp
-  POSTGRES_DB: {{ requiredEnv "POSTGRES_DB" | quote }}
-  POSTGRES_HOST: {{ requiredEnv "POSTGRES_HOST" | quote }}
-  POSTGRES_MAX_OVERFLOW: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
-  POSTGRES_MAX_POOLSIZE: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
-  POSTGRES_PASSWORD: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
-  POSTGRES_PORT: {{ requiredEnv "POSTGRES_PORT" | quote }}
-  POSTGRES_USER: {{ requiredEnv "POSTGRES_USER" | quote }}
-  SC_DONE_MARK_FILE: {{ $doneMarkFile | quote }}
+  - name: HOME
+    value: "/tmp"
+  - name: POSTGRES_DB
+    value: {{ requiredEnv "POSTGRES_DB" | quote }}
+  - name: POSTGRES_HOST
+    value: {{ requiredEnv "POSTGRES_HOST" | quote }}
+  - name: POSTGRES_MAX_OVERFLOW
+    value: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
+  - name: POSTGRES_MAX_POOLSIZE
+    value: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
+  - name: POSTGRES_PASSWORD
+    value: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+    sensitive: true
+  - name: POSTGRES_PORT
+    value: {{ requiredEnv "POSTGRES_PORT" | quote }}
+  - name: POSTGRES_USER
+    value: {{ requiredEnv "POSTGRES_USER" | quote }}
+  - name: SC_DONE_MARK_FILE
+    value: {{ $doneMarkFile | quote }}
 
 probes:
   startup:

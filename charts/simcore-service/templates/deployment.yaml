@@ -14,10 +14,8 @@ spec:
     metadata:
       labels:
         {{- include "simcore-service.labels" . | nindent 8 }}
-      {{- if .Values.env }}
       annotations:
-        checksum/env: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-      {{- end }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -42,15 +40,9 @@ spec:
           {{- end }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          {{- if or .Values.env .Values.envFrom }}
-          envFrom:
-            {{- if .Values.env }}
-            - secretRef:
-                name: {{ include "simcore-service.envSecretName" . }}
-            {{- end }}
-            {{- with .Values.envFrom }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+          {{- with (include "simcore-service.containerEnv" . | trim) }}
+          env:
+            {{- . | nindent 12 }}
           {{- end }}
           {{- with .Values.probes.startup }}
           startupProbe:
