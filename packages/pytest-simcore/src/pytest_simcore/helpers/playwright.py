@@ -63,16 +63,14 @@ _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
 # Progress types a starting dynamic service is expected to report before its start is complete
-REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset(
-    {
-        ProgressType.SERVICE_INPUTS_PULLING,
-        ProgressType.SIDECARS_PULLING,
-        ProgressType.SERVICE_OUTPUTS_PULLING,
-        ProgressType.SERVICE_STATE_PULLING,
-        ProgressType.SERVICE_IMAGES_PULLING,
-        ProgressType.SERVICE_CONTAINERS_STARTING,
-    }
-)
+REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset({
+    ProgressType.SERVICE_INPUTS_PULLING,
+    ProgressType.SIDECARS_PULLING,
+    ProgressType.SERVICE_OUTPUTS_PULLING,
+    ProgressType.SERVICE_STATE_PULLING,
+    ProgressType.SERVICE_IMAGES_PULLING,
+    ProgressType.SERVICE_CONTAINERS_STARTING,
+})
 
 
 class _OSparcMessages(StrEnum):
@@ -1075,7 +1073,7 @@ def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool
     return content_frame is not None and node_id in content_frame.url
 
 
-def _service_iframe_src_set(page: Page, node_id: str) -> bool:
+def _is_service_iframe_src_set(page: Page, node_id: str) -> bool:
     return bool(
         page.evaluate(
             """nodeId => {
@@ -1115,7 +1113,7 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         try:
-            navigated = src_set(lambda: _service_iframe_src_set(page, node_id))
+            navigated = src_set(lambda: _is_service_iframe_src_set(page, node_id))
         except RetryError:
             navigated = False
         if not navigated:
