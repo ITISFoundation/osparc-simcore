@@ -1,0 +1,45 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/notifications
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  HOME: /tmp
+  CELERY_EPHEMERAL_RESULT_EXPIRES: {{ requiredEnv "NOTIFICATIONS_CELERY_EPHEMERAL_RESULT_EXPIRES" | quote }}
+  LOG_FILTER_MAPPING: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  LOG_FORMAT_LOCAL_DEV_ENABLED: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  NOTIFICATIONS_BOOT_SERVER_MODE: {{ env "NOTIFICATIONS_BOOT_SERVER_MODE" | default "AS_REST_API_SERVER" | quote }}
+  NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE: {{ requiredEnv "NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE" | quote }}
+  NOTIFICATIONS_LOGLEVEL: {{ requiredEnv "NOTIFICATIONS_LOGLEVEL" | quote }}
+  NOTIFICATIONS_SMTP_SETTINGS: {{ requiredEnv "SMTP_SETTINGS" | quote }}
+  NOTIFICATIONS_TRACING: {{ requiredEnv "NOTIFICATIONS_TRACING" | quote }}
+  POSTGRES_DB: {{ requiredEnv "POSTGRES_DB" | quote }}
+  POSTGRES_HOST: {{ requiredEnv "POSTGRES_HOST" | quote }}
+  POSTGRES_MAX_OVERFLOW: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
+  POSTGRES_MAX_POOLSIZE: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
+  POSTGRES_PASSWORD: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+  POSTGRES_PORT: {{ requiredEnv "POSTGRES_PORT" | quote }}
+  POSTGRES_USER: {{ requiredEnv "POSTGRES_USER" | quote }}
+  RABBIT_HOST: {{ requiredEnv "RABBIT_HOST" | quote }}
+  RABBIT_PASSWORD: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+  RABBIT_PORT: {{ requiredEnv "RABBIT_PORT" | quote }}
+  RABBIT_SECURE: {{ requiredEnv "RABBIT_SECURE" | quote }}
+  RABBIT_USER: {{ requiredEnv "RABBIT_USER" | quote }}
+  REDIS_HOST: {{ requiredEnv "REDIS_HOST" | quote }}
+  REDIS_PASSWORD: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+  REDIS_PORT: {{ requiredEnv "REDIS_PORT" | quote }}
+  REDIS_SECURE: {{ requiredEnv "REDIS_SECURE" | quote }}
+  REDIS_USER: {{ requiredEnv "REDIS_USER" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_PORT: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT" | quote }}
+  TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" | quote }}
+  TRACING_OPENTELEMETRY_TRACED_FUNCTIONS: {{ requiredEnv "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS" | quote }}

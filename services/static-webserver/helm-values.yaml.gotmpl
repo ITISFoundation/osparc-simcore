@@ -2,6 +2,16 @@ image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/static-webserver
   tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
 
+# image has no gosu entrypoint and runs non-root, so do not start it as root
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 8004
+  runAsGroup: 8004
+
+containerSecurityContext:
+  capabilities:
+    add: []
+
 env:
   SERVER_HOST: {{ "0.0.0.0" | quote }}
   SERVER_LOG_LEVEL: {{ "error" | quote }}

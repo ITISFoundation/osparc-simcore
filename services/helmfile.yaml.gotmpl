@@ -7,12 +7,26 @@ helmDefaults:
   disableValidation: true
 
 releases:
+  - name: invitations
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - invitations/helm-values.yaml.gotmpl
+
   - name: migration
     namespace: simcore
     createNamespace: true
     chart: ../charts/simcore-service
     values:
       - migration/helm-values.yaml.gotmpl
+
+  - name: notifications
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - notifications/helm-values.yaml.gotmpl
 
   - name: static-webserver
     namespace: simcore

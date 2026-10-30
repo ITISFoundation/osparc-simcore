@@ -13,11 +13,10 @@ service:
   enabled: true
   port: 8000
 
-podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 8004
-  runAsGroup: 8004
-  fsGroup: 8004
+podSecurityContext: # simcore services start as root
+  runAsNonRoot: false
+  runAsUser: 0
+  runAsGroup: 0
   seccompProfile:
     type: RuntimeDefault
 
@@ -27,6 +26,11 @@ containerSecurityContext:
   capabilities:
     drop:
       - ALL
+    add: # simcore services changes file metadata on start
+      - DAC_READ_SEARCH
+      - SETGID
+      - SETUID
+      - CHOWN
 
 probes:
   startup:
@@ -54,8 +58,6 @@ probes:
 envFrom: []
 env: {}
 
-# ingress/egress rules are additions to the DNS egress that the chart always
-# allows. An empty egress list still denies everything else.
 networkPolicy:
   enabled: false
   ingress: []
