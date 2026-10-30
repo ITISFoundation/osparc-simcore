@@ -18,7 +18,7 @@ resources:
 env:
   HOME: /tmp
   POSTGRES_DB: {{ requiredEnv "POSTGRES_DB" | quote }}
-  POSTGRES_HOST: {{ required "postgresHost must be set in the environment values" .Environment.Values.postgresHost | quote }}
+  POSTGRES_HOST: {{ requiredEnv "POSTGRES_HOST" | quote }}
   POSTGRES_MAX_OVERFLOW: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
   POSTGRES_MAX_POOLSIZE: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
   POSTGRES_PASSWORD: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
@@ -45,15 +45,4 @@ probes:
   liveness: null
 
 networkPolicy:
-  enabled: true
-  egress:
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.0/8
-        - ipBlock:
-            cidr: 172.16.0.0/12
-        - ipBlock:
-            cidr: 192.168.0.0/16
-      ports:
-        - protocol: TCP
-          port: {{ requiredEnv "POSTGRES_PORT" | int }}
+  enabled: false

@@ -57,7 +57,7 @@ env: {}
 # ingress/egress rules are additions to the DNS egress that the chart always
 # allows. An empty egress list still denies everything else.
 networkPolicy:
-  enabled: true
+  enabled: false
   ingress: []
   egress: []
 

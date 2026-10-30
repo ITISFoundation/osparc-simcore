@@ -34,6 +34,6 @@ _require-valid-kind:
 # rule, so leave it undeclared.
 .helmfile-%: _require-valid-helmfile _require-valid-kubectl
 	cd $(REPO_BASE_DIR) || exit 1; \
-	set -a; source .env-devel; set +a; \
+	set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
 	helmfile -f services/helmfile.local-ops.yaml.gotmpl $* && \
 	helmfile -f services/helmfile.yaml.gotmpl $*
