@@ -31,7 +31,7 @@ services:
 
   flower:
     # Celery task monitoring UI — https://flower.readthedocs.io
-    image: mher/flower:2.0.1
+    image: mher/flower:2.2.0
     init: true
     environment:
       CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}//
