@@ -7,8 +7,8 @@
     "helpers:pinGitHubActionDigests"
   ],
   "dependencyDashboard": true,
-  // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
-  // once approved (see .github/mergify.yml), like any other PR
+  // Renovate never merges: Mergify queues its pull requests once approved, like
+  // any other pull request (see .github/mergify.yml)
   "automerge": false,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
@@ -21,8 +21,7 @@
     "uv": "0.13.6"
   },
   "labels": [
-    "t:maintenance",
-    "🤖-automerge"
+    "t:maintenance"
   ],
   // GitHub's Dependabot alerts cover transitive dependencies but briefly vanish while
   // GitHub rescans after a push; OSV covers direct dependencies only, independently

@@ -40,8 +40,8 @@ touching a branch that someone else wrote last.
 
 ## From pull request to merge
 
-Renovate never merges. `automerge` stays `false`, and it labels its pull
-requests `🤖-automerge`. Mergify queues them like any other pull request once:
+Renovate never merges. `automerge` stays `false`. Mergify queues its pull
+requests like any other pull request once:
 
 1. Mergify rebases the branch on `master` and the required status checks pass.
    The ruleset marks those checks *strict*, so an outdated branch cannot count;
