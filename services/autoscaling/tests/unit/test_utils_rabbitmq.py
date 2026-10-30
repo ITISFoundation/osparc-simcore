@@ -33,6 +33,7 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.models import DaskTask
+from simcore_service_autoscaling.modules.rabbitmq import get_rabbitmq_client
 from simcore_service_autoscaling.utils.rabbitmq import (
     post_tasks_log_message,
     post_tasks_progress_message,
@@ -69,30 +70,36 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 async def logs_rabbitmq_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    rabbit_settings: RabbitSettings,
+    wait_till_queue_has_consumer: Callable[[str, str], Awaitable[None]],
     mocker: MockerFixture,
 ) -> AsyncMock:
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
+    queue_name, _ = await client.subscribe(
         LoggerRabbitMessage.get_channel_name(),
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS],
     )
+    await wait_till_queue_has_consumer(queue_name, rabbit_settings.RABBIT_VHOST)
     return mocked_message_handler
 
 
 @pytest.fixture
 async def progress_rabbitmq_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    rabbit_settings: RabbitSettings,
+    wait_till_queue_has_consumer: Callable[[str, str], Awaitable[None]],
     mocker: MockerFixture,
 ) -> AsyncMock:
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
+    queue_name, _ = await client.subscribe(
         ProgressRabbitMessageNode.get_channel_name(),
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS],
     )
+    await wait_till_queue_has_consumer(queue_name, rabbit_settings.RABBIT_VHOST)
     return mocked_message_handler
 
 
@@ -189,9 +196,12 @@ async def test_post_task_log_message_docker(
     osparc_docker_label_keys: SimcoreContainerLabels,
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
     docker_task = await create_running_service_task(osparc_docker_label_keys.to_simcore_runtime_docker_labels())
     log_message = faker.pystr()
+    # publishing while the app is still reconnecting to the broker loses the message, so publish once connected
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_log_message(initialized_app, tasks=[docker_task], message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -228,8 +238,10 @@ async def test_post_task_log_message_dask(
     node_id: NodeID,
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
     log_message = faker.pystr()
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_log_message(initialized_app, tasks=[dask_task], message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -264,12 +276,14 @@ async def test_post_task_progress_message_docker(
     osparc_docker_label_keys: SimcoreContainerLabels,
     faker: Faker,
     progress_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
     docker_task = await create_running_service_task(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
     )
 
     progress_value = faker.pyfloat(min_value=0)
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_progress_message(
         initialized_app,
         tasks=[docker_task],
@@ -311,8 +325,10 @@ async def test_post_task_progress_message_dask(
     node_id: NodeID,
     faker: Faker,
     progress_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
     progress_value = faker.pyfloat(min_value=0)
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_progress_message(
         initialized_app,
         tasks=[dask_task],

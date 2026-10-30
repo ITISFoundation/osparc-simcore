@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 
 import pytest
@@ -113,15 +113,19 @@ async def test_post_message(
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    wait_till_queue_has_consumer: Callable[[str, str], Awaitable[None]],
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
     mocker: MockerFixture,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
+    queue_name, _ = await client.subscribe(
         rabbit_message.channel_name,
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS] if rabbit_message.routing_key() else None,
     )
+    await wait_till_queue_has_consumer(queue_name, enabled_rabbitmq.RABBIT_VHOST)
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_message(initialized_app, message=rabbit_message)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
