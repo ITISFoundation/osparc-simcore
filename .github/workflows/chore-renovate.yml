@@ -1,6 +1,6 @@
 # Self-hosted Renovate, replacing the Mend-hosted app.
 # It runs as the osparc Renovate GitHub App and executes
-# .github/renovate/resync-lockfiles.bash as a post-upgrade task, so the layered
+# .github/renovate/resync_lockfiles.py as a post-upgrade task, so the layered
 # pip-compile lockfiles are fixed inside Renovate's own commit (Mend-hosted Renovate
 # cannot run commands, and a fixup commit by another author blocks both CI, which
 # waits for approval, and Renovate, which stops updating an "edited" branch).
@@ -29,8 +29,7 @@ on:
       - edited
   pull_request_target:
     # same for the "rebase/retry" box of a Renovate PR. pull_request_target (not
-    # pull_request) so that the workflow and the checkout always come from the base
-    # branch: no code of the PR is ever run
+    # pull_request) so that no code of the PR is ever run
     types:
       - edited
   workflow_dispatch:
@@ -75,7 +74,7 @@ jobs:
     steps:
       - name: create GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v3.3.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
@@ -90,13 +89,15 @@ jobs:
           permission-workflows: write
 
       - name: checkout Renovate configuration
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          # not pull_request.base.sha: it lags behind master for long-lived Renovate PRs, which
+          # would run Renovate with an outdated configuration
+          ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
       - name: run Renovate
-        uses: renovatebot/github-action@v46.3.9
+        uses: renovatebot/github-action@2804199d260ad00c1fae0e9e842888369391c776 # v46.3.10
         with:
           token: ${{ steps.app-token.outputs.token }}
           configurationFile: .github/renovate/global-config.json5

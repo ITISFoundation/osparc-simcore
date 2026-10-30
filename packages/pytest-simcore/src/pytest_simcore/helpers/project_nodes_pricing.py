@@ -26,9 +26,10 @@ EC2 type               dask (cpu, ram bytes)      dynamic (cpu, ram bytes)
 
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any, Final
 
 import sqlalchemy as sa
+from annotated_types import doc
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingUnitGet,
@@ -36,7 +37,16 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
-from pydantic import ByteSize
+from models_library.services_resources import (
+    DEFAULT_SINGLE_SERVICE_NAME,
+    ServiceResourcesDict,
+    is_single_container_service,
+)
+from pydantic import ByteSize, TypeAdapter
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    MultiContainerOverrideNotSupportedRPCError,
+    UnsupportedNodeClassRPCError,
+)
 from simcore_postgres_database.models.projects_node_to_pricing_unit import (
     projects_node_to_pricing_unit,
 )
@@ -47,15 +57,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 # Fixed EC2 instance types (never random: expected values are literals)
 # ---------------------------------------------------------------------------
 
-T3_MEDIUM_NAME: str = "t3.medium"  # used as the DEFAULT pricing unit machine
-T3_MEDIUM_CPUS: float = 2.0
-T3_MEDIUM_RAM_BYTES: int = 4 * 1024**3  # 4 GiB
+T3_MEDIUM_NAME: Final[Annotated[str, doc("machine of the DEFAULT pricing unit in tests")]] = "t3.medium"
+T3_MEDIUM_CPUS: Final[float] = 2.0
+T3_MEDIUM_RAM_BYTES: Final[int] = 4 * 1024**3
 
-R5_4XLARGE_NAME: str = "r5.4xlarge"  # used as a NON-DEFAULT pricing unit machine
-R5_4XLARGE_CPUS: float = 16.0
-R5_4XLARGE_RAM_BYTES: int = 128 * 1024**3  # 128 GiB
+R5_4XLARGE_NAME: Final[Annotated[str, doc("machine of a NON-DEFAULT pricing unit in tests")]] = "r5.4xlarge"
+R5_4XLARGE_CPUS: Final[float] = 16.0
+R5_4XLARGE_RAM_BYTES: Final[int] = 128 * 1024**3
 
-_EC2_REGISTRY: dict[str, EC2InstanceTypeGet] = {
+_EC2_REGISTRY: Final[dict[str, EC2InstanceTypeGet]] = {
     T3_MEDIUM_NAME: EC2InstanceTypeGet(name=T3_MEDIUM_NAME, cpus=T3_MEDIUM_CPUS, ram=ByteSize(T3_MEDIUM_RAM_BYTES)),
     R5_4XLARGE_NAME: EC2InstanceTypeGet(name=R5_4XLARGE_NAME, cpus=R5_4XLARGE_CPUS, ram=ByteSize(R5_4XLARGE_RAM_BYTES)),
 }
@@ -218,3 +228,81 @@ async def set_node_required_resources(
             .values(required_resources=required_resources)
         )
         assert result.rowcount == 1, f"node {node_id} not found in project {project_uuid}"
+
+
+# ---------------------------------------------------------------------------
+# Test double for the director-v2 sizing RPC (for web-server tests, where
+# director-v2 does not run). The REAL implementation lives in director-v2
+# (`modules/resources_sizing.py`) and is pinned by its own RPC tests.
+# ---------------------------------------------------------------------------
+
+_SERVICE_RESOURCES_ADAPTER: Final[TypeAdapter[ServiceResourcesDict]] = TypeAdapter(ServiceResourcesDict)
+
+
+def _dask_worker_resources(ec2: EC2InstanceTypeGet) -> tuple[float, int]:
+    # mirror of `estimate_dask_worker_resources_from_ec2_instance`, see docstring
+    return max(0.1, float(ec2.cpus) - 0.1), int(int(ec2.ram) * 0.9)
+
+
+def _dynamic_sidecar_resources(ec2: EC2InstanceTypeGet) -> tuple[float, int]:
+    # mirror of `estimate_dynamic_sidecar_resources_from_ec2_instance`, see docstring
+    ram = int(ec2.ram)
+    return max(0.5, float(ec2.cpus) - 1.4), int(ram - 0.1 * ram - 1024**3)
+
+
+def _sizing_ec2_type(instance_type_name: str) -> EC2InstanceTypeGet:
+    if instance_type_name in _EC2_REGISTRY:
+        return _EC2_REGISTRY[instance_type_name]
+    # machines outside the fixed registry (e.g. from model examples) get fixed specs
+    return EC2InstanceTypeGet(name=instance_type_name, cpus=T3_MEDIUM_CPUS, ram=ByteSize(T3_MEDIUM_RAM_BYTES))
+
+
+async def fake_compute_node_resources_for_hardware(
+    _rabbitmq_rpc_client: Any,
+    *,
+    service_key: str,
+    service_version: str,
+    resources: ServiceResourcesDict,
+    hardware_info: HardwareInfo,
+) -> ServiceResourcesDict:
+    """Replaces the director-v2 sizing RPC client function in web-server tests,
+    sizing by node class (from the service key) the way director-v2 does.
+
+    Use as the `side_effect` of a patch on
+    ``servicelib.rabbitmq.rpc_interfaces.director_v2.resources.compute_node_resources_for_hardware``.
+    """
+    if not hardware_info.aws_ec2_instances:
+        return resources
+
+    ec2 = _sizing_ec2_type(hardware_info.aws_ec2_instances[0])
+    resized = _SERVICE_RESOURCES_ADAPTER.validate_python(resources)
+    key_parts = service_key.split("/")
+    node_type = key_parts[2] if len(key_parts) >= 3 else ""
+
+    if node_type == "comp":
+        if not is_single_container_service(resized):
+            raise MultiContainerOverrideNotSupportedRPCError(sub_service_names=set(resized))
+        cpu, ram = _dask_worker_resources(ec2)
+        resized[DEFAULT_SINGLE_SERVICE_NAME].resources["CPU"].set_value(cpu)
+        resized[DEFAULT_SINGLE_SERVICE_NAME].resources["RAM"].set_value(ram)
+        return resized
+
+    if node_type == "dynamic":
+        cpu, ram = _dynamic_sidecar_resources(ec2)
+        scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
+        if not is_single_container_service(resized):
+            # scale up/down the largest sub-service so all containers fit the machine
+            scalable_service_name, _ = max(resized.items(), key=lambda s_r: int(s_r[1].resources["RAM"].limit))
+            other_cpus = sum(
+                float(r.resources["CPU"].limit) for name, r in resized.items() if name != scalable_service_name
+            )
+            other_ram = sum(
+                int(r.resources["RAM"].limit) for name, r in resized.items() if name != scalable_service_name
+            )
+            cpu = max(cpu - other_cpus, 0.5)
+            ram = max(int(ram - other_ram), 128 * 1024 * 1024)
+        resized[scalable_service_name].resources["CPU"].set_value(cpu)
+        resized[scalable_service_name].resources["RAM"].set_value(ram)
+        return resized
+
+    raise UnsupportedNodeClassRPCError(service_key=service_key, service_version=service_version)

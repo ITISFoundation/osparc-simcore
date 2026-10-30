@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG PYTHON_VERSION="3.14.9"
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+ARG PYTHON_VERSION="3.14.10"
+FROM python:${PYTHON_VERSION}-slim-trixie AS base
 
 RUN \
   apt-get update && \

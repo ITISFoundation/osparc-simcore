@@ -1,11 +1,15 @@
 # pylint: disable=redefined-outer-name
 
+import importlib.util
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from typing import Final
 
 import pytest
+from packaging.specifiers import SpecifierSet
 
 # Stands in for `make -C <dir> reqs upgrade="<...>"` and answers like uv for a
 # virtualenv update that needs packaging>=26.3: the update only resolves once packaging
@@ -30,6 +34,45 @@ printf 'click==8.1.0\\npackaging==26.3\\n' >"$dir/_base.txt"
 printf 'click==8.1.0\\npackaging==26.3\\nvirtualenv==21.14.10\\n' >"$dir/_tools.txt"
 """
 
+# Answers like uv when the blocker is an extras-bracketed pin (`python-socketio[...]`):
+# the error can only be matched when the pin matchers accept extras.
+_FAKE_MAKE_BLAMES_EXTRAS = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$upgrade" >>"$FAKE_MAKE_CALLS"
+if [[ " $upgrade " != *" python-socketio "* ]]; then
+  echo "Resolved 3 packages in 1ms"
+  echo "error: No solution found when resolving dependencies"
+  echo "  cause: Because pytest-aiohttp depends on aiohttp==3.14.3 and python-socketio[asyncio-client]==5.16.4,"
+  echo "         we can conclude that the requirements are unsatisfiable."
+  echo "make: *** [requirements.mk:58: _test.txt] Error 1"
+  exit 1
+fi
+printf 'aiohttp==3.14.5\\n' >"$dir/_base.txt"
+printf 'aiohttp==3.14.5\\npython-socketio[asyncio-client]==5.17.0\\n' >"$dir/_test.txt"
+"""
+
+
+# Answers like uv when a directory consumes another directory's lockfile as a
+# --constraint: the consumer only resolves once the source pin moved, mirroring
+# autoscaling/clusters-keeper consuming dask-sidecar's _dask-distributed.txt.
+_FAKE_MAKE_CONSTRAINT_ORDER: Final[str] = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$dir" >>"$FAKE_MAKE_CALLS"
+new=$(echo "$upgrade" | tr ' ' '\\n' | grep -m1 '^msgish==' | cut -d= -f3)
+if [[ "$dir" == *zzz* ]]; then
+  printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
+  exit 0
+fi
+if ! grep -q "msgish==$new" services/zzz/requirements/_base.txt; then
+  echo "error: No solution found when resolving dependencies"
+  echo "  cause: Because you require msgish==1.0.0 and msgish==$new, they are unsatisfiable."
+  exit 1
+fi
+printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
+"""
+
 
 def _run(
     program: str, *args: str, cwd: Path, env: dict[str, str] | None = None, check: bool = True
@@ -41,11 +84,7 @@ def _run(
     )
 
 
-def _make_git_repo(path: Path, lockfiles: dict[str, str]) -> Path:
-    for name, content in lockfiles.items():
-        lockfile = path / "requirements" / name
-        lockfile.parent.mkdir(parents=True, exist_ok=True)
-        lockfile.write_text(content)
+def _init_git_repo(path: Path) -> Path:
     identity = ("-c", "user.name=test", "-c", "user.email=test@example.com")
     _run("git", *identity, "init", "--quiet", cwd=path)
     _run("git", *identity, "add", ".", cwd=path)
@@ -53,9 +92,27 @@ def _make_git_repo(path: Path, lockfiles: dict[str, str]) -> Path:
     return path
 
 
+def _make_git_repo(path: Path, lockfiles: dict[str, str]) -> Path:
+    for name, content in lockfiles.items():
+        lockfile = path / "requirements" / name
+        lockfile.parent.mkdir(parents=True, exist_ok=True)
+        lockfile.write_text(content)
+    return _init_git_repo(path)
+
+
 @pytest.fixture
 def resync_lockfiles_script(osparc_simcore_root_dir: Path) -> Path:
-    return osparc_simcore_root_dir / ".github" / "renovate" / "resync-lockfiles.bash"
+    return osparc_simcore_root_dir / ".github" / "renovate" / "resync_lockfiles.py"
+
+
+@pytest.fixture
+def resync_module(resync_lockfiles_script: Path):
+    spec = importlib.util.spec_from_file_location("resync_lockfiles", resync_lockfiles_script)
+    assert spec
+    assert spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.fixture
@@ -76,12 +133,11 @@ def git_repo_behind_on_virtualenv(tmp_path: Path) -> Path:
     )
 
 
-@pytest.fixture
-def fake_make_env(tmp_path: Path) -> dict[str, str]:
+def _fake_make_env(tmp_path: Path, script: str) -> dict[str, str]:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     fake_make = bin_dir / "make"
-    fake_make.write_text(_FAKE_MAKE)
+    fake_make.write_text(script)
     fake_make.chmod(0o755)
     return {
         **os.environ,
@@ -90,8 +146,24 @@ def fake_make_env(tmp_path: Path) -> dict[str, str]:
     }
 
 
+@pytest.fixture
+def fake_make_env(tmp_path: Path) -> dict[str, str]:
+    return _fake_make_env(tmp_path, _FAKE_MAKE)
+
+
 def _make_calls(env: dict[str, str]) -> list[str]:
     return Path(env["FAKE_MAKE_CALLS"]).read_text().splitlines()
+
+
+def test_resync_lockfiles_shows_help_without_a_pins_file(resync_lockfiles_script: Path, tmp_path: Path):
+    # someone running the script by hand gets the usage instead of a bare error
+    env = {name: value for name, value in os.environ.items() if name != "RENOVATE_POST_UPGRADE_COMMAND_DATA_FILE"}
+
+    result = _run(sys.executable, f"{resync_lockfiles_script}", cwd=tmp_path, env=env, check=False)
+
+    assert result.returncode == 2
+    assert result.stdout.startswith("usage:")
+    assert "PINS_FILE" in result.stdout
 
 
 def test_resync_lockfiles_propagates_only_the_highest_pin_of_a_package(
@@ -103,7 +175,7 @@ def test_resync_lockfiles_propagates_only_the_highest_pin_of_a_package(
     pins_file = git_repo_with_lockfile / "pins.txt"
     pins_file.write_text("virtualenv==21.14.10\nvirtualenv==21.14.9\nPyYAML==6.0.2\n")
 
-    result = _run("bash", f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_with_lockfile)
+    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_with_lockfile)
 
     pins_line = next(line for line in result.stdout.splitlines() if line.startswith("Propagating pins:"))
     assert set(pins_line.removeprefix("Propagating pins:").split()) == {"PyYAML==6.0.2", "virtualenv==21.14.10"}
@@ -117,14 +189,19 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
     pins_file = git_repo_behind_on_virtualenv / "pins.txt"
     pins_file.write_text("virtualenv==21.14.10\n")
     env = {**fake_make_env, "FAKE_MAKE_BLOCKING_PIN": "packaging==26.0"}
+    # a report left over from an earlier failed branch must not survive a clean resync
+    (git_repo_behind_on_virtualenv / "renovate-resync-report.md").write_text("stale\n")
 
-    result = _run("bash", f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env)
+    result = _run(
+        sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env
+    )
 
     # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed
     assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging"]
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.3\nvirtualenv==21.14.10\n"
     assert "these packages had to move too: requirements (packaging)" in result.stderr
+    assert not (git_repo_behind_on_virtualenv / "renovate-resync-report.md").exists()
 
 
 def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_it(
@@ -136,11 +213,98 @@ def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_
     env = {**fake_make_env, "FAKE_MAKE_BLOCKING_PIN": "packaging==99.0"}
 
     result = _run(
-        "bash", f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env, check=False
+        sys.executable,
+        f"{resync_lockfiles_script}",
+        f"{pins_file}",
+        cwd=git_repo_behind_on_virtualenv,
+        env=env,
+        check=False,
     )
 
     assert result.returncode == 1
+    # an error that names no pin the lockfiles carry is not a version to unblock
+    # (it would just loop), so the directory fails after the first attempt
     assert _make_calls(env) == ["virtualenv==21.14.10"]
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.0\nvirtualenv==21.14.5\n"
     assert "could not regenerate the lockfiles in: requirements" in result.stderr
+    # the failure is committed to the Renovate PR through postUpgradeTasks.fileFilters
+    report = (git_repo_behind_on_virtualenv / "renovate-resync-report.md").read_text()
+    assert "`requirements`" in report
+    assert "virtualenv==21.14.10" in report
+
+
+def test_requirements_constraints_forbid_the_unbuildable_aiodocker_sdist(osparc_simcore_root_dir: Path):
+    # the bare `aiodocker` requests let uv's resolver backtrack into the 2015 aiodocker
+    # 0.6 sdist, whose metadata build aborts the whole resolution (it imports code with
+    # `asyncio.async(...)`, invalid since Python 3.7): the global constraints file must
+    # keep a floor that makes every such version ineligible before uv ever fetches it
+    constraints = (osparc_simcore_root_dir / "requirements" / "constraints.txt").read_text()
+    line = next(entry for entry in constraints.splitlines() if entry.strip().startswith("aiodocker"))
+    specifier = SpecifierSet(line.split("#")[0].strip().removeprefix("aiodocker"))
+    assert "0.6" not in specifier
+    assert "0.27.0" in specifier
+
+
+def test_resync_lockfiles_regenerates_a_constraint_source_before_its_consumers(
+    resync_lockfiles_script: Path, tmp_path: Path
+):
+    # the msgpack 1.2.4 security update left autoscaling and clusters-keeper behind:
+    # they consume dask-sidecar's _dask-distributed.txt as a --constraint, and regenerating
+    # them before that source moved made them need its old pin and the new pin at once
+    repo = tmp_path / "repo"
+    for directory, template in (
+        ("services/aaa/requirements", "--constraint ../../zzz/requirements/_base.txt\n"),
+        ("services/zzz/requirements", "msgish\n"),
+    ):
+        (repo / directory).mkdir(parents=True)
+        (repo / directory / "_base.in").write_text(template)
+        (repo / directory / "_base.txt").write_text("msgish==1.0.0\n")
+    _init_git_repo(repo)
+    env = _fake_make_env(tmp_path, _FAKE_MAKE_CONSTRAINT_ORDER)
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("msgish==2.0.0\n")
+
+    _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env)
+
+    # the constraint source runs first even though it sorts last
+    assert _make_calls(env) == ["services/zzz/requirements", "services/aaa/requirements"]
+    assert (repo / "services/aaa/requirements/_base.txt").read_text() == "msgish==2.0.0\n"
+    assert (repo / "services/zzz/requirements/_base.txt").read_text() == "msgish==2.0.0\n"
+    assert not (repo / "renovate-resync-report.md").exists()
+
+
+def test_resync_lockfiles_blames_a_blocking_pin_with_extras(resync_lockfiles_script: Path, tmp_path: Path):
+    # the aiohttp 3.14.5 security update went out with payments and the catalog left
+    # behind because a blocker named with extras, `python-socketio[asyncio-client]`,
+    # escaped the blamed-pins matchers: extras must not hide a blocker
+    repo = _make_git_repo(
+        tmp_path / "repo",
+        {"_base.txt": "aiohttp==3.14.3\n", "_test.txt": "aiohttp==3.14.3\npython-socketio[asyncio-client]==5.16.4\n"},
+    )
+    env = _fake_make_env(tmp_path, _FAKE_MAKE_BLAMES_EXTRAS)
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("aiohttp==3.14.5\n")
+
+    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env)
+
+    assert _make_calls(env) == ["aiohttp==3.14.5", "aiohttp==3.14.5 python-socketio"]
+    lockfiles = repo / "requirements"
+    assert (lockfiles / "_test.txt").read_text() == "aiohttp==3.14.5\npython-socketio[asyncio-client]==5.17.0\n"
+    assert "these packages had to move too: requirements (python-socketio)" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        pytest.param("", [], id="empty"),
+        pytest.param("# comment\nnot-a-pin\n", [], id="no valid pin"),
+        pytest.param("uvicorn[standard]==1.2.0\n", ["uvicorn[standard]==1.2.0"], id="extras kept verbatim"),
+        # a security branch can list one package at two versions: uv cannot satisfy two
+        # exact pins, so only the highest (sort -V style: 3.14.10 > 3.14.9) survives
+        pytest.param("a==3.14.9\nA==3.14.10\n", ["A==3.14.10"], id="highest of same name"),
+        pytest.param("b==1.0\na==2.0\n", ["a==2.0", "b==1.0"], id="sorted by normalized name"),
+    ],
+)
+def test_parse_pins(resync_module, text: str, expected: list[str]):
+    assert resync_module.parse_pins(text) == expected

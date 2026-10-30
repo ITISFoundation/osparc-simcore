@@ -58,6 +58,7 @@ from ...core.errors import (
     ComputationalRunNotFoundError,
     ConfigurationError,
     EC2InstanceTypeNotFoundError,
+    MultiContainerOverrideNotSupportedError,
     PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
     ProjectNodeNotFoundError,
@@ -501,6 +502,9 @@ async def create_or_update_or_start_computation(
         EC2InstanceTypeNotFoundError,
     ) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+
+    except MultiContainerOverrideNotSupportedError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"{e}") from e
 
     except (
         ClustersKeeperNotAvailableError,

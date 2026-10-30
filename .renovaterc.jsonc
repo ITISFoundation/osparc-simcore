@@ -1,4 +1,6 @@
 {
+  // How a PR gets from here to master (labels, CI, who may approve, who merges) is
+  // documented in docs/renovate.md
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
@@ -16,7 +18,7 @@
   // (both checked by tests/environment-setup/test_used_{uv,python}.py)
   "constraints": {
     "python": "~=3.14.0",
-    "uv": "0.13.5"
+    "uv": "0.13.6"
   },
   "labels": [
     "t:maintenance",
@@ -36,7 +38,7 @@
     ],
     // the newest version instead of the lowest fixed one: Renovate otherwise proposes
     // different versions for lockfiles below and above the fix in the same branch, the
-    // PR title shows only one of them, and .github/renovate/resync-lockfiles.bash has to
+    // PR title shows only one of them, and .github/renovate/resync_lockfiles.py has to
     // pick one. This can be a new major version: the PR still needs two reviews
     "vulnerabilityFixStrategy": "highest"
   },
@@ -53,6 +55,23 @@
       "/(^|/)ci/helpers/requirements/requirements\\.txt$/",
       "/(^|/)tests/e2e-playwright/requirements/_[^/]+\\.txt$/",
       "/(^|/)tests/environment-setup/requirements/requirements\\.txt$/"
+    ]
+  },
+  // docker-compose: config:recommended ignores **/test/** and **/tests/**, so the fixture
+  // compose files under the tests directories were never scanned and fell behind the main
+  // stack on image digests (see the partial valkey update of PR #9915, guarded since by
+  // services/web/server/tests/unit/isolated/test__consistency.py). Scan them together with
+  // the rest, so Renovate moves every file sharing an image in one PR, except the fixtures
+  // of the service-integration tests, which pin an old image version on purpose
+  "docker-compose": {
+    "ignorePaths": [
+      "**/node_modules/**",
+      "**/bower_components/**",
+      "**/vendor/**",
+      "**/examples/**",
+      "**/__tests__/**",
+      "**/__fixtures__/**",
+      "**/packages/service-integration/tests/data/**"
     ]
   },
   "customManagers": [
@@ -128,7 +147,7 @@
   "lockFileMaintenance": {
     "enabled": true,
     // re-resolves every package of a requirements directory, with no pin for
-    // .github/renovate/resync-lockfiles.bash to propagate: only on request
+    // .github/renovate/resync_lockfiles.py to propagate: only on request
     "dependencyDashboardApproval": true,
     // any time that day: Renovate runs nightly at 03:17/04:17 Zurich time
     // (see .github/workflows/chore-renovate.yml), so a narrower window can be missed
@@ -138,14 +157,11 @@
   },
   "packageRules": [
     {
-      "description": "pip-compile lockfiles (e.g. _test.txt, _tools.txt) reference _base.txt as a --constraint, so packages only pinned there (not required directly by their own .in file) are classified by Renovate as 'indirect' deps and ignored by default. Force-enable them so they don't silently drift out of sync (e.g. stay on an old, vulnerable version) whenever _base.txt is bumped.",
+      "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [
         "pip-compile"
       ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "enabled": true
+      "rangeStrategy": "update-lockfile"
     },
     {
       "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",
@@ -162,14 +178,16 @@
       ],
       "postUpgradeTasks": {
         "commands": [
-          "bash .github/renovate/resync-lockfiles.bash"
+          "uv run --script --no-project .github/renovate/resync_lockfiles.py"
         ],
         "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
         "fileFilters": [
           "**/requirements/_*.txt",
           "api/tests/requirements.txt",
           "ci/helpers/requirements/requirements.txt",
-          "tests/environment-setup/requirements/requirements.txt"
+          "tests/environment-setup/requirements/requirements.txt",
+          // the resync's failure report, so a lockfile left on a vulnerable version is visible in the PR and not only in the run log (the script removes it once a resync runs clean)
+          "renovate-resync-report.md"
         ],
         "executionMode": "branch",
         "installTools": {
@@ -212,6 +230,13 @@
         "pip_setup"
       ],
       "enabled": false
+    },
+    {
+      "description": "GitHub Actions: wait a week before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "minimumReleaseAge": "7 days"
     },
     {
       "description": "Docker images: one PR per image (no grouping, so an update of one image does not block the others) and majors step only one major at a time (e.g. postgres 14 -> 15, never 14 -> 18). Majors still need approval on the Dependency Dashboard (see the major rule below)",

@@ -54,7 +54,7 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.2.2
+msgpack==1.2.4
     # via distributed
 orjson==3.11.9
     # via
@@ -123,7 +123,7 @@ toolz==1.1.0
     #   dask
     #   distributed
     #   partd
-tornado==6.5.10
+tornado==6.6
     # via distributed
 typer==0.27.3
     # via -r requirements/../../../packages/settings-library/requirements/_base.in

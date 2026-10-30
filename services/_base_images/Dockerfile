@@ -24,7 +24,7 @@
 # Define arguments in the global scope
 # exact patch on purpose: a floating minor (python:3.14) would let upstream
 # patch releases change the image contents under an unchanged content-hash tag
-ARG PYTHON_VERSION="3.14.9"
+ARG PYTHON_VERSION="3.14.10"
 # no default on purpose: the uv version comes from requirements/UV_VERSION,
 # which is hashed into BASE_TAG. A build without --build-arg UV_VERSION fails
 # loudly instead of producing an image whose contents do not match its tag.
@@ -35,7 +35,7 @@ FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # -------------------------- runtime-base -------------------
 # Minimal runtime shared by every service production stage
 #
-FROM python:${PYTHON_VERSION}-slim-bookworm AS runtime-base
+FROM python:${PYTHON_VERSION}-slim-trixie AS runtime-base
 
 LABEL maintainer="osparc-simcore"
 

@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout source branch
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # setup-simcore-env installs Python 3.13 + uv (version from requirements/UV_VERSION)
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
@@ -37,5 +37,7 @@ jobs:
         working-directory: scripts/i18n/tools
       - name: Run i18n tools tests
         run: |
-          uv run --with Babel --with Jinja2 --with litellm --with polib --with pytest --with rich --with typer \
+          set -o pipefail
+          uv export --script scripts/i18n/tools/i18n_translator.py --locked --no-hashes --no-header --quiet \
+            | uv run --with-requirements - --with Babel --with Jinja2 --with pytest --with rich \
             pytest scripts/i18n/tools/tests -v

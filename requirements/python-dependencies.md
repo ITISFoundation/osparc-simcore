@@ -1,7 +1,8 @@
 # Management of python dependencies
 
-Since [issue 234](https://github.com/ITISFoundation/osparc-simcore/issues/234) the dependencies management for python packages (i.e. setup of installation requirements) has been redesigned and normalized.
-
+Since [issue 234](https://github.com/ITISFoundation/osparc-simcore/issues/234)
+the dependencies management for python packages (i.e. setup of installation
+requirements) has been redesigned and normalized.
 
 ## Motivation
 
@@ -10,18 +11,23 @@ Managing the dependency across multiple packages can be truly daunting and error
 <!--
 TODO: finish!
 - As a developer, I just want to add a list of requirements on the go
-- Each package in the requirements have its own requirements specifications and so on.
-- Listing up all these dependency constraints should result in final explicit list of requirements
+- Each package in the requirements have its own requirements specifications and
+  so on.
+- Listing up all these dependency constraints should result in final explicit
+  list of requirements
 - Each package adds some version constraints to its dependencies.
-  - The management system shall be able to find a list of all packages needed and the versions that satisfy *all constraints* in place
-- The dependencies have to be kept up-to-date regularly (e.g. due to security patches;  new feature in our package might add new direct dependencies to our requirements)
-- Inter-dependent libraries typically have different release cycles creating in time version conflicts (e.g. package A and B strictly depend on different versions of C)
+  - The management system shall be able to find a list of all packages needed
+    and the versions that satisfy *all constraints* in place
+- The dependencies have to be kept up-to-date regularly (e.g. due to security
+  patches;  new feature in our package might add new direct dependencies to our
+  requirements)
+- Inter-dependent libraries typically have different release cycles creating in
+  time version conflicts (e.g. package A and B strictly depend on different
+  versions of C)
 
-
-- packages uses input requirements as install-requirements (i.e. entry in setup and in requirements/ci.txt) NOT compiled ones
+- packages uses input requirements as install-requirements (i.e. entry in setup
+  and in requirements/ci.txt) NOT compiled ones
 - services use compiled requirements
-
-
 
 - tests packages with the latest (i.e. compile requirements to latest version)
   - if tests fails, then add constraints in input requirements
@@ -29,11 +35,10 @@ TODO: finish!
   - if tests succeed, you can use them in services
   - if at least one service has a problem, we need to decide whether to add a constraint:
     a) at the package level => will ensure is tested but is constraining all services
-    b) at the service level => only affects service but cannot do isolate tests against latest upgrades
-
+    b) at the service level => only affects service but cannot do isolate tests
+    against latest upgrades
 
 ### How to purge unused requirements?
-
 
 ### Propagation of constraints
 
@@ -46,69 +51,101 @@ pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytes
 ```
 - Question: how to make sure this is also taken into account in other places?
 
-
 !-->
 
 ## Rationale
 
-Every python package specifies its dependencies to the installer via the ``setup.py``. Typically, dependencies to third-party libraries are listed in a text file denoted as the *requirements* file. Notice that the requirements must be in sync with the ``install_requires`` entry in the ``setup.py`` (see [Setup vs requirements]).
+Every python package specifies its dependencies to the installer via the
+``setup.py``. Typically, dependencies to third-party libraries are listed in a
+text file denoted as the *requirements* file. Notice that the requirements must
+be in sync with the ``install_requires`` entry in the ``setup.py`` (see [Setup
+vs requirements]).
 
 - All dependency specifications are under ``requirements`` folder
 - There are two type of files there with extensions ``*.in`` and ``*.txt``
 - All ``*.in`` files contain third-party dependencies
   - created by the developer
-  - should not be very restrictive with versions. Add only constraints that must be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
+  - should not be very restrictive with versions. Add only constraints that must
+    be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
   - used as input to [uv] which will determine the final version used
-- All ``*.txt`` files are actual requirements, i.e. can be used in ``uv pip install -r requirements/filename.txt``. There are two types:
-  1. *frozen dependencies* are automatically created using [uv] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree. These follow a [workflow of layered requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements) in which ``_base.txt`` contains dependencies for production and ``_test.txt`` **extra** dependencies for setting up testing.
+- All ``*.txt`` files are actual requirements, i.e. can be used in ``uv pip
+  install -r requirements/filename.txt``. There are two types:
+  1. *frozen dependencies* are automatically created using [uv] from ``_*.in``
+     files. These includes a strict list of libraries with pinned versions.
+     Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these
+     files start with ``_`` and therefore are listed at the top of the tree.
+     These follow a [workflow of layered
+     requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements)
+     in which ``_base.txt`` contains dependencies for production and
+     ``_test.txt`` **extra** dependencies for setting up testing.
   2. installation *shortcuts* for three different *contexts*:
      1. **development**: ``uv pip install -r requirements/dev.txt``
-        - Installs target package in [develop (or edit)](https://pip.pypa.io/en/stable/reference/pip_install/#usage) mode as well as  other tools or packages within the simcore repository
+        - Installs target package in [develop (or
+          edit)](https://pip.pypa.io/en/stable/reference/pip_install/#usage)
+          mode as well as  other tools or packages within the simcore repository
      2. **contiguous integration**: ``uv pip install -r requirements/ci.txt``
         - Installs target package, simcore-repo  and tests dependencies
      3. **production**: ``uv pip install -r requirements/prod.txt``
         - Installs target package  and simcore-repo dependencies
 - ``setup.py`` read dependencies into the setup (a bit more below)
-  - **libraries** (e.g. in [packages/service-lib](../packages/service-library/setup.py)) have *flexible dependencies*, i.e. requirements read from  ``requirements/_base.in``
-  - **services** (e.g. in [services/web/server](../services/web/server/setup.py) ) have *strict dependencies* and therefore it reads from ``requirements/_base.txt`` where all versions are pinned.
-
+  - **libraries** (e.g. in
+    [packages/service-lib](../packages/service-library/setup.py)) have *flexible
+    dependencies*, i.e. requirements read from  ``requirements/_base.in``
+  - **services** (e.g. in [services/web/server](../services/web/server/setup.py)
+    ) have *strict dependencies* and therefore it reads from
+    ``requirements/_base.txt`` where all versions are pinned.
 
 ### Weak *vs* strong requirements & libraries *vs* services requirements
 
-Every package's ``setup.py`` defines the [dependency management](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#dependencies-management-in-setuptools) under different scenarios, namely ``install_require``,
+Every package's ``setup.py`` defines the [dependency
+management](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#dependencies-management-in-setuptools)
+under different scenarios, namely ``install_require``,
 ``tests_require``, ``extras_require`` and ``setup_require``.
 
+The files under ``requirements`` and have ``*.in`` or ``*.txt`` extensions to
+separate input requirements (w/o many constraints) from frozen requirements
+(every library is constrained to a pinned version). Depending on whether we are
+setting up a library or a service, different listing apply.
 
-The files under ``requirements`` and have ``*.in`` or ``*.txt`` extensions to separate input requirements (w/o many constraints) from frozen requirements (every library is constrained to a pinned version). Depending on whether we are setting up a library or a service, different listing apply.
+Basically, the idea is that *libraries* shall have *weak* constraint
+requirements while *services* shall have *hard* constraints requirements.  Weak
+requirements are in the ``*.in`` files while *hard* are in the ``*.txt`` files.
 
-Basically, the idea is that *libraries* shall have *weak* constraint requirements while *services* shall have *hard* constraints requirements.  Weak requirements are in the ``*.in`` files while *hard* are in the ``*.txt`` files.
+The main reason is that the former are shared among different services and
+provides more degrees of freedom. In the case of the services, those are final
+and there is no need for those degrees of freedom.
 
-The main reason is that the former are shared among different services and provides more degrees of freedom. In the case of the services, those are final and there is no need for those degrees of freedom.
-
-Libraries requirements are only frozen for testing (therefore ``tests_require= .. txt`` in libraries setup).
-
+Libraries requirements are only frozen for testing (therefore ``tests_require=
+.. txt`` in libraries setup).
 
 ## Workflows
 
-To install a given workflow we use directly [pip]. Assume we are in the package folder
+To install a given workflow we use directly [pip]. Assume we are in the package
+folder
 
 ```console
-$ cd path/to/package
+cd path/to/package
 ```
+
 then to **develop** your library/service type
-```console
-$ uv pip install -r requirements/dev.txt
-```
-for **CI** of your your library/service (normally used in ci/travis/...) type
-```console
-$ uv pip install -r requirements/ci.txt
-```
-to **deploy** your service
-```console
-$ uv pip install -r requirements/prod.txt
-```
-or if it is a library, then ``uv pip install .`` is preferred.
 
+```console
+uv pip install -r requirements/dev.txt
+```
+
+for **CI** of your your library/service (normally used in ci/travis/...) type
+
+```console
+uv pip install -r requirements/ci.txt
+```
+
+to **deploy** your service
+
+```console
+uv pip install -r requirements/prod.txt
+```
+
+or if it is a library, then ``uv pip install .`` is preferred.
 
 ### Updating dependencies
 
@@ -118,10 +155,10 @@ This is the typical [uv] workflow
 2. ``uv pip compile`` requirements (via ``make reqs`` in the package folder)
 3. ``uv pip install -r requirements/[dev|ci|prod].txt`` depending on your context
 
-
 ### auto-compile requirements
 
-Or how to convert all ``requirements/*.in`` into ``requirements/*.txt`` using the Makefile:
+Or how to convert all ``requirements/*.in`` into ``requirements/*.txt`` using
+the Makefile:
 
 ```console
 $ cd path/to/package/requirements
@@ -142,20 +179,22 @@ in the setup they are fed from .in requirements files and not the .txt
 requirements. For that reason, a full upgrade of requirements in every
 package will ONLY affect testing and tooling of the package. In short,
 to upgrade t&t reqs in packages, we must:
+
 - touch ``*.in``
 - ``make reqs``
 and should change ``_base.txt, _test.txt, _tool.txt``
 
-
 In the case of services is a bit more involved since
 we must compile ``_test.*`` and ``_tool.*`` without changing ``_base.*``
+
 - touch ``_test.*, _tool.*``
 - ``make reqs``
 BUT the problem is that ``_base.in`` includes dependencies to packages
 ``*.in`` files which MIGHT have added NEW CONSTRAINTS. For that reason,
 we need to update carefully ``_base.*`` as well such that it produces
 a new ``_base.txt`` that accounts for ONLY the CONSTRAINTS. A trick
-is to call ``make reqs upgrade=<some-fixed-version-dependency-already-in-base-txt>``. The latter
+is to call ``make reqs
+upgrade=<some-fixed-version-dependency-already-in-base-txt>``. The latter
 will upgrade only packages that do not suit the constraints.
 
 So, this is a typical workflow:
@@ -174,49 +213,62 @@ $ make build-nc
 $ make shell
 crespo@8ac9edf78469:~$ cd services/api-server/requirements
 ```
+
 #### upgrades _base.in ONLY on constraints (e.g. fix upgrade to a given version)
+
 ```console
 crespo@8ac9edf78469:~/services/api-server/requirements$ touch _base.in
 crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs upgrade=fastapi==x.x
 ```
+
 #### full upgrade of tests
+
 ```console
 crespo@8ac9edf78469:~/services/api-server/requirements$ touch _tests.in
 crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs
 ```
+
 ---
+
 ## Security workflow
 
-### Why Dependabot pip is disabled
+### Dependency updates go through Renovate
 
-Dependabot's `package-ecosystem: pip` works by editing `*.txt` files directly. In this repo `*.txt` files are **generated artifacts** — they are compiled from `*.in` sources by `uv pip compile` and must respect the full constraint chain:
-
-```
-_base.in  →  _base.txt  →  _test.in  →  _test.txt
-              ↑
-       requirements/constraints.txt  (applied to every compile)
-```
-
-If Dependabot edits `_base.txt` directly, the change is invisible to `uv pip compile` and will be overwritten the next time `make reqs` runs. Dependabot pip version-update PRs are therefore set to `open-pull-requests-limit: 0` (disabled). GitHub's security-alert mechanism uses a separate internal limit and is **not** affected by this setting.
+All dependency updates — Python lockfiles, GitHub Actions and Docker base
+images — are handled by the self-hosted Renovate
+([`.renovaterc.jsonc`](../.renovaterc.jsonc), run nightly by
+[`.github/workflows/chore-renovate.yml`](../.github/workflows/chore-renovate.yml)),
+which compiles the `*.txt` lockfiles from their `*.in` sources through the
+`pip-compile` manager instead of editing generated files in place. Dependabot
+is not used.
 
 ### `requirements/constraints.txt` — the security override layer
 
-This file is applied as `--constraint` to **every** `*.in` compilation across the repo. It is the canonical place to:
+This file is applied as `--constraint` to **every** `*.in` compilation across
+the repo. It is the canonical place to:
 
 - Pin a minimum safe version after a CVE (e.g. `aiohttp>=3.11.14  # CVE-2024-23334`).
 - Block a broken release across all services at once (e.g. `httpx!=0.28.0`).
 - Coordinate a strategic upgrade that spans multiple services.
 
-Do **not** use service-local `*.in` files for these cross-cutting pins — they would silently miss other services.
+Do **not** use service-local `*.in` files for these cross-cutting pins — they
+would silently miss other services.
 
-### Automated CVE scanning — pip-audit
+### CVE scanning — pip-audit
 
-The workflow [`.github/workflows/pip-audit.yml`](../.github/workflows/pip-audit.yml) runs:
+CVE scanning runs on demand via the [requirements Makefile](Makefile)
+(there is no dedicated CI workflow for it):
 
-- **Weekly** (Monday 06:00 UTC) and on any push/PR touching `**/requirements/*.{in,txt}` or `requirements/constraints.txt`.
-- Scans all `_base.txt` files (35 files across 18 services + 9 packages): **CI fails** on any CVE.
-- Scans all `_test.txt` files: **warning only**, never blocks CI.
-- Uploads a SARIF report to the GitHub Security tab and writes a markdown summary in the job log.
+- `make -C requirements audit-prod`: scans every `_base.txt` with
+  [pip-audit](https://github.com/pypa/pip-audit) and **fails** on any CVE.
+- `make -C requirements audit-test`: scans `_test.txt` files, warnings
+  only.
+- `SCOPE=services/<name> make -C requirements audit` limits the scan to
+  one project.
+
+Independently of that, the nightly Renovate run files security PRs right
+away for dependencies with known vulnerabilities (OSV-backed, see
+`.renovaterc.jsonc`).
 
 Security SLA:
 
@@ -232,26 +284,33 @@ When a CVE is found in a production dependency:
 
 1. Check the fix version on PyPI / the CVE advisory.
 2. Run the security fix workflow from `requirements/Makefile` (recommended):
+
    ```console
-   $ cd requirements/
-   $ make security-fix PKG=aiohttp VERSION=">=3.11.14" CVE_ID=CVE-2024-23334
+   cd requirements/
+   make security-fix PKG=aiohttp VERSION=">=3.11.14" CVE_ID=CVE-2024-23334
    ```
+
    Or repo-wide from the repo root:
+
    ```console
-   $ make -C requirements security-fix PKG=aiohttp VERSION=">=3.11.14" CVE_ID=CVE-2024-23334
+   make -C requirements security-fix PKG=aiohttp VERSION=">=3.11.14" CVE_ID=CVE-2024-23334
    ```
+
    The workflow:
    - Validates package name and version constraint.
    - Calls the propagation script which adds or updates the pin in `requirements/constraints.txt`.
-   - Runs `make -C requirements/tools reqs-all upgrade=<package>` which re-pins the package across all `*.txt` files in the repo.
+   - Runs `make -C requirements/tools reqs-all upgrade=<package>` which re-pins
+     the package across all `*.txt` files in the repo.
    - Prints the changed files and next steps (review, test, commit).
 3. Review the diff (`git diff requirements/`), run unit tests, then commit.
 
-For an isolated single-service fix use `make reqs upgrade=<package>` inside that service's `requirements/` folder instead of `reqs-all`.
+For an isolated single-service fix use `make reqs upgrade=<package>` inside that
+service's `requirements/` folder instead of `reqs-all`.
 
 ### Cool-down / N-1 policy
 
-A *cool-down* (also called patch-lag or N-1 policy) delays adoption of newly released versions to avoid inheriting bugs introduced in fresh releases.
+A *cool-down* (also called patch-lag or N-1 policy) delays adoption of newly
+released versions to avoid inheriting bugs introduced in fresh releases.
 
 | Dependency type         | Major  | Minor  | Patch  | Security  |
 | ----------------------- | ------ | ------ | ------ | --------- |
@@ -259,23 +318,39 @@ A *cool-down* (also called patch-lag or N-1 policy) delays adoption of newly rel
 | Docker base images      | 30 d   | 14 d   | 7 d    | immediate |
 | Python libs (strategic) | manual | manual | manual | immediate |
 
-For GitHub Actions and Docker, cool-down is enforced by Dependabot's `cooldown:` block in `.github/dependabot.yml`.
+For GitHub Actions, the cool-down is enforced by the `minimumReleaseAge` rule
+for the `github-actions` manager in `.renovaterc.jsonc`. Docker base images get
+no release-lag: Docker Hub exposes no per-tag release dates, so Renovate cannot
+compute an age for them (see the `python` custom-manager rule in
+`.renovaterc.jsonc`).
 
-For Python libraries, the cool-down is applied **manually** via `requirements/constraints.txt`. When a new release of a strategic library (e.g. `pydantic`, `aiohttp`, `sqlalchemy`) is published, add an upper bound to `constraints.txt` (e.g. `pydantic<2.12.0`) and remove it only after the release has been validated in CI and staging. Security updates always bypass this — apply them immediately regardless of cool-down.
+For Python libraries, the cool-down is applied **manually** via
+`requirements/constraints.txt`. When a new release of a strategic library (e.g.
+`pydantic`, `aiohttp`, `sqlalchemy`) is published, add an upper bound to
+`constraints.txt` (e.g. `pydantic<2.12.0`) and remove it only after the release
+has been validated in CI and staging. Security updates always bypass this —
+apply them immediately regardless of cool-down.
 
 ## References
 
 1. [pip] manual
-1. [Better Python Dependency Management with pip-tools](https://www.caktusgroup.com/blog/2018/09/18/python-dependency-management-pip-tools/) by D. Poirier
+1. [Better Python Dependency Management with
+   pip-tools](https://www.caktusgroup.com/blog/2018/09/18/python-dependency-management-pip-tools/)
+   by D. Poirier
 1. [Setup vs requirements] by D. Stufft
 1. [Pin your packages](https://nvie.com/posts/pin-your-packages/) by V. Driessen
-1. [Using pip-tools to manage my python dependencies](https://alexwlchan.net/2017/10/pip-tools/) by alexwlchan
-1. [A successful pip-tools workflow for managing Python package requirements](https://jamescooke.info/a-successful-pip-tools-workflow-for-managing-python-package-requirements.html) by J. Cooke
-1. [Python Application Dependency Management in 2018](https://hynek.me/articles/python-app-deps-2018/#pip-tools-everything-old-is-new-again) by Hynek Schlawack
-1. [Dealing with dependency conflicts](https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts) in [pip] doc
+1. [Using pip-tools to manage my python
+   dependencies](https://alexwlchan.net/2017/10/pip-tools/) by alexwlchan
+1. [A successful pip-tools workflow for managing Python package
+   requirements](https://jamescooke.info/a-successful-pip-tools-workflow-for-managing-python-package-requirements.html)
+   by J. Cooke
+1. [Python Application Dependency Management in
+   2018](https://hynek.me/articles/python-app-deps-2018/#pip-tools-everything-old-is-new-again)
+   by Hynek Schlawack
+1. [Dealing with dependency
+   conflicts](https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts)
+   in [pip] doc
 
-[pip-tools]:https://github.com/jazzband/pip-tools
 [uv]:https://github.com/astral-sh/uv
 [pip]:https://pip.pypa.io/en/stable/reference/
-[pipkit-repo]:https://github.com/ITISFoundation/dockerfiles/tree/master/pip-kit
 [Setup vs requirements]:https://caremad.io/posts/2013/07/setup-vs-requirement/

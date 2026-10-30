@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
-ARG UV_VERSION="0.13.5"
+ARG UV_VERSION="0.13.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
-FROM python:3.14.9-slim-bookworm
+FROM python:3.14.10-slim-trixie
 
 RUN curl https://rclone.org/install.sh | bash && \
   rclone --version

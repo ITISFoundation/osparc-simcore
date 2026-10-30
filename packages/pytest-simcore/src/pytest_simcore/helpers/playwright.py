@@ -14,21 +14,36 @@ from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum, unique
+from enum import StrEnum
 from types import TracebackType
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import arrow
 import pytest
+from annotated_types import doc
+from models_library.projects_state import ProjectStatus, RunningState
+from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
-from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request, WebSocket
+from playwright.sync_api import (
+    APIRequestContext,
+    ElementHandle,
+    FrameLocator,
+    Locator,
+    Page,
+    Request,
+    WebSocket,
+    expect,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
 from tenacity import (
+    RetryError,
+    Retrying,
     before_sleep_log,
     retry,
     retry_if_exception_type,
+    retry_if_result,
     stop_after_attempt,
     stop_after_delay,
     wait_exponential,
@@ -47,66 +62,17 @@ NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/projects/[^/]
 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
-@unique
-class RunningState(StrEnum):
-    # NOTE: this is a duplicate of models-library/project_states.py
-    # It must remain as such until that module is pydantic V2 compatible
-    """State of execution of a project's computational workflow
-
-    SEE StateType for task state
-    """
-
-    UNKNOWN = "UNKNOWN"
-    PUBLISHED = "PUBLISHED"
-    NOT_STARTED = "NOT_STARTED"
-    PENDING = "PENDING"
-    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    ABORTED = "ABORTED"
-    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
-
-    def is_running(self) -> bool:
-        return self in (
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.WAITING_FOR_CLUSTER,
-        )
-
-
-@unique
-class NodeProgressType(StrEnum):
-    # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
-    # It must remain as such until that module is pydantic V2 compatible
-    CLUSTER_UP_SCALING = "CLUSTER_UP_SCALING"
-    SIDECARS_PULLING = "SIDECARS_PULLING"
-    SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
-    SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
-    SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
-    SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
-    SERVICE_CONTAINERS_STARTING = "SERVICE_CONTAINERS_STARTING"
-    SERVICE_STATE_PUSHING = "SERVICE_STATE_PUSHING"
-    SERVICE_OUTPUTS_PUSHING = "SERVICE_OUTPUTS_PUSHING"
-    PROJECT_CLOSING = "PROJECT_CLOSING"
-
-    @classmethod
-    def required_types_for_started_service(cls) -> set["NodeProgressType"]:
-        return {
-            NodeProgressType.SERVICE_INPUTS_PULLING,
-            NodeProgressType.SIDECARS_PULLING,
-            NodeProgressType.SERVICE_OUTPUTS_PULLING,
-            NodeProgressType.SERVICE_STATE_PULLING,
-            NodeProgressType.SERVICE_IMAGES_PULLING,
-            NodeProgressType.SERVICE_CONTAINERS_STARTING,
-        }
-
-
-class ServiceType(StrEnum):
-    DYNAMIC = "DYNAMIC"
-    COMPUTATIONAL = "COMPUTATIONAL"
+# Progress types a starting dynamic service is expected to report before its start is complete
+REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset(
+    {
+        ProgressType.SERVICE_INPUTS_PULLING,
+        ProgressType.SIDECARS_PULLING,
+        ProgressType.SERVICE_OUTPUTS_PULLING,
+        ProgressType.SERVICE_STATE_PULLING,
+        ProgressType.SERVICE_IMAGES_PULLING,
+        ProgressType.SERVICE_CONTAINERS_STARTING,
+    }
+)
 
 
 class _OSparcMessages(StrEnum):
@@ -146,7 +112,7 @@ class _ReconnectableEventWaiter:
     reconnections instead of raising a stale ``Socket closed`` error.
     """
 
-    robust_websocket: "RobustWebSocket"
+    robust_websocket: RobustWebSocket
     event: str
     predicate: typing.Callable | None
     timeout: float | None
@@ -175,6 +141,11 @@ class _ReconnectableEventWaiter:
         if exc_val is not None:
             if self._ctx is not None:
                 self._ctx.__exit__(exc_type, exc_val, exc_tb)
+        elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
+            # The predicate saw its event but could not report it as a match at the time (e.g. its
+            # project uuid was still unknown): cancel the pending wait.
+            if self._ctx is not None:
+                self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
         else:
             _ = self.value
 
@@ -401,10 +372,16 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
     return RunningState(event.obj["data"]["state"]["value"])
 
 
+def retrieve_project_id_from_decoded_message(event: SocketIOEvent) -> str:
+    assert event.name == _OSparcMessages.PROJECT_STATE_UPDATED.value
+    assert "project_uuid" in event.obj
+    return event.obj["project_uuid"]
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NodeProgressEvent:
     node_id: str
-    progress_type: NodeProgressType
+    progress_type: ProgressType
     current_progress: float
     total_progress: float
 
@@ -417,7 +394,7 @@ def retrieve_node_progress_from_decoded_message(
     assert "progress_report" in event.obj
     return NodeProgressEvent(
         node_id=event.obj["node_id"],
-        progress_type=NodeProgressType(event.obj["progress_type"]),
+        progress_type=ProgressType(event.obj["progress_type"]),
         current_progress=float(event.obj["progress_report"]["actual_value"]),
         total_progress=float(event.obj["progress_report"]["total"]),
     )
@@ -425,6 +402,10 @@ def retrieve_node_progress_from_decoded_message(
 
 @dataclass
 class SocketIOProjectClosedWaiter:
+    """Waits for `project_uuid` to close, ignoring the closing of other projects"""
+
+    project_uuid: str
+
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
@@ -433,10 +414,11 @@ class SocketIOProjectClosedWaiter:
                 decoded_message = decode_socketio_42_message(message)
                 if (
                     (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
-                    and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
+                    and (retrieve_project_id_from_decoded_message(decoded_message) == self.project_uuid)
+                    and (decoded_message.obj["data"]["shareState"]["status"] == ProjectStatus.CLOSED)
                     and (decoded_message.obj["data"]["shareState"]["locked"] is False)
                 ):
-                    ctx.logger.info("project successfully closed")
+                    ctx.logger.info("project %s successfully closed", self.project_uuid)
                     return True
 
         return False
@@ -444,18 +426,55 @@ class SocketIOProjectClosedWaiter:
 
 @dataclass
 class SocketIOProjectStateUpdatedWaiter:
+    """Waits for `project_uuid` to reach one of `expected_states`, ignoring other projects"""
+
     expected_states: tuple[RunningState, ...]
+    # None for as long as the caller has not learned the uuid yet, see `is_done`
+    project_uuid: str | None
+
+    # every (uuid, state) seen so far, since a frame received while `project_uuid` was still
+    # unknown may well be the awaited update and will not be sent again
+    _seen_states: list[tuple[str, RunningState]] = field(init=False, default_factory=list, repr=False)
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
-                    return retrieve_project_state_from_decoded_message(decoded_message) in self.expected_states
+                    event_project_uuid = retrieve_project_id_from_decoded_message(decoded_message)
+                    event_state = retrieve_project_state_from_decoded_message(decoded_message)
+                    self._seen_states.append((event_project_uuid, event_state))
+
+                    if self.project_uuid is None:
+                        ctx.logger.debug(
+                            "remembering %s of project %s until the expected project uuid is known",
+                            event_state,
+                            event_project_uuid,
+                        )
+                        return False
+
+                    if event_project_uuid != self.project_uuid:
+                        # a different project (e.g. a previous test/job's project still open or
+                        # closing on the shared user): ignore it and keep waiting for ours
+                        ctx.logger.debug(
+                            "ignoring projectStateUpdated for other project %s (waiting for %s)",
+                            event_project_uuid,
+                            self.project_uuid,
+                        )
+                        return False
+                    return event_state in self.expected_states
 
             return False
+
+    def is_done(self) -> bool:
+        """Whether an earlier frame already met the expectation, e.g. one delivered while
+        `project_uuid` was still unknown and hence unmatchable at the time"""
+        return self.project_uuid is not None and any(
+            event_project_uuid == self.project_uuid and event_state in self.expected_states
+            for event_project_uuid, event_state in self._seen_states
+        )
 
 
 @dataclass
@@ -548,8 +567,8 @@ def wait_for_nodes_outputs_updated(
 ) -> Generator[None]:
     """Asserts that a `NodeUpdated` websocket message with the expected number of outputs is
     received for every node in `node_id_to_expected_number_of_outputs` while the wrapped block
-    runs. Unlike `check_node_outputs` (which only polls the REST API after the fact), this
-    verifies the websocket push actually happened.
+    runs. Unlike checking the UI after the fact, this verifies the websocket push actually
+    happened.
     """
     waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
     with (
@@ -609,7 +628,7 @@ def _check_service_endpoint(
                 f"{service_url}",
                 timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds() * SECOND,
             )
-        except (PlaywrightTimeoutError, TimeoutError):
+        except PlaywrightTimeoutError, TimeoutError:
             logger.exception(
                 "❌ Timed-out requesting service endpoint after %ds ❌",
                 _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
@@ -695,7 +714,7 @@ class SocketIONodeProgressCompleteWaiter:
     node_id: str
     max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
     min_idle_before_fail_fast: timedelta = _MIN_IDLE_DURATION_BEFORE_FAIL_FAST
-    _current_progress: dict[NodeProgressType, float] = field(default_factory=defaultdict)
+    _current_progress: dict[ProgressType, float] = field(default_factory=defaultdict)
     _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
 
@@ -733,7 +752,7 @@ class SocketIONodeProgressCompleteWaiter:
 
                             ctx.logger.info(
                                 "Current startup progress [expected %d types]: %s",
-                                len(NodeProgressType.required_types_for_started_service()),
+                                len(REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE),
                                 f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                             )
 
@@ -758,8 +777,7 @@ class SocketIONodeProgressCompleteWaiter:
 
     def _completed_successfully(self) -> bool:
         return all(
-            progress_type in self._current_progress
-            for progress_type in NodeProgressType.required_types_for_started_service()
+            progress_type in self._current_progress for progress_type in REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE
         ) and all(round(progress, 1) == 1.0 for progress in self._current_progress.values())
 
     @property
@@ -810,6 +828,7 @@ def wait_for_pipeline_state(
     current_state: RunningState,
     *,
     websocket: RobustWebSocket,
+    project_uuid: str,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -824,7 +843,8 @@ def wait_for_pipeline_state(
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
-                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES
+                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES,
+                project_uuid=project_uuid,
             )
             with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
                 current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
@@ -876,6 +896,7 @@ def wait_for_computation_done(
     current_state: RunningState,
     *,
     websocket: RobustWebSocket,
+    project_uuid: str,
     stage_timeouts: PipelineStageTimeouts | int,
 ) -> RunningState:
     """Waits for an already-started computational pipeline to reach a final state.
@@ -888,6 +909,7 @@ def wait_for_computation_done(
         return wait_for_pipeline_state(
             current_state,
             websocket=websocket,
+            project_uuid=project_uuid,
             if_in_states=_RUNNING_STATES,
             expected_states=(RunningState.SUCCESS,),
             timeout_ms=stage_timeouts,
@@ -896,6 +918,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.PUBLISHED, RunningState.PENDING),
         expected_states=(
             RunningState.WAITING_FOR_CLUSTER,
@@ -908,6 +931,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
         expected_states=(
             RunningState.WAITING_FOR_RESOURCES,
@@ -919,6 +943,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
         expected_states=(
             RunningState.STARTED,
@@ -929,6 +954,7 @@ def wait_for_computation_done(
     return wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.STARTED,),
         expected_states=(RunningState.SUCCESS,),
         timeout_ms=stage_timeouts.started_ms,
@@ -939,6 +965,7 @@ def run_pipeline_and_wait_done(
     page: Page,
     websocket: RobustWebSocket,
     *,
+    project_uuid: str,
     run_button_test_id: str = "runStudyBtn",
     timeout_ms: int = _RUN_PIPELINE_MAX_WAIT_TIME,
     stage_timeouts: PipelineStageTimeouts | None = None,
@@ -956,7 +983,7 @@ def run_pipeline_and_wait_done(
     # `projectStateUpdated` frame still reporting the pre-run state can't race with the actual run
     # trigger and be mistaken for a final state; the `POST /computations` request is also checked
     # to confirm the click really triggered a computation.
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES)
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES, project_uuid=project_uuid)
     with log_context(
         logging.INFO,
         f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
@@ -976,6 +1003,7 @@ def run_pipeline_and_wait_done(
         current_state = wait_for_computation_done(
             current_state,
             websocket=websocket,
+            project_uuid=project_uuid,
             stage_timeouts=stage_timeouts if stage_timeouts is not None else timeout_ms,
         )
         assert current_state == RunningState.SUCCESS, f"❌ Pipeline finished with {current_state} ❌"
@@ -999,12 +1027,18 @@ class ServiceRunning:
     iframe_locator: FrameLocator | None
 
 
-_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
+_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[
+    Annotated[timedelta, doc("floor left to the endpoint check after the start waits")]
+] = timedelta(seconds=30)
+
+
+def _service_iframe_selector(node_id: str) -> str:
+    return f'[osparc-test-id="iframe_{node_id}"]'
 
 
 def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
     """Returns the service iframe for ``node_id``, resilient to duplicate iframes."""
-    iframe_selector = f'[osparc-test-id="iframe_{node_id}"]'
+    iframe_selector = _service_iframe_selector(node_id)
     iframe_count = page.locator(iframe_selector).count()
     if iframe_count > 1:
         _logger.warning(
@@ -1014,6 +1048,83 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
             node_id,
         )
     return page.frame_locator(iframe_selector).first
+
+
+_SERVICE_IFRAME_SRC_TIMEOUT: Final[
+    Annotated[
+        timedelta,
+        doc("the UI navigates the service iframe to its service URL only once the service became ready"),
+    ]
+] = timedelta(seconds=10)
+_SERVICE_FRAME_ATTACH_TIMEOUT: Final[
+    Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
+] = timedelta(seconds=10)
+_SERVICE_FRAME_POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=250)
+
+
+def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool:
+    """Whether the driver attached the content frame of the given iframe element.
+
+    Only the service frame URL carries the node id, so the stale frame left by
+    the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
+    """
+    content_frame = iframe_element.content_frame()
+    return content_frame is not None and node_id in content_frame.url
+
+
+def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
+    """Re-navigates the service iframe when the driver never attached its content frame.
+
+    Firefox intermittently does not attach the content frame of a rendered
+    cross-origin iframe (microsoft/playwright#43007), which makes every query on
+    its ``FrameLocator`` hang until timeout even though the service UI is fully
+    shown. Re-setting the iframe source reloads it and re-triggers the frame
+    lifecycle events the driver needs to attach the content frame.
+
+    Best-effort: it first waits for the UI to navigate the iframe and for the
+    driver to attach its content frame, and only then re-navigates the iframe
+    once. Playwright errors are logged and swallowed, so that the caller still
+    fails with its own original error.
+    """
+    try:
+        page.wait_for_function(
+            """nodeId => {
+                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
+                return !!iframe && iframe.src.includes(nodeId);
+            }""",
+            arg=node_id,
+            timeout=int(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds() * SECOND),
+        )
+
+        iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
+        if iframe_element is None:
+            return
+
+        frame_attached = Retrying(
+            stop=stop_after_delay(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds()),
+            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+            retry=retry_if_result(lambda attached: not attached),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        )
+        try:
+            attached = frame_attached(lambda: _service_frame_attached(iframe_element, node_id))
+        except RetryError:
+            attached = False
+        if attached:
+            return
+
+        _logger.warning(
+            "Service iframe content frame of node %s is not attached: "
+            "re-navigating the iframe to force the driver to attach it",
+            node_id,
+        )
+        page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
+    except PlaywrightError:
+        _logger.exception(
+            "Could not ensure the service iframe content frame of node %s is attached; "
+            "continuing so that the caller reports its own original error",
+            node_id,
+        )
 
 
 @contextlib.contextmanager
@@ -1064,9 +1175,10 @@ def expected_service_running(
         is_legacy_service=is_service_legacy,
         timeout=max(
             timeout - int(elapsed_time.total_seconds() * SECOND),
-            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+            int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
+    _ensure_service_iframe_attached(page, node_id)
     service_running.iframe_locator = _service_iframe_locator(page, node_id)
 
 
@@ -1119,10 +1231,11 @@ def wait_for_service_running(
         is_legacy_service=is_service_legacy,
         timeout=max(
             timeout - int(elapsed_time.total_seconds() * SECOND),
-            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+            int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
 
+    _ensure_service_iframe_attached(page, node_id)
     return _service_iframe_locator(page, node_id)
 
 
@@ -1138,9 +1251,9 @@ def app_mode_trigger_next_app(page: Page) -> None:
             with page.expect_request(_node_started_predicate, timeout=_APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT):
                 # Move to next step (this auto starts the next service)
                 page.get_by_test_id("AppMode_NextBtn").click()
-        except (PlaywrightTimeoutError, TimeoutError):
-            ctx.logger.info(
-                "⚠️ no start request detected within %s ms: the next service was likely already started ⚠️",
+        except PlaywrightTimeoutError, TimeoutError:
+            ctx.logger.exception(
+                "❌ no start request detected within %s ms: the next service was likely already started ❌",
                 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT,
             )
 
@@ -1246,7 +1359,7 @@ def _read_output_file_names(
     wait=wait_exponential_jitter(max=_OUTPUT_FILE_NAMES_WAIT_INTERVAL.total_seconds()),
     before_sleep=before_sleep_log(_logger, logging.INFO),
 )
-def _check_node_outputs_dialog(
+def _check_node_files_panel(
     page: Page,
     *,
     study_id: str,
@@ -1255,7 +1368,7 @@ def _check_node_outputs_dialog(
     open_outputs_folder: bool,
     app_mode: bool,
 ) -> None:
-    with log_context(logging.INFO, "Opening node outputs panel"):
+    with log_context(logging.INFO, "Opening node files panel"):
         path_filter = f"{study_id}/{node_id}"
         with page.expect_response(
             re.compile(r"storage/locations/0/paths\?file_filter="),
@@ -1274,11 +1387,11 @@ def _check_node_outputs_dialog(
             open_outputs_folder=open_outputs_folder,
         )
     finally:
-        with log_context(logging.INFO, "Closing node outputs panel"):
+        with log_context(logging.INFO, "Closing node files panel"):
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
 
 
-def check_node_outputs(
+def check_node_files_panel(
     page: Page,
     *,
     study_id: str,
@@ -1312,8 +1425,8 @@ def check_node_outputs(
     assert node_id in workbench, f"node {node_id!r} not found in workbench"
     _select_node(page, node_id=node_id)
 
-    with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
-        _check_node_outputs_dialog(
+    with log_context(logging.INFO, f"Checking node {node_id=} files panel"):
+        _check_node_files_panel(
             page,
             study_id=study_id,
             node_id=node_id,
@@ -1321,3 +1434,58 @@ def check_node_outputs(
             open_outputs_folder=open_outputs_folder,
             app_mode=app_mode,
         )
+
+
+_NODE_OUTPUT_LINK_MAX_WAITING_TIME: Final[timedelta] = timedelta(minutes=10)
+_NODE_OUTPUT_LINK_CLEARED_MAX_WAITING_TIME: Final[timedelta] = timedelta(minutes=5)
+_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME: Final[timedelta] = timedelta(seconds=30)
+_NODE_OUTPUT_LINK_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=2)
+
+
+def _visible_output_link(page: Page, *, port_key: str) -> Locator:
+    """Visible value widget of the node output ``port_key`` in the Outputs panel.
+
+    Only visible matches are considered: removed qooxdoo widgets can leave hidden
+    nodes with the same test id in the DOM.
+    """
+    return page.get_by_test_id(f"nodeOutputValue_{port_key}").filter(visible=True).first
+
+
+def wait_for_node_output_link(page: Page, *, port_key: str, filename: str) -> None:
+    """Waits until the output ``port_key`` shows a link to the file ``filename``.
+
+    The node must already be selected so that its Outputs panel is shown.
+    """
+    expect(_visible_output_link(page, port_key=port_key)).to_contain_text(
+        filename, timeout=_NODE_OUTPUT_LINK_MAX_WAITING_TIME.total_seconds() * 1000
+    )
+
+
+@retry(
+    stop=stop_after_delay(_NODE_OUTPUT_LINK_CLEARED_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_fixed(_NODE_OUTPUT_LINK_POLL_INTERVAL.total_seconds()),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+)
+def wait_for_node_output_link_cleared(page: Page, *, port_key: str, filename: str) -> None:
+    """Waits until the output ``port_key`` no longer links to ``filename`` and stays that way.
+
+    The widget must first stop linking to ``filename``, then keep doing so for
+    ``_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME``. A single pass is not enough: the row is
+    re-rendered on updates, so the check could transiently succeed while an old widget is
+    detached even if the file is then listed again. A regression raises and is retried.
+    """
+
+    def _read_link_text() -> str | None:
+        value = _visible_output_link(page, port_key=port_key)
+        return value.text_content() if value.count() > 0 else None
+
+    text = _read_link_text()
+    assert text is not None, f"no visible output link widget for port {port_key!r}"
+    assert filename not in text, f"output {port_key!r} still links to {filename!r} (text: {text!r})"
+
+    page.wait_for_timeout(_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME.total_seconds() * 1000)
+    text = _read_link_text()
+    assert text is not None, f"no visible output link widget for port {port_key!r}"
+    assert filename not in text, f"output {port_key!r} links to {filename!r} again (text: {text!r})"

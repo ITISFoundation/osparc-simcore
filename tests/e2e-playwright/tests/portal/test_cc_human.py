@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page
-from pytest_simcore.helpers.playwright import check_node_outputs, run_pipeline_and_wait_done
+from pytest_simcore.helpers.playwright import check_node_files_panel, run_pipeline_and_wait_done
 
 
 def test_cc_human(
@@ -20,23 +20,23 @@ def test_cc_human(
     study_id = project_data["uuid"]
     workbench = project_data["workbench"]
 
-    run_pipeline_and_wait_done(page, opened_study.websocket, timeout_ms=run_pipeline_timeout)
+    run_pipeline_and_wait_done(page, opened_study.websocket, project_uuid=study_id, timeout_ms=run_pipeline_timeout)
 
-    check_node_outputs(
+    check_node_files_panel(
         page,
         study_id=study_id,
         workbench=workbench,
         node_name="Human GB 0D cardiac model",
         expected_file_names=["vm_1Hz.txt", "logs.zip", "allresult_1Hz.txt"],
     )
-    check_node_outputs(
+    check_node_files_panel(
         page,
         study_id=study_id,
         workbench=workbench,
         node_name="Human GB 1D cardiac model",
         expected_file_names=["model_INPUT.from1D", "y_1D.txt", "logs.zip", "ECGs.txt"],
     )
-    check_node_outputs(
+    check_node_files_panel(
         page,
         study_id=study_id,
         workbench=workbench,

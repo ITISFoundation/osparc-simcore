@@ -1,0 +1,11 @@
+# A fake stand-in for the data file Renovate renders from
+# postUpgradeTasks.dataFileTemplate, so the script can be tried by hand. Lines that are
+# not a "<package>==<version>" pin are ignored. Each pin must be newer than the version
+# the lockfiles hold, or there is nothing to propagate. Regenerating takes minutes per
+# directory. Run in a throwaway worktree to keep the checkout unchanged:
+#   git worktree add --detach /tmp/resync-tryout HEAD
+#   cd /tmp/resync-tryout
+#   ./.github/renovate/resync_lockfiles.py .github/renovate/resync_lockfiles.example.txt
+#   git --no-pager diff
+#   git worktree remove --force /tmp/resync-tryout
+aiohttp==3.14.5
