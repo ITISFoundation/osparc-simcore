@@ -53,10 +53,6 @@ def dask_scheduler_config() -> dict[str, Any]:
     return {
         "cls": distributed.Scheduler,
         "options": {
-            # Port 0 lets the OS assign a free port: pytest's unused_tcp_port_factory is
-            # per-process, so parallel pytest-xdist workers can hand out the same port and
-            # a second scheduler bind fails. Consumers must read the real address from
-            # cluster.scheduler_address after startup, never from this config.
             "port": 0,
             "dashboard_address": ":0",
             "preload": ("dask_task_models_library.plugins.task_life_cycle_scheduler_plugin",),
