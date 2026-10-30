@@ -6,38 +6,32 @@ helmDefaults:
   # avoid helm diff errors on 1st installation
   disableValidation: true
 
+templates:
+  simcore-service:
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - helm-values.common.yaml.gotmpl
+      - "{{`{{ .Release.Name }}`}}/helm-values.yaml.gotmpl"
+
 releases:
   - name: datcore-adapter
-    namespace: simcore
-    createNamespace: true
-    chart: ../charts/simcore-service
-    values:
-      - datcore-adapter/helm-values.yaml.gotmpl
+    inherit:
+      - template: simcore-service
 
   - name: invitations
-    namespace: simcore
-    createNamespace: true
-    chart: ../charts/simcore-service
-    values:
-      - invitations/helm-values.yaml.gotmpl
+    inherit:
+      - template: simcore-service
 
   - name: migration
-    namespace: simcore
-    createNamespace: true
-    chart: ../charts/simcore-service
-    values:
-      - migration/helm-values.yaml.gotmpl
+    inherit:
+      - template: simcore-service
 
   - name: notifications
-    namespace: simcore
-    createNamespace: true
-    chart: ../charts/simcore-service
-    values:
-      - notifications/helm-values.yaml.gotmpl
+    inherit:
+      - template: simcore-service
 
   - name: static-webserver
-    namespace: simcore
-    createNamespace: true
-    chart: ../charts/simcore-service
-    values:
-      - static-webserver/helm-values.yaml.gotmpl
+    inherit:
+      - template: simcore-service
