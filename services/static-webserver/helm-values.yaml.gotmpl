@@ -1,0 +1,17 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/static-webserver
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+env:
+  SERVER_HOST: {{ "0.0.0.0" | quote }}
+  SERVER_LOG_LEVEL: {{ "error" | quote }}
+  SERVER_PORT: {{ "8000" | quote }}
+  SERVER_ROOT: {{ "/static-content" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

@@ -33,7 +33,6 @@ probes:
       command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
     periodSeconds: 5
     timeoutSeconds: 5
-    # 100 * 5s stays below the helmfile timeout
     failureThreshold: 100
   readiness:
     httpGet: null
@@ -43,6 +42,3 @@ probes:
     timeoutSeconds: 5
     failureThreshold: 3
   liveness: null
-
-networkPolicy:
-  enabled: false

@@ -13,3 +13,10 @@ releases:
     chart: ../charts/simcore-service
     values:
       - migration/helm-values.yaml.gotmpl
+
+  - name: static-webserver
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - static-webserver/helm-values.yaml.gotmpl
