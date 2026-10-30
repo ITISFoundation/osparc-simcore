@@ -20,8 +20,8 @@ from settings_library.r_clone import RCloneSettings
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFoundError, UnboundPortError
 from ..node_ports_common.file_io_utils import LogRedirectCB
-from ..node_ports_v2.port import SetKWargs
-from .links import ItemConcreteValue, ItemValue
+from ..node_ports_v2.port import Port, SetKWargs, delete_replaced_file_link
+from .links import DataItemValue, ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
@@ -63,10 +63,10 @@ class Nodeports(BaseModel):
     user_id: UserID
     project_id: ProjectIDStr
     node_uuid: NodeIDStr
-    save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
+    save_to_db_cb: Callable[[Nodeports], Coroutine[Any, Any, None]]
     node_port_creator_cb: Callable[
         [DBManager, UserID, ProjectIDStr, NodeIDStr],
-        Coroutine[Any, Any, type["Nodeports"]],
+        Coroutine[Any, Any, type[Nodeports]],
     ]
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
@@ -140,7 +140,7 @@ class Nodeports(BaseModel):
                 return
         raise PortNotFoundError(msg=f"output port for item {item_value} not found")
 
-    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type["Nodeports"]:
+    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type[Nodeports]:
         return await self.node_port_creator_cb(self.db_manager, self.user_id, self.project_id, node_uuid)
 
     async def _auto_update_from_db(self) -> None:
@@ -156,6 +156,26 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self  # noqa: SLF001
 
+    async def _delete_replaced_files(
+        self,
+        previous_values: dict[ServicePortKey, DataItemValue | None],
+    ) -> None:
+        for port_key, previous_value in previous_values.items():
+            current_port = self._find_port(port_key)
+            await delete_replaced_file_link(
+                self,
+                port_key,
+                previous_value,
+                current_port.value if current_port is not None else None,
+            )
+
+    def _find_port(self, port_key: ServicePortKey) -> Port | None:
+        if port_key in self.internal_outputs:
+            return self.internal_outputs[port_key]
+        if port_key in self.internal_inputs:
+            return self.internal_inputs[port_key]
+        return None
+
     async def set_multiple(
         self,
         port_values: dict[ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]],
@@ -167,6 +187,10 @@ class Nodeports(BaseModel):
         Sets the provided values to the respective input or output ports
         Only supports port_key by name, not able to distinguish between inputs
         and outputs using the index.
+
+        If a port's file value is replaced, this deletes the old object from
+        storage after the new values are persisted. Best-effort, see
+        ``delete_replaced_file_link``.
 
         raises ValidationError
         """
@@ -201,6 +225,9 @@ class Nodeports(BaseModel):
                 raise
 
         tasks = []
+        previous_values: dict[ServicePortKey, DataItemValue | None] = {
+            port_key: port.value for port_key in port_values if (port := self._find_port(port_key)) is not None
+        }
         async with progress_bar.sub_progress(
             steps=len(port_values.items()), description="set multiple"
         ) as sub_progress:
@@ -209,6 +236,8 @@ class Nodeports(BaseModel):
 
             results = await logged_gather(*tasks)
             await self.save_to_db_cb(self)
+
+        await self._delete_replaced_files(previous_values)
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
         if error_details := [

@@ -1,3 +1,4 @@
+# pyright: reportCallIssue=false
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
@@ -819,3 +820,38 @@ async def test_search_files_scoped_by_product(
 
     # Verify product isolation: no file from product 2 should appear in product 1 results
     assert file_ids_product_1.isdisjoint(file_ids_product_2), "Files from different products should not overlap"
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_file_removes_only_the_exact_object(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """Deleting a file must not remove stored keys that merely start with its key
+
+    Storage keys are plain strings: ``.../report.txt`` is a prefix of
+    ``.../report.txt.gz``, and a prefix-based delete would destroy both.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+    _, prefixed_file_id = await upload_file(file_size, "report.txt.gz", None)
+    assert str(prefixed_file_id).startswith(f"{file_id}"), "keys must be prefix-related for this test"
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{file_id}")
+
+    # the key that starts with the deleted one must be untouched
+    s3_metadata = await storage_s3_client.get_object_metadata(
+        bucket=storage_s3_bucket, object_key=f"{prefixed_file_id}"
+    )
+    assert s3_metadata.size == file_size

@@ -4,9 +4,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from models_library.api_schemas_storage.storage_schemas import LinkType
+from models_library.projects import ProjectID
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
 from pydantic import (
@@ -19,8 +20,11 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
+from ..node_ports_common import filemanager
+from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.exceptions import (
     AbsoluteSymlinkIsNotUploadableError,
     InvalidItemTypeError,
@@ -37,6 +41,9 @@ from .links import (
 )
 from .port_validation import validate_port_content
 
+if TYPE_CHECKING:
+    from .nodeports_v2 import Nodeports
+
 log = logging.getLogger(__name__)
 
 
@@ -52,7 +59,7 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
     if not symlink.is_symlink():
         return
 
-    symlink_target_path = Path(os.readlink(symlink))
+    symlink_target_path = Path(os.readlink(symlink))  # noqa: PTH115
     if symlink_target_path.is_symlink():
         raise SymlinkToSymlinkIsNotUploadableError(symlink, symlink_target_path)
 
@@ -74,6 +81,57 @@ class SetKWargs:
     file_base_path: Path | None = None
 
 
+async def delete_replaced_file_link(
+    node_ports: Nodeports,
+    port_key: ServicePortKey,
+    old_value: DataItemValue | None,
+    new_value: DataItemValue | None,
+) -> None:
+    """Delete the storage object a port referenced before its value was replaced
+
+    Deletes only when all of these hold:
+    - the old value is a ``FileLink`` with a different ``(store, path)`` than the
+      new value. The same path means the object was re-uploaded in place.
+    - the object lives in the simcore store and its path starts with this node's
+      prefix. Objects owned by other nodes, e.g. user-picked links, stay.
+    - no other port of this node references the same object.
+
+    Runs only after the new value was uploaded and persisted. It logs errors
+    instead of raising them, so a successful upload never fails.
+    """
+    if not isinstance(old_value, FileLink):
+        return
+    if isinstance(new_value, FileLink) and (new_value.store, new_value.path) == (old_value.store, old_value.path):
+        return  # same object re-uploaded, overwritten in place
+
+    # only simcore-managed objects under this node's prefix may be deleted
+    s3_prefix = f"{node_ports.project_id}/{node_ports.node_uuid}/"
+    if old_value.store != SIMCORE_LOCATION or not old_value.path.startswith(s3_prefix):
+        return
+
+    ports = (*node_ports.internal_inputs.values(), *node_ports.internal_outputs.values())
+    if any(
+        isinstance(port.value, FileLink) and (port.value.store, port.value.path) == (old_value.store, old_value.path)
+        for port in ports
+    ):
+        return  # another port of this node still references the same object
+
+    try:
+        # delete as the project owner: the user triggering the replacement may
+        # lack delete rights on a shared project
+        owner_id = await node_ports.db_manager.get_project_owner_user_id(
+            TypeAdapter(ProjectID).validate_python(node_ports.project_id)
+        )
+        await filemanager.delete_file(user_id=owner_id, store_id=old_value.store, s3_object=old_value.path)
+    except Exception:  # pylint: disable=broad-except
+        msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
+        log.warning("%s", msg, exc_info=True)
+        if node_ports.io_log_redirect_cb:
+            # never let a failing log callback break the best-effort deletion
+            with log_catch(log, reraise=False):
+                await node_ports.io_log_redirect_cb(f"Something went wrong while removing outdated data: {msg}")
+
+
 class Port(BaseServiceIOModel):
     key: ServicePortKey
     widget: dict[str, Any] | None = None
@@ -92,10 +150,10 @@ class Port(BaseServiceIOModel):
     # Function to convert from ItemValue -> ItemConcreteValue
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
     # Reference to the `NodePorts` instance that contains this port
-    _node_ports = PrivateAttr()
+    _node_ports: Nodeports = PrivateAttr()
 
     # flags
-    _used_default_value: bool = PrivateAttr(False)
+    _used_default_value: bool = PrivateAttr(False)  # noqa: FBT003
 
     model_config = ConfigDict(validate_assignment=True)
 
@@ -105,7 +163,7 @@ class Port(BaseServiceIOModel):
         if v is not None and (property_type := info.data.get("property_type")) and not isinstance(v, PortLink):
             if port_utils.is_file_type(property_type):
                 if not isinstance(v, FileLink | DownloadLink):
-                    msg = f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"
+                    msg = f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"  # noqa: E501
                     raise ValueError(msg)
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
@@ -186,7 +244,7 @@ class Port(BaseServiceIOModel):
                 other_port_itemvalue: ItemValue | None = await port_utils.get_value_link_from_port_link(
                     self.value,
                     # pylint: disable=protected-access
-                    self._node_ports._node_ports_creator_cb,
+                    self._node_ports._node_ports_creator_cb,  # noqa: SLF001
                     file_link_type=file_link_type,
                 )
 
@@ -235,7 +293,7 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | ItemConcreteValue = await port_utils.get_value_from_link(
+                other_port_concretevalue: ItemConcreteValue | None = await port_utils.get_value_from_link(
                     # pylint: disable=protected-access
                     key=self.key,
                     value=self.value,
@@ -276,7 +334,7 @@ class Port(BaseServiceIOModel):
                 return None
 
             concrete_value = self._py_value_converter(value)
-            return concrete_value
+            return concrete_value  # noqa: RET504
 
         # assigns to validate result
         v = await _evaluate()
@@ -349,15 +407,21 @@ class Port(BaseServiceIOModel):
     ) -> None:
         """sets a value to the port, by default it is also stored in the database
 
+        If the new value replaces a previously uploaded file, this deletes the
+        old object from storage after the database update. Best-effort, see
+        ``delete_replaced_file_link``.
+
         :raises InvalidItemTypeError
         :raises ValidationError
         """
+        previous_value = self.value
         await self._set(
             new_concrete_value=new_value,
             **set_kwargs,
             progress_bar=progress_bar or ProgressBarData(num_steps=1, description="set"),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
+        await delete_replaced_file_link(self._node_ports, self.key, previous_value, self.value)
 
     async def set_value(self, new_item_value: ItemValue | None) -> None:
         """set the value on the port using an item-value

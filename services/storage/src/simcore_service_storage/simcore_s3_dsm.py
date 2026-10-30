@@ -698,11 +698,41 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
+            s3_client = get_s3_client(self.app)
+            file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
             try:
-                await get_s3_client(self.app).delete_objects_recursively(
-                    bucket=self.simcore_bucket_name,
-                    prefix=file_id,
-                )
+                fmd = await file_meta_data_repo.get(connection=connection, file_id=file_id)
+            except FileMetaDataNotFoundError:
+                # not registered: nothing known about its shape, fall back to the
+                # legacy prefix-based removal to clean up whatever may be stored
+                fmd = None
+
+            try:
+                if fmd is None:
+                    await s3_client.delete_objects_recursively(
+                        bucket=self.simcore_bucket_name,
+                        prefix=file_id,
+                    )
+                elif fmd.is_directory:
+                    await s3_client.delete_objects_recursively(
+                        bucket=self.simcore_bucket_name,
+                        prefix=ensure_ends_with(f"{fmd.object_name}", "/"),
+                    )
+                elif fmd.is_soft_link:
+                    # a link references an object owned elsewhere, only its own
+                    # registration (file_id) may be removed here
+                    await s3_client.delete_objects_recursively(
+                        bucket=self.simcore_bucket_name,
+                        prefix=file_id,
+                    )
+                else:
+                    # single object: delete it exactly, a prefix delete would also
+                    # remove keys that merely start with this one, e.g. deleting
+                    # 'report.txt' would destroy a stored 'report.txt.gz'
+                    await s3_client.delete_object(
+                        bucket=self.simcore_bucket_name,
+                        object_key=f"{fmd.object_name}",
+                    )
             except S3KeyNotFoundError:
                 _logger.warning("File %s not found in S3", file_id)
                 # we still need to clean up the database entry (it exists)
