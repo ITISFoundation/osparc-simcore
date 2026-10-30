@@ -1068,21 +1068,33 @@ def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool
 
     Only the service frame URL carries the node id, so the stale frame left by
     the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
+    Polled, so a failed read counts as unattached and the next poll retries it.
     """
-    content_frame = iframe_element.content_frame()
+    try:
+        content_frame = iframe_element.content_frame()
+    except PlaywrightError:
+        return False
     return content_frame is not None and node_id in content_frame.url
 
 
 def _is_service_iframe_src_set(page: Page, node_id: str) -> bool:
-    return bool(
-        page.evaluate(
-            """nodeId => {
+    """Whether the UI navigated the service iframe to the given node.
+
+    Polled while the page may be busy, so a failed read counts as not set yet
+    and the next poll retries it, instead of aborting the best-effort helper.
+    """
+    try:
+        return bool(
+            page.evaluate(
+                """nodeId => {
                 const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
                 return !!iframe && iframe.src.includes(nodeId);
             }""",
-            node_id,
+                node_id,
+            )
         )
-    )
+    except PlaywrightError:
+        return False
 
 
 def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
@@ -1101,9 +1113,9 @@ def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
     the UI never navigated is left alone: re-navigating it would restart a
     healthy navigation.
 
-    Best-effort: it re-navigates the iframe at most once. Playwright errors are
-    logged and swallowed, so that the caller still fails with its own original
-    error.
+    Best-effort: failed reads while polling are retried, the iframe is
+    re-navigated at most once, and Playwright errors are logged and swallowed,
+    so that the caller still fails with its own original error.
     """
     try:
         src_set = Retrying(

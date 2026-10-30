@@ -275,6 +275,28 @@ def test_service_iframe_not_navigated_yet_is_left_untouched(_no_src_wait_grace: 
     iframe_locator.evaluate.assert_not_called()
 
 
+def test_transient_errors_during_polling_still_run_the_recovery(
+    _no_frame_attach_grace: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Transient Playwright errors while polling must not abort the helper.
+
+    The polls run while the page is busy; a failed read counts as not yet and
+    the next poll retries it, so the recovery still runs rather than an error
+    escaping to the caller and the log.
+    """
+    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None)
+    mock_page = cast("mock.Mock", page)
+    mock_page.evaluate.side_effect = [PlaywrightError("Execution context was destroyed"), True]
+    iframe_element = cast("mock.Mock", iframe_locator.element_handle.return_value)
+    iframe_element.content_frame.side_effect = PlaywrightError("Element is not attached to the DOM")
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+
+    _ensure_service_iframe_attached(page, _NODE_ID)  # must not raise
+
+    iframe_locator.evaluate.assert_called_once()
+
+
 def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace: None):
     """A Playwright error during the best-effort recovery must not propagate.
 
