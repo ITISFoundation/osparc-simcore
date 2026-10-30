@@ -468,7 +468,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
