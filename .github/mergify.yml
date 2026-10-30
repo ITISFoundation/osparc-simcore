@@ -6,7 +6,6 @@ queue_rules:
     batch_size: 1
 
     queue_conditions:
-      - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
       - -draft
@@ -16,7 +15,6 @@ queue_rules:
       - "#review-threads-unresolved=0"
 
     merge_conditions: # (identical to queue_conditions)
-      - label=🤖-automerge
       - label!=🤖-do-not-merge
       - base=master
       - -draft
@@ -28,31 +26,16 @@ merge_protections_settings:
   reporting_method: check-runs
 
 pull_request_rules:
-  # Nobody adds the 🤖-automerge label or types `@mergify queue` by hand anymore.
-  #  1. Every PR targeting master gets 🤖-automerge, unless it has
-  #     🤖-do-not-merge. Renovate PRs already carry the label from
-  #     .renovaterc.jsonc, so rule 1 is a no-op for them.
-  #  2. A labeled PR enters the default queue as soon as it leaves draft. The
-  #     queue only starts checking a PR once its queue_conditions match (2
-  #     approvals, code-owner approval, checks green, ...), so Mergify waits
-  #     for those conditions instead of for a human to queue the PR.
-  #  3. The PR leaves the queue automatically when it goes back to draft, gets
-  #     🤖-do-not-merge, loses the label, or loses an approval, because then it
-  #     unmatches the queue_conditions.
+  # Every non-draft PR targeting master joins the default queue; nobody types
+  # `@mergify queue` by hand. The queue only merges once its conditions match
+  # (2 approvals, code-owner approval, checks green, ...), so Mergify waits for
+  # those instead of for a human. A PR leaves the queue automatically when it
+  # goes back to draft, gets 🤖-do-not-merge, or loses an approval.
   # To hold a PR back from the queue, add 🤖-do-not-merge.
-  - name: label every pull request for the merge queue
-    conditions:
-      - base=master
-      - label!=🤖-automerge
-      - label!=🤖-do-not-merge
-    actions:
-      label:
-        add:
-          - 🤖-automerge
   - name: queue every pull request that is not a draft anymore
     conditions:
       - base=master
-      - label=🤖-automerge
+      - label!=🤖-do-not-merge
       - -draft
     actions:
       queue:

@@ -1,15 +1,13 @@
 name: Chore Rerun Flaky Jobs
-# CI Build Test has flaky test jobs. Today one failed job means an extra push or a
-# manual "Re-run failed jobs" click, and both restart the whole workflow. On a failed
-# pull request run of a non-draft PR, re-trigger only the failed jobs; green jobs
-# keep their results, and a draft PR is left alone since nobody waits on its checks.
-# Do this once per commit, and only for failures that look flaky. Runs with more
-# than 3 failed jobs, a failed python-linting (pylint) job, or a failed typecheck
-# step are deterministic, and those runs stay red. The second failure of the same
-# commit is assumed real and stays red for Mergify to dequeue and a human to
-# investigate.
-# NOTE: GitHub only fires workflow_run for workflows that exist on the default
-# branch, so this file takes effect only once merged to master.
+# A failed CI Build Test job is usually flaky: an extra push or a manual "Re-run
+# failed jobs" restarts the whole workflow to get one retry. On a failed CI run of
+# a non-draft pull request from a fork into this repository, re-trigger only the
+# failed jobs; green jobs keep their results, and draft PRs are left alone.
+# More than 3 failed jobs, a failed python-linting (pylint) job, or a failed
+# typecheck step is not treated as flaky and stays red. The second failure of a
+# commit stays red for Mergify to dequeue and a human to investigate.
+# GitHub only fires workflow_run for workflows that exist on the default branch, so
+# this file takes effect once merged to master.
 on:
   workflow_run:
     workflows:
@@ -24,13 +22,16 @@ jobs:
   rerun:
     name: Rerun failed jobs
     runs-on: ubuntu-latest
-    # failed pull request runs only, and only their first attempt (run_attempt
-    # is 1-based and increments on every re-run, so this caps automation at one
-    # retry per commit and cannot loop)
+    # failed pull_request runs from a fork into this repository (head_repository
+    # differs), first attempt only: run_attempt is 1-based and increments per
+    # re-run, so one retry per commit and no loop. The upstream check: a fork
+    # that synced master would rerun its own runs, where this token cannot write.
     if: >-
+      github.repository == 'ITISFoundation/osparc-simcore' &&
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.run_attempt < 2
+      github.event.workflow_run.run_attempt < 2 &&
+      github.event.workflow_run.head_repository.full_name != 'ITISFoundation/osparc-simcore'
     permissions:
       actions: write # only needed to re-trigger runs, nothing else
     steps:
@@ -43,6 +44,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          # workflow_run.pull_requests is empty for a fork's PR: PR_NUMBER
+          # comes out empty and the head repo/branch fall back to the run's.
+          # The script looks the PR up from PR_HEAD_REPO:PR_HEAD_BRANCH.
+          PR_HEAD_REPO: ${{ github.event.workflow_run.pull_requests[0].head.repo.full_name || github.event.workflow_run.head_repository.full_name }}
+          PR_HEAD_BRANCH: ${{ github.event.workflow_run.pull_requests[0].head.ref || github.event.workflow_run.head_branch }}
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          PR_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
         run: ./.github/scripts/rerun_flaky_jobs.sh
