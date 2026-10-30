@@ -20,7 +20,7 @@
 
 services:
   adminer:
-    image: adminer:6.0.1
+    image: adminer:6.2.0
     init: true
     environment:
       ADMINER_DEFAULT_SERVER: postgres
@@ -31,7 +31,7 @@ services:
 
   flower:
     # Celery task monitoring UI — https://flower.readthedocs.io
-    image: mher/flower:2.0.1
+    image: mher/flower:2.2.0
     init: true
     environment:
       CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}//
@@ -74,7 +74,7 @@ services:
 
   mailpit:
     # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:v1.29.3
+    image: axllent/mailpit:v1.32.0
     init: true
     command:
       - --smtp-auth-accept-any
