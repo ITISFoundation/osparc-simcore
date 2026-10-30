@@ -101,7 +101,7 @@ async def test_register_body_validation(client: TestClient, user_password: str, 
         },
     )
 
-    assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status == status.HTTP_422_UNPROCESSABLE_CONTENT
     body = await response.json()
     data, error = unwrap_envelope(body)
 

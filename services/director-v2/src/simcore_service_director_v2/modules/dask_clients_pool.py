@@ -4,9 +4,9 @@ from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import TypeAlias
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.clusters import BaseCluster, ClusterTypeInModel
 from pydantic import AnyUrl
 from servicelib.logging_utils import log_context
@@ -24,8 +24,8 @@ from .dask_client import DaskClient
 _logger = logging.getLogger(__name__)
 
 
-_ClusterUrl: TypeAlias = AnyUrl
-ClientRef: TypeAlias = str
+type _ClusterUrl = AnyUrl
+type ClientRef = str
 
 
 @dataclass
@@ -163,18 +163,17 @@ class DaskClientsPool:
             raise
 
 
-def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
-    async def on_startup() -> None:
-        app.state.dask_clients_pool = await DaskClientsPool.create(app=app, settings=settings)
+def configure_dask_clients_pool(app_lifespan: LifespanManager, *, settings: ComputationalBackendSettings) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        app.state.dask_clients_pool = pool = await DaskClientsPool.create(app=app, settings=settings)
 
         _logger.info(
             "Default cluster is set to %s",
             f"{settings.default_cluster!r}",
         )
+        try:
+            yield
+        finally:
+            await pool.delete()
 
-    async def on_shutdown() -> None:
-        if app.state.dask_clients_pool:
-            await app.state.dask_clients_pool.delete()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)

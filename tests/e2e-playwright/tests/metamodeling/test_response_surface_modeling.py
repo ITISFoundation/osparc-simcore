@@ -23,11 +23,12 @@ from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
 import pytest
+from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, ServiceType, wait_for_service_running
+from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, wait_for_service_running
 from tenacity import (
     RetryError,
     before_sleep_log,
@@ -56,7 +57,8 @@ _SAMPLING_TIMEOUT: Final[int] = 2 * 10 * MINUTE
 
 _FAILED_STATES: Final[set[str]] = {"failed", "failed partially", "error", "aborted"}
 _LHS_SEED: Final[int] = 42
-_NUM_SAMPLING_POINTS: Final[int] = 40
+# CI can override this via --mmux-num-sampling-points, e.g. for weaker deployments
+_DEFAULT_NUM_SAMPLING_POINTS: Final[int] = 40
 _PROJECT_RENAME_PERSISTENCE_ATTEMPTS: Final[int] = 10
 _PROJECT_RENAME_PERSISTENCE_WAIT_SECONDS: Final[float] = 0.5
 _SELECT_FUNCTION_MAX_ATTEMPTS: Final[int] = 3
@@ -66,7 +68,8 @@ _TEARDOWN_RETRY_WAIT_SECONDS: Final[float] = 5.0
 _TEARDOWN_MAX_ATTEMPTS: Final[int] = 8
 _TEARDOWN_FULL_WAIT_SECONDS: Final[float] = 10.0
 _TEARDOWN_FULL_ATTEMPTS: Final[int] = 3
-_EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
+_LIST_PAGE_LIMIT: Final[int] = 50
+_EXPECTED_LHS_INPUT_VALUES_40: Final[list[float]] = [
     1.1852604487,
     1.4180537145,
     1.5227525095,
@@ -108,6 +111,20 @@ _EXPECTED_LHS_INPUT_VALUES: Final[list[float]] = [
     9.6906882977,
     9.7291886695,
 ]
+
+# Generated the same way as _EXPECTED_LHS_INPUT_VALUES_40, with n=5
+_EXPECTED_LHS_INPUT_VALUES_5: Final[list[float]] = [
+    2.404167764,
+    4.3708610696,
+    6.3879263578,
+    7.5879454763,
+    9.5564287577,
+]
+# Only known CI overrides have precomputed expected values to check against
+_EXPECTED_LHS_INPUT_VALUES_BY_COUNT: Final[dict[int, list[float]]] = {
+    40: _EXPECTED_LHS_INPUT_VALUES_40,
+    5: _EXPECTED_LHS_INPUT_VALUES_5,
+}
 
 
 class _TeardownDeleteError(Exception):
@@ -162,6 +179,40 @@ def _delete_with_retry(
         logging.exception("Gave up deleting %s after %d attempts", label, _TEARDOWN_MAX_ATTEMPTS)
 
 
+def _delete_all_items(
+    api_request_context: APIRequestContext,
+    list_url: str,
+    label: str,
+    delete_item: Callable[[dict[str, Any]], None],
+    *,
+    headers: dict[str, str] | None = None,
+) -> None:
+    """Delete everything a listing returns.
+
+    Offsets are unsafe while deleting, so the first page is re-read after each batch.
+    Pages are only walked forward past items whose deletion was already attempted.
+    """
+    attempted: set[str] = set()
+    offset = 0
+    while True:
+        resp = api_request_context.get(f"{list_url}&limit={_LIST_PAGE_LIMIT}&offset={offset}", headers=headers or {})
+        if not resp.ok:
+            if resp.status != 404:
+                logging.warning("Could not list %s: %s", label, resp.text()[:200])
+            return
+        payload = resp.json()
+        pending = [item for item in payload.get("items", []) if item["uid"] not in attempted]
+        if pending:
+            for item in pending:
+                attempted.add(item["uid"])
+                delete_item(item)
+            offset = 0
+        elif offset + _LIST_PAGE_LIMIT < payload.get("total", 0):
+            offset += _LIST_PAGE_LIMIT
+        else:
+            return
+
+
 def _get_api_server_url(product_url: AnyUrl) -> str:
     """Derive the API server URL from the product URL.
 
@@ -173,6 +224,19 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     return urlunparse(parsed._replace(netloc=api_netloc))
 
 
+@pytest.fixture(scope="session")
+def num_sampling_points(request: pytest.FixtureRequest) -> int:
+    value = (
+        int(passed)
+        if (passed := request.config.getoption("--mmux-num-sampling-points")) is not None
+        else _DEFAULT_NUM_SAMPLING_POINTS
+    )
+    assert value in _EXPECTED_LHS_INPUT_VALUES_BY_COUNT, (
+        f"No expected LHS values for num_sampling_points={value}, add an entry to _EXPECTED_LHS_INPUT_VALUES_BY_COUNT"
+    )
+    return value
+
+
 @retry(
     wait=wait_fixed(_TEARDOWN_FULL_WAIT_SECONDS),
     stop=stop_after_attempt(_TEARDOWN_FULL_ATTEMPTS),
@@ -180,7 +244,7 @@ def _get_api_server_url(product_url: AnyUrl) -> str:
     before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
     reraise=True,
 )
-def _teardown_function(  # noqa: C901
+def _teardown_function(
     api_request_context: APIRequestContext,
     api_server_url: str,
     product_url: AnyUrl,
@@ -193,65 +257,43 @@ def _teardown_function(  # noqa: C901
     """
     function_uuid = function_data["uuid"]
     template_id = function_data.get("templateId")
-    limit = 50
 
     # 1. Delete all function_job_collections for this function
-    for offset in range(0, 100_000, limit):
-        collections_resp = api_request_context.get(
-            f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}&limit={limit}&offset={offset}",
+    _delete_all_items(
+        api_request_context,
+        f"{api_server_url}v0/function_job_collections?has_function_id={function_uuid}",
+        f"function_job_collections for {function_uuid}",
+        lambda collection: _delete_with_retry(
+            api_request_context,
+            f"{api_server_url}v0/function_job_collections/{collection['uid']}",
+            f"function_job_collection {collection['uid']}",
             headers=auth_headers,
-        )
-        if not collections_resp.ok:
-            if collections_resp.status != 404:
-                logging.warning(
-                    "Could not list function_job_collections for %s: %s",
-                    function_uuid,
-                    collections_resp.text()[:200],
-                )
-            break
-        collections = collections_resp.json().get("items", [])
-        for collection in collections:
-            _delete_with_retry(
-                api_request_context,
-                f"{api_server_url}v0/function_job_collections/{collection['uid']}",
-                f"function_job_collection {collection['uid']}",
-                headers=auth_headers,
-            )
-        if len(collections) < limit:
-            break
+        ),
+        headers=auth_headers,
+    )
 
     # 2. Delete all function_jobs and their associated comp projects
-    for offset in range(0, 100_000, limit):
-        jobs_resp = api_request_context.get(
-            f"{api_server_url}v0/function_jobs?function_id={function_uuid}&limit={limit}&offset={offset}",
+    def _delete_job(job: dict[str, Any]) -> None:
+        _delete_with_retry(
+            api_request_context,
+            f"{api_server_url}v0/function_jobs/{job['uid']}",
+            f"function_job {job['uid']}",
             headers=auth_headers,
         )
-        if not jobs_resp.ok:
-            if jobs_resp.status != 404:
-                logging.warning(
-                    "Could not list function_jobs for %s: %s",
-                    function_uuid,
-                    jobs_resp.text()[:200],
-                )
-            break
-        jobs = jobs_resp.json().get("items", [])
-        for job in jobs:
-            job_uid = job["uid"]
-            project_job_id = job.get("project_job_id")
+        if project_job_id := job.get("project_job_id"):
             _delete_with_retry(
                 api_request_context,
-                f"{api_server_url}v0/function_jobs/{job_uid}",
-                f"function_job {job_uid}",
-                headers=auth_headers,
+                f"{product_url}v0/projects/{project_job_id}",
+                f"comp project {project_job_id}",
             )
-            if project_job_id:
-                _delete_with_retry(
-                    api_request_context,
-                    f"{product_url}v0/projects/{project_job_id}",
-                    f"comp project {project_job_id}",
-                )
-        if len(jobs) < limit:
-            break
+
+    _delete_all_items(
+        api_request_context,
+        f"{api_server_url}v0/function_jobs?function_id={function_uuid}",
+        f"function_jobs for {function_uuid}",
+        _delete_job,
+        headers=auth_headers,
+    )
 
     # 3. Delete the function itself (functions live on the api-server, not web-server)
     _delete_with_retry(
@@ -467,6 +509,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     create_function_from_project: Callable[[Page, str], dict[str, Any]],
     api_request_context: APIRequestContext,
     api_key_and_secret: tuple[str, str],
+    num_sampling_points: int,
 ):
     # 1. create the initial study with two chained jsonifiers
     with log_context(logging.INFO, "Create new study for function"):
@@ -862,7 +905,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
             samplingInput.wait_for(state="attached", timeout=_WAITING_FOR_SERVICE_TO_APPEAR)
             samplingInput.scroll_into_view_if_needed()
             samplingInput.wait_for(state="visible", timeout=30 * SECOND)
-            samplingInput.fill(str(_NUM_SAMPLING_POINTS))
+            samplingInput.fill(f"{num_sampling_points}")
             samplingInput.press("Enter")
 
             seed_was_set = False
@@ -972,13 +1015,12 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
                 )
 
                 if "uq" not in local_service_key.lower():
-                    assert len(input_values) == _NUM_SAMPLING_POINTS, (
-                        f"Expected {_NUM_SAMPLING_POINTS} input values, got {len(input_values)}"
+                    assert len(input_values) == num_sampling_points, (
+                        f"Expected {num_sampling_points} input values, got {len(input_values)}"
                     )
                     if seed_was_set:
-                        for i, (actual, expected) in enumerate(
-                            zip(input_values, _EXPECTED_LHS_INPUT_VALUES, strict=True)
-                        ):
+                        expected_values = _EXPECTED_LHS_INPUT_VALUES_BY_COUNT[num_sampling_points]
+                        for i, (actual, expected) in enumerate(zip(input_values, expected_values, strict=True)):
                             assert abs(actual - expected) < 1e-4, f"Input value {i} mismatch: {actual} != {expected}"
 
         with (

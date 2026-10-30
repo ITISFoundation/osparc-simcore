@@ -430,7 +430,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
               outputCounter++;
             }
           });
-          return this.tr("Outputs") + ` (${outputCounter})`;
+          return this.tr("Outputs (%1)", outputCounter);
         }
       });
       this.__outputsBtn.addListener("changeLabel", () => {

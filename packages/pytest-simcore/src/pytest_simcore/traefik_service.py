@@ -6,7 +6,7 @@
 import aiohttp
 import pytest
 import tenacity
-from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
+from servicelib.retry_policies import ServiceRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.docker import get_service_published_port
@@ -21,9 +21,9 @@ def traefik_endpoints(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDi
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_traefik" in docker_stack["services"]
 
-    traefik_api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080)}"
-    webserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 80)}"
-    apiserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 10081)}"
+    traefik_api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080, stack_name=prefix)}"
+    webserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 80, stack_name=prefix)}"
+    apiserver_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 10081, stack_name=prefix)}"
     return (
         URL(f"http://{traefik_api_endpoint}"),
         URL(f"http://{webserver_endpoint}"),
@@ -36,12 +36,11 @@ async def traefik_service(
     traefik_endpoints: tuple[URL, URL, URL],
     docker_stack: dict,
 ) -> tuple[URL, URL, URL]:
-    traefik_api_endpoint, webserver_endpoint, apiserver_endpoint = traefik_endpoints
+    traefik_api_endpoint, *_ = traefik_endpoints
     await wait_till_traefik_responsive(traefik_api_endpoint)
     return traefik_endpoints
 
 
-# TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_traefik_responsive(api_endpoint: URL):
     async with aiohttp.ClientSession() as session, session.get(api_endpoint.with_path("/api/http/routers")) as resp:

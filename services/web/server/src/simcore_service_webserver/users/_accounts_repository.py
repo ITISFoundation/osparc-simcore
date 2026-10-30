@@ -25,11 +25,18 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ._models_pre_registration_extras import ExtrasAuditEntry, merge_audit_entry_into_extras
+from ._models_pre_registration_extras import (
+    ExtrasAuditEntry,
+    PreRegistrationExtraKey,
+    PreRegistrationExtrasPatch,
+    merge_audit_entry_into_extras,
+)
 from .errors import (
+    AlreadyPreRegisteredError,
     PreRegistrationAlreadyLinkedToAccountError,
     PreRegistrationAlreadyReviewedError,
     PreRegistrationDuplicateInProductError,
@@ -110,10 +117,24 @@ async def create_user_pre_registration(
                 if created_by is not None:
                     values["account_request_reviewed_by"] = created_by
 
-        result = await conn.execute(
-            sa.insert(users_pre_registration_details).values(**values).returning(users_pre_registration_details.c.id)
+        stmt = (
+            postgresql.insert(users_pre_registration_details)
+            .values(**values)
+            .on_conflict_do_nothing(
+                index_elements=[
+                    users_pre_registration_details.c.pre_email,
+                    users_pre_registration_details.c.product_name,
+                ]
+            )
+            .returning(users_pre_registration_details.c.id)
         )
-        pre_registration_id: int = result.scalar_one()
+        result = await conn.execute(stmt)
+        pre_registration_id: int | None = result.scalar_one_or_none()
+        if pre_registration_id is None:
+            raise AlreadyPreRegisteredError(
+                email=email,
+                product_name=product_name,
+            )
         return pre_registration_id
 
 
@@ -231,7 +252,7 @@ async def review_user_pre_registration(
     pre_registration_id: int,
     reviewed_by: UserID,
     new_status: AccountRequestStatus,
-    invitation_extras: dict[str, Any] | None = None,
+    extras: PreRegistrationExtrasPatch | None = None,
 ) -> None:
     """Updates the account request status of a pre-registered user.
 
@@ -241,9 +262,11 @@ async def review_user_pre_registration(
         pre_registration_id: ID of the pre-registration record
         reviewed_by: ID of the user who reviewed the request
         new_status: New status (APPROVED or REJECTED)
-        invitation_extras: Optional invitation data to store in extras field
+        extras: Optional patch of known top-level extras keys (``PreRegistrationExtraKey``,
+            build entries via the ``create_*_extras`` helpers) merged into the record's
+            existing extras
     """
-    if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
+    if new_status not in {AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED}:
         msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
         raise ValueError(msg)
 
@@ -255,10 +278,8 @@ async def review_user_pre_registration(
             "account_request_reviewed_at": sa.func.now(),
         }
 
-        # Add invitation extras to the existing extras if provided
-        if invitation_extras is not None:
-            assert list(invitation_extras.keys()) == ["invitation"]  # nosec
-
+        # Merge the provided extras into the existing extras if provided
+        if extras is not None:
             # Get the current extras first
             current_extras_result = await conn.execute(
                 sa.select(users_pre_registration_details.c.extras).where(
@@ -268,8 +289,7 @@ async def review_user_pre_registration(
             current_extras_row = current_extras_result.one_or_none()
             current_extras = current_extras_row.extras if current_extras_row and current_extras_row.extras else {}
 
-            # Merge with invitation extras
-            merged_extras = {**current_extras, **invitation_extras}
+            merged_extras = {**current_extras, **extras}
             update_values["extras"] = merged_extras
 
         await conn.execute(
@@ -373,7 +393,7 @@ async def update_pre_registration_product(
         )
         merged_extras = merge_audit_entry_into_extras(
             current_extras=current_extras,
-            key="product_move",
+            key=PreRegistrationExtraKey.PRODUCT_MOVE,
             entry=audit_entry,
         )
 

@@ -1,4 +1,7 @@
+from collections.abc import AsyncIterator
+
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager, State
 from models_library.rabbitmq_basic_types import RPCNamespace
 from servicelib.rabbitmq import RPCRouter
 
@@ -12,8 +15,8 @@ ROUTERS: list[RPCRouter] = [
 ]
 
 
-def setup_rpc_api_routes(app: FastAPI) -> None:
-    async def startup() -> None:
+def configure_rpc_api_routes(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _rpc_api_lifespan(app: FastAPI) -> AsyncIterator[State]:
         rpc_client = get_rabbitmq_rpc_client(app)
         settings: ApplicationSettings = app.state.settings
         rpc_namespace = RPCNamespace.from_entries(
@@ -25,5 +28,6 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
         )
         for router in ROUTERS:
             await rpc_client.register_router(router, rpc_namespace, app)
+        yield {}
 
-    app.add_event_handler("startup", startup)
+    app_lifespan.add(_rpc_api_lifespan)

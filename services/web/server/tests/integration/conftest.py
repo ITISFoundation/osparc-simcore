@@ -25,6 +25,7 @@ from string import Template
 from unittest import mock
 
 import pytest
+import sqlalchemy as sa
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
@@ -35,6 +36,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 _logger = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def postgres_db(postgres_live_stack_db: sa.engine.Engine) -> sa.engine.Engine:
+    """Shadows the template-clone `postgres_db` from `pytest_simcore.postgres_service`
+    with the in-place + teardown-reset variant required by live-stack integration
+    tests, see `pytest_simcore.postgres_live_stack_service`.
+    """
+    return postgres_live_stack_db
 
 
 @pytest.fixture(scope="module")
@@ -89,7 +99,12 @@ def webserver_environ(request, docker_stack: dict, simcore_docker_compose: dict)
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
-        published_port = get_service_published_port(name, int(environ[port_key]))
+        # NOTE: filter by THIS run's stack: another checkout may deploy the same service names
+        published_port = get_service_published_port(
+            name,
+            int(environ[port_key]),
+            stack_name=docker_stack["stacks"]["core"]["name"],
+        )
         environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
@@ -134,8 +149,7 @@ def _default_app_config_for_integration_tests(
     # NOTE: previously in .env but removed from that file env since the webserver
     # can be configured as GC service as well. In integration tests, we are
     # for the moment using web-server as an all-in-one service.
-    # NOTE: create integration tests using different configs
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
+    # follow-up tracked in https://github.com/ITISFoundation/osparc-simcore/issues/2896
     test_environ["WEBSERVER_GARBAGE_COLLECTOR"] = (
         "{}"  # by default it is disabled. This enables it with default or env variables
     )

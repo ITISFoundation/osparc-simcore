@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
 # Define arguments in the global scope
-ARG PYTHON_VERSION="3.13.9"
-ARG UV_VERSION="0.12"
+ARG PYTHON_VERSION="3.14.10"
+ARG UV_VERSION="0.13.6"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
-FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+FROM python:${PYTHON_VERSION}-slim-trixie AS base
 
 RUN apt-get update \
   && apt-get -y install --no-install-recommends\
@@ -19,7 +19,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean
 
-
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=uv_build /uv /uvx /bin/
 
 # devenv
 COPY requirements.txt requirements.txt

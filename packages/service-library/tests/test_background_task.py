@@ -5,6 +5,7 @@
 
 
 import asyncio
+import contextlib
 import datetime
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -168,6 +169,34 @@ async def test_periodic_task_context_manager(
     assert asyncio_task.cancelled() is True
 
 
+async def test_periodic_task_context_manager_wakes_up_early(
+    mock_background_task: mock.AsyncMock,
+    very_long_task_interval: datetime.timedelta,
+):
+    wake_up_event = asyncio.Event()
+    async with periodic_task(
+        mock_background_task, interval=very_long_task_interval, early_wake_up_event=wake_up_event
+    ) as asyncio_task:
+        await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+        mock_background_task.assert_called_once()
+
+        # setting the event must skip the remaining (very long) wait
+        wake_up_event.set()
+        await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+        assert mock_background_task.call_count == 2
+
+        # without a new wake-up the task waits the full interval again
+        await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+        assert mock_background_task.call_count == 2
+
+        # the event is re-armed after consuming a wake-up: setting it again works
+        assert not wake_up_event.is_set(), "the wake-up event must be cleared once consumed"
+        wake_up_event.set()
+        await asyncio.sleep(5 * _FAST_POLL_INTERVAL)
+        assert mock_background_task.call_count == 3
+    assert asyncio_task.cancelled() is True
+
+
 async def test_periodic_decorator():
     # This mock function will allow us to test if the function is called periodically
     mock_func = AsyncMock()
@@ -187,6 +216,29 @@ async def test_periodic_decorator():
         await task
 
     assert mock_func.call_count > 1
+
+
+async def test_periodic_forwards_kwargs_sharing_a_name_with_internals():
+    # A wrapped task may take a keyword whose name collides with a parameter the
+    # decorator threads internally, e.g. `chain`. It must reach the task, see
+    # https://github.com/ITISFoundation/osparc-simcore/pull/9863#issuecomment
+    received = []
+    done = asyncio.Event()
+
+    @periodic(interval=datetime.timedelta(milliseconds=5))
+    async def _func(*, chain: object) -> None:
+        received.append(chain)
+        done.set()
+
+    task = asyncio.create_task(_func(chain="user-chain"))
+    try:
+        await asyncio.wait_for(done.wait(), timeout=5)
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    assert received[:1] == ["user-chain"]
 
 
 class CustomError(Exception):

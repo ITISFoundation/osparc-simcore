@@ -122,16 +122,24 @@ async def create_study_job(
         hidden=hidden,
     )
     assert job.name == compose_study_job_resource_name(study_id, job.id)
-    job.url = url_for(
-        "get_study_job",
-        study_id=study_id,
-        job_id=job.id,
+
+    # NOTE: fields are typed as HttpUrl and assigned after validation, hence the explicit
+    # conversion — otherwise serializing the model (e.g. the API response) warns that the
+    # value's type does not match the field's (PydanticSerializationUnexpectedValue)
+    job.url = HttpUrl(
+        url_for(
+            "get_study_job",
+            study_id=study_id,
+            job_id=job.id,
+        )
     )
-    job.runner_url = url_for("get_study", study_id=study_id)
-    job.outputs_url = url_for(
-        "get_study_job_outputs",
-        study_id=study_id,
-        job_id=job.id,
+    job.runner_url = HttpUrl(url_for("get_study", study_id=study_id))
+    job.outputs_url = HttpUrl(
+        url_for(
+            get_study_job_outputs.__name__,
+            study_id=study_id,
+            job_id=job.id,
+        )
     )
     return job
 
@@ -186,7 +194,7 @@ async def delete_study_job(
             "description": "Cluster not found",
             "model": ErrorGet,
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": "Configuration error",
             "model": ErrorGet,
         },
@@ -364,23 +372,30 @@ def _update_study_job_urls(
     job: Job,
     study_id: StudyID,
     job_id: JobID | str,
-    url_for: Callable[..., HttpUrl],
+    url_for: Callable[..., str],
 ) -> Job:
-    job.url = url_for(
-        get_study_job.__name__,
-        study_id=study_id,
-        job_id=job_id,
+    # see NOTE in create_study_job about converting to HttpUrl before assigning
+    job.url = HttpUrl(
+        url_for(
+            get_study_job.__name__,
+            study_id=study_id,
+            job_id=job_id,
+        )
     )
 
-    job.runner_url = url_for(
-        "get_study",
-        study_id=study_id,
+    job.runner_url = HttpUrl(
+        url_for(
+            "get_study",
+            study_id=study_id,
+        )
     )
 
-    job.outputs_url = url_for(
-        get_study_job_outputs.__name__,
-        study_id=study_id,
-        job_id=job_id,
+    job.outputs_url = HttpUrl(
+        url_for(
+            get_study_job_outputs.__name__,
+            study_id=study_id,
+            job_id=job_id,
+        )
     )
 
     return job

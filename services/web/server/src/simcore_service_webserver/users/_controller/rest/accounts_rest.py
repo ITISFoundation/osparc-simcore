@@ -228,6 +228,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         reviewer_id=req_ctx.user_id,
         bcc_emails=approval_data.bcc_emails,
         invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
+        extra_credits_in_usd=approval_data.extra_credits_in_usd,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
     assert pre_registration_id  # nosec
@@ -244,6 +245,22 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
     assert req_ctx.product_name  # nosec
 
     approval_data = await parse_request_body_as(UserAccountPreviewApproval, request)
+
+    existing_user_id = await _accounts_service.get_registered_user_id_for_pending_request(
+        request.app,
+        email=approval_data.email,
+        product_name=req_ctx.product_name,
+    )
+
+    if existing_user_id is not None:
+        # Already-registered user: no invitation is generated, they keep their existing password
+        preview_result = await _accounts_service.preview_grant_product_access_user_account(
+            request.app,
+            approval_email=approval_data.email,
+            product_name=req_ctx.product_name,
+        )
+        response = UserAccountPreviewApprovalGet(**preview_result.model_dump())
+        return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 
     with log_context(
         _logger,

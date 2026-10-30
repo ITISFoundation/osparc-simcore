@@ -13,9 +13,7 @@ from typing import Any
 import pytest
 from common_library.logging.logging_base import get_log_record_extra
 from faker import Faker
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from pydantic import AnyUrl
 from servicelib.logging_utils import (
     _DEFAULT_FORMATTING,
     CustomFormatter,
@@ -29,8 +27,7 @@ from servicelib.logging_utils import (
     log_exceptions,
     set_parent_module_log_level,
 )
-from servicelib.tracing import TracingConfig, _current_tracing_config, get_current_tracing_config
-from settings_library.tracing import TracingSettings
+from servicelib.tracing import TracingConfig, get_current_tracing_config
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -63,6 +60,23 @@ _ALL_LOGGING_LEVELS = [
 
 def _to_level_name(lvl: int) -> str:
     return logging.getLevelName(lvl)
+
+
+def test_log_decorator_warns_and_omits_filename_when_stack_frames_are_unavailable(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+):
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr("servicelib.logging_utils.currentframe", lambda: None)
+
+    @log_decorator(_logger, logging.INFO)
+    def _decorated_function() -> int:
+        return 42
+
+    assert _decorated_function() == 42
+    assert len(caplog.records) == 3
+    assert caplog.records[0].levelno == logging.WARNING
+    assert "filename override will be omitted" in caplog.records[0].message
+    assert all("file_name_override" not in record.__dict__ for record in caplog.records)
 
 
 @pytest.mark.parametrize("logger", [None, _logger])
@@ -100,6 +114,7 @@ async def test_error_regression_async_def(
     assert result == 0
     assert len(caplog.records) == 2
     info_record = caplog.records[0]
+    assert info_record.__dict__["file_name_override"] == Path(log_decorator.__code__.co_filename).name
     assert info_record.levelno == logging.INFO
     assert (
         f"{_not_raising_fct.__module__.split('.')[-1]}:"
@@ -241,9 +256,13 @@ def test_log_context(
 ):
     caplog.clear()
 
-    with log_context(_logger, logging.ERROR, msg, *args, extra=extra):
+    with (
+        caplog.filtering(logging.Filter(_logger.name)),
+        log_context(_logger, logging.ERROR, msg, *args, extra=extra),
+    ):
         ...
-    assert len(caplog.messages) == 2
+
+    assert len(caplog.records) == 2
 
 
 @pytest.fixture
@@ -276,36 +295,7 @@ def test_log_context_caller_is_included_in_log(
     assert Path(__file__).name in caplog.text
 
 
-@pytest.fixture
-def no_tracing_config() -> Iterable[None]:
-    # NOTE: `_current_tracing_config` is process-wide (set once by `setup_log_tracing` and never
-    # reset), so we explicitly force/restore it here to make this test independent of test order.
-    token = _current_tracing_config.set(None)
-    try:
-        yield
-    finally:
-        _current_tracing_config.reset(token)
-
-
-@pytest.fixture
-def tracing_config_enabled(faker: Faker) -> Iterable[tuple[TracingConfig, InMemorySpanExporter]]:
-    tracing_settings = TracingSettings(
-        TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION="0.144.0",
-        TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=AnyUrl("http://opentelemetry-collector"),
-        TRACING_OPENTELEMETRY_COLLECTOR_PORT=4318,
-        TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=1.0,
-    )
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
-    assert tracing_config.tracer_provider is not None
-
-    memory_exporter = InMemorySpanExporter()
-    tracing_config.tracer_provider.add_span_processor(SimpleSpanProcessor(memory_exporter))
-
-    token = _current_tracing_config.set(tracing_config)
-    try:
-        yield tracing_config, memory_exporter
-    finally:
-        _current_tracing_config.reset(token)
+# NOTE: `no_tracing_config` and `tracing_config_enabled` are defined in tests/conftest.py
 
 
 def test_log_context_without_tracing_config_creates_no_span(
@@ -412,8 +402,11 @@ def test_log_context_span_has_code_lineno_attribute(
 ):
     _tracing_config, memory_exporter = tracing_config_enabled
 
-    with log_context(_logger, logging.INFO, "doing something"):  # <-- this line's number is expected below
-        expected_lineno = getframeinfo(currentframe()).lineno - 1
+    caller_frame = currentframe()
+    assert caller_frame is not None
+    expected_lineno = getframeinfo(caller_frame).lineno + 1  # the `with` line below is what log_context reports
+    with log_context(_logger, logging.INFO, "doing something"):
+        ...
 
     spans = memory_exporter.get_finished_spans()
     assert len(spans) == 1

@@ -73,14 +73,6 @@ services:
       - "8000"
       - "3010:3000"
 
-  efs-guardian:
-    environment:
-      <<: *common_environment
-      EFS_GUARDIAN_REMOTE_DEBUGGING_PORT: 3000
-    ports:
-      - "8013:8000"
-      - "3020:3000"
-
   invitations:
     environment:
       <<: *common_environment
@@ -273,6 +265,8 @@ services:
   rabbit:
     ports:
       - "5672"
+      # NOTE: keep the management port mapping in sync with _MANAGEMENT_PORT in
+      # packages/pytest-simcore/src/pytest_simcore/rabbit_service.py (its fallback value)
       - "15672:15672"
       - "15692"
 

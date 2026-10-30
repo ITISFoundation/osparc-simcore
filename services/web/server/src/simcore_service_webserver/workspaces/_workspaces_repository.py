@@ -183,7 +183,8 @@ async def get_workspace_for_user(
         row = result.one_or_none()
         if row is None:
             raise WorkspaceAccessForbiddenError(
-                details=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
+                details=f"User {user_id} does not have access to the workspace {workspace_id}. "
+                "Or workspace does not exist.",
             )
         return UserWorkspaceWithAccessRights.model_validate(row)
 
@@ -252,6 +253,8 @@ async def delete_workspace(
 
 assert set(WorkspaceDBGet.model_fields.keys()) == {col.name for col in _WORKSPACE_SELECTION_COLS}
 
+type TotalCount = int
+
 
 async def list_workspaces_db_get_as_admin(
     app: web.Application,
@@ -264,7 +267,7 @@ async def list_workspaces_db_get_as_admin(
     limit: int,
     # ordering
     order_by: OrderBy,
-) -> tuple[int, list[WorkspaceDBGet]]:
+) -> tuple[TotalCount, list[WorkspaceDBGet]]:
     """
     NOTE: This is an internal function used for administrative purposes.
     Ex. It lists trashed workspaces across the application for cleanup tasks.

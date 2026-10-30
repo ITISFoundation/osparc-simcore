@@ -1,11 +1,11 @@
 import contextlib
 import functools
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Final
+from typing import ClassVar, Final
 
-from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
+from aiohttp import ClientResponseError, ClientSession, encode_basic_auth, hdrs, web
 from aiohttp.client_exceptions import ClientError
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
@@ -40,7 +40,7 @@ def _handle_exceptions_as_invitations_errors(member_func: Callable):
             return await member_func(*args, **kwargs)
 
         except ClientResponseError as err:
-            if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+            if err.status == status.HTTP_422_UNPROCESSABLE_CONTENT:
                 raise InvalidInvitationError(
                     api_funcname=member_func.__name__,
                     status=err.status,
@@ -78,14 +78,16 @@ class InvitationsServiceApi:
     healthcheck_path: str = "/"
 
     @classmethod
-    async def create(cls, settings: InvitationsSettings) -> "InvitationsServiceApi":
+    async def create(cls, settings: InvitationsSettings) -> InvitationsServiceApi:
         exit_stack = contextlib.AsyncExitStack()
         client_session = await exit_stack.enter_async_context(
             ClientSession(
-                auth=BasicAuth(
-                    login=settings.INVITATIONS_USERNAME,
-                    password=settings.INVITATIONS_PASSWORD.get_secret_value(),
-                ),
+                headers={
+                    hdrs.AUTHORIZATION: encode_basic_auth(
+                        login=settings.INVITATIONS_USERNAME,
+                        password=settings.INVITATIONS_PASSWORD.get_secret_value(),
+                    )
+                },
                 raise_for_status=True,
             )
         )
@@ -119,7 +121,7 @@ class InvitationsServiceApi:
             _logger.debug("Invitations service is not responsive: %s", err)
         return ok
 
-    is_responsive = ping
+    is_responsive: ClassVar[Callable[..., Awaitable[bool]]] = ping  # alias
 
     #
     # service API

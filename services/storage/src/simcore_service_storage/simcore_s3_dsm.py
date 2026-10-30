@@ -108,6 +108,7 @@ from .utils.utils import (
 
 _NO_CONCURRENCY: Final[int] = 1
 _MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
+_PROJECT_FOLDER_MAX_PARTS: Final[int] = 2
 
 
 _logger = logging.getLogger(__name__)
@@ -740,6 +741,15 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 limit=MAX_CONCURRENT_S3_TASKS,
             )
 
+    async def delete_path(self, user_id: UserID, path: Path) -> None:
+        # NOTE: a project or project/node folder is not a file identifier, it is authorized at project level
+        if 0 < len(path.parts) <= _PROJECT_FOLDER_MAX_PARTS:
+            node_id = NodeID(path.parts[1]) if len(path.parts) == _PROJECT_FOLDER_MAX_PARTS else None
+            await self.delete_project_simcore_s3(user_id, ProjectID(path.parts[0]), node_id)
+            return
+
+        await self.delete_file(user_id, TypeAdapter(StorageFileID).validate_python(f"{path}"))
+
     async def delete_project_simcore_s3(
         self, user_id: UserID, project_id: ProjectID, node_id: NodeID | None = None
     ) -> None:
@@ -754,7 +764,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 project_id=project_id
             )
         else:
-            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_node(node_id=node_id)
+            await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_node(
+                project_id=project_id, node_id=node_id
+            )
 
         await get_s3_client(self.app).delete_objects_recursively(
             bucket=self.simcore_bucket_name,
@@ -1190,7 +1202,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         2. if nothing exists in S3, deletes the file metadata entry and aborts the multipart
            upload, if any.
         """
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
 
         list_of_expired_uploads = [
             fmd async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(expired_after=now)
@@ -1268,7 +1280,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         older than `STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL` and removes them, S3 object first then the
         file_meta_data entry.
         """
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
         retention = get_application_settings(self.app).STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL
         threshold = now - retention
 
@@ -1434,7 +1446,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
         upload_expiration_date = now + datetime.timedelta(
             seconds=get_application_settings(self.app).STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )

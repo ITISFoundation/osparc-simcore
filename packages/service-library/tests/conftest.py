@@ -5,7 +5,7 @@
 
 import asyncio
 import sys
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from copy import deepcopy
 from pathlib import Path
@@ -14,8 +14,13 @@ from typing import Any
 import pytest
 import servicelib
 from faker import Faker
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from pydantic import AnyUrl
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
+from servicelib.tracing import TracingConfig, _current_tracing_config
 from settings_library.redis import RedisDatabase, RedisSettings
+from settings_library.tracing import TracingSettings
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
@@ -43,6 +48,7 @@ def package_tests_dir():
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
+    assert servicelib.__file__ is not None
     pdir = Path(servicelib.__file__).resolve().parent
     assert pdir.exists()
     return pdir
@@ -118,3 +124,54 @@ async def get_in_process_redis_client_sdk(
 ) -> AsyncIterable[Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]]:
     async with _get_redis_client_sdk(redis_service) as client:
         yield client
+
+
+@pytest.fixture
+async def redis_client_sdk(
+    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
+) -> AsyncIterator[RedisClientSDK]:
+    async with get_redis_client_sdk(RedisDatabase.RESOURCES) as client:
+        yield client
+
+
+@pytest.fixture
+def no_tracing_config() -> Iterable[None]:
+    # NOTE: `_current_tracing_config` is process-wide. `setup_log_tracing` sets it once and never
+    # resets it, so this fixture sets it to None and restores it afterwards. That keeps the test
+    # independent of the tests running before it.
+    token = _current_tracing_config.set(None)
+    try:
+        yield
+    finally:
+        _current_tracing_config.reset(token)
+
+
+@pytest.fixture
+def tracing_config_enabled(faker: Faker) -> Iterable[tuple[TracingConfig, InMemorySpanExporter]]:
+    """Configure tracing with an in-memory span exporter and make it the current config.
+
+    Yields the `TracingConfig` and the exporter holding the finished spans, so tests can
+    assert on spans without running a collector. Use this fixture in unit tests that have
+    no app lifespan to wire tracing. App tests use
+    `pytest_simcore.tracing.setup_tracing_fastapi` or `setup_tracing_aiohttp` instead.
+    """
+    tracing_settings = TracingSettings(
+        TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION="0.144.0",
+        TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT=AnyUrl("http://opentelemetry-collector"),
+        TRACING_OPENTELEMETRY_COLLECTOR_PORT=4318,
+        TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=1.0,
+    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
+    assert tracing_config.tracer_provider is not None
+
+    memory_exporter = InMemorySpanExporter()
+    tracing_config.tracer_provider.add_span_processor(SimpleSpanProcessor(memory_exporter))
+
+    # NOTE: `_current_tracing_config` is process-wide (set once by `setup_log_tracing` and
+    # never reset), so we explicitly force/restore it here to make tests independent of
+    # test order.
+    token = _current_tracing_config.set(tracing_config)
+    try:
+        yield tracing_config, memory_exporter
+    finally:
+        _current_tracing_config.reset(token)

@@ -5,9 +5,12 @@ on:
   pull_request:
     paths:
       - "services/static-webserver/client/source/class/**/*.js"
-      - "services/static-webserver/client/.eslintrc.json"
+      - "eslint.config.js"
       - "package.json"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: setup node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
       - name: install eslint toolchain
         run: npm install
       - name: run linter

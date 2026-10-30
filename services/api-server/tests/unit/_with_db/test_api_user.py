@@ -21,6 +21,8 @@ from simcore_service_api_server.models.schemas.profiles import Profile
 from simcore_service_api_server.services_http.webserver import AuthSession
 from starlette import status
 
+pytest_simcore_core_services_selection = ["postgres"]
+
 
 @pytest.fixture
 def mocked_webserver_rest_api(app: FastAPI):

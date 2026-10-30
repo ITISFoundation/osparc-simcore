@@ -116,7 +116,7 @@ async def _create_domain_file(
         project = await webserver_api.get_project(project_id=client_file.job_id)
         if len(project.workbench) > 1:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Job_id {project.uuid} is not a valid program job.",
             )
         node_id = next(iter(project.workbench.keys()))
@@ -201,6 +201,11 @@ def _get_spooled_file_size(file_io: IO) -> int:
     return file_size
 
 
+def _restore_openapi_binary_file_schema(json_schema: dict[str, Any]) -> None:
+    json_schema.pop("contentMediaType", None)
+    json_schema["format"] = "binary"
+
+
 @router.put(
     "/content",
     response_model=OutputFile,
@@ -209,7 +214,13 @@ def _get_spooled_file_size(file_io: IO) -> int:
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
-    file: Annotated[UploadFile, FileParam(...)],
+    file: Annotated[
+        UploadFile,
+        FileParam(
+            ...,
+            json_schema_extra=_restore_openapi_binary_file_schema,
+        ),
+    ],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     content_length: str | None = Header(None),
 ):

@@ -5,12 +5,12 @@ inputs:
   python-version:
     description: 'Python version to use'
     required: false
-    default: '3.13'
+    default: '3.14'
 
   uv-version:
-    description: 'UV version to use'
+    description: 'UV version to use (defaults to requirements/UV_VERSION)'
     required: false
-    default: '0.12.x'
+    default: ''
 
   cache-dependency-glob:
     description: 'Glob pattern for cache dependency files'
@@ -38,23 +38,31 @@ runs:
     - name: Setup Docker BuildX
       if: inputs.setup-docker == 'true'
       id: buildx
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       with:
         driver: docker-container
 
     - name: Expose GitHub runtime for BuildX
       if: inputs.expose-github-runtime == 'true'
-      uses: crazy-max/ghaction-github-runtime@v4
+      uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
 
     - name: Setup Python environment
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: ${{ inputs.python-version }}
 
+    # Single source of truth for the uv version (see requirements/UV_VERSION for the
+    # pinning note). tests/environment-setup/test_used_uv.py keeps other
+    # references (Dockerfiles, workflows, Makefile) in sync.
+    - name: Resolve UV version
+      id: uv-version
+      shell: bash
+      run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
+
     - name: Install UV
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       with:
-        version: ${{ inputs.uv-version }}
+        version: ${{ inputs.uv-version || steps.uv-version.outputs.version }}
         enable-cache: false
         cache-dependency-glob: ${{ inputs.cache-dependency-glob }}
 

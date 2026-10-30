@@ -1,10 +1,12 @@
 """Module that takes care of communications with dynamic services v0"""
 
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.tracing import setup_httpx_client_tracing
 
@@ -13,8 +15,8 @@ from ..utils.client_decorators import handle_errors, handle_retry
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
-    def on_startup() -> None:
+def configure_dynamic_services(app_lifespan: LifespanManager) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         client = httpx.AsyncClient(timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT)
         if get_tracing_config(app).tracing_enabled:
             setup_httpx_client_tracing(
@@ -25,14 +27,13 @@ def setup(app: FastAPI) -> None:
             app,
             client=client,
         )
+        try:
+            yield
+        finally:
+            await client.aclose()
+            del app.state.dynamic_services_client
 
-    async def on_shutdown() -> None:
-        client = ServicesClient.instance(app).client
-        await client.aclose()
-        del app.state.dynamic_services_client
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_lifespan)
 
 
 @dataclass

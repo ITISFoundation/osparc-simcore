@@ -11,16 +11,17 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.projects_networks import ProjectsNetworks
 from models_library.services_resources import (
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture(scope="session")
-def network_name() -> str:
-    return "pytest-simcore_interactive_services_subnet"
+def network_name(env_vars_for_docker_compose: EnvVarsDict) -> str:
+    return f"{env_vars_for_docker_compose['SWARM_STACK_NAME']}_interactive_services_subnet"
 
 
 @pytest.fixture
@@ -68,17 +69,15 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
 
 @pytest.fixture
 def mock_resource_usage_tracker(mocker: MockerFixture) -> None:
     base_module = "simcore_service_director_v2.modules.resource_usage_tracker_client"
-    service_pricing_plan = RutPricingPlanGet.model_validate(
-        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][1]
-    )
+    service_pricing_plan = RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][1])
     for unit in service_pricing_plan.pricing_units:
         unit.specific_info.aws_ec2_instances.clear()
     mocker.patch(

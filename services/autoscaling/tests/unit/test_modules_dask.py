@@ -4,6 +4,7 @@
 
 
 import asyncio
+import logging
 from collections.abc import Callable
 from typing import Any, Final
 
@@ -14,6 +15,7 @@ from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
     DASK_WORKER_THREAD_RESOURCE_NAME,
 )
+from dask_task_models_library.scheduler_utils import get_scheduler_details
 from faker import Faker
 from models_library.clusters import (
     ClusterAuthentication,
@@ -22,6 +24,7 @@ from models_library.clusters import (
 )
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.logging_tools import log_context
 from simcore_service_autoscaling.core.errors import (
     DaskNoWorkersError,
     DaskSchedulerNotFoundError,
@@ -36,7 +39,6 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.modules.dask import (
     DaskMonitoringSettings,
     DaskTask,
-    _get_scheduler_identity,
     _scheduler_client,
     add_instance_generic_resources,
     compute_cluster_total_resources,
@@ -146,8 +148,12 @@ async def test_list_processing_tasks(
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5)
     assert future_queued_task
 
+    # scheduler_info()'s "workers" is permanently empty for async clients (see
+    # get_scheduler_details's docstring), so we query the scheduler directly.
+    scheduler_identity = await get_scheduler_details(dask_spec_cluster_client)
+    worker_address = next(iter(scheduler_identity["workers"]))
     assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {
-        next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
+        worker_address: [
             DaskTask(
                 task_id=TypeAdapter(DaskTaskId).validate_python(future_queued_task.key),
                 required_resources=DaskTaskResources(threads=1),  # type: ignore
@@ -459,7 +465,12 @@ async def test_is_worker_retired(
 
 
 @pytest.fixture
-def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
+def more_than_5_num_workers(faker: Faker) -> int:
+    return faker.random.randint(6, 10)  # more than the default scheduler_info(n_workers=5) cap
+
+
+@pytest.fixture
+def dask_workers_config_with_more_than_5_workers(more_than_5_num_workers: int) -> dict[str, Any]:
     """Creates 6 workers - more than the scheduler_info(n_workers=5) default cap."""
     local_ip = get_localhost_ip().replace(".", "-")
     return {
@@ -471,19 +482,24 @@ def dask_workers_config_with_more_than_5_workers() -> dict[str, Any]:
                 "name": f"dask-sidecar_ip-{local_ip}_{utcnow()}_worker{i}",
             },
         }
-        for i in range(6)
+        for i in range(more_than_5_num_workers)
     }
 
 
-async def test_get_scheduler_identity_returns_all_workers_beyond_default_cap(
+async def test_get_scheduler_info_returns_all_workers_reliably(
+    disable_aiocache: None,
+    more_than_5_num_workers: int,
     dask_workers_config_with_more_than_5_workers: dict[str, Any],
     dask_scheduler_config: dict[str, Any],
 ):
-    """Regression test: scheduler_info() caps at 5 workers for async clients;
-    _get_scheduler_identity() must return all workers regardless."""
-    _NUM_WORKERS: Final[int] = 6
-    assert len(dask_workers_config_with_more_than_5_workers) == _NUM_WORKERS
-
+    """Regression test: client.scheduler_info() is a local cache that (a) used to cap results at
+    5 workers for async clients (distributed#9045) and (b), even after distributed#9308, is never
+    populated with any worker for async clients: its periodic background refresh always fetches
+    with n_workers=0, so scheduler_info()["workers"] stays permanently empty. `get_scheduler_details()`
+    uses a live RPC instead and must reliably return all workers."""
+    assert len(dask_workers_config_with_more_than_5_workers) == more_than_5_num_workers, (
+        f"Expected {more_than_5_num_workers} workers, got {len(dask_workers_config_with_more_than_5_workers)}"
+    )
     async with (
         distributed.SpecCluster(
             workers=dask_workers_config_with_more_than_5_workers,
@@ -492,17 +508,22 @@ async def test_get_scheduler_identity_returns_all_workers_beyond_default_cap(
         ) as cluster,
         distributed.Client(cluster.scheduler_address, asynchronous=True) as client,
     ):
-        # Demonstrate the bug: scheduler_info() with default n_workers=5 misses
-        # the 6th worker even when called with n_workers=-1 on an async client
-        info_default = client.scheduler_info()
-        assert len(info_default["workers"]) == 5, "scheduler_info() should return at most 5 workers (the default cap)"
-        info_minus1 = client.scheduler_info(n_workers=-1)
-        assert len(info_minus1["workers"]) == 5, (
-            "scheduler_info(n_workers=-1) is still broken for async clients - it ignores the argument"
-        )
+        # scheduler_info()'s periodic background refresh always fetches n_workers=0 for async
+        # clients, so its "workers" cache never converges - unlike the live RPC below.
+        assert client.scheduler_info()["workers"] == {}
 
-        # Our fix: _get_scheduler_identity() bypasses the cache and returns all workers
-        identity = await _get_scheduler_identity(client)
-        assert len(identity["workers"]) == _NUM_WORKERS, (
-            f"_get_scheduler_identity() must return all {_NUM_WORKERS} workers"
-        )
+        with log_context(logging.INFO, "wait for get_scheduler_details() to report all workers") as ctx:
+            async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
+                with attempt:
+                    identity = await get_scheduler_details(client)
+                    num_workers = len(identity["workers"])
+                    if num_workers != more_than_5_num_workers:
+                        ctx.logger.info(
+                            "attempt %s: get_scheduler_details() reports %s/%s workers, retrying...",
+                            attempt.retry_state.attempt_number,
+                            num_workers,
+                            more_than_5_num_workers,
+                        )
+                    assert num_workers == more_than_5_num_workers, (
+                        f"get_scheduler_details() must return all {more_than_5_num_workers} workers"
+                    )

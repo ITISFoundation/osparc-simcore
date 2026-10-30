@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
@@ -14,6 +15,7 @@ from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
 
 _TRACES_PATH: Final[Path] = Path("/traces")
+_HIDDEN_FILE_NAME: Final[str] = ".hidden_do_not_remove"
 
 
 def _ensure_path(path: Path) -> Path:
@@ -175,19 +177,36 @@ class MountedVolumes:
             yield f"{bind_path}:{state_path}"
 
 
-def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
-    settings: ApplicationSettings = app.state.settings
+async def volumes_fix_permissions(mounted_volumes: MountedVolumes) -> None:
+    # NOTE: by creating a hidden file on all mounted volumes
+    # the same permissions are ensured and avoids
+    # issues when starting the services
+    for volume_path in mounted_volumes.all_disk_paths_iter():
+        hidden_file = volume_path / _HIDDEN_FILE_NAME
+        hidden_file.write_text(
+            f"Directory must not be empty.\nCreated by {__file__}.\n"
+            "Required by oSPARC internals to properly enforce permissions on this "
+            "directory and all its files"
+        )
 
-    app.state.mounted_volumes = mounted_volumes = MountedVolumes(
-        service_run_id=settings.DY_SIDECAR_RUN_ID,
-        node_id=settings.DY_SIDECAR_NODE_ID,
-        inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
-        outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
-        user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
-        state_paths=settings.DY_SIDECAR_STATE_PATHS,
-        state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
-        compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
-        dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
-    )
 
-    return mounted_volumes
+def configure_mounted_fs(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        settings: ApplicationSettings = app.state.settings
+        app.state.mounted_volumes = mounted_volumes = MountedVolumes(
+            service_run_id=settings.DY_SIDECAR_RUN_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
+            inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
+            outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
+            user_preferences_path=settings.DY_SIDECAR_USER_PREFERENCES_PATH,
+            state_paths=settings.DY_SIDECAR_STATE_PATHS,
+            state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
+            compose_namespace=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
+            dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
+        )
+        # ensure volumes have uniform permissions before any other
+        # volume consumer (inputs, outputs, ...) starts
+        await volumes_fix_permissions(mounted_volumes)
+        yield
+
+    app_lifespan.add(_lifespan)

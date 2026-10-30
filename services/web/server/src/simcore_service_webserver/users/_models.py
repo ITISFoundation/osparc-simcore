@@ -83,7 +83,7 @@ class UserCredentialsTuple(NamedTuple):
 
 
 class PreviewApproval(BaseModel):
-    invitation_url: str
+    invitation_url: str | None = None
     message_content: dict[str, Any]
 
 

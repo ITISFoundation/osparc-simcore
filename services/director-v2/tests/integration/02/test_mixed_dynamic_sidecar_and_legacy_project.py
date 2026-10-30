@@ -51,7 +51,7 @@ pytest_simcore_core_services_selection = [
     "storage",
 ]
 
-pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
+pytest_simcore_ops_services_selection = ["adminer", "s3-storage", "portainer"]
 
 
 @pytest.fixture()
@@ -62,7 +62,7 @@ def mock_env(
     rabbit_service: RabbitSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: dict[str, str],
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     storage_service: URL,
     network_name: str,
     services_endpoint: dict[str, URL],
@@ -85,7 +85,6 @@ def mock_env(
         {
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-            "SWARM_STACK_NAME": "pytest-simcore",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
@@ -95,7 +94,7 @@ def mock_env(
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
             "DIRECTOR_HOST": director_host,
             "DIRECTOR_PORT": f"{director_port}",
@@ -147,6 +146,8 @@ async def dy_static_file_server_project(
     uuid_legacy: str,
     uuid_dynamic_sidecar: str,
     uuid_dynamic_sidecar_compose: str,
+    osparc_product_name: str,
+    grant_service_access_rights: Callable[..., dict[str, Any]],
 ) -> ProjectAtDB:
     def _assemble_node_data(spec: dict, label: str) -> dict[str, str]:
         return {
@@ -154,6 +155,18 @@ async def dy_static_file_server_project(
             "version": spec["image"]["tag"],
             "label": label,
         }
+
+    for spec in (
+        dy_static_file_server_service,
+        dy_static_file_server_dynamic_sidecar_service,
+        dy_static_file_server_dynamic_sidecar_compose_spec_service,
+    ):
+        grant_service_access_rights(
+            group_id=user_dict["primary_gid"],
+            service_key=spec["image"]["name"],
+            service_version=spec["image"]["tag"],
+            product_name=osparc_product_name,
+        )
 
     return await create_project(
         user=user_dict,

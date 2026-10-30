@@ -53,6 +53,14 @@ Example with fragment pointing to specific operation:
 <!--
 - No changes /updated ENV. SEE https://git.speag.com/oSparc/osparc-ops-deployment-configuration/-/blob/configs/README.md?ref_type=heads#how-to-update-env-variables)
 - SEE docs/devops-checklist.md
-- 🤖 If AI tools were used, add: Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
-  (see https://docs.kernel.org/process/coding-assistants.html#attribution)
 -->
+
+## AI assistance
+
+- [ ] 🤖 This PR was AI generated
+
+<!-- If checked, list the AI tools/models that contributed, one per line:
+     Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
+     (see https://docs.kernel.org/process/coding-assistants.html#attribution) -->
+
+Assisted-by:

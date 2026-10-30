@@ -14,6 +14,7 @@ import aiofiles.tempfile
 import httpx
 from fastapi import FastAPI
 from servicelib.container_utils import run_command_in_container
+from servicelib.ssl_context import get_shared_ssl_context
 from settings_library.utils_r_clone import resolve_provider
 
 from ..core.settings import ApplicationSettings
@@ -41,7 +42,7 @@ async def _rclone_config_file(settings: ApplicationSettings) -> AsyncIterator[Pa
     config_content = _R_CLONE_CONFIG.format(
         destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
-        destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
+        destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY.get_secret_value(),
         destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
         destination_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
     )
@@ -126,7 +127,9 @@ def _get_self_container_ip() -> str:
 async def _get_self_container() -> str:
     ip = _get_self_container_ip()
 
-    async with httpx.AsyncClient(transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")) as client:
+    async with httpx.AsyncClient(
+        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock", verify=get_shared_ssl_context())
+    ) as client:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
             if ip in json.dumps(entry):

@@ -94,7 +94,7 @@ qx.Class.define("osparc.share.Collaborators", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const label = osparc.dashboard.ResourceDetails.createIntroLabel().set({
-        value: qx.locale.Manager.tr("Any logged-in user with access to the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" can open it"),
+        value: qx.locale.Manager.tr("Any logged-in user with access to the %1 can open it", osparc.product.Utils.getStudyAlias()),
       });
       vBox.add(label);
 
@@ -130,9 +130,9 @@ qx.Class.define("osparc.share.Collaborators", {
 
         const label = osparc.dashboard.ResourceDetails.createIntroLabel();
         if (permalink["is_public"]) {
-          label.setValue(qx.locale.Manager.tr("Anyone on the internet with the link can open this ") + osparc.product.Utils.getTemplateAlias());
+          label.setValue(qx.locale.Manager.tr("Anyone on the internet with the link can open this %1", osparc.product.Utils.getTemplateAlias()));
         } else {
-          label.setValue(qx.locale.Manager.tr("Any logged-in user with the link can copy and open this ") + osparc.product.Utils.getTemplateAlias());
+          label.setValue(qx.locale.Manager.tr("Any logged-in user with the link can copy and open this %1", osparc.product.Utils.getTemplateAlias()));
         }
         vBox.add(label);
 
@@ -302,7 +302,7 @@ qx.Class.define("osparc.share.Collaborators", {
         case "hypertool":
         case "service": {
           const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType);
-          return this.tr("This section provides an overview of all users and organizations who have access to the " + resourceAlias + " and their assigned roles. Depending on your permissions, you may be able to modify access or update roles.");
+          return this.tr("This section provides an overview of all users and organizations who have access to the %1 and their assigned roles. Depending on your permissions, you may be able to modify access or update roles.", resourceAlias);
         }
       }
       return null;

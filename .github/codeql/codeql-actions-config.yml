@@ -1,0 +1,8 @@
+name: "osparc-simcore CodeQL config (GitHub Actions)"
+
+disable-default-queries: false
+
+# codeql-config.yml allow-lists service source trees, which hold no workflow
+# file; the Actions analysis has to be pointed at .github itself
+paths:
+  - .github

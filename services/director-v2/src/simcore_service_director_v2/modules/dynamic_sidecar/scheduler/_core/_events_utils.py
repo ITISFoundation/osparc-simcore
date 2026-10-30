@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
 from common_library.json_serialization import json_loads
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
@@ -71,6 +72,7 @@ from ....instrumentation import (
     get_instrumentation,
     get_metrics_labels,
     get_rate,
+    has_instrumentation,
     track_duration,
 )
 from ....long_running_tasks import get_long_running_client_helper
@@ -265,7 +267,7 @@ async def service_save_state(
 
     with track_duration() as duration:
         size = await sidecars_client.save_service_state(scheduler_data.endpoint, progress_callback=progress_callback)
-    if size and size > 0:
+    if size and size > 0 and has_instrumentation(app):
         get_instrumentation(app).dynamic_sidecar_metrics.push_service_state_rate.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(get_rate(size, duration.to_float()))
@@ -308,12 +310,26 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         swarm_stack_name=swarm_stack_name,
     )
     if scheduler_data.dynamic_sidecar.docker_node_id:
-        await force_container_cleanup(
-            rabbit_rpc_client,
-            docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-            swarm_stack_name=swarm_stack_name,
-            node_id=scheduler_data.node_uuid,
-        )
+        try:
+            await force_container_cleanup(
+                rabbit_rpc_client,
+                docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                swarm_stack_name=swarm_stack_name,
+                node_id=scheduler_data.node_uuid,
+            )
+        except RemoteMethodNotRegisteredError as e:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    f"Could not force container cleanup for {scheduler_data.service_name}",
+                    error=e,
+                    error_context={
+                        "node_uuid": f"{scheduler_data.node_uuid}",
+                        "service_name": scheduler_data.service_name,
+                        "docker_node_id": scheduler_data.dynamic_sidecar.docker_node_id,
+                    },
+                    tip=("The container might have not been removed and requires manual intervention."),
+                )
+            )
 
     await task_progress.update(message="removing network", percent=0.2)
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
@@ -333,7 +349,18 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 NoServiceVolumesFoundRPCError,
                 RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
             ) as e:
-                _logger.info("Could not remove volumes, because: '%s'", e)
+                _logger.warning(
+                    **create_troubleshooting_log_kwargs(
+                        f"Could not remove volumes for {scheduler_data.service_name}",
+                        error=e,
+                        error_context={
+                            "node_uuid": f"{scheduler_data.node_uuid}",
+                            "service_name": scheduler_data.service_name,
+                            "docker_node_id": scheduler_data.dynamic_sidecar.docker_node_id,
+                        },
+                        tip=("The volumes might have not been removed and require manual intervention."),
+                    )
+                )
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
@@ -450,7 +477,7 @@ async def attempt_pod_removal_and_data_saving(app: FastAPI, scheduler_data: Sche
     )
 
     # remove sidecar's api client
-    remove_sidecars_client(app, scheduler_data.node_uuid)
+    await remove_sidecars_client(app, scheduler_data.node_uuid)
 
     # instrumentation
     message = InstrumentationRabbitMessage(
@@ -470,7 +497,7 @@ async def attempt_pod_removal_and_data_saving(app: FastAPI, scheduler_data: Sche
     # metrics
 
     stop_duration = scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
-    if stop_duration is not None:
+    if stop_duration is not None and has_instrumentation(app):
         get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(stop_duration)
@@ -552,7 +579,7 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
     async def _pull_output_ports_with_metrics() -> None:
         with track_duration() as duration:
             size: int = await sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint)
-        if size and size > 0:
+        if size and size > 0 and has_instrumentation(app):
             get_instrumentation(app).dynamic_sidecar_metrics.output_ports_pull_rate.labels(
                 **get_metrics_labels(scheduler_data)
             ).observe(get_rate(size, duration.to_float()))
@@ -561,15 +588,16 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
         with track_duration() as duration:
             await sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint)
 
-        get_instrumentation(app).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
-            **get_metrics_labels(scheduler_data)
-        ).observe(duration.to_float())
+        if has_instrumentation(app):
+            get_instrumentation(app).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
+                **get_metrics_labels(scheduler_data)
+            ).observe(duration.to_float())
 
     async def _restore_service_state_with_metrics() -> None:
         with track_duration() as duration:
             size = await sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
 
-        if size and size > 0:
+        if size and size > 0 and has_instrumentation(app):
             get_instrumentation(app).dynamic_sidecar_metrics.pull_service_state_rate.labels(
                 **get_metrics_labels(scheduler_data)
             ).observe(get_rate(size, duration.to_float()))

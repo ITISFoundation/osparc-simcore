@@ -20,6 +20,7 @@ from typing import cast
 
 import arrow
 from aws_library.ec2 import (
+    PRODUCT_NAME_TAG_KEY,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
@@ -67,7 +68,8 @@ def _record_instance_ready_metrics(app: FastAPI, *, instance: EC2InstanceData) -
     """Record metrics for instances ready to pull images."""
     if has_instrumentation(app):
         get_instrumentation(app).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
-            instance_type=instance.type
+            instance_type=instance.type,
+            product_name=f"{instance.tags.get(PRODUCT_NAME_TAG_KEY)}",
         ).observe((arrow.utcnow().datetime - instance.launch_time).total_seconds())
 
 
@@ -353,7 +355,8 @@ async def _handle_pool_image_pulling(
                         get_instrumentation(
                             app
                         ).buffer_machines_pools_metrics.instances_completed_pulling_seconds.labels(
-                            instance_type=instance.type
+                            instance_type=instance.type,
+                            product_name=f"{instance.tags.get(PRODUCT_NAME_TAG_KEY)}",
                         ).observe((ssm_command.finish_time - ssm_command.start_time).total_seconds())
                     instances_to_stop.add(instance)
                 case "InProgress" | "Pending":

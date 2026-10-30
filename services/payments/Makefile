@@ -1,21 +1,18 @@
 #
 # DEVELOPMENT recipes for payments
 #
-include ../../scripts/common.Makefile
-include ../../scripts/common-service.Makefile
+.DEFAULT_GOAL := help
+
+include ../../scripts/makefiles/common.mk
+include ../../scripts/makefiles/service.mk
 
 
-.env-ignore:
-	$(APP_CLI_NAME) echo-dotenv --auto-password > $@
+ENV_IGNORE_FLAGS := --auto-password
 
 .PHONY: openapi.json
 openapi-specs: openapi.json
 openapi.json: .env-ignore ## produces openapi.json
-	# generating openapi specs file (need to have the environment set for this)
-	@set -o allexport; \
-	source $<; \
-	set +o allexport; \
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $@
+	$(call generate_and_validate_openapi,$<,$@)
 
 
 # NOTE: Create using `ln -s path/to/osparc-config/repo.config .env-secret`

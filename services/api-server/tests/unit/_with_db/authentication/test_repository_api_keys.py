@@ -7,6 +7,8 @@
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from simcore_service_api_server.repository.api_keys import ApiKeysRepository
 
+pytest_simcore_core_services_selection = ["postgres"]
+
 
 async def test_get_user_with_valid_credentials(
     api_key_in_db: ApiKeyInDB,
@@ -28,7 +30,7 @@ async def test_get_user_with_invalid_credentials(
     # Generate a fake API key
 
     # Act - use wrong secret
-    result = await api_key_repo.get_user(api_key=api_key_in_db.api_key, api_secret="wrong_secret")
+    result = await api_key_repo.get_user(api_key=api_key_in_db.api_key, api_secret="wrong_secret")  # noqa: S106
 
     # Assert
     assert result is None

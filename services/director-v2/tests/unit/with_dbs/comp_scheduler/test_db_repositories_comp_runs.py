@@ -61,14 +61,18 @@ async def test_get(
     with_product: dict[str, Any],
 ):
     with pytest.raises(ComputationalRunNotFoundError):
-        await CompRunsRepository(sqlalchemy_async_engine).get(fake_user_id, fake_project_id)
+        await CompRunsRepository(sqlalchemy_async_engine).get(
+            user_id=fake_user_id,
+            project_id=fake_project_id,
+        )
 
     published_project = await publish_project()
     assert published_project.project.prj_owner
     # there is still no comp run created
     with pytest.raises(ComputationalRunNotFoundError):
         await CompRunsRepository(sqlalchemy_async_engine).get(
-            published_project.project.prj_owner, published_project.project.uuid
+            user_id=published_project.project.prj_owner,
+            project_id=published_project.project.uuid,
         )
 
     await create_comp_run(
@@ -77,7 +81,8 @@ async def test_get(
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
     )
     comp_run_db = await CompRunsRepository(sqlalchemy_async_engine).get(
-        published_project.project.prj_owner, published_project.project.uuid
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
     )
     assert comp_run_db.dag_adjacency_list == published_project.pipeline.dag_adjacency_list
 
@@ -325,7 +330,9 @@ async def test_update(
 ):
     # this updates nothing but also does not complain
     updated = await CompRunsRepository(sqlalchemy_async_engine).update(
-        fake_user_id, fake_project_id, faker.pyint(min_value=1)
+        user_id=fake_user_id,
+        project_id=fake_project_id,
+        iteration=faker.pyint(min_value=1),
     )
     assert updated is None
     # now let's create a valid one
@@ -347,9 +354,9 @@ async def test_update(
     assert created == got
 
     updated = await CompRunsRepository(sqlalchemy_async_engine).update(
-        created.user_id,
-        created.project_uuid,
-        created.iteration,
+        user_id=created.user_id,
+        project_id=created.project_uuid,
+        iteration=created.iteration,
         scheduled=datetime.datetime.now(datetime.UTC),
     )
     assert updated is not None

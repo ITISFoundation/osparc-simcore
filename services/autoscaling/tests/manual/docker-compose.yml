@@ -19,13 +19,13 @@ services:
       start_period: 5s
 
   redis:
-    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
+    image: "valkey/valkey:7.2.15@sha256:828b1cbb1c258e02b9cd9588063fa997e097444e610d3f3c00d43e21400e2b8d"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     # ports:
     #   - "6379:6379"
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50

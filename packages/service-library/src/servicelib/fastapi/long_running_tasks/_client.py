@@ -1,5 +1,5 @@
-import asyncio
 import functools
+import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Final
@@ -85,7 +85,7 @@ def retry_on_http_errors(
     """
     Will retry the request on `httpx.HTTPError`.
     """
-    assert asyncio.iscoroutinefunction(request_func)
+    assert inspect.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "HttpClient", *args, **kwargs) -> Any:
@@ -201,23 +201,12 @@ class HttpClient:
             )
 
 
-def setup(
+def configure_client(
     app: FastAPI,
     *,
     router_prefix: str = "",
     http_requests_timeout: PositiveFloat = _DEFAULT_HTTP_REQUESTS_TIMEOUT,
-):
-    """
-    - `router_prefix` by default it is assumed the server mounts the APIs on
-        `/task/...` this will assume the APIs are as following
-        `{router_prefix}/task/...`
-    - `http_requests_timeout` short requests are used to interact with the
-        server API, a low timeout is sufficient
-    """
-
-    async def on_startup() -> None:
-        app.state.long_running_client_configuration = ClientConfiguration(
-            router_prefix=router_prefix, default_timeout=http_requests_timeout
-        )
-
-    app.add_event_handler("startup", on_startup)
+) -> None:
+    app.state.long_running_client_configuration = ClientConfiguration(
+        router_prefix=router_prefix, default_timeout=http_requests_timeout
+    )

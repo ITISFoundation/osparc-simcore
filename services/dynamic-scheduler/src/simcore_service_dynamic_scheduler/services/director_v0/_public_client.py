@@ -1,5 +1,5 @@
 import logging
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import httpx
 from fastapi import FastAPI
@@ -32,7 +32,7 @@ def _unenvelope_or_raise_error(resp: httpx.Response) -> dict | list:
 
 
 class DirectorV0PublicClient(SingletonInAppStateMixin):
-    app_state_name: str = "director_v0_public_client"
+    app_state_name: ClassVar[str] = "director_v0_public_client"
 
     def __init__(self, app: FastAPI) -> None:
         self.app = app

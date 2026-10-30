@@ -2,11 +2,11 @@
 exclude: "^.venv$|^.cache$|^.pytest_cache$|^services/static-webserver/client/qx_libs/"
 fail_fast: false
 default_language_version:
-  python: python3.13
+  python: python3.14
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.14.14
+    rev: v0.16.5
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -32,6 +32,12 @@ repos:
         args: [--allow-missing-credentials]
       - id: debug-statements
       - id: no-commit-to-branch
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.414
+    hooks:
+      - id: pyright
+        name: pyright
+        types: [file, python]
   - repo: local
     hooks:
       - id: pytest-testit
@@ -47,8 +53,39 @@ repos:
         types: [file]
         entry: scripts/precommit/validate-docker-compose.bash
   - repo: https://github.com/crate-ci/typos
-    rev: v1.40.0
+    rev: v1.50.0
     hooks:
       - id: typos
         name: spellchecker
         exclude: "(^|/)generated_models/|^services/static-webserver/client/source/translation/.*\\.po$|^packages/common-library/src/common_library/locale/.*\\.po$"
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.23.3
+    hooks:
+      - id: markdownlint-cli2
+        name: markdown-linter
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        name: yaml-linter
+        args: ["--config-file", ".yamllint.yaml"]
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        name: actionlint
+  - repo: local
+    hooks:
+      - id: ensure-lychee-version-argument-matches-rev
+        name: ensure lychee version argument matches rev
+        language: script
+        entry: scripts/precommit/ensure_lychee_version_argument_matches_rev.py
+        files: ^\.pre-commit-config\.yaml$
+        pass_filenames: false
+  - repo: https://github.com/lycheeverse/lychee.git
+    rev: lychee-v0.24.2
+    hooks:
+      - id: lychee
+        name: markdown-link-checker
+        args: ["LYCHEE_VERSION=0.24.2", "--config", ".lychee.toml"]
+        types_or: [markdown]

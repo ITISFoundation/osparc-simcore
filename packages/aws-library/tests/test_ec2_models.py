@@ -198,6 +198,11 @@ def test_resources_ge_operator(a: Resources, b: Resources, a_greater_or_equal_th
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
             False,
         ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "custom-gpu"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "custom-gpu"}),
+            False,  # equal non-comparable (and non-boolean) strings -> not greater, resources are equal
+        ),
     ],
     ids=str,
 )
@@ -385,3 +390,12 @@ def test_ec2_instance_boot_specific_with_invalid_custom_script(faker: Faker):
 
     with pytest.raises(ValueError, match="Invalid bash call"):
         EC2InstanceBootSpecific(**invalid_model)
+
+
+def test_ec2_instance_boot_specific_with_valid_custom_script(faker: Faker):
+    valid_model = EC2InstanceBootSpecific.model_json_schema()["examples"][0]
+    model_with_valid_script = {**valid_model, "custom_boot_scripts": ["echo 'all good here'"]}
+
+    instance = EC2InstanceBootSpecific(**model_with_valid_script)
+
+    assert instance.custom_boot_scripts == ["echo 'all good here'"]

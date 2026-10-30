@@ -41,6 +41,9 @@ class OsparcErrorMixin(PydanticErrorMixin):
         # the actual message visible in those cases too.
         return f"{type(self).__name__}({self._build_message()!r})"
 
+    def __reduce__(self) -> tuple[Any, tuple[type["OsparcErrorMixin"]], dict[str, Any]]:
+        return type(self).__new__, (type(self),), self.error_context()
+
     def _build_message(self) -> str:
         # NOTE: safe. Does not raise KeyError
         message = self.msg_template.format_map(_DefaultDict(**self.__dict__))

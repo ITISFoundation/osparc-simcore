@@ -19,6 +19,7 @@ from ...resource_manager.user_sessions import (
     PROJECT_ID_KEY,
     managed_resource,
 )
+from ...signals import SIGNAL_USER_CONNECTED, SIGNAL_USER_DISCONNECTED
 from .._projects_service import (
     conditionally_unsubscribe_project_logs_across_replicas,
     retrieve_and_notify_project_locked_state,
@@ -69,18 +70,20 @@ async def _on_user_disconnected(
 
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
+    # NOTE: both groups of tasks run concurrently and independently (reraise=False) so a
+    # failure notifying the project-locked state (e.g. an RPC timeout) can never prevent
+    # the log-unsubscription from running, which would otherwise leak a topic binding
     await logged_gather(
-        *[retrieve_and_notify_project_locked_state(user_id, prj, app, notify_only_prj_user=True) for prj in projects]
+        *[retrieve_and_notify_project_locked_state(user_id, prj, app, notify_only_prj_user=True) for prj in projects],
+        *[conditionally_unsubscribe_project_logs_across_replicas(app, ProjectID(prj), user_id) for prj in projects],
+        reraise=False,
     )
-
-    for _project_id in projects:  # At the moment, only 1 is expected
-        await conditionally_unsubscribe_project_logs_across_replicas(app, ProjectID(_project_id), user_id)
 
 
 def setup_project_observer_events(app: web.Application) -> None:
     setup_observer_registry(app)
 
-    register_observer(app, _on_user_connected, event="SIGNAL_USER_CONNECTED")
-    register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
+    register_observer(app, _on_user_connected, event=SIGNAL_USER_CONNECTED)
+    register_observer(app, _on_user_disconnected, event=SIGNAL_USER_DISCONNECTED)
 
     _logger.info("App registered events (at this point):\n%s", registered_observers_report(app))

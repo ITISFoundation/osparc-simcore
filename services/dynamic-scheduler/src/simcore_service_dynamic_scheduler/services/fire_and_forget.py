@@ -1,5 +1,6 @@
 from asyncio import Task
 from collections.abc import AsyncIterator
+from typing import ClassVar
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
@@ -7,7 +8,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
 class FireAndForgetCollection(SingletonInAppStateMixin):
-    app_state_name: str = "fire_and_forget_collection"
+    app_state_name: ClassVar[str] = "fire_and_forget_collection"
 
     def __init__(self, app: FastAPI) -> None:
         self.app = app

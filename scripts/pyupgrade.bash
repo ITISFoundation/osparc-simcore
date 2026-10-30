@@ -8,7 +8,7 @@ IFS=$'\n\t'
 #
 #
 # NOTE: check --py* flag in CLI when PYTHON_VERSION is modified
-PYTHON_VERSION=3.13.9
+PYTHON_VERSION=3.14.10
 IMAGE_NAME="local/pyupgrade-devkit:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
@@ -18,13 +18,13 @@ Build() {
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
     - <<EOF
-FROM python:${PYTHON_VERSION}-slim-bookworm
+FROM python:${PYTHON_VERSION}-slim-trixie
 
 RUN uv pip install \
   pyupgrade
 
 ENTRYPOINT ["pyupgrade", \
-  "--py313-plus" ]
+  "--py314-plus" ]
 EOF
 }
 

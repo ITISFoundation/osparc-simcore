@@ -9,22 +9,29 @@
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
+import pytest
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_directorv2.comp_runs import (
     ComputationCollectionRunRpcGetPage,
     ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGetPage,
+    ComputationRunStateBatchGetProjectIDs,
+    ComputationRunStateRpcGet,
     ComputationTaskRpcGetPage,
 )
 from models_library.computations import CollectionRunID
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
+from pydantic import TypeAdapter, ValidationError
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
     computations as rpc_computations,
 )
 from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_service_director_v2.api.rpc import _computations as rpc_api_computations
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_run_snapshot_tasks import (
     CompRunSnapshotTaskDBGet,
@@ -36,6 +43,69 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
+
+
+async def test_rpc_batch_get_computations_latest_states_rejects_oversized_batch():
+    max_batch_size = TypeAdapter(ComputationRunStateBatchGetProjectIDs).json_schema()["maxItems"]
+
+    with pytest.raises(ValidationError, match=f"at most {max_batch_size} items"):
+        await rpc_api_computations.batch_get_computations_latest_states(
+            FastAPI(),
+            project_ids=[ProjectID(f"{uuid4()}") for _ in range(max_batch_size + 1)],
+        )
+
+
+async def test_rpc_list_computations_latest_states(
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    fake_workbench_adjacency: dict[str, Any],
+    fake_workbench_without_outputs: dict[str, Any],
+    rpc_client: RabbitMQRPCClient,
+    with_product: dict[str, Any],
+):
+    owner = create_registered_user()
+    other_user = create_registered_user()
+    project_with_multiple_runs = await create_project(owner, workbench=fake_workbench_without_outputs)
+    project_without_runs = await create_project(owner, workbench=fake_workbench_without_outputs)
+    project_with_other_user_run = await create_project(owner, workbench=fake_workbench_without_outputs)
+
+    await create_comp_run(
+        user=owner,
+        project=project_with_multiple_runs,
+        result=RunningState.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    await create_comp_run(
+        user=owner,
+        project=project_with_multiple_runs,
+        result=RunningState.SUCCESS,
+        iteration=2,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    await create_comp_run(
+        user=other_user,
+        project=project_with_other_user_run,
+        result=RunningState.FAILED,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+
+    assert await rpc_computations.batch_get_computations_latest_states(rpc_client, project_ids=[]) == []
+
+    output = await rpc_computations.batch_get_computations_latest_states(
+        rpc_client,
+        project_ids=[
+            project_with_multiple_runs.uuid,
+            project_without_runs.uuid,
+            project_with_other_user_run.uuid,
+        ],
+    )
+
+    assert all(isinstance(item, ComputationRunStateRpcGet) for item in output)
+    assert {item.project_uuid: item.state for item in output} == {
+        project_with_multiple_runs.uuid: RunningState.SUCCESS,
+        project_with_other_user_run.uuid: RunningState.FAILED,
+    }
 
 
 async def test_rpc_list_computation_runs_and_tasks(
@@ -55,7 +125,7 @@ async def test_rpc_list_computation_runs_and_tasks(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks_from_project(user=user, project=proj, state=StateType.PUBLISHED, progress=None)
+    await create_tasks_from_project(user=user, project=proj, state=StateType.PUBLISHED, progress=None)
     comp_runs = await create_comp_run(
         user=user,
         project=proj,
@@ -71,7 +141,7 @@ async def test_rpc_list_computation_runs_and_tasks(
     assert isinstance(output, ComputationRunRpcGetPage)
     assert output.items[0].iteration == 1
 
-    comp_runs_2 = await create_comp_run(
+    await create_comp_run(
         user=user,
         project=proj,
         result=RunningState.PENDING,
@@ -88,7 +158,7 @@ async def test_rpc_list_computation_runs_and_tasks(
     assert output.items[0].started_at is not None
     assert output.items[0].ended_at is None
 
-    comp_runs_3 = await create_comp_run(
+    await create_comp_run(
         user=user,
         project=proj,
         result=RunningState.SUCCESS,
@@ -134,8 +204,8 @@ async def test_rpc_list_computation_runs_with_filtering(
         project_id=f"{proj_1.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks_from_project(user=user, project=proj_1, state=StateType.PUBLISHED, progress=None)
-    comp_runs = await create_comp_run(
+    await create_tasks_from_project(user=user, project=proj_1, state=StateType.PUBLISHED, progress=None)
+    await create_comp_run(
         user=user,
         project=proj_1,
         result=RunningState.PUBLISHED,
@@ -147,8 +217,8 @@ async def test_rpc_list_computation_runs_with_filtering(
         project_id=f"{proj_2.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks_from_project(user=user, project=proj_2, state=StateType.SUCCESS, progress=None)
-    comp_runs = await create_comp_run(
+    await create_tasks_from_project(user=user, project=proj_2, state=StateType.SUCCESS, progress=None)
+    await create_comp_run(
         user=user,
         project=proj_2,
         result=RunningState.SUCCESS,

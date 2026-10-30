@@ -111,11 +111,11 @@ async def test_request_validation_error_handler(initialized_app: FastAPI, client
     response = await client.get("/test")
     assert_status(
         response,
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         None,
         expected_msg=_error_msg,
     )
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 async def test_validation_error_handler(initialized_app: FastAPI, client: AsyncClient):

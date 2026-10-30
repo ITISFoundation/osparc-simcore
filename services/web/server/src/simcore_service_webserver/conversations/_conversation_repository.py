@@ -261,29 +261,6 @@ async def get(
         return ConversationGetDB.model_validate(row)
 
 
-async def get_for_user(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    conversation_id: ConversationID,
-    user_group_id: GroupID,
-) -> ConversationGetDB:
-    select_query = (
-        select(*_SELECTION_ARGS)
-        .select_from(conversations)
-        .where(
-            (conversations.c.conversation_id == f"{conversation_id}") & (conversations.c.user_group_id == user_group_id)
-        )
-    )
-
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(select_query)
-        row = result.one_or_none()
-        if row is None:
-            raise ConversationErrorNotFoundError(conversation_id=conversation_id)
-        return ConversationGetDB.model_validate(row)
-
-
 async def update(
     app: web.Application,
     connection: AsyncConnection | None = None,

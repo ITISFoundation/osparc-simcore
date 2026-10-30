@@ -66,10 +66,10 @@ async def test_resend_2fa_workflow(
         autospec=True,
     )
 
-    mock_get_2fa_code = mocker.patch(
-        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.get_2fa_code",
+    mock_has_2fa_code = mocker.patch(
+        "simcore_service_webserver.login._controller.rest.twofa._twofa_service.has_2fa_code",
         autospec=True,
-        return_value=None,  # <-- Emulates code expired
+        return_value=False,  # <-- Emulates code expired
     )
 
     # login
@@ -107,7 +107,7 @@ async def test_resend_2fa_workflow(
     assert data["parameters"]["expiration_2fa"]
     assert not error
 
-    assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
+    assert mock_has_2fa_code.call_count == 1, "Emulates code expired"
     assert mock_send_sms_code_2.call_count == 2, "SMS was not sent??"
 
     # resend code via email
@@ -126,5 +126,5 @@ async def test_resend_2fa_workflow(
     assert data["parameters"]["expiration_2fa"]
     assert not error
 
-    assert mock_get_2fa_code.call_count == 2, "Emulates code expired"
+    assert mock_has_2fa_code.call_count == 2, "Emulates code expired"
     assert mock_send_email_code.call_count == 1, "Email was not sent??"

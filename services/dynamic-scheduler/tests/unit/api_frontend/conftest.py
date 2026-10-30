@@ -9,6 +9,7 @@ from contextlib import suppress
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI, status
+from fastapi.routing import _IncludedRouter
 from helpers import SCREENSHOT_SUFFIX, SCREENSHOTS_PATH
 from httpx import AsyncClient
 from hypercorn.asyncio import serve
@@ -34,7 +35,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def use_internal_scheduler() -> bool:
+def use_internal_scheduler() -> None:
     pytest.fail("please define use_internal_scheduler fixture in your tests folder")
 
 
@@ -81,6 +82,10 @@ def reset_nicegui_app() -> None:
     for path in all_page_routes:
         app.remove_route(path)
 
+    app.routes[:] = [route for route in app.routes if not isinstance(route, _IncludedRouter)]
+    # FastAPI 0.141 caches lazy included routes; direct route removal must invalidate that cache.
+    app.router._mark_routes_changed()  # pylint: disable=protected-access  # noqa: SLF001
+
     for route in list(app.routes):
         if (
             isinstance(route, Route)
@@ -90,6 +95,7 @@ def reset_nicegui_app() -> None:
         ):
             app.remove_route(route.path)
 
+    Client.instances.clear()
     app.middleware_stack = None
     app.user_middleware.clear()
 

@@ -42,12 +42,6 @@ from ..docker_states import (
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
 from ._utils import docker_client
 
-NO_PENDING_OVERWRITE = {
-    ServiceState.FAILED,
-    ServiceState.COMPLETE,
-    ServiceState.RUNNING,
-}
-
 _logger = logging.getLogger(__name__)
 
 
@@ -409,7 +403,7 @@ async def get_or_create_networks_ids(networks: list[str], project_id: ProjectID)
                     # multiple calls to this function can be processed in parallel
                     # this will cause creation to fail, it is OK to assume it already
                     # exist an raise an error (see below)
-                    _logger.info("Network %s might already exist, skipping creation", network)
+                    _logger.debug("Network %s might already exist, skipping creation", network)
 
         networks_ids = await logged_gather(*[_get_id_from_name(client, network) for network in networks])
 

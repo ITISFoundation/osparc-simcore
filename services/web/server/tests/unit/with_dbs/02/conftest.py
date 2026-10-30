@@ -21,16 +21,20 @@ from aioresponses import aioresponses
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.projects_nodes import Node, NodeID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
+    SERVICE_RESOURCES_DICT_EXAMPLES,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
 )
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.project_nodes_pricing import (
+    fake_compute_node_resources_for_hardware,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import SocketHandlers
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
@@ -38,6 +42,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
+from simcore_service_webserver.director_v2 import _director_v2_service
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDATED_EVENT
 
@@ -50,9 +55,23 @@ def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyP
 
 
 @pytest.fixture
+def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
+    """director-v2's sizing RPC answers with FIXED machine types (see
+    `pytest_simcore.helpers.project_nodes_pricing`) so sizing assertions are
+    deterministic. The real RPC implementation is pinned by director-v2's own tests."""
+
+    mocked = mocker.patch(
+        "servicelib.rabbitmq.rpc_interfaces.director_v2.resources.compute_node_resources_for_hardware",
+        autospec=True,
+    )
+    mocked.side_effect = fake_compute_node_resources_for_hardware
+    return mocked
+
+
+@pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
-    return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
+    return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+        SERVICE_RESOURCES_DICT_EXAMPLES[0],
     )
 
 
@@ -224,9 +243,16 @@ async def project_db_cleaner(client: TestClient):
     await delete_all_projects(client.app)
 
 
-@pytest.fixture(autouse=True)
-async def mocked_director_v2(director_v2_service_mock: aioresponses) -> None:
-    pass
+@pytest.fixture
+async def mocked_director_v2(
+    director_v2_service_mock: aioresponses,
+    mocker: MockerFixture,
+) -> mock.AsyncMock:
+    return mocker.patch(
+        f"{_director_v2_service.__name__}.computations.batch_get_computations_latest_states",
+        spec=True,
+        return_value=[],
+    )
 
 
 @pytest.fixture()

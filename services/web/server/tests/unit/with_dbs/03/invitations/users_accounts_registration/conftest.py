@@ -44,6 +44,9 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         {
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_DB_LISTENER": "0",
+            # NOTE: enabled WEBSERVER_WALLETS to test (SIGNAL_ON_USER_CONFIRMATION
+            # observer in wallets/_events.py)
+            "WEBSERVER_WALLETS": "1",
         },
     )
 
@@ -281,6 +284,18 @@ def mock_notifications_preview_template(mocker: MockerFixture) -> AsyncMock:
                         "<p>We regret to inform you that your account request has been denied.</p>"
                     ),
                     "body_text": f"Dear {first_name}, your account request has been denied.",
+                },
+            )
+        if ref.template_name == "account_added_to_product":
+            return TemplatePreview(
+                ref=TemplateRef(channel=Channel.email, template_name="account_added_to_product"),
+                message_content={
+                    "subject": "You now have access to this product",
+                    "body_html": (
+                        f"<p>Dear {first_name},</p>"
+                        "<p>You now have access to this product. Please continue using your existing password.</p>"
+                    ),
+                    "body_text": f"Dear {first_name}, you now have access to this product.",
                 },
             )
         msg = f"Unexpected template_name={ref.template_name}"

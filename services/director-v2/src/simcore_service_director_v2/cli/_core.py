@@ -2,10 +2,11 @@ import asyncio
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from enum import Enum
+from enum import StrEnum
 
 import typer
 from fastapi import FastAPI, status
+from fastapi_lifespan_manager import LifespanManager
 from httpx import AsyncClient, HTTPError
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
@@ -16,10 +17,13 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
+from servicelib.ssl_context import get_shared_ssl_context
+from servicelib.tracing import TracingConfig
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
 
+from .._meta import APP_NAME
 from ..core.application import create_base_app
 from ..core.settings import AppSettings
 from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
@@ -35,22 +39,24 @@ from ._client import ThinDV2LocalhostClient
 
 @asynccontextmanager
 async def _initialized_app(*, only_db: bool = False) -> AsyncIterator[FastAPI]:
-    app = create_base_app()
-    settings: AppSettings = app.state.settings
+    settings = AppSettings.create_from_envs()
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.DIRECTOR_V2_TRACING)
+    app_lifespan: LifespanManager = LifespanManager()
+    app = create_base_app(settings, tracing_config, app_lifespan)
+
     # Initialize minimal required components for the application
-    db.setup(app, settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
+    db.configure_db(app_lifespan, settings=settings.POSTGRES, tracing_config=None, monitoring_enabled=False)
 
     if not only_db:
-        dynamic_sidecar.setup(app)
-        director_v0.setup(
-            app,
+        dynamic_sidecar.configure_dynamic_sidecar(app, app_lifespan)
+        director_v0.configure_director_v0(
+            app_lifespan,
             director_v0_settings=settings.DIRECTOR_V0,
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
-    await app.router.startup()
-    yield app
-    await app.router.shutdown()
+    async with app_lifespan(app):
+        yield app
 
 
 ### PROJECT SAVE STATE
@@ -86,8 +92,8 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
     async with _initialized_app() as app:
         projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
         projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
-        project_at_db = await projects_repository.get(project_id)
-        workbench = await projects_nodes_repository.get_all(project_id)
+        project_at_db = await projects_repository.get(project_id=project_id)
+        workbench = await projects_nodes_repository.get_all(project_id=project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
         nodes_failed_to_save: list[NodeIDStr] = []
@@ -124,7 +130,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
 ### PROJECT STATE
 
 
-class StatusIcon(str, Enum):
+class StatusIcon(StrEnum):
     OK = ":green_heart:"
     ONGOING = ":yellow_heart:"
     FAILED = ":broken_heart:"
@@ -153,7 +159,7 @@ async def _get_dy_service_state(client: AsyncClient, node_uuid: NodeIDStr) -> Dy
         return None
 
     result_dict = result.json()
-    return DynamicServiceGet(**(result_dict.get("data", result_dict)))
+    return TypeAdapter(DynamicServiceGet).validate_python(result_dict.get("data", result_dict))
 
 
 async def _to_render_data(
@@ -218,11 +224,11 @@ async def _get_nodes_render_data(
     projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
     projects_nodes_repository: ProjectsNodesRepository = get_repository(app, ProjectsNodesRepository)
 
-    await projects_repository.get(project_id)
-    workbench = await projects_nodes_repository.get_all(project_id)
+    await projects_repository.get(project_id=project_id)
+    workbench = await projects_nodes_repository.get_all(project_id=project_id)
 
     render_data: list[RenderData] = []
-    async with AsyncClient() as client:
+    async with AsyncClient(verify=get_shared_ssl_context()) as client:
         for node_uuid, node_content in workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
             render_data.append(await _to_render_data(client, node_uuid, node_content.label, service_type))

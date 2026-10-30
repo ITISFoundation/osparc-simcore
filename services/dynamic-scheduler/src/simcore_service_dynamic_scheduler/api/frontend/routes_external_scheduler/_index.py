@@ -6,6 +6,7 @@ from models_library.projects_nodes_io import NodeID
 from nicegui import APIRouter, app, ui
 from nicegui.element import Element
 from nicegui.elements.label import Label
+from servicelib.ssl_context import get_shared_ssl_context
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
@@ -67,7 +68,8 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
                 confirm_dialog.close()
 
                 url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}:stop"
-                await httpx.AsyncClient(timeout=10).get(f"{url}")
+                async with httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
+                    await client.get(f"{url}")
 
                 ui.notify(f"Submitted stop request for {node_id}. Please give the service some time to stop!")
 

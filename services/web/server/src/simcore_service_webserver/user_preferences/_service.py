@@ -1,6 +1,8 @@
-from typing import Any, Final, cast
+import logging
+from typing import Any, Final
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.users_preferences import (
     AggregatedPreferences,
     Preference,
@@ -9,15 +11,19 @@ from models_library.products import ProductName
 from models_library.user_preferences import (
     AnyUserPreference,
     FrontendUserPreference,
+    InvalidValueConstraintsError,
     PreferenceIdentifier,
     PreferenceName,
 )
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt, ValidationError
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraProperties,
+    GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
 )
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from ..db.plugin import get_asyncpg_engine
 from ._models import (
@@ -27,9 +33,14 @@ from ._models import (
     get_preference_name,
 )
 from ._repository import UserPreferencesRepository
-from .errors import FrontendUserPreferenceIsNotDefinedError
+from .errors import (
+    FrontendUserPreferenceIsNotDefinedError,
+    FrontendUserPreferenceValueIsInvalidError,
+)
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
+
+_logger = logging.getLogger(__name__)
 
 
 async def _get_frontend_user_preferences(
@@ -71,13 +82,43 @@ async def get_frontend_user_preference(
     )
 
 
+async def _get_group_extra_properties(
+    app: web.Application, *, user_id: UserID, product_name: ProductName
+) -> GroupExtraProperties:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
+        return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+            conn, user_id=user_id, product_name=product_name
+        )
+
+
+def _log_invalid_constraints(
+    error: Exception,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    frontend_preference_identifier: PreferenceIdentifier,
+) -> None:
+    _logger.warning(
+        **create_troubleshooting_log_kwargs(
+            f"Ignoring misconfigured constraints for {frontend_preference_identifier}",
+            error=error,
+            error_context={
+                "user_id": user_id,
+                "product_name": product_name,
+                "frontend_preference_identifier": frontend_preference_identifier,
+            },
+            tip=(
+                "Fix `frontend_preferences_constraints` in the `groups_extra_properties` row for this product. "
+                "Until then the defaults defined in the code apply."
+            ),
+        )
+    )
+
+
 async def get_frontend_user_preferences_aggregation(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> AggregatedPreferences:
-    async with get_asyncpg_engine(app).connect() as conn:
-        group_extra_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            conn, user_id=user_id, product_name=product_name
-        )
+    group_extra_properties = await _get_group_extra_properties(app, user_id=user_id, product_name=product_name)
 
     is_telemetry_enabled: bool = group_extra_properties.enable_telemetry
 
@@ -92,8 +133,35 @@ async def get_frontend_user_preferences_aggregation(
             return is_telemetry_enabled
         return True
 
+    def to_preference(preference: FrontendUserPreference, overrides: dict[str, Any] | None) -> Preference:
+        # NOTE: builds the validator as well, to reject constraints that are malformed and not only unknown
+        preference.build_value_validator(overrides)
+        return Preference.model_validate(
+            {
+                "value": preference.value,
+                "default_value": preference.get_default_value(),
+                "constraints": preference.get_value_constraints(overrides) or None,
+            }
+        )
+
+    def to_preference_or_default(preference: FrontendUserPreference) -> Preference:
+        try:
+            return to_preference(
+                preference,
+                group_extra_properties.frontend_preferences_constraints.get(preference.preference_identifier),
+            )
+        except (InvalidValueConstraintsError, ValidationError) as exc:
+            _log_invalid_constraints(
+                exc,
+                user_id=user_id,
+                product_name=product_name,
+                frontend_preference_identifier=preference.preference_identifier,
+            )
+            # NOTE: constraints declared in the code are validated at class creation, this cannot fail
+            return to_preference(preference, None)
+
     aggregated_preferences: AggregatedPreferences = {
-        p.preference_identifier: Preference.model_validate({"value": p.value, "default_value": p.get_default_value()})
+        p.preference_identifier: to_preference_or_default(p)
         for p in await _get_frontend_user_preferences(app, user_id, product_name)
         if include_preference(p.preference_identifier)
     }
@@ -111,16 +179,41 @@ async def set_frontend_user_preference(
     try:
         preference_name: PreferenceName = get_preference_name(frontend_preference_identifier)
     except KeyError as e:
-        raise FrontendUserPreferenceIsNotDefinedError(frontend_preference_identifier) from e
+        raise FrontendUserPreferenceIsNotDefinedError(
+            frontend_preference_identifier=frontend_preference_identifier
+        ) from e
 
-    preference_class = cast(
-        type[AnyUserPreference],
-        FrontendUserPreference.get_preference_class_from_name(preference_name),
-    )
+    preference_class = FrontendUserPreference.get_preference_class_from_name(preference_name)
+
+    try:
+        group_extra_properties = await _get_group_extra_properties(app, user_id=user_id, product_name=product_name)
+        constraints_overrides = group_extra_properties.frontend_preferences_constraints.get(
+            frontend_preference_identifier
+        )
+    except GroupExtraPropertiesNotFoundError:
+        constraints_overrides = None
+
+    try:
+        try:
+            preference_class.validate_value(value, constraints_overrides)
+        except InvalidValueConstraintsError as exc:
+            _log_invalid_constraints(
+                exc,
+                user_id=user_id,
+                product_name=product_name,
+                frontend_preference_identifier=frontend_preference_identifier,
+            )
+            preference_class.validate_value(value)
+
+        preference = preference_class.model_validate({"value": value})
+    except ValidationError as e:
+        raise FrontendUserPreferenceValueIsInvalidError(
+            frontend_preference_identifier=frontend_preference_identifier, value=value
+        ) from e
 
     repo = UserPreferencesRepository.create_from_app(app)
     await repo.set_user_preference(
         user_id=user_id,
-        preference=TypeAdapter(preference_class).validate_python({"value": value}),  # type: ignore[arg-type] # GitHK this is suspicious
         product_name=product_name,
+        preference=preference,
     )

@@ -128,8 +128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "title": "Response Get Service Resources V0 Services  Service Key   Service Version  Resources Get"
+                  "$ref": "#/components/schemas/ServiceResourcesDict"
                 }
               }
             }
@@ -3334,6 +3333,10 @@
           "kind": "input"
         }
       },
+      "ServiceResourcesDict": {
+        "type": "object",
+        "description": "Resources reserved/limited per running container of a service"
+      },
       "ServiceSpec": {
         "properties": {
           "Name": {
@@ -3854,6 +3857,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

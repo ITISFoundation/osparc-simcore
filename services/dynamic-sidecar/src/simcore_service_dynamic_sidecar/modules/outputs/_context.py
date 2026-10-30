@@ -1,9 +1,13 @@
+import multiprocessing
+from asyncio import to_thread
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from multiprocessing.queues import Queue
 from pathlib import Path
+from typing import Any
 
-import aioprocessing  # type: ignore[import-untyped]
-from aioprocessing.queues import AioQueue  # type: ignore[import-untyped]
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 
 from ..mounted_fs import MountedVolumes
 
@@ -13,10 +17,10 @@ class OutputsContext:
     outputs_path: Path
 
     # _PortKeysEventHandler (generates) -> EventFilter (receives)
-    port_key_events_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
+    port_key_events_queue: Queue[str | None] = field(default_factory=multiprocessing.Queue)
 
     # OutputsContext (generates) -> _EventHandlerProcess(receives)
-    file_system_event_handler_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
+    file_system_event_handler_queue: Queue[dict[str, Any] | None] = field(default_factory=multiprocessing.Queue)
 
     # contains port types such as int, str, bool
     non_file_type_port_keys: list[str] = field(default_factory=list)
@@ -26,19 +30,21 @@ class OutputsContext:
 
     async def set_file_type_port_keys(self, file_type_port_keys: list[str]) -> None:
         self._file_type_port_keys = file_type_port_keys
-        await self.file_system_event_handler_queue.coro_put(  # pylint:disable=no-member
+        await to_thread(
+            self.file_system_event_handler_queue.put,
             {
                 "method_name": "handle_set_outputs_port_keys",
                 "kwargs": {"outputs_port_keys": self._file_type_port_keys},
-            }
+            },
         )
 
     async def toggle_event_propagation(self, *, is_enabled: bool) -> None:
-        await self.file_system_event_handler_queue.coro_put(  # pylint:disable=no-member
+        await to_thread(
+            self.file_system_event_handler_queue.put,
             {
                 "method_name": "handle_toggle_event_propagation",
                 "kwargs": {"is_enabled": is_enabled},
-            }
+            },
         )
 
     @property
@@ -46,11 +52,12 @@ class OutputsContext:
         return self._file_type_port_keys
 
 
-def setup_outputs_context(app: FastAPI) -> None:
-    async def on_startup() -> None:
+def configure_outputs_context(app_lifespan: LifespanManager[FastAPI]) -> None:
+    async def _lifespan_from_events_adapter(app: FastAPI) -> AsyncIterator[None]:
         assert isinstance(app.state.mounted_volumes, MountedVolumes)  # nosec
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
         app.state.outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
+        yield
 
-    app.add_event_handler("startup", on_startup)
+    app_lifespan.add(_lifespan_from_events_adapter)

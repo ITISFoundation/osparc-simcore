@@ -4,11 +4,14 @@
 # LGTM         : https://lgtm.com/#explore
 # codeql-config: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-a-custom-configuration-file
 #
-name: "CodeQL"
+name: CodeQL Analysis
 
 on:
   schedule:
     - cron: "26 5 * * 1"
+
+permissions:
+  contents: read
 
 jobs:
   analyze:
@@ -22,17 +25,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["javascript", "python"]
+        include:
+          - language: javascript
+            config-file: ./.github/codeql/codeql-config.yml
+          - language: python
+            config-file: ./.github/codeql/codeql-config.yml
+          # workflow and action definitions are code too: this catches the
+          # injection patterns that review of .github/** tends to miss
+          - language: actions
+            config-file: ./.github/codeql/codeql-actions-config.yml
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL tools for scanning
-        uses: github/codeql-action/init@v4.37.3
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           languages: ${{ matrix.language }}
-          config-file: ./.github/codeql/codeql-config.yml
+          config-file: ${{ matrix.config-file }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4.37.3
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3

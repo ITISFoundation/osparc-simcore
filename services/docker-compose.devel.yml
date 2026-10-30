@@ -141,17 +141,6 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
-  efs-guardian:
-    environment:
-      <<: *common_environment
-      EFS_GUARDIAN_LOGLEVEL: DEBUG
-    volumes:
-      - ./efs-guardian:/devel/services/efs-guardian
-      - ../packages:/devel/packages
-      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
-    deploy:
-      replicas: 0
-
   static-webserver:
     volumes:
       - ./static-webserver/client/source-output:/static-content

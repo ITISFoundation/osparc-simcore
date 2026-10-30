@@ -8,6 +8,7 @@ Keeps functionality that couples with the following app modules
 
 """
 
+import asyncio
 import logging
 import secrets
 import string
@@ -106,6 +107,7 @@ async def create_temporary_guest_user(request: web.Request):
     random_user_name = "".join(secrets.choice(string.ascii_lowercase) for _ in range(10))
     email: LowerCaseEmailStr = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
+    password_hash = await asyncio.to_thread(security_service.encrypt_password, password)
     # NOTE: expires_at is currently set as offset-naive
     expires_at = (datetime.now(UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME).replace(tzinfo=None)
 
@@ -121,7 +123,7 @@ async def create_temporary_guest_user(request: web.Request):
             # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
             user_row = await repo.new_user(
                 email=email,
-                password_hash=security_service.encrypt_password(password),
+                password_hash=password_hash,
                 status=UserStatus.ACTIVE,
                 role=UserRole.GUEST,
                 expires_at=expires_at,

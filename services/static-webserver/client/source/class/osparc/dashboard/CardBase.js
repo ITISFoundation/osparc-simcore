@@ -730,7 +730,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __applyHits: function(hits) {
       if (hits !== null) {
         const hitsLabel = this.getChildControl("hits-service");
-        hitsLabel.setValue(this.tr("Hits: ") + String(hits));
+        hitsLabel.setValue(this.tr("Hits: %1", String(hits)));
       }
     },
 

@@ -92,6 +92,7 @@ async def _request_clone_project(client: TestClient, url: URL) -> ProjectGet:
 )
 async def test_clone_project(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, Any],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

@@ -387,7 +387,17 @@ class _InvitationDetails(InputSchema):
 class UserAccountApprove(InputSchema):
     email: EmailStr
     bcc_emails: list[EmailStr] | None = None
-    invitation_url: HttpUrl
+    invitation_url: HttpUrl | None = None
+    extra_credits_in_usd: Annotated[
+        WelcomeCreditsAnnotated,
+        Field(
+            description=(
+                "Extra credits (in USD) granted to an already-registered user when approving "
+                "their request for a new product. For new users the credits travel inside the "
+                "invitation instead, so this field is ignored when an invitation is used."
+            )
+        ),
+    ] = None
     message_content: MessageContent | None = None
 
 
@@ -397,7 +407,7 @@ class UserAccountPreviewApproval(InputSchema):
 
 
 class UserAccountPreviewApprovalGet(OutputSchema):
-    invitation_url: HttpUrl
+    invitation_url: HttpUrl | None = None
     message_content: MessageContentGet | None = None
 
 

@@ -76,8 +76,6 @@ async def login(request: web.Request):
     # Authenticate user and verify access to the product
     user = await _auth_service.get_user_or_none(request.app, email=login_data.email)
 
-    user = _auth_service.check_not_null_user(user)
-
     user = await _auth_service.check_authorized_user_credentials(
         request.app,
         user,
@@ -179,6 +177,7 @@ async def login(request: web.Request):
         user_name=user["name"],
         product_name=product.name,
         host=request.host,
+        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         user_id=user["id"],
         locale=get_locale_or_none(request),
     )
@@ -213,16 +212,14 @@ async def login_2fa(request: web.Request):
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
-    _expected_2fa_code = await _twofa_service.get_2fa_code(request.app, login_2fa_.email)
-    if not _expected_2fa_code:
+    if not await _twofa_service.has_2fa_code(request.app, login_2fa_.email):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
-    if login_2fa_.code.get_secret_value() != _expected_2fa_code:
+    if not await _twofa_service.verify_2fa_code(
+        request.app, user_email=login_2fa_.email, code=login_2fa_.code.get_secret_value()
+    ):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
     user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=login_2fa_.email))
-
-    # NOTE: a privilege user should not have called this entrypoint
-    assert UserRole(user["role"]) <= UserRole.USER  # nosec
 
     # dispose since code was used
     await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)

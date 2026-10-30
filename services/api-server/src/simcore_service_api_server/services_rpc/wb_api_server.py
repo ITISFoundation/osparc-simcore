@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from functools import partial
-from typing import cast
+from typing import ClassVar, cast
 
 from common_library.exclude import as_dict_exclude_none
 from fastapi import FastAPI
@@ -10,7 +10,6 @@ from fastapi_pagination import create_page
 from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -129,8 +128,9 @@ def _create_licensed_items_get_page(
 
 @dataclass
 class WbApiRpcClient(SingletonInAppStateMixin):
-    app_state_name = "wb_api_rpc_client"
     _rpc_client: WebServerRpcClient
+
+    app_state_name: ClassVar[str] = "wb_api_rpc_client"
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
@@ -418,21 +418,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filters=filters,
-        )
-
-    async def run_function(
-        self,
-        *,
-        user_id: UserID,
-        product_name: ProductName,
-        function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> RegisteredFunctionJob:
-        return await self._rpc_client.functions.run_function(
-            user_id=user_id,
-            product_name=product_name,
-            function_id=function_id,
-            inputs=inputs,
         )
 
     async def get_function_job(

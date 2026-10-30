@@ -21,6 +21,7 @@ from typing import Any, Final
 import arrow
 import pytest
 from faker import Faker
+from models_library.services_enums import ServiceType
 from playwright.sync_api import APIRequestContext, Browser, BrowserContext, Page, expect
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
@@ -32,7 +33,6 @@ from pytest_simcore.helpers.playwright import (
     AutoRegisteredUser,
     RobustWebSocket,
     RunningState,
-    ServiceType,
     SocketIOEvent,
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
@@ -193,7 +193,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         diagnostics = {
             "test_name": test_name,
             "test_location": test_location,
-            "product_url": product_url,
+            "product_url": f"{product_url}" if product_url is not None else None,
             "is_billable": is_billable,
         }
 
@@ -415,15 +415,16 @@ def log_in_and_out(
         assert response
         assert response.ok, response.body()
 
-    # In case the accept cookies or new release window shows up, we accept
-    page.wait_for_timeout(2000)
-    acceptCookiesBtnLocator = page.get_by_test_id("acceptCookiesBtn")
-    if acceptCookiesBtnLocator.is_visible():
-        acceptCookiesBtnLocator.click()
-        page.wait_for_timeout(1000)
-        newReleaseCloseBtnLocator = page.get_by_test_id("newReleaseCloseBtn")
-        if newReleaseCloseBtnLocator.is_visible():
-            newReleaseCloseBtnLocator.click()
+    # The cookie-consent banner and the "new release" popup can appear at
+    # unpredictable times (often a moment after page load)
+    page.add_locator_handler(
+        page.get_by_test_id("acceptCookiesBtn"),
+        lambda locator: locator.click(),
+    )
+    page.add_locator_handler(
+        page.get_by_test_id("newReleaseCloseBtn"),
+        lambda locator: locator.click(),
+    )
 
     with (
         log_context(
@@ -519,7 +520,9 @@ def _open_project(  # noqa: C901
     timeout: int,
 ) -> dict[str, Any]:
     """Handles clicking open, waiting for responses, and returning project data."""
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+    # NOTE: the uuid is only known from the /projects/:open response below, i.e. possibly after
+    # this project's state updates were already received (see SocketIOProjectStateUpdatedWaiter)
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states, project_uuid=None)
 
     with log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND):
         with page.expect_response(re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND) as response_info:
@@ -577,6 +580,12 @@ def _open_project(  # noqa: C901
                 _open_with_resources(page, click_it=True)
 
         assert response_info.value.ok, f"{response_info.value.json()}"
+        project_uuid = response_info.value.json()["data"]["uuid"]
+        assert isinstance(project_uuid, str), (
+            f"Expected project uuid to be a string in /projects/:open response, got: {project_uuid!r}"
+        )
+        assert project_uuid, "Expected non-empty project uuid in /projects/:open response"
+        waiter.project_uuid = project_uuid
     project_data = response_info.value.json()
     assert project_data
     return project_data
@@ -648,7 +657,7 @@ def create_new_project_and_delete(
                     stack.enter_context(
                         log_in_and_out.expect_event(
                             "framereceived",
-                            SocketIOProjectClosedWaiter(),
+                            SocketIOProjectClosedWaiter(project_uuid=project_uuid),
                             timeout=_PROJECT_CLOSING_TIMEOUT,
                         )
                     )
@@ -805,13 +814,14 @@ def start_and_stop_pipeline(
     page: Page,
     log_in_and_out: RobustWebSocket,
     api_request_context: APIRequestContext,
-) -> Iterator[Callable[[], SocketIOEvent]]:
+) -> Iterator[Callable[[str], SocketIOEvent]]:
     started_pipeline_ids = []
 
-    def _do() -> SocketIOEvent:
+    def _do(project_uuid: str) -> SocketIOEvent:
         with log_context(
             logging.INFO,
-            f"Start computation in {product_url=}...",
+            f"Start computation in {product_url=} "
+            f"(timeout: {datetime.timedelta(milliseconds=_OUTER_CONTEXT_TIMEOUT_MS)})...",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(
@@ -820,7 +830,8 @@ def start_and_stop_pipeline(
                     RunningState.WAITING_FOR_CLUSTER,
                     RunningState.WAITING_FOR_RESOURCES,
                     RunningState.STARTED,
-                )
+                ),
+                project_uuid=project_uuid,
             )
 
             # NOTE: Keep expect_request as an inner context. In case of timeout, we want

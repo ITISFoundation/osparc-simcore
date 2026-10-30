@@ -96,6 +96,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
   members: {
     __loadMarked: null,
+    __resizeObserver: null,
 
     /**
      * Fetches the markdown content from the given URL and sets it as the value.
@@ -166,6 +167,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         // for some reason the content is not immediately there
         qx.event.Timer.once(() => {
           this.__parseImages();
+          this.__observeContentResize();
           this.__resizeMe();
         }, this, 100);
 
@@ -184,6 +186,24 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           this.__resizeMe();
         };
       }
+    },
+
+    // Catch any post-render content size change (fonts/images loading, <details>
+    // toggles, iframes/videos, ...) that wouldn't otherwise fire a qooxdoo resize
+    // event, so the widget always recomputes its height to fit its content.
+    __observeContentResize: function() {
+      const domElement = this.__getDomElement();
+      if (domElement === null || typeof ResizeObserver === "undefined") {
+        return;
+      }
+      if (this.__resizeObserver) {
+        this.__resizeObserver.disconnect();
+      } else {
+        this.__resizeObserver = new ResizeObserver(() => this.__resizeMe());
+      }
+      // Observe the children rather than the widget's own element to avoid a
+      // feedback loop with the height we set on it in __resizeMe.
+      Array.from(domElement.children).forEach(child => this.__resizeObserver.observe(child));
     },
 
     // qx.ui.embed.html scale to content
@@ -267,5 +287,12 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       return qx.bom.element.Dimension.getSize(element);
     },
+  },
+
+  destruct: function() {
+    if (this.__resizeObserver) {
+      this.__resizeObserver.disconnect();
+      this.__resizeObserver = null;
+    }
   }
 });

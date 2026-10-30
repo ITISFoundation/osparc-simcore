@@ -8,7 +8,6 @@
 """
 
 import asyncio
-import collections
 import contextlib
 import datetime
 import logging
@@ -16,16 +15,21 @@ from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import suppress
 from decimal import Decimal
-from typing import Any, Final, cast
+from typing import Annotated, Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
+from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import get_log_record_extra
-from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationRunStateRpcGet,
+)
 from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
     GetProjectInactivityResponse,
+)
+from models_library.api_schemas_directorv2.dynamic_services_service import (
+    RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -71,31 +75,31 @@ from models_library.resource_tracker import (
     PricingInfo,
 )
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_constants import FRONTEND_SERVICE_KEY_PREFIX
 from models_library.services_resources import (
-    DEFAULT_SINGLE_SERVICE_NAME,
     ServiceResourcesDict,
-    ServiceResourcesDictHelpers,
+    set_reservation_same_as_limit,
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
-from pydantic import ByteSize, PositiveInt, TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.docker_utils import (
-    DYNAMIC_SIDECAR_MIN_CPUS,
-    estimate_dynamic_sidecar_resources_from_ec2_instance,
-)
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
-from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
-    get_instance_type_details,
+from servicelib.rabbitmq.rpc_interfaces.director_v2 import resources as director_v2_resources
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    ClustersKeeperNotAvailableRPCError,
+    EC2InstanceTypeNotFoundRPCError,
+    MultiContainerOverrideNotSupportedRPCError,
+    UnsupportedNodeClassRPCError,
 )
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -115,11 +119,13 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
+from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
@@ -159,7 +165,7 @@ from ._access_rights_service import (
     check_user_project_permission,
     has_user_project_access_rights,
 )
-from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
+from ._nodes_utils import validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
@@ -172,11 +178,13 @@ from .exceptions import (
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
     NodeShareStateCannotBeComputedError,
+    ParentNodeNotFoundError,
     ProjectCopyingTrashedProjectError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNodeResourcesSetByPricingUnitError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
     ProjectTooManyUserSessionsError,
@@ -186,7 +194,6 @@ from .models import (
     ProjectDBGet,
     ProjectDict,
     ProjectPatchInternalExtended,
-    ProjectWithWorkbenchDBGet,
 )
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import (
@@ -415,15 +422,6 @@ async def get_project_type(app: web.Application, project_uuid: ProjectID) -> Pro
     db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     return await db_legacy.get_project_type(project_uuid)
-
-
-async def get_project_dict_legacy(app: web.Application, project_uuid: ProjectID) -> ProjectDict:
-    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
-    assert db_legacy  # nosec
-    project, _ = await db_legacy.get_project_dict_and_type(
-        f"{project_uuid}",
-    )
-    return project
 
 
 async def get_project_dict_and_type(
@@ -743,14 +741,6 @@ async def _get_default_pricing_and_hardware_info(
     raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}")
 
 
-_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
-_CPUS_SAFE_MARGIN: Final[float] = 1.4
-_MIN_NUM_CPUS: Final[float] = 0.5
-
-
 async def update_project_node_resources_from_hardware_info(
     app: web.Application,
     *,
@@ -762,79 +752,71 @@ async def update_project_node_resources_from_hardware_info(
     product_name: str,
     hardware_info: HardwareInfo,
 ) -> None:
+    """Resize the node's required resources for the EC2 machine of its pricing unit.
+
+    The sizing itself (formula per node class, EC2 machine selection) is computed by
+    director-v2; the web-server only persists the result.
+    """
     if not hardware_info.aws_ec2_instances:
         return
+
+    if f"{service_key}".startswith(FRONTEND_SERVICE_KEY_PREFIX):
+        # frontend nodes are owned by the frontend and never run on a machine:
+        # their resources are not sized from an EC2 type, there is nothing to ask
+        # director-v2 about
+        return
+
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
-        )
-
-        assert unordered_list_ec2_instance_types  # nosec
-
-        # NOTE: with the current implementation, there is no use to get the instance past the first one
-        def _by_type_name(ec2: EC2InstanceTypeGet) -> bool:
-            return bool(ec2.name == hardware_info.aws_ec2_instances[0])
-
-        selected_ec2_instance_type = next(iter(filter(_by_type_name, unordered_list_ec2_instance_types)))
-
-        # now update the project node required resources
-        # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
-        # less memory than the machine theoretical amount
         node_resources = await get_project_node_resources(
             app, user_id, project_id, node_id, service_key, service_version, product_name
         )
-        scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
-        new_cpus_value, new_ram_value = estimate_dynamic_sidecar_resources_from_ec2_instance(
-            selected_ec2_instance_type.cpus, selected_ec2_instance_type.ram
+        new_node_resources = await director_v2_resources.compute_node_resources_for_hardware(
+            rabbitmq_rpc_client,
+            service_key=service_key,
+            service_version=service_version,
+            resources=node_resources,
+            hardware_info=hardware_info,
         )
-
-        if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
-            # NOTE: we go for the largest sub-service and scale it up/down
-            scalable_service_name, hungry_service_resources = max(
-                node_resources.items(),
-                key=lambda service_to_resources: int(service_to_resources[1].resources["RAM"].limit),
-            )
-            _logger.debug(
-                "the most hungry service is %s",
-                f"{scalable_service_name=}:{hungry_service_resources}",
-            )
-            other_services_resources = collections.Counter({"RAM": 0, "CPUS": 0})
-            for service_name, sub_service_resources in node_resources.items():
-                if service_name != scalable_service_name:
-                    other_services_resources.update(
-                        {
-                            "RAM": sub_service_resources.resources["RAM"].limit,
-                            "CPU": sub_service_resources.resources["CPU"].limit,
-                        }
-                    )
-            new_cpus_value = max(
-                new_cpus_value - other_services_resources["CPU"],
-                DYNAMIC_SIDECAR_MIN_CPUS,
-            )
-
-            new_ram_value = max(int(new_ram_value - other_services_resources["RAM"]), 128 * 1024 * 1024)
-
-        # scale the service
-        node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
-        node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
-        db = ProjectDBAPI.get_from_app_context(app)
-        await db.update_project_node(
-            user_id,
-            project_id,
+    except UnsupportedNodeClassRPCError:
+        # director-v2 refuses to size node classes it does not know (frontend nodes
+        # are already filtered out above); keep their resources as they are
+        _logger.warning(
+            "Not resizing resources of node %s in project %s: service %s cannot be sized from an EC2 machine type",
             node_id,
-            product_name,
-            required_resources=ServiceResourcesDictHelpers.create_jsonable(node_resources),
-            check_update_allowed=False,
+            project_id,
+            service_key,
         )
-    except StopIteration as exc:
+        return
+    except MultiContainerOverrideNotSupportedRPCError as exc:
+        # per-sub-service sizing of a multi-container service is not implemented:
+        # keep the node's resources as they are
+        _logger.warning("Not resizing resources of node %s in project %s: %s", node_id, project_id, exc)
+        return
+    except EC2InstanceTypeNotFoundRPCError as exc:
         raise InvalidEC2TypeInResourcesSpecsError(ec2_types=set(hardware_info.aws_ec2_instances)) from exc
 
     except KeyError as exc:
         raise InvalidKeysInResourcesSpecsError(missing_key=f"{exc}") from exc
-    except (TimeoutError, RemoteMethodNotRegisteredError, RPCServerError) as exc:
+    except (
+        ClustersKeeperNotAvailableRPCError,
+        TimeoutError,
+        RemoteMethodNotRegisteredError,
+        RPCServerError,
+    ) as exc:
         raise ClustersKeeperNotAvailableError from exc
+
+    db = ProjectDBAPI.get_from_app_context(app)
+    await db.update_project_node(
+        user_id,
+        project_id,
+        node_id,
+        product_name,
+        required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+            new_node_resources, mode="json"
+        ),
+        check_update_allowed=False,
+    )
 
 
 async def _check_project_node_has_all_required_inputs(  # noqa: C901
@@ -1225,6 +1207,47 @@ async def _remove_service_and_its_data_folders(
     )
 
 
+def _prune_node_references(node: Node, *, deleted_node_id: NodeID) -> PartialNode | None:
+    updates: dict[str, Any] = {}
+    if node.inputs is not None:
+        inputs = {
+            input_id: value
+            for input_id, value in node.inputs.items()
+            if not (isinstance(value, PortLink) and value.node_uuid == deleted_node_id)
+        }
+        if inputs != node.inputs:
+            updates["inputs"] = inputs
+
+    if node.input_nodes is not None:
+        input_nodes = [input_node_id for input_node_id in node.input_nodes if input_node_id != deleted_node_id]
+        if input_nodes != node.input_nodes:
+            updates["input_nodes"] = input_nodes
+
+    return PartialNode.model_construct(**updates) if updates else None
+
+
+_NODE_GRAPH_FIELDS: Final[frozenset[str]] = frozenset({"input_nodes", "inputs"})
+
+
+def _validate_node_references(
+    partial_node: PartialNode,
+    *,
+    project_id: ProjectID,
+    project_node_ids: set[NodeID],
+) -> None:
+    referenced_node_ids = (
+        set(partial_node.input_nodes or []) if "input_nodes" in partial_node.model_fields_set else set()
+    )
+    if "inputs" in partial_node.model_fields_set and partial_node.inputs is not None:
+        referenced_node_ids.update(
+            value.node_uuid for value in partial_node.inputs.values() if isinstance(value, PortLink)
+        )
+
+    if missing_node_ids := referenced_node_ids - project_node_ids:
+        missing_node_id = min(missing_node_ids, key=str)
+        raise ParentNodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{missing_node_id}")
+
+
 async def delete_project_node(
     request: web.Request,
     project_uuid: ProjectID,
@@ -1250,6 +1273,39 @@ async def delete_project_node(
         project_id=project_uuid,
     )
 
+    async def _delete_node_from_graph(connection: AsyncConnection) -> None:
+        project_nodes = await _projects_nodes_repository.get_by_project(
+            request.app,
+            connection=connection,
+            project_id=project_uuid,
+        )
+        for sibling_node_id, sibling_node in project_nodes.items():
+            if sibling_node_id == node_uuid:
+                continue
+
+            partial_node = _prune_node_references(sibling_node, deleted_node_id=node_uuid)
+            if partial_node is not None:
+                await _projects_nodes_repository.update(
+                    request.app,
+                    connection=connection,
+                    project_id=project_uuid,
+                    node_id=sibling_node_id,
+                    partial_node=partial_node,
+                )
+
+        await _projects_nodes_repository.delete(
+            request.app,
+            connection=connection,
+            project_id=project_uuid,
+            node_id=node_uuid,
+        )
+
+    await _projects_repository.run_project_graph_mutation(
+        request.app,
+        project_uuid=project_uuid,
+        mutation=_delete_node_from_graph,
+    )
+
     fire_and_forget_task(
         _remove_service_and_its_data_folders(
             request.app,
@@ -1262,12 +1318,6 @@ async def delete_project_node(
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
-    await _projects_nodes_repository.delete(
-        request.app,
-        project_id=project_uuid,
-        node_id=node_uuid,
     )
 
     await create_project_document_and_notify(
@@ -1333,7 +1383,7 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
 
 # Node fields that only affect the UI and therefore do not require syncing
 # the computational pipeline (director-v2 / comp_* DB tables) on patch.
-_NODE_UI_KEYS: Final[frozenset[str]] = frozenset({"ui"})
+_NODE_UI_KEYS: Final[frozenset[str]] = frozenset({"ui", "progress"})
 
 
 async def patch_project_node(
@@ -1376,13 +1426,39 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
+    if partial_node.model_fields_set & _NODE_GRAPH_FIELDS:
 
-    await _projects_nodes_repository.update(
-        app,
-        project_id=project_id,
-        node_id=node_id,
-        partial_node=partial_node,
-    )
+        async def _patch_node_graph(connection: AsyncConnection) -> None:
+            project_nodes = await _projects_nodes_repository.get_by_project(
+                app,
+                connection=connection,
+                project_id=project_id,
+            )
+            _validate_node_references(
+                partial_node,
+                project_id=project_id,
+                project_node_ids=set(project_nodes),
+            )
+            await _projects_nodes_repository.update(
+                app,
+                connection=connection,
+                project_id=project_id,
+                node_id=node_id,
+                partial_node=partial_node,
+            )
+
+        await _projects_repository.run_project_graph_mutation(
+            app,
+            project_uuid=project_id,
+            mutation=_patch_node_graph,
+        )
+    else:
+        await _projects_nodes_repository.update(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+            partial_node=partial_node,
+        )
 
     await create_project_document_and_notify(
         app,
@@ -1404,17 +1480,35 @@ async def patch_project_node(
         if node_patch_exclude_unset.get("label"):
             await dynamic_scheduler_service.update_projects_networks(app, project_id=project_id)
 
-    updated_project: ProjectWithWorkbenchDBGet = await _projects_repository.get_project_with_workbench(
-        app, project_uuid=project_id
-    )
+    notify_all_nodes = bool({"inputs", "outputs"} & node_patch_exclude_unset.keys())
+    if notify_all_nodes:
+        updated_project = await _projects_repository.get_project_with_workbench(app, project_uuid=project_id)
+        project_for_notification = updated_project.model_dump(mode="json", by_alias=True)
+    else:
+        latest_node = await _projects_nodes_repository.get(
+            app,
+            project_id=project_id,
+            node_id=node_id,
+        )
+        project_for_notification = {
+            "uuid": f"{project_id}",
+            "workbench": {
+                f"{node_id}": latest_node.model_dump(mode="json", by_alias=True),
+            },
+        }
 
     updated_project_with_states = await add_project_states_for_user(
-        user_id=user_id, project=updated_project.model_dump(mode="json", by_alias=True), app=app
+        user_id=user_id,
+        project=project_for_notification,
+        app=app,
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
-    if {"inputs", "outputs"} & node_patch_exclude_unset.keys():
-        for node_uuid in updated_project_with_states["workbench"]:
-            await notify_project_node_update(app, updated_project_with_states, node_uuid)
+    if notify_all_nodes:
+        await notify_project_nodes_update(
+            app,
+            updated_project_with_states,
+            [NodeID(node_uuid) for node_uuid in updated_project_with_states["workbench"]],
+        )
         return
 
     await notify_project_node_update(app, updated_project_with_states, node_id)
@@ -1515,16 +1609,16 @@ async def _get_node_share_state(
     node_id: NodeID,
     node_key: ServiceKey,
     computational_pipeline_running: bool | None,
-    user_primrary_groupid: GroupID,
+    user_primary_groupid: GroupID,
 ) -> NodeShareState:
     if _is_node_dynamic(node_key):
         # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(app, node_id=node_id)
 
-        if isinstance(service, DynamicServiceGet | NodeGet):
+        if isinstance(service, RunningDynamicServiceDetails | NodeGet):
             # service is running
             is_collaborative_service = False
-            if isinstance(service, DynamicServiceGet):
+            if isinstance(service, RunningDynamicServiceDetails):
                 # only dynamic-sidecar powered services can be collaborative
                 is_collaborative_service = service.is_collaborative
 
@@ -1545,7 +1639,7 @@ async def _get_node_share_state(
         return NodeShareState(
             locked=True,
             current_user_groupids=[
-                user_primrary_groupid,
+                user_primary_groupid,
             ],
             status=NodeShareStatus.OPENED,
         )
@@ -1600,14 +1694,14 @@ async def _trigger_connected_service_retrieve(
     await logged_gather(*update_tasks, reraise=False)
 
 
-async def post_trigger_connected_service_retrieve(
+def post_trigger_connected_service_retrieve(
     app: web.Application,
     *,
     project: dict,
     updated_node_uuid: str,
     changed_keys: list[str],
 ) -> None:
-    await fire_and_forget_task(
+    fire_and_forget_task(
         _trigger_connected_service_retrieve(
             app,
             project=project,
@@ -1842,31 +1936,34 @@ async def close_project_for_user(
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
     _logger.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
-    if not all_user_sessions_with_project:
-        # NOTE: depending on the garbage collector speed, it might already be removing it
-        remove_services_task = remove_project_dynamic_services(
-            user_id, project_uuid, app, simcore_user_agent, product_name
-        )
-        if wait_for_service_closed:
-            # wait for the task to finish
-            await remove_services_task
-        else:
-            fire_and_forget_task(
-                remove_services_task,
-                task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
-                fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+    try:
+        if not all_user_sessions_with_project:
+            # NOTE: depending on the garbage collector speed, it might already be removing it
+            remove_services_task = remove_project_dynamic_services(
+                user_id, project_uuid, app, simcore_user_agent, product_name
             )
-    else:
-        # when the project is still opened by other users, we just notify the project state update
-        project = await get_project_for_user(
-            app,
-            f"{project_uuid}",
-            user_id,
-            include_state=True,
-        )
-        await notify_project_state_update(app, project)
-
-    await conditionally_unsubscribe_project_logs_across_replicas(app, project_uuid, user_id)
+            if wait_for_service_closed:
+                # wait for the task to finish
+                await remove_services_task
+            else:
+                fire_and_forget_task(
+                    remove_services_task,
+                    task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+                    fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+                )
+        else:
+            # when the project is still opened by other users, we just notify the project state update
+            project = await get_project_for_user(
+                app,
+                f"{project_uuid}",
+                user_id,
+                include_state=True,
+            )
+            await notify_project_state_update(app, project)
+    finally:
+        # NOTE: always unsubscribe, even if the above raised (e.g. an RPC timeout), so a
+        # failure here can never leak this project's log topic binding on this replica
+        await conditionally_unsubscribe_project_logs_across_replicas(app, project_uuid, user_id)
 
 
 async def _get_project_share_state(
@@ -1985,6 +2082,53 @@ async def _get_project_share_state(
     )
 
 
+async def _list_pipelines_latest_states_or_none(
+    app: web.Application,
+    project_ids: list[ProjectID],
+) -> list[ComputationRunStateRpcGet] | None:
+    try:
+        return await director_v2_service.list_pipelines_latest_states(
+            app,
+            project_ids=project_ids,
+        )
+    except DirectorV2PipelineStatesRetrievalError as exc:
+        _logger.warning("Getting latest computation states failed: %s", exc)
+        return None
+
+
+async def add_projects_states_for_user(
+    *,
+    user_id: UserID,
+    projects: list[ProjectDict],
+    app: web.Application,
+) -> list[ProjectDict]:
+    latest_states, project_share_states = await asyncio.gather(
+        _list_pipelines_latest_states_or_none(
+            app,
+            [ProjectID(project["uuid"]) for project in projects],
+        ),
+        limited_gather(
+            *[_get_project_share_state(user_id, project["uuid"], app) for project in projects],
+            limit=20,
+        ),
+    )
+    state_by_project = {item.project_uuid: item.state for item in latest_states} if latest_states is not None else None
+
+    for project, project_share_state in zip(projects, project_share_states, strict=True):
+        project_id = ProjectID(project["uuid"])
+        project_running_state = (
+            state_by_project.get(project_id, RunningState.NOT_STARTED)
+            if state_by_project is not None
+            else RunningState.UNKNOWN
+        )
+        project["state"] = ProjectState(
+            share_state=project_share_state,
+            state=ProjectRunningState(value=project_running_state),
+        ).model_dump(by_alias=True, exclude_unset=True)
+
+    return projects
+
+
 async def add_project_states_for_user(
     *,
     user_id: UserID,
@@ -2020,7 +2164,7 @@ async def add_project_states_for_user(
                 node_id=NodeID(node_uuid),
                 node_key=node["key"],
                 computational_pipeline_running=is_pipeline_running,
-                user_primrary_groupid=user_primary_group_id,
+                user_primary_groupid=user_primary_group_id,
             )
         if NodeID(node_uuid) in computational_node_states:
             computed_node_state = computational_node_states[NodeID(node_uuid)].model_copy(
@@ -2035,15 +2179,13 @@ async def add_project_states_for_user(
             )
 
         # upgrade the project
-        # NOTE: copy&dump step avoids both alias and field-names to be keys in the dict
-        # e.g. "current_status" and "currentStatus"
         current_node_state = NodeState.model_validate(
             node.get("state") or {}  # NOTE: that node.get("state") can exists and be None!
         )
-        updated_node_state = current_node_state.model_copy(
-            update=computed_node_state.model_dump(mode="json", exclude_unset=True)
-        )
-        node["state"] = updated_node_state.model_dump(by_alias=True, exclude_unset=True)
+        node["state"] = {
+            **current_node_state.model_dump(mode="json", by_alias=True, exclude_unset=True),
+            **computed_node_state.model_dump(mode="json", by_alias=True, exclude_unset=True),
+        }
 
         if "progress" in node["state"] and node["state"]["progress"] is not None:
             # ensure progress is a percentage
@@ -2103,7 +2245,9 @@ async def get_project_node_resources(
     db = ProjectDBAPI.get_from_app_context(app)
     try:
         project_node = await db.get_project_node(project_id, node_id)
-        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        node_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+            project_node.required_resources
+        )
         if not node_resources:
             # get default resources
             node_resources = await catalog_service.get_service_resources(
@@ -2129,7 +2273,9 @@ async def update_project_node_resources(
     try:
         # validate the resource are applied to the same container names
         current_project_node = await db.get_project_node(project_id, node_id)
-        current_resources = TypeAdapter(ServiceResourcesDict).validate_python(current_project_node.required_resources)
+        current_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(
+            current_project_node.required_resources
+        )
         if not current_resources:
             # NOTE: this can happen after the migration
             # get default resources
@@ -2140,15 +2286,25 @@ async def update_project_node_resources(
         validate_new_service_resources(current_resources, new_resources=resources)
         set_reservation_same_as_limit(resources)
 
+        if pricing := await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id):
+            raise ProjectNodeResourcesSetByPricingUnitError(
+                project_uuid=f"{project_id}",
+                node_uuid=f"{node_id}",
+                pricing_plan_id=pricing.pricing_plan_id,
+                pricing_unit_id=pricing.pricing_unit_id,
+            )
+
         project_node = await db.update_project_node(
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
             product_name=product_name,
-            required_resources=jsonable_encoder(resources),
+            required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+                resources, mode="json"
+            ),
             check_update_allowed=True,
         )
-        return TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
+        return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(project_node.required_resources)
     except ProjectNodesNodeNotFoundError as exc:
         raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}") from exc
 
@@ -2175,9 +2331,10 @@ async def run_project_dynamic_services(
         for service_uuid, service in project["workbench"].items()
         if _is_node_dynamic(service["key"]) and service_uuid not in running_services_uuids
     }
-    if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
-        (len(services_to_start_uuids) + len(running_services_uuids))
-        > project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+    if (
+        0
+        < project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+        < (len(services_to_start_uuids) + len(running_services_uuids))
     ):
         # we cannot start so many services so we are done
         raise ProjectStartsTooManyDynamicNodesError(user_id=user_id, project_uuid=ProjectID(project["uuid"]))
@@ -2279,34 +2436,61 @@ async def remove_project_dynamic_services(
 _CONCURRENT_NOTIFICATIONS_LIMIT: Final[int] = 10
 
 
+async def _list_project_group_rooms_to_notify(
+    app: web.Application,
+    project_id: ProjectID,
+) -> list[GroupID]:
+    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=project_id
+    )
+    return [item.gid for item in project_group_get_list if item.read is True]
+
+
+async def _send_message_to_rooms(
+    app: web.Application,
+    rooms: Iterable[GroupID],
+    message: SocketMessageDict,
+    *,
+    strict: Annotated[
+        bool,
+        doc(
+            "if True, emit failures are raised so the caller can retry the notification "
+            "(at-least-once, used by the outbox consumer); if False, failures are only "
+            "logged. Emitting to a room with no members is a no-op in both cases, see "
+            "socketio/_messages.py"
+        ),
+    ],
+) -> None:
+    # all emits settle before the first failure is raised, so a retry never overlaps
+    # emits still in flight from the failed attempt
+    results = await limited_gather(
+        *(socketio_service.send_message_to_standard_group(app, room, message, strict=strict) for room in rooms),
+        reraise=False,
+        log=_logger,
+        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
+    )
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
+
+
 async def _send_message_to_project_groups(
     app: web.Application,
     project_id: ProjectID,
     message: SocketMessageDict,
+    *,
+    strict: bool,
 ) -> None:
-    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-        app, project_id=project_id
-    )
-    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
-
-    await limited_gather(
-        *(
-            socketio_service.send_message_to_standard_group(
-                app,
-                room,
-                message,
-            )
-            for room in rooms_to_notify
-        ),
-        log=_logger,
-        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
-    )
+    rooms_to_notify = await _list_project_group_rooms_to_notify(app, project_id)
+    await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
     notify_only_user: UserID | None = None,
+    *,
+    strict: bool = False,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -2327,31 +2511,46 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
+            strict=strict,
         )
     else:
-        await _send_message_to_project_groups(app, project["uuid"], message)
+        await _send_message_to_project_groups(app, project["uuid"], message, strict=strict)
+
+
+async def notify_project_nodes_update(
+    app: web.Application,
+    project: dict,
+    node_ids: Iterable[NodeID],
+    *,
+    strict: bool = False,
+) -> None:
+    if await is_project_hidden(app, ProjectID(project["uuid"])):
+        return
+
+    rooms_to_notify = await _list_project_group_rooms_to_notify(app, ProjectID(project["uuid"]))
+    for node_id in node_ids:
+        data: dict = {
+            "project_id": project["uuid"],
+            "node_id": f"{node_id}",
+            "data": project["workbench"][f"{node_id}"],
+        }
+
+        message = SocketMessageDict(
+            event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+            data=data,
+        )
+
+        await _send_message_to_rooms(app, rooms_to_notify, message, strict=strict)
 
 
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
     node_id: NodeID,
+    *,
+    strict: bool = False,
 ) -> None:
-    if await is_project_hidden(app, ProjectID(project["uuid"])):
-        return
-
-    data: dict = {
-        "project_id": project["uuid"],
-        "node_id": f"{node_id}",
-        "data": project["workbench"][f"{node_id}"],
-    }
-
-    message = SocketMessageDict(
-        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-        data=data,
-    )
-
-    await _send_message_to_project_groups(app, project["uuid"], message)
+    await notify_project_nodes_update(app, project, (node_id,), strict=strict)
 
 
 async def retrieve_and_notify_project_locked_state(

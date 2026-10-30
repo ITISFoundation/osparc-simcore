@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import inspect
 import logging
 import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -15,6 +16,7 @@ from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, TypeAdapter
+from servicelib.fastapi.httpx_utils import retry_on_dropped_connection
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.tracing import setup_httpx_client_tracing
@@ -67,7 +69,7 @@ def _return_data_or_raise_error(
     """
     Creates a context for safe inter-process communication (IPC)
     """
-    assert asyncio.iscoroutinefunction(request_func)
+    assert inspect.iscoroutinefunction(request_func)
 
     def _unenvelope_or_raise_error(
         resp: httpx.Response,
@@ -102,7 +104,7 @@ def _return_data_or_raise_error(
         return data or {}
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: "DirectorClient", path: str, *args, **kwargs) -> list[Any] | dict[str, Any]:
+    async def request_wrapper(zelf: DirectorClient, path: str, *args, **kwargs) -> list[Any] | dict[str, Any]:
         normalized_path = path.lstrip("/")
         try:
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)  # noqa: B026
@@ -158,9 +160,9 @@ class DirectorClient:
     #
 
     @_return_data_or_raise_error
+    @retry_on_dropped_connection
     async def get(self, path: str) -> httpx.Response:
-        # temp solution: default timeout increased to 20"
-        return await self.client.get(path, timeout=20.0)
+        return await self.client.get(path)
 
     #
     # High level API
@@ -173,7 +175,7 @@ class DirectorClient:
             response = await self.client.head(health_check_path, timeout=1.0)
             response.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
+        except httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException:
             return False
 
     async def get_service(self, service_key: ServiceKey, service_version: ServiceVersion) -> ServiceMetaDataPublished:

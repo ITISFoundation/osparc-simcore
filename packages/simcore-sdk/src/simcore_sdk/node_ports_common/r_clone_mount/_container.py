@@ -16,14 +16,9 @@ from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import BaseModel, Field, NonNegativeInt, TypeAdapter, ValidationError
 from servicelib.file_utils import disk_usage
 from servicelib.r_clone_utils import get_r_clone_version
+from servicelib.ssl_context import get_shared_ssl_context
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_delay,
-    wait_fixed,
-)
+from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
 from ..r_clone_utils import get_effective_vfs_write_back_seconds, overwrite_command
 from . import _docker_utils
@@ -76,7 +71,7 @@ class _RCloneContainerLabels(BaseModel):
             raise InvalidContainerLabelsError(container_name=container_name, errors=errors) from exc
 
 
-_MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
+_MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=60)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
 
@@ -338,7 +333,7 @@ class RemoteControlHttpClient:
         params = params or {}
         _logger.debug("Sending '%s %s' request with payload '%s'", method, request_url, params)
 
-        async with AsyncClient(timeout=self._r_clone_client_timeout_seconds) as client:
+        async with AsyncClient(timeout=self._r_clone_client_timeout_seconds, verify=get_shared_ssl_context()) as client:
             response = await client.request(method, request_url, auth=self._auth, params=params)
             response.raise_for_status()
             dict_response: dict = response.json()

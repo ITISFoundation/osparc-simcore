@@ -1,7 +1,7 @@
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Final
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -15,10 +15,15 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.utils.change_case import snake_to_camel
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt, PositiveInt, TypeAdapter
+from servicelib.async_utils import run_sequentially_in_context
+from servicelib.redis import exclusive
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_extensions import projects_extensions
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodesRepo,
+    lock_project_for_write,
+)
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -28,10 +33,13 @@ from sqlalchemy import sql
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
+from ..redis import get_redis_lock_manager_client_sdk
 from .exceptions import ProjectNotFoundError
 from .models import ProjectDBGet, ProjectWithWorkbenchDBGet
 
 _logger = logging.getLogger(__name__)
+
+_PROJECT_GRAPH_MUTATION_REDIS_LOCK_KEY: Final[str] = "project_graph_mutation:{}"
 
 
 PROJECT_DB_COLS = get_columns_from_db_model(
@@ -53,6 +61,9 @@ def _to_sql_expression(table: sa.Table, order_by: OrderBy):
     return direction_func(table.columns[order_by.field])
 
 
+type TotalCount = int
+
+
 async def list_projects_db_get_as_admin(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -66,7 +77,7 @@ async def list_projects_db_get_as_admin(
     limit: PositiveInt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     # order
     order_by: OrderBy,
-) -> tuple[int, list[ProjectDBGet]]:
+) -> tuple[TotalCount, list[ProjectDBGet]]:
     base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
 
     if is_set(trashed_explicitly):
@@ -89,10 +100,10 @@ async def list_projects_db_get_as_admin(
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
-
+        assert isinstance(total_count, int)  # nosec
         result = await conn.stream(list_query)
         projects_list: list[ProjectDBGet] = [ProjectDBGet.model_validate(row) async for row in result]
-        return cast(int, total_count), projects_list
+        return total_count, projects_list
 
 
 async def get_project(
@@ -107,6 +118,36 @@ async def get_project(
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return ProjectDBGet.model_validate(row)
+
+
+async def _lock_project_graph(
+    connection: AsyncConnection,
+    *,
+    project_uuid: ProjectID,
+) -> None:
+    if not await lock_project_for_write(connection, project_uuid):
+        raise ProjectNotFoundError(project_uuid=project_uuid)
+
+
+@run_sequentially_in_context(target_args=["project_uuid"])
+async def run_project_graph_mutation(
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    mutation: Callable[[AsyncConnection], Awaitable[None]],
+) -> None:
+    @exclusive(
+        get_redis_lock_manager_client_sdk(app),
+        lock_key=_PROJECT_GRAPH_MUTATION_REDIS_LOCK_KEY.format(project_uuid),
+        blocking=True,
+        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    )
+    async def _run_exclusively() -> None:
+        async with transaction_context(get_asyncpg_engine(app)) as connection:
+            await _lock_project_graph(connection, project_uuid=project_uuid)
+            await mutation(connection)
+
+    await _run_exclusively()
 
 
 async def get_project_product(

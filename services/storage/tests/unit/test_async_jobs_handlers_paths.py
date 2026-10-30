@@ -9,8 +9,9 @@
 
 import datetime
 import random
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from celery.worker.worker import WorkController
@@ -23,17 +24,21 @@ from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
+from models_library.api_schemas_async_jobs.exceptions import JobError
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from servicelib.celery.async_jobs.storage.paths import submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
+
+_NUM_NODES: Final[int] = 2
 
 type _IsFile = bool
 
@@ -101,18 +106,18 @@ async def _assert_delete_paths(
     *,
     paths: set[Path],
 ) -> None:
-    async_job = await submit_job(
+    task_id, _ = await submit_delete_paths_task(
         task_manager,
-        execution_metadata=TaskExecutionMetadata(name="delete_paths"),
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         location_id=location_id,
         user_id=user_id,
+        product_name=product_name,
         paths=paths,
     )
     async for job_composed_result in wait_and_get_job_result(
         task_manager,
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
-        job_id=async_job.job_id,
+        job_id=task_id,
         stop_after=datetime.timedelta(seconds=120),
     ):
         if job_composed_result.done:
@@ -357,5 +362,148 @@ async def test_delete_paths(
         user_id,
         path=path,
         expected_total_size=expected_total_size - len(selected_paths) * project_params.allowed_file_sizes[0],
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=_NUM_NODES,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=3,
+        )
+    ],
+    ids=str,
+)
+@pytest.mark.parametrize("delete_node_folder", [False, True], ids=["project-folder", "node-folder"])
+async def test_delete_paths_of_folder(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    location_id: LocationID,
+    project_with_seeded_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    product_name: ProductName,
+    delete_node_folder: bool,
+):
+    """folders are not valid file identifiers and are authorized at project level"""
+    project, list_of_files = project_with_seeded_files
+    assert len(list_of_files) == _NUM_NODES, "test preconditions are not filled! two nodes are needed for this test"
+    deleted_node_id, kept_node_id = list(list_of_files)
+
+    path = Path(project["uuid"])
+    if delete_node_folder:
+        path /= f"{deleted_node_id}"
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        user_id,
+        product_name,
+        paths={path},
+    )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=path,
+        expected_total_size=0,
+        product_name=product_name,
+    )
+
+    # deleting a node folder must not touch the sibling node
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=Path(project["uuid"]) / f"{kept_node_id}",
+        expected_total_size=(len(list_of_files[kept_node_id]) if delete_node_folder else 0),
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize("path", [Path("not-a-uuid"), Path("not-a-uuid/neither-is-this")], ids=str)
+async def test_delete_paths_of_invalid_short_path_fails(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    location_id: LocationID,
+    product_name: ProductName,
+    path: Path,
+):
+    """short paths that are neither project[/node] folders nor file identifiers are rejected, not silently ignored"""
+    with pytest.raises(JobError) as exc:
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            user_id,
+            product_name,
+            paths={path},
+        )
+
+    assert exc.value.exc_type == "ValueError"
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_node_folder_of_another_project(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    user_id: UserID,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    product_name: ProductName,
+):
+    """a node folder is only deleted when it belongs to the authorized project"""
+    project_params = ProjectWithFilesParams(
+        num_nodes=1,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=3,
+    )
+    other_project, other_files = await project_with_seeded_files_factory(project_params)
+    project, _ = await project_with_seeded_files_factory(project_params)
+    other_node_id, other_node_files = next(iter(other_files.items()))
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        user_id,
+        product_name,
+        paths={Path(project["uuid"]) / f"{other_node_id}"},
+    )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        user_id,
+        path=Path(other_project["uuid"]) / f"{other_node_id}",
+        expected_total_size=len(other_node_files),
         product_name=product_name,
     )

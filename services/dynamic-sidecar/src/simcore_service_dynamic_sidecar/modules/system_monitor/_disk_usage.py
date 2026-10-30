@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import cached_property
@@ -9,6 +11,7 @@ from typing import Final
 import psutil
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     MountPathCategory,
@@ -64,15 +67,6 @@ class DiskUsageMonitor:
 
     # tracked disk usage
     _last_usage: dict[MountPathCategory, DiskUsage] = field(default_factory=dict)
-    _usage_overwrite: dict[str, DiskUsage] = field(
-        default_factory=dict,
-        metadata={
-            "description": (
-                "third party services can update the disk usage for certain paths "
-                "monitored by the dynamic-sidecar. This is the case for the efs-guardian."
-            )
-        },
-    )
 
     @cached_property
     def _monitored_paths_set(self) -> set[Path]:
@@ -85,7 +79,7 @@ class DiskUsageMonitor:
         """
         Transforms Path -> str form `/tmp/.some_file/here` -> `_tmp_.some_file_here`.
         This a one way transformation used to uniquely identify volume mounts inside
-        by the dynamic-sidecar. These are also used by the efs-guardian.
+        by the dynamic-sidecar.
         """
         return {
             k: {_get_normalized_folder_name(get_relative_path(p, self.dy_volumes_mount_dir)) for p in paths}
@@ -100,11 +94,6 @@ class DiskUsageMonitor:
             _get_normalized_folder_name(get_relative_path(p, self.dy_volumes_mount_dir)): u
             for p, u in zip(self._monitored_paths_set, measured_disk_usage, strict=True)
         }
-
-    def _replace_incoming_usage(self, normalized_disk_usage: dict[str, DiskUsage]) -> None:
-        """overwrites local disk usage with incoming usage from egs-guardian"""
-        for key, overwrite_usage in self._usage_overwrite.items():
-            normalized_disk_usage[key] = overwrite_usage  # noqa: PERF403
 
     @staticmethod
     def _get_grouped_usage_to_folder_names(
@@ -126,8 +115,6 @@ class DiskUsageMonitor:
         measured_disk_usage = await self._get_measured_disk_usage()
 
         local_disk_usage = self._get_local_disk_usage(measured_disk_usage)
-
-        self._replace_incoming_usage(local_disk_usage)
 
         usage_to_folder_names = self._get_grouped_usage_to_folder_names(local_disk_usage)
 
@@ -166,14 +153,6 @@ class DiskUsageMonitor:
         if self._monitor_task:
             await cancel_wait_task(self._monitor_task)
 
-    def set_disk_usage_for_path(self, overwrite_usage: dict[str, DiskUsage]) -> None:
-        """
-        efs-guardian manages disk quotas since the underlying FS has no support for them.
-        the dynamic-sidecar will use this information to provide correct quotas for the
-        volumes managed by the efs-guardian
-        """
-        self._usage_overwrite = overwrite_usage
-
 
 def _get_monitored_paths(app: FastAPI) -> dict[MountPathCategory, set[Path]]:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
@@ -204,18 +183,18 @@ def get_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor | None:
     return None
 
 
-def setup_disk_usage(app: FastAPI) -> None:
-    async def on_startup() -> None:
-        with log_context(_logger, logging.INFO, "setup disk monitor"):
-            app.state.disk_usage_monitor = create_disk_usage_monitor(app)
-            await app.state.disk_usage_monitor.setup()
+def configure_disk_usage(app_lifespan: LifespanManager[FastAPI]) -> None:
+    @asynccontextmanager
+    async def _disk_usage_lifespan(app: FastAPI) -> AsyncIterator[None]:
+        disk_usage_monitor: DiskUsageMonitor | None = None
+        try:
+            with log_context(_logger, logging.INFO, "setup disk monitor"):
+                app.state.disk_usage_monitor = disk_usage_monitor = create_disk_usage_monitor(app)
+                await disk_usage_monitor.setup()
+            yield
+        finally:
+            if disk_usage_monitor is not None:
+                with log_context(_logger, logging.INFO, "shutdown disk monitor"):
+                    await disk_usage_monitor.shutdown()
 
-    async def on_shutdown() -> None:
-        with log_context(_logger, logging.INFO, "shutdown disk monitor"):
-            if disk_usage_monitor := getattr(  # noqa: B009
-                app.state, "disk_usage_monitor"
-            ):
-                await disk_usage_monitor.shutdown()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    app_lifespan.add(_disk_usage_lifespan)

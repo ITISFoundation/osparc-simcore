@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -61,6 +62,8 @@ from ..modules.outputs import (
     event_propagation_disabled,
 )
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
+from ..services.container_extensions import writable_inputs
+from ..services.container_restart_lock import container_restart_locked
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
@@ -504,19 +507,20 @@ async def pull_user_services_input_ports(
         description="pulling inputs",
     ) as root_progress:
         with log_directory_changes(mounted_volumes.disk_inputs_path, _logger, logging.INFO):
-            transferred_bytes = await nodeports.download_target_ports(
-                nodeports.PortTypeName.INPUTS,
-                mounted_volumes.disk_inputs_path,
-                port_keys=port_keys,
-                io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
-                progress_bar=root_progress,
-                port_notifier=PortNotifier(
-                    app,
-                    settings.DY_SIDECAR_USER_ID,
-                    settings.DY_SIDECAR_PROJECT_ID,
-                    settings.DY_SIDECAR_NODE_ID,
-                ),
-            )
+            async with writable_inputs(app):
+                transferred_bytes = await nodeports.download_target_ports(
+                    nodeports.PortTypeName.INPUTS,
+                    mounted_volumes.disk_inputs_path,
+                    port_keys=port_keys,
+                    io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
+                    progress_bar=root_progress,
+                    port_notifier=PortNotifier(
+                        app,
+                        settings.DY_SIDECAR_USER_ID,
+                        settings.DY_SIDECAR_PROJECT_ID,
+                        settings.DY_SIDECAR_NODE_ID,
+                    ),
+                )
     await post_sidecar_log_message(app, f"Finished pulling inputs: {port_keys}", log_level=logging.INFO)
     await progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
@@ -575,12 +579,10 @@ async def restart_user_services(
     settings: ApplicationSettings,
     shared_store: SharedStore,
 ) -> None:
-    assert app.state.container_restart_lock  # nosec
-
     # NOTE: if containers inspect reports that the containers are restarting
     # or some other state, the service will get shutdown, to prevent this
     # blocking status while containers are being restarted.
-    async with app.state.container_restart_lock:
+    async with container_restart_locked(app):
         await progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
             msg = "No spec for docker compose command was found"
@@ -606,27 +608,27 @@ async def restart_user_services(
         await progress.update(message="started log fetching", percent=0.99)
 
 
-def setup_long_running_tasks(app: FastAPI) -> None:
+def configure_long_running_tasks(app: FastAPI, app_lifespan: LifespanManager[FastAPI]) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    long_running_tasks.server.setup(
+    long_running_tasks.server.configure_server(
         app,
+        app_lifespan,
         redis_settings=app_settings.REDIS_SETTINGS,
         rabbit_settings=app_settings.RABBIT_SETTINGS,
         lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
     )
 
-    task_context: dict[TaskProtocol, dict[str, Any]] = {}
+    async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        registered_handlers: list[TaskProtocol] = []
+        try:
+            shared_store: SharedStore = app.state.shared_store
+            settings: ApplicationSettings = app.state.settings
+            application_health: ApplicationHealth = app.state.application_health
+            mounted_volumes: MountedVolumes = app.state.mounted_volumes
+            outputs_manager: OutputsManager = app.state.outputs_manager
+            inputs_state: InputsState = app.state.inputs_state
 
-    async def on_startup() -> None:
-        shared_store: SharedStore = app.state.shared_store
-        settings: ApplicationSettings = app.state.settings
-        application_health: ApplicationHealth = app.state.application_health
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        outputs_manager: OutputsManager = app.state.outputs_manager
-        inputs_state: InputsState = app.state.inputs_state
-
-        task_context.update(
-            {
+            task_context: dict[TaskProtocol, dict[str, Any]] = {
                 pull_user_services_images: {
                     "shared_store": shared_store,
                     "app": app,
@@ -673,14 +675,13 @@ def setup_long_running_tasks(app: FastAPI) -> None:
                     "shared_store": shared_store,
                 },
             }
-        )
 
-        for handler, context in task_context.items():
-            TaskRegistry.register(handler, **context)
+            for handler, context in task_context.items():
+                TaskRegistry.register(handler, **context)
+                registered_handlers.append(handler)
+            yield
+        finally:
+            for handler in registered_handlers:
+                TaskRegistry.unregister(handler)
 
-    async def _on_shutdown() -> None:
-        for handler in task_context:
-            TaskRegistry.unregister(handler)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", _on_shutdown)
+    app_lifespan.add(_lifespan)

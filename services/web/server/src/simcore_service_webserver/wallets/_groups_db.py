@@ -77,32 +77,6 @@ async def list_wallet_groups(
         return TypeAdapter(list[WalletGroupGetDB]).validate_python(rows)
 
 
-async def get_wallet_group(
-    app: web.Application,
-    wallet_id: WalletID,
-    group_id: GroupID,
-) -> WalletGroupGetDB:
-    stmt = (
-        select(
-            wallet_to_groups.c.gid,
-            wallet_to_groups.c.read,
-            wallet_to_groups.c.write,
-            wallet_to_groups.c.delete,
-            wallet_to_groups.c.created,
-            wallet_to_groups.c.modified,
-        )
-        .select_from(wallet_to_groups)
-        .where((wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id))
-    )
-
-    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
-        result = await conn.execute(stmt)
-        row = result.mappings().one_or_none()
-        if row is None:
-            raise WalletGroupNotFoundError(details=f"Wallet {wallet_id} group {group_id} not found")
-        return WalletGroupGetDB.model_validate(row)
-
-
 async def update_wallet_group(
     app: web.Application,
     wallet_id: WalletID,

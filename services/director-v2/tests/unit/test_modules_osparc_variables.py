@@ -8,7 +8,6 @@
 import asyncio
 import json
 from collections.abc import AsyncIterable
-from contextlib import asynccontextmanager
 from copy import deepcopy
 from typing import Final
 from unittest.mock import AsyncMock, Mock
@@ -17,6 +16,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager as FastAPILifespanManager
 from models_library.service_settings_labels import ComposeSpecLabelDict
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_types import ServiceRunID
@@ -116,12 +116,19 @@ async def test_resolve_session_environs(faker: Faker, session_context: ContextDi
 
 @pytest.fixture
 def mock_repo_db_engine(mocker: MockerFixture) -> None:
-    @asynccontextmanager
-    async def _connect():
-        yield
+    mocked_conn = AsyncMock()
+    mocked_conn.closed = False
 
     mocked_engine = AsyncMock()
-    mocked_engine.connect = _connect
+    # NOTE: SQLAlchemy 2.0 `AsyncEngine.connect()` is awaited and returns an
+    # AsyncConnection usable as async context manager
+    mocked_engine.connect = AsyncMock(return_value=mocked_conn)
+    # NOTE: emulate a real SQLAlchemy pool (int-returning introspection methods);
+    # an AsyncMock pool would return coroutines from `checkedout()`/`size()`,
+    # which `BaseRepository.__post_init__` pool-utilization checks cannot consume
+    mocked_engine.pool = Mock(_max_overflow=0)
+    mocked_engine.pool.checkedout.return_value = 0
+    mocked_engine.pool.size.return_value = 5
 
     def _get_repository[RepoType: BaseRepository](app: FastAPI, repo_type: type[RepoType]) -> RepoType:
         return repo_type(db_engine=mocked_engine)
@@ -142,13 +149,14 @@ def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
 
 @pytest.fixture
 async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
-    app = FastAPI()
+    app_lifespan = FastAPILifespanManager()
+    app = FastAPI(lifespan=app_lifespan)
     app.state.engine = AsyncMock()
 
     mock_settings = Mock()
     app.state.settings = mock_settings
 
-    substitutions.setup(app)
+    substitutions.configure_substitutions(app_lifespan)
 
     async with LifespanManager(app):
         yield app

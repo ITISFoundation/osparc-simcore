@@ -1,27 +1,32 @@
 # osparc-simcore platform
 
+<!-- markdownlint-disable MD013 MD033 -->
+<!-- The centered logo and footer need inline HTML, and badge and table lines cannot be wrapped -->
+
 <p align="center">
 <a href="https://osparc.io" target="_blank">
-<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="500">
+<img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" alt="oSPARC" width="500">
 </a>
 </p>
 
 <!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
 [![ruff_badge]](https://github.com/astral-sh/ruff)
-[![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
+[![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-build-test.yml)
 [![codecov_badge]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
+[![codspeed_badge]](https://app.codspeed.io/ITISFoundation/osparc-simcore?utm_source=badge)
 [![doc_badge]](https://itisfoundation.github.io/)
 [![dockerhub_badge]](https://hub.docker.com/u/itisfoundation)
 [![license_badge]](./LICENSE)
-[![renovate_badge]](https://github.com/ITISFoundation/osparc-simcore/issues/9336)
+[![renovate_badge]](https://github.com/ITISFoundation/osparc-simcore/issues/9879)
 [![sonarcloud_badge]](https://sonarcloud.io/summary/new_code?id=ITISFoundation_osparc-simcore)
 [![osparc_status]](https://status.osparc.io)
 [![s4l_status]](https://s4llite.statuspage.io)
 
 <!-- BADGES: LINKS TO IMAGES. Default to https://shields.io/ ------------------------------>
 [ruff_badge]:https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
-[ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg
+[ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-build-test.yml/badge.svg
 [codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
+[codspeed_badge]:https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
 [doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [dockerhub_badge]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=docker%20images&up_color=blue
 [license_badge]:https://img.shields.io/badge/license-MIT-green
@@ -35,13 +40,12 @@ The SIM-CORE, named **o<sup>2</sup>S<sup>2</sup>PARC** – **O**pen **O**nline *
 The aim of o<sup>2</sup>S<sup>2</sup>PARC is to establish a comprehensive, freely accessible, intuitive, and interactive online platform for simulating peripheral nerve system neuromodulation/ stimulation and its impact on organ physiology in a precise and predictive manner.
 To achieve this, the platform will comprise both state-of-the art and highly detailed animal and human anatomical models with realistic tissue property distributions that make it possible to perform simulations ranging from the molecular scale up to the complexity of the human body.
 
-
 ## Getting Started
 
 A production instance of **o<sup>2</sup>S<sup>2</sup>PARC** is running at [oSPARC.io](https://osparc.io).
 
 If you want to spin up your own instance, you can follow the common workflow to build and deploy locally using the **Linux commandline** (Ubuntu recommended).
-Make sure you first install all the [requirements](#Requirements) mentioned in the section below.
+Make sure you first install all the [requirements](#requirements) mentioned in the section below.
 
 ```bash
   # clone code repository
@@ -77,7 +81,7 @@ To build and run:
 - git
 - [docker](https://docs.docker.com/engine/install/ubuntu/#installation-methods)
 - make >=4.2
-- awk, jq (optional tools within makefiles)
+- gawk, jq (optional tools within makefiles)
 
 To develop, in addition:
 
@@ -87,14 +91,13 @@ To develop, in addition:
 
 To verify current base OS, Docker and Python build versions have a look at:
 
-- GitHub Actions [config](.github/workflows/ci-testing-deploy.yml)
+- GitHub Actions [config](.github/workflows/ci-build-test.yml)
 
 If you want to verify if your system has all the necessary requirements:
 
 ```bash
     make info
 ```
-
 
 #### Setting up other Operating Systems
 
@@ -179,8 +182,6 @@ To enable this, the following commands should be used to build, instead of the o
 ## Contributing
 
 Would you like to make a change or add something new? Please read the [contributing guidelines](CONTRIBUTING.md).
-
-
 
 ## License
 

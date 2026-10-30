@@ -70,7 +70,7 @@ def mocked_catalog(
 
 
 @pytest.fixture
-def mocked_director_v2(director_v2_service_mock: aioresponses): ...
+def mocked_director_v2(director_v2_service_mock: aioresponses) -> None: ...
 
 
 @pytest.fixture

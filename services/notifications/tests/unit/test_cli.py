@@ -4,7 +4,6 @@
 import traceback
 
 import pytest
-from click.testing import Result
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
     load_dotenv,
@@ -12,7 +11,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 )
 from simcore_service_notifications.cli import main
 from simcore_service_notifications.core.settings import ApplicationSettings
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 
 pytest_simcore_core_services_selection = [
     "postgres",

@@ -23,6 +23,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects import ProjectStateOutputSchema
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import (
@@ -361,6 +362,23 @@ async def logged_user_registered_in_two_products(
     assert group.gid == s4l_product.group_id
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_list_projects_reports_unknown_when_computation_states_are_unavailable(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    mocked_director_v2: mock.AsyncMock,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    user_project: dict[str, Any],
+):
+    mocked_director_v2.return_value = None
+
+    data, *_ = await _list_and_assert_projects(client, status.HTTP_200_OK, {"type": "user"})
+
+    assert len(data) == 1
+    assert data[0]["uuid"] == user_project["uuid"]
+    assert data[0]["state"]["state"]["value"] == RunningState.UNKNOWN
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -421,6 +439,7 @@ async def test_get_project(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group,
@@ -438,6 +457,7 @@ async def test_new_project(
 )
 async def test_create_get_and_patch_project_ui_field(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     storage_subsystem_mock,
     client: TestClient,
     logged_user: UserInfoDict,
@@ -599,6 +619,7 @@ async def test_new_project_from_template_with_body(
 async def test_new_template_from_project(
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mocked_director_v2: mock.AsyncMock,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],

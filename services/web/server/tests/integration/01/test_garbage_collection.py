@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import logging
 import re
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
@@ -20,11 +20,11 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers import webserver_projects
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -77,7 +77,7 @@ pytest_simcore_core_services_selection = [
     "sto-worker",
 ]
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "s3-storage",
     "adminer",
     "redis-commander",
 ]
@@ -88,11 +88,6 @@ GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
 WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
-
-
-@pytest.fixture(autouse=True)
-def _drop_and_recreate_postgres(database_from_template_before_each_function):
-    return
 
 
 @pytest.fixture(autouse=True)
@@ -107,15 +102,15 @@ async def _delete_all_redis_keys(redis_settings: RedisSettings):
 
 
 @pytest.fixture
-async def director_v2_service_mock(
+def director_v2_service_mock(
+    aioresponses_mocker: AioResponsesMock,
     mocker: MockerFixture,
-) -> AsyncIterable[aioresponses]:
+) -> AioResponsesMock:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
     Other than that it seems to behave nicely
     """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
     get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
     delete_computation_pattern = get_computation_pattern
     stop_computation_pattern = get_computation_pattern
@@ -126,33 +121,28 @@ async def director_v2_service_mock(
         return_value={},
     )
 
-    # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
-    # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined
-    # at different locations?? not sure..
-    # anyway I think this should disappear once the garbage collector moves to its own micro-service
-    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        mock.get(
-            get_computation_pattern,
-            status=status.HTTP_202_ACCEPTED,
-            payload={"state": str(RunningState.NOT_STARTED.value)},
-            repeat=True,
-        )
-        mock.delete(delete_computation_pattern, status=204, repeat=True)
-        mock.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
-        yield mock
+    aioresponses_mocker.get(
+        get_computation_pattern,
+        status=status.HTTP_202_ACCEPTED,
+        payload={"state": str(RunningState.NOT_STARTED.value)},
+        repeat=True,
+    )
+    aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
+    aioresponses_mocker.post(stop_computation_pattern, status=status.HTTP_202_ACCEPTED, repeat=True)
+    return aioresponses_mocker
 
 
 @pytest.fixture
 async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     app_config: dict[str, Any],
-    postgres_with_template_db: sa.engine.Engine,
+    postgres_db: sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
     redis_client: aioredis.Redis,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
-    director_v2_service_mock: aioresponses,
+    director_v2_service_mock: AioResponsesMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> TestClient:
     cfg = deepcopy(app_config)

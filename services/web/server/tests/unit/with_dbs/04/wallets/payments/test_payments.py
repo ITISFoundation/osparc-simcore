@@ -29,7 +29,10 @@ from simcore_postgres_database.models.payments_transactions import (
 from simcore_service_webserver.payments._onetime_api import (
     _ack_creation_of_wallet_payment,
 )
-from simcore_service_webserver.payments.errors import PaymentCompletedError
+from simcore_service_webserver.payments.errors import (
+    PaymentAlreadyAckedError,
+    PaymentCompletedError,
+)
 from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
@@ -65,7 +68,7 @@ async def test_payment_on_invalid_wallet(
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4657")
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
-    [(1, status.HTTP_422_UNPROCESSABLE_ENTITY), (25, status.HTTP_201_CREATED)],
+    [(1, status.HTTP_422_UNPROCESSABLE_CONTENT), (25, status.HTTP_201_CREATED)],
 )
 async def test_one_time_payment_workflow(
     latest_osparc_price: Decimal,
@@ -345,6 +348,31 @@ async def test_payment_not_found(
     error_msg = error["message"]
     assert payment_id in error_msg
     assert ":cancel" not in error_msg
+
+
+async def test_cancel_already_closed_payment_reports_conflict(
+    latest_osparc_price: Decimal,
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    faker: Faker,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
+):
+    """Closing the buy-credits view also fires a cancel right after the gateway acked the
+    payment, so this common race must be reported as a conflict and never as an internal
+    error (it used to fall through and show the user a generic 500 error page)
+    """
+    wallet = logged_user_wallet
+    payment_id = faker.uuid4()
+
+    mock_rpc_payments_service_api["cancel_payment"].side_effect = PaymentAlreadyAckedError(payment_id=payment_id)
+
+    response = await client.post(
+        f"/v0/wallets/{wallet.wallet_id}/payments/{payment_id}:cancel",
+    )
+
+    data, error = await assert_status(response, status.HTTP_409_CONFLICT)
+    assert data is None
+    assert payment_id in error["message"]
 
 
 def test_payment_transaction_state_and_literals_are_in_sync():

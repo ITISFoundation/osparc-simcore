@@ -31,7 +31,7 @@ PARTIALS_DIR   := $(LOCALE_OUT_DIR)/_partials
 ENV_FILE       := $(REPO_ROOT)/.env
 
 # --- Backend configuration ---
-LANGS            ?= zh_CN es_ES               ## Backend target locales (space-separated locale codes)
+LANGS            ?= es_ES ko_KR zh_CN        ## Backend target locales (space-separated locale codes)
 POT              := $(LOCALE_OUT_DIR)/messages.pot
 PO_FILES         := $(foreach lang,$(LANGS),$(LOCALE_OUT_DIR)/$(lang)/LC_MESSAGES/messages.po)
 MO_FILES         := $(PO_FILES:.po=.mo)
@@ -41,6 +41,8 @@ PARALLEL         ?= true                      ## Translate entries in parallel (
 PROGRESS         ?= true                      ## Show progress bar during translation
 INCREMENTAL_SAVE ?= true                      ## Save .po incrementally as entries are translated
 MAX_WORKERS      ?= 4                         ## Max parallel workers when PARALLEL=true
+KEEP_OBSOLETE    ?= false                     ## false = `merge` also runs `purge-obsolete`
+RETRANSLATE_IDENTICAL ?= true                 ## true = also re-translate entries whose msgstr equals msgid verbatim (likely failed translations; acronyms included)
 TRANSLATE_TS     := $(shell date +%Y%m%dT%H%M%S)
 
 # --- Ollama integration ---
@@ -68,6 +70,7 @@ I18N_DIRS := \
   services/director-v2 \
   services/api-server \
   services/notifications \
+  services/storage \
   packages/service-library \
   packages/dask-task-models-library \
   packages/common-library
@@ -94,7 +97,7 @@ CLIENT_SRC_REL      := services/static-webserver/client/source/class
 CLIENT_TRANS_DIR    := $(CLIENT_DIR)/source/translation
 FRONTEND_PARTIALS_DIR := $(CLIENT_TRANS_DIR)/_partials
 FRONTEND_POT        := $(CLIENT_TRANS_DIR)/frontend.pot
-CLIENT_LANGS        ?= es_ES zh_CN            ## Frontend target locales (space-separated locale codes)
+CLIENT_LANGS        ?= es_ES ko_KR zh_CN      ## Frontend target locales (space-separated locale codes)
 
 # --- Guided tours JSON resources (extracted via json_cmd, not xgettext) ---
 # Data loaded at runtime (osparc.tours.Manager/List/Step), so their
@@ -123,6 +126,24 @@ else
   PARALLEL_FLAG := --no-parallel
 endif
 
+# msgmerge keeps obsolete (#~) entries at the end of each .po once their msgid
+# is gone from the sources, and has no flag to drop them (this system's gettext
+# 0.21 msgmerge predates --no-obsolete), so purging is an explicit post-merge
+# step. The merge steps below call this helper unless KEEP_OBSOLETE=true;
+# standalone targets: `purge-obsolete` / `purge-obsolete-frontend`.
+# Usage: $(call PURGE_OBSOLETE,file.po)
+ifeq ($(strip $(KEEP_OBSOLETE)),true)
+  PURGE_OBSOLETE = :
+else
+  PURGE_OBSOLETE = msgattrib --no-obsolete $(1) -o $(1).tmp && mv $(1).tmp $(1) || exit 1
+endif
+
+ifeq ($(strip $(RETRANSLATE_IDENTICAL)),true)
+  RETRANSLATE_IDENTICAL_FLAG := --retranslate-identical
+else
+  RETRANSLATE_IDENTICAL_FLAG :=
+endif
+
 ifneq ($(BASE_URL),)
   BASE_URL_FLAG := --base-url $(BASE_URL)
 else
@@ -130,7 +151,7 @@ else
 endif
 
 EXTRACTOR  := uv run $(I18N_TOOLS)/i18n_extractor.py
-TRANSLATOR := uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
+TRANSLATOR := uv run --locked --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py
 
 # ---------------------------------------------------------------------------
 # Step header — bold-yellow "[TAG] message" banner printed before each
@@ -150,6 +171,7 @@ STEP = printf '\033[1;33m[%s]\033[0m %s\n' "$(1)" "$(2)"
 
 .PHONY: backend-all backend-extract backend-plan backend-translate backend-compile \
         frontend-all frontend-extract frontend-plan frontend-translate frontend-tools-install \
+        purge-obsolete purge-obsolete-frontend \
         check-i18n-style clean test vars
 
 # ===========================================================================
@@ -196,8 +218,9 @@ backend-plan:  ## Dry-run backend: log LLM prompts that WOULD be sent (no call, 
 	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
-	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --dry-run --pot $(POT) $$in_po_flag --lang $$lang --out $$po; \
+	  uv run --locked $(I18N_TOOLS)/i18n_translator.py translate \
+	    --dry-run --pot $(POT) $$in_po_flag --lang $$lang --out $$po \
+	    $(RETRANSLATE_IDENTICAL_FLAG); \
 	done
 
 # ---------------------------------------------------------------------------
@@ -209,6 +232,7 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT) | $(TRANSLATE_DEPS)
 	@mkdir -p $(@D)
 	@if [ -f "$@" ]; then \
 	  msgmerge --update --backup=none "$@" "$(POT)"; \
+	  $(call PURGE_OBSOLETE,$@); \
 	else \
 	  msginit --no-translator --input="$(POT)" --locale="$*" --output-file="$@"; \
 	fi
@@ -222,6 +246,7 @@ $(LOCALE_OUT_DIR)/%/LC_MESSAGES/messages.po: $(POT) | $(TRANSLATE_DEPS)
 	  $(INCREMENTAL_SAVE_FLAG) \
 	  $(PROGRESS_FLAG) \
 	  $(PARALLEL_FLAG) \
+	  $(RETRANSLATE_IDENTICAL_FLAG) \
 	  --max-workers $(MAX_WORKERS) \
 	  --log-file $(@D)/translate-$(TRANSLATE_TS).log \
 	  --out $@
@@ -288,8 +313,9 @@ frontend-plan:  ## Dry-run frontend: log LLM prompts that WOULD be sent (no call
 	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
 	  in_po_flag=""; \
 	  if [ -f "$$po" ]; then in_po_flag="--in-po $$po"; fi; \
-	  uv run $(I18N_TOOLS)/i18n_translator.py translate \
-	    --dry-run --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po; \
+	  uv run --locked $(I18N_TOOLS)/i18n_translator.py translate \
+	    --dry-run --pot $(FRONTEND_POT) $$in_po_flag --lang $$lang --out $$po \
+	    $(RETRANSLATE_IDENTICAL_FLAG); \
 	done
 
 # ---------------------------------------------------------------------------
@@ -311,10 +337,11 @@ frontend-translate: $(TRANSLATE_DEPS)  ## msgmerge + AI translate frontend .po f
 	  $(call STEP,TRANSLATE,frontend $$lang -> $$out); \
 	  if [ -f "$$out" ]; then \
 	    msgmerge --update --backup=none "$$out" "$(FRONTEND_POT)"; \
+	    $(call PURGE_OBSOLETE,$$out); \
 	  else \
 	    msginit --no-translator --input="$(FRONTEND_POT)" --locale="$$out_lang" --output-file="$$out"; \
 	  fi; \
-	  uv run --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py translate \
+	  uv run --locked --env-file $(ENV_FILE) $(I18N_TOOLS)/i18n_translator.py translate \
 	    --pot $(FRONTEND_POT) \
 	    --in-po $$out \
 	    --lang $$lang \
@@ -323,6 +350,7 @@ frontend-translate: $(TRANSLATE_DEPS)  ## msgmerge + AI translate frontend .po f
 	    $(INCREMENTAL_SAVE_FLAG) \
 	    $(PROGRESS_FLAG) \
 	    $(PARALLEL_FLAG) \
+	    $(RETRANSLATE_IDENTICAL_FLAG) \
 	    --max-workers $(MAX_WORKERS) \
 	    --log-file $(CLIENT_TRANS_DIR)/translate-$$out_lang.log \
 	    --out $$out; \
@@ -347,6 +375,33 @@ vars:  ## List configurable variables (override via 'make VAR=value ...')
 	@echo ""
 
 # ---------------------------------------------------------------------------
+# purge-obsolete — standalone sweep dropping the `#~` entries msgmerge keeps at
+# the end of each .po once their msgid is gone from the sources (the translate
+# targets also run it per-file after msgmerge unless KEEP_OBSOLETE=true).
+# \warning It discards the history msgmerge uses for fuzzy matching, so a later
+# extraction of a removed string starts from scratch instead of a fuzzy hit.
+# ---------------------------------------------------------------------------
+purge-obsolete:  ## Strip obsolete (#~) entries from backend .po files (LANGS)
+	@for lang in $(LANGS); do \
+	  po=$(LOCALE_OUT_DIR)/$$lang/LC_MESSAGES/messages.po; \
+	  [ -f "$$po" ] || continue; \
+	  $(call STEP,PURGE,$$po); \
+	  msgattrib --no-obsolete "$$po" -o "$$po.tmp" && mv "$$po.tmp" "$$po" || exit 1; \
+	done
+
+purge-obsolete-frontend:  ## Strip obsolete (#~) entries from frontend .po files (CLIENT_LANGS)
+	@for lang in $(CLIENT_LANGS); do \
+	  case $$lang in \
+	    zh_CN) out_lang=zh ;; \
+	    *) out_lang=$$lang ;; \
+	  esac; \
+	  po=$(CLIENT_TRANS_DIR)/$$out_lang.po; \
+	  [ -f "$$po" ] || continue; \
+	  $(call STEP,PURGE,$$po); \
+	  msgattrib --no-obsolete "$$po" -o "$$po.tmp" && mv "$$po.tmp" "$$po" || exit 1; \
+	done
+
+# ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
 check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DIRS)
@@ -362,14 +417,13 @@ check-i18n-style:  ## Validate no f-strings in user_message() calls (all I18N_DI
 # local typescript) self-skip when those are unavailable.
 # ---------------------------------------------------------------------------
 test:  ## Run unit tests for the i18n tools (uv-managed deps, self-skips gated tests)
-	cd $(I18N_TOOLS) && uv run \
+	cd $(I18N_TOOLS) && \
+	  requirements=$$(uv export --script i18n_translator.py --locked --no-hashes --no-header --quiet) && \
+	  printf '%s\n' "$$requirements" | uv run --with-requirements - \
 	  --with pytest \
-	  --with polib \
-	  --with typer \
 	  --with rich \
 	  --with Babel \
 	  --with Jinja2 \
-	  --with litellm \
 	  pytest tests -v
 
 # ---------------------------------------------------------------------------

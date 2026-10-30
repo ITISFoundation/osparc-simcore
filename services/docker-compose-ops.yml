@@ -12,7 +12,7 @@
 # $ make ops_disabled=1 up-versioned
 # $ make ops_disabled=1 up-latest
 #
-# Nonetheless, notice that minio is a service used from simcore stack. Therefore, disabling ops stack
+# Nonetheless, notice that s3-storage is a service used from simcore stack. Therefore, disabling ops stack
 # is meaningful ONLY when simcore stack is intended to run with the the actual stacks from osparc-ops
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
@@ -20,12 +20,10 @@
 
 services:
   adminer:
-    image: adminer:5.4.1
+    image: adminer:6.2.0
     init: true
     environment:
       ADMINER_DEFAULT_SERVER: postgres
-      ADMINER_DESIGN: nette
-      ADMINER_PLUGINS: json-column
     ports:
       - "18080:8080"
     networks:
@@ -33,7 +31,7 @@ services:
 
   flower:
     # Celery task monitoring UI — https://flower.readthedocs.io
-    image: mher/flower:2.0.1
+    image: mher/flower:2.2.0
     init: true
     environment:
       CELERY_BROKER_URL: amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}//
@@ -57,30 +55,26 @@ services:
       start_period: 10s
 
   jaeger:
-    image: jaegertracing/all-in-one:1.47
+    image: jaegertracing/jaeger:latest
     networks:
       - simcore_default
     ports:
       - "16686:16686" # Jaeger UI
-      - "14268:14268" # Jaeger HTTP Thrift
-      - "14250:14250" # Jaeger gRPC
       - "43017:4317" # opentelemetry GRPC default port
       - "43018:4318" # opentelemetry HTTP default port
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
   portainer:
     image: portainer/portainer-ce
     init: true
     ports:
       - "9000:9000"
-    command: -H unix:///var/run/docker.sock
+    command: ["-H", "unix:///var/run/docker.sock", "--no-setup-token"]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
 
   mailpit:
     # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:v1.29.3
+    image: axllent/mailpit:v1.32.0
     init: true
     command:
       - --smtp-auth-accept-any
@@ -105,24 +99,26 @@ services:
       retries: 3
       start_period: 10s
 
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+  s3-storage:
+    # S3-compatible object storage (https://rustfs.com). The image runs as
+    # non-root UID/GID 10001; the named volume inherits /data's ownership
+    # from the image at creation time.
+    image: rustfs/rustfs:1.0.4@sha256:e287e99762a4a3e7b706526e01f2ff755f67db165e9be9f6b907adc6fb6d6ee1
     init: true
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?access_key_required}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?secret_key_required}
-      MINIO_VOLUMES: /data
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?access_key_required}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?secret_key_required}
+      RUSTFS_CONSOLE_ENABLE: "true"
     ports:
-      - "9001:9000"
-      - "9090:9090"
-    command: server --console-address ":9090"
+      - "9001:9000" # S3 API (host port kept from the previous minio service)
+      - "9090:9001" # web console
     volumes:
-      - minio_data:/data
+      - s3_storage_data:/data
     networks:
       - simcore_default
       - interactive_services_subnet
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "--fail", "http://localhost:9000/health"]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -144,7 +140,8 @@ services:
         dynamic_services:${REDIS_HOST}:${REDIS_PORT}:8:${REDIS_PASSWORD},
         celery_tasks:${REDIS_HOST}:${REDIS_PORT}:9:${REDIS_PASSWORD},
         documents:${REDIS_HOST}:${REDIS_PORT}:10:${REDIS_PASSWORD},
-        aiocache:${REDIS_HOST}:${REDIS_PORT}:11:${REDIS_PASSWORD}
+        aiocache:${REDIS_HOST}:${REDIS_PORT}:11:${REDIS_PASSWORD},
+        chatbox_usage:${REDIS_HOST}:${REDIS_PORT}:12:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"
@@ -186,8 +183,8 @@ services:
       TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
       TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}
 volumes:
-  minio_data:
-    name: ops_minio_data
+  s3_storage_data:
+    name: ops_s3_storage_data
   portainer_data:
     name: ops_portainer_data
 

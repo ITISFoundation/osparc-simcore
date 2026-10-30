@@ -18,6 +18,7 @@ coverage
 docker
 faker
 fakeredis[lua]
+filelock
 flaky
 numpy
 openapi-spec-validator
@@ -28,7 +29,6 @@ pytest-aiohttp
 pytest-asyncio
 pytest-benchmark
 pytest-cov
-pytest-docker
 pytest-icdiff
 pytest-instafail
 pytest-mock

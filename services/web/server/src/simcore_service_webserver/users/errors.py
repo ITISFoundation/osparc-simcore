@@ -85,6 +85,23 @@ class PreRegistrationAlreadyLinkedToAccountError(UsersBaseError):
         self.user_id = user_id
 
 
+class UserAccountNotActiveError(UsersBaseError):
+    msg_template = "Cannot grant product access to user_id={user_id}: account status is {status} (expected ACTIVE)"
+
+    def __init__(self, *, user_id: int, status: str, **ctx: Any):
+        super().__init__(**ctx)
+        self.user_id = user_id
+        self.status = status
+
+
+class InvitationUrlRequiredError(UsersBaseError):
+    msg_template = "An invitation URL is required to approve email {email}: no existing account was found for it"
+
+    def __init__(self, *, email: str, **ctx: Any):
+        super().__init__(**ctx)
+        self.email = email
+
+
 class PreRegistrationDuplicateInProductError(UsersBaseError):
     msg_template = "A pre-registration with email {email} already exists in product {product_name}"
 

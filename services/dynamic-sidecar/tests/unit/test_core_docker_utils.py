@@ -32,11 +32,15 @@ def service_run_id() -> ServiceRunID:
 
 
 @pytest.fixture
-async def volume_with_label(volume_name: str, service_run_id: ServiceRunID) -> AsyncIterable[None]:
+async def volume_with_label(volume_name: str, service_run_id: ServiceRunID, faker: Faker) -> AsyncIterable[None]:
+    """Creates a labeled volume with a unique name: faker is session-scoped and re-seeded
+    per xdist worker, so faker.unique never repeats a name within or across workers
+    """
+
     async with aiodocker.Docker() as docker_client:
         volume = await docker_client.volumes.create(
             {
-                "Name": "test_volume_name_1",
+                "Name": f"test_volume_name_{faker.unique.uuid4()}",
                 "Labels": {"source": volume_name, "run_id": service_run_id},
             }
         )
@@ -52,8 +56,11 @@ def container_count(request: pytest.FixtureRequest) -> PositiveInt:
 
 
 @pytest.fixture
-def container_names(container_count: PositiveInt) -> list[str]:
-    return [f"container_test_{i}" for i in range(container_count)]
+def container_names(container_count: PositiveInt, faker: Faker) -> list[str]:
+    """Unique prefix so concurrent xdist workers never collide on fixed names"""
+
+    prefix = f"container_test_{faker.unique.uuid4()}"
+    return [f"{prefix}_{i}" for i in range(container_count)]
 
 
 @pytest.fixture

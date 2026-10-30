@@ -32,7 +32,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from . import exceptions
-from .storage_endpoint import get_base_url, get_basic_auth
+from .storage_endpoint import get_base_url, get_basic_auth_headers
 
 _logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def handle_client_exception[**P, R](
             if err.status == status.HTTP_404_NOT_FOUND:
                 msg = kwargs.get("file_id", "unknown file id")
                 raise exceptions.S3InvalidPathError(msg) from err
-            if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
+            if err.status == status.HTTP_422_UNPROCESSABLE_CONTENT:
                 msg = f"Invalid call to storage: {err.message}"
                 raise exceptions.StorageInvalidCallError(msg) from err
             if status.HTTP_500_INTERNAL_SERVER_ERROR > err.status >= status.HTTP_400_BAD_REQUEST:
@@ -87,7 +87,8 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
 
 
 def _session_method(session: ClientSession, method: str, url: str, **kwargs) -> RequestContextManager:
-    return session.request(method, url, auth=get_basic_auth(), **kwargs)
+    headers = {**(kwargs.pop("headers", None) or {}), **get_basic_auth_headers()}
+    return session.request(method, url, headers=headers, **kwargs)
 
 
 @asynccontextmanager
@@ -112,7 +113,7 @@ async def retry_request(
             async with _session_method(session, method, url, **kwargs) as response:
                 if response.status != expected_status:
                     # this is a more precise raise_for_status()
-                    error_msg = await response.json()
+                    error_msg = await response.text()
                     response.release()
                     raise ClientResponseError(
                         response.request_info,

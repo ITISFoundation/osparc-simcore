@@ -17,7 +17,7 @@ from models_library.api_schemas_storage.storage_schemas import UNDEFINED_SIZE_TY
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
-from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
+from pytest_simcore.helpers.faker_factories import deterministic_faker
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -34,10 +34,16 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
     expected_size = MAX_CHUNK_SIZE * 3 + 1000
 
     async with httpx.AsyncClient() as session:
-        total_size = await download_to_file_or_raise(session, f"{httpbin_base_url}/bytes/{expected_size}", destination)
+        # NOTE: str(HttpUrl) ends with "/", so no leading slash here (go-httpbin answers
+        # "//bytes/N" with a 307 redirect, which download_to_file_or_raise does not follow)
+        total_size = await download_to_file_or_raise(session, f"{httpbin_base_url}bytes/{expected_size}", destination)
         assert destination.exists()
         assert expected_size == total_size
         assert destination.stat().st_size == total_size
+
+
+# fake values in @pytest.mark.parametrize must be worker-identical (see deterministic_faker)
+_COLLECTION_FAKER = deterministic_faker()
 
 
 @pytest.mark.parametrize(
@@ -45,25 +51,25 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
     [
         (-1, None, None, None, False),
         (0, None, None, None, False),
-        (DEFAULT_FAKER.random_int(1, 1000000), None, None, None, False),
+        (_COLLECTION_FAKER.random_int(1, 1000000), None, None, None, False),
         (-1, "some_valid_entity_tag", None, None, False),
         (0, "some_valid_entity_tag", None, None, False),
         (
-            DEFAULT_FAKER.random_int(1, 1000000),
+            _COLLECTION_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
             "some_upload_id",
             None,
             False,
         ),
         (
-            DEFAULT_FAKER.random_int(1, 1000000),
+            _COLLECTION_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
             None,
             datetime.datetime.now(datetime.UTC),
             False,
         ),
         (
-            DEFAULT_FAKER.random_int(1, 1000000),
+            _COLLECTION_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
             None,
             None,

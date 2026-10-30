@@ -1,9 +1,12 @@
 import datetime
 from contextlib import suppress
 from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    NewType,
     TypedDict,
+    cast,
 )
 
+import networkx as nx
 from models_library.api_schemas_directorv2.encryption import FileIDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -47,11 +50,14 @@ class RunMetadataDict(TypedDict, total=False):
     encryption: JobEncryptionRunMetadataDict
 
 
-type Iteration = PositiveInt
+type _IterationInt = PositiveInt
+type _RunIDInt = PositiveInt
+Iteration = NewType("Iteration", _IterationInt)
+RunID = NewType("RunID", _RunIDInt)
 
 
 class CompRunsAtDB(BaseModel):
-    run_id: PositiveInt
+    run_id: RunID
     project_uuid: ProjectID
     user_id: UserID
     iteration: Iteration
@@ -93,6 +99,15 @@ class CompRunsAtDB(BaseModel):
         if v is None:
             v = RunMetadataDict()
         return v
+
+    def get_graph(self) -> nx.DiGraph:
+        return cast(
+            nx.DiGraph,
+            nx.convert.from_dict_of_lists(
+                self.dag_adjacency_list,  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
+                create_using=nx.DiGraph,
+            ),
+        )
 
     model_config = ConfigDict(
         from_attributes=True,

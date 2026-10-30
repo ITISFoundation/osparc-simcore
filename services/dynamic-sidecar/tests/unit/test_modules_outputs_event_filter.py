@@ -131,13 +131,15 @@ async def test_event_triggers_once(
 ):
     # event triggers once
     await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mocked_port_key_content_changed.call_count == 1
 
     # event triggers a second time
     await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 2
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mocked_port_key_content_changed.call_count == 2
 
 
 async def test_trigger_once_after_event_chain(
@@ -147,8 +149,9 @@ async def test_trigger_once_after_event_chain(
 ):
     for _ in range(100):
         await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mocked_port_key_content_changed.call_count == 1
 
 
 async def test_always_trigger_after_delay(

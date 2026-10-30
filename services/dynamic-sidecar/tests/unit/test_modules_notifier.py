@@ -3,7 +3,6 @@
 
 from collections.abc import AsyncIterable, Callable
 from contextlib import AsyncExitStack, _AsyncGeneratorContextManager
-from pathlib import Path
 from typing import Final
 from unittest.mock import AsyncMock
 
@@ -12,6 +11,7 @@ import socketio
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from fastapi_lifespan_manager import LifespanManager as AppLifespanManager
 from models_library.api_schemas_dynamic_sidecar.ports import (
     InputPortStatus,
     InputStatus,
@@ -44,8 +44,10 @@ from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.notifications import (
     PortNotifier,
     StatePathsNotifier,
+    configure_notifications,
     publish_disk_usage,
 )
+from simcore_service_dynamic_sidecar.modules.notifications import _setup as notifications_setup
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
 )
@@ -59,6 +61,25 @@ pytest_simcore_core_services_selection = [
 ]
 
 _NUMBER_OF_CLIENTS: Final[NonNegativeInt] = 10
+
+
+def test_configure_notifications_preserves_socketio_before_notifier(mocker: MockerFixture):
+    app_lifespan: AppLifespanManager[FastAPI] = AppLifespanManager()
+    configured_lifespans: list[str] = []
+    mocker.patch.object(
+        notifications_setup,
+        "configure_notifier",
+        side_effect=lambda _: configured_lifespans.append("notifier"),
+    )
+    mocker.patch.object(
+        notifications_setup,
+        "configure_socketio",
+        side_effect=lambda _: configured_lifespans.append("socketio"),
+    )
+
+    configure_notifications(app_lifespan)
+
+    assert configured_lifespans == ["socketio", "notifier"]
 
 
 @pytest.fixture
@@ -168,7 +189,7 @@ async def test_notifier_publish_disk_usage(
     socketio_server_events: dict[str, AsyncMock],
     app: FastAPI,
     user_id: UserID,
-    usage: dict[Path, DiskUsage],
+    usage: dict[MountPathCategory, DiskUsage],
     node_id: NodeID,
     socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
 ):
@@ -334,6 +355,25 @@ async def test_notifier_send_output_port_status(
         on_output_port_events: list[AsyncMock] = [_get_on_output_port_spy(c) for c in frontend_clients]
 
         port_notifier = PortNotifier(app, user_id, project_id, node_id)
+
+        # warm up the server->client fanout: the "check" round-trip only proves
+        # client->server traffic, while the fanout leg (exchange queue binding,
+        # the manager's receiver loop, each client's websocket writer) is
+        # otherwise first exercised by the asserted event itself and can miss it
+        # on a loaded runner. Each round sends one probe through the real path
+        # and waits until every client received exactly that probe, so nothing
+        # is still in flight when the spies are reset for the exactly-once
+        # assertion below
+        async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(20), reraise=True):
+            with attempt:
+                for on_output_port_event in on_output_port_events:
+                    on_output_port_event.reset_mock()
+                await port_notifier.send_output_port_upload_started(port_key)
+                for on_output_port_event in on_output_port_events:
+                    await _assert_call_count(on_output_port_event, call_count=1)
+
+        for on_output_port_event in on_output_port_events:
+            on_output_port_event.reset_mock()
 
         # server publishes a message
         match output_status:

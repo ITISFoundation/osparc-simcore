@@ -45,7 +45,7 @@ async def test_running_services_post_and_delete(  # noqa: PLR0915
 ):
     params = {}
     resp = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     params = {
         "user_id": f"{faker.pyint(min_value=1)}",
@@ -57,7 +57,7 @@ async def test_running_services_post_and_delete(  # noqa: PLR0915
     }
     resp = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     data = resp.json()
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, data
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, data
 
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"

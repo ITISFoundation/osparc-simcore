@@ -12,7 +12,7 @@ from fastapi_pagination import add_pagination
 from servicelib.fastapi import timing_middleware
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
 from servicelib.fastapi.httpx_client import configure_httpx_client
-from servicelib.fastapi.lifespan_utils import configure_app_lifespan
+from servicelib.fastapi.lifespan_utils import Lifespan, configure_app_lifespan
 from servicelib.fastapi.monitoring import (
     configure_prometheus_instrumentation,
 )
@@ -102,8 +102,13 @@ def _configure_app(
             set_exception_handlers(app)
 
 
-def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings,
+    tracing_config: TracingConfig,
+    logging_lifespan: Lifespan | None = None,
+) -> FastAPI:
     with configure_app_lifespan(
+        logging_lifespan=logging_lifespan,
         starting_banner=APP_STARTING_BANNER_MSG,
         started_banner=get_started_banner(settings.STORAGE_BOOT_SERVER_MODE),
         shutdown_complete_banner=APP_FINISHED_BANNER_MSG,

@@ -1,12 +1,14 @@
 import functools
 import logging
-import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
+from fastapi_lifespan_manager import LifespanManager
 from models_library.projects_nodes_io import StorageFileID
 from models_library.rabbitmq_messages import FileNotificationEventType, FileNotificationMessage
 from servicelib.container_utils import run_command_in_container
@@ -19,6 +21,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePat
 
 from ..core.rabbitmq import get_rabbitmq_client
 from ..core.settings import ApplicationSettings
+from ..core.utils import get_self_container_name
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 
@@ -86,9 +89,8 @@ async def _try_remove_from_disk_volumes(
     if local_path is None or not local_path.exists():
         return
 
-    self_container = os.environ["HOSTNAME"]
     await run_command_in_container(
-        self_container,
+        get_self_container_name(),
         command=["rm", "-rf", f"{local_path}"],
         timeout=_TIMEOUT_REMOVAL.total_seconds(),
     )
@@ -176,29 +178,35 @@ async def _handle_file_notification(app: FastAPI, data: bytes) -> bool:
     return True
 
 
-def setup_file_notification_subscriber(app: FastAPI) -> None:
-    async def _startup() -> None:
-        settings: ApplicationSettings = app.state.settings
-        topic = f"{settings.DY_SIDECAR_PROJECT_ID}.{settings.DY_SIDECAR_NODE_ID}"
+def configure_file_notification_subscriber(app_lifespan: LifespanManager[FastAPI]) -> None:
+    @asynccontextmanager
+    async def file_notification_subscriber_lifespan(app: FastAPI) -> AsyncIterator[None]:
+        subscribed_queue: QueueName | None = None
+        try:
+            settings: ApplicationSettings = app.state.settings
+            topic = f"{settings.DY_SIDECAR_PROJECT_ID}.{settings.DY_SIDECAR_NODE_ID}"
 
-        with log_context(_logger, logging.INFO, msg=f"subscribing to file notifications with topic={topic}"):
-            rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-            subscribed_queue, _ = await rabbit_client.subscribe(
-                FileNotificationMessage.get_channel_name(),
-                message_handler=functools.partial(_handle_file_notification, app),
-                exclusive_queue=True,
-                topics=[topic],
-            )
-            app.state.file_notification_state = _FileNotificationState(queue_name=subscribed_queue)
+            with log_context(_logger, logging.INFO, msg=f"subscribing to file notifications with topic={topic}"):
+                rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+                subscribed_queue, _ = await rabbit_client.subscribe(
+                    FileNotificationMessage.get_channel_name(),
+                    message_handler=functools.partial(_handle_file_notification, app),
+                    exclusive_queue=True,
+                    topics=[topic],
+                )
+                app.state.file_notification_state = _FileNotificationState(queue_name=subscribed_queue)
+            yield
+        finally:
+            if subscribed_queue is not None:
+                with log_context(
+                    _logger,
+                    logging.INFO,
+                    msg=f"unsubscribing from file notifications with queue={subscribed_queue}",
+                ):
+                    rabbit_client = get_rabbitmq_client(app)
+                    await rabbit_client.unsubscribe(subscribed_queue)
 
-    async def _stop() -> None:
-        queue_name = _get_file_notification_state(app).queue_name
-        with log_context(_logger, logging.INFO, msg=f"unsubscribing from file notifications with queue={queue_name}"):
-            rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-            await rabbit_client.unsubscribe(queue_name)
-
-    app.add_event_handler("startup", _startup)
-    app.add_event_handler("shutdown", _stop)
+    app_lifespan.add(file_notification_subscriber_lifespan)
 
 
 def enable_notifications_processing(app: FastAPI) -> None:

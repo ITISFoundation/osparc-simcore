@@ -1,31 +1,49 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-instance-attributes
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 import contextlib
 import json
 import logging
 import re
+import threading
 import typing
 from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from enum import Enum, unique
-from typing import Any, Final
+from enum import StrEnum
+from types import TracebackType
+from typing import Annotated, Any, Final
 
 import arrow
 import pytest
-from playwright._impl._sync_base import EventContextManager
-from playwright.sync_api import APIRequestContext, FrameLocator, Locator, Page, Request, WebSocket
+from annotated_types import doc
+from models_library.projects_state import ProjectStatus, RunningState
+from models_library.rabbitmq_messages import ProgressType
+from playwright._impl._sync_base import EventContextManager, EventInfo
+from playwright.sync_api import (
+    APIRequestContext,
+    ElementHandle,
+    FrameLocator,
+    Locator,
+    Page,
+    Request,
+    WebSocket,
+    expect,
+)
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
 from tenacity import (
+    RetryError,
+    Retrying,
     before_sleep_log,
     retry,
     retry_if_exception_type,
+    retry_if_result,
     stop_after_attempt,
     stop_after_delay,
     wait_exponential,
@@ -44,69 +62,18 @@ NODE_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/projects/[^/]
 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
-@unique
-class RunningState(str, Enum):
-    # NOTE: this is a duplicate of models-library/project_states.py
-    # It must remain as such until that module is pydantic V2 compatible
-    """State of execution of a project's computational workflow
-
-    SEE StateType for task state
-    """
-
-    UNKNOWN = "UNKNOWN"
-    PUBLISHED = "PUBLISHED"
-    NOT_STARTED = "NOT_STARTED"
-    PENDING = "PENDING"
-    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    ABORTED = "ABORTED"
-    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
-
-    def is_running(self) -> bool:
-        return self in (
-            RunningState.PUBLISHED,
-            RunningState.PENDING,
-            RunningState.WAITING_FOR_RESOURCES,
-            RunningState.STARTED,
-            RunningState.WAITING_FOR_CLUSTER,
-        )
+# Progress types a starting dynamic service is expected to report before its start is complete
+REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset({
+    ProgressType.SERVICE_INPUTS_PULLING,
+    ProgressType.SIDECARS_PULLING,
+    ProgressType.SERVICE_OUTPUTS_PULLING,
+    ProgressType.SERVICE_STATE_PULLING,
+    ProgressType.SERVICE_IMAGES_PULLING,
+    ProgressType.SERVICE_CONTAINERS_STARTING,
+})
 
 
-@unique
-class NodeProgressType(str, Enum):
-    # NOTE: this is a partial duplicate of models_library/rabbitmq_messages.py
-    # It must remain as such until that module is pydantic V2 compatible
-    CLUSTER_UP_SCALING = "CLUSTER_UP_SCALING"
-    SIDECARS_PULLING = "SIDECARS_PULLING"
-    SERVICE_INPUTS_PULLING = "SERVICE_INPUTS_PULLING"
-    SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
-    SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
-    SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
-    SERVICE_CONTAINERS_STARTING = "SERVICE_CONTAINERS_STARTING"
-    SERVICE_STATE_PUSHING = "SERVICE_STATE_PUSHING"
-    SERVICE_OUTPUTS_PUSHING = "SERVICE_OUTPUTS_PUSHING"
-    PROJECT_CLOSING = "PROJECT_CLOSING"
-
-    @classmethod
-    def required_types_for_started_service(cls) -> set["NodeProgressType"]:
-        return {
-            NodeProgressType.SERVICE_INPUTS_PULLING,
-            NodeProgressType.SIDECARS_PULLING,
-            NodeProgressType.SERVICE_OUTPUTS_PULLING,
-            NodeProgressType.SERVICE_STATE_PULLING,
-            NodeProgressType.SERVICE_IMAGES_PULLING,
-            NodeProgressType.SERVICE_CONTAINERS_STARTING,
-        }
-
-
-class ServiceType(str, Enum):
-    DYNAMIC = "DYNAMIC"
-    COMPUTATIONAL = "COMPUTATIONAL"
-
-
-class _OSparcMessages(str, Enum):
+class _OSparcMessages(StrEnum):
     NODE_UPDATED = "nodeUpdated"
     NODE_PROGRESS = "nodeProgress"
     PROJECT_STATE_UPDATED = "projectStateUpdated"
@@ -133,49 +100,194 @@ class SocketIOEvent:
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
+_SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
+_MAX_REATTACH_ATTEMPTS: Final[int] = 100
+
+
+@dataclass
+class _ReconnectableEventWaiter:
+    """Wraps `WebSocket.expect_event()` so a pending wait survives `RobustWebSocket`
+    reconnections instead of raising a stale ``Socket closed`` error.
+    """
+
+    robust_websocket: RobustWebSocket
+    event: str
+    predicate: typing.Callable | None
+    timeout: float | None
+
+    _deadline: datetime | None = field(init=False, default=None)
+    _reattach_attempts: int = field(init=False, default=0)
+
+    _ctx: EventContextManager | None = field(init=False, default=None)
+    _event_info: EventInfo | None = field(init=False, default=None)
+    _bound_ws: WebSocket = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.timeout is not None:
+            self._deadline = datetime.now(UTC) + timedelta(milliseconds=self.timeout)
+        self._attach()
+
+    def __enter__(self) -> typing.Self:
+        return self
+
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> None:
+        # NOTE: This pattern avoids `Error: Socked closed` from being raised.
+        # If nothing went wrong, read `.value` here so a dropped connection is retried
+        # even if the caller never reads `.value` themselves.
+        if exc_val is not None:
+            if self._ctx is not None:
+                self._ctx.__exit__(exc_type, exc_val, exc_tb)
+        elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
+            # The predicate saw its event but could not report it as a match at the time (e.g. its
+            # project uuid was still unknown): cancel the pending wait.
+            if self._ctx is not None:
+                self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
+        else:
+            _ = self.value
+
+    @property
+    def value(self) -> typing.Any:
+        """returns the same value as `EventInfo.value` making the result of `socket.expect_event` behave similarly"""
+
+        assert self._event_info is not None  # nosec
+        while True:
+            try:
+                return self._event_info.value
+            except PlaywrightError as exc:
+                if _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}" or self.robust_websocket.ws is self._bound_ws:
+                    raise
+
+                self._enforce_reattach_limit(exc)
+                with log_context(
+                    logging.INFO,
+                    msg=f"Reattaching wait for {self.event!r} to newly reconnected websocket",
+                ):
+                    self._attach()
+
+    def _enforce_reattach_limit(self, exc: PlaywrightError) -> None:
+        self._reattach_attempts += 1
+        if self._reattach_attempts > _MAX_REATTACH_ATTEMPTS:
+            msg = (
+                f"Giving up reattaching after {_MAX_REATTACH_ATTEMPTS} attempts while waiting for {self.event!r}. "
+                "TIP: please check for networking issues"
+            )
+            raise PlaywrightError(msg) from exc
+
+    def _remaining_timeout(self) -> float | None:
+        if self._deadline is None:
+            return None
+        return (self._deadline - datetime.now(UTC)).total_seconds() * SECOND
+
+    def _attach(self) -> None:  # pylint: disable=attribute-defined-outside-init,access-member-before-definition
+        if self._ctx is not None:
+            # Exit the context on the connection we're replacing, as if the `with` block around
+            # it had raised - this cancels its pending future instead of blocking on it.
+            self._ctx.__exit__(PlaywrightError, PlaywrightError("Reattaching to a new connection"), None)
+
+        self._bound_ws = self.robust_websocket.ws
+        remaining_timeout = self._remaining_timeout()
+        if remaining_timeout is not None and remaining_timeout <= 0:
+            # Playwright treats timeout=0 as "wait forever", so an already-expired
+            # deadline must raise here instead of being passed through as-is.
+            msg = f"Timeout {self.timeout}ms exceeded while waiting for {self.event!r}."
+            raise PlaywrightTimeoutError(msg)
+
+        self._ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
+        self._event_info = self._ctx.__enter__()
 
 
 @dataclass
 class RobustWebSocket:
     page: Page
     ws: WebSocket
-    _registered_events: list[tuple[str, typing.Callable | None]] = field(default_factory=list)
     _num_reconnections: int = 0
     auto_reconnect: bool = True
+    ws_predicate: typing.Callable[[WebSocket], bool] | None = None
+    reconnect_timeout: float = 5 * SECOND
+    log_prefix: str = _WEBSOCKET_MESSAGE_PREFIX
+    _reconnect_lock: threading.Lock = field(init=False, repr=False, default_factory=threading.Lock)
+    _reconnect_handled: set[int] = field(init=False, repr=False, default_factory=set)
+    _frames_received_on: set[int] = field(init=False, repr=False, default_factory=set)
 
     def __post_init__(self) -> None:
         self._configure_websocket_events()
+        if self.ws.is_closed():
+            if not self.auto_reconnect:
+                return
+            # NOTE: a websocket whose handshake already failed (e.g. a socket.io connection refused
+            # during a service's cold start) has already fired its events before being captured,
+            # so the listeners attached above never see them: reconnect right away.
+            _logger.warning("%s WebSocket is already closed. Attempting to reconnect...", self.log_prefix)
+            self._reconnect_handled.add(id(self.ws))
+            self._attempt_reconnect(_logger)
+        else:
+            # NOTE: a socket that is not closed completed its handshake: it is connected even if its
+            # first frame (e.g. the socket.io 'open' packet) was already delivered before the
+            # listeners above could be attached, since `page.expect_websocket` resolves as soon as
+            # the browser *creates* the socket. Without this, `wait_until_connected` would wait for
+            # an unrelated later frame (engine.io pings come ~25s later) on a healthy socket.
+            self._mark_connected(self.ws)
+
+    def _mark_connected(self, socket: WebSocket) -> None:
+        self._frames_received_on.add(id(socket))
 
     def _configure_websocket_events(self) -> None:
+        # NOTE: bind the current socket in the closure: the 'socketerror' event only carries the
+        # error message, so the socket must be identified through the closure instead.
+        socket = self.ws
+
         with log_context(
             logging.INFO,
             msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
         ) as ctx:
 
             def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_PREFIX, payload)
+                ctx.logger.debug("%s⬇️ Frame sent: %s", self.log_prefix, payload)
 
             def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_PREFIX, payload)
+                # NOTE: receiving a frame is the proof that this socket's handshake succeeded
+                # (a socket.io server sends its 'open' packet immediately on connect)
+                self._frames_received_on.add(id(socket))
+                ctx.logger.debug("%s⬆️ Frame received: %s", self.log_prefix, payload)
+
+            def _trigger_reconnect(reason: str) -> None:
+                with self._reconnect_lock:
+                    # NOTE: a failed handshake emits both 'socketerror' and 'close' on the same
+                    # socket; only the first event may trigger a reconnect, the second wait would
+                    # otherwise hang until timeout waiting for a websocket that never arrives.
+                    if id(socket) in self._reconnect_handled:
+                        return
+                    self._reconnect_handled.add(id(socket))
+                ctx.logger.warning("%s⚠️ %s. Attempting to reconnect...", self.log_prefix, reason)
+                self._attempt_reconnect(ctx.logger)
 
             def on_close(_: WebSocket) -> None:
-                if self.auto_reconnect:
-                    ctx.logger.warning(
-                        "%s⚠️ WebSocket closed. Attempting to reconnect...",
-                        _WEBSOCKET_MESSAGE_PREFIX,
-                    )
-                    self._attempt_reconnect(ctx.logger)
-                else:
-                    ctx.logger.info("%s WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX)
+                # NOTE: a closed socket is no longer proof of connectivity: without dropping
+                # the stale proof, `wait_until_connected` would return immediately on the
+                # dead socket while its (event-dispatched) reconnection has not completed yet.
+                self._frames_received_on.discard(id(socket))
+                if not self.auto_reconnect:
+                    ctx.logger.info("%s WebSocket closed.", self.log_prefix)
+                    return
+                _trigger_reconnect("WebSocket closed")
 
             def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_PREFIX, error_msg)
+                self._frames_received_on.discard(id(socket))
+                if not self.auto_reconnect:
+                    ctx.logger.error("%s❌ WebSocket error: %s", self.log_prefix, error_msg)
+                    return
+                # NOTE: expected during e.g. a service cold start, where the socket.io client
+                # immediately retries (polling, then websocket upgrade).
+                ctx.logger.warning("%s❌ WebSocket error: %s (expecting a reconnection)", self.log_prefix, error_msg)
+                _trigger_reconnect(f"WebSocket error: {error_msg}")
 
             # Attach core event listeners
-            self.ws.on("framesent", on_framesent)
-            self.ws.on("framereceived", on_framereceived)
-            self.ws.on("close", on_close)
-            self.ws.on("socketerror", on_socketerror)
+            socket.on("framesent", on_framesent)
+            socket.on("framereceived", on_framereceived)
+            socket.on("close", on_close)
+            socket.on("socketerror", on_socketerror)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -190,19 +302,25 @@ class RobustWebSocket:
         """
         Attempt to reconnect the WebSocket and restore event listeners.
         """
-        with self.page.expect_websocket(timeout=5000) as ws_info:
+
+        def _accept(new_websocket: WebSocket) -> bool:
+            if self.ws_predicate is not None and not self.ws_predicate(new_websocket):
+                return False
+            return not new_websocket.is_closed()
+
+        with self.page.expect_websocket(_accept, timeout=self.reconnect_timeout) as ws_info:
             assert not ws_info.value.is_closed()
 
         self.ws = ws_info.value
         self._num_reconnections += 1
+        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even
+        # if its first frame raced ahead of the listeners attached below (same as in __post_init__)
+        self._mark_connected(self.ws)
         logger.info(
             "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
             self._num_reconnections,
         )
         self._configure_websocket_events()
-        # Re-register all custom event listeners
-        for event, predicate in self._registered_events:
-            self.ws.expect_event(event, predicate)
 
     def expect_event(
         self,
@@ -210,13 +328,33 @@ class RobustWebSocket:
         predicate: typing.Callable | None = None,
         *,
         timeout: float | None = None,
-    ) -> EventContextManager:
+    ) -> _ReconnectableEventWaiter:
         """
-        Register an event listener with support for reconnection.
+        Register an event listener that keeps waiting across reconnections.
         """
-        output = self.ws.expect_event(event, predicate, timeout=timeout)
-        self._registered_events.append((event, predicate))
-        return output
+        return _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
+
+    def wait_until_connected(self, *, timeout: float) -> None:
+        """
+        Block until the current websocket is connected, i.e. it received its first frame
+        (possibly after a reconnection), raising a `TimeoutError` if that does not happen
+        within `timeout` milliseconds.
+        """
+        with log_context(logging.INFO, msg=f"waiting for websocket connection (timeout: {timeout}ms)") as ctx:
+            deadline = datetime.now(UTC) + timedelta(milliseconds=timeout)
+            while True:
+                # NOTE: pumping the page's event loop lets event-driven reconnections proceed.
+                # It must happen *before* evaluating connectivity: websocket events are
+                # dispatched only while the loop is pumped, so a 'close' that the browser has
+                # already emitted but that has not been dispatched yet would otherwise leave a
+                # stale proof-of-life on the (now dead) socket and make this return immediately.
+                self.page.wait_for_timeout(100)
+                if not self.ws.is_closed() and id(self.ws) in self._frames_received_on:
+                    break
+                if datetime.now(UTC) > deadline:
+                    msg = f"Timeout {timeout}ms exceeded while waiting for the websocket to connect."
+                    raise PlaywrightTimeoutError(msg)
+            ctx.logger.debug("%s WebSocket is connected.", self.log_prefix)
 
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
@@ -232,10 +370,16 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
     return RunningState(event.obj["data"]["state"]["value"])
 
 
+def retrieve_project_id_from_decoded_message(event: SocketIOEvent) -> str:
+    assert event.name == _OSparcMessages.PROJECT_STATE_UPDATED.value
+    assert "project_uuid" in event.obj
+    return event.obj["project_uuid"]
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class NodeProgressEvent:
     node_id: str
-    progress_type: NodeProgressType
+    progress_type: ProgressType
     current_progress: float
     total_progress: float
 
@@ -248,7 +392,7 @@ def retrieve_node_progress_from_decoded_message(
     assert "progress_report" in event.obj
     return NodeProgressEvent(
         node_id=event.obj["node_id"],
-        progress_type=NodeProgressType(event.obj["progress_type"]),
+        progress_type=ProgressType(event.obj["progress_type"]),
         current_progress=float(event.obj["progress_report"]["actual_value"]),
         total_progress=float(event.obj["progress_report"]["total"]),
     )
@@ -256,6 +400,10 @@ def retrieve_node_progress_from_decoded_message(
 
 @dataclass
 class SocketIOProjectClosedWaiter:
+    """Waits for `project_uuid` to close, ignoring the closing of other projects"""
+
+    project_uuid: str
+
     def __call__(self, message: str) -> bool:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
@@ -264,10 +412,11 @@ class SocketIOProjectClosedWaiter:
                 decoded_message = decode_socketio_42_message(message)
                 if (
                     (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
-                    and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
+                    and (retrieve_project_id_from_decoded_message(decoded_message) == self.project_uuid)
+                    and (decoded_message.obj["data"]["shareState"]["status"] == ProjectStatus.CLOSED)
                     and (decoded_message.obj["data"]["shareState"]["locked"] is False)
                 ):
-                    ctx.logger.info("project successfully closed")
+                    ctx.logger.info("project %s successfully closed", self.project_uuid)
                     return True
 
         return False
@@ -275,18 +424,55 @@ class SocketIOProjectClosedWaiter:
 
 @dataclass
 class SocketIOProjectStateUpdatedWaiter:
+    """Waits for `project_uuid` to reach one of `expected_states`, ignoring other projects"""
+
     expected_states: tuple[RunningState, ...]
+    # None for as long as the caller has not learned the uuid yet, see `is_done`
+    project_uuid: str | None
+
+    # every (uuid, state) seen so far, since a frame received while `project_uuid` was still
+    # unknown may well be the awaited update and will not be sent again
+    _seen_states: list[tuple[str, RunningState]] = field(init=False, default_factory=list, repr=False)
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
-                    return retrieve_project_state_from_decoded_message(decoded_message) in self.expected_states
+                    event_project_uuid = retrieve_project_id_from_decoded_message(decoded_message)
+                    event_state = retrieve_project_state_from_decoded_message(decoded_message)
+                    self._seen_states.append((event_project_uuid, event_state))
+
+                    if self.project_uuid is None:
+                        ctx.logger.debug(
+                            "remembering %s of project %s until the expected project uuid is known",
+                            event_state,
+                            event_project_uuid,
+                        )
+                        return False
+
+                    if event_project_uuid != self.project_uuid:
+                        # a different project (e.g. a previous test/job's project still open or
+                        # closing on the shared user): ignore it and keep waiting for ours
+                        ctx.logger.debug(
+                            "ignoring projectStateUpdated for other project %s (waiting for %s)",
+                            event_project_uuid,
+                            self.project_uuid,
+                        )
+                        return False
+                    return event_state in self.expected_states
 
             return False
+
+    def is_done(self) -> bool:
+        """Whether an earlier frame already met the expectation, e.g. one delivered while
+        `project_uuid` was still unknown and hence unmatchable at the time"""
+        return self.project_uuid is not None and any(
+            event_project_uuid == self.project_uuid and event_state in self.expected_states
+            for event_project_uuid, event_state in self._seen_states
+        )
 
 
 @dataclass
@@ -295,18 +481,109 @@ class SocketIOWaitNodeForOutputs:
     node_id: str
 
     def __call__(self, message: str) -> bool:
-        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
             if message.startswith(SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == _OSparcMessages.NODE_UPDATED:
                     assert "data" in decoded_message.obj
                     assert "node_id" in decoded_message.obj
                     if decoded_message.obj["node_id"] == self.node_id:
-                        assert "outputs" in decoded_message.obj["data"]
-
-                        return len(decoded_message.obj["data"]["outputs"]) == self.expected_number_of_outputs
+                        # NOTE: NodeUpdated is also sent for state-only changes (e.g. PUBLISHED),
+                        # which carry no "outputs" key at all
+                        outputs = decoded_message.obj["data"].get("outputs")
+                        if outputs is not None:
+                            is_complete = len(outputs) == self.expected_number_of_outputs
+                            if is_complete:
+                                ctx.logger.info(
+                                    "📤 outputs push received for node %s (%d/%d)",
+                                    self.node_id,
+                                    len(outputs),
+                                    self.expected_number_of_outputs,
+                                )
+                            return is_complete
 
         return False
+
+
+@dataclass
+class SocketIOWaitNodesForOutputs:
+    """Like `SocketIOWaitNodeForOutputs`, but resolves only once *every* node in
+    `node_id_to_expected_number_of_outputs` has reported its expected number of outputs
+    (e.g. several nodes completing concurrently in the same pipeline run).
+    """
+
+    node_id_to_expected_number_of_outputs: dict[str, int]
+    _pending_node_ids: set[str] = field(init=False)
+    _received_number_of_outputs: dict[str, int] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self._pending_node_ids = set(self.node_id_to_expected_number_of_outputs)
+        self._received_number_of_outputs = {}
+
+    def __call__(self, message: str) -> bool:
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+                decoded_message = decode_socketio_42_message(message)
+                if decoded_message.name == _OSparcMessages.NODE_UPDATED:
+                    assert "data" in decoded_message.obj
+                    assert "node_id" in decoded_message.obj
+                    node_id = decoded_message.obj["node_id"]
+                    if node_id in self._pending_node_ids:
+                        # NOTE: NodeUpdated is also sent for state-only changes (e.g. PUBLISHED),
+                        # which carry no "outputs" key at all
+                        outputs = decoded_message.obj["data"].get("outputs")
+                        if outputs is not None:
+                            self._received_number_of_outputs[node_id] = len(outputs)
+                            expected = self.node_id_to_expected_number_of_outputs[node_id]
+                            if len(outputs) == expected:
+                                self._pending_node_ids.discard(node_id)
+                                ctx.logger.info(
+                                    "📤 outputs push received for node %s (%d/%d), %d node(s) left",
+                                    node_id,
+                                    len(outputs),
+                                    expected,
+                                    len(self._pending_node_ids),
+                                )
+
+        return not self._pending_node_ids
+
+    def missing_outputs_report(self) -> str:
+        """Reports, for each node still pending, how many outputs were received vs expected."""
+        return ", ".join(
+            f"{node_id}: {self._received_number_of_outputs.get(node_id, 0)}/{expected}"
+            for node_id, expected in self.node_id_to_expected_number_of_outputs.items()
+            if node_id in self._pending_node_ids
+        )
+
+
+@contextlib.contextmanager
+def wait_for_nodes_outputs_updated(
+    websocket: RobustWebSocket,
+    *,
+    node_id_to_expected_number_of_outputs: dict[str, int],
+    timeout: int | None = None,
+) -> Generator[None]:
+    """Asserts that a `NodeUpdated` websocket message with the expected number of outputs is
+    received for every node in `node_id_to_expected_number_of_outputs` while the wrapped block
+    runs. Unlike checking the UI after the fact, this verifies the websocket push actually
+    happened.
+    """
+    waiter = SocketIOWaitNodesForOutputs(node_id_to_expected_number_of_outputs=node_id_to_expected_number_of_outputs)
+    with (
+        log_context(
+            logging.INFO,
+            msg=ContextMessages(
+                starting=f"⏳ waiting for outputs push for nodes {list(node_id_to_expected_number_of_outputs)}",
+                done="✅ received outputs push for all expected nodes",
+                raised=lambda: (
+                    f"❌ missing outputs push for: {waiter.missing_outputs_report()}. "
+                    "TIP: check that the webserver's db-listener service is running properly!"
+                ),
+            ),
+        ),
+        websocket.expect_event("framereceived", waiter, timeout=timeout),
+    ):
+        yield
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("failed",)
@@ -349,7 +626,7 @@ def _check_service_endpoint(
                 f"{service_url}",
                 timeout=_SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds() * SECOND,
             )
-        except (PlaywrightTimeoutError, TimeoutError):
+        except PlaywrightTimeoutError, TimeoutError:
             logger.exception(
                 "❌ Timed-out requesting service endpoint after %ds ❌",
                 _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
@@ -435,7 +712,7 @@ class SocketIONodeProgressCompleteWaiter:
     node_id: str
     max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
     min_idle_before_fail_fast: timedelta = _MIN_IDLE_DURATION_BEFORE_FAIL_FAST
-    _current_progress: dict[NodeProgressType, float] = field(default_factory=defaultdict)
+    _current_progress: dict[ProgressType, float] = field(default_factory=defaultdict)
     _last_progress_time: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     _received_messages: list[SocketIOEvent] = field(default_factory=list)
 
@@ -473,7 +750,7 @@ class SocketIONodeProgressCompleteWaiter:
 
                             ctx.logger.info(
                                 "Current startup progress [expected %d types]: %s",
-                                len(NodeProgressType.required_types_for_started_service()),
+                                len(REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE),
                                 f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
                             )
 
@@ -498,8 +775,7 @@ class SocketIONodeProgressCompleteWaiter:
 
     def _completed_successfully(self) -> bool:
         return all(
-            progress_type in self._current_progress
-            for progress_type in NodeProgressType.required_types_for_started_service()
+            progress_type in self._current_progress for progress_type in REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE
         ) and all(round(progress, 1) == 1.0 for progress in self._current_progress.values())
 
     @property
@@ -550,6 +826,7 @@ def wait_for_pipeline_state(
     current_state: RunningState,
     *,
     websocket: RobustWebSocket,
+    project_uuid: str,
     if_in_states: tuple[RunningState, ...],
     expected_states: tuple[RunningState, ...],
     timeout_ms: int,
@@ -564,7 +841,8 @@ def wait_for_pipeline_state(
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
-                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES
+                expected_states=expected_states + _FAIL_FAST_COMPUTATIONAL_STATES,
+                project_uuid=project_uuid,
             )
             with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
                 current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
@@ -582,6 +860,12 @@ _RUNNING_STATES: Final[tuple[RunningState, ...]] = (
 )
 
 _RUN_PIPELINE_MAX_WAIT_TIME: Final[int] = 60 * SECOND
+_COMPUTATION_START_REQUEST_PATTERN: Final[re.Pattern[str]] = re.compile(r"/computations")
+_COMPUTATION_START_REQUEST_TIMEOUT: Final[int] = 35 * SECOND
+
+
+def _computation_started_predicate(request: Request) -> bool:
+    return bool(re.search(_COMPUTATION_START_REQUEST_PATTERN, request.url) and request.method.upper() == "POST")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -598,11 +882,19 @@ class PipelineStageTimeouts:
     waiting_for_resources_ms: int = 5 * MINUTE
     started_ms: int = 5 * MINUTE
 
+    @property
+    def total_ms(self) -> int:
+        """Upper bound covering every stage sequentially, for wrappers spanning the whole wait."""
+        return (
+            self.published_or_pending_ms + self.waiting_for_cluster_ms + self.waiting_for_resources_ms + self.started_ms
+        )
+
 
 def wait_for_computation_done(
     current_state: RunningState,
     *,
     websocket: RobustWebSocket,
+    project_uuid: str,
     stage_timeouts: PipelineStageTimeouts | int,
 ) -> RunningState:
     """Waits for an already-started computational pipeline to reach a final state.
@@ -615,6 +907,7 @@ def wait_for_computation_done(
         return wait_for_pipeline_state(
             current_state,
             websocket=websocket,
+            project_uuid=project_uuid,
             if_in_states=_RUNNING_STATES,
             expected_states=(RunningState.SUCCESS,),
             timeout_ms=stage_timeouts,
@@ -623,6 +916,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.PUBLISHED, RunningState.PENDING),
         expected_states=(
             RunningState.WAITING_FOR_CLUSTER,
@@ -635,6 +929,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
         expected_states=(
             RunningState.WAITING_FOR_RESOURCES,
@@ -646,6 +941,7 @@ def wait_for_computation_done(
     current_state = wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
         expected_states=(
             RunningState.STARTED,
@@ -656,6 +952,7 @@ def wait_for_computation_done(
     return wait_for_pipeline_state(
         current_state,
         websocket=websocket,
+        project_uuid=project_uuid,
         if_in_states=(RunningState.STARTED,),
         expected_states=(RunningState.SUCCESS,),
         timeout_ms=stage_timeouts.started_ms,
@@ -666,6 +963,7 @@ def run_pipeline_and_wait_done(
     page: Page,
     websocket: RobustWebSocket,
     *,
+    project_uuid: str,
     run_button_test_id: str = "runStudyBtn",
     timeout_ms: int = _RUN_PIPELINE_MAX_WAIT_TIME,
     stage_timeouts: PipelineStageTimeouts | None = None,
@@ -678,17 +976,32 @@ def run_pipeline_and_wait_done(
 
     Port of the legacy `TutorialBase.runPipeline()` + `TutorialBase.waitForStudyDone()`.
     """
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=tuple(RunningState))
+    # NOTE: mirrors `start_and_stop_pipeline` (tests/conftest.py): expected_states is restricted to
+    # the "actively running" states only (no NOT_STARTED/UNKNOWN/SUCCESS/FAILED/ABORTED) so a stray
+    # `projectStateUpdated` frame still reporting the pre-run state can't race with the actual run
+    # trigger and be mistaken for a final state; the `POST /computations` request is also checked
+    # to confirm the click really triggered a computation.
+    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=_RUNNING_STATES, project_uuid=project_uuid)
     with log_context(
         logging.INFO,
         f"Running pipeline and waiting for it to complete (timeout {timedelta(milliseconds=timeout_ms)})",
-    ):
-        with websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event:
+    ) as ctx:
+        with (
+            websocket.expect_event("framereceived", waiter, timeout=timeout_ms) as event,
+            page.expect_request(
+                _computation_started_predicate, timeout=_COMPUTATION_START_REQUEST_TIMEOUT
+            ) as request_info,
+        ):
             page.get_by_test_id(run_button_test_id).click()
+        response = request_info.value.response()
+        assert response
+        ctx.logger.info("POST /computations request response: %s", f"{response.status=}")
+        assert response.ok, f"{response.json()}"
         current_state = retrieve_project_state_from_decoded_message(decode_socketio_42_message(event.value))
         current_state = wait_for_computation_done(
             current_state,
             websocket=websocket,
+            project_uuid=project_uuid,
             stage_timeouts=stage_timeouts if stage_timeouts is not None else timeout_ms,
         )
         assert current_state == RunningState.SUCCESS, f"❌ Pipeline finished with {current_state} ❌"
@@ -712,7 +1025,146 @@ class ServiceRunning:
     iframe_locator: FrameLocator | None
 
 
-_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[int] = 30 * SECOND
+_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT: Final[
+    Annotated[timedelta, doc("floor left to the endpoint check after the start waits")]
+] = timedelta(seconds=30)
+
+
+def _service_iframe_selector(node_id: str) -> str:
+    return f'[osparc-test-id="iframe_{node_id}"]'
+
+
+def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
+    """Returns the service iframe for ``node_id``, resilient to duplicate iframes."""
+    iframe_selector = _service_iframe_selector(node_id)
+    iframe_count = page.locator(iframe_selector).count()
+    if iframe_count > 1:
+        _logger.warning(
+            "Found %d iframes with duplicate osparc-test-id for node %s; using the first one "
+            "(see ITISFoundation/osparc-simcore#9541)",
+            iframe_count,
+            node_id,
+        )
+    return page.frame_locator(iframe_selector).first
+
+
+_SERVICE_IFRAME_SRC_TIMEOUT: Final[
+    Annotated[
+        timedelta,
+        doc(
+            "the UI sets the service iframe src only once its own readiness polling has seen "
+            "the service, tens of seconds after the backend-side checks pass"
+        ),
+    ]
+] = timedelta(seconds=90)
+_SERVICE_FRAME_ATTACH_TIMEOUT: Final[
+    Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
+] = timedelta(seconds=10)
+_SERVICE_FRAME_POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=250)
+
+
+def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool:
+    """Whether the driver attached the content frame of the given iframe element.
+
+    Only the service frame URL carries the node id, so the stale frame left by
+    the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
+    Polled, so a failed read counts as unattached and the next poll retries it.
+    """
+    try:
+        content_frame = iframe_element.content_frame()
+    except PlaywrightError:
+        return False
+    return content_frame is not None and node_id in content_frame.url
+
+
+def _is_service_iframe_src_set(page: Page, node_id: str) -> bool:
+    """Whether the UI navigated the service iframe to the given node.
+
+    Polled while the page may be busy, so a failed read counts as not set yet
+    and the next poll retries it, instead of aborting the best-effort helper.
+    """
+    try:
+        return bool(
+            page.evaluate(
+                """nodeId => {
+                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
+                return !!iframe && iframe.src.includes(nodeId);
+            }""",
+                node_id,
+            )
+        )
+    except PlaywrightError:
+        return False
+
+
+def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
+    """Re-navigates the service iframe when the driver never attached its content frame.
+
+    Firefox intermittently does not attach the content frame of a rendered
+    cross-origin iframe (microsoft/playwright#43007), which makes every query on
+    its ``FrameLocator`` hang until timeout even though the service UI is fully
+    shown. Re-setting the iframe source reloads it and re-triggers the frame
+    lifecycle events the driver needs to attach the content frame.
+
+    The UI sets the iframe source only once its own readiness polling has seen
+    the service, tens of seconds after the backend-side checks pass. This
+    helper therefore polls the iframe source first and checks the attachment
+    afterwards, so that a late navigation still gets the recovery. An iframe
+    the UI never navigated is left alone: re-navigating it would restart a
+    healthy navigation.
+
+    Best-effort: failed reads while polling are retried, the iframe is
+    re-navigated at most once, and Playwright errors are logged and swallowed,
+    so that the caller still fails with its own original error.
+    """
+    try:
+        src_set = Retrying(
+            stop=stop_after_delay(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds()),
+            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+            retry=retry_if_result(lambda navigated: not navigated),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        )
+        try:
+            navigated = src_set(lambda: _is_service_iframe_src_set(page, node_id))
+        except RetryError:
+            navigated = False
+        if not navigated:
+            _logger.warning(
+                "Service iframe of node %s was not navigated by the UI within %s: leaving it untouched",
+                node_id,
+                _SERVICE_IFRAME_SRC_TIMEOUT,
+            )
+            return
+
+        iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
+        if iframe_element is None:
+            return
+
+        frame_attached = Retrying(
+            stop=stop_after_delay(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds()),
+            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+            retry=retry_if_result(lambda attached: not attached),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        )
+        try:
+            attached = frame_attached(lambda: _service_frame_attached(iframe_element, node_id))
+        except RetryError:
+            attached = False
+        if attached:
+            return
+
+        _logger.warning(
+            "Service iframe content frame of node %s is not attached: "
+            "re-navigating the iframe to force the driver to attach it",
+            node_id,
+        )
+        page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
+    except PlaywrightError:
+        _logger.exception(
+            "Could not ensure the service iframe content frame of node %s is attached; "
+            "continuing so that the caller reports its own original error",
+            node_id,
+        )
 
 
 @contextlib.contextmanager
@@ -763,10 +1215,11 @@ def expected_service_running(
         is_legacy_service=is_service_legacy,
         timeout=max(
             timeout - int(elapsed_time.total_seconds() * SECOND),
-            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+            int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
-    service_running.iframe_locator = page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
+    _ensure_service_iframe_attached(page, node_id)
+    service_running.iframe_locator = _service_iframe_locator(page, node_id)
 
 
 def wait_for_service_running(
@@ -818,11 +1271,12 @@ def wait_for_service_running(
         is_legacy_service=is_service_legacy,
         timeout=max(
             timeout - int(elapsed_time.total_seconds() * SECOND),
-            _MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT,
+            int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
 
-    return page.frame_locator(f'[osparc-test-id="iframe_{node_id}"]')
+    _ensure_service_iframe_attached(page, node_id)
+    return _service_iframe_locator(page, node_id)
 
 
 def app_mode_trigger_next_app(page: Page) -> None:
@@ -837,9 +1291,9 @@ def app_mode_trigger_next_app(page: Page) -> None:
             with page.expect_request(_node_started_predicate, timeout=_APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT):
                 # Move to next step (this auto starts the next service)
                 page.get_by_test_id("AppMode_NextBtn").click()
-        except (PlaywrightTimeoutError, TimeoutError):
-            ctx.logger.info(
-                "⚠️ no start request detected within %s ms: the next service was likely already started ⚠️",
+        except PlaywrightTimeoutError, TimeoutError:
+            ctx.logger.exception(
+                "❌ no start request detected within %s ms: the next service was likely already started ❌",
                 _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT,
             )
 
@@ -864,19 +1318,39 @@ def get_node_id_from_service_key(workbench: dict[str, Any], service_key_fragment
     raise ValueError(msg)
 
 
-def _select_node(page: Page, position: int) -> str:
-    """Selects the node at `position` in the workbench tree (left panel) and returns its node id."""
-    tree_items = page.locator('[osparc-test-id="nodeTreeItem"]')
-    node_ids_and_locators = []
-    for index in range(tree_items.count()):
-        item = tree_items.nth(index)
-        node_key = item.get_attribute("osparc-test-key")
-        if node_key and node_key != "root":
-            node_ids_and_locators.append((node_key, item))
+def get_node_id_from_label(workbench: dict[str, Any], label_fragment: str) -> str:
+    """Finds the node id in a project's workbench whose label contains the given fragment.
 
-    node_id, locator = node_ids_and_locators[position]
+    Preferred over the workbench tree's displayed text since the workbench dict is the
+    authoritative source for a node's label.
+    """
+    matches = [node_id for node_id, node_data in workbench.items() if label_fragment in node_data["label"]]
+    available_labels = [node_data["label"] for node_data in workbench.values()]
+    if not matches:
+        msg = f"Could not find a node with label containing {label_fragment!r} (available: {available_labels})"
+        raise ValueError(msg)
+    if len(matches) > 1:
+        msg = f"Found {len(matches)} nodes with label containing {label_fragment!r} (available: {available_labels})"
+        raise ValueError(msg)
+    return matches[0]
+
+
+def get_node_id_from_position(workbench: dict[str, Any], position: int) -> str:
+    """Returns the node id at `position` in the workbench (its insertion order).
+
+    Preferred over the workbench tree's DOM order since the workbench dict is the authoritative
+    source for a project's nodes and their order.
+    """
+    node_ids = list(workbench)
+    assert 0 <= position < len(node_ids), f"position {position} out of range for workbench with {len(node_ids)} node(s)"
+    return node_ids[position]
+
+
+def _select_node(page: Page, *, node_id: str) -> None:
+    """Selects the node with `node_id` in the workbench tree (left panel)."""
+    locator = page.locator(f'[osparc-test-id="nodeTreeItem"][osparc-test-key="{node_id}"]')
+    assert locator.count() == 1, f"expected exactly one tree item for node {node_id!r}, found {locator.count()}"
     locator.click()
-    return node_id
 
 
 _OUTPUT_FILE_NAMES_MAX_WAITING_TIME: Final[timedelta] = timedelta(seconds=30)
@@ -925,7 +1399,7 @@ def _read_output_file_names(
     wait=wait_exponential_jitter(max=_OUTPUT_FILE_NAMES_WAIT_INTERVAL.total_seconds()),
     before_sleep=before_sleep_log(_logger, logging.INFO),
 )
-def _check_node_outputs_dialog(
+def _check_node_files_panel(
     page: Page,
     *,
     study_id: str,
@@ -934,7 +1408,7 @@ def _check_node_outputs_dialog(
     open_outputs_folder: bool,
     app_mode: bool,
 ) -> None:
-    with log_context(logging.INFO, "Opening node outputs panel"):
+    with log_context(logging.INFO, "Opening node files panel"):
         path_filter = f"{study_id}/{node_id}"
         with page.expect_response(
             re.compile(r"storage/locations/0/paths\?file_filter="),
@@ -953,15 +1427,17 @@ def _check_node_outputs_dialog(
             open_outputs_folder=open_outputs_folder,
         )
     finally:
-        with log_context(logging.INFO, "Closing node outputs panel"):
+        with log_context(logging.INFO, "Closing node files panel"):
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
 
 
-def check_node_outputs(
+def check_node_files_panel(
     page: Page,
     *,
     study_id: str,
+    workbench: dict[str, Any],
     node_position: int | None = None,
+    node_name: str | None = None,
     node_id: str | None = None,
     expected_file_names: list[str],
     open_outputs_folder: bool = False,
@@ -969,15 +1445,28 @@ def check_node_outputs(
 ) -> None:
     """Opens a node's output files panel and asserts it contains exactly `expected_file_names`.
 
+    The node is identified by exactly one of `node_id`, `node_position` (its index in
+    `workbench`) or `node_name` (its label in `workbench`). `workbench` is the project's
+    authoritative source of node ids/labels/order, so the lookup never depends on the fragile
+    workbench tree's DOM order/displayed text.
+
     Port of the legacy `TutorialBase.checkNodeOutputs()` /
     `TutorialBase.checkNodeOutputsAppMode()`.
     """
     if node_id is None:
-        assert node_position is not None, "either node_id or node_position must be provided"
-        node_id = _select_node(page, node_position)
+        assert (node_position is None) != (node_name is None), (
+            "either node_id, node_position or node_name must be provided"
+        )
+        if node_position is not None:
+            node_id = get_node_id_from_position(workbench, node_position)
+        else:
+            assert node_name is not None
+            node_id = get_node_id_from_label(workbench, node_name)
+    assert node_id in workbench, f"node {node_id!r} not found in workbench"
+    _select_node(page, node_id=node_id)
 
-    with log_context(logging.INFO, f"Checking node {node_id=} outputs"):
-        _check_node_outputs_dialog(
+    with log_context(logging.INFO, f"Checking node {node_id=} files panel"):
+        _check_node_files_panel(
             page,
             study_id=study_id,
             node_id=node_id,
@@ -985,3 +1474,58 @@ def check_node_outputs(
             open_outputs_folder=open_outputs_folder,
             app_mode=app_mode,
         )
+
+
+_NODE_OUTPUT_LINK_MAX_WAITING_TIME: Final[timedelta] = timedelta(minutes=10)
+_NODE_OUTPUT_LINK_CLEARED_MAX_WAITING_TIME: Final[timedelta] = timedelta(minutes=5)
+_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME: Final[timedelta] = timedelta(seconds=30)
+_NODE_OUTPUT_LINK_POLL_INTERVAL: Final[timedelta] = timedelta(seconds=2)
+
+
+def _visible_output_link(page: Page, *, port_key: str) -> Locator:
+    """Visible value widget of the node output ``port_key`` in the Outputs panel.
+
+    Only visible matches are considered: removed qooxdoo widgets can leave hidden
+    nodes with the same test id in the DOM.
+    """
+    return page.get_by_test_id(f"nodeOutputValue_{port_key}").filter(visible=True).first
+
+
+def wait_for_node_output_link(page: Page, *, port_key: str, filename: str) -> None:
+    """Waits until the output ``port_key`` shows a link to the file ``filename``.
+
+    The node must already be selected so that its Outputs panel is shown.
+    """
+    expect(_visible_output_link(page, port_key=port_key)).to_contain_text(
+        filename, timeout=_NODE_OUTPUT_LINK_MAX_WAITING_TIME.total_seconds() * 1000
+    )
+
+
+@retry(
+    stop=stop_after_delay(_NODE_OUTPUT_LINK_CLEARED_MAX_WAITING_TIME),
+    retry=retry_if_exception_type(AssertionError),
+    reraise=True,
+    wait=wait_fixed(_NODE_OUTPUT_LINK_POLL_INTERVAL.total_seconds()),
+    before_sleep=before_sleep_log(_logger, logging.INFO),
+)
+def wait_for_node_output_link_cleared(page: Page, *, port_key: str, filename: str) -> None:
+    """Waits until the output ``port_key`` no longer links to ``filename`` and stays that way.
+
+    The widget must first stop linking to ``filename``, then keep doing so for
+    ``_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME``. A single pass is not enough: the row is
+    re-rendered on updates, so the check could transiently succeed while an old widget is
+    detached even if the file is then listed again. A regression raises and is retried.
+    """
+
+    def _read_link_text() -> str | None:
+        value = _visible_output_link(page, port_key=port_key)
+        return value.text_content() if value.count() > 0 else None
+
+    text = _read_link_text()
+    assert text is not None, f"no visible output link widget for port {port_key!r}"
+    assert filename not in text, f"output {port_key!r} still links to {filename!r} (text: {text!r})"
+
+    page.wait_for_timeout(_NODE_OUTPUT_LINK_CLEARED_STABLE_TIME.total_seconds() * 1000)
+    text = _read_link_text()
+    assert text is not None, f"no visible output link widget for port {port_key!r}"
+    assert filename not in text, f"output {port_key!r} links to {filename!r} again (text: {text!r})"

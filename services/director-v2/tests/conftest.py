@@ -48,7 +48,8 @@ pytest_plugins = [
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
-    "pytest_simcore.minio_service",
+    "pytest_simcore.s3_storage_service",
+    "pytest_simcore.postgres_live_stack_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -60,6 +61,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.socketio",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 logger = logging.getLogger(__name__)
@@ -155,6 +157,7 @@ def dynamic_sidecar_docker_image_name() -> str:
 def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
+    env_vars_for_docker_compose: EnvVarsDict,
     faker: Faker,
 ) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
@@ -176,7 +179,7 @@ def mock_env(
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_USER": "test",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "RABBIT_HOST": "mocked_host",
             "RABBIT_PASSWORD": "mocked_password",
             "RABBIT_SECURE": "false",
@@ -188,7 +191,9 @@ def mock_env(
             "REGISTRY_URL": faker.url(),
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-            "SWARM_STACK_NAME": "pytest-simcore",
+            # NOTE: the checkout-scoped stack name, so that swarm services created by tests
+            # (fake sidecars, ...) are observed/cleaned per checkout and never per branch
+            "SWARM_STACK_NAME": env_vars_for_docker_compose["SWARM_STACK_NAME"],
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
             "DIRECTOR_V2_TRACING": "null",
         },
@@ -287,19 +292,24 @@ def fake_workbench_complete_adjacency(
 
 @pytest.fixture
 def disable_rabbitmq(mocker: MockerFixture) -> None:
-    def rabbitmq_mock_setup(app: FastAPI) -> None:
-        app.state.rabbitmq_client = AsyncMock()
+    def rabbitmq_mock_configure(app_lifespan, **kwargs) -> None:
+        async def _lifespan(app: FastAPI):
+            app.state.rabbitmq_client = AsyncMock()
+            app.state.rabbitmq_rpc_client = AsyncMock()
+            yield
 
-    def rpc_api_routes_mock_setup(app: FastAPI) -> None:
-        app.state.rabbitmq_rpc_client = AsyncMock()
+        app_lifespan.add(_lifespan)
+
+    def rpc_api_routes_mock_configure(app_lifespan) -> None:
+        pass
 
     mocker.patch(
-        "simcore_service_director_v2.modules.rabbitmq.setup",
-        side_effect=rabbitmq_mock_setup,
+        "simcore_service_director_v2.modules.rabbitmq.configure_rabbitmq",
+        side_effect=rabbitmq_mock_configure,
     )
     mocker.patch(
-        "simcore_service_director_v2.core.application.setup_rpc_api_routes",
-        side_effect=rpc_api_routes_mock_setup,
+        "simcore_service_director_v2.core.application.configure_rpc_api_routes",
+        side_effect=rpc_api_routes_mock_configure,
     )
 
 
@@ -315,19 +325,20 @@ def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_redis(mocker: MockerFixture) -> None:
-    def _mock_setup(app: FastAPI) -> None:
+    def _mock_configure(app_lifespan, **kwargs) -> None:
         def _mock_client(*args, **kwargs) -> AsyncMock:
             return AsyncMock()
 
         mock = AsyncMock()
         mock.client = _mock_client
 
-        async def on_startup() -> None:
+        async def _lifespan(app: FastAPI):
             app.state.redis_clients_manager = mock
+            yield
 
-        app.add_event_handler("startup", on_startup)
+        app_lifespan.add(_lifespan)
 
-    mocker.patch("simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup)
+    mocker.patch("simcore_service_director_v2.modules.redis.configure_redis", side_effect=_mock_configure)
 
 
 @pytest.fixture

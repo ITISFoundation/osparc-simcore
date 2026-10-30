@@ -59,6 +59,13 @@ class EC2InstanceTypeNotFoundError(DirectorError):
     msg_template: str = "invalid EC2 instance type selected {ec2_instance_types}. TIP: adjust product configuration"
 
 
+class MultiContainerOverrideNotSupportedError(DirectorError):
+    msg_template: str = (
+        "Sizing the containers of a multi-container service {sub_service_names} from an EC2 "
+        "machine type is not supported (node {node_id} in project {project_id})"
+    )
+
+
 class PipelineNotFoundError(DirectorError):
     msg_template: str = "pipeline {pipeline_id} not found"
 
@@ -69,6 +76,10 @@ class ComputationalRunNotFoundError(DirectorError):
 
 class ComputationalTaskNotFoundError(DirectorError):
     msg_template = "Computational task {node_id} not found"
+
+
+class ComputationalTaskJobIdAlreadySetError(DirectorError):
+    msg_template = "Computational task {node_id} in project {project_id} already has a job_id set"
 
 
 class WalletNotEnoughCreditsError(DirectorError):
@@ -152,6 +163,10 @@ class ComputationalBackendTaskNotFoundError(ComputationalSchedulerError):
 
 class ComputationalBackendTaskResultsNotReadyError(ComputationalSchedulerError):
     msg_template = "The task result is not ready yet for job '{job_id}'"
+
+
+class ComputationalBackendTaskResultsReleaseError(ComputationalSchedulerError):
+    msg_template = "Releasing the task result for job '{job_id}' timed-out"
 
 
 class ClustersKeeperNotAvailableError(ComputationalSchedulerError):

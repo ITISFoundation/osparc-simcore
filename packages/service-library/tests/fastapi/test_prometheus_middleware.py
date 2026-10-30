@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterator
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -8,15 +8,19 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from httpx import AsyncClient
 from prometheus_client.openmetrics.exposition import CONTENT_TYPE_LATEST
-from servicelib.fastapi.monitoring import setup_prometheus_instrumentation
+from servicelib.fastapi.monitoring import (
+    create_prometheus_instrumentation_lifespan_manager,
+    initialize_prometheus_instrumentation,
+)
 
 
 @pytest.fixture
-async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
+async def app() -> AsyncIterator[FastAPI]:
     """
     Fixture that sets up the Prometheus middleware in the FastAPI app.
     """
-    setup_prometheus_instrumentation(app)
+    app = FastAPI(lifespan=create_prometheus_instrumentation_lifespan_manager())
+    initialize_prometheus_instrumentation(app)
 
     @app.get("/dummy-endpoint")
     async def dummy_endpoint() -> PlainTextResponse:

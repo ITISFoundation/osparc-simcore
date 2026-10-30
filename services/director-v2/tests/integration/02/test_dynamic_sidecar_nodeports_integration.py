@@ -116,7 +116,7 @@ pytest_simcore_core_services_selection = [
 
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "s3-storage",
     "portainer",
 ]
 
@@ -162,7 +162,7 @@ async def minimal_configuration(
     dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
-    minio_s3_settings_envs: EnvVarsDict,
+    s3_storage_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
     with_product: dict[str, Any],
     osparc_product_name: str,
@@ -317,16 +317,17 @@ async def patch_storage_setup(
 ) -> None:
     local_settings = StorageSettings.create_from_envs()
 
-    original_setup = dv2_modules_storage.setup
+    original_configure = dv2_modules_storage.configure_storage
 
-    def setup(
-        app: FastAPI,
+    def configure_storage(
+        app_lifespan,
+        *,
         storage_settings: StorageSettings,
         tracing_settings: TracingSettings | None,
     ) -> None:
-        original_setup(app, storage_settings=local_settings, tracing_settings=tracing_settings)
+        original_configure(app_lifespan, storage_settings=local_settings, tracing_settings=tracing_settings)
 
-    mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
+    mocker.patch("simcore_service_director_v2.modules.storage.configure_storage", side_effect=configure_storage)
 
 
 @pytest.fixture
@@ -364,7 +365,6 @@ def mock_env(
             "DYNAMIC_SIDECAR_IMAGE": image_name,
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-            "SWARM_STACK_NAME": "pytest-simcore",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
@@ -379,7 +379,7 @@ def mock_env(
             # this address to reach the rabbit service
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,

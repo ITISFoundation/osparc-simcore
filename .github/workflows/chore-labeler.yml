@@ -1,0 +1,39 @@
+# Automatically apply area / type labels to a PR based on which files
+# it changes. Uses .github/labeler.yml as the rule set.
+#
+# `pull_request_target` is required so that labels can also be applied to
+# PRs opened from forks (the workflow then runs with the base repo's
+# permissions). The job is read-only on the checkout side and only writes
+# labels through the GitHub API, so this is safe.
+#
+# Needs an Actions event policy that explicitly allows pull_request_target on
+# this file's path. GitHub blocks the event on public repositories by default,
+# and policies match file paths, so renaming this file means updating the
+# policy as well: https://gh.io/securely-using-pull_request_target
+name: Chore PR Auto-Labeler
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Apply area labels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label PR based on changed files
+        uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
+        with:
+          configuration-path: .github/labeler.yml
+          # Keep previously-set labels so that manually added labels
+          # (e.g. priority, type) survive subsequent pushes.
+          sync-labels: false
+          dot: true
