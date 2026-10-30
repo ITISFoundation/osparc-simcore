@@ -49,12 +49,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          # owner/repo and branch of the PR head. workflow_run.pull_requests
-          # only lists same-repository PRs, so for a fork's PR it is empty and
-          # the number has to be looked up from these instead
+          # workflow_run.pull_requests only lists same-repository PRs, so for a
+          # fork's PR it is empty: PR_NUMBER comes out empty and the head
+          # repo/branch fall back to the run's. The script then looks the PR up
+          # from PR_HEAD_REPO:PR_HEAD_BRANCH
           PR_HEAD_REPO: ${{ github.event.workflow_run.pull_requests[0].head.repo.full_name || github.event.workflow_run.head_repository.full_name }}
           PR_HEAD_BRANCH: ${{ github.event.workflow_run.pull_requests[0].head.ref || github.event.workflow_run.head_branch }}
-          # empty for a fork's PR (pull_requests is empty there); the script
-          # then finds the PR from PR_HEAD_REPO:PR_HEAD_BRANCH
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: ./.github/scripts/rerun_flaky_jobs.sh

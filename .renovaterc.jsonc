@@ -164,7 +164,7 @@
       "rangeStrategy": "update-lockfile"
     },
     {
-      "description": "One branch/PR per dependency: every lockfile pinning the package (and, through the resync below, every directory constraining it) moves together in one focused PR, instead of one PR per requirements/ directory or one giant PR per area",
+      "description": "One branch/PR per dependency: every lockfile pinning the package moves in the same PR, and the resync below propagates the pin to the directories that constrain it at another layer. Replaces the old grouping per requirements/ directory, which collapsed into two per-area mega-branches",
       "matchManagers": [
         "pip-compile"
       ],

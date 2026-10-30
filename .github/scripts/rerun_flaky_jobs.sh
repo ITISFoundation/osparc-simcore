@@ -16,8 +16,7 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-# the payload carries no PR number for a pull request from a fork, so find the
-# open PR whose head is this run's head branch
+# fall back to the head-repo:branch lookup (see the header)
 if [ -z "$PR_NUMBER" ]; then
   PR_NUMBER="$(gh api --paginate \
     "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100&head=$PR_HEAD_REPO:$PR_HEAD_BRANCH" \
