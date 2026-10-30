@@ -74,11 +74,9 @@ async def login(request: web.Request):
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
-    user = await _auth_service.get_user_or_none(request.app, email=login_data.email)
-
-    user = await _auth_service.check_authorized_user_credentials(
+    user = await _auth_service.authenticate_user(
         request.app,
-        user,
+        email=login_data.email,
         password=login_data.password.get_secret_value(),
         product=product,
     )
