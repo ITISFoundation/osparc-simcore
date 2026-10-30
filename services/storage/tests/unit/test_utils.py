@@ -8,6 +8,7 @@
 import datetime
 from collections.abc import Callable
 from pathlib import Path
+from typing import Final
 from uuid import uuid4
 
 import httpx
@@ -16,6 +17,7 @@ from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import UNDEFINED_SIZE_TYPE
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import deterministic_faker
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
@@ -25,6 +27,7 @@ from simcore_service_storage.utils.utils import (
     MAX_CHUNK_SIZE,
     download_to_file_or_raise,
     is_file_entry_valid,
+    is_upload_in_progress,
     is_valid_managed_multipart_upload,
 )
 
@@ -44,6 +47,34 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
 
 # fake values in @pytest.mark.parametrize must be worker-identical (see deterministic_faker)
 _COLLECTION_FAKER = deterministic_faker()
+
+
+@pytest.fixture
+def create_file_metadata(
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    faker: Faker,
+) -> Callable[..., FileMetaData]:
+    def _create(
+        *,
+        file_size: int = -1,
+        entity_tag: ETag | None = None,
+        upload_id: UploadID | None = None,
+        upload_expires_at: datetime.datetime | None = None,
+    ) -> FileMetaData:
+        return FileMetaData.from_simcore_node(
+            user_id=UserID(faker.pyint(min_value=1)),
+            file_id=create_simcore_file_id(uuid4(), uuid4(), faker.file_name()),
+            bucket=TypeAdapter(S3BucketName).validate_python("pytest-bucket"),
+            location_id=SimcoreS3DataManager.get_location_id(),
+            location_name=SimcoreS3DataManager.get_location_name(),
+            sha256_checksum=None,
+            file_size=TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(file_size),
+            entity_tag=entity_tag,
+            upload_id=upload_id,
+            upload_expires_at=upload_expires_at,
+        )
+
+    return _create
 
 
 @pytest.mark.parametrize(
@@ -83,23 +114,55 @@ def test_file_entry_valid(
     upload_id: UploadID | None,
     upload_expires_at: datetime.datetime | None,
     expected_validity: bool,
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
+    create_file_metadata: Callable[..., FileMetaData],
 ):
-    file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
-    fmd = FileMetaData.from_simcore_node(
-        user_id=faker.pyint(min_value=1),
-        file_id=file_id,
-        bucket=TypeAdapter(S3BucketName).validate_python("pytest-bucket"),
-        location_id=SimcoreS3DataManager.get_location_id(),
-        location_name=SimcoreS3DataManager.get_location_name(),
-        sha256_checksum=None,
+    fmd = create_file_metadata(
+        file_size=file_size,
+        entity_tag=entity_tag,
+        upload_id=upload_id,
+        upload_expires_at=upload_expires_at,
     )
-    fmd.file_size = TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(file_size)
-    fmd.entity_tag = entity_tag
-    fmd.upload_id = upload_id
-    fmd.upload_expires_at = upload_expires_at
     assert is_file_entry_valid(fmd) == expected_validity
+
+
+# file_meta_data timestamps are timestamptz, so they arrive as aware UTC instants
+_REFERENCE_TIME: Final[datetime.datetime] = datetime.datetime(2030, 1, 1, 12, tzinfo=datetime.UTC)
+_NAIVE_REFERENCE_TIME: Final[datetime.datetime] = _REFERENCE_TIME.replace(tzinfo=None)
+_UPLOAD_LEASE: Final[datetime.timedelta] = datetime.timedelta(hours=1)
+
+
+@pytest.mark.parametrize(
+    "upload_id, upload_expires_at, expected_in_progress",
+    [
+        (None, None, False),
+        ("some_upload_id", None, False),
+        (None, _REFERENCE_TIME - _UPLOAD_LEASE, False),  # deadline passed
+        (None, _REFERENCE_TIME, False),  # deadline reached
+        (None, _REFERENCE_TIME + _UPLOAD_LEASE, True),  # single presigned link carries no upload_id
+        ("some_upload_id", _REFERENCE_TIME + _UPLOAD_LEASE, True),
+        ("some_upload_id", _NAIVE_REFERENCE_TIME + _UPLOAD_LEASE, True),  # naive value read as UTC
+        (S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID, _REFERENCE_TIME + _UPLOAD_LEASE, True),
+    ],
+)
+def test_is_upload_in_progress(
+    upload_id: UploadID | None,
+    upload_expires_at: datetime.datetime | None,
+    expected_in_progress: bool,
+    create_file_metadata: Callable[..., FileMetaData],
+):
+    fmd = create_file_metadata(upload_id=upload_id, upload_expires_at=upload_expires_at)
+    assert is_upload_in_progress(fmd, now=_REFERENCE_TIME) is expected_in_progress
+
+
+def test_is_upload_in_progress_against_current_time(create_file_metadata: Callable[..., FileMetaData]):
+    # the reference defaults to the present, like it does when reading from the database
+    now = datetime.datetime.now(tz=datetime.UTC)
+    in_progress = create_file_metadata(upload_expires_at=now + _UPLOAD_LEASE)
+    expired = create_file_metadata(upload_expires_at=now - _UPLOAD_LEASE)
+
+    assert is_upload_in_progress(in_progress) is True, f"{in_progress.upload_expires_at} is in the future"
+    assert is_upload_in_progress(expired) is False, f"{expired.upload_expires_at} is in the past"
+    assert is_upload_in_progress(in_progress, now=now.replace(tzinfo=None)) is True, "naive references are UTC"
 
 
 @pytest.mark.parametrize(
