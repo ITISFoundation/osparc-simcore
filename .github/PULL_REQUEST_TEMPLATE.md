@@ -57,7 +57,7 @@ Example with fragment pointing to specific operation:
 
 ## AI assistance
 
-- [ ] 🤖 This PR was (partially-)AI generated
+- [ ] 🤖 This PR was AI generated
 
 <!-- If checked, list the AI tools/models that contributed, one per line:
      Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
