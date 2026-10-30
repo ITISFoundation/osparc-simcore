@@ -7,8 +7,8 @@
     "helpers:pinGitHubActionDigests"
   ],
   "dependencyDashboard": true,
-  // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
-  // once approved (see .github/mergify.yml), like any other PR
+  // Renovate never merges: Mergify queues its pull requests once approved, like
+  // any other pull request (see .github/mergify.yml)
   "automerge": false,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
@@ -21,8 +21,7 @@
     "uv": "0.13.6"
   },
   "labels": [
-    "t:maintenance",
-    "🤖-automerge"
+    "t:maintenance"
   ],
   // GitHub's Dependabot alerts cover transitive dependencies but briefly vanish while
   // GitHub rescans after a push; OSV covers direct dependencies only, independently
@@ -164,12 +163,12 @@
       "rangeStrategy": "update-lockfile"
     },
     {
-      "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",
+      "description": "One branch/PR per dependency: every lockfile pinning the package moves in the same PR, and the resync below propagates the pin to the directories that constrain it at another layer. Replaces the old grouping per requirements/ directory, which collapsed into two per-area mega-branches",
       "matchManagers": [
         "pip-compile"
       ],
-      "groupName": "{{packageFileDir}}",
-      "groupSlug": "{{packageFileDir}}"
+      "groupName": "{{depName}}",
+      "groupSlug": "{{depName}}"
     },
     {
       "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
@@ -197,19 +196,10 @@
       }
     },
     {
-      "description": "Shared packages: upgrade faster (smaller blast radius)",
-      "matchFileNames": [
-        "packages/**/requirements/**"
+      "description": "Python dependencies: wait two weeks before adopting a release (same cool-down as GitHub Actions and uv)",
+      "matchManagers": [
+        "pip-compile"
       ],
-      "groupName": "packages deps",
-      "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Services: upgrade slower / more conservative",
-      "matchFileNames": [
-        "services/**/requirements/**"
-      ],
-      "groupName": "services deps",
       "minimumReleaseAge": "14 days"
     },
     {
@@ -232,11 +222,11 @@
       "enabled": false
     },
     {
-      "description": "GitHub Actions: wait a week before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
+      "description": "GitHub Actions: wait two weeks before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
       "matchManagers": [
         "github-actions"
       ],
-      "minimumReleaseAge": "7 days"
+      "minimumReleaseAge": "14 days"
     },
     {
       "description": "Docker images: one PR per image (no grouping, so an update of one image does not block the others) and majors step only one major at a time (e.g. postgres 14 -> 15, never 14 -> 18). Majors still need approval on the Dependency Dashboard (see the major rule below)",
@@ -263,13 +253,13 @@
       "enabled": false
     },
     {
-      "description": "uv is pinned in requirements/UV_VERSION, in the Dockerfiles (ARG UV_VERSION) and in the constraints above, which tests/environment-setup/test_used_uv.py requires to match: update them together, once a release has been out for a week (security fixes do not wait)",
+      "description": "uv is pinned in requirements/UV_VERSION, in the Dockerfiles (ARG UV_VERSION) and in the constraints above, which tests/environment-setup/test_used_uv.py requires to match: update them together, once a release has been out for two weeks (security fixes do not wait)",
       "matchDepNames": [
         "uv"
       ],
       "groupName": "uv",
       "groupSlug": "uv",
-      "minimumReleaseAge": "7 days"
+      "minimumReleaseAge": "14 days"
     },
     {
       "description": "Python minor/major upgrades are done by hand across the whole repository (see requirements/how-to-upgrade-python.md): base images, .python-version, requires-python, actions/setup-python inputs and the constraints above are never touched by Renovate",

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-file MD012 MD013 MD041 -->
 <!-- Title Annotations:
 
   WIP: work in progress
@@ -21,6 +22,10 @@
 
 or from https://gitmoji.dev/
 -->
+
+## Goal
+
+<!-- One sentence: why this PR exists. -->
 
 ## What do these changes do?
 
