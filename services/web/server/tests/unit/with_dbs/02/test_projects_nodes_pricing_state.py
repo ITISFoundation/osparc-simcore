@@ -20,70 +20,148 @@ pipeline update" behaviors (D1-D6) are exercised from the director-v2 side in
 `services/director-v2/tests/unit/with_dbs`.
 """
 
-import re
 from typing import Any
 from unittest import mock
+from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    RutPricingPlanGet,
     RutPricingUnitGet,
 )
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID
+from models_library.services_resources import ServiceResourcesDict
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.aioresponses_mocker import AioResponsesMock
+from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.project_nodes_pricing import (
-    T3_MEDIUM_NAME,
     get_node_pricing_state,
-    make_pricing_unit,
-    regex_for_rut_pricing_unit,
     set_node_required_resources,
     single_container_required_resources,
 )
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.long_running_tasks.models import TaskStatus
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.resource_usage.settings import get_plugin_settings
 from sqlalchemy.ext.asyncio import AsyncEngine
+from tenacity.asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+
+# Hand-computed expectation (t3.medium = 2 CPU / 4 GiB, dask-worker formula):
+#   cpu = max(0.1, 2.0 - 0.1) = 1.9
+#   ram = int(4294967296 * 0.9) = 3865470566
+#
+
+_FILE_PICKER_NODE_ID = "106bfd6b-4b94-4e9e-9cd4-2f8e446f9a9e"
+_COMP_NODE_ID = "0e5cc0cf-0b75-4b17-b995-899cb95a5eeb"
+_DYNAMIC_NODE_ID = "b18cc951-4e0a-4f1f-9f2d-98b1d1ba72a1"
+
+_WORKBENCH: dict[str, Any] = {
+    _FILE_PICKER_NODE_ID: {
+        "key": "simcore/services/frontend/file-picker",
+        "version": "1.0.0",
+        "label": "File Picker",
+        "inputs": {},
+        "outputs": {},
+    },
+    _COMP_NODE_ID: {
+        "key": "simcore/services/comp/itis/sleeper",
+        "version": "2.1.7",
+        "label": "sleeper",
+        "inputs": {},
+        "outputs": {},
+    },
+    _DYNAMIC_NODE_ID: {
+        "key": "simcore/services/dynamic/pytest-dynamic-service",
+        "version": "0.0.0",
+        "label": "dyn",
+        "inputs": {},
+        "outputs": {},
+    },
+}
 
 
-@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_project_creation_writes_no_pricing_links(
+async def test_project_creation_links_default_unit_and_sizes_computational_nodes(
     client: TestClient,
     logged_user: UserInfoDict,
-    user_project: ProjectDict,
     asyncpg_engine: AsyncEngine,
+    project_db_cleaner: None,
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
-    """W5: creating a project (new, copy, template or api-server job) writes
-    `projects_nodes` rows but NEVER a `projects_node_to_pricing_unit` link, and
-    makes no resource-usage-tracker call (none is mocked here and aioresponses
-    would raise on an unexpected HTTP call).
-
-    ⚠️ The pricing/resources ownership rework (PR 2) intends to link the default
-    pricing unit and size COMPUTATIONAL nodes at creation; when that lands,
-    computational nodes here must be expected to have a default link and
-    dask-sized resources (dynamic/frontend nodes keep having no link).
+    """W5: creating a new project (POST /v0/projects) links the DEFAULT pricing
+    unit and sizes every COMPUTATIONAL node right away, while dynamic and frontend
+    nodes get NO link at creation (copy/template cloning is characterized in
+    test_projects_service__copy.py; api-server jobs use this same creation path).
     """
     assert client.app
 
-    state = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
-    assert state, "the test project must have persisted nodes"
+    create_url = client.app.router["create_project"].url_for()
+    resp = await client.post(
+        f"{create_url}",
+        json={
+            "name": "w5-project",
+            "description": "pricing state at creation",
+            "workbench": _WORKBENCH,
+            "accessRights": {},
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_202_ACCEPTED)
 
-    for node_state in state.values():
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            rsp = await client.get(urlparse(data["status_href"]).path)
+            status_data, _ = await assert_status(rsp, status.HTTP_200_OK)
+            task_status = TaskStatus.model_validate(status_data)
+            assert task_status.done, f"creation task not done: {task_status}"
+
+    rsp = await client.get(urlparse(data["result_href"]).path)
+    new_project, _ = await assert_status(rsp, status.HTTP_201_CREATED)
+
+    # only the computational node is sized at creation: exactly one RPC call
+    mocked_director_v2_node_sizing.assert_called_once()
+
+    state = await get_node_pricing_state(asyncpg_engine, new_project["uuid"])
+    assert len(state) == len(_WORKBENCH)
+
+    # computational node: linked to the default plan/unit and dask-sized
+    comp_state = state[NodeID(_COMP_NODE_ID)]
+    assert comp_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert comp_state.pricing_unit_id == mock_rut_default_pricing_unit.pricing_unit_id
+    assert comp_state.required_resources
+    comp_resources = comp_state.required_resources["container"]["resources"]
+    assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
+    assert comp_resources["RAM"]["limit"] == 3865470566
+    assert comp_resources["RAM"]["reservation"] == 3865470566
+
+    # dynamic and frontend nodes: NOT linked, catalog resources untouched
+    for node_id in (_DYNAMIC_NODE_ID, _FILE_PICKER_NODE_ID):
+        node_state = state[NodeID(node_id)]
         assert node_state.pricing_plan_id is None
         assert node_state.pricing_unit_id is None
+        assert node_state.required_resources == jsonable_encoder(mock_service_resources)
 
 
 #
-# W2b: starting a dynamic service in a BILLED product, on a node with no pricing link.
+# W2b: starting a dynamic service in a BILLED product, on a node with no pricing link
+# (dynamic nodes are never linked at creation, so this path always fires for them).
 #
 # Hand-computed expectation (t3.medium = 2 CPU / 4 GiB, dynamic-sidecar formula):
 #   cpu = max(0.5, 2.0 - 1.4) = 0.6
@@ -112,30 +190,6 @@ def billed_product(client: TestClient, osparc_product_name: ProductName) -> None
 
 
 @pytest.fixture
-def mock_rut_default_pricing_unit(client: TestClient, aioresponses_mocker: AioResponsesMock) -> RutPricingUnitGet:
-    """RUT: the service's default plan/unit is unit 1 (t3.medium, non-zero cost)."""
-    assert client.app
-    settings = get_plugin_settings(client.app)
-    default_unit = make_pricing_unit(
-        pricing_unit_id=_DEFAULT_PRICING_UNIT_ID, default=True, aws_ec2_instance=T3_MEDIUM_NAME
-    )
-    default_plan = RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0]).model_copy(
-        update={"pricing_plan_id": _DEFAULT_PRICING_PLAN_ID, "pricing_units": [default_unit]}
-    )
-    aioresponses_mocker.get(
-        re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$"),
-        payload=jsonable_encoder(default_plan),
-        repeat=True,
-    )
-    aioresponses_mocker.get(
-        regex_for_rut_pricing_unit(f"{settings.api_base_url}", _DEFAULT_PRICING_PLAN_ID, _DEFAULT_PRICING_UNIT_ID),
-        payload=jsonable_encoder(default_unit),
-        repeat=True,
-    )
-    return default_unit
-
-
-@pytest.fixture
 def mock_project_wallet_with_credits(mocker: MockerFixture) -> None:
     """The project is connected to a wallet that has credits."""
     # NOTE: autospec of a coroutine function gives an AsyncMock
@@ -154,7 +208,6 @@ def mock_project_wallet_with_credits(mocker: MockerFixture) -> None:
     )
 
 
-@pytest.mark.epic("sanderegg/T2", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_formula(
     client: TestClient,
@@ -168,14 +221,10 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
 ):
     """W2b: starting a dynamic service in a billed product, on a node without any
-    pricing link, lazily links the DEFAULT plan/unit of the service and resizes
+    pricing link, links the DEFAULT plan/unit of the service and resizes
     `required_resources` with the DYNAMIC-SIDECAR formula of that unit's machine
-    (the sizing is computed by director-v2).
-
-    ⚠️ The pricing/resources ownership rework (PR 2) moves link/size creation to
-    project creation and node addition, keeping the start only as a repair: the END
-    state asserted here is intended to stay, but the RUT/sizing calls below may
-    disappear once the link is already in place.
+    (the sizing is computed by director-v2). Dynamic nodes are never linked at
+    creation, so this path stays the (only) writer of a dynamic node's link.
     """
     assert client.app
 

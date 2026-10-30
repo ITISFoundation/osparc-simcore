@@ -127,7 +127,7 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
-) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+) -> tuple[ProjectDict, NodesMap, CopyProjectNodesCoro | None, CopyFileCoro | None]:
     """
     Raises:
         ProjectCopyingTrashedProjectError: if the source project is trashed
@@ -180,7 +180,7 @@ async def _prepare_project_copy(
             product_name,
             task_progress,
         )
-    return new_project, copy_project_nodes_coro, copy_file_coro
+    return new_project, nodes_map, copy_project_nodes_coro, copy_file_coro
 
 
 # Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
@@ -381,6 +381,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
+    nodes_map: NodesMap | None = None
     # Any failure raised after the project row has been inserted (signalled via
     # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized cleanup,
     # so we never leave a half-created project behind.
@@ -419,6 +420,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 # 1.1 prepare copy
                 (
                     new_project,
+                    nodes_map,
                     project_node_coro,
                     copy_file_coro,
                 ) = await _prepare_project_copy(
@@ -481,6 +483,23 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 parent_node_id=parent_node_id,
             )
             await progress.update()
+
+            # 3.1.bis pricing/resources: keep the source project's pricing choices
+            # (when copying) and link + size every remaining computational node
+            if from_study is not None and nodes_map is not None:
+                await _projects_service.copy_pricing_links(
+                    app,
+                    source_project_id=from_study,
+                    destination_project_id=ProjectID(new_project["uuid"]),
+                    nodes_map=nodes_map,
+                    product_name=product_name,
+                )
+            await _projects_service.link_default_pricing_units_and_size_computational_nodes(
+                app,
+                user_id=user_id,
+                project_id=ProjectID(new_project["uuid"]),
+                product_name=product_name,
+            )
 
             # 3.2 move project to proper folder
             if folder_id:

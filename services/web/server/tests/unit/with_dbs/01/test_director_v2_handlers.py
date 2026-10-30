@@ -6,6 +6,7 @@
 import base64
 from decimal import Decimal
 from typing import Any
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
@@ -32,6 +33,7 @@ from models_library.api_schemas_webserver.computations import (
     ComputationTaskRestGet,
 )
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
@@ -568,7 +570,6 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
 #
 
 
-@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
     "wallet_info_expected",
@@ -579,7 +580,7 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
         pytest.param(None, id="not_billed"),
     ],
 )
-async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_projects_nodes(
+async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_billed(
     director_v2_service_mock: AioResponsesMock,
     client: TestClient,
     logged_user: LoggedUser,
@@ -587,14 +588,16 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     mocker: MockerFixture,
     asyncpg_engine: AsyncEngine,
     wallet_info_expected: WalletInfo | None,
+    mock_rut_default_pricing_unit: None,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
-    """W8/W9: starting a computation forwards `wallet_info` to director-v2 and the
-    web-server itself writes NOTHING to `projects_nodes` or
-    `projects_node_to_pricing_unit`.
-
-    ⚠️ In the pricing/resources ownership rework (PR 2), starting a billed project
-    will additionally REPAIR missing/stale pricing links and node resources here;
-    the "not_billed" case must keep writing nothing.
+    """W8/W9: starting a computation forwards `wallet_info` to director-v2. When
+    the product is BILLED (wallet resolved), the web-server first REPAIRS the
+    pricing state of every runnable node: unlinked computational/dynamic nodes get
+    the DEFAULT unit and are sized for its machine (hand-computed t3.medium:
+    dask 1.9 CPU / 3865470566 B, dynamic-sidecar 0.6 CPU / 2791728742 B).
+    Frontend nodes are never linked. When NOT billed, the web-server writes
+    NOTHING to `projects_nodes` or `projects_node_to_pricing_unit`.
     """
     assert client.app
 
@@ -612,6 +615,7 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
 
     state_before = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
     assert state_before, "the test project must have nodes"
+    assert all(node_state.pricing_unit_id is None for node_state in state_before.values())
 
     url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
     rsp = await client.post(f"{url}")
@@ -623,13 +627,45 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     assert mocked_start.call_count == 1
     assert mocked_start.call_args.kwargs["wallet_info"] == wallet_info_expected
 
-    # the web-server wrote nothing to the nodes' pricing state
     state_after = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
-    assert state_after == state_before
-    assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
+
+    if wallet_info_expected is None:
+        # not billed: the web-server wrote nothing to the nodes' pricing state
+        assert state_after == state_before
+        mocked_director_v2_node_sizing.assert_not_called()
+        return
+
+    # billed: computational and dynamic nodes are linked to the default unit and
+    # sized for its machine, frontend nodes are untouched
+    comp_node_id = next(
+        NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]
+    )
+    dynamic_node_id = next(
+        NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/dynamic/" in node["key"]
+    )
+    for node_id in (comp_node_id, dynamic_node_id):
+        assert state_after[node_id].pricing_plan_id == 1
+        assert state_after[node_id].pricing_unit_id == 1
+
+    comp_node_resources = state_after[comp_node_id].required_resources
+    assert comp_node_resources
+    comp_resources = comp_node_resources["container"]["resources"]
+    assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
+    assert comp_resources["RAM"]["limit"] == 3865470566
+
+    dynamic_node_resources = state_after[dynamic_node_id].required_resources
+    assert dynamic_node_resources
+    dynamic_resources = dynamic_node_resources["container"]["resources"]
+    assert dynamic_resources["CPU"]["limit"] == pytest.approx(0.6)
+    assert dynamic_resources["RAM"]["limit"] == 2791728742
+
+    for node_id, node_state in state_after.items():
+        if node_id not in (comp_node_id, dynamic_node_id):
+            assert node_state == state_before[node_id]
+
+    assert mocked_director_v2_node_sizing.call_count == 2
 
 
-@pytest.mark.epic("sanderegg/T2", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_start_computation_forwards_every_runnable_project(
     director_v2_service_mock: AioResponsesMock,
@@ -644,10 +680,8 @@ async def test_start_computation_forwards_every_runnable_project(
     to director-v2 per project, all of them with the SAME wallet_info, and still answers
     with the pipeline_id of the project the user started.
 
-    ⚠️ The pricing/resources ownership rework (PR 2) keeps the one-request-per-runnable-
-    project forwarding and identical wallet_info asserted here, but additionally
-    repairs each project's pricing links/resources before forwarding, so extra
-    interactions may appear around these calls.
+    The pricing repair done before forwarding is best-effort (the resource-usage
+    tracker is not mocked here) and does not change the forwarding asserted below.
     """
     assert client.app
 
