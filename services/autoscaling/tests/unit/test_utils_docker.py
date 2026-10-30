@@ -1229,6 +1229,10 @@ async def test_set_node_begin_termination_process(
     assert arrow.utcnow().datetime > returned_termination_started_at
 
 
+@pytest.mark.docker_exclusive(
+    reason="drains and re-activates the single shared swarm node via product code: swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
+)
 async def test_attach_node(
     disabled_rabbitmq: None,
     disabled_ec2: None,
