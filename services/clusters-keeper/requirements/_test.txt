@@ -109,7 +109,7 @@ frozenlist==1.8.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.3.0
+graphql-core==3.3.1
     # via moto
 h11==0.16.0
     # via
