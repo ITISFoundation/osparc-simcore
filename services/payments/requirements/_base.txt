@@ -283,7 +283,7 @@ psutil==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.11
     # via sqlalchemy
-pyasn1==0.6.4
+pyasn1==0.6.5
     # via
     #   python-jose
     #   rsa
