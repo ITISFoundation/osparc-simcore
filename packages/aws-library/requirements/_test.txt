@@ -95,7 +95,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-graphql-core==3.3.0
+graphql-core==3.3.1
     # via moto
 h11==0.16.0
     # via
