@@ -1,0 +1,43 @@
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  - name: INVITATIONS_DEFAULT_PRODUCT
+    value: {{ requiredEnv "INVITATIONS_DEFAULT_PRODUCT" | quote }}
+  - name: INVITATIONS_LOGLEVEL
+    value: {{ requiredEnv "INVITATIONS_LOGLEVEL" | quote }}
+  - name: INVITATIONS_OSPARC_URL
+    value: {{ requiredEnv "INVITATIONS_OSPARC_URL" | quote }}
+  - name: INVITATIONS_PASSWORD
+    value: {{ requiredEnv "INVITATIONS_PASSWORD" | quote }}
+    sensitive: true
+  - name: INVITATIONS_SECRET_KEY
+    value: {{ requiredEnv "INVITATIONS_SECRET_KEY" | quote }}
+    sensitive: true
+  - name: INVITATIONS_SWAGGER_API_DOC_ENABLED
+    value: {{ requiredEnv "INVITATIONS_SWAGGER_API_DOC_ENABLED" | quote }}
+  - name: INVITATIONS_TRACING
+    value: {{ requiredEnv "INVITATIONS_TRACING" | quote }}
+  - name: INVITATIONS_USERNAME
+    value: {{ requiredEnv "INVITATIONS_USERNAME" | quote }}
+  - name: LOG_FILTER_MAPPING
+    value: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  - name: LOG_FORMAT_LOCAL_DEV_ENABLED
+    value: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_PORT
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT" | quote }}
+  - name: TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" | quote }}
+  - name: TRACING_OPENTELEMETRY_TRACED_FUNCTIONS
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS" | quote }}

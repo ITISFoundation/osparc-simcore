@@ -1,0 +1,86 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # postgres
+      - containerPort: 30432
+        hostPort: 5432
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # redis
+      - containerPort: 30379
+        hostPort: 6379
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # redis-commander
+      - containerPort: 31881
+        hostPort: 18081
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # rabbit AMQP
+      - containerPort: 30672
+        hostPort: 5672
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # rabbit management UI
+      - containerPort: 31672
+        hostPort: 15672
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # headlamp
+      - containerPort: 30080
+        hostPort: 9000
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # adminer
+      - containerPort: 31808
+        hostPort: 18080
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # flower
+      - containerPort: 30555
+        hostPort: 5555
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # mailpit SMTP
+      - containerPort: 31025
+        hostPort: 1025
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # mailpit web UI
+      - containerPort: 31825
+        hostPort: 8025
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # rustfs S3 API
+      - containerPort: 32000
+        hostPort: 9001
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # rustfs console
+      - containerPort: 32001
+        hostPort: 9090
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # jaeger UI
+      - containerPort: 31686
+        hostPort: 16686
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # jaeger OTLP gRPC
+      - containerPort: 31417
+        hostPort: 43017
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # jaeger OTLP HTTP
+      - containerPort: 31418
+        hostPort: 43018
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # OpenTelemetry Collector OTLP HTTP
+      - containerPort: 31431
+        hostPort: 4318
+        listenAddress: 127.0.0.1
+        protocol: TCP

@@ -1,0 +1,51 @@
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  - name: DATCORE_ADAPTER_LOG_FILTER_MAPPING
+    value: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  - name: DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED
+    value: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  - name: DATCORE_ADAPTER_TRACING
+    value: {{ requiredEnv "DATCORE_ADAPTER_TRACING" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_PORT
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT" | quote }}
+  - name: TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" | quote }}
+  - name: TRACING_OPENTELEMETRY_TRACED_FUNCTIONS
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS" | quote }}
+
+# no route served at "/", and /v0/ready probes external pennsieve.io, so probe /v0/live as the image's HEALTHCHECK does
+probes:
+  startup:
+    httpGet:
+      path: /v0/live
+      port: http
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet:
+      path: /v0/live
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /v0/live
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5

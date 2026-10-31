@@ -1,0 +1,60 @@
+{{- $doneMarkFile := "/tmp/migration.done" }}
+
+# image has no gosu entrypoint and runs non-root, so do not start it as root
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 8004
+  runAsGroup: 8004
+
+containerSecurityContext:
+  capabilities:
+    add: []
+
+service:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  - name: HOME
+    value: "/tmp"
+  - name: POSTGRES_DB
+    value: {{ requiredEnv "POSTGRES_DB" | quote }}
+  - name: POSTGRES_HOST
+    value: {{ requiredEnv "POSTGRES_HOST" | quote }}
+  - name: POSTGRES_MAX_OVERFLOW
+    value: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
+  - name: POSTGRES_MAX_POOLSIZE
+    value: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
+  - name: POSTGRES_PASSWORD
+    value: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+    sensitive: true
+  - name: POSTGRES_PORT
+    value: {{ requiredEnv "POSTGRES_PORT" | quote }}
+  - name: POSTGRES_USER
+    value: {{ requiredEnv "POSTGRES_USER" | quote }}
+  - name: SC_DONE_MARK_FILE
+    value: {{ $doneMarkFile | quote }}
+
+probes:
+  startup:
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 100
+  readiness:
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness: null

@@ -1,0 +1,37 @@
+helmDefaults:
+  wait: true
+  waitForJobs: true
+  timeout: 600
+
+  # avoid helm diff errors on 1st installation
+  disableValidation: true
+
+templates:
+  simcore-service:
+    namespace: simcore
+    createNamespace: true
+    chart: ../charts/simcore-service
+    values:
+      - helm-values.common.yaml.gotmpl
+      - "{{`{{ .Release.Name }}`}}/helm-values.yaml.gotmpl"
+
+releases:
+  - name: datcore-adapter
+    inherit:
+      - template: simcore-service
+
+  - name: invitations
+    inherit:
+      - template: simcore-service
+
+  - name: migration
+    inherit:
+      - template: simcore-service
+
+  - name: notifications
+    inherit:
+      - template: simcore-service
+
+  - name: static-webserver
+    inherit:
+      - template: simcore-service

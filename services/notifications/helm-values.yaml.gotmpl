@@ -1,0 +1,75 @@
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  - name: CELERY_EPHEMERAL_RESULT_EXPIRES
+    value: {{ requiredEnv "NOTIFICATIONS_CELERY_EPHEMERAL_RESULT_EXPIRES" | quote }}
+  - name: LOG_FILTER_MAPPING
+    value: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  - name: LOG_FORMAT_LOCAL_DEV_ENABLED
+    value: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  - name: NOTIFICATIONS_BOOT_SERVER_MODE
+    value: {{ env "NOTIFICATIONS_BOOT_SERVER_MODE" | default "AS_REST_API_SERVER" | quote }}
+  - name: NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE
+    value: {{ requiredEnv "NOTIFICATIONS_EMAIL_MAX_RECIPIENTS_PER_MESSAGE" | quote }}
+  - name: NOTIFICATIONS_LOGLEVEL
+    value: {{ requiredEnv "NOTIFICATIONS_LOGLEVEL" | quote }}
+  - name: NOTIFICATIONS_SMTP_SETTINGS
+    value: {{ requiredEnv "SMTP_SETTINGS" | quote }}
+    sensitive: true
+  - name: NOTIFICATIONS_TRACING
+    value: {{ requiredEnv "NOTIFICATIONS_TRACING" | quote }}
+  - name: POSTGRES_DB
+    value: {{ requiredEnv "POSTGRES_DB" | quote }}
+  - name: POSTGRES_HOST
+    value: {{ requiredEnv "POSTGRES_HOST" | quote }}
+  - name: POSTGRES_MAX_OVERFLOW
+    value: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
+  - name: POSTGRES_MAX_POOLSIZE
+    value: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
+  - name: POSTGRES_PASSWORD
+    value: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+    sensitive: true
+  - name: POSTGRES_PORT
+    value: {{ requiredEnv "POSTGRES_PORT" | quote }}
+  - name: POSTGRES_USER
+    value: {{ requiredEnv "POSTGRES_USER" | quote }}
+  - name: RABBIT_HOST
+    value: {{ requiredEnv "RABBIT_HOST" | quote }}
+  - name: RABBIT_PASSWORD
+    value: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+    sensitive: true
+  - name: RABBIT_PORT
+    value: {{ requiredEnv "RABBIT_PORT" | quote }}
+  - name: RABBIT_SECURE
+    value: {{ requiredEnv "RABBIT_SECURE" | quote }}
+  - name: RABBIT_USER
+    value: {{ requiredEnv "RABBIT_USER" | quote }}
+  - name: REDIS_HOST
+    value: {{ requiredEnv "REDIS_HOST" | quote }}
+  - name: REDIS_PASSWORD
+    value: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+    sensitive: true
+  - name: REDIS_PORT
+    value: {{ requiredEnv "REDIS_PORT" | quote }}
+  - name: REDIS_SECURE
+    value: {{ requiredEnv "REDIS_SECURE" | quote }}
+  - name: REDIS_USER
+    value: {{ requiredEnv "REDIS_USER" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION" | quote }}
+  - name: TRACING_OPENTELEMETRY_COLLECTOR_PORT
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT" | quote }}
+  - name: TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" | quote }}
+  - name: TRACING_OPENTELEMETRY_TRACED_FUNCTIONS
+    value: {{ requiredEnv "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS" | quote }}

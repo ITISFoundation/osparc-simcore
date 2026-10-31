@@ -1,0 +1,27 @@
+# image has no gosu entrypoint and runs non-root, so do not start it as root
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 8004
+  runAsGroup: 8004
+
+containerSecurityContext:
+  capabilities:
+    add: []
+
+env:
+  - name: SERVER_HOST
+    value: "0.0.0.0"
+  - name: SERVER_LOG_LEVEL
+    value: "error"
+  - name: SERVER_PORT
+    value: "8000"
+  - name: SERVER_ROOT
+    value: "/static-content"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

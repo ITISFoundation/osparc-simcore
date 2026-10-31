@@ -1,0 +1,6 @@
+apiVersion: v2
+name: simcore-service
+description: Generic chart for deploying an oSparc simcore service
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

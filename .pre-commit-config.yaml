@@ -20,6 +20,7 @@ repos:
         args: ["--maxkb=1024"]
       - id: check-merge-conflict
       - id: check-yaml
+        exclude: '^charts/.*/templates/'
       - id: check-json
       - id: check-toml
       - id: detect-private-key
@@ -69,6 +70,7 @@ repos:
       - id: yamllint
         name: yaml-linter
         args: ["--config-file", ".yamllint.yaml"]
+        exclude: '^charts/.*/templates/'
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:

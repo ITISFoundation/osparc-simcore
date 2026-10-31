@@ -1,0 +1,170 @@
+helmDefaults:
+  wait: true
+  waitForJobs: true
+  timeout: 600
+
+  disableValidation: true
+
+repositories:
+  - name: headlamp
+    url: https://kubernetes-sigs.github.io/headlamp/
+  - name: jaegertracing
+    url: https://jaegertracing.github.io/helm-charts
+  - name: open-telemetry
+    url: https://open-telemetry.github.io/opentelemetry-helm-charts
+  - name: rustfs
+    url: https://charts.rustfs.com
+
+releases:
+  - name: adminer
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/adminer
+
+  - name: flower
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/flower
+    values:
+      - user: {{ requiredEnv "RABBIT_USER" | quote }}
+        password: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+
+  - name: jaeger
+    namespace: ops
+    createNamespace: true
+    chart: jaegertracing/jaeger
+    version: 4.16.1
+    values:
+      - jaeger:
+          service:
+            type: ClusterIP
+        extraObjects:
+          - apiVersion: v1
+            kind: Service
+            metadata:
+              name: jaeger-host
+            spec:
+              type: NodePort
+              selector:
+                app.kubernetes.io/name: jaeger
+                app.kubernetes.io/instance: jaeger
+                app.kubernetes.io/component: all-in-one
+              ports:
+                - name: ui
+                  port: 16686
+                  targetPort: 16686
+                  nodePort: 31686
+                - name: otlp-grpc
+                  port: 4317
+                  targetPort: 4317
+                  nodePort: 31417
+                - name: otlp-http
+                  port: 4318
+                  targetPort: 4318
+                  nodePort: 31418
+
+  - name: opentelemetry-collector
+    namespace: ops
+    createNamespace: true
+    chart: open-telemetry/opentelemetry-collector
+    version: 0.144.0
+    values:
+      - mode: deployment
+        image:
+          repository: otel/opentelemetry-collector-contrib
+        command:
+          name: otelcol-contrib
+        service:
+          type: NodePort
+        ports:
+          otlp:
+            nodePort: 31419
+          otlp-http:
+            nodePort: 31431
+          jaeger-compact:
+            enabled: false
+          jaeger-thrift:
+            enabled: false
+          jaeger-grpc:
+            enabled: false
+          zipkin:
+            enabled: false
+        fullnameOverride: opentelemetry-collector
+        alternateConfig: {{ readFile "opentelemetry-collector-config.yaml" | fromYaml | toYaml | nindent 10 }}
+        extraEnvs:
+          - name: TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE
+            value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE" | quote }}
+          - name: TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT
+            value: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT" | quote }}
+
+  - name: mailpit
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/mailpit
+
+  - name: postgres
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/postgres
+    values:
+      - db: {{ requiredEnv "POSTGRES_DB" | quote }}
+        user: {{ requiredEnv "POSTGRES_USER" | quote }}
+        password: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+
+  - name: redis
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/redis
+    values:
+      - password: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+
+  - name: redis-commander
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/redis-commander
+    values:
+      - password: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+
+  - name: rabbit
+    namespace: ops
+    createNamespace: true
+    chart: ../charts/ops-local/rabbit
+    values:
+      - user: {{ requiredEnv "RABBIT_USER" | quote }}
+        password: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+
+  - name: rustfs
+    namespace: ops
+    createNamespace: true
+    chart: rustfs/rustfs
+    version: 1.0.4
+    values:
+      - mode:
+          standalone:
+            enabled: true
+          distributed:
+            enabled: false
+        replicaCount: 1
+        ingress:
+          enabled: false
+        service:
+          type: NodePort
+        storageclass:
+          name: standard
+          dataStorageSize: 10Gi
+        secret:
+          rustfs:
+            access_key: {{ requiredEnv "S3_ACCESS_KEY" | quote }}
+            secret_key: {{ requiredEnv "S3_SECRET_KEY" | quote }}
+
+  - name: headlamp # Portainer alternative for Kubernetes
+    namespace: ops
+    createNamespace: true
+    chart: headlamp/headlamp
+    version: 0.46.0
+    values:
+      - service:
+          type: NodePort
+          nodePort: 30080
+        config:
+          unsafeUseServiceAccountToken: true # access ui without password/token

@@ -1,0 +1,65 @@
+replicaCount: 1
+
+image:
+  repository: ""
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+command: []
+args: []
+
+containerPort: 8000
+service:
+  enabled: true
+  port: 8000
+
+podSecurityContext: # simcore services start as root
+  runAsNonRoot: false
+  runAsUser: 0
+  runAsGroup: 0
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+    add: # simcore services changes file metadata on start
+      - DAC_READ_SEARCH
+      - SETGID
+      - SETUID
+      - CHOWN
+
+probes:
+  startup:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+
+env: []
+
+networkPolicy:
+  enabled: false
+  ingress: []
+  egress: []
+
+resources: {}
