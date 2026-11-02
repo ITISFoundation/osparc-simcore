@@ -171,6 +171,17 @@
       "groupSlug": "{{depName}}"
     },
     {
+      "description": "The opentelemetry packages ship in two coordinated release trains (the 1.x api/sdk/exporters and the 0.66bN instrumentation/semantic-conventions, which pin each other), so per-package PRs moved one pin of a family twenty directories already kept in lockstep. One PR moves the whole family instead; Renovate still splits majors into their own branch (separateMajorMinor)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "/^opentelemetry/"
+      ],
+      "groupName": "opentelemetry",
+      "groupSlug": "opentelemetry"
+    },
+    {
       "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
       "matchManagers": [
         "pip-compile"
@@ -236,7 +247,10 @@
       "maxMajorIncrement": 1
     },
     {
-      "description": "Major updates usually need code changes: only on request, by ticking them on the Dependency Dashboard (security fixes excepted, see vulnerabilityAlerts)",
+      "description": "Docker image majors usually need code changes (a new major can change the configuration layout or the data format): only on request, by ticking them on the Dependency Dashboard (security fixes excepted, see vulnerabilityAlerts). Majors of Python packages, GitHub Actions and uv come through as regular PRs instead, under the usual two reviews, the code-owner gate and the cool-downs",
+      "matchDatasources": [
+        "docker"
+      ],
       "matchUpdateTypes": [
         "major"
       ],
