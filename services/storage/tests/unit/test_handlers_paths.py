@@ -802,8 +802,6 @@ async def test_path_compute_size_with_file_under_upload(
     all_file_ids = [file_id for files_in_node in list_of_files.values() for file_id in files_in_node]
     in_flight_file_id = all_file_ids[0]
 
-    # handing out the upload links deletes the object and arms the upload lease, so storage cannot
-    # size this file yet
     url = url_from_operation_id(
         client,
         initialized_app,
