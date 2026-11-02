@@ -38,27 +38,6 @@ class LicensesRpcApi(BaseRpcApi):
             ),
         )
 
-    async def get_available_licensed_items_for_wallet(
-        self,
-        *,
-        product_name: ProductName,
-        wallet_id: WalletID,
-        user_id: UserID,
-        offset: int = 0,
-        limit: int = 20,
-    ) -> LicensedItemRpcGetPage:
-        """Get licensed items for a wallet."""
-        return TypeAdapter(LicensedItemRpcGetPage).validate_python(
-            await self._request(
-                "get_available_licensed_items_for_wallet",
-                product_name=product_name,
-                user_id=user_id,
-                wallet_id=wallet_id,
-                offset=offset,
-                limit=limit,
-            ),
-        )
-
     async def get_licensed_items_checkouts_for_wallet(
         self,
         *,

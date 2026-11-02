@@ -182,13 +182,6 @@ async def test_license_checkout_workflow(
     assert result.total == 1
     assert isinstance(result, LicensedItemRpcGetPage)
 
-    with pytest.raises(NotImplementedError):
-        await webserver_rpc_client.licenses.get_available_licensed_items_for_wallet(
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-            wallet_id=1,
-        )
-
     checkout = await webserver_rpc_client.licenses.checkout_licensed_item_for_wallet(
         product_name=osparc_product_name,
         user_id=logged_user["id"],

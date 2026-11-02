@@ -5,6 +5,7 @@
 import asyncio
 import dataclasses
 import datetime
+import functools
 import json
 import logging
 import random
@@ -12,7 +13,7 @@ import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, cast, get_args
+from typing import Annotated, Any, Final, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -22,6 +23,7 @@ import httpx
 import psutil
 import pytest
 import simcore_service_autoscaling
+from annotated_types import doc
 from asgi_lifespan import LifespanManager
 from aws_library.ec2 import (
     EC2InstanceBootSpecific,
@@ -66,6 +68,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     delenvs_from_dict,
     setenvs_from_dict,
 )
+from pytest_simcore.helpers.xdist import get_worker_id
 from servicelib.tracing import TracingConfig
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
@@ -97,9 +100,9 @@ from simcore_service_autoscaling.utils.warm_buffer_machines import (
     get_deactivated_warm_buffer_ec2_tags,
 )
 from tenacity import after_log, before_sleep_log, retry
-from tenacity.retry import retry_if_exception_type
+from tenacity.retry import retry_if_exception, retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_fixed, wait_random_exponential
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import TagTypeDef
@@ -118,6 +121,7 @@ pytest_plugins = [
     "pytest_simcore.logging",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 
@@ -351,14 +355,21 @@ def with_enabled_buffer_pools(
 def enabled_dynamic_mode(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
 ) -> EnvVarsDict:
+    """Monitored label keys are unique per xdist worker: with common keys on the ONE
+    shared docker stack, one worker's autoscaler would discover and scale up on the
+    other workers' pending services. The worker id is suffixed with a letter because
+    Docker label keys must not end with a digit, a dot or a dash ("gw0" is invalid).
+    """
+    worker_id = f"{get_worker_id(request)}x"
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
             "AUTOSCALING_NODES_MONITORING": "{}",
-            "NODES_MONITORING_NODE_LABELS": json_dumps(["pytest.fake-node-label"]),
-            "NODES_MONITORING_SERVICE_LABELS": json_dumps(["pytest.fake-service-label"]),
-            "NODES_MONITORING_NEW_NODES_LABELS": json_dumps(["pytest.fake-new-node-label"]),
+            "NODES_MONITORING_NODE_LABELS": json_dumps([f"pytest.fake-node-label.{worker_id}"]),
+            "NODES_MONITORING_SERVICE_LABELS": json_dumps([f"pytest.fake-service-label.{worker_id}"]),
+            "NODES_MONITORING_NEW_NODES_LABELS": json_dumps([f"pytest.fake-new-node-label.{worker_id}"]),
         },
     )
 
@@ -459,6 +470,45 @@ async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
         yield cast(AutoscalingDocker, docker_client)
 
 
+def _is_out_of_sequence(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, aiodocker.exceptions.DockerError)
+        and exc.status == 500
+        and "update out of sequence" in str(exc.message)
+    )
+
+
+_NODE_SPEC_UPDATE_MAX_WAIT_S: Final[
+    Annotated[int, doc("cap of the jittered exponential backoff between node spec updates")]
+] = 5
+_NODE_SPEC_UPDATE_TIMEOUT_S: Final[Annotated[int, doc("time budget to ride out a node spec version conflict")]] = 30
+
+
+@retry(
+    retry=retry_if_exception(_is_out_of_sequence),
+    reraise=True,
+    wait=wait_random_exponential(max=_NODE_SPEC_UPDATE_MAX_WAIT_S),
+    stop=stop_after_delay(_NODE_SPEC_UPDATE_TIMEOUT_S),
+)
+async def _update_node_spec_with_retry(
+    *,
+    async_docker_client: aiodocker.Docker,
+    node_id: str,
+    spec: dict[str, Any],
+) -> None:
+    """Re-reads the version per attempt: xdist workers race on the swarm node's version (last writer wins)."""
+    current = await async_docker_client.nodes.inspect(node_id=node_id)
+    await async_docker_client.nodes.update(node_id=node_id, version=current["Version"]["Index"], spec=spec)
+
+
+@pytest.fixture
+def update_node_spec_with_retry(
+    async_docker_client: aiodocker.Docker,
+) -> Callable[..., Awaitable[None]]:
+    """`_update_node_spec_with_retry` bound to the session's docker client"""
+    return functools.partial(_update_node_spec_with_retry, async_docker_client=async_docker_client)
+
+
 @pytest.fixture
 async def host_node(
     docker_swarm: None,
@@ -472,13 +522,11 @@ async def host_node(
     assert old_node.spec
     assert old_node.spec.role
     assert old_node.spec.availability
-    assert old_node.version
-    assert old_node.version.index
     labels = old_node.spec.labels or {}
     # ensure we have the necessary labels
-    await async_docker_client.nodes.update(
+    await _update_node_spec_with_retry(
+        async_docker_client=async_docker_client,
         node_id=old_node.id,
-        version=old_node.version.index,
         spec={
             "Availability": old_node.spec.availability.value,
             "Labels": labels
@@ -494,13 +542,9 @@ async def host_node(
     )
     yield modified_host_node
     # revert state
-    current_node = TypeAdapter(DockerNode).validate_python(await async_docker_client.nodes.inspect(node_id=old_node.id))
-    assert current_node.id
-    assert current_node.version
-    assert current_node.version.index
-    await async_docker_client.nodes.update(
-        node_id=current_node.id,
-        version=current_node.version.index,
+    await _update_node_spec_with_retry(
+        async_docker_client=async_docker_client,
+        node_id=old_node.id,
         spec={
             "Availability": old_node.spec.availability.value,
             "Labels": old_node.spec.labels,
@@ -732,6 +776,9 @@ WAIT_TIME: Final[float] = 0.5
 async def _assert_wait_for_service_state(
     async_docker_client: aiodocker.Docker, service: Service, expected_states: list[str]
 ) -> None:
+    """Follows the newest task (by swarm object index): concurrent xdist workers
+    drain/restore the ONE shared node, so stale task objects pile up next to the live one.
+    """
     with log_context(logging.INFO, msg=f"wait for service {service.id} to become {expected_states}") as ctx:
         number_of_success = {"count": 0}
 
@@ -752,8 +799,7 @@ async def _assert_wait_for_service_state(
 
             tasks = await async_docker_client.tasks.list(filters={"service": found_service["Spec"]["Name"]})
             assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
-            assert len(tasks) == 1
-            service_task = tasks[0]
+            service_task = max(tasks, key=lambda task: int(task["Version"]["Index"]))
             assert service_task["Status"]["State"] in expected_states, (
                 f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
             )
@@ -888,7 +934,7 @@ def project_id(faker: Faker) -> ProjectID:
 
 @pytest.fixture
 def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
+    return TypeAdapter(UserID).validate_python(faker.pyint(min_value=1))
 
 
 @pytest.fixture
@@ -1245,12 +1291,15 @@ def ec2_instances_allowed_types_with_only_1_buffered(
     fake_pre_pull_images: list[DockerGenericTag],
     external_ec2_instances_allowed_types: dict[str, EC2InstanceBootSpecific] | None,
 ) -> dict[InstanceTypeType, EC2InstanceBootSpecific]:
+    """The buffer floor must stay >= `num_hot_buffer`: tests that replace hot buffers
+    with warm ones need warm supply >= hot demand.
+    """
     if not external_ec2_instances_allowed_types:
         return {
             "t2.micro": EC2InstanceBootSpecific(
                 ami_id=faker.pystr(),
                 pre_pull_images=fake_pre_pull_images,
-                buffer_count=faker.pyint(min_value=2, max_value=10),
+                buffer_count=faker.pyint(min_value=5, max_value=10),
             )
         }
 
