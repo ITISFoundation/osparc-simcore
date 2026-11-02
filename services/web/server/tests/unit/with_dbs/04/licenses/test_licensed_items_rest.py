@@ -20,7 +20,11 @@ from models_library.api_schemas_webserver.licensed_items_purchases import (
     LicensedItemPurchaseGet,
 )
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from models_library.licenses import VIP_DETAILS_EXAMPLE, LicensedResourceType
+from models_library.licenses import (
+    VIP_DETAILS_EXAMPLE,
+    LicensedResourcePatchDB,
+    LicensedResourceType,
+)
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -103,6 +107,23 @@ async def test_licensed_items_listing(
     # Testing trimmed
     assert "additionalField" not in source
     assert "additional_field" not in source
+
+    # Testing market visibility flag on licensed resources: always returned, defaults to False
+    resource = data[0]["licensedResources"][0]
+    assert resource["isHiddenOnMarket"] is False
+
+    # NOTE: flipping the resource flag (curation) must NOT hide the item: this flag is
+    # front-end presentation only and the APIs always return the resource itself
+    await _licensed_resources_repository.update(
+        client.app,
+        licensed_resource_id=got_licensed_resource_duke.licensed_resource_id,
+        updates=LicensedResourcePatchDB(is_hidden_on_market=True),
+    )
+    url = client.app.router["list_licensed_items"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["licensedResources"][0]["isHiddenOnMarket"] is True
 
     # Testing hidden flag
     async with transaction_context(get_asyncpg_engine(client.app)) as conn:
