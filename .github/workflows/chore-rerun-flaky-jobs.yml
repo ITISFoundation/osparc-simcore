@@ -1,10 +1,11 @@
 name: Chore Rerun Flaky Jobs
 # A failed CI Build Test job is usually flaky: an extra push or a manual "Re-run
 # failed jobs" restarts the whole workflow to get one retry. On a failed CI run of
-# a non-draft pull request from a fork into this repository, of a Renovate pull
-# request, or of a push to master, re-trigger only the failed jobs; green jobs keep
-# their results, and draft PRs are left alone. CI runs on other in-repo branches
-# are not retried.
+# a pull request from a fork into this repository, of a Renovate pull request, or
+# of a push to master, re-trigger only the failed jobs; green jobs keep their
+# results. Draft PRs from forks are left alone, but Renovate pull requests are
+# drafts by default, so their drafts are retried too. CI runs on other in-repo
+# branches are not retried.
 # More than 3 failed jobs, a failed python-linting (pylint) job, or a failed
 # typecheck step is not treated as flaky and stays red. The second failure of a
 # commit stays red for Mergify to dequeue and a human to investigate.
