@@ -13,9 +13,10 @@
   // PRs open as drafts, so GitHub does not auto-request the code owners until the
   // checks finish. Chore Renovate Review Gate
   // (.github/workflows/chore-renovate-review-gate.yml) marks them ready once all
-  // checks are done: silently for the 🤖-automerge PRs (patch/pin/digest bumps,
-  // merged by the Mergify fast lane without reviews) and with a review request for
-  // everything else, including failing PRs (see docs/renovate.md)
+  // checks are done, and that transition makes GitHub request the code owners
+  // itself. The 🤖-automerge PRs (patch/pin/digest bumps) then merge through the
+  // Mergify fast lane without waiting for that review; everything else, failing
+  // PRs included, waits for it (see docs/renovate.md)
   "draftPR": true,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
@@ -39,10 +40,10 @@
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": false,
     // on top of the labels above (addLabels appends, labels would replace).
-    // 🤖-automerge takes a passing security fix through the fast lane too, even when
-    // the fix is a minor or major. If the checks fail, the review gate workflow marks
-    // the draft ready and requests the code owners, like any other PR
-    // (see docs/renovate.md)
+    // 🤖-automerge takes a passing security fix through the fast lane too, even
+    // when the fix is a minor or major. If the checks fail, the review gate
+    // workflow marks the draft ready after its cool-down and GitHub requests the
+    // code owners (see docs/renovate.md)
     "addLabels": [
       "security",
       "🤖-automerge"

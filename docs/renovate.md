@@ -12,7 +12,7 @@ as a vulnerability source only.
 | Admin configuration (`allowedCommands`, `platformCommit`) | [.github/renovate/global-config.json5](../.github/renovate/global-config.json5) |
 | Lockfile re-resolution post-upgrade task | [.github/renovate/resync_lockfiles.py](../.github/renovate/resync_lockfiles.py) |
 | Milestone assignment for new pull requests | [.github/workflows/chore-renovate-milestone.yml](../.github/workflows/chore-renovate-milestone.yml) |
-| Review gate (drafts, review requests, automerge marking) | [.github/workflows/chore-renovate-review-gate.yml](../.github/workflows/chore-renovate-review-gate.yml) |
+| Review gate (drafts go ready) | [.github/workflows/chore-renovate-review-gate.yml](../.github/workflows/chore-renovate-review-gate.yml) |
 | Who reviews them | [CODEOWNERS](../.github/CODEOWNERS), last block |
 | Who merges them | [mergify.yml](../.github/mergify.yml) |
 
@@ -56,15 +56,16 @@ only after the checks have finished:
 1. Renovate opens every pull request as a draft (`draftPR`), so GitHub does not
    auto-request the code owners up front — security pull requests included.
 2. `chore-renovate-review-gate.yml` polls the drafts every 15 minutes. Once all
-   checks of the head commit are done:
+   checks of the head commit are done, it marks the pull request ready — and the
+   ready transition makes GitHub request the code owners itself:
    - **all passed, `🤖-automerge` label** (patch, pin and digest bumps, and every
-     security fix): the pull request is marked ready silently and the
-     `renovate-fast` Mergify queue merges it without any review;
-   - **all passed, no label** (minors, majors, everything else): marked ready and
-     the four code owners are requested — this is when a review is wanted;
+     security fix): the `renovate-fast` Mergify queue merges it without waiting
+     for that review — the request goes out, nothing blocks on it;
+   - **all passed, no label** (minors, majors, everything else): the requested
+     code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit is still failing, the pull request is marked ready, labeled
-     `🤖-ci-failing`, the owners are requested and a comment lists the failing
+     commit is still failing, the pull request is marked ready (which requests
+     the code owners), labeled `🤖-ci-failing`, and a comment lists the failing
      checks. Remove the label to have the workflow ask again when the state
      changes.
 3. The reviewed path merges once Mergify's conditions match: the branch is
@@ -106,8 +107,8 @@ The fast lane needs two one-time settings, both outside this repository:
 When the resync task cannot propagate a pin to every directory that constrains
 it, it leaves `renovate-resync-report.md` in the pull request and Renovate
 reports a failing `renovate/artifacts` check. A patch-level resync failure
-therefore keeps the pull request out of the fast lane: the review gate workflow
-requests the code owners after the 3 h cool-down.
+therefore keeps the pull request out of the fast lane: marking it ready after
+the 3 h cool-down requests the code owners.
 
 ## Adding something new for Renovate to manage
 

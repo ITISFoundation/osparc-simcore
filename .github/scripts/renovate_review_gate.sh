@@ -2,21 +2,20 @@
 #
 #  Renovate opens every PR as a draft (draftPR in .renovaterc.jsonc), so GitHub
 #  does not auto-request the code owners until the checks are done. This poller
-#  marks the drafts ready once their checks have all finished:
+#  marks the drafts ready once their checks have all finished; the ready
+#  transition makes GitHub request the code owners from CODEOWNERS by itself:
 #  - all checks done + passed + 🤖-automerge (patch/pin/digest bumps and security
-#    fixes): stays silent, the renovate-fast Mergify queue merges it without
-#    reviews;
-#  - all checks done + passed without the label (minors/majors): the code owners
-#    get requested;
+#    fixes): the request comes out but nothing waits on it, the renovate-fast
+#    Mergify queue merges the PR;
+#  - all checks done + passed without the label (minors/majors): the requested
+#    review is what the PR then waits for;
 #  - failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so
-#    Renovate can push its own fix; then the PR is marked ready, the owners
-#    requested, the PR labeled 🤖-ci-failing and a comment lists the failing
-#    checks. The label keeps the request from repeating; remove it to have the
-#    workflow ask again on a state change.
-#  The ruleset bypass that lets the fast lane merge is documented in
-#  docs/renovate.md.
+#    Renovate can push its own fix; then the PR is marked ready (which requests
+#    the owners), labeled 🤖-ci-failing and a comment lists the failing checks.
+#    The label keeps the request from repeating; remove it to have the workflow
+#    ask again on a state change.
 #
-#  Required environment: REPO, BOT, OWNERS, FAIL_COOLDOWN_HOURS.
+#  Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS.
 #  Uses gh for API calls (GH_TOKEN must be set).
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
@@ -51,19 +50,17 @@ for pr in $(gh pr list --repo "$REPO" --state open --base master \
       continue
     fi
     failed=$(jq -r '.[] | select(.bucket == "fail") | "- " + .name' <<<"$checks")
-    body="The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them:"$'\n\n'"${failed}"$'\n\n'"Requesting a review so someone can have a look. Remove the 🤖-ci-failing label to have the review gate workflow ask again when the state changes."
+    body="The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them:"$'\n\n'"${failed}"$'\n\n'"Marking the pull request ready so the code owners get requested. Remove the 🤖-ci-failing label to have the review gate workflow ask again when the state changes."
     gh pr edit "$pr" --repo "$REPO" --add-label '🤖-ci-failing'
     gh pr ready "$pr" --repo "$REPO"
-    gh pr edit "$pr" --repo "$REPO" --add-reviewer "$OWNERS"
     gh pr comment "$pr" --repo "$REPO" --body "$body"
-    echo "PR #$pr: failing past the cool-down, review requested"
+    echo "PR #$pr: failing past the cool-down, marked ready"
   else
     gh pr ready "$pr" --repo "$REPO"
     if grep -qx '🤖-automerge' <<<"$labels"; then
-      echo "PR #$pr: checks passed, the renovate-fast queue takes it without reviews"
+      echo "PR #$pr: checks passed, the renovate-fast queue takes it without waiting for reviews"
     else
-      gh pr edit "$pr" --repo "$REPO" --add-reviewer "$OWNERS"
-      echo "PR #$pr: checks passed, review requested"
+      echo "PR #$pr: checks passed, marked ready for review"
     fi
   fi
 done

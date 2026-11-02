@@ -1,6 +1,6 @@
-# Marks Renovate's draft PRs ready once their checks have all finished and requests
-# code-owner reviews only where one is wanted. The cases are in the script it runs:
-# .github/scripts/renovate_review_gate.sh
+# Marks Renovate's draft PRs ready once their checks have all finished; GitHub then
+# requests the code owners from CODEOWNERS itself. Which PRs merge without waiting
+# for that review is in the script it runs: .github/scripts/renovate_review_gate.sh
 name: Chore Renovate Review Gate
 
 on:
@@ -30,7 +30,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           BOT: osparc-simcore-renovate[bot]
-          # keep in sync with the last block of .github/CODEOWNERS
-          OWNERS: sanderegg,pcrespov,GitHK,giancarloromeo
           FAIL_COOLDOWN_HOURS: 3
         run: ./.github/scripts/renovate_review_gate.sh
