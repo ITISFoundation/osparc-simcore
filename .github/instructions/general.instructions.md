@@ -85,20 +85,32 @@ that file type or service over a general rule.
 - Follow the structure of [PULL_REQUEST_TEMPLATE.md](../PULL_REQUEST_TEMPLATE.md).
 - Always unslop before posting, whoever drafted the text. Run it through
   [`unslop`](../skills/unslop/SKILL.md) so the description carries only what
-  changed, why, and how it was verified.
+  changed and why.
 - Open with the template's `## Goal` section: one sentence on why the PR
   exists.
 - Keep them compact: state the final solution, the facts, and the
   measurements. No trial or process narrative, no step-by-step history of how
   the branch evolved.
-- Give one sentence per change about what changed; add background only where a
-  reviewer needs it to judge the change.
+- `## What do these changes do?`: state the change in behavior, not the diff.
+  The review already shows the files, so name one only when that file is itself
+  the subject (a generated spec, a lockfile, a config a reviewer must open).
+  Say nothing about code the PR does not touch. At most two sentences per bullet.
+- Background a reviewer needs but did not ask for goes under a `### Context`
+  sub-title: two sentences, facts or measurements only.
+- `## How to test`: commands and snippets a reviewer runs, or `n/a`. What you ran
+  while developing does not belong here, and nowhere else either.
+- Work to do after merge goes under a `### Follow-up` sub-title, not in
+  `## How to test`.
+- Do not report tooling that runs by default. Pre-commit, linting, and the test
+  suite passing is expected. Report only what a reviewer cannot infer:
+  measurements, and what was deliberately left untested.
 - Keep each bullet point to at most two sentences.
 - Fill every template section. When one does not apply, write `n/a`.
 - Unslop means cutting filler openers and closers (`This PR aims to ...`,
   `Feel free to ask ...`), evaluative adjectives (`robust`, `seamless`,
   `comprehensive`), extra headings or summaries that duplicate the template
-  sections, and prose that restates the diff.
+  sections — except `### Context` and `### Follow-up` — and prose that restates
+  the diff.
 - Keep the caveats. Do not dress a known limitation in optimistic prose, and do
   not claim more than the measurements support.
 - Performance PRs: include before/after measurements (e.g. CI step durations,
