@@ -196,7 +196,7 @@ async def clean_function_job_collections(
 
 @pytest.fixture
 async def add_user_function_api_access_rights(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     request: pytest.FixtureRequest,
@@ -204,7 +204,7 @@ async def add_user_function_api_access_rights(
     if hasattr(request, "param") and not request.param:
         yield
         return
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
             await conn.execute(
                 funcapi_api_access_rights_table.insert().values(
@@ -222,7 +222,7 @@ async def add_user_function_api_access_rights(
                 )
             )
     yield
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         for group_id in (logged_user["primary_gid"], other_logged_user["primary_gid"]):
             await conn.execute(
                 sqlalchemy.delete(funcapi_api_access_rights_table).where(
@@ -233,14 +233,14 @@ async def add_user_function_api_access_rights(
 
 @pytest.fixture
 async def logged_user_function_api_access_rights(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
     *,
     expected_read_functions: bool,
     expected_write_functions: bool,
 ) -> AsyncIterator[dict[str, Any]]:
     cm = insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=funcapi_api_access_rights_table,
         values={
             "group_id": logged_user["primary_gid"],
@@ -266,13 +266,13 @@ async def logged_user_function_api_access_rights(
 
 @pytest.fixture
 async def fake_function_with_associated_job(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[UUID]:
     async with AsyncExitStack() as stack:
         function_row = await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=functions_table,
                 values={
                     "title": "Test Function",
@@ -300,7 +300,7 @@ async def fake_function_with_associated_job(
 
         await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=functions_access_rights_table,
                 values={
                     "function_uuid": function_row["uuid"],
@@ -320,7 +320,7 @@ async def fake_function_with_associated_job(
 
         await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=function_jobs_table,
                 values={
                     "function_uuid": function_row["uuid"],

@@ -22,6 +22,12 @@ from simcore_service_webserver.session._cookie_storage import (
 from simcore_service_webserver.session.api import get_session
 from simcore_service_webserver.session.settings import SessionSettings
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def session_url_path() -> str:

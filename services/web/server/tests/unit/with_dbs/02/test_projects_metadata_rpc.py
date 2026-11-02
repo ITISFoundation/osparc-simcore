@@ -27,6 +27,8 @@ from simcore_service_webserver.projects._metadata_service import (
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

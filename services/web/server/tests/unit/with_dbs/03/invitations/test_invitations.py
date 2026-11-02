@@ -23,6 +23,12 @@ from simcore_service_webserver.invitations.errors import (
 from simcore_service_webserver.products.models import Product
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_invitation_service_unavailable(
     client: TestClient,

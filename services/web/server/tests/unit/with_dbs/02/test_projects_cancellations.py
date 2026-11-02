@@ -37,6 +37,8 @@ from simcore_service_webserver.trash import trash_service
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

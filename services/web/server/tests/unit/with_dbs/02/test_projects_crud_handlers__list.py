@@ -35,6 +35,12 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_batch_get_computations_latest_states(
