@@ -782,6 +782,7 @@ async def test_path_compute_size(
     ],
     ids=str,
 )
+@pytest.mark.regression
 async def test_path_compute_size_with_file_currently_uploading(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -794,6 +795,12 @@ async def test_path_compute_size_with_file_currently_uploading(
     ],
     project_params: ProjectWithFilesParams,
 ):
+    """compute_path_size reports size 0 for a file currently uploading and
+    excludes it from its parent path's total.
+
+    Before https://github.com/ITISFoundation/osparc-simcore/pull/9949, the
+    request on an uploading file's path raised S3KeyNotFoundError (HTTP 404).
+    """
     assert len(project_params.allowed_file_sizes) == 1, (
         "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
     )
