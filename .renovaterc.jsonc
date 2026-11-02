@@ -10,9 +10,10 @@
   // Renovate never merges: Mergify queues its pull requests once approved, like
   // any other pull request (see .github/mergify.yml)
   "automerge": false,
-  // PRs open as drafts, so GitHub does not auto-request the code owners before CI has
-  // spoken. .github/workflows/chore-renovate-review-gate.yml marks them ready once the
-  // checks are conclusive: silently for the 🤖-automerge PRs (patch/pin/digest bumps,
+  // PRs open as drafts, so GitHub does not auto-request the code owners until the
+  // checks finish. Chore Renovate Review Gate
+  // (.github/workflows/chore-renovate-review-gate.yml) marks them ready once all
+  // checks are done: silently for the 🤖-automerge PRs (patch/pin/digest bumps,
   // merged by the Mergify fast lane without reviews) and with a review request for
   // everything else, including failing PRs (see docs/renovate.md)
   "draftPR": true,
@@ -38,9 +39,10 @@
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": false,
     // on top of the labels above (addLabels appends, labels would replace).
-    // 🤖-automerge fast-lanes a green security fix too, even when the fix is a minor or
-    // major: the review gate workflow treats these PRs like any other draft and pages
-    // the code owners when the checks stay red (see docs/renovate.md)
+    // 🤖-automerge takes a passing security fix through the fast lane too, even when
+    // the fix is a minor or major. If the checks fail, the review gate workflow marks
+    // the draft ready and requests the code owners, like any other PR
+    // (see docs/renovate.md)
     "addLabels": [
       "security",
       "🤖-automerge"
@@ -48,7 +50,7 @@
     // the newest version instead of the lowest fixed one: Renovate otherwise proposes
     // different versions for lockfiles below and above the fix in the same branch, the
     // PR title shows only one of them, and .github/renovate/resync_lockfiles.py has to
-    // pick one. This can be a new major version: with green checks it still goes
+    // pick one. This can be a new major version: if the checks pass, it still goes
     // through the fast lane (see the addLabels above and docs/renovate.md)
     "vulnerabilityFixStrategy": "highest"
   },

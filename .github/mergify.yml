@@ -24,8 +24,8 @@ queue_rules:
       - "#review-threads-unresolved=0"
 
   # Low-risk Renovate bumps (patch/pin/digest or security, labeled by .renovaterc.jsonc)
-  # merge with nobody reviewing them. GitHub evaluates its ruleset requirements on the
-  # actor performing the merge, so Mergify — not Renovate — must sit on the bypass list
+  # merge without a review. GitHub evaluates its ruleset requirements on the actor
+  # performing the merge, so Mergify — not Renovate — must sit on the bypass list
   # of the review-requirement ruleset (see docs/renovate.md); Mergify itself still waits
   # for the checks to pass and refuses a conflicted or 🤖-do-not-merge PR.
   - name: renovate-fast
@@ -53,7 +53,7 @@ pull_request_rules:
   # Low-risk Renovate bumps skip the review wait: they join renovate-fast instead of
   # the default queue. 🤖-do-not-merge still holds them back, and removing it is enough
   # to let one go.
-  - name: queue green low-risk Renovate PRs without waiting for reviews
+  - name: queue low-risk Renovate PRs without waiting for reviews
     conditions:
       - base=master
       - author=osparc-simcore-renovate[bot]
@@ -71,7 +71,7 @@ pull_request_rules:
   # goes back to draft, gets 🤖-do-not-merge, or loses an approval.
   # To hold a PR back from the queue, add 🤖-do-not-merge.
   # 🤖-automerge PRs go to the renovate-fast queue by the rule above and must not
-  # join this one too; the label therefore no longer means anything on a human PR.
+  # join this one too; the label does nothing on a human PR.
   - name: queue every pull request that is not a draft anymore
     conditions:
       - base=master

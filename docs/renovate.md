@@ -27,8 +27,8 @@ touching a branch that someone else wrote last.
 - **Security fixes skip the throttling.** `osvVulnerabilityAlerts` and the
   Dependabot alerts open the pull request on the next run. It needs no
   Dependency Dashboard approval and waits for no cool-down. It gets the
-  `security` label and `🤖-automerge`, so a green security fix merges through
-  the fast lane (see below) whatever the version jump.
+  `security` label and `🤖-automerge`, so a security fix whose checks pass
+  merges through the fast lane (see below) whatever the version jump.
   `vulnerabilityFixStrategy: "highest"` makes it propose the
   newest release, not the lowest one that fixes the vulnerability. A branch then
   cannot offer two versions of the same package.
@@ -50,23 +50,23 @@ touching a branch that someone else wrote last.
 ## From pull request to merge
 
 Renovate never merges. `automerge` stays `false`. Mergify merges its pull
-requests, either reviewed or through a fast lane, and nobody is requested to
-review before CI has spoken:
+requests, either reviewed or through a fast lane, and reviewers are requested
+only after the checks have finished:
 
 1. Renovate opens every pull request as a draft (`draftPR`), so GitHub does not
-   auto-request the code owners up front. Security pull requests included:
-   checks speak first, in every case.
+   auto-request the code owners up front — security pull requests included.
 2. `chore-renovate-review-gate.yml` polls the drafts every 15 minutes. Once all
    checks of the head commit are done:
-   - **green, `🤖-automerge` label** (patch, pin and digest bumps, and every
+   - **all passed, `🤖-automerge` label** (patch, pin and digest bumps, and every
      security fix): the pull request is marked ready silently and the
      `renovate-fast` Mergify queue merges it without any review;
-   - **green, no label** (minors, majors, everything else): marked ready and the
-     four code owners are requested — this is when a review is wanted;
+   - **all passed, no label** (minors, majors, everything else): marked ready and
+     the four code owners are requested — this is when a review is wanted;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit stays red, the pull request is marked ready, labeled
+     commit is still failing, the pull request is marked ready, labeled
      `🤖-ci-failing`, the owners are requested and a comment lists the failing
-     checks. Remove the label to have the workflow flag a state change again.
+     checks. Remove the label to have the workflow ask again when the state
+     changes.
 3. The reviewed path merges once Mergify's conditions match: the branch is
    rebased on `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
@@ -100,15 +100,14 @@ The fast lane needs two one-time settings, both outside this repository:
   demanding the approvals for everything the fast lane does not claim;
 - the `🤖-automerge` label means "fast-lane material" and Renovate applies it.
   It used to be a hand-typed queue hint and is still on some older human pull
-  requests; those carry it for nothing, and a human pull request wearing it is
-  queued by neither Mergify rule (the catch-all excludes the label), so strip
-  it there.
+  requests, where it does nothing: the catch-all Mergify rule excludes the
+  label, so remove it there.
 
 When the resync task cannot propagate a pin to every directory that constrains
 it, it leaves `renovate-resync-report.md` in the pull request and Renovate
 reports a failing `renovate/artifacts` check. A patch-level resync failure
 therefore keeps the pull request out of the fast lane: the review gate workflow
-flags the owners after the 3 h cool-down.
+requests the code owners after the 3 h cool-down.
 
 ## Adding something new for Renovate to manage
 

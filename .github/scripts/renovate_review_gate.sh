@@ -1,18 +1,18 @@
 #!/bin/bash
 #
 #  Renovate opens every PR as a draft (draftPR in .renovaterc.jsonc), so GitHub
-#  does not auto-request the code owners while CI is still running. This poller
-#  marks the drafts ready once their checks are conclusive:
-#  - all checks done + green + 🤖-automerge (patch/pin/digest bumps and security
+#  does not auto-request the code owners until the checks are done. This poller
+#  marks the drafts ready once their checks have all finished:
+#  - all checks done + passed + 🤖-automerge (patch/pin/digest bumps and security
 #    fixes): stays silent, the renovate-fast Mergify queue merges it without
 #    reviews;
-#  - all checks done + green without the label (minors/majors): the code owners
-#    get requested, which is when a review is actually wanted;
+#  - all checks done + passed without the label (minors/majors): the code owners
+#    get requested;
 #  - failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so
-#    Renovate can self-heal; then the PR is marked ready, the owners requested,
-#    the PR labeled 🤖-ci-failing and a comment lists the failing checks. The
-#    label keeps the request from repeating; remove it to have the workflow ask
-#    again on a state change.
+#    Renovate can push its own fix; then the PR is marked ready, the owners
+#    requested, the PR labeled 🤖-ci-failing and a comment lists the failing
+#    checks. The label keeps the request from repeating; remove it to have the
+#    workflow ask again on a state change.
 #  The ruleset bypass that lets the fast lane merge is documented in
 #  docs/renovate.md.
 #
@@ -38,9 +38,9 @@ for pr in $(gh pr list --repo "$REPO" --state open --base master \
   fi
   labels=$(gh pr view "$pr" --repo "$REPO" --json labels --jq '.labels[].name')
   if jq -e 'any(.bucket == "fail")' <<<"$checks" >/dev/null; then
-    # Renovate pushes fixes itself; page a human only once it stops trying
+    # Renovate pushes fixes itself; request a review only once it stops trying
     if grep -qx '🤖-ci-failing' <<<"$labels"; then
-      echo "PR #$pr: failing and already flagged"
+      echo "PR #$pr: failing and already reported"
       continue
     fi
     sha=$(gh pr view "$pr" --repo "$REPO" --json headRefOid --jq .headRefOid)
@@ -56,14 +56,14 @@ for pr in $(gh pr list --repo "$REPO" --state open --base master \
     gh pr ready "$pr" --repo "$REPO"
     gh pr edit "$pr" --repo "$REPO" --add-reviewer "$OWNERS"
     gh pr comment "$pr" --repo "$REPO" --body "$body"
-    echo "PR #$pr: failing past the cool-down, flagged the owners"
+    echo "PR #$pr: failing past the cool-down, review requested"
   else
     gh pr ready "$pr" --repo "$REPO"
     if grep -qx '🤖-automerge' <<<"$labels"; then
-      echo "PR #$pr: green, the renovate-fast queue takes it without reviews"
+      echo "PR #$pr: checks passed, the renovate-fast queue takes it without reviews"
     else
       gh pr edit "$pr" --repo "$REPO" --add-reviewer "$OWNERS"
-      echo "PR #$pr: green, reviews requested"
+      echo "PR #$pr: checks passed, review requested"
     fi
   fi
 done

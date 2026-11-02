@@ -1,6 +1,6 @@
-# Marks Renovate's draft PRs ready for review once their checks are conclusive and
-# requests the code owners only where a review is wanted. The branching is
-# documented in the script it runs.
+# Marks Renovate's draft PRs ready once their checks have all finished and requests
+# code-owner reviews only where one is wanted. The cases are in the script it runs:
+# .github/scripts/renovate_review_gate.sh
 name: Chore Renovate Review Gate
 
 on:
