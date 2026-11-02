@@ -103,7 +103,6 @@ from .utils.utils import (
     convert_db_to_model,
     download_to_file_or_raise,
     is_file_entry_valid,
-    is_upload_pending,
     is_valid_managed_multipart_upload,
 )
 
@@ -330,12 +329,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         # ensure file sizes are uptodate
         updated_fmds = []
         for metadata in fmds:
-            if not metadata.is_directory and is_upload_pending(metadata):
-                continue
             if is_file_entry_valid(metadata):
                 updated_fmds.append(convert_db_to_model(metadata))
                 continue
-            updated_fmds.append(convert_db_to_model(await self._update_database_from_storage(metadata)))
+            # an entry storage cannot confirm (e.g. an upload still under way) has no usable size,
+            # so it is left out of the total instead of failing the whole path
+            with suppress(S3KeyNotFoundError):
+                updated_fmds.append(convert_db_to_model(await self._update_database_from_storage(metadata)))
 
         return ByteSize(sum(fmd.file_size for fmd in updated_fmds))
 

@@ -65,18 +65,6 @@ def is_file_entry_valid(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
     )
 
 
-def is_upload_pending(file_metadata: FileMetaData | FileMetaDataAtDB) -> bool:
-    """True once upload links are handed out and until the entry is resynchronized with storage.
-
-    A set upload_expires_at means storage has not confirmed the object: it is removed before those
-    links are created, so its absence is expected here and must not be reported as lost data.
-    upload_id cannot replace the check, as only multipart and externally managed uploads get one.
-    The links expiring does not end the state: the entry stays unresolved until the cleaner or a
-    resynchronization clears the column.
-    """
-    return file_metadata.upload_expires_at is not None
-
-
 def is_valid_managed_multipart_upload(upload_id: UploadID | None) -> bool:
     """the upload ID is valid (created by storage service) AND internally managed
     by storage (e.g. PRESIGNED multipart upload)
