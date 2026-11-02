@@ -16,7 +16,6 @@ from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import UNDEFINED_SIZE_TYPE
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import deterministic_faker
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
@@ -45,34 +44,6 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
 
 # fake values in @pytest.mark.parametrize must be worker-identical (see deterministic_faker)
 _COLLECTION_FAKER = deterministic_faker()
-
-
-@pytest.fixture
-def create_file_metadata(
-    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    faker: Faker,
-) -> Callable[..., FileMetaData]:
-    def _create(
-        *,
-        file_size: int = -1,
-        entity_tag: ETag | None = None,
-        upload_id: UploadID | None = None,
-        upload_expires_at: datetime.datetime | None = None,
-    ) -> FileMetaData:
-        return FileMetaData.from_simcore_node(
-            user_id=UserID(faker.pyint(min_value=1)),
-            file_id=create_simcore_file_id(uuid4(), uuid4(), faker.file_name()),
-            bucket=TypeAdapter(S3BucketName).validate_python("pytest-bucket"),
-            location_id=SimcoreS3DataManager.get_location_id(),
-            location_name=SimcoreS3DataManager.get_location_name(),
-            sha256_checksum=None,
-            file_size=TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(file_size),
-            entity_tag=entity_tag,
-            upload_id=upload_id,
-            upload_expires_at=upload_expires_at,
-        )
-
-    return _create
 
 
 @pytest.mark.parametrize(
@@ -112,14 +83,22 @@ def test_file_entry_valid(
     upload_id: UploadID | None,
     upload_expires_at: datetime.datetime | None,
     expected_validity: bool,
-    create_file_metadata: Callable[..., FileMetaData],
+    create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
+    faker: Faker,
 ):
-    fmd = create_file_metadata(
-        file_size=file_size,
-        entity_tag=entity_tag,
-        upload_id=upload_id,
-        upload_expires_at=upload_expires_at,
+    file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
+    fmd = FileMetaData.from_simcore_node(
+        user_id=faker.pyint(min_value=1),
+        file_id=file_id,
+        bucket=TypeAdapter(S3BucketName).validate_python("pytest-bucket"),
+        location_id=SimcoreS3DataManager.get_location_id(),
+        location_name=SimcoreS3DataManager.get_location_name(),
+        sha256_checksum=None,
     )
+    fmd.file_size = TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(file_size)
+    fmd.entity_tag = entity_tag
+    fmd.upload_id = upload_id
+    fmd.upload_expires_at = upload_expires_at
     assert is_file_entry_valid(fmd) == expected_validity
 
 
