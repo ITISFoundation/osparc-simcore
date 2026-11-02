@@ -8,7 +8,8 @@
 #  Required environment: GITHUB_REPOSITORY, RUN_ID, HEAD_SHA, CI_EVENT,
 #  PR_HEAD_REPO, PR_HEAD_BRANCH, PR_NUMBER (may be empty: for a fork's PR the
 #  payload omits it and the script looks the PR up from the head owner and
-#  branch). A push has no pull request, so the PR checks are skipped for it.
+#  branch, which is also how a manually started run reaches the PR). A push has
+#  no pull request, so the PR checks are skipped for it.
 #  Uses gh for API calls (GH_TOKEN must be set).
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
