@@ -15,6 +15,7 @@ from aws_library.s3 import (
     S3DirectoryMetaData,
     S3KeyNotFoundError,
     S3MetaData,
+    SimcoreS3API,
     UploadedBytesTransferredCallback,
     UploadID,
 )
@@ -673,6 +674,16 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         return link
 
+    async def _delete_object_and_subfolders(self, s3_client: SimcoreS3API, file_id: StorageFileID) -> None:
+        """Delete the object stored under `file_id` and its subfolders, leaving
+        keys that only start with `file_id` (e.g. `report.txt.gz`) untouched
+        """
+        await s3_client.delete_object(bucket=self.simcore_bucket_name, object_key=f"{file_id}")
+        await s3_client.delete_objects_recursively(
+            bucket=self.simcore_bucket_name,
+            prefix=ensure_ends_with(f"{file_id}", "/"),
+        )
+
     async def delete_file(
         self,
         user_id: UserID,
@@ -705,32 +716,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             try:
                 fmd = await file_meta_data_repo.get(connection=connection, file_id=file_id)
             except FileMetaDataNotFoundError:
-                # not registered: nothing known about its shape, fall back to the
-                # legacy prefix-based removal to clean up whatever may be stored
+                # e.g. a file stored inside a registered folder: it has no entry of its own
                 fmd = None
 
             try:
                 if fmd is None:
-                    # unregistered key: its shape is unknown, so remove the exact
-                    # object and, if stored as a folder, its slash-delimited
-                    # descendants. A raw prefix delete would also destroy keys
-                    # that merely start with this one (e.g. deleting
-                    # 'report.txt' after its registration was removed must not
-                    # destroy a stored 'report.txt.gz')
-                    await s3_client.delete_object(
-                        bucket=self.simcore_bucket_name,
-                        object_key=f"{file_id}",
-                    )
-                    await s3_client.delete_objects_recursively(
-                        bucket=self.simcore_bucket_name,
-                        prefix=ensure_ends_with(f"{file_id}", "/"),
-                    )
+                    await self._delete_object_and_subfolders(s3_client, file_id)
                 elif fmd.is_soft_link:
-                    # a soft link owns no S3 object: its fmd mirrors the
-                    # target's object_name and is_directory, so only its own
-                    # registration (removed in the transaction below) may be
-                    # deleted here -- anything else would touch data owned
-                    # by the link's target
                     _logger.debug("Removing soft link %s without S3 deletion", file_id)
                 elif fmd.is_directory:
                     await s3_client.delete_objects_recursively(
@@ -738,9 +730,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                         prefix=ensure_ends_with(f"{fmd.object_name}", "/"),
                     )
                 else:
-                    # single object: delete it exactly, a prefix delete would also
-                    # remove keys that merely start with this one, e.g. deleting
-                    # 'report.txt' would destroy a stored 'report.txt.gz'
+                    # delete exactly this object, keys merely starting with it stay
                     await s3_client.delete_object(
                         bucket=self.simcore_bucket_name,
                         object_key=f"{fmd.object_name}",
@@ -752,7 +742,12 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
             async with transaction_context(get_db_engine(self.app), connection) as conn:
                 file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
-                deleted_fmds = await file_meta_data_repo.delete(connection=conn, file_ids=[file_id], recursive=True)
+                # remove child entries only when their objects were deleted above:
+                # an unregistered folder cleanup or a registered directory delete
+                remove_children = fmd is None or (fmd.is_directory and not fmd.is_soft_link)
+                deleted_fmds = await file_meta_data_repo.delete(
+                    connection=conn, file_ids=[file_id], recursive=remove_children
+                )
 
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (

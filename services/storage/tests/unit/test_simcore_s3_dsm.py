@@ -863,6 +863,42 @@ async def test_delete_file_removes_only_the_exact_object(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
+async def test_delete_file_keeps_registered_child_entries(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """Deleting a registered file removes its object but not child entries
+
+    Children registered under the file id keep their S3 objects (only the exact
+    object is deleted), so their registrations must survive too.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+    child_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{file_id}/child.txt")
+    await upload_file(file_size, "child.txt", child_file_id)
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{file_id}")
+
+    child_metadata = await storage_s3_client.get_object_metadata(
+        bucket=storage_s3_bucket, object_key=f"{child_file_id}"
+    )
+    assert child_metadata.size == file_size
+    child_fmd = await simcore_s3_dsm.get_file(user_id, child_file_id)
+    assert child_fmd.file_id == child_file_id
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_delete_file_twice_keeps_prefix_sharing_sibling(
     user_id: UserID,
     storage_s3_bucket: S3BucketName,
@@ -871,11 +907,10 @@ async def test_delete_file_twice_keeps_prefix_sharing_sibling(
     upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
 ):
-    """A repeated delete of an already-removed file must not touch a sibling key
+    """A repeated delete must not touch a prefix-sharing sibling key
 
-    The second call finds no registration (the first delete removed it) and
-    falls back to cleaning up unregistered keys; that fallback must stay
-    confined to the exact key and its folder descendants.
+    The second call finds no registration and takes the unregistered cleanup
+    path; that path must stay confined to the exact key and its subfolders.
     """
     _, file_id = await upload_file(file_size, "report.txt", None)
     _, prefixed_file_id = await upload_file(file_size, "report.txt.gz", None)
@@ -942,17 +977,12 @@ async def test_delete_directory_soft_link_keeps_the_target_objects(
     ],
     file_size: ByteSize,
 ):
-    """Removing a directory soft link must not delete the target's S3 objects
-
-    The link metadata mirrors the target's ``object_name`` and
-    ``is_directory``, so any S3 removal keyed on them would destroy the
-    directory the link points to.
-    """
+    """Removing a directory soft link must not delete the target's S3 objects"""
     FILE_COUNT = 5
     directory_file_id, _ = await create_directory_with_files(
         "dir-under-soft-link",
         file_size,
-        0,
+        1,
         FILE_COUNT,
         project_id,
         node_id,
@@ -962,19 +992,16 @@ async def test_delete_directory_soft_link_keeps_the_target_objects(
     link_fmd = await simcore_s3_dsm.create_soft_link(user_id, directory_file_id, link_file_id)
     assert link_fmd.is_soft_link
     assert link_fmd.is_directory
-    assert link_fmd.object_name  # mirrors the target: this is what a prefix delete would use
+    assert link_fmd.object_name
 
     await simcore_s3_dsm.delete_file(user_id, link_file_id)
 
-    # only the link registration is gone
     with pytest.raises(FileMetaDataNotFoundError):
         await simcore_s3_dsm.get_file(user_id, link_file_id)
 
-    # the target directory registration is untouched
     target_fmd = await simcore_s3_dsm.get_file(user_id, directory_file_id)
     assert not target_fmd.is_soft_link
 
-    # all objects under the target directory are still in S3
     s3_client = get_s3_client(simcore_s3_dsm.app)
     counted_objects = 0
     async for s3_objects in s3_client.list_objects_paginated(

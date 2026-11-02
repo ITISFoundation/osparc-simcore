@@ -5,6 +5,7 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
+from aiohttp import ClientError
 from common_library.logging.logging_errors import format_exception_as_string
 from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectIDStr
@@ -21,11 +22,11 @@ from settings_library.r_clone import RCloneSettings
 from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
-from ..node_ports_common.exceptions import PortNotFoundError, UnboundPortError
+from ..node_ports_common.exceptions import NodeportsError, PortNotFoundError, UnboundPortError
 from ..node_ports_common.file_io_utils import LogRedirectCB
-from ..node_ports_v2.port import Port, SetKWargs
+from ..node_ports_v2.port import SetKWargs
 from .links import DataItemValue, FileLink, ItemConcreteValue, ItemValue
-from .port_utils import is_file_type
+from .port_utils import find_port, is_file_type
 from .ports_mapping import InputsList, OutputsList
 
 log = logging.getLogger(__name__)
@@ -165,26 +166,18 @@ class Nodeports(BaseModel):
         old_value: DataItemValue | None,
         new_value: DataItemValue | None,
     ) -> None:
-        """Delete the storage object a port referenced before its value was replaced
+        """Delete the storage object a replaced port value pointed to, best-effort
 
-        Deletes only when all of these hold:
-        - the old value is a ``FileLink`` with a different ``(store, path)`` than
-          the new value. The same path means the object was re-uploaded in place.
-        - the object lives in the simcore store and its path starts with this
-          node's prefix. Objects owned by other nodes, e.g. user-picked links,
-          stay.
-        - no other port of this node references the same object.
-
-        Callers must run this only after the new value was uploaded and
-        persisted. It logs errors instead of raising them, so a successful
-        upload never fails.
+        Must run after the new value was uploaded and persisted. Skips re-uploads
+        to the same path, objects outside the simcore store or outside this node's
+        prefix, and objects another port of this node still references. Storage
+        errors are logged, not raised.
         """
         if not isinstance(old_value, FileLink):
             return
         if isinstance(new_value, FileLink) and (new_value.store, new_value.path) == (old_value.store, old_value.path):
-            return  # same object re-uploaded, overwritten in place
+            return  # re-upload to the same path, object kept
 
-        # only simcore-managed objects under this node's prefix may be deleted
         s3_prefix = f"{self.project_id}/{self.node_uuid}/"
         if old_value.store != SIMCORE_LOCATION or not old_value.path.startswith(s3_prefix):
             return
@@ -195,15 +188,14 @@ class Nodeports(BaseModel):
             and (port.value.store, port.value.path) == (old_value.store, old_value.path)
             for port in ports
         ):
-            return  # another port of this node still references the same object
+            return  # another port still references the object
 
         try:
             await filemanager.delete_file(user_id=self.user_id, store_id=old_value.store, s3_object=old_value.path)
-        except Exception:  # pylint: disable=broad-except
+        except (NodeportsError, ClientError) as exc:
             msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
-            log.warning("%s", msg, exc_info=True)
+            log.warning("%s: %s", msg, exc)
             if self.io_log_redirect_cb:
-                # never let a failing log callback break the best-effort deletion
                 with log_catch(log, reraise=False):
                     await self.io_log_redirect_cb(f"Something went wrong while removing outdated data: {msg}")
 
@@ -211,9 +203,8 @@ class Nodeports(BaseModel):
         self,
         previous_values: dict[ServicePortKey, DataItemValue | None],
     ) -> None:
-        # every port already holds its new value here, so the still-referenced
-        # guard cannot catch a link shared by two ports of the same batch:
-        # delete each replaced object at most once
+        # ports already hold their new values, so the still-referenced guard
+        # misses a link shared by two ports of this batch: delete each one once
         deleted_paths: set[tuple[LocationID, str]] = set()
         for port_key, previous_value in previous_values.items():
             if isinstance(previous_value, FileLink):
@@ -221,19 +212,12 @@ class Nodeports(BaseModel):
                 if old_key in deleted_paths:
                     continue
                 deleted_paths.add(old_key)
-            current_port = self._find_port(port_key)
+            current_port = find_port(port_key, self.internal_inputs, self.internal_outputs)
             await self.delete_replaced_file_link(
                 port_key,
                 previous_value,
                 current_port.value if current_port is not None else None,
             )
-
-    def _find_port(self, port_key: ServicePortKey) -> Port | None:
-        if port_key in self.internal_outputs:
-            return self.internal_outputs[port_key]
-        if port_key in self.internal_inputs:
-            return self.internal_inputs[port_key]
-        return None
 
     async def set_multiple(
         self,
@@ -285,7 +269,9 @@ class Nodeports(BaseModel):
 
         tasks = []
         previous_values: dict[ServicePortKey, DataItemValue | None] = {
-            port_key: port.value for port_key in port_values if (port := self._find_port(port_key)) is not None
+            port_key: port.value
+            for port_key in port_values
+            if (port := find_port(port_key, self.internal_inputs, self.internal_outputs)) is not None
         }
         async with progress_bar.sub_progress(
             steps=len(port_values.items()), description="set multiple"

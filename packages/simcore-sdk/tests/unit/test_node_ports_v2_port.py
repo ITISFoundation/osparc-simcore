@@ -7,6 +7,7 @@
 # pylint:disable=unused-variable
 
 
+import asyncio
 import os
 import re
 import shutil
@@ -29,6 +30,7 @@ from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.dbmanager import DBManager
+from simcore_sdk.node_ports_common.exceptions import StorageServerIssueError
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import exceptions
@@ -658,7 +660,7 @@ async def test_valid_port(  # noqa: C901
     if isinstance(exp_get_value, Path):
         # if it's a file let's create one there already
         exp_get_value.parent.mkdir(parents=True, exist_ok=True)
-        exp_get_value.touch()  # noqa: ASYNC240
+        await asyncio.to_thread(exp_get_value.touch)
 
     if exp_get_value is None:
         assert await port.get() is None
@@ -677,7 +679,7 @@ async def test_valid_port(  # noqa: C901
     if isinstance(exp_new_get_value, Path):
         # if it's a file let's create one there already
         exp_new_get_value.parent.mkdir(parents=True, exist_ok=True)
-        exp_new_get_value.touch()  # noqa: ASYNC240
+        await asyncio.to_thread(exp_new_get_value.touch)
     if exp_new_get_value is None:
         assert await port.get() is None
     else:
@@ -883,7 +885,7 @@ async def test_set_still_succeeds_when_old_file_deletion_fails(
     project_id: str,
     node_uuid: str,
 ):
-    mock_delete_file.side_effect = RuntimeError("storage unreachable")
+    mock_delete_file.side_effect = StorageServerIssueError("storage unreachable")
 
     old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
     port = Port(
@@ -935,7 +937,7 @@ async def test_set_still_succeeds_when_deletion_log_callback_fails(
     project_id: str,
     node_uuid: str,
 ):
-    mock_delete_file.side_effect = RuntimeError("storage unreachable")
+    mock_delete_file.side_effect = StorageServerIssueError("storage unreachable")
 
     async def _failing_log_cb(log: str) -> None:
         err_msg = "cannot redirect logs"
