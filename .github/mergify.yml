@@ -23,11 +23,8 @@ queue_rules:
       - "#changes-requested-reviews-by=0"
       - "#review-threads-unresolved=0"
 
-  # Low-risk Renovate bumps (patch/pin/digest or security, labeled by .renovaterc.jsonc)
-  # merge without a review. GitHub evaluates its ruleset requirements on the actor
-  # performing the merge, so Mergify — not Renovate — must sit on the bypass list
-  # of the review-requirement ruleset (see docs/renovate.md); Mergify itself still waits
-  # for the checks to pass and refuses a conflicted or 🤖-do-not-merge PR.
+  # Low-risk Renovate bumps merge without a review; how that is set up and what
+  # still blocks a merge is in docs/renovate.md.
   - name: renovate-fast
     batch_size: 1
 
