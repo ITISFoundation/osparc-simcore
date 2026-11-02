@@ -89,10 +89,9 @@ The fast lane needs two one-time settings, both outside this repository:
   merge, not on the pull request author. The fast-lane pull requests never
   collect the two approvals and the code-owner review, so *Mergify* — the app
   that presses the merge button — must be exempt from exactly those
-  requirements: move "Require a pull request before merging" out of the *master
-  branch* ruleset into a second ruleset targeting the same branch (GitHub
-  aggregates the rules of every ruleset matching the branch), and add the
-  Mergify App to that one ruleset's bypass list in *exempt* mode, which is what
+  requirements: the "Require a pull request before merging" rule lives in its
+  own *master-branch-reviews* ruleset with the Mergify App on the bypass list
+  in *exempt* mode and Maintain in *pull request* mode, which is what
   Mergify's own setup docs prescribe
   (<https://docs.mergify.com/merge-queue/setup>). Required status checks and the
   push protections stay in the *master branch* ruleset with no Mergify entry, so
