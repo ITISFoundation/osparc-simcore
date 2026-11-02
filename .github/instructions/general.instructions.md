@@ -95,6 +95,9 @@ that file type or service over a general rule.
   The review already shows the files, so name one only when that file is itself
   the subject (a generated spec, a lockfile, a config a reviewer must open).
   Say nothing about code the PR does not touch. At most two sentences per bullet.
+- Work that is not what the `## Goal` sentence is about goes under a `### Bonus`
+  sub-title of `## What do these changes do?`, not mixed into the main bullets.
+  Better still, put it in its own PR.
 - Background a reviewer needs but did not ask for goes under a `### Context`
   sub-title: two sentences, facts or measurements only.
 - `## How to test`: commands and snippets a reviewer runs, or `n/a`. What you ran
@@ -109,8 +112,8 @@ that file type or service over a general rule.
 - Unslop means cutting filler openers and closers (`This PR aims to ...`,
   `Feel free to ask ...`), evaluative adjectives (`robust`, `seamless`,
   `comprehensive`), extra headings or summaries that duplicate the template
-  sections — except `### Context` and `### Follow-up` — and prose that restates
-  the diff.
+  sections — except `### Bonus`, `### Context`, and `### Follow-up` — and prose
+  that restates the diff.
 - Keep the caveats. Do not dress a known limitation in optimistic prose, and do
   not claim more than the measurements support.
 - Performance PRs: include before/after measurements (e.g. CI step durations,

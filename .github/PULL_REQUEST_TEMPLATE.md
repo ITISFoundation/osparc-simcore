@@ -31,7 +31,8 @@ or from https://gitmoji.dev/
 
 <!-- The behavioral change, not a walk over the diff: the review already lists the
      files. Nothing here that this PR did not change. Two sentences per bullet.
-     Background you must add goes under `### Context`, two sentences. -->
+     Work outside the Goal sentence: `### Bonus`. Background you must add:
+     `### Context`, two sentences. -->
 
 <!-- Badge to openapi specs (use for API changes)
 URL structure: https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/[GITHUB_USERNAME]/[REPO]/[COMMIT_HASH_OR_BRANCH]/[PATH_TO_FILE]#tag/[TAG_NAME]/operation/[OPERATION_ID]
