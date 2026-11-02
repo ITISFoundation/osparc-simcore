@@ -7,21 +7,24 @@ from typing import Any
 
 from common_library.logging.logging_errors import format_exception_as_string
 from models_library.api_schemas_storage.storage_schemas import LinkType
-from models_library.projects import ProjectIDStr
-from models_library.projects_nodes_io import NodeIDStr
+from models_library.projects import ProjectIDAdapter, ProjectIDStr
+from models_library.projects_nodes_io import LocationID, NodeIDStr
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import InitErrorDetails
+from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 
+from ..node_ports_common import filemanager
+from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFoundError, UnboundPortError
 from ..node_ports_common.file_io_utils import LogRedirectCB
-from ..node_ports_v2.port import Port, SetKWargs, delete_replaced_file_link
-from .links import DataItemValue, ItemConcreteValue, ItemValue
+from ..node_ports_v2.port import Port, SetKWargs
+from .links import DataItemValue, FileLink, ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
@@ -63,10 +66,10 @@ class Nodeports(BaseModel):
     user_id: UserID
     project_id: ProjectIDStr
     node_uuid: NodeIDStr
-    save_to_db_cb: Callable[[Nodeports], Coroutine[Any, Any, None]]
+    save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
     node_port_creator_cb: Callable[
         [DBManager, UserID, ProjectIDStr, NodeIDStr],
-        Coroutine[Any, Any, type[Nodeports]],
+        Coroutine[Any, Any, type["Nodeports"]],
     ]
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
@@ -140,7 +143,7 @@ class Nodeports(BaseModel):
                 return
         raise PortNotFoundError(msg=f"output port for item {item_value} not found")
 
-    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type[Nodeports]:
+    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type["Nodeports"]:
         return await self.node_port_creator_cb(self.db_manager, self.user_id, self.project_id, node_uuid)
 
     async def _auto_update_from_db(self) -> None:
@@ -156,14 +159,75 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self  # noqa: SLF001
 
+    async def delete_replaced_file_link(
+        self,
+        port_key: ServicePortKey,
+        old_value: DataItemValue | None,
+        new_value: DataItemValue | None,
+    ) -> None:
+        """Delete the storage object a port referenced before its value was replaced
+
+        Deletes only when all of these hold:
+        - the old value is a ``FileLink`` with a different ``(store, path)`` than
+          the new value. The same path means the object was re-uploaded in place.
+        - the object lives in the simcore store and its path starts with this
+          node's prefix. Objects owned by other nodes, e.g. user-picked links,
+          stay.
+        - no other port of this node references the same object.
+
+        Callers must run this only after the new value was uploaded and
+        persisted. It logs errors instead of raising them, so a successful
+        upload never fails.
+        """
+        if not isinstance(old_value, FileLink):
+            return
+        if isinstance(new_value, FileLink) and (new_value.store, new_value.path) == (old_value.store, old_value.path):
+            return  # same object re-uploaded, overwritten in place
+
+        # only simcore-managed objects under this node's prefix may be deleted
+        s3_prefix = f"{self.project_id}/{self.node_uuid}/"
+        if old_value.store != SIMCORE_LOCATION or not old_value.path.startswith(s3_prefix):
+            return
+
+        ports = (*self.internal_inputs.values(), *self.internal_outputs.values())
+        if any(
+            isinstance(port.value, FileLink)
+            and (port.value.store, port.value.path) == (old_value.store, old_value.path)
+            for port in ports
+        ):
+            return  # another port of this node still references the same object
+
+        try:
+            # delete as the project owner: the user triggering the replacement
+            # may lack delete rights on a shared project
+            owner_id = await self.db_manager.get_project_owner_user_id(
+                ProjectIDAdapter.validate_python(self.project_id)
+            )
+            await filemanager.delete_file(user_id=owner_id, store_id=old_value.store, s3_object=old_value.path)
+        except Exception:  # pylint: disable=broad-except
+            msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
+            log.warning("%s", msg, exc_info=True)
+            if self.io_log_redirect_cb:
+                # never let a failing log callback break the best-effort deletion
+                with log_catch(log, reraise=False):
+                    await self.io_log_redirect_cb(f"Something went wrong while removing outdated data: {msg}")
+
     async def _delete_replaced_files(
         self,
         previous_values: dict[ServicePortKey, DataItemValue | None],
     ) -> None:
+        # every port already holds its new value here, so the still-referenced
+        # guard cannot catch a link shared by two ports of the same batch:
+        # delete each replaced object at most once
+        deleted_paths: set[tuple[LocationID, str]] = set()
         for port_key, previous_value in previous_values.items():
+            if isinstance(previous_value, FileLink):
+                old_key = (previous_value.store, previous_value.path)
+                if old_key in deleted_paths:
+                    continue
+                deleted_paths.add(old_key)
             current_port = self._find_port(port_key)
-            await delete_replaced_file_link(
-                self,
+            await self.delete_replaced_file_link(
                 port_key,
                 previous_value,
                 current_port.value if current_port is not None else None,

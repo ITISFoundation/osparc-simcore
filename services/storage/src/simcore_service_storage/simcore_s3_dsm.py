@@ -715,17 +715,17 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                         bucket=self.simcore_bucket_name,
                         prefix=file_id,
                     )
+                elif fmd.is_soft_link:
+                    # a soft link owns no S3 object: its fmd mirrors the
+                    # target's object_name and is_directory, so only its own
+                    # registration (removed in the transaction below) may be
+                    # deleted here -- anything else would touch data owned
+                    # by the link's target
+                    _logger.debug("Removing soft link %s without S3 deletion", file_id)
                 elif fmd.is_directory:
                     await s3_client.delete_objects_recursively(
                         bucket=self.simcore_bucket_name,
                         prefix=ensure_ends_with(f"{fmd.object_name}", "/"),
-                    )
-                elif fmd.is_soft_link:
-                    # a link references an object owned elsewhere, only its own
-                    # registration (file_id) may be removed here
-                    await s3_client.delete_objects_recursively(
-                        bucket=self.simcore_bucket_name,
-                        prefix=file_id,
                     )
                 else:
                     # single object: delete it exactly, a prefix delete would also

@@ -1,4 +1,3 @@
-# pyright: reportAttributeAccessIssue=false
 # pylint:disable=no-member
 # pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
@@ -7,21 +6,16 @@
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
 
-# legacy tests construct `FileLink` via a dynamic alias whose kwargs pyright
-# cannot resolve, so its reportCallIssue errors here are false positives
-# pyright: reportCallIssue=false
-
 
 import os
 import re
 import shutil
 import tempfile
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from types import SimpleNamespace
-from typing import Any, Final, NamedTuple, Self, cast
+from typing import Any, Final, NamedTuple, cast
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -34,6 +28,7 @@ from models_library.projects_nodes_io import LocationID
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.dbmanager import DBManager
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import exceptions
@@ -44,6 +39,7 @@ from simcore_sdk.node_ports_v2.links import (
     ItemConcreteValue,
     PortLink,
 )
+from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import CONSTANT_UUID, create_valid_port_config
@@ -613,10 +609,6 @@ async def test_valid_port(  # noqa: C901
         node_uuid: str
         r_clone_settings: Any | None = None
         io_log_redirect_cb: LogRedirectCB | None = _io_log_redirect_cb
-        # required by the old-file cleanup triggered on Port.set
-        internal_inputs: InputsList = field(default_factory=lambda: InputsList(root={}))
-        internal_outputs: OutputsList = field(default_factory=lambda: OutputsList(root={}))
-        db_manager: AsyncMock = field(default_factory=AsyncMock)
 
         @staticmethod
         async def get(_key: str, _progress_bar: ProgressBarData | None = None):
@@ -625,7 +617,7 @@ async def test_valid_port(  # noqa: C901
             return another_node_file if port_cfg["type"].startswith("data:") else exp_get_value
 
         @classmethod
-        async def _node_ports_creator_cb(cls, node_uuid: str) -> Self:
+        async def _node_ports_creator_cb(cls, node_uuid: str):
             return cls(
                 user_id=user_id,
                 project_id=project_id,
@@ -636,12 +628,17 @@ async def test_valid_port(  # noqa: C901
         async def save_to_db_cb(_node_ports):
             return
 
+        @staticmethod
+        async def delete_replaced_file_link(*_args, **_kwargs) -> None:
+            # old-file deletion is exercised against real Nodeports in
+            # test_node_ports_v2_nodeports_v2.py
+            return
+
     fake_node_ports = FakeNodePorts(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
     )
-    fake_node_ports.db_manager.get_project_owner_user_id.return_value = user_id
     port = Port(**port_cfg)
     port._node_ports = fake_node_ports  # noqa: SLF001
 
@@ -767,13 +764,16 @@ def _create_node_ports_with_outputs(
     node: str,
     owner_user_id: int,
     outputs: OutputsList,
-):
+) -> Nodeports:
     async def _save_to_db_cb(_node_ports) -> None:
         return
 
-    db_manager = AsyncMock()
+    async def _node_port_creator_cb(_node_uuid: str) -> None:
+        return None
+
+    db_manager = AsyncMock(spec=DBManager)
     db_manager.get_project_owner_user_id.return_value = owner_user_id
-    return SimpleNamespace(
+    return Nodeports(
         user_id=user_id(),
         project_id=project,
         node_uuid=node,
@@ -781,8 +781,9 @@ def _create_node_ports_with_outputs(
         io_log_redirect_cb=None,
         r_clone_settings=None,
         save_to_db_cb=_save_to_db_cb,
-        internal_inputs=InputsList(root={}),
-        internal_outputs=outputs,
+        node_port_creator_cb=_node_port_creator_cb,
+        inputs=InputsList(root={}),
+        outputs=outputs,
     )
 
 
@@ -817,9 +818,7 @@ async def test_old_file_link_deleted_on_replacement(
             value=_own_node_file_link_file_value(old_path, old_store),
         )
     )
-    port._node_ports = _create_node_ports_with_outputs(  # noqa: SLF001
-        project_id, node_uuid, user_id() + 1, OutputsList(root={"output_1": port})
-    )
+    _create_node_ports_with_outputs(project_id, node_uuid, user_id() + 1, OutputsList(root={"output_1": port}))
 
     await port.set(new_file)
 
@@ -848,9 +847,7 @@ async def test_old_file_link_deleted_when_port_cleared(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    port._node_ports = _create_node_ports_with_outputs(  # noqa: SLF001
-        project_id, node_uuid, user_id(), OutputsList(root={"output_1": port})
-    )
+    _create_node_ports_with_outputs(project_id, node_uuid, user_id(), OutputsList(root={"output_1": port}))
 
     await port.set(cast("ItemConcreteValue", None))
 
@@ -876,7 +873,7 @@ async def test_old_file_link_kept_when_still_referenced_by_another_port(
     new_file = tmp_path / "new_file.txt"
     new_file.write_text("some new data")
 
-    replaced_port._node_ports = _create_node_ports_with_outputs(  # noqa: SLF001
+    _create_node_ports_with_outputs(
         project_id,
         node_uuid,
         user_id(),
@@ -905,9 +902,7 @@ async def test_set_still_succeeds_when_old_file_deletion_fails(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    port._node_ports = _create_node_ports_with_outputs(  # noqa: SLF001
-        project_id, node_uuid, user_id(), OutputsList(root={"output_1": port})
-    )
+    _create_node_ports_with_outputs(project_id, node_uuid, user_id(), OutputsList(root={"output_1": port}))
     new_file = tmp_path / "new_file.txt"
     new_file.write_text("some new data")
 
@@ -935,9 +930,7 @@ async def test_old_file_link_of_other_node_is_not_deleted(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    port._node_ports = _create_node_ports_with_outputs(  # noqa: SLF001
-        project_id, node_uuid, user_id(), OutputsList(root={"output_1": port})
-    )
+    _create_node_ports_with_outputs(project_id, node_uuid, user_id(), OutputsList(root={"output_1": port}))
 
     await port.set(new_file)
 
@@ -953,7 +946,7 @@ async def test_set_still_succeeds_when_deletion_log_callback_fails(
 ):
     mock_delete_file.side_effect = RuntimeError("storage unreachable")
 
-    async def _failing_log_cb(msg: str) -> None:
+    async def _failing_log_cb(log: str) -> None:
         err_msg = "cannot redirect logs"
         raise RuntimeError(err_msg)
 
@@ -967,7 +960,6 @@ async def test_set_still_succeeds_when_deletion_log_callback_fails(
     )
     node_ports = _create_node_ports_with_outputs(project_id, node_uuid, user_id(), OutputsList(root={"output_1": port}))
     node_ports.io_log_redirect_cb = _failing_log_cb
-    port._node_ports = node_ports  # noqa: SLF001
     new_file = tmp_path / "new_file.txt"
     new_file.write_text("some new data")
 

@@ -15,6 +15,7 @@ from pydantic import (
     Field,
     HttpUrl,
     StringConstraints,
+    TypeAdapter,
     field_validator,
 )
 
@@ -37,6 +38,7 @@ from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
 
 ProjectID: TypeAlias = UUID
+ProjectIDAdapter: Final[TypeAdapter[ProjectID]] = TypeAdapter(ProjectID)
 CommitID: TypeAlias = int
 ClassifierID: TypeAlias = str
 
