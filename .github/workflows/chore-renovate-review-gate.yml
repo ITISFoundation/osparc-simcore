@@ -1,15 +1,14 @@
 # Renovate opens every PR as a draft (draftPR in .renovaterc.jsonc), so GitHub does
 # not auto-request the code owners while CI is still running. This poller marks the
 # drafts ready once their checks are conclusive:
-# - all checks done + green + 🤖-automerge (patch/pin/digest bumps): stays silent, the
-#   renovate-fast Mergify queue merges it without reviews;
+# - all checks done + green + 🤖-automerge (patch/pin/digest bumps and security fixes):
+#   stays silent, the renovate-fast Mergify queue merges it without reviews;
 # - all checks done + green without the label (minors/majors): the code owners get
 #   requested, which is when a review is actually wanted;
 # - failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so Renovate can
 #   self-heal; then the PR is marked ready, the owners requested, the PR labeled
 #   🤖-ci-failing and a comment lists the failing checks. The label keeps the request
 #   from repeating; remove it to have the workflow ask again on a state change.
-# Security PRs open non-draft (vulnerabilityAlerts.draftPR) and are not handled here.
 # The ruleset bypass that lets the fast lane merge is documented in docs/renovate.md.
 name: Chore Renovate Review Gate
 
@@ -38,7 +37,7 @@ jobs:
       BOT: osparc-simcore-renovate[bot]
       # keep in sync with the last block of .github/CODEOWNERS
       OWNERS: sanderegg,pcrespov,GitHK,giancarloromeo
-      FAIL_COOLDOWN_HOURS: 24
+      FAIL_COOLDOWN_HOURS: 3
     steps:
       - name: resolve the drafts
         run: |
@@ -83,7 +82,7 @@ jobs:
               echo "PR #$pr: failing past the cool-down, flagged the owners"
             else
               gh pr ready "$pr" --repo "$REPO"
-              if grep -qx '🤖-automerge' <<<"$labels" && ! grep -qx 'security' <<<"$labels"; then
+              if grep -qx '🤖-automerge' <<<"$labels"; then
                 echo "PR #$pr: green, the renovate-fast queue takes it without reviews"
               else
                 gh pr edit "$pr" --repo "$REPO" --add-reviewer "$OWNERS"

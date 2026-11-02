@@ -23,10 +23,10 @@ queue_rules:
       - "#changes-requested-reviews-by=0"
       - "#review-threads-unresolved=0"
 
-  # Low-risk Renovate bumps (patch/pin/digest, labeled by .renovaterc.jsonc) merge with
-  # nobody reviewing them. The ruleset's 2-approval and code-owner gates are bypassed
-  # for PRs opened by the Renovate App (see docs/renovate.md); Mergify still waits for
-  # the checks to pass and refuses a conflicted or 🤖-do-not-merge PR.
+  # Low-risk Renovate bumps (patch/pin/digest or security, labeled by .renovaterc.jsonc)
+  # merge with nobody reviewing them. The ruleset's 2-approval and code-owner gates are
+  # bypassed for PRs opened by the Renovate App (see docs/renovate.md); Mergify still
+  # waits for the checks to pass and refuses a conflicted or 🤖-do-not-merge PR.
   - name: renovate-fast
     batch_size: 1
 
@@ -34,7 +34,6 @@ queue_rules:
       - base=master
       - author=osparc-simcore-renovate[bot]
       - label=🤖-automerge
-      - label!=security # security fixes wait for a human, even patch ones
       - label!=🤖-do-not-merge
       - -draft
       - -conflict
@@ -43,7 +42,6 @@ queue_rules:
       - base=master
       - author=osparc-simcore-renovate[bot]
       - label=🤖-automerge
-      - label!=security
       - label!=🤖-do-not-merge
       - -draft
       - -conflict
@@ -59,25 +57,11 @@ pull_request_rules:
       - base=master
       - author=osparc-simcore-renovate[bot]
       - label=🤖-automerge
-      - label!=security
       - label!=🤖-do-not-merge
       - -draft
     actions:
       queue:
         name: renovate-fast
-
-  # A security fix that happens to be a patch carries both labels (Renovate's patch
-  # rule adds 🤖-automerge, vulnerabilityAlerts adds security). It must reach the
-  # default queue, which the rule below would otherwise filter out.
-  - name: queue security PRs through the reviewed path
-    conditions:
-      - base=master
-      - label=🤖-automerge
-      - label=security
-      - label!=🤖-do-not-merge
-      - -draft
-    actions:
-      queue:
 
   # Every non-draft PR targeting master joins the default queue; nobody types
   # `@mergify queue` by hand. The queue only merges once its conditions match
