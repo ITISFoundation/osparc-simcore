@@ -7,7 +7,6 @@
 # pylint:disable=unused-variable
 
 
-import asyncio
 import os
 import re
 import shutil
@@ -16,10 +15,11 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Final, NamedTuple, cast
+from typing import Any, Final, NamedTuple, Self, cast
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import aiofiles
 import pytest
 from aiohttp.client import ClientSession
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
@@ -619,7 +619,7 @@ async def test_valid_port(  # noqa: C901
             return another_node_file if port_cfg["type"].startswith("data:") else exp_get_value
 
         @classmethod
-        async def _node_ports_creator_cb(cls, node_uuid: str):
+        async def _node_ports_creator_cb(cls, node_uuid: str) -> Self:
             return cls(
                 user_id=user_id,
                 project_id=project_id,
@@ -660,7 +660,8 @@ async def test_valid_port(  # noqa: C901
     if isinstance(exp_get_value, Path):
         # if it's a file let's create one there already
         exp_get_value.parent.mkdir(parents=True, exist_ok=True)
-        await asyncio.to_thread(exp_get_value.touch)
+        async with aiofiles.open(exp_get_value, "wb"):
+            pass
 
     if exp_get_value is None:
         assert await port.get() is None
@@ -679,7 +680,8 @@ async def test_valid_port(  # noqa: C901
     if isinstance(exp_new_get_value, Path):
         # if it's a file let's create one there already
         exp_new_get_value.parent.mkdir(parents=True, exist_ok=True)
-        await asyncio.to_thread(exp_new_get_value.touch)
+        async with aiofiles.open(exp_new_get_value, "wb"):
+            pass
     if exp_new_get_value is None:
         assert await port.get() is None
     else:
