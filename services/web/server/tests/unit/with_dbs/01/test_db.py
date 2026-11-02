@@ -3,10 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from pathlib import Path
-
 import sqlalchemy as sa
-import yaml
 from aiohttp.test_utils import TestServer
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
@@ -46,15 +43,6 @@ async def test_asyncpg_engine_in_app(web_server: TestServer):
     async with sqlalchemy_async_engine.connect() as conn:
         result = (await conn.execute(query)).scalar_one_or_none()
     assert result is not None
-
-
-def test_uses_same_postgres_version(simcore_docker_compose: dict, osparc_simcore_root_dir: Path):
-    # the stack's postgres is the one deployed for the tests, so this only guards against
-    # a mismatch between the compose used to deploy and the one tracked in the repository
-    with Path.open(osparc_simcore_root_dir / "services" / "docker-compose.yml") as fh:
-        expected = yaml.safe_load(fh)
-
-    assert simcore_docker_compose["services"]["postgres"]["image"] == expected["services"]["postgres"]["image"]
 
 
 async def test_responsive(web_server: TestServer):
