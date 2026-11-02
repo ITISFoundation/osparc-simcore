@@ -22,20 +22,58 @@ queue_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - "#review-threads-unresolved=0"
+
+  # Low-risk Renovate bumps merge without a review; how that is set up and what
+  # still blocks a merge is in docs/renovate.md.
+  - name: renovate-fast
+    batch_size: 1
+
+    queue_conditions:
+      - base=master
+      - author=osparc-simcore-renovate[bot]
+      - label=🤖-automerge
+      - label!=🤖-do-not-merge
+      - -draft
+      - -conflict
+
+    merge_conditions: # (identical to queue_conditions)
+      - base=master
+      - author=osparc-simcore-renovate[bot]
+      - label=🤖-automerge
+      - label!=🤖-do-not-merge
+      - -draft
+      - -conflict
 merge_protections_settings:
   reporting_method: check-runs
 
 pull_request_rules:
+  # Low-risk Renovate bumps skip the review wait: they join renovate-fast instead of
+  # the default queue. 🤖-do-not-merge still holds them back, and removing it is enough
+  # to let one go.
+  - name: queue low-risk Renovate PRs without waiting for reviews
+    conditions:
+      - base=master
+      - author=osparc-simcore-renovate[bot]
+      - label=🤖-automerge
+      - label!=🤖-do-not-merge
+      - -draft
+    actions:
+      queue:
+        name: renovate-fast
+
   # Every non-draft PR targeting master joins the default queue; nobody types
   # `@mergify queue` by hand. The queue only merges once its conditions match
   # (2 approvals, code-owner approval, checks green, ...), so Mergify waits for
   # those instead of for a human. A PR leaves the queue automatically when it
   # goes back to draft, gets 🤖-do-not-merge, or loses an approval.
   # To hold a PR back from the queue, add 🤖-do-not-merge.
+  # 🤖-automerge PRs go to the renovate-fast queue by the rule above and must not
+  # join this one too; the label does nothing on a human PR.
   - name: queue every pull request that is not a draft anymore
     conditions:
       - base=master
       - label!=🤖-do-not-merge
+      - label!=🤖-automerge
       - -draft
     actions:
       queue:
