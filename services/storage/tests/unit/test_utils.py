@@ -27,7 +27,7 @@ from simcore_service_storage.utils.utils import (
     MAX_CHUNK_SIZE,
     download_to_file_or_raise,
     is_file_entry_valid,
-    is_upload_in_progress,
+    is_upload_pending,
     is_valid_managed_multipart_upload,
 )
 
@@ -126,43 +126,45 @@ def test_file_entry_valid(
 
 
 # file_meta_data timestamps are timestamptz, so they arrive as aware UTC instants
-_REFERENCE_TIME: Final[datetime.datetime] = datetime.datetime(2030, 1, 1, 12, tzinfo=datetime.UTC)
-_NAIVE_REFERENCE_TIME: Final[datetime.datetime] = _REFERENCE_TIME.replace(tzinfo=None)
-_UPLOAD_LEASE: Final[datetime.timedelta] = datetime.timedelta(hours=1)
+_LINKS_VALIDITY: Final[datetime.timedelta] = datetime.timedelta(hours=1)
+_EXPIRES_AT: Final[datetime.datetime] = datetime.datetime(2030, 1, 1, 12, tzinfo=datetime.UTC)
+_EXPIRED: Final[datetime.datetime] = _EXPIRES_AT - _LINKS_VALIDITY
+_NOT_YET_EXPIRED: Final[datetime.datetime] = _EXPIRES_AT + _LINKS_VALIDITY
 
 
 @pytest.mark.parametrize(
-    "upload_id, upload_expires_at, expected_in_progress",
+    "upload_id, upload_expires_at, expected_pending",
     [
-        (None, None, False),
+        (None, None, False),  # resynchronized entry, object is in storage
         ("some_upload_id", None, False),
-        (None, _REFERENCE_TIME - _UPLOAD_LEASE, False),  # deadline passed
-        (None, _REFERENCE_TIME, False),  # deadline reached
-        (None, _REFERENCE_TIME + _UPLOAD_LEASE, True),  # single presigned link carries no upload_id
-        ("some_upload_id", _REFERENCE_TIME + _UPLOAD_LEASE, True),
-        ("some_upload_id", _NAIVE_REFERENCE_TIME + _UPLOAD_LEASE, True),  # naive value read as UTC
-        (S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID, _REFERENCE_TIME + _UPLOAD_LEASE, True),
+        (None, _NOT_YET_EXPIRED, True),  # single presigned links carry no upload_id
+        ("some_upload_id", _NOT_YET_EXPIRED, True),  # managed multipart upload
+        (S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID, _NOT_YET_EXPIRED, True),  # v1/rclone uploads
+        (None, _EXPIRED, True),  # links expired, storage has still not confirmed the object
+        ("some_upload_id", _EXPIRED, True),
+        (None, _EXPIRED.replace(tzinfo=None), True),  # no time zone interpretation is applied
     ],
 )
-def test_is_upload_in_progress(
+def test_is_upload_pending(
     upload_id: UploadID | None,
     upload_expires_at: datetime.datetime | None,
-    expected_in_progress: bool,
+    expected_pending: bool,
     create_file_metadata: Callable[..., FileMetaData],
 ):
     fmd = create_file_metadata(upload_id=upload_id, upload_expires_at=upload_expires_at)
-    assert is_upload_in_progress(fmd, now=_REFERENCE_TIME) is expected_in_progress
+    assert is_upload_pending(fmd) is expected_pending
 
 
-def test_is_upload_in_progress_against_current_time(create_file_metadata: Callable[..., FileMetaData]):
-    # the reference defaults to the present, like it does when reading from the database
-    now = datetime.datetime.now(tz=datetime.UTC)
-    in_progress = create_file_metadata(upload_expires_at=now + _UPLOAD_LEASE)
-    expired = create_file_metadata(upload_expires_at=now - _UPLOAD_LEASE)
-
-    assert is_upload_in_progress(in_progress) is True, f"{in_progress.upload_expires_at} is in the future"
-    assert is_upload_in_progress(expired) is False, f"{expired.upload_expires_at} is in the past"
-    assert is_upload_in_progress(in_progress, now=now.replace(tzinfo=None)) is True, "naive references are UTC"
+def test_pending_upload_is_never_a_valid_entry(create_file_metadata: Callable[..., FileMetaData]):
+    # is_file_entry_valid is what tells a reader it may go and ask storage, so it must stay False
+    # for as long as the entry is unsynchronized, whatever the other columns hold
+    fmd = create_file_metadata(
+        file_size=_COLLECTION_FAKER.random_int(1, 1000000),
+        entity_tag="some_valid_entity_tag",
+        upload_expires_at=_NOT_YET_EXPIRED,
+    )
+    assert is_upload_pending(fmd) is True
+    assert is_file_entry_valid(fmd) is False
 
 
 @pytest.mark.parametrize(

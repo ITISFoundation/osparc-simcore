@@ -103,7 +103,7 @@ from .utils.utils import (
     convert_db_to_model,
     download_to_file_or_raise,
     is_file_entry_valid,
-    is_upload_in_progress,
+    is_upload_pending,
     is_valid_managed_multipart_upload,
 )
 
@@ -330,7 +330,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         # ensure file sizes are uptodate
         updated_fmds = []
         for metadata in fmds:
-            if not metadata.is_directory and is_upload_in_progress(metadata):
+            if not metadata.is_directory and is_upload_pending(metadata):
                 continue
             if is_file_entry_valid(metadata):
                 updated_fmds.append(convert_db_to_model(metadata))

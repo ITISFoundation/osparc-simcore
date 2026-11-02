@@ -1,10 +1,13 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+import datetime
 from collections.abc import Awaitable, Callable
+from typing import Final
 
 import httpx
 import pytest
+import sqlalchemy as sa
 from fastapi import FastAPI, status
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.products import ProductName
@@ -14,10 +17,15 @@ from pydantic import ByteSize
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
+from simcore_postgres_database.storage_models import file_meta_data as file_meta_data_table
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_plugins = [
     "pytest_simcore.xdist_docker_daemon",
 ]
+
+# long enough that no clock skew between replicas can make it look unexpired
+_EXPIRED_LEASE: Final[datetime.timedelta] = datetime.timedelta(hours=1)
 
 
 @pytest.fixture
@@ -71,3 +79,22 @@ def start_upload_without_completing(
         assert_status(response, status.HTTP_200_OK, FileUploadSchema)
 
     return _start
+
+
+@pytest.fixture
+def expire_upload_lease(sqlalchemy_async_engine: AsyncEngine) -> Callable[[SimcoreS3FileID], Awaitable[None]]:
+    """Push upload_expires_at into the past, as in an upload whose links lapsed.
+
+    The lease stays armed: only a resynchronization or the cleaner clears it, so the entry is
+    still unsynchronized and its object still missing.
+    """
+
+    async def _expire(file_id: SimcoreS3FileID) -> None:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                sa.update(file_meta_data_table)
+                .where(file_meta_data_table.c.file_id == file_id)
+                .values(upload_expires_at=datetime.datetime.now(datetime.UTC) - _EXPIRED_LEASE)
+            )
+
+    return _expire

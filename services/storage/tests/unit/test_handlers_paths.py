@@ -781,6 +781,7 @@ async def test_path_compute_size(
     ],
     ids=str,
 )
+@pytest.mark.parametrize("links_expired", [False, True], ids=["links_still_valid", "links_expired"])
 async def test_path_compute_size_with_file_under_upload(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -793,6 +794,8 @@ async def test_path_compute_size_with_file_under_upload(
     ],
     project_params: ProjectWithFilesParams,
     start_upload_without_completing: Callable[..., Awaitable[None]],
+    expire_upload_lease: Callable[[SimcoreS3FileID], Awaitable[None]],
+    links_expired: bool,
 ):
     assert len(project_params.allowed_file_sizes) == 1, (
         "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
@@ -810,6 +813,9 @@ async def test_path_compute_size_with_file_under_upload(
         product_name=product_name,
         file_size=single_file_size,
     )
+    if links_expired:
+        # the client never reported completion and the cleaner has not run over it yet
+        await expire_upload_lease(in_flight_file_id)
 
     await _assert_compute_path_size(
         initialized_app,

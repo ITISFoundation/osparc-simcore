@@ -263,6 +263,7 @@ async def test_path_compute_size(
     ],
     ids=str,
 )
+@pytest.mark.parametrize("links_expired", [False, True], ids=["links_still_valid", "links_expired"])
 async def test_path_compute_size_with_file_under_upload(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
@@ -276,6 +277,8 @@ async def test_path_compute_size_with_file_under_upload(
     project_params: ProjectWithFilesParams,
     product_name: ProductName,
     start_upload_without_completing: Callable[..., Awaitable[None]],
+    expire_upload_lease: Callable[[SimcoreS3FileID], Awaitable[None]],
+    links_expired: bool,
 ):
     project, list_of_files = project_with_seeded_files
     single_file_size = project_params.allowed_file_sizes[0]
@@ -290,6 +293,9 @@ async def test_path_compute_size_with_file_under_upload(
         product_name=product_name,
         file_size=single_file_size,
     )
+    if links_expired:
+        # the client never reported completion and the cleaner has not run over it yet
+        await expire_upload_lease(in_flight_file_id)
 
     # the job finishes instead of failing on a key that is only waiting to be uploaded
     await _assert_compute_path_size(
