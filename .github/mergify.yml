@@ -24,9 +24,10 @@ queue_rules:
       - "#review-threads-unresolved=0"
 
   # Low-risk Renovate bumps (patch/pin/digest or security, labeled by .renovaterc.jsonc)
-  # merge with nobody reviewing them. The ruleset's 2-approval and code-owner gates are
-  # bypassed for PRs opened by the Renovate App (see docs/renovate.md); Mergify still
-  # waits for the checks to pass and refuses a conflicted or 🤖-do-not-merge PR.
+  # merge with nobody reviewing them. GitHub evaluates its ruleset requirements on the
+  # actor performing the merge, so Mergify — not Renovate — must sit on the bypass list
+  # of the review-requirement ruleset (see docs/renovate.md); Mergify itself still waits
+  # for the checks to pass and refuses a conflicted or 🤖-do-not-merge PR.
   - name: renovate-fast
     batch_size: 1
 

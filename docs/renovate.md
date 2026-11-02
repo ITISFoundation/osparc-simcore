@@ -85,13 +85,20 @@ clear the code-owner gate.
 
 The fast lane needs two one-time settings, both outside this repository:
 
-- the Renovate App is on the bypass list (*pull request* mode) of the *master
-  branch* ruleset, which otherwise requires two approvals and a code-owner
-  review from GitHub itself and the merge would never pass. The reviewed path
-  keeps them; Mergify still demands the approvals there, so only the fast-lane
-  labels (`🤖-automerge`, not `🤖-do-not-merge`) skip them; a ruleset can only
-  add requirements, never relax another one, so there is no way to express a
-  narrower "renovate fast lane" ruleset instead of widening that bypass list;
+- GitHub enforces a ruleset's requirements on the actor that performs the
+  merge, not on the pull request author. The fast-lane pull requests never
+  collect the two approvals and the code-owner review, so *Mergify* — the app
+  that presses the merge button — must be exempt from exactly those
+  requirements: move "Require a pull request before merging" out of the *master
+  branch* ruleset into a second ruleset targeting the same branch (GitHub
+  aggregates the rules of every ruleset matching the branch), and add the
+  Mergify App to that one ruleset's bypass list in *exempt* mode, which is what
+  Mergify's own setup docs prescribe
+  (<https://docs.mergify.com/merge-queue/setup>). Required status checks and the
+  push protections stay in the *master branch* ruleset with no Mergify entry, so
+  GitHub itself still refuses Mergify a merge with failing checks. Human pull
+  requests lose nothing: the requirements are unchanged, and Mergify keeps
+  demanding the approvals for everything the fast lane does not claim;
 - the `🤖-automerge` label means "fast-lane material" and Renovate applies it.
   It used to be a hand-typed queue hint and is still on some older human pull
   requests; those carry it for nothing, and a human pull request wearing it is
