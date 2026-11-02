@@ -10,6 +10,12 @@
   // Renovate never merges: Mergify queues its pull requests once approved, like
   // any other pull request (see .github/mergify.yml)
   "automerge": false,
+  // PRs open as drafts, so GitHub does not auto-request the code owners before CI has
+  // spoken. .github/workflows/chore-renovate-review-gate.yml marks them ready once the
+  // checks are conclusive: silently for the 🤖-automerge PRs (patch/pin/digest bumps,
+  // merged by the Mergify fast lane without reviews) and with a review request for
+  // everything else, including failing PRs (see docs/renovate.md)
+  "draftPR": true,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   // Tools Renovate installs for pip-compile and its post-upgrade task. uv is updated
@@ -31,6 +37,9 @@
   // and ignore the PR limits below
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": false,
+    // security PRs open non-draft, unlike everything else: they must page the code
+    // owners right away, and the review gate workflow only handles drafts
+    "draftPR": false,
     // on top of the labels above (addLabels appends, labels would replace)
     "addLabels": [
       "security"
@@ -155,6 +164,21 @@
     ]
   },
   "packageRules": [
+    {
+      // the review gate workflow and the Mergify fast lane only see labels, not the
+      // update type, so this is where the low-risk bumps get marked. A security fix
+      // that happens to be a patch gets the label too; the label!=security condition
+      // in .github/mergify.yml keeps it out of the fast lane
+      "description": "Patch releases, new digests of a pinned tag, and pins resolved from a range: mark with 🤖-automerge for the review gate workflow and the Mergify fast lane (see docs/renovate.md)",
+      "matchUpdateTypes": [
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "addLabels": [
+        "🤖-automerge"
+      ]
+    },
     {
       "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [

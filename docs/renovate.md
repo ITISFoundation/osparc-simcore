@@ -12,6 +12,7 @@ as a vulnerability source only.
 | Admin configuration (`allowedCommands`, `platformCommit`) | [.github/renovate/global-config.json5](../.github/renovate/global-config.json5) |
 | Lockfile re-resolution post-upgrade task | [.github/renovate/resync_lockfiles.py](../.github/renovate/resync_lockfiles.py) |
 | Milestone assignment for new pull requests | [.github/workflows/chore-renovate-milestone.yml](../.github/workflows/chore-renovate-milestone.yml) |
+| Review gate (drafts, review requests, automerge marking) | [.github/workflows/chore-renovate-review-gate.yml](../.github/workflows/chore-renovate-review-gate.yml) |
 | Who reviews them | [CODEOWNERS](../.github/CODEOWNERS), last block |
 | Who merges them | [mergify.yml](../.github/mergify.yml) |
 
@@ -46,28 +47,59 @@ touching a branch that someone else wrote last.
 
 ## From pull request to merge
 
-Renovate never merges. `automerge` stays `false`. Mergify queues its pull
-requests like any other pull request once:
+Renovate never merges. `automerge` stays `false`. Mergify merges its pull
+requests, either reviewed or through a fast lane, and nobody is requested to
+review before CI has spoken:
 
-1. Mergify rebases the branch on `master` and the required status checks pass.
-   The ruleset marks those checks *strict*, so an outdated branch cannot count;
-2. reviewers approve twice, request no changes, and leave no review thread open;
-3. a code owner approves. For the files Renovate writes, the owners are the four
-   people in the last block of `.github/CODEOWNERS`. They own *only* version
-   manifests: `**/requirements/**`, Dockerfiles, `docker-compose*.yml`,
-   `.python-version`, and the Actions pinned under `.github/workflows/**`. One
-   dependency bump rewrites dozens of directories at once, so leaving those
-   files to the per-service rules would make every security fix wait on six or
-   seven reviewers.
+1. Renovate opens every pull request as a draft (`draftPR`), so GitHub does not
+   auto-request the code owners up front. Security pull requests are the
+   exception: `vulnerabilityAlerts.draftPR` is `false`, they open right away and
+   page the owners at once.
+2. `chore-renovate-review-gate.yml` polls the drafts every 15 minutes. Once all
+   checks of the head commit are done:
+   - **green, `🤖-automerge` label** (patch, pin and digest bumps): the pull
+     request is marked ready silently and the `renovate-fast` Mergify queue
+     merges it without any review;
+   - **green, no label** (minors, majors, everything else): marked ready and the
+     four code owners are requested — this is when a review is wanted;
+   - **failing**: nothing for 24 h so Renovate can push its own fix. If the last
+     commit stays red, the pull request is marked ready, labeled
+     `🤖-ci-failing`, the owners are requested and a comment lists the failing
+     checks. Remove the label to have the workflow flag a state change again.
+3. The reviewed path merges once Mergify's conditions match: the branch is
+   rebased on `master` (the ruleset marks the checks *strict*), reviewers
+   approve twice, request no changes, leave no thread open, and a code owner
+   approves. For the files Renovate writes, the owners are the four people in
+   the last block of `.github/CODEOWNERS`. They own *only* version manifests:
+   `**/requirements/**`, Dockerfiles, `docker-compose*.yml`, `.python-version`,
+   and the Actions pinned under `.github/workflows/**`. One dependency bump
+   rewrites dozens of directories at once, so leaving those files to the
+   per-service rules would make every security fix wait on six or seven
+   reviewers.
 
-Add the `🤖-do-not-merge` label to hold a pull request back. Remove it to let the
-pull request go. Anyone else may still approve, and their review counts toward
-the two approvals, but it does not clear the code-owner gate.
+Add the `🤖-do-not-merge` label to hold a pull request back, from either lane.
+Remove it to let the pull request go. On the reviewed path, anyone else may
+still approve, and their review counts toward the two approvals, but it does not
+clear the code-owner gate.
+
+The fast lane needs two one-time settings, both outside this repository:
+
+- the Renovate App is on the bypass list (*pull request* mode) of the *master
+  branch* ruleset, which otherwise requires two approvals and a code-owner
+  review from GitHub itself and the merge would never pass. The reviewed path
+  keeps them; Mergify still demands the approvals there, so only the fast-lane
+  labels (`🤖-automerge`, not `security`, not `🤖-do-not-merge`) skip them;
+- the `🤖-automerge` label means "fast-lane material" and Renovate applies it.
+  It used to be a hand-typed queue hint and is still on some older human pull
+  requests; those carry it for nothing, and a human pull request wearing it is
+  queued by neither Mergify rule (the catch-all excludes the label), so strip
+  it there.
 
 When the resync task cannot propagate a pin to every directory that constrains
 it, it leaves `renovate-resync-report.md` in the pull request and Renovate
-reports a failing `renovate/artifacts` check. Neither of those checks is
-required, so read both before you approve.
+reports a failing `renovate/artifacts` check. A patch-level resync failure
+therefore keeps the pull request out of the fast lane: the review gate workflow
+flags the owners after the 24 h cool-down.
 
 ## Adding something new for Renovate to manage
 
