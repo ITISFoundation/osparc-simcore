@@ -15,7 +15,6 @@ from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
-from simcore_sdk.node_ports_common.dbmanager import DBManager
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
 from simcore_sdk.node_ports_v2.port import Port
@@ -285,7 +284,6 @@ async def test_set_multiple_deletes_replaced_output_files(
     tmp_path: Path,
 ):
     db_manager = mock_db_manager(default_configuration)
-    mocker.patch.object(DBManager, "get_project_owner_user_id", autospec=True, return_value=user_id)
     mock_delete_file = mocker.patch("simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True)
 
     original_inputs = create_valid_port_mapping(InputsList, suffix="delete")
@@ -363,7 +361,6 @@ async def test_set_multiple_deletes_shared_replaced_file_only_once(
     must delete the shared object once: a second delete reaches storage without
     files.meta and falls back to a prefix-based removal"""
     db_manager = mock_db_manager(default_configuration)
-    mocker.patch.object(DBManager, "get_project_owner_user_id", autospec=True, return_value=user_id)
     mock_delete_file = mocker.patch("simcore_sdk.node_ports_common.filemanager.delete_file", autospec=True)
 
     original_inputs = create_valid_port_mapping(InputsList, suffix="dedup")

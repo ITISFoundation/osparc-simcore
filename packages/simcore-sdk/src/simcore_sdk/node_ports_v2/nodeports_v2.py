@@ -7,7 +7,7 @@ from typing import Any
 
 from common_library.logging.logging_errors import format_exception_as_string
 from models_library.api_schemas_storage.storage_schemas import LinkType
-from models_library.projects import ProjectIDAdapter, ProjectIDStr
+from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import LocationID, NodeIDStr
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
@@ -198,12 +198,7 @@ class Nodeports(BaseModel):
             return  # another port of this node still references the same object
 
         try:
-            # delete as the project owner: the user triggering the replacement
-            # may lack delete rights on a shared project
-            owner_id = await self.db_manager.get_project_owner_user_id(
-                ProjectIDAdapter.validate_python(self.project_id)
-            )
-            await filemanager.delete_file(user_id=owner_id, store_id=old_value.store, s3_object=old_value.path)
+            await filemanager.delete_file(user_id=self.user_id, store_id=old_value.store, s3_object=old_value.path)
         except Exception:  # pylint: disable=broad-except
             msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
             log.warning("%s", msg, exc_info=True)
