@@ -332,8 +332,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             if is_file_entry_valid(metadata):
                 updated_fmds.append(convert_db_to_model(metadata))
                 continue
-            # an entry storage cannot confirm (e.g. an upload still under way) has no usable size,
-            # so it is left out of the total instead of failing the whole path
             with suppress(S3KeyNotFoundError):
                 updated_fmds.append(convert_db_to_model(await self._update_database_from_storage(metadata)))
 
