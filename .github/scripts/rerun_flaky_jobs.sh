@@ -1,12 +1,13 @@
 #!/bin/bash
 #
 #  Re-triggers the failed jobs of a CI Build Test run on a pull request from a
-#  fork into this repository, once per commit. Which runs it acts on, and what
-#  counts as flaky, is in chore-rerun-flaky-jobs.yml.
+#  fork into this repository, or on a Renovate pull request, once per commit.
+#  Which runs it acts on, and what counts as flaky, is in
+#  chore-rerun-flaky-jobs.yml.
 #
 #  Required environment: GITHUB_REPOSITORY, RUN_ID, HEAD_SHA, PR_HEAD_REPO,
 #  PR_HEAD_BRANCH, PR_NUMBER (may be empty: for a fork's PR the payload omits
-#  it and the script looks the PR up from PR_HEAD_REPO:PR_HEAD_BRANCH).
+#  it and the script looks the PR up from the head owner and branch).
 #  Uses gh for API calls (GH_TOKEN must be set).
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
@@ -15,16 +16,18 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-# a fork's PR carries no number in the payload: look it up by head repo:branch
+# a fork's PR carries no number in the payload: look it up by head. The API's
+# head filter wants "owner:branch" (the owner's login, not owner/repo:branch).
+PR_HEAD_OWNER="${PR_HEAD_REPO%%/*}"
 if [ -z "$PR_NUMBER" ]; then
   PR_NUMBER="$(gh api --paginate \
-    "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100&head=$PR_HEAD_REPO:$PR_HEAD_BRANCH" \
+    "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100&head=$PR_HEAD_OWNER:$PR_HEAD_BRANCH" \
     --jq '.[0].number // ""')"
 fi
 
 # no open PR for this head (e.g. run on a plain branch push): nothing to rerun
 if [ -z "$PR_NUMBER" ]; then
-  echo "no open PR for $PR_HEAD_REPO:$PR_HEAD_BRANCH; not rerunning"
+  echo "no open PR for $PR_HEAD_OWNER:$PR_HEAD_BRANCH; not rerunning"
   exit 0
 fi
 
