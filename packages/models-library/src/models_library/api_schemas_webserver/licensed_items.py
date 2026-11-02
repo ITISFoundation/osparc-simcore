@@ -51,6 +51,7 @@ class LicensedResource(BaseModel):
     category_id: IDStr
     category_display: str
     terms_of_use_url: HttpUrl | None = None
+    is_hidden_on_market: bool
 
 
 class LicensedItemRpcGet(BaseModel):
@@ -80,6 +81,7 @@ class LicensedItemRpcGet(BaseModel):
                             "category_id": "HumanWholeBody",
                             "category_display": "Humans",
                             "terms_of_use_url": None,
+                            "is_hidden_on_market": False,
                         }
                     ],
                     "pricing_plan_id": "15",
@@ -111,6 +113,7 @@ class _ItisVipRestData(OutputSchema):
 
 class _ItisVipResourceRestData(OutputSchema):
     source: _ItisVipRestData
+    is_hidden_on_market: bool
 
 
 class LicensedItemRestGet(OutputSchema):
@@ -147,6 +150,7 @@ class LicensedItemRestGet(OutputSchema):
                                 JsonDict,
                                 {
                                     "source": {**VIP_DETAILS_EXAMPLE, "doi": doi},
+                                    "is_hidden_on_market": False,
                                 },
                             )
                         ],

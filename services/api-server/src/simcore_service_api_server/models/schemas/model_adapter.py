@@ -191,7 +191,7 @@ assert set(LicensedResourceSource.model_fields.keys()) == set(  # nosec
     _LicensedResourceSource.model_fields.keys()
 ), "LicensedResourceSource keys do not match"
 
-for key in LicensedResourceSource.model_fields.keys():
+for key in LicensedResourceSource.model_fields:
     if key == "features":
         continue
     assert (  # nosec
@@ -204,6 +204,7 @@ class LicensedResource(BaseModel):
     category_id: IDStr
     category_display: str
     terms_of_use_url: HttpUrl | None
+    is_hidden_on_market: bool
 
 
 assert set(LicensedResource.__annotations__.keys()) == set(  # nosec
