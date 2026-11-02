@@ -782,7 +782,7 @@ async def test_path_compute_size(
     ],
     ids=str,
 )
-async def test_path_compute_size_with_file_under_upload(
+async def test_path_compute_size_with_file_currently_uploading(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     location_id: LocationID,
