@@ -10,6 +10,13 @@
   // Renovate never merges: Mergify queues its pull requests once approved, like
   // any other pull request (see .github/mergify.yml)
   "automerge": false,
+  // PRs open as drafts, so GitHub does not auto-request the code owners until the
+  // checks finish. Chore Renovate Review Gate
+  // (.github/workflows/chore-renovate-review-gate.yml) marks them ready once all
+  // checks are done: silently for the 🤖-automerge PRs (patch/pin/digest bumps,
+  // merged by the Mergify fast lane without reviews) and with a review request for
+  // everything else, including failing PRs (see docs/renovate.md)
+  "draftPR": true,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   // Tools Renovate installs for pip-compile and its post-upgrade task. uv is updated
@@ -31,14 +38,20 @@
   // and ignore the PR limits below
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": false,
-    // on top of the labels above (addLabels appends, labels would replace)
+    // on top of the labels above (addLabels appends, labels would replace).
+    // 🤖-automerge takes a passing security fix through the fast lane too, even when
+    // the fix is a minor or major. If the checks fail, the review gate workflow marks
+    // the draft ready and requests the code owners, like any other PR
+    // (see docs/renovate.md)
     "addLabels": [
-      "security"
+      "security",
+      "🤖-automerge"
     ],
     // the newest version instead of the lowest fixed one: Renovate otherwise proposes
     // different versions for lockfiles below and above the fix in the same branch, the
     // PR title shows only one of them, and .github/renovate/resync_lockfiles.py has to
-    // pick one. This can be a new major version: the PR still needs two reviews
+    // pick one. This can be a new major version: if the checks pass, it still goes
+    // through the fast lane (see the addLabels above and docs/renovate.md)
     "vulnerabilityFixStrategy": "highest"
   },
   // regular PRs: at most 2 new ones per run (Renovate runs nightly, see
@@ -155,6 +168,21 @@
     ]
   },
   "packageRules": [
+    {
+      // the review gate workflow and the Mergify fast lane only see labels, not the
+      // update type, so this is where the low-risk bumps get marked. Security fixes get
+      // the label through vulnerabilityAlerts.addLabels instead: their fix can be a
+      // minor or major, which this rule would miss
+      "description": "Patch releases, new digests of a pinned tag, and pins resolved from a range: mark with 🤖-automerge for the review gate workflow and the Mergify fast lane (see docs/renovate.md)",
+      "matchUpdateTypes": [
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "addLabels": [
+        "🤖-automerge"
+      ]
+    },
     {
       "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [
