@@ -45,10 +45,18 @@ else
   PR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
 
   # skip draft PRs: nobody waits on a draft's red checks. The payload has no
-  # draft flag, so it comes from the API fetch above.
+  # draft flag, so it comes from the API fetch above. Renovate pull requests
+  # are always drafts until the review gate converts them, so their drafts are
+  # retried like their ready ones: recognized by author (REST reports the bot
+  # login) or by the renovate/ branch prefix.
   if [ "$(jq -r '.draft' <<<"$PR")" = "true" ]; then
-    echo "PR #$PR_NUMBER is a draft; not rerunning"
-    exit 0
+    if jq -r '.user.login' <<<"$PR" | grep -q renovate \
+      || jq -r '.head.ref' <<<"$PR" | grep -q '^renovate/'; then
+      echo "PR #$PR_NUMBER is a Renovate draft; rerunning anyway"
+    else
+      echo "PR #$PR_NUMBER is a draft; not rerunning"
+      exit 0
+    fi
   fi
 
   # skip stale runs: the PR head moved to a newer commit while this run was

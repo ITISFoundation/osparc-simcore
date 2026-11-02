@@ -23,9 +23,17 @@ set -o errexit  # abort on nonzero exitstatus
 set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 
-for pr in $(gh pr list --repo "$REPO" --state open --base master \
-  --json number,isDraft,author \
-  --jq ".[] | select(.isDraft and .author.login == \"$BOT\") | .number"); do
+# --author filters server-side; GitHub search resolves the bot name to both
+# the "<name>[bot]" and the "app/<name>" form the gh CLI reports in
+# .author.login. --limit: the default 30 results would drop drafts once the
+# repo has more open pull requests than that.
+DRAFTS="$(gh pr list --repo "$REPO" --state open --base master --limit 200 \
+  --author "$BOT" --json number,isDraft \
+  --jq '.[] | select(.isDraft) | .number')"
+if [ -z "$DRAFTS" ]; then
+  echo "no draft $BOT pull requests open"
+fi
+for pr in $DRAFTS; do
   checks=$(gh pr checks "$pr" --repo "$REPO" --json name,bucket 2>/dev/null || true)
   if [ -z "$checks" ] || [ "$checks" = "[]" ]; then
     echo "PR #$pr: no checks reported yet"
