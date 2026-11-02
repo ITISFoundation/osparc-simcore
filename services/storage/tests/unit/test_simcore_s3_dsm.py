@@ -863,6 +863,41 @@ async def test_delete_file_removes_only_the_exact_object(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
+async def test_delete_file_twice_keeps_prefix_sharing_sibling(
+    user_id: UserID,
+    storage_s3_bucket: S3BucketName,
+    storage_s3_client: SimcoreS3API,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """A repeated delete of an already-removed file must not touch a sibling key
+
+    The second call finds no registration (the first delete removed it) and
+    falls back to cleaning up unregistered keys; that fallback must stay
+    confined to the exact key and its folder descendants.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+    _, prefixed_file_id = await upload_file(file_size, "report.txt.gz", None)
+    assert str(prefixed_file_id).startswith(f"{file_id}"), "keys must be prefix-related for this test"
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    s3_metadata = await storage_s3_client.get_object_metadata(
+        bucket=storage_s3_bucket, object_key=f"{prefixed_file_id}"
+    )
+    assert s3_metadata.size == file_size
+    fmd = await simcore_s3_dsm.get_file(user_id, prefixed_file_id)
+    assert fmd.file_id == prefixed_file_id
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_delete_file_soft_link_keeps_the_target_object(
     user_id: UserID,
     storage_s3_bucket: S3BucketName,

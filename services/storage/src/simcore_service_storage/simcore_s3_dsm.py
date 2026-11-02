@@ -711,9 +711,19 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
             try:
                 if fmd is None:
+                    # unregistered key: its shape is unknown, so remove the exact
+                    # object and, if stored as a folder, its slash-delimited
+                    # descendants. A raw prefix delete would also destroy keys
+                    # that merely start with this one (e.g. deleting
+                    # 'report.txt' after its registration was removed must not
+                    # destroy a stored 'report.txt.gz')
+                    await s3_client.delete_object(
+                        bucket=self.simcore_bucket_name,
+                        object_key=f"{file_id}",
+                    )
                     await s3_client.delete_objects_recursively(
                         bucket=self.simcore_bucket_name,
-                        prefix=file_id,
+                        prefix=ensure_ends_with(f"{file_id}", "/"),
                     )
                 elif fmd.is_soft_link:
                     # a soft link owns no S3 object: its fmd mirrors the
