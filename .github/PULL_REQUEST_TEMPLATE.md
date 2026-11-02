@@ -29,6 +29,11 @@ or from https://gitmoji.dev/
 
 ## What do these changes do?
 
+<!-- The behavioral change, not a walk over the diff: the review already lists the
+     files. Nothing here that this PR did not change. Two sentences per bullet.
+     Work outside the Goal sentence: `### Bonus`. Background you must add:
+     `### Context`, two sentences. -->
+
 <!-- Badge to openapi specs (use for API changes)
 URL structure: https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/[GITHUB_USERNAME]/[REPO]/[COMMIT_HASH_OR_BRANCH]/[PATH_TO_FILE]#tag/[TAG_NAME]/operation/[OPERATION_ID]
 
@@ -51,7 +56,9 @@ Example with fragment pointing to specific operation:
 
 ## How to test
 
-<!-- Give REVIEWERS some hits or code snippets on how could this be tested -->
+<!-- Commands or snippets a reviewer runs to try this out, or `n/a`. Not a report
+     of what was run during development. Post-merge work goes under
+     `### Follow-up`, not here. -->
 
 ## Dev-ops
 
