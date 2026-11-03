@@ -47,8 +47,8 @@ pull request.
   `vulnerabilityFixStrategy: "highest"` makes it propose the
   newest release, not the lowest one that fixes the vulnerability. A branch then
   cannot offer two versions of the same package.
-- **Regular updates are throttled.** Two new pull requests per run, two open at
-  a time. The Dependency Dashboard holds the rest. It is also where you tick
+- **Regular updates are throttled.** Two new pull requests per hour, four open
+  at a time. The Dependency Dashboard holds the rest. It is also where you tick
   Docker image majors and the monthly `lockFileMaintenance` runs; majors of
   Python packages, GitHub Actions and `uv` arrive as regular pull requests.
 - **Cool-downs.** 14 days for every dependency: pip-compile lockfiles, GitHub
@@ -56,9 +56,12 @@ pull request.
 - **One PR per dependency.** A pip-compile package gets a single PR that moves
   its pin in every `requirements/` directory at once (the resync post-upgrade
   task propagates it). No PRs grouped per directory or per area. The
-  `opentelemetry-*` packages are the exception: they ship in two coordinated
-  release trains that pin each other, so one PR moves the whole family
-  (`renovate/opentelemetry`, majors on their own branch). Security pull
+  exceptions move a family in one PR (majors on their own branch): the
+  `opentelemetry-*` packages, which ship in two coordinated release trains that
+  pin each other (`renovate/opentelemetry`); the AWS SDK (`boto3`, `botocore`,
+  `s3transfer`, `aioboto3`, `aiobotocore`) with its stubs (`renovate/boto`); the
+  other type stubs (`types-*`, `*-stubs`, `renovate/type-stubs`); and the
+  `pytest-*` plugins (`renovate/pytest-plugins`). Security pull
   requests are never grouped: Renovate's `vulnerabilityAlerts` default resets
   the group name, so a vulnerable package gets its own immediate PR.
 
@@ -69,8 +72,8 @@ How each kind of pull request reaches `master`:
 ```mermaid
 flowchart TD
     human["Human PR"]
-    fast["Renovate: patch, pin, digest,<br/>security fix<br/>(🤖-renovate-fast-lane)"]
-    other["Renovate: minor, major"]
+    fast["Renovate: patch, pin, digest,<br/>Python minor, security fix<br/>(🤖-renovate-fast-lane)"]
+    other["Renovate: major,<br/>non-Python minor"]
     gate{"review gate, every 15 min:<br/>checks of the draft"}
     ready["ready: GitHub requests<br/>the code owners"]
     held["ready, 🤖-do-not-merge,<br/>fast-lane label removed"]
@@ -123,10 +126,11 @@ only after the checks have finished:
    checks of the head commit are done, it marks the pull request ready — and the
    ready transition makes GitHub request the code owners itself:
    - **all passed, `🤖-renovate-fast-lane` label** (patch, pin and digest bumps,
-     and every security fix): the `renovate-fast` Mergify queue merges it without
-     waiting for that review — the request goes out, nothing blocks on it. GitHub
-     does not let anyone withdraw a code-owner request, so it stays until the merge;
-   - **all passed, no label** (minors, majors, everything else): the requested
+     Python minors, and every security fix): the `renovate-fast` Mergify queue
+     merges it without waiting for that review — the request goes out, nothing
+     blocks on it. GitHub does not let anyone withdraw a code-owner request, so
+     it stays until the merge;
+   - **all passed, no label** (majors, other minors): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
      commit is still failing, the pull request gets `🤖-do-not-merge`, loses
