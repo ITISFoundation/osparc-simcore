@@ -485,10 +485,10 @@ async def test_open_project(
                     app=client.app,
                     dynamic_service_start=DynamicServiceStart(
                         project_id=user_project["uuid"],
-                        service_key=service["key"],
-                        service_uuid=service_uuid,
-                        service_version=service["version"],
-                        user_id=logged_user["id"],
+                        key=service["key"],
+                        node_uuid=service_uuid,
+                        version=service["version"],
+                        user_id=UserID(logged_user["id"]),
                         request_scheme=request_scheme,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
@@ -636,10 +636,10 @@ async def test_open_template_project_for_edition(
                     app=client.app,
                     dynamic_service_start=DynamicServiceStart(
                         project_id=template_project["uuid"],
-                        service_key=service["key"],
-                        service_uuid=service_uuid,
-                        service_version=service["version"],
-                        user_id=logged_user["id"],
+                        key=service["key"],
+                        node_uuid=service_uuid,
+                        version=service["version"],
+                        user_id=UserID(logged_user["id"]),
                         request_scheme=request_scheme,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
@@ -1010,7 +1010,9 @@ async def test_open_project_limit_is_scoped_to_product(
     """Opening a project in product A must not consume the open-project quota for product B."""
     assert client.app
     # Register the user in the second product's group so the product access check passes
-    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=second_product_with_limit)
+    await auto_add_user_to_product_group(
+        client.app, user_id=UserID(logged_user["id"]), product_name=second_product_with_limit
+    )
 
     # Open user_project in the default product (osparc, limit=1) — should succeed
     _, client_id_1, _ = await create_socketio_connection_with_handlers(None, client)
@@ -1102,7 +1104,7 @@ async def test_close_project(
             call(
                 app=client.app,
                 dynamic_service_stop=DynamicServiceStop(
-                    user_id=user_id,
+                    user_id=UserID(user_id),
                     project_id=service.project_id,
                     node_id=service.node_uuid,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -1834,7 +1836,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
                 "share_state": ProjectShareStateOutputSchema(
                     locked=True,
                     status=ProjectStatus.OPENED,
-                    current_user_groupids=[int(user_2["primary_gid"])],
+                    current_user_groupids=[GroupIDAdapter.validate_python(user_2["primary_gid"])],
                 ),
             }
         )
@@ -1843,7 +1845,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
                 "share_state": ProjectShareStateOutputSchema(
                     locked=True,
                     status=ProjectStatus.OPENED,
-                    current_user_groupids=[int(user_2["primary_gid"])],
+                    current_user_groupids=[GroupIDAdapter.validate_python(user_2["primary_gid"])],
                 ),
             }
         )
@@ -1928,7 +1930,9 @@ async def test_open_shared_project_at_same_time(
     # one should be opened, the other locked
     if user_role != UserRole.ANONYMOUS:
         num_assertions = 0
-        for data, error in results:
+        for result in results:
+            assert not isinstance(result, BaseException), f"could not open project: {result}"
+            data, error = result
             assert data or error
             if error:
                 num_assertions += 1
