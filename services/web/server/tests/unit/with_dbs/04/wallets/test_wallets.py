@@ -36,6 +36,12 @@ from simcore_service_webserver.wallets._events import (
     _WALLET_NAME_TEMPLATE,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_rut_sum_total_available_credits_in_the_wallet(

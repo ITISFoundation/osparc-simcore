@@ -73,6 +73,8 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -373,7 +375,7 @@ async def test_create_node(
     mock_catalog_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     postgres_db: sa.engine.Engine,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -411,7 +413,7 @@ async def test_create_node(
         # ⚠️ For node_class == "comp" the pricing/resources ownership rework (PR 2)
         # intends to link the default pricing unit and size with the dask formula
         # AT CREATION; when that lands, update the expectations for "comp".
-        state = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+        state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
         new_node_state = state[NodeID(node_id)]
         assert new_node_state.pricing_plan_id is None
         assert new_node_state.pricing_unit_id is None

@@ -16,7 +16,9 @@
 #    ask again on a state change.
 #
 #  Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS.
-#  Uses gh for API calls (GH_TOKEN must be set).
+#  Uses gh for API calls (GH_TOKEN must be set). GH_TOKEN must belong to the
+#  Renovate App: a GitHub App cannot mark a pull request opened by another App
+#  ready, so a github.token (github-actions App) run fails on the ready call.
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -o errexit  # abort on nonzero exitstatus

@@ -17,6 +17,12 @@ from simcore_service_webserver.projects._ports_service import (
     set_inputs_in_project,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
     # get all inputs in the workbench

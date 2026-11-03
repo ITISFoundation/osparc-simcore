@@ -23,6 +23,12 @@ from simcore_service_webserver.signals import SIGNAL_ON_USER_CONFIRMATION
 from simcore_service_webserver.users import users_product_access_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
@@ -50,11 +56,11 @@ async def user(client: TestClient, user_email: str) -> AsyncIterator[UserInfoDic
 
 
 @pytest.fixture
-async def inclusion_rule_group(asyncpg_engine: AsyncEngine, user_email: str) -> AsyncIterator[dict[str, Any]]:
+async def inclusion_rule_group(sqlalchemy_async_engine: AsyncEngine, user_email: str) -> AsyncIterator[dict[str, Any]]:
     """A STANDARD group whose inclusion_rules match this test's user email"""
     # pylint: disable=contextmanager-generator-missing-cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=groups,
         values={
             "name": "Grant Product Access Test Group",
@@ -179,7 +185,7 @@ async def test_grant_user_access_to_product_skips_rule_on_null_column(
     client: TestClient,
     user: UserInfoDict,
     second_product_name: ProductName,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     # A STANDARD group with an inclusion rule on a nullable user column (phone) that
     # this user has not set (NULL). Matching must skip the NULL value instead of
@@ -189,7 +195,7 @@ async def test_grant_user_access_to_product_skips_rule_on_null_column(
     assert user.get("phone") is None
 
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=groups,
         values={
             "name": "Phone Rule Test Group",
