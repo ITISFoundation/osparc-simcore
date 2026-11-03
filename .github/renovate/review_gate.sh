@@ -4,10 +4,10 @@
 #  does not auto-request the code owners until the checks are done. This poller
 #  marks the drafts ready once their checks have all finished; the ready
 #  transition makes GitHub request the code owners from CODEOWNERS by itself:
-#  - all checks done + passed + 🤖-renovate-fast-lane (patch/pin/digest bumps and security
-#    fixes): the request comes out but nothing waits on it, the renovate-fast
-#    Mergify queue merges the PR;
-#  - all checks done + passed without the label (minors/majors): the requested
+#  - all checks done + passed + 🤖-renovate-fast-lane (patch/pin/digest bumps,
+#    Python minors, security fixes): the request comes out but nothing waits on
+#    it, the renovate-fast Mergify queue merges the PR;
+#  - all checks done + passed without the label (majors, other minors): the requested
 #    review is what the PR then waits for;
 #  - failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so
 #    Renovate can push its own fix; then the PR gets 🤖-do-not-merge, loses

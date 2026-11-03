@@ -12,7 +12,7 @@
   // PRs open as drafts, so GitHub does not auto-request the code owners until the
   // checks finish. The review-gate job of .github/workflows/chore-renovate.yml
   // marks them ready once all checks are done, and that transition makes GitHub
-  // request the code owners itself. The 🤖-renovate-fast-lane PRs (patch/pin/digest bumps)
+  // request the code owners itself. The 🤖-renovate-fast-lane PRs (patch/pin/digest bumps, Python minors)
   // then merge through the Mergify fast lane without waiting for that review;
   // everything else, failing PRs included, waits for it (see docs/renovate.md)
   "draftPR": true,
@@ -64,11 +64,10 @@
     // through the fast lane (see the addLabels above and docs/renovate.md)
     "vulnerabilityFixStrategy": "highest"
   },
-  // regular PRs: at most 2 new ones per run (Renovate runs nightly, see
-  // .github/workflows/chore-renovate.yml) and at most 2 open at a time, so the next
-  // ones wait until one of them is merged or closed
+  // regular PRs: at most 2 new ones per hour and at most 4 open at a time, so the
+  // next ones wait until one of them is merged or closed
   "prHourlyLimit": 2,
-  "prConcurrentLimit": 2,
+  "prConcurrentLimit": 4,
   "timezone": "Europe/Zurich",
   "pip-compile": {
     "managerFilePatterns": [
@@ -218,6 +217,55 @@
       ],
       "groupName": "opentelemetry",
       "groupSlug": "opentelemetry"
+    },
+    {
+      "description": "Python minor releases go through the fast lane as well: all checks must pass and Renovate must have written every commit, but no review is needed. Majors keep their own branch (separateMajorMinor) and wait for reviews",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "addLabels": [
+        "🤖-renovate-fast-lane"
+      ]
+    },
+    {
+      "description": "Type stubs only affect type checking and come in many small releases: one PR moves all of them. The AWS stubs belong to the boto group below",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "/^types[-_]/i",
+        "/-stubs$/i"
+      ],
+      "groupName": "type stubs",
+      "groupSlug": "type-stubs"
+    },
+    {
+      "description": "pytest plugins: one PR moves all of them (pytest itself keeps its own PR)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "/^pytest[-_]/i"
+      ],
+      "groupName": "pytest plugins",
+      "groupSlug": "pytest-plugins"
+    },
+    {
+      "description": "The AWS SDK release train and its stubs: aiobotocore pins the botocore versions it accepts, so boto3/botocore/s3transfer/aioboto3/aiobotocore and their type stubs move in one PR. opentelemetry-instrumentation-botocore stays in the opentelemetry group",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "/^(aio)?boto/i",
+        "/^types[-_](aio)?boto/i",
+        "/^(types[-_])?s3transfer$/i",
+        "/^types[-_]awscrt$/i"
+      ],
+      "groupName": "boto",
+      "groupSlug": "boto"
     },
     {
       "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
