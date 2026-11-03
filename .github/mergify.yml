@@ -45,6 +45,12 @@ queue_rules:
     # "master branch" ruleset too: the check conditions below replace them, and
     # GitHub still enforces those required checks when Mergify merges.
     branch_protection_injection_mode: none
+    # Mergify refuses `none` without a merge bot account. osparc-shared (write)
+    # is the only member of a team that bypasses master-branch-reviews and
+    # master-push-gate for pull requests only: it can merge without the reviews
+    # but not push to master, and the required checks of "master branch" still
+    # apply to it (see docs/renovate.md)
+    merge_bot_account: osparc-shared
 
     # No check of another app than Mergify is pending or failed. Mergify lists each
     # check under its name and as @<app>/<name>; matching the qualified form leaves
