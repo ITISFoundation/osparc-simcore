@@ -429,6 +429,11 @@ def standard_user_role() -> tuple[str, tuple]:
 
 
 @pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.docker_exclusive(
+    reason="150 node creations and 150 deletions in parallel saturate this worker's event loop "
+    "and the shared services, which makes other workers lose their redis locks and socketio "
+    "notifications"
+)
 async def test_create_and_delete_many_nodes_in_parallel(
     mock_dynamic_scheduler: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
