@@ -880,14 +880,24 @@ async def test_old_file_link_kept_when_still_referenced_by_another_port(
     mock_delete_file.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    "deletion_error",
+    [
+        StorageServerIssueError("storage unreachable"),
+        # the storage client can also raise outside the NodeportsError hierarchy
+        RuntimeError("Unhandled control flow reached, please report this issue"),
+    ],
+    ids=["storage-server-issue", "unmapped-storage-response"],
+)
 async def test_set_still_succeeds_when_old_file_deletion_fails(
+    deletion_error: Exception,
     common_fixtures: None,
     mock_delete_file: AsyncMock,
     tmp_path: Path,
     project_id: str,
     node_uuid: str,
 ):
-    mock_delete_file.side_effect = StorageServerIssueError("storage unreachable")
+    mock_delete_file.side_effect = deletion_error
 
     old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
     port = Port(

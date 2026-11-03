@@ -5,8 +5,7 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
-from aiohttp import ClientError
-from common_library.logging.logging_errors import format_exception_as_string
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs, format_exception_as_string
 from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import LocationID, NodeIDStr
@@ -22,7 +21,7 @@ from settings_library.r_clone import RCloneSettings
 from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
-from ..node_ports_common.exceptions import NodeportsError, PortNotFoundError, UnboundPortError
+from ..node_ports_common.exceptions import PortNotFoundError, UnboundPortError
 from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_v2.port import SetKWargs
 from .links import DataItemValue, FileLink, ItemConcreteValue, ItemValue
@@ -67,10 +66,10 @@ class Nodeports(BaseModel):
     user_id: UserID
     project_id: ProjectIDStr
     node_uuid: NodeIDStr
-    save_to_db_cb: Callable[["Nodeports"], Coroutine[Any, Any, None]]
+    save_to_db_cb: Callable[[Nodeports], Coroutine[Any, Any, None]]
     node_port_creator_cb: Callable[
         [DBManager, UserID, ProjectIDStr, NodeIDStr],
-        Coroutine[Any, Any, type["Nodeports"]],
+        Coroutine[Any, Any, type[Nodeports]],
     ]
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
@@ -144,7 +143,7 @@ class Nodeports(BaseModel):
                 return
         raise PortNotFoundError(msg=f"output port for item {item_value} not found")
 
-    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type["Nodeports"]:
+    async def _node_ports_creator_cb(self, node_uuid: NodeIDStr) -> type[Nodeports]:
         return await self.node_port_creator_cb(self.db_manager, self.user_id, self.project_id, node_uuid)
 
     async def _auto_update_from_db(self) -> None:
@@ -192,9 +191,22 @@ class Nodeports(BaseModel):
 
         try:
             await filemanager.delete_file(user_id=self.user_id, store_id=old_value.store, s3_object=old_value.path)
-        except (NodeportsError, ClientError) as exc:
+        except Exception as exc:  # pylint: disable=broad-except
+            # the new value is already uploaded and persisted here: a failed cleanup must
+            # neither fail the publication nor abort a multi-port update
             msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
-            log.warning("%s: %s", msg, exc)
+            log.warning(
+                **create_troubleshooting_log_kwargs(
+                    msg,
+                    error=exc,
+                    error_context={
+                        "node_id": f"{self.node_uuid}",
+                        "port_key": f"{port_key}",
+                        "store_id": old_value.store,
+                        "s3_object": old_value.path,
+                    },
+                )
+            )
             if self.io_log_redirect_cb:
                 with log_catch(log, reraise=False):
                     await self.io_log_redirect_cb(f"Something went wrong while removing outdated data: {msg}")
