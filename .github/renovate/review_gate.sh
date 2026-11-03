@@ -66,7 +66,7 @@ for pr in $DRAFTS; do
       continue
     fi
     failed=$(jq -r '.[] | select(.bucket == "fail") | "- " + .name' <<<"$checks")
-    body="> [!WARNING]"$'\n'"> The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them. This pull request is held with 🤖-do-not-merge and needs reviews, also if a later commit passes."$'\n\n'"Failing checks:"$'\n\n'"${failed}"$'\n\n'"Reviewers: fix or close it, or remove 🤖-do-not-merge once the checks pass and the update is fine to merge."
+    body="> [!WARNING]"$'\n'"> The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them. This pull request is held with 🤖-do-not-merge and needs reviews, also if a later commit passes."$'\n\n'"Failing checks:"$'\n\n'"${failed}"$'\n\n'"Reviewers: do not push to this branch; fix or close it as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request, and remove 🤖-do-not-merge once the checks pass and the update is fine to merge."
     gh pr edit "$pr" --repo "$REPO" --add-label '🤖-do-not-merge'
     if grep -qx '🤖-renovate-fast-lane' <<<"$labels"; then
       gh pr edit "$pr" --repo "$REPO" --remove-label '🤖-renovate-fast-lane'
