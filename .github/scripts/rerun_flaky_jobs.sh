@@ -1,11 +1,16 @@
 #!/bin/bash
 #
-#  Re-triggers the failed jobs of a CI Build Test run, once per commit, and only
-#  for failures that look flaky (see chore-rerun-flaky-jobs.yml for when this
-#  runs). Deterministic failures (lint, typecheck, many failed jobs) stay red.
+#  Re-triggers the failed jobs of a CI Build Test run on a pull request from a
+#  fork into this repository, on a Renovate pull request, or on a push to master,
+#  once per commit. Which runs it acts on, and what counts as flaky, is in
+#  chore-rerun-flaky-jobs.yml.
 #
-#  Required environment: GITHUB_REPOSITORY, RUN_ID, HEAD_SHA, PR_NUMBER,
-#  PR_HEAD_SHA. Uses gh for API calls (GH_TOKEN must be set).
+#  Required environment: GITHUB_REPOSITORY, RUN_ID, HEAD_SHA, CI_EVENT,
+#  PR_HEAD_REPO, PR_HEAD_BRANCH, PR_NUMBER (may be empty: for a fork's PR the
+#  payload omits it and the script looks the PR up from the head owner and
+#  branch, which is also how a manually started run reaches the PR). A push has
+#  no pull request, so the PR checks are skipped for it.
+#  Uses gh for API calls (GH_TOKEN must be set).
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -o errexit  # abort on nonzero exitstatus
@@ -13,18 +18,55 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-# skip draft PRs: a draft PR is not waiting to merge, so nobody is
-# waiting on its red checks (the payload has no draft flag, so ask the API)
-if [ "$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .draft)" = "true" ]; then
-  echo "PR #$PR_NUMBER is a draft; not rerunning"
-  exit 0
-fi
+if [ "$CI_EVENT" = "push" ]; then
+  # a push has no open pull request: the PR it came from is merged, so the head
+  # lookups below do not apply. Only the commit at master's tip is still worth a
+  # retry; an older red commit's failure may already be fixed by a newer one.
+  MASTER_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits?sha=master&per_page=1" --jq '.[0].sha')"
+  if [ "$HEAD_SHA" != "$MASTER_SHA" ]; then
+    echo "run $RUN_ID is on $HEAD_SHA, master is now $MASTER_SHA; not rerunning"
+    exit 0
+  fi
+else
+  # a fork's PR carries no number in the payload: look it up by head. The API's
+  # head filter wants "owner:branch" (the owner's login, not owner/repo:branch).
+  PR_HEAD_OWNER="${PR_HEAD_REPO%%/*}"
+  if [ -z "$PR_NUMBER" ]; then
+    PR_NUMBER="$(gh api --paginate \
+      "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100&head=$PR_HEAD_OWNER:$PR_HEAD_BRANCH" \
+      --jq '.[0].number // ""')"
+  fi
 
-# skip stale runs: the PR head moved to a newer commit while this run was
-# still failing, and that newer commit has its own run
-if [ "$HEAD_SHA" != "$PR_HEAD_SHA" ]; then
-  echo "run $RUN_ID is on $HEAD_SHA, PR head is now $PR_HEAD_SHA; not rerunning"
-  exit 0
+  # no open PR for this head: nothing to rerun
+  if [ -z "$PR_NUMBER" ]; then
+    echo "no open PR for $PR_HEAD_OWNER:$PR_HEAD_BRANCH; not rerunning"
+    exit 0
+  fi
+
+  PR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
+
+  # skip draft PRs: nobody waits on a draft's red checks. The payload has no
+  # draft flag, so it comes from the API fetch above. Renovate pull requests
+  # are always drafts until the review gate converts them, so their drafts are
+  # retried like their ready ones: recognized by author (REST reports the bot
+  # login) or by the renovate/ branch prefix.
+  if [ "$(jq -r '.draft' <<<"$PR")" = "true" ]; then
+    if jq -r '.user.login' <<<"$PR" | grep -q renovate \
+      || jq -r '.head.ref' <<<"$PR" | grep -q '^renovate/'; then
+      echo "PR #$PR_NUMBER is a Renovate draft; rerunning anyway"
+    else
+      echo "PR #$PR_NUMBER is a draft; not rerunning"
+      exit 0
+    fi
+  fi
+
+  # skip stale runs: the PR head moved to a newer commit while this run was
+  # still failing, and that newer commit has its own run
+  PR_HEAD_SHA="$(jq -r '.head.sha' <<<"$PR")"
+  if [ "$HEAD_SHA" != "$PR_HEAD_SHA" ]; then
+    echo "run $RUN_ID is on $HEAD_SHA, PR head is now $PR_HEAD_SHA; not rerunning"
+    exit 0
+  fi
 fi
 
 FAILED_JOBS="$(gh api --paginate \
@@ -46,7 +88,7 @@ if jq -e 'any(.[]; .name | test("python-linting"))' <<<"$FAILED_JOBS" >/dev/null
   exit 0
 fi
 
-# a failed "typecheck" step (pyright) is deterministic too
+# a failed "typecheck" step (pyright) does not disappear on a retry either
 if jq -e 'any(.[]; .steps[]? | select(.name == "typecheck" and .conclusion == "failure"))' \
   <<<"$FAILED_JOBS" >/dev/null; then
   echo "a typecheck step failed; not rerunning"

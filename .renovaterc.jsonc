@@ -7,9 +7,17 @@
     "helpers:pinGitHubActionDigests"
   ],
   "dependencyDashboard": true,
-  // Renovate never merges: PRs carry the 🤖-automerge label and are queued by Mergify
-  // once approved (see .github/mergify.yml), like any other PR
+  // Renovate never merges: Mergify queues its pull requests once approved, like
+  // any other pull request (see .github/mergify.yml)
   "automerge": false,
+  // PRs open as drafts, so GitHub does not auto-request the code owners until the
+  // checks finish. Chore Renovate Review Gate
+  // (.github/workflows/chore-renovate-review-gate.yml) marks them ready once all
+  // checks are done, and that transition makes GitHub request the code owners
+  // itself. The 🤖-automerge PRs (patch/pin/digest bumps) then merge through the
+  // Mergify fast lane without waiting for that review; everything else, failing
+  // PRs included, waits for it (see docs/renovate.md)
+  "draftPR": true,
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   // Tools Renovate installs for pip-compile and its post-upgrade task. uv is updated
@@ -21,8 +29,7 @@
     "uv": "0.13.6"
   },
   "labels": [
-    "t:maintenance",
-    "🤖-automerge"
+    "t:maintenance"
   ],
   // GitHub's Dependabot alerts cover transitive dependencies but briefly vanish while
   // GitHub rescans after a push; OSV covers direct dependencies only, independently
@@ -32,14 +39,20 @@
   // and ignore the PR limits below
   "vulnerabilityAlerts": {
     "dependencyDashboardApproval": false,
-    // on top of the labels above (addLabels appends, labels would replace)
+    // on top of the labels above (addLabels appends, labels would replace).
+    // 🤖-automerge takes a passing security fix through the fast lane too, even
+    // when the fix is a minor or major. If the checks fail, the review gate
+    // workflow marks the draft ready after its cool-down and GitHub requests the
+    // code owners (see docs/renovate.md)
     "addLabels": [
-      "security"
+      "security",
+      "🤖-automerge"
     ],
     // the newest version instead of the lowest fixed one: Renovate otherwise proposes
     // different versions for lockfiles below and above the fix in the same branch, the
     // PR title shows only one of them, and .github/renovate/resync_lockfiles.py has to
-    // pick one. This can be a new major version: the PR still needs two reviews
+    // pick one. This can be a new major version: if the checks pass, it still goes
+    // through the fast lane (see the addLabels above and docs/renovate.md)
     "vulnerabilityFixStrategy": "highest"
   },
   // regular PRs: at most 2 new ones per run (Renovate runs nightly, see
@@ -157,6 +170,21 @@
   },
   "packageRules": [
     {
+      // the review gate workflow and the Mergify fast lane only see labels, not the
+      // update type, so this is where the low-risk bumps get marked. Security fixes get
+      // the label through vulnerabilityAlerts.addLabels instead: their fix can be a
+      // minor or major, which this rule would miss
+      "description": "Patch releases, new digests of a pinned tag, and pins resolved from a range: mark with 🤖-automerge for the review gate workflow and the Mergify fast lane (see docs/renovate.md)",
+      "matchUpdateTypes": [
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "addLabels": [
+        "🤖-automerge"
+      ]
+    },
+    {
       "description": "Deps in .in files have no version specifier, so no range strategy would ever propose an update for them and the lockfiles go stale. update-lockfile raises the pin in the .txt lockfiles to the newest version the .in range allows and never edits the .in files. The post-upgrade resync propagates the pin to the lockfiles that depend on it",
       "matchManagers": [
         "pip-compile"
@@ -164,12 +192,23 @@
       "rangeStrategy": "update-lockfile"
     },
     {
-      "description": "Group all pip-compile outputs (_base.txt, _test.txt, _tools.txt, ...) of the same requirements/ directory into a single branch/PR, so they are always updated atomically instead of drifting apart",
+      "description": "One branch/PR per dependency: every lockfile pinning the package moves in the same PR, and the resync below propagates the pin to the directories that constrain it at another layer. Replaces the old grouping per requirements/ directory, which collapsed into two per-area mega-branches",
       "matchManagers": [
         "pip-compile"
       ],
-      "groupName": "{{packageFileDir}}",
-      "groupSlug": "{{packageFileDir}}"
+      "groupName": "{{depName}}",
+      "groupSlug": "{{depName}}"
+    },
+    {
+      "description": "The opentelemetry packages ship in two coordinated release trains (the 1.x api/sdk/exporters and the 0.66bN instrumentation/semantic-conventions, which pin each other), so per-package PRs moved one pin of a family twenty directories already kept in lockstep. One PR moves the whole family instead; Renovate still splits majors into their own branch (separateMajorMinor)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "/^opentelemetry/"
+      ],
+      "groupName": "opentelemetry",
+      "groupSlug": "opentelemetry"
     },
     {
       "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
@@ -197,19 +236,10 @@
       }
     },
     {
-      "description": "Shared packages: upgrade faster (smaller blast radius)",
-      "matchFileNames": [
-        "packages/**/requirements/**"
+      "description": "Python dependencies: wait two weeks before adopting a release (same cool-down as GitHub Actions and uv)",
+      "matchManagers": [
+        "pip-compile"
       ],
-      "groupName": "packages deps",
-      "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Services: upgrade slower / more conservative",
-      "matchFileNames": [
-        "services/**/requirements/**"
-      ],
-      "groupName": "services deps",
       "minimumReleaseAge": "14 days"
     },
     {
@@ -232,11 +262,11 @@
       "enabled": false
     },
     {
-      "description": "GitHub Actions: wait a week before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
+      "description": "GitHub Actions: wait two weeks before adopting a release, the cool-down previously enforced by Dependabot's cooldown block (its `github-actions` ecosystem). Security updates skip minimumReleaseAge and land right away",
       "matchManagers": [
         "github-actions"
       ],
-      "minimumReleaseAge": "7 days"
+      "minimumReleaseAge": "14 days"
     },
     {
       "description": "Docker images: one PR per image (no grouping, so an update of one image does not block the others) and majors step only one major at a time (e.g. postgres 14 -> 15, never 14 -> 18). Majors still need approval on the Dependency Dashboard (see the major rule below)",
@@ -246,7 +276,10 @@
       "maxMajorIncrement": 1
     },
     {
-      "description": "Major updates usually need code changes: only on request, by ticking them on the Dependency Dashboard (security fixes excepted, see vulnerabilityAlerts)",
+      "description": "Docker image majors usually need code changes (a new major can change the configuration layout or the data format): only on request, by ticking them on the Dependency Dashboard (security fixes excepted, see vulnerabilityAlerts). Majors of Python packages, GitHub Actions and uv come through as regular PRs instead, under the usual two reviews, the code-owner gate and the cool-downs",
+      "matchDatasources": [
+        "docker"
+      ],
       "matchUpdateTypes": [
         "major"
       ],
@@ -263,13 +296,13 @@
       "enabled": false
     },
     {
-      "description": "uv is pinned in requirements/UV_VERSION, in the Dockerfiles (ARG UV_VERSION) and in the constraints above, which tests/environment-setup/test_used_uv.py requires to match: update them together, once a release has been out for a week (security fixes do not wait)",
+      "description": "uv is pinned in requirements/UV_VERSION, in the Dockerfiles (ARG UV_VERSION) and in the constraints above, which tests/environment-setup/test_used_uv.py requires to match: update them together, once a release has been out for two weeks (security fixes do not wait)",
       "matchDepNames": [
         "uv"
       ],
       "groupName": "uv",
       "groupSlug": "uv",
-      "minimumReleaseAge": "7 days"
+      "minimumReleaseAge": "14 days"
     },
     {
       "description": "Python minor/major upgrades are done by hand across the whole repository (see requirements/how-to-upgrade-python.md): base images, .python-version, requires-python, actions/setup-python inputs and the constraints above are never touched by Renovate",

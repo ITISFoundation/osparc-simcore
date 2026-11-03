@@ -24,6 +24,7 @@ def app_environment(
     mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
 ) -> EnvVarsDict:
+
     return app_environment
 
 

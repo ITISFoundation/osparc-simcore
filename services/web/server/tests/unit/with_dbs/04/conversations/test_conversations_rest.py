@@ -26,6 +26,12 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_functions_factory(

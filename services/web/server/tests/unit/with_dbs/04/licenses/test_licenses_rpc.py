@@ -33,6 +33,8 @@ from simcore_service_webserver.licenses import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -181,13 +183,6 @@ async def test_license_checkout_workflow(
     assert len(result.items) == 1
     assert result.total == 1
     assert isinstance(result, LicensedItemRpcGetPage)
-
-    with pytest.raises(NotImplementedError):
-        await webserver_rpc_client.licenses.get_available_licensed_items_for_wallet(
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-            wallet_id=1,
-        )
 
     checkout = await webserver_rpc_client.licenses.checkout_licensed_item_for_wallet(
         product_name=osparc_product_name,

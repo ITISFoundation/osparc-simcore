@@ -19,6 +19,12 @@ from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
 from simcore_service_webserver.db.models import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_catalog_service_api_responses(client: TestClient, aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:

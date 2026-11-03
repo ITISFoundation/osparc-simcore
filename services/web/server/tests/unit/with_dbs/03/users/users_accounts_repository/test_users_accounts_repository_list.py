@@ -13,6 +13,12 @@ from pytest_simcore.helpers.webserver_users import MixedUserTestData
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _accounts_repository
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_list_user_pre_registrations(
     app: web.Application,
@@ -20,7 +26,7 @@ async def test_list_user_pre_registrations(
     product_owner_user: dict[str, Any],
     pre_registration_details_db_cleanup: list[int],
 ):
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     created_by_user_id = product_owner_user["id"]
 
     emails = [
@@ -33,7 +39,7 @@ async def test_list_user_pre_registrations(
 
     for i, email in enumerate(emails[:3]):
         pre_reg_id = await _accounts_repository.create_user_pre_registration(
-            asyncpg_engine,
+            sqlalchemy_async_engine,
             email=email,
             created_by=created_by_user_id,
             product_name=product_name,
@@ -45,14 +51,14 @@ async def test_list_user_pre_registrations(
         pre_registration_details_db_cleanup.append(pre_reg_id)
 
     await _accounts_repository.review_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         pre_registration_id=pre_reg_ids[0],
         reviewed_by=created_by_user_id,
         new_status=AccountRequestStatus.APPROVED,
     )
 
     await _accounts_repository.review_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         pre_registration_id=pre_reg_ids[1],
         reviewed_by=created_by_user_id,
         new_status=AccountRequestStatus.REJECTED,
@@ -60,7 +66,7 @@ async def test_list_user_pre_registrations(
 
     # 1. Get all registrations (should be 3)
     all_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_product_name=product_name,
     )
     assert count == 3
@@ -68,7 +74,7 @@ async def test_list_user_pre_registrations(
 
     # 2. Filter by email pattern
     test_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_pre_email="test",
         filter_by_product_name=product_name,
     )
@@ -78,7 +84,7 @@ async def test_list_user_pre_registrations(
 
     # 3. Filter by status - APPROVED
     approved_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_account_request_status=AccountRequestStatus.APPROVED,
         filter_by_product_name=product_name,
     )
@@ -89,7 +95,7 @@ async def test_list_user_pre_registrations(
 
     # 4. Filter by status - REJECTED
     rejected_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_account_request_status=AccountRequestStatus.REJECTED,
         filter_by_product_name=product_name,
     )
@@ -100,7 +106,7 @@ async def test_list_user_pre_registrations(
 
     # 5. Filter by status - PENDING
     pending_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_account_request_status=AccountRequestStatus.PENDING,
         filter_by_product_name=product_name,
     )
@@ -111,7 +117,7 @@ async def test_list_user_pre_registrations(
 
     # 6. Test pagination
     paginated_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_product_name=product_name,
         pagination_limit=2,
         pagination_offset=0,
@@ -120,7 +126,7 @@ async def test_list_user_pre_registrations(
     assert len(paginated_registrations) == 2
 
     page2_registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_product_name=product_name,
         pagination_limit=2,
         pagination_offset=2,
@@ -135,10 +141,10 @@ async def test_list_merged_users_all_users(
     mixed_user_data: MixedUserTestData,
 ):
     """Test that list_merged_pre_and_registered_users correctly returns all users."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, total_count = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_include_deleted=False,
         pagination_limit=10,
@@ -163,10 +169,10 @@ async def test_list_merged_users_pre_registered_only(
     mixed_user_data: MixedUserTestData,
 ):
     """Test pre-registered only user details are correctly returned."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_include_deleted=False,
     )
@@ -192,10 +198,10 @@ async def test_list_merged_users_linked_user(
     mixed_user_data: MixedUserTestData,
 ):
     """Test that a linked user (both registered and pre-registered) has correct data."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_include_deleted=False,
     )
@@ -223,10 +229,10 @@ async def test_list_merged_users_filter_pending(
     mixed_user_data: MixedUserTestData,
 ):
     """Test filtering by PENDING account request status."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     pending_users, pending_count = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,
@@ -246,10 +252,10 @@ async def test_list_merged_users_filter_approved(
     mixed_user_data: MixedUserTestData,
 ):
     """Test filtering by APPROVED account request status."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     approved_users, approved_count = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.APPROVED],
         filter_include_deleted=False,
@@ -268,10 +274,10 @@ async def test_list_merged_users_multiple_statuses(
     mixed_user_data: MixedUserTestData,
 ):
     """Test filtering by multiple account request statuses."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     mixed_status_users, mixed_status_count = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[
             AccountRequestStatus.PENDING,
@@ -327,10 +333,10 @@ async def test_list_merged_users_with_registered_filter(
     expected_absent: list[str],
 ):
     """Test account request status and registered filters in combination."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, total_count = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=filter_statuses,
         filter_registered=filter_registered,
@@ -358,10 +364,10 @@ async def test_list_merged_users_pagination(
     mixed_user_data: MixedUserTestData,
 ):
     """Test pagination of merged user results."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     page1_users, total_count = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_include_deleted=False,
         pagination_limit=2,
@@ -369,7 +375,7 @@ async def test_list_merged_users_pagination(
     )
 
     page2_users, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_include_deleted=False,
         pagination_limit=2,

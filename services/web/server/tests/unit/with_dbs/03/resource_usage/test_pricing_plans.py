@@ -24,6 +24,12 @@ from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_rut_api_responses(client: TestClient, aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:

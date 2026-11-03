@@ -155,18 +155,19 @@ def with_valid_time_before_termination(
 
 
 @pytest.fixture
-async def drained_host_node(host_node: Node, async_docker_client: aiodocker.Docker) -> AsyncIterator[Node]:
+async def drained_host_node(
+    host_node: Node,
+    async_docker_client: aiodocker.Docker,
+    update_node_spec_with_retry: Callable[..., Awaitable[None]],
+) -> AsyncIterator[Node]:
     assert host_node.id
-    assert host_node.version
-    assert host_node.version.index
     assert host_node.spec
     assert host_node.spec.availability
     assert host_node.spec.role
 
     old_availability = host_node.spec.availability
-    await async_docker_client.nodes.update(
+    await update_node_spec_with_retry(
         node_id=host_node.id,
-        version=host_node.version.index,
         spec={
             "Availability": "drain",
             "Labels": host_node.spec.labels,
@@ -179,13 +180,10 @@ async def drained_host_node(host_node: Node, async_docker_client: aiodocker.Dock
     # NOTE: getting the node again as the version might have changed
     drained_node = TypeAdapter(Node).validate_python(await async_docker_client.nodes.inspect(node_id=host_node.id))
     assert drained_node.id
-    assert drained_node.version
-    assert drained_node.version.index
     assert drained_node.spec
     assert drained_node.spec.role
-    await async_docker_client.nodes.update(
+    await update_node_spec_with_retry(
         node_id=drained_node.id,
-        version=drained_node.version.index,
         spec={
             "Availability": old_availability.value,
             "Labels": drained_node.spec.labels,
@@ -1701,6 +1699,10 @@ async def test__find_terminateable_nodes_with_no_hosts(
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
 )
+@pytest.mark.docker_exclusive(
+    reason="the drained_host_node fixture drains the single shared swarm node, so swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
+)
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
@@ -1737,6 +1739,10 @@ async def test__try_scale_down_cluster_with_no_nodes(
     "with_drain_nodes_labelled",
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
+)
+@pytest.mark.docker_exclusive(
+    reason="the drained_host_node fixture drains the single shared swarm node, so swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
 )
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
@@ -1823,6 +1829,10 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
     "with_drain_nodes_labelled",
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
+)
+@pytest.mark.docker_exclusive(
+    reason="the drained_host_node fixture drains the single shared swarm node, so swarm stops and "
+    "reschedules the tasks of the stack shared by all xdist workers (e.g. the rabbit broker)",
 )
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,

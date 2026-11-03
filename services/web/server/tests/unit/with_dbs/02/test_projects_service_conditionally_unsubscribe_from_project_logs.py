@@ -30,6 +30,12 @@ from simcore_service_webserver.projects._projects_service import (
 )
 from test_projects_states_handlers import _close_project, _open_project
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def max_number_of_user_sessions() -> int:
