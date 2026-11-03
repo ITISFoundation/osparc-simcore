@@ -32,6 +32,12 @@ from simcore_service_webserver.catalog._controller_rest_schemas import (
 )
 from simcore_service_webserver.db.models import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:

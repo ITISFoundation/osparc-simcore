@@ -41,6 +41,12 @@ from simcore_service_webserver.wallets._constants import (
     MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 type OpenApiDict = dict[str, Any]
 
 

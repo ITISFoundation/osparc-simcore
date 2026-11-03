@@ -35,6 +35,12 @@ from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncConnection
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _TIMEOUT_S: Final[float] = 30.0
 _SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'"
 

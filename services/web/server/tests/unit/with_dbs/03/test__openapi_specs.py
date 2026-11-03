@@ -18,6 +18,12 @@ from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.rest._utils import get_openapi_specs_path
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture(scope="session")
 def openapi_specs_path(api_version_prefix: str) -> Path:

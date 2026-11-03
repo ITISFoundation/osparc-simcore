@@ -6,7 +6,7 @@ attrs==26.1.0
     #   referencing
 cffi==2.0.0
     # via cryptography
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov

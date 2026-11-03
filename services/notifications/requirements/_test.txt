@@ -50,7 +50,7 @@ click-repl==0.3.0
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov

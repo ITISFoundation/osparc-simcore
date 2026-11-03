@@ -18,6 +18,12 @@ from simcore_service_webserver.chatbot._client import (
 )
 from simcore_service_webserver.chatbot.settings import ChatbotSettings
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_chatbot_client(
     app_environment: EnvVarsDict,
