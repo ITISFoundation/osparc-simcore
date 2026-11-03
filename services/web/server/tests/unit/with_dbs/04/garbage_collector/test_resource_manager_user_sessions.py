@@ -36,6 +36,12 @@ from simcore_service_webserver.resource_manager.user_sessions import (
 )
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(

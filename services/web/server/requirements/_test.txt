@@ -45,7 +45,6 @@ attrs==25.4.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
-    #   pytest-docker
     #   referencing
 certifi==2026.10.19
     # via
@@ -259,7 +258,6 @@ pytest==9.1.1
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
-    #   pytest-docker
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
@@ -270,8 +268,6 @@ pytest-asyncio==1.4.0
 pytest-benchmark==5.3.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
-    # via -r requirements/_test.in
-pytest-docker==3.2.5
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in

@@ -64,6 +64,12 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role() -> UserRole:
@@ -636,7 +642,7 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
     mocked_dynamic_services_interface: dict[str, MockType],
     mock_dynamic_scheduler: None,
     storage_subsystem_mock_override: None,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """W6/W7: cloning (a project or a template) copies `required_resources` but
     drops the `projects_node_to_pricing_unit` links (director-v2 would later
@@ -647,7 +653,9 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
     source_uuid = source["uuid"]
 
     # SETUP: source computational node is linked to a non-default unit and sized
-    _, sourced_resources = await _price_and_size_one_computational_node(client.app, asyncpg_engine, source_uuid)
+    _, sourced_resources = await _price_and_size_one_computational_node(
+        client.app, sqlalchemy_async_engine, source_uuid
+    )
 
     # ACT
     source_project = await _fetch_source_project(client.app, source_uuid, UserID(logged_user["id"]))
@@ -663,11 +671,11 @@ async def test_clone_project_data_copies_required_resources_but_not_pricing_link
 
     # ASSERT: the clone's DB state
     await _assert_clone_kept_resources_but_lost_pricing_links(
-        client.app, asyncpg_engine, cloned_project, sourced_resources
+        client.app, sqlalchemy_async_engine, cloned_project, sourced_resources
     )
 
     # the SOURCE project keeps its link and resources untouched
-    source_state = await get_node_pricing_state(asyncpg_engine, source_uuid)
+    source_state = await get_node_pricing_state(sqlalchemy_async_engine, source_uuid)
     linked = {
         node_id: node_state for node_id, node_state in source_state.items() if node_state.pricing_unit_id is not None
     }

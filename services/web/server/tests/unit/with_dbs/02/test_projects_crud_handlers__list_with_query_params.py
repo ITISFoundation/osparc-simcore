@@ -35,6 +35,12 @@ from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def _create_folder_via_api(client: TestClient, name: str) -> FolderID:
     """Create a folder using the REST API and return its ID."""

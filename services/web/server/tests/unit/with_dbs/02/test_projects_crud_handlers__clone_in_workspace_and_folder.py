@@ -26,6 +26,12 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.workspaces._workspaces_service import create_workspace
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 async def create_workspace_and_folder(

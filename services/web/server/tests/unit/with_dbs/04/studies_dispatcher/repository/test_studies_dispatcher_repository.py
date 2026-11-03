@@ -12,13 +12,19 @@ from simcore_service_webserver.studies_dispatcher._repository import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def studies_dispatcher_repository(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> StudiesDispatcherRepository:
     """Create StudiesDispatcherRepository instance."""
-    return StudiesDispatcherRepository(engine=asyncpg_engine)
+    return StudiesDispatcherRepository(engine=sqlalchemy_async_engine)
 
 
 async def test_list_viewers_info_all(

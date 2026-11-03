@@ -38,6 +38,12 @@ from simcore_service_webserver.licenses import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_licensed_items_listing(
