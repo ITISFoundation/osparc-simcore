@@ -30,8 +30,7 @@ test_isolated() {
   popd
 }
 
-# NOTE: --numprocesses=auto spreads the folder across the runner's CPUs. pytest-simcore deploys the shared core-services stack
-# (postgres, rabbit, valkey) once per session and gives each worker its own database, rabbit vhost and valkey logical database.
+# pytest-simcore gives each xdist worker its own database, RabbitMQ vhost and Valkey logical database
 test_with_db() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
