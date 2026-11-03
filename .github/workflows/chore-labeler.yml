@@ -46,8 +46,8 @@ jobs:
     # kept. No code of the PR is checked out or run
     name: Set current milestone
     if: github.event.action == 'opened' && github.event.pull_request.milestone == null
+    # a PR is an issue to the API: pull-requests: write covers PATCH /issues/{n}
     permissions:
-      issues: write
       pull-requests: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
