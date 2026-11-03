@@ -182,11 +182,8 @@ How the fast lane gets past the review requirement:
 - Renovate applies the `🤖-renovate-fast-lane` label. It replaces
   `🤖-automerge`, which no Mergify rule reads anymore.
 
-To fix a failing Renovate pull request, do not push to its branch. Fix the
-cause on `master` in a pull request of your own (code that breaks with the new
-version, a constraint, the Renovate configuration) and let Renovate regenerate
-its branch on top of it, or close it and open your own pull request with the
-update and the fix.
+To fix a failing Renovate pull request, see
+[Fixing a failing Renovate pull request](#fixing-a-failing-renovate-pull-request).
 
 When the resync task cannot propagate a pin to every directory that constrains
 it, it leaves `renovate-resync-report.md` in the pull request and Renovate
@@ -213,6 +210,24 @@ GitHub's *Update branch* button is disabled. Two tools update a Renovate branch:
 A pull request that waits for reviews is only updated by Renovate's runs. The
 push trigger of the `renovate` job makes that happen within minutes of every
 dependency merge.
+
+## Fixing a failing Renovate pull request
+
+Do not push to a `renovate/*` branch. The fast lane refuses a pull request with
+a commit Renovate did not write, and Renovate stops maintaining a branch someone
+else committed to, so its lockfiles are no longer regenerated. Instead:
+
+1. **Flaky failure**: tick the rebase box in the pull request description;
+   Renovate recreates the branch and CI runs again.
+2. **The new version breaks something**: fix the cause on `master` in a pull
+   request of your own (code that needs the new API, a constraint in
+   `requirements/constraints.txt`, the Renovate configuration). Once it merges,
+   Renovate regenerates its branch on top of it.
+3. **The update needs code changes in the same commit**: close the Renovate pull
+   request and open your own with the update and the fix; it goes through
+   review like any other pull request.
+4. **The version cannot be used for now**: close the pull request, or exclude
+   the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
 
 ## Adding something new for Renovate to manage
 
