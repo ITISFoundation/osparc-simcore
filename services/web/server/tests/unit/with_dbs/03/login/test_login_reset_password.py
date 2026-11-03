@@ -29,6 +29,12 @@ from simcore_service_webserver.login.settings import LoginOptions
 from simcore_service_webserver.users import users_service
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 #
 # NOTE: theses tests are hitting a 'global_rate_limit_route' decorated entrypoint: 'auth_reset_password'
 #       and might fail with 'HTTPTooManyRequests' error.

@@ -29,6 +29,8 @@ from simcore_service_webserver.api_keys.models import ApiKey
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

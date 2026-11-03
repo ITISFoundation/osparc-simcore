@@ -44,7 +44,7 @@ click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.16.0
+coverage==7.16.2
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in

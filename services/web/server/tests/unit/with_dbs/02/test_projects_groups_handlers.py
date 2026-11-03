@@ -19,6 +19,12 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.acceptance_test("Driving test for https://github.com/ITISFoundation/osparc-issues/issues/1547")
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
