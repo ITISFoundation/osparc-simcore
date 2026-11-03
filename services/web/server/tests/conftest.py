@@ -99,6 +99,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
     "pytest_simcore.xdist_docker_daemon",
+    "pytest_simcore.xdist_unused_tcp_ports",
 ]
 
 

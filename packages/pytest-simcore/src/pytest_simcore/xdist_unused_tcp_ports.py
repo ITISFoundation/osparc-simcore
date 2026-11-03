@@ -1,0 +1,33 @@
+"""TCP ports for a whole pytest session, safe to use from several pytest-xdist workers.
+
+Load it with ``pytest_plugins = ["pytest_simcore.xdist_unused_tcp_ports"]`` in a suite that starts
+servers on ``unused_tcp_port``/``unused_tcp_port_factory`` and runs under xdist. It replaces the
+fixtures with those names from pytest-asyncio and pytest-aiohttp, which keep their book of handed-out
+ports per process: two workers can be given the same port and the last one to bind it errors with
+``Address already in use``. See `helpers.xdist_ports` for how the ports are split between workers.
+"""
+
+from collections.abc import Callable
+from pathlib import Path
+
+import pytest
+
+from .helpers.stack_names import get_checkout_uid
+from .helpers.xdist import get_max_xdist_workers, get_worker_id
+from .helpers.xdist_ports import get_port_allocator
+
+
+@pytest.fixture(scope="session")
+def unused_tcp_port_factory(request: pytest.FixtureRequest, osparc_simcore_root_dir: Path) -> Callable[[], int]:
+    allocator = get_port_allocator(
+        worker_id=get_worker_id(request),
+        max_workers=get_max_xdist_workers(request.config),
+        checkout_uid=get_checkout_uid(osparc_simcore_root_dir),
+    )
+    return allocator.get
+
+
+@pytest.fixture
+def unused_tcp_port(unused_tcp_port_factory: Callable[[], int]) -> int:
+    # pytest-asyncio's and pytest-aiohttp's fixtures with this name draw a port on their own
+    return unused_tcp_port_factory()
