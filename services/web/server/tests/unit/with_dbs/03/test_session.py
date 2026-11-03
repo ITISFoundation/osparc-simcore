@@ -113,21 +113,26 @@ async def test_security_identity_is_email_and_product(
     "session_key",
     [
         Fernet.generate_key(),
-        # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32], # FAILS: ensure this value has at least 44 characters (type=value_error.any_str.min_length; limit_value=44)
+        # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32],
+        # FAILS: value has at least 44 characters (any_str.min_length; limit_value=44)
         b"REPLACE_ME-with_a-key_of-length_44-12345678=",
         b"REPLACE_ME_with_result__Fernet_generate_key=",
         "REPLACE_ME_with_result__Fernet_generate_key=",
-        # "REPLACE_ME_with_a_key_of_44__character_long".encode("utf-8"),  # FAILS: ensure this value has at least 44 characters (type=value_error.any_str.min_length; limit_value=44)
-        # "REPLACE ME with a key of at least length 44.".encode("utf-8"), # FAILS: Invalid session key value='REPLACE ME with a key of at least length 44.': Incorrect padding (type=value_error)
+        # "REPLACE_ME_with_a_key_of_44__character_long".encode("utf-8"),
+        # FAILS: value has at least 44 characters (any_str.min_length; limit_value=44)
+        # "REPLACE ME with a key of at least length 44.".encode("utf-8"),
+        # FAILS: Incorrect padding (type=value_error)
         "REPLACE-ME-with-a-key-of-at-least-length-44=",
         None,
     ],
 )
 def test_session_settings(session_key: str | bytes | None, mock_env_devel_environment: EnvVarsDict):
     if session_key is not None:
-        settings = SessionSettings(WEBSERVER_SESSION_SECRET_KEY=session_key)
+        settings = SessionSettings(
+            WEBSERVER_SESSION_SECRET_KEY=session_key  # pyright: ignore[reportCallIssue]
+        )
     else:
-        settings = SessionSettings()
+        settings = SessionSettings()  # pyright: ignore[reportCallIssue]
 
         WEBSERVER_SESSION_SECRET_KEY = mock_env_devel_environment["WEBSERVER_SESSION_SECRET_KEY"]
         assert settings.SESSION_SECRET_KEY.get_secret_value() == WEBSERVER_SESSION_SECRET_KEY
@@ -136,4 +141,4 @@ def test_session_settings(session_key: str | bytes | None, mock_env_devel_enviro
         # NOTE: we pass here a string!
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value()
     )
-    assert _should_not_raise._fernet is not None  # pylint: disable=protected-access
+    assert _should_not_raise._fernet is not None  # noqa: SLF001  # pylint: disable=protected-access

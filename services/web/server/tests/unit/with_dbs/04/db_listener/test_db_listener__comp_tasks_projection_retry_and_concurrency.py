@@ -36,7 +36,11 @@ from simcore_service_webserver.db_listener._task import (
     _OUTBOX_LISTENER_APPLICATION_NAME,
     _with_outbox_wakeup_listener,
 )
-from simcore_service_webserver.db_listener.models import ClaimableAggregate
+from simcore_service_webserver.db_listener.models import (
+    AggregateID,
+    ClaimableAggregate,
+    EventKind,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import func
 
@@ -795,7 +799,10 @@ async def test_failed_claim_records_attempt_before_releasing_the_aggregate(
         side_effect=_failing_projection,
     )
 
-    candidate = ClaimableAggregate(kind=DB_OUTBOX_KIND_COMP_TASK_SYNC, aggregate_id=f"{task['task_id']}")
+    candidate = ClaimableAggregate(
+        kind=EventKind(DB_OUTBOX_KIND_COMP_TASK_SYNC),
+        aggregate_id=AggregateID(f"{task['task_id']}"),
+    )
 
     async def _stale_claimer(delay: float):
         await asyncio.sleep(delay)

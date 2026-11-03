@@ -103,11 +103,11 @@ def create_user_ids(faker: Faker) -> Callable[[int], list[UserID]]:
     "user_session, key",
     [
         (
-            UserSession(user_id=456, client_session_id="some_value"),
+            UserSession(user_id=UserID(456), client_session_id="some_value"),
             "user_id=456:client_session_id=some_value",
         ),
         (
-            UserSession(user_id=123, client_session_id="*"),
+            UserSession(user_id=UserID(123), client_session_id="*"),
             "user_id=123:client_session_id=*",
         ),
     ],
@@ -124,7 +124,7 @@ async def test_redis_registry_hashes(redis_enabled_app: web.Application, user_se
 def create_user_session(faker: Faker) -> Callable[[], UserSession]:
     def _() -> UserSession:
         return UserSession(
-            user_id=faker.pyint(),
+            user_id=UserID(faker.pyint()),
             client_session_id=faker.uuid4(),
         )
 

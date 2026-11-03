@@ -25,7 +25,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from common_library.async_tools import delayed_start
 from faker import Faker
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectID
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
@@ -404,7 +404,7 @@ async def test_get_project_owner_raises_when_project_missing(
     missing_uuid = faker.uuid4()
     async with sqlalchemy_async_engine.connect() as conn:
         with pytest.raises(exceptions.ProjectOwnerNotFoundError):
-            await get_project_owner(conn, missing_uuid)
+            await get_project_owner(conn, ProjectID(missing_uuid))
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
