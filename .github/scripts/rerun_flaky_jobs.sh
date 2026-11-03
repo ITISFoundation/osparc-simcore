@@ -8,7 +8,8 @@
 #  Required environment: GITHUB_REPOSITORY, RUN_ID, HEAD_SHA, CI_EVENT,
 #  PR_HEAD_REPO, PR_HEAD_BRANCH, PR_NUMBER (may be empty: for a fork's PR the
 #  payload omits it and the script looks the PR up from the head owner and
-#  branch). A push has no pull request, so the PR checks are skipped for it.
+#  branch, which is also how a manually started run reaches the PR). A push has
+#  no pull request, so the PR checks are skipped for it.
 #  Uses gh for API calls (GH_TOKEN must be set).
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
@@ -45,10 +46,18 @@ else
   PR="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")"
 
   # skip draft PRs: nobody waits on a draft's red checks. The payload has no
-  # draft flag, so it comes from the API fetch above.
+  # draft flag, so it comes from the API fetch above. Renovate pull requests
+  # are always drafts until the review gate converts them, so their drafts are
+  # retried like their ready ones: recognized by author (REST reports the bot
+  # login) or by the renovate/ branch prefix.
   if [ "$(jq -r '.draft' <<<"$PR")" = "true" ]; then
-    echo "PR #$PR_NUMBER is a draft; not rerunning"
-    exit 0
+    if jq -r '.user.login' <<<"$PR" | grep -q renovate \
+      || jq -r '.head.ref' <<<"$PR" | grep -q '^renovate/'; then
+      echo "PR #$PR_NUMBER is a Renovate draft; rerunning anyway"
+    else
+      echo "PR #$PR_NUMBER is a draft; not rerunning"
+      exit 0
+    fi
   fi
 
   # skip stale runs: the PR head moved to a newer commit while this run was

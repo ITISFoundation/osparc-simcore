@@ -93,7 +93,8 @@ that file type or service over a general rule.
   the branch evolved.
 - `## What do these changes do?`: state the change in behavior, not the diff.
   The review already shows the files, so name one only when that file is itself
-  the subject (a generated spec, a lockfile, a config a reviewer must open).
+  the subject (a generated spec, a lockfile, a config a reviewer must open);
+  name a workflow by its display name, never its file name.
   Say nothing about code the PR does not touch. At most two sentences per bullet.
 - Work that is not what the `## Goal` sentence is about goes under a `### Bonus`
   sub-title of `## What do these changes do?`, not mixed into the main bullets.
@@ -108,6 +109,13 @@ that file type or service over a general rule.
   suite passing is expected. Report only what a reviewer cannot infer:
   measurements, and what was deliberately left untested.
 - Keep each bullet point to at most two sentences.
+- State each fact once. A mechanism explained in one bullet must not come back
+  in the next.
+- Use the platform's own words: checks pass or fail, reviewers are requested.
+  No `green`/`red`, no `paging the owners`, no metaphors (`once CI has
+  spoken`): literal wording only.
+- `## Dev-ops`: the work that still has to be done at deploy time, or `n/a`.
+  Steps already carried out belong nowhere in the description.
 - Fill every template section. When one does not apply, write `n/a`.
 - Unslop means cutting filler openers and closers (`This PR aims to ...`,
   `Feel free to ask ...`), evaluative adjectives (`robust`, `seamless`,

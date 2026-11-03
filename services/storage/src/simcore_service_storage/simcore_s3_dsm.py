@@ -332,7 +332,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             if is_file_entry_valid(metadata):
                 updated_fmds.append(convert_db_to_model(metadata))
                 continue
-            updated_fmds.append(convert_db_to_model(await self._update_database_from_storage(metadata)))
+            with suppress(S3KeyNotFoundError):
+                updated_fmd = await self._update_database_from_storage(metadata)
+                updated_fmds.append(convert_db_to_model(updated_fmd))
 
         return ByteSize(sum(fmd.file_size for fmd in updated_fmds))
 
