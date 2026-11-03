@@ -19,8 +19,9 @@ __version__: str = version("pytest-simcore")
 
 _logger = logging.getLogger(__name__)
 
-# last respx release the httpcore2 interception seam below was verified against
-_RESPX_SEAM_VERIFIED_VERSION: Final[str] = "0.22.0"
+_RESPX_SEAM_VERIFIED_VERSION: Final[
+    Annotated[str, doc("Last respx release the httpcore2 interception seam below was verified against")]
+] = "0.22.0"
 
 
 def pytest_addoption(parser: pytest.Parser):
