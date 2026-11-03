@@ -98,6 +98,13 @@ pytest_simcore_core_services_selection = [
 RESOURCE_NAME = "projects"
 API_PREFIX = f"/{API_VTAG}"
 
+# `docker_exclusive` is the only cross-worker barrier the suite has: these tests need the web
+# server of their worker uninterrupted, not the docker daemon to themselves
+_EVENTS_TO_MANY_CLIENTS = (
+    "several socketio clients must all receive every project state event: tests running in other "
+    "xdist workers starve the web server's event loop and the events are dropped"
+)
+
 
 def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
@@ -1345,6 +1352,7 @@ def clean_redis_table(redis_client) -> None:
 
 
 @pytest.mark.acceptance_test
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_multiple_users(
     max_number_of_user_sessions: int,
@@ -1494,6 +1502,7 @@ async def test_open_shared_project_multiple_users(
         await _state_project(client_i, shared_project, expected.ok, opened_project_state)
 
 
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_refreshing_tab_of_opened_project_multiple_users(
     with_enabled_rtc_collaboration_limited_to_1_user: None,
@@ -1583,6 +1592,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     )
 
 
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     with_enabled_rtc_collaboration_limited_to_1_user: None,
@@ -1662,6 +1672,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     )
 
 
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
     with_disabled_rtc_collaboration: None,
