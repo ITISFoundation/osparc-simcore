@@ -53,13 +53,13 @@ Make sure you first install all the [requirements](#requirements) mentioned in t
   cd osparc-simcore
 
   # show setup info and build core services
-  make info build
+  make build
 
   # starts swarm and deploys services
   make up-prod
 
-  # display swarm configuration
-  make info-swarm
+  # display endpoints for osparc and monitoring tools
+  make show-endpoints
 
   # open front-end in the browser
   #  127.0.0.1.nip.io:9081 - simcore front-end site
@@ -67,7 +67,7 @@ Make sure you first install all the [requirements](#requirements) mentioned in t
   xdg-open http://127.0.0.1.nip.io:9081/
 
   # to stop the swarm
-  make down
+  make down leave
 ```
 
 Some routes can only be reached via DNS such as `UUID.services.DNS`. Since `UUID.services.127.0.0.1` is **not a valid DNS**, the solution is to use [nip.io](https://nip.io/). A service that maps ``<anything>[.-]<IP Address>.nip.io`` in "dot", "dash" or "hexadecimal" notation to the corresponding ``<IP Address>``.
@@ -85,7 +85,7 @@ To build and run:
 
 To develop, in addition:
 
-- *python 3.10*: we recommend using [UV](https://docs.astral.sh/uv/)
+- *python 3.13*: we recommend using [UV](https://docs.astral.sh/uv/)
 - *nodejs* for client part: we recommend using the node manager [nvm](https://github.com/nvm-sh/nvm#install--update-script)
 - [vscode] (highly recommended)
 
