@@ -351,7 +351,7 @@ class Port(BaseServiceIOModel):
 
         If the new value replaces a previously uploaded file, the old object is
         deleted from storage after the database update, best-effort, see
-        `Nodeports.delete_replaced_file_link`.
+        `Nodeports.safe_delete_replaced_file_link`.
 
         :raises InvalidItemTypeError
         :raises ValidationError
@@ -363,7 +363,7 @@ class Port(BaseServiceIOModel):
             progress_bar=progress_bar or ProgressBarData(num_steps=1, description="set"),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
-        await self._node_ports.delete_replaced_file_link(self.key, previous_value, self.value)
+        await self._node_ports.safe_delete_replaced_file_link(self.key, previous_value, self.value)
 
     async def set_value(self, new_item_value: ItemValue | None) -> None:
         """set the value on the port using an item-value

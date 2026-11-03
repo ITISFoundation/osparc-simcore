@@ -631,7 +631,7 @@ async def test_valid_port(  # noqa: C901
             return
 
         @staticmethod
-        async def delete_replaced_file_link(*_args, **_kwargs) -> None:
+        async def safe_delete_replaced_file_link(*_args, **_kwargs) -> None:
             # old-file deletion is exercised against real Nodeports in
             # test_node_ports_v2_nodeports_v2.py
             return

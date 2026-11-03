@@ -159,7 +159,7 @@ class Nodeports(BaseModel):
         for output_key in self.internal_outputs:
             self.internal_outputs[output_key]._node_ports = self  # noqa: SLF001
 
-    async def delete_replaced_file_link(
+    async def safe_delete_replaced_file_link(
         self,
         port_key: ServicePortKey,
         old_value: DataItemValue | None,
@@ -192,6 +192,9 @@ class Nodeports(BaseModel):
         try:
             await filemanager.delete_file(user_id=self.user_id, store_id=old_value.store, s3_object=old_value.path)
         except Exception as exc:  # pylint: disable=broad-except
+            # storage answers are mapped onto NodeportsError subclasses, but not every
+            # failure is mapped: an unexpected status below 400 leaves handle_client_exception
+            # raising RuntimeError and the session lifecycle can raise aiohttp errors of its own
             # the new value is already uploaded and persisted here: a failed cleanup must
             # neither fail the publication nor abort a multi-port update
             msg = f"could not delete old file '{old_value.path}' replaced on port '{port_key}'"
@@ -225,7 +228,7 @@ class Nodeports(BaseModel):
                     continue
                 deleted_paths.add(old_key)
             current_port = find_port(port_key, self.internal_inputs, self.internal_outputs)
-            await self.delete_replaced_file_link(
+            await self.safe_delete_replaced_file_link(
                 port_key,
                 previous_value,
                 current_port.value if current_port is not None else None,
@@ -245,7 +248,7 @@ class Nodeports(BaseModel):
 
         If a port's file value is replaced, this deletes the old object from
         storage after the new values are persisted. Best-effort, see
-        ``delete_replaced_file_link``.
+        ``safe_delete_replaced_file_link``.
 
         raises ValidationError
         """
