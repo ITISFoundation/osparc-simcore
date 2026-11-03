@@ -106,7 +106,7 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -132,7 +132,7 @@ fastapi-lifespan-manager==0.1.4
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fastapi-pagination==0.15.16
+fastapi-pagination==0.16.1
     # via -r requirements/_base.in
 fastar==0.11.0
     # via fastapi
