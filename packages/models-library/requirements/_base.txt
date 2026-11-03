@@ -20,7 +20,7 @@ jsonschema==4.26.0
     # via -r requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-orjson==3.11.9
+orjson==3.13.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in

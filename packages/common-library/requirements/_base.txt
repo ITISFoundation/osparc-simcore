@@ -2,7 +2,7 @@
 #    uv pip compile --output-file=requirements/_base.txt requirements/_base.in
 annotated-types==0.8.0
     # via pydantic
-orjson==3.11.9
+orjson==3.13.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
