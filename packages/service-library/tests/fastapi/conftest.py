@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import socket
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable
 from typing import cast
 
 import arrow
@@ -43,25 +43,29 @@ async def client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 
 @pytest.fixture
-def base_url() -> str:
+def mocked_api_base_url() -> str:
     return "https://test_base_http_api"
 
 
 @pytest.fixture
-def mocked_server_api(base_url: str) -> Iterator[respx.MockRouter]:
-    """Mocks a remote HTTP API at `base_url` and rejects any request not routed here."""
-    with respx.mock(
-        base_url=base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as mock:
-        mock.get("/").respond(status.HTTP_200_OK)
+def base_url(mocked_api_base_url: str) -> str:
+    return mocked_api_base_url
 
-        mock.post(path__startswith="/foo").respond(status.HTTP_200_OK)
-        mock.get(path__startswith="/foo").respond(status.HTTP_200_OK)
-        mock.delete(path__startswith="/foo").respond(status.HTTP_200_OK)
 
-        yield mock
+@pytest.fixture
+def mocked_server_api(mocked_api_router: respx.MockRouter) -> respx.MockRouter:
+    """Mocks a remote HTTP API at `base_url` and rejects any request not routed here.
+
+    The mock shell and its `assert_all_mocked` guard come from
+    `pytest_simcore.respx_mocks`; only these canned routes are local to this package.
+    """
+    mocked_api_router.get("/").respond(status.HTTP_200_OK)
+
+    mocked_api_router.post(path__startswith="/foo").respond(status.HTTP_200_OK)
+    mocked_api_router.get(path__startswith="/foo").respond(status.HTTP_200_OK)
+    mocked_api_router.delete(path__startswith="/foo").respond(status.HTTP_200_OK)
+
+    return mocked_api_router
 
 
 @pytest.fixture(params=["", "/base-path", "/nested/path"])
