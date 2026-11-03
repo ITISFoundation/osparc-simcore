@@ -46,7 +46,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "13",
+        "14",
         "--appendonly",
         "yes",
         "--requirepass",

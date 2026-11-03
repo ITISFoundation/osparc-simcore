@@ -189,7 +189,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "13",
+        "14",
 
         # Persist mutations in AOF as well.
         "--appendonly",
@@ -1004,6 +1004,10 @@ services:
       LOGIN_REGISTRATION_INVITATION_REQUIRED: ${LOGIN_REGISTRATION_INVITATION_REQUIRED}
       LOGIN_2FA_REQUIRED: ${LOGIN_2FA_REQUIRED}
       LOGIN_2FA_CODE_EXPIRATION_SEC: ${LOGIN_2FA_CODE_EXPIRATION_SEC}
+      LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS: ${LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS}
+      LOGIN_THROTTLE_BASE_DELAY_SEC: ${LOGIN_THROTTLE_BASE_DELAY_SEC}
+      LOGIN_THROTTLE_MAX_DELAY_SEC: ${LOGIN_THROTTLE_MAX_DELAY_SEC}
+      LOGIN_THROTTLE_WINDOW_SEC: ${LOGIN_THROTTLE_WINDOW_SEC}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
       TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: ${TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT}
@@ -1122,6 +1126,17 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.service=${SWARM_STACK_NAME}_webserver_sticky
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
+        # login guard: rejects login attempts of emails in back-off, before any password hashing
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.address=http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:login-guard
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.forwardBody=true
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.maxBodySize=1048576
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.preserveRequestMethod=true
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_login_guard.forwardauth.trustForwardHeader=true
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.rule=Path(`/v0/auth/login`) && Method(`POST`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.service=${SWARM_STACK_NAME}_webserver
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.priority=7
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_login.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_login_guard, ${SWARM_STACK_NAME}_webserver_retry
     networks: &webserver_networks
       - default
       - interactive_services_subnet
@@ -1231,6 +1246,7 @@ services:
     environment:
       <<:
         - *postgres_settings
+        - *redis_settings
         - *tracing_open_telemetry_environments
         - *webserver_diagnostics_environments
 
@@ -1286,7 +1302,6 @@ services:
       WEBSERVER_PROJECTS: "null"
       WEBSERVER_RABBITMQ: "null"
       WEBSERVER_REALTIME_COLLABORATION: "null"
-      WEBSERVER_REDIS: "null"
       WEBSERVER_RESOURCE_USAGE_TRACKER: "null"
       WEBSERVER_RPC_NAMESPACE: "null"
       WEBSERVER_SCICRUNCH: "null"

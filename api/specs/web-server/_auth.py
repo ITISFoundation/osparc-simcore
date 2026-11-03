@@ -13,7 +13,7 @@ from models_library.api_schemas_webserver.auth import (
 )
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
-from pydantic import BaseModel, Field, confloat
+from pydantic import BaseModel, Field
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._controller.rest.auth_schemas import (
     LoginBody,
@@ -165,6 +165,21 @@ async def check_auth():
 
 
 @router.post(
+    "/auth:login-guard",
+    operation_id="auth_login_guard",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "model": EnvelopedError,
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"model": EnvelopedError},
+    },
+)
+async def login_guard(_body: LoginBody):
+    """checks whether a login attempt is allowed for the email, i.e. not in back-off after repeated failures"""
+
+
+@router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],
     operation_id="initiate_reset_password",
@@ -210,8 +225,10 @@ async def change_email(_body: ChangeEmailBody):
 
 class PasswordCheckSchema(BaseModel):
     strength: Annotated[
-        confloat(ge=0.0, le=1.0),
+        float,
         Field(
+            ge=0.0,
+            le=1.0,
             description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
         ),
     ]

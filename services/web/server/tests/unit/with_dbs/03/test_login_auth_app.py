@@ -19,6 +19,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
+from settings_library.redis import RedisSettings
 from simcore_service_webserver.application import create_application_auth
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
@@ -38,6 +39,7 @@ def app_environment_for_wb_authz_service_dict(
     docker_compose_service_environment_dict: EnvVarsDict,
     docker_compose_service_hostname: str,
     default_app_cfg: AppConfigDict,
+    redis_service: RedisSettings,
 ) -> EnvVarsDict:
     postgres_cfg = default_app_cfg["db"]["postgres"]
 
@@ -59,6 +61,9 @@ def app_environment_for_wb_authz_service_dict(
         "POSTGRES_PORT": postgres_cfg["port"],
         "POSTGRES_USER": postgres_cfg["user"],
         "POSTGRES_PASSWORD": postgres_cfg["password"],
+        "REDIS_HOST": redis_service.REDIS_HOST,
+        "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+        "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value() if redis_service.REDIS_PASSWORD else "",
         "HOSTNAME": docker_compose_service_hostname,
         "WEBSERVER_CELERY": "null",
         "WEBSERVER_TRACING": "null",  # BUT we will disable it for tests
@@ -209,3 +214,18 @@ def test_docker_compose_dev_vendors_forwardauth_configuration(
 
     assert wb_auth_host is not None, "WB_AUTH_WEBSERVER_HOST should be configured in test environment"
     assert wb_auth_port is not None, "WB_AUTH_WEBSERVER_PORT should be configured in test environment"
+
+
+def test_login_guard_body_limit_allows_what_the_login_endpoint_accepts(services_docker_compose_file: Path):
+    compose_config = yaml.safe_load(services_docker_compose_file.read_text())
+    labels = compose_config["services"]["webserver"]["deploy"]["labels"]
+
+    limits = [
+        int(label.split("forwardauth.maxBodySize=")[1])
+        for label in labels
+        if "login_guard.forwardauth.maxBodySize=" in label
+    ]
+
+    assert len(limits) == 1
+    # the guard receives the same body as the login endpoint, which aiohttp caps at 1 MiB by default
+    assert limits[0] >= 1024**2
