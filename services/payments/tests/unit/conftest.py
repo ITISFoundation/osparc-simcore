@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, NamedTuple
 from unittest.mock import Mock
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import jsonref
 import pytest

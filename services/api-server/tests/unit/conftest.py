@@ -15,14 +15,19 @@ from unittest.mock import MagicMock
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp.test_utils
+
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 import respx
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from httpx import ASGITransport, Request, Response
+from httpx import Request, Response
+from httpx2 import ASGITransport
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
@@ -159,7 +164,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx.AsyncClient]:
+async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx2.AsyncClient]:
     #
     # Prefer this client instead of fastapi.testclient.TestClient
     #
@@ -171,13 +176,13 @@ async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx.Asyn
             startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
             shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
         ),
-        httpx.AsyncClient(
+        httpx2.AsyncClient(
             base_url="http://api.testserver.io",
             headers={"Content-Type": "application/json"},
             transport=ASGITransport(app=app),
         ) as httpx_async_client,
     ):
-        assert isinstance(httpx_async_client, httpx.AsyncClient)
+        assert isinstance(httpx_async_client, httpx2.AsyncClient)
         yield httpx_async_client
 
 
@@ -792,13 +797,13 @@ def patch_lrt_response_urls(mocker: MockerFixture):
     """
 
     def _() -> MagicMock:
-        def _get_lrt_urls(lrt_response: httpx.Response):
+        def _get_lrt_urls(lrt_response: httpx2.Response):
             # NOTE: this function is needed to mock
             data = Envelope[TaskGet].model_validate_json(lrt_response.text).data
             assert data is not None  # nosec
 
             def _patch(href):
-                return lrt_response.request.url.copy_with(raw_path=httpx.URL(href).raw_path)
+                return lrt_response.request.url.copy_with(raw_path=httpx2.URL(href).raw_path)
 
             data.status_href = _patch(data.status_href)
             data.result_href = _patch(data.result_href)

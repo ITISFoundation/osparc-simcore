@@ -45,6 +45,7 @@ queue_rules:
     # "master branch" ruleset too: the check conditions below replace them, and
     # GitHub still enforces those required checks when Mergify merges.
     branch_protection_injection_mode: none
+    merge_bot_account: osparc-shared
 
     # No check of another app than Mergify is pending or failed. Mergify lists each
     # check under its name and as @<app>/<name>; matching the qualified form leaves

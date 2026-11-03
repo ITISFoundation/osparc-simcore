@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from faker import Faker
@@ -64,7 +64,7 @@ def _filter_and_group_paths_one_level_deeper(paths: list[Path], prefix: Path) ->
 
 async def _assert_list_paths(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -123,7 +123,7 @@ async def _assert_list_paths(
 
 async def test_list_paths_root_folder_of_empty_returns_nothing(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -159,7 +159,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
 )
 async def test_list_paths_pagination(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -301,7 +301,7 @@ async def test_list_child_paths_empty_page_still_reports_total(
 )
 async def test_list_paths_pagination_large_page(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -350,7 +350,7 @@ async def test_list_paths_pagination_large_page(
 )
 async def test_list_paths(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -506,7 +506,7 @@ async def test_list_paths(
 )
 async def test_list_paths_with_display_name_containing_slashes(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -616,7 +616,7 @@ async def test_list_paths_with_display_name_containing_slashes(
 
 async def _assert_compute_path_size(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -663,7 +663,7 @@ async def _assert_compute_path_size(
 )
 async def test_path_compute_size(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -785,7 +785,7 @@ async def test_path_compute_size(
 @pytest.mark.regression
 async def test_path_compute_size_with_file_currently_uploading(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -842,7 +842,7 @@ async def test_path_compute_size_with_file_currently_uploading(
 
 async def test_path_compute_size_inexistent_path(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -879,7 +879,7 @@ async def test_path_compute_size_inexistent_path(
 )
 async def test_list_paths_filters_by_product(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     create_product: Callable[..., Awaitable[dict[str, Any]]],

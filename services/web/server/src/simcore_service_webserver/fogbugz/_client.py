@@ -8,7 +8,7 @@ import logging
 from typing import Any, Final
 from urllib.parse import urljoin
 
-import httpx
+import httpx2
 from aiohttp import web
 from pydantic import AnyUrl, BaseModel, Field, SecretStr
 from servicelib.aiohttp import status
@@ -40,7 +40,7 @@ class FogbugzCaseCreate(BaseModel):
     description: str = Field(description="Case description/first comment")
 
 
-def _should_retry(response: httpx.Response | None) -> bool:
+def _should_retry(response: httpx2.Response | None) -> bool:
     if response is None:
         return True
     return (
@@ -53,7 +53,7 @@ class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = httpx.AsyncClient()
+        self._client = httpx2.AsyncClient()
         self._api_token = api_token
         self._base_url = base_url
 
@@ -65,10 +65,10 @@ class FogbugzRestClient:
                 retry_if_result(_should_retry)
                 | retry_if_exception_type(
                     (
-                        httpx.ConnectError,
-                        httpx.TimeoutException,
-                        httpx.NetworkError,
-                        httpx.ProtocolError,
+                        httpx2.ConnectError,
+                        httpx2.TimeoutException,
+                        httpx2.NetworkError,
+                        httpx2.ProtocolError,
                     )
                 )
             ),
@@ -76,7 +76,7 @@ class FogbugzRestClient:
             wait=wait_exponential(multiplier=1, min=1, max=10),
             reraise=True,
         )
-        async def _request() -> httpx.Response:
+        async def _request() -> httpx2.Response:
             # Fogbugz requires multipart/form-data with stringified JSON
             files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
             url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")

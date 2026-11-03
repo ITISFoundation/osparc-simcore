@@ -167,13 +167,6 @@ How the fast lane gets past the review requirement:
   therefore keeps a pull request out of the fast lane. The `system-tests`
   condition keeps the pull request waiting until CI has reported on the commit
   Mergify adds; renaming that job stalls the fast lane;
-- GitHub enforces a ruleset's requirements on the actor that performs the
-  merge. The *master-branch-reviews* ruleset has the Mergify App on its bypass
-  list in *exempt* mode and Maintain in *pull request* mode, so GitHub lets
-  Mergify merge without the reviews. The *master branch* ruleset (required
-  checks, push protections) has no Mergify entry, so GitHub itself still
-  refuses Mergify a merge with a failing required check. Human pull requests
-  lose nothing: the default queue keeps the injected conditions;
 - the fast lane only takes a pull request Renovate wrote alone: Renovate opened
   it, and every commit is authored by Renovate or Mergify and verified by
   GitHub (`renovate_only` in `mergify.yml`). A commit pushed by anyone else
