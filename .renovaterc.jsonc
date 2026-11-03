@@ -7,17 +7,21 @@
     "helpers:pinGitHubActionDigests"
   ],
   "dependencyDashboard": true,
-  // Renovate never merges: Mergify queues its pull requests once approved, like
-  // any other pull request (see .github/mergify.yml)
+  // Renovate never merges: Mergify queues its pull requests (see .github/mergify.yml)
   "automerge": false,
   // PRs open as drafts, so GitHub does not auto-request the code owners until the
-  // checks finish. Chore Renovate Review Gate
-  // (.github/workflows/chore-renovate-review-gate.yml) marks them ready once all
-  // checks are done, and that transition makes GitHub request the code owners
-  // itself. The 🤖-automerge PRs (patch/pin/digest bumps) then merge through the
-  // Mergify fast lane without waiting for that review; everything else, failing
-  // PRs included, waits for it (see docs/renovate.md)
+  // checks finish. The review-gate job of .github/workflows/chore-renovate.yml
+  // marks them ready once all checks are done, and that transition makes GitHub
+  // request the code owners itself. The 🤖-automerge PRs (patch/pin/digest bumps)
+  // then merge through the Mergify fast lane without waiting for that review;
+  // everything else, failing PRs included, waits for it (see docs/renovate.md)
   "draftPR": true,
+  // Mergify merges master into a queued PR branch before testing it. Renovate
+  // would otherwise treat that commit as a manual edit and stop rebasing and
+  // regenerating the branch (see docs/renovate.md)
+  "gitIgnoredAuthors": [
+    "37929162+mergify[bot]@users.noreply.github.com"
+  ],
   "branchPrefix": "renovate/",
   "commitMessageSuffix": " [Renovate]",
   // Tools Renovate installs for pip-compile and its post-upgrade task. uv is updated

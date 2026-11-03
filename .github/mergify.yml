@@ -27,7 +27,21 @@ queue_rules:
   # still blocks a merge is in docs/renovate.md.
   - name: renovate-fast
     batch_size: 1
+    # Mergify otherwise copies the master rulesets into this queue's conditions,
+    # including the review requirement of master-branch-reviews (2 approvals and a
+    # code owner), which a Renovate PR never collects. Being a bypass actor on that
+    # ruleset does not stop the copy. `none` drops the required checks of the
+    # "master branch" ruleset too: the check conditions below replace them, and
+    # GitHub still enforces those required checks when Mergify merges.
+    branch_protection_injection_mode: none
 
+    # No check of another app than Mergify is pending or failed. Mergify lists each
+    # check under its name and as @<app>/<name>; matching the qualified form leaves
+    # out Mergify's own check runs, which stay in progress while the PR is queued.
+    # check-success=system-tests requires CI to have reported on the commit Mergify
+    # merges master into; right after that push no check exists yet, so "nothing
+    # pending" alone would already hold. system-tests is a required check of
+    # ci-build-test.yml; renaming it stalls this queue.
     queue_conditions:
       - base=master
       - author=osparc-simcore-renovate[bot]
@@ -35,6 +49,9 @@ queue_rules:
       - label!=🤖-do-not-merge
       - -draft
       - -conflict
+      - "-check-pending~=^@(?!mergify/)"
+      - "-check-failure~=^@(?!mergify/)"
+      - check-success=system-tests
 
     merge_conditions: # (identical to queue_conditions)
       - base=master
@@ -43,6 +60,9 @@ queue_rules:
       - label!=🤖-do-not-merge
       - -draft
       - -conflict
+      - "-check-pending~=^@(?!mergify/)"
+      - "-check-failure~=^@(?!mergify/)"
+      - check-success=system-tests
 merge_protections_settings:
   reporting_method: check-runs
 
