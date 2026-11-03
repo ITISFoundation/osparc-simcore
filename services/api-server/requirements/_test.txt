@@ -86,8 +86,10 @@ cffi==2.1.1
     #   pact-python-ffi
 cfn-lint==1.47.1
     # via moto
-charset-normalizer==3.4.0
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.2.1
     # via
     #   -c requirements/_base.txt
@@ -352,6 +354,7 @@ regex==2026.7.19
     # via cfn-lint
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   aws-xray-sdk
     #   docker
     #   jsonschema-path

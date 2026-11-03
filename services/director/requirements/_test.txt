@@ -34,8 +34,10 @@ certifi==2026.10.19
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.0
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.16.2
     # via pytest-cov
 docker==7.1.0
@@ -133,7 +135,9 @@ redis==7.4.0
     #   -c requirements/_base.txt
     #   fakeredis
 requests==2.34.2
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.22.0
     # via -r requirements/_test.in
 sniffio==1.3.1

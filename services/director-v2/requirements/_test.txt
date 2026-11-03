@@ -31,8 +31,10 @@ certifi==2026.10.19
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.4
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.5.0
     # via
     #   -c requirements/_base.txt
@@ -218,6 +220,7 @@ redis==7.4.0
     #   fakeredis
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 respx==0.22.0

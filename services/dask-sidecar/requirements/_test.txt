@@ -66,9 +66,10 @@ botocore-stubs==1.43.14
     #   -c requirements/_base.txt
     #   types-aioboto3
     #   types-aiobotocore
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   requests
 cffi==2.0.0
     # via
@@ -77,7 +78,9 @@ cffi==2.0.0
 cfn-lint==1.41.0
     # via moto
 charset-normalizer==3.5.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.5.0
     # via
     #   -c requirements/_base.txt
@@ -279,6 +282,7 @@ regex==2026.2.28
     # via cfn-lint
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto

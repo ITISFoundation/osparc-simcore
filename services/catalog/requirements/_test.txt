@@ -38,8 +38,10 @@ certifi==2026.10.19
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.1
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.2.1
     # via
     #   -c requirements/_base.txt
@@ -165,7 +167,9 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.22.0
     # via -r requirements/_test.in
 rpds-py==0.28.0
