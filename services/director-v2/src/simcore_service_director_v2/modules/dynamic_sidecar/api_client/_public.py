@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import Any, Final
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,

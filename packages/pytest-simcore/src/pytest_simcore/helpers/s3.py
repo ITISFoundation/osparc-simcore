@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Final
 
 import aiofiles
-import httpx
+import httpx2
 import orjson
 from aws_library.s3 import MultiPartUploadLinks
 from fastapi import status
@@ -39,7 +39,7 @@ async def _file_sender(file: Path, *, offset: int, bytes_to_send: int, raise_whi
 
 
 async def upload_file_part(
-    session: httpx.AsyncClient,
+    session: httpx2.AsyncClient,
     file: Path,
     part_index: int,
     file_offset: int,
@@ -78,7 +78,7 @@ async def upload_file_to_presigned_link(
     file_size = file.stat().st_size
 
     with log_context(logging.INFO, msg=f"uploading {file} via {file_upload_link=}"):
-        async with httpx.AsyncClient() as session:
+        async with httpx2.AsyncClient() as session:
             file_chunk_size = int(file_upload_link.chunk_size)
             num_urls = len(file_upload_link.urls)
             last_chunk_size = file_size - file_chunk_size * (num_urls - 1)

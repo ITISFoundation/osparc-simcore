@@ -12,7 +12,10 @@ from pathlib import Path
 from typing import Any, Final
 from uuid import UUID
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 import respx
 from faker import Faker
@@ -37,8 +40,8 @@ _faker = Faker()
 @pytest.mark.xfail(reason="Still not implemented")
 @pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177")
 async def test_studies_jobs_workflow(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     study_id: StudyID,
@@ -121,12 +124,12 @@ async def test_studies_jobs_workflow(
 
 
 async def test_start_stop_delete_study_job(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
     faker: Faker,
@@ -166,7 +169,7 @@ async def test_start_stop_delete_study_job(
         + [_side_effect_no_project_id],
     )
 
-    def _check_response(response: httpx.Response, status_code: int):
+    def _check_response(response: httpx2.Response, status_code: int):
         response.raise_for_status()
         assert response.status_code == status_code
         if response.status_code != status.HTTP_204_NO_CONTENT:
@@ -202,12 +205,12 @@ async def test_start_stop_delete_study_job(
 )
 @pytest.mark.parametrize("hidden", [True, False])
 async def test_create_study_job(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
     hidden: bool,
@@ -292,9 +295,9 @@ async def test_create_study_job(
     ],
 )
 async def test_get_study_job_outputs(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     fake_study_id: UUID,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_id: UUID,
     job_state: RunningState,
     expected_status_code: int,
@@ -367,12 +370,12 @@ async def test_get_study_job_outputs(
 
 
 async def test_get_job_logs(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
 ):
     _study_id = "7171cbf8-2fc9-11ef-95d3-0242ac140018"
@@ -392,12 +395,12 @@ async def test_get_job_logs(
 
 
 async def test_get_study_outputs(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     mocked_directorv2_rest_api_base: respx.MockRouter,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_tests_dir: Path,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
     mock_dependency_get_celery_task_manager: MockType,

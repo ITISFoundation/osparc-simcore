@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from common_library.pagination_tools import iter_pagination_params
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_pagination import create_page
-from httpx import HTTPStatusError
+from httpx2 import HTTPStatusError
 from models_library.api_schemas_catalog.services import ServiceListFilters
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.services_enums import ServiceType
