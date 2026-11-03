@@ -863,7 +863,7 @@ async def test_delete_file_removes_only_the_exact_object(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
-async def test_delete_file_keeps_registered_child_entries(
+async def test_delete_file_twice_removes_entries_nested_under_its_id(
     user_id: UserID,
     storage_s3_bucket: S3BucketName,
     storage_s3_client: SimcoreS3API,
@@ -871,10 +871,13 @@ async def test_delete_file_keeps_registered_child_entries(
     upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
 ):
-    """Deleting a registered file removes its object but not child entries
+    """Entries nested under a file id are removed once the id is unregistered
 
-    Children registered under the file id keep their S3 objects (only the exact
-    object is deleted), so their registrations must survive too.
+    A file holds no children, so registering `file_id/child.txt` under a stored file is
+    not a supported layout. The first delete removes the exact object only and leaves the
+    nested entry behind; the second delete finds no registration, treats the id as a
+    folder path and cascades over the `file_id/` prefix, as deleting an unregistered
+    folder requires.
     """
     _, file_id = await upload_file(file_size, "report.txt", None)
     child_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{file_id}/child.txt")
@@ -889,8 +892,13 @@ async def test_delete_file_keeps_registered_child_entries(
         bucket=storage_s3_bucket, object_key=f"{child_file_id}"
     )
     assert child_metadata.size == file_size
-    child_fmd = await simcore_s3_dsm.get_file(user_id, child_file_id)
-    assert child_fmd.file_id == child_file_id
+
+    await simcore_s3_dsm.delete_file(user_id, file_id)
+
+    with pytest.raises(S3KeyNotFoundError):
+        await storage_s3_client.get_object_metadata(bucket=storage_s3_bucket, object_key=f"{child_file_id}")
+    with pytest.raises(FileMetaDataNotFoundError):
+        await simcore_s3_dsm.get_file(user_id, child_file_id)
 
 
 @pytest.mark.parametrize(

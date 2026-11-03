@@ -677,6 +677,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     async def _delete_object_and_subfolders(self, s3_client: SimcoreS3API, file_id: StorageFileID) -> None:
         """Delete the object stored under `file_id` and its subfolders, leaving
         keys that only start with `file_id` (e.g. `report.txt.gz`) untouched
+
+        An id without registration is a folder path, so whatever is registered or
+        stored below `file_id/` belongs to it and goes away with it.
         """
         await s3_client.delete_object(bucket=self.simcore_bucket_name, object_key=f"{file_id}")
         await s3_client.delete_objects_recursively(
@@ -692,6 +695,21 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         enforce_access_rights: bool = True,
         connection: AsyncConnection | None = None,
     ) -> None:
+        """Delete `file_id` from S3 and from `file_meta_data`
+
+        A stored key is a plain string, so a registered file removes only its exact
+        object, a registered directory removes its `object_name/` subtree, and a soft
+        link removes nothing in S3.
+
+        An id with no registration left is a folder path: the delete then cascades to
+        everything registered under the `file_id/` prefix, which is what deleting an
+        unregistered folder must do (see
+        tests/unit/test_handlers_files.py::test_delete_parent_folder_path_removes_descendants_from_db).
+        Nothing records what an unregistered path used to be, so a repeated delete of a
+        file id cannot be told apart from a folder delete. Entries nested under the id of
+        a registered file are not a supported layout either way -- a file holds no
+        children -- and a repeated delete removes them like any other child entry.
+        """
         #   _   _  ___ _____ _____
         #  | \ | |/ _ \_   _| ____|
         #  |  \| | | | || | |  _|
