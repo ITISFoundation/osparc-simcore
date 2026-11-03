@@ -191,7 +191,7 @@ assert set(LicensedResourceSource.model_fields.keys()) == set(  # nosec
     _LicensedResourceSource.model_fields.keys()
 ), "LicensedResourceSource keys do not match"
 
-for key in LicensedResourceSource.model_fields:
+for key in LicensedResourceSource.model_fields.keys():  # noqa: SIM118
     if key == "features":
         continue
     assert (  # nosec
