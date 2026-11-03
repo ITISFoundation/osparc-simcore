@@ -69,8 +69,13 @@ def test_preuserprofile_parse_model_from_request_form_data(
     account_request_form: dict[str, Any],
     institution_key: str,
 ):
+    # a name with a lowercase word (e.g. "Cooke and Little") gets capitalized by the model, so
+    # this test uses an institution the model returns unchanged
+    institution = "Simcore Core"
+
     data = deepcopy(account_request_form)
-    data[institution_key] = data.pop("company")
+    data.pop("company")
+    data[institution_key] = institution
     data["comment"] = "extra comment"
 
     # pre-processors
@@ -79,7 +84,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
     print(pre_user_profile.model_dump_json(indent=1))
 
     # institution aliases
-    assert pre_user_profile.institution == account_request_form["company"]
+    assert pre_user_profile.institution == institution
 
     # extras
     assert {
