@@ -1,5 +1,6 @@
 # Automatically apply area / type labels to a PR based on which files
-# it changes. Uses .github/labeler.yml as the rule set.
+# it changes (rule set: .github/labeler.yml), and put every new PR into the
+# current milestone.
 #
 # `pull_request_target` is required so that labels can also be applied to
 # PRs opened from forks (the workflow then runs with the base repo's
@@ -20,13 +21,14 @@ on:
       - synchronize
       - ready_for_review
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   label:
     name: Apply area labels
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Label PR based on changed files
@@ -37,3 +39,30 @@ jobs:
           # (e.g. priority, type) survive subsequent pushes.
           sync-labels: false
           dot: true
+
+  milestone:
+    # the open milestone with the earliest due date, overdue or not, because a
+    # sprint milestone stays in use until it is closed. A milestone set by hand is
+    # kept. No code of the PR is checked out or run
+    name: Set current milestone
+    if: github.event.action == 'opened' && github.event.pull_request.milestone == null
+    permissions:
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: set the current milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          milestone=$(gh api "repos/${REPO}/milestones?state=open&per_page=100" \
+            --jq '[.[] | select(.due_on != null)] | sort_by(.due_on) | first | .number // empty')
+          if [ -z "$milestone" ]; then
+            echo "No open milestone with a due date, leaving PR #${PR_NUMBER} without milestone"
+            exit 0
+          fi
+          gh api --method PATCH "repos/${REPO}/issues/${PR_NUMBER}" -F "milestone=${milestone}" \
+            --jq '"PR #\(.number) added to milestone \(.milestone.title)"'
