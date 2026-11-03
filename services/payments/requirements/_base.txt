@@ -66,7 +66,7 @@ click==8.2.1
     # via
     #   rich-toolkit
     #   uvicorn
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -256,7 +256,7 @@ opentelemetry-util-http==0.66b1
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orjson==3.11.9
+orjson==3.13.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
