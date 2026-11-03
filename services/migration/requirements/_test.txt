@@ -15,7 +15,7 @@ coverage==7.16.2
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 greenlet==3.5.6
     # via sqlalchemy
