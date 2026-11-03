@@ -714,7 +714,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             s3_client = get_s3_client(self.app)
             file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
             try:
-                fmd = await file_meta_data_repo.get(connection=connection, file_id=file_id)
+                # no `connection` here on purpose: reading on a caller-owned connection
+                # autobegins it, which turns the transaction below into a savepoint
+                # nothing ever commits
+                fmd = await file_meta_data_repo.get(file_id=file_id)
             except FileMetaDataNotFoundError:
                 # e.g. a file stored inside a registered folder: it has no entry of its own
                 fmd = None
@@ -741,7 +744,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 # and to invalidate the size of the parent directory
 
             async with transaction_context(get_db_engine(self.app), connection) as conn:
-                file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
                 # remove child entries only when their objects were deleted above:
                 # an unregistered folder cleanup or a registered directory delete
                 remove_children = fmd is None or (fmd.is_directory and not fmd.is_soft_link)
