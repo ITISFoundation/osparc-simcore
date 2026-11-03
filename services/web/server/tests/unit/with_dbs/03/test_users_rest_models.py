@@ -29,7 +29,11 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def account_request_form(faker: Faker, user_phone_number: PhoneNumberStr) -> dict[str, Any]:
+def account_request_form(
+    faker: Faker,
+    user_phone_number: PhoneNumberStr,
+    country_name: str,
+) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
         "firstName": faker.first_name(),
@@ -41,7 +45,7 @@ def account_request_form(faker: Faker, user_phone_number: PhoneNumberStr) -> dic
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "postalCode": faker.postcode(),
-        "country": faker.country(),
+        "country": country_name,
         # extras
         "application": faker.word(),
         "description": faker.sentence(),
