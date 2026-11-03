@@ -45,7 +45,7 @@ queue_rules:
     queue_conditions:
       - base=master
       - author=osparc-simcore-renovate[bot]
-      - label=🤖-automerge
+      - label=🤖-renovate-fast-lane
       - label!=🤖-do-not-merge
       - -draft
       - -conflict
@@ -56,7 +56,7 @@ queue_rules:
     merge_conditions: # (identical to queue_conditions)
       - base=master
       - author=osparc-simcore-renovate[bot]
-      - label=🤖-automerge
+      - label=🤖-renovate-fast-lane
       - label!=🤖-do-not-merge
       - -draft
       - -conflict
@@ -74,7 +74,7 @@ pull_request_rules:
     conditions:
       - base=master
       - author=osparc-simcore-renovate[bot]
-      - label=🤖-automerge
+      - label=🤖-renovate-fast-lane
       - label!=🤖-do-not-merge
       - -draft
     actions:
@@ -87,13 +87,13 @@ pull_request_rules:
   # those instead of for a human. A PR leaves the queue automatically when it
   # goes back to draft, gets 🤖-do-not-merge, or loses an approval.
   # To hold a PR back from the queue, add 🤖-do-not-merge.
-  # 🤖-automerge PRs go to the renovate-fast queue by the rule above and must not
-  # join this one too; the label does nothing on a human PR.
+  # 🤖-renovate-fast-lane PRs go to the renovate-fast queue by the rule above and
+  # must not join this one too.
   - name: queue every pull request that is not a draft anymore
     conditions:
       - base=master
       - label!=🤖-do-not-merge
-      - label!=🤖-automerge
+      - label!=🤖-renovate-fast-lane
       - -draft
     actions:
       queue:
