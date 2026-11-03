@@ -40,7 +40,7 @@ Renovate pull request is opened. Neither runs Renovate.
 - **Security fixes skip the throttling.** `osvVulnerabilityAlerts` and the
   Dependabot alerts open the pull request on the next run. It needs no
   Dependency Dashboard approval and waits for no cool-down. It gets the
-  `security` label and `🤖-automerge`, so a security fix whose checks pass
+  `security` label and `🤖-renovate-fast-lane`, so a security fix whose checks pass
   merges through the fast lane (see below) whatever the version jump.
   `vulnerabilityFixStrategy: "highest"` makes it propose the
   newest release, not the lowest one that fixes the vulnerability. A branch then
@@ -71,10 +71,10 @@ only after the checks have finished:
 2. The `review-gate` job polls the drafts every 15 minutes. Once all
    checks of the head commit are done, it marks the pull request ready — and the
    ready transition makes GitHub request the code owners itself:
-   - **all passed, `🤖-automerge` label** (patch, pin and digest bumps, and every
-     security fix): the `renovate-fast` Mergify queue merges it without waiting
-     for that review — the request goes out, nothing blocks on it. GitHub does
-     not let anyone withdraw a code-owner request, so it stays until the merge;
+   - **all passed, `🤖-renovate-fast-lane` label** (patch, pin and digest bumps,
+     and every security fix): the `renovate-fast` Mergify queue merges it without
+     waiting for that review — the request goes out, nothing blocks on it. GitHub
+     does not let anyone withdraw a code-owner request, so it stays until the merge;
    - **all passed, no label** (minors, majors, everything else): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
@@ -119,10 +119,9 @@ How the fast lane gets past the review requirement:
   checks, push protections) has no Mergify entry, so GitHub itself still
   refuses Mergify a merge with a failing required check. Human pull requests
   lose nothing: the default queue keeps the injected conditions;
-- the `🤖-automerge` label means "fast-lane material" and Renovate applies it.
-  It used to be a hand-typed queue hint and is still on some older human pull
-  requests, where it does nothing: the catch-all Mergify rule excludes the
-  label, so remove it there.
+- Renovate applies the `🤖-renovate-fast-lane` label; the catch-all Mergify rule
+  excludes it, so on a human pull request it keeps the pull request out of both
+  queues. It replaces `🤖-automerge`, which no Mergify rule reads anymore.
 
 When the resync task cannot propagate a pin to every directory that constrains
 it, it leaves `renovate-resync-report.md` in the pull request and Renovate

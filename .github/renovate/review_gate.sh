@@ -4,7 +4,7 @@
 #  does not auto-request the code owners until the checks are done. This poller
 #  marks the drafts ready once their checks have all finished; the ready
 #  transition makes GitHub request the code owners from CODEOWNERS by itself:
-#  - all checks done + passed + 🤖-automerge (patch/pin/digest bumps and security
+#  - all checks done + passed + 🤖-renovate-fast-lane (patch/pin/digest bumps and security
 #    fixes): the request comes out but nothing waits on it, the renovate-fast
 #    Mergify queue merges the PR;
 #  - all checks done + passed without the label (minors/majors): the requested
@@ -67,7 +67,7 @@ for pr in $DRAFTS; do
     echo "PR #$pr: failing past the cool-down, marked ready"
   else
     gh pr ready "$pr" --repo "$REPO"
-    if grep -qx '🤖-automerge' <<<"$labels"; then
+    if grep -qx '🤖-renovate-fast-lane' <<<"$labels"; then
       echo "PR #$pr: checks passed, the renovate-fast queue takes it without waiting for reviews"
     else
       echo "PR #$pr: checks passed, marked ready for review"
