@@ -12,9 +12,8 @@ These keys grant the client authorization to the API resources
 """
 
 import sqlalchemy as sa
-from sqlalchemy.sql import func
 
-from ._common import RefActions
+from ._common import RefActions, column_created_datetime
 from .base import metadata
 from .users import users
 
@@ -65,16 +64,10 @@ api_keys = sa.Table(
         nullable=False,
         doc="API key secret, hashed using blowfish algorithm",
     ),
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,  # WARNING: still not updated to correct utc
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
+    column_created_datetime(),
     sa.Column(
         "expires_at",
-        sa.DateTime(),  # WARNING: still not updated to correct utc
+        sa.DateTime(timezone=True),
         nullable=True,
         doc="Sets the expiration date for this api-key.If set to NULL then the key does not expire.",
     ),
