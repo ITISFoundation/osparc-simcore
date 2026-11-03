@@ -321,7 +321,7 @@ pamqp==4.0.1
     # via aiormq
 passlib==1.7.4
     # via -r requirements/_base.in
-phonenumbers==9.0.9
+phonenumbers==9.0.41
     # via -r requirements/_base.in
 pillow==13.0.0
     # via captcha
