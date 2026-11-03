@@ -85,7 +85,7 @@ cryptography==50.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-debugpy==1.8.20
+debugpy==1.8.22
     # via -r requirements/_test.in
 deepdiff==9.1.0
     # via -r requirements/_test.in
