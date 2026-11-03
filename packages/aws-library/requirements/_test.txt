@@ -61,7 +61,7 @@ charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via flask
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
