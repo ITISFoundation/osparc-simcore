@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from aiohttp import web
 from common_library.async_tools import cancel_wait_task
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.licenses import LicensedResourceType
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context

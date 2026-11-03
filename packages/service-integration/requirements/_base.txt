@@ -63,7 +63,7 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==7.0.0
     # via yarl
-orjson==3.11.9
+orjson==3.13.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in

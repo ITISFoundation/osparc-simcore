@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.api_schemas_directorv2.services import (
     ServiceExtras,
 )

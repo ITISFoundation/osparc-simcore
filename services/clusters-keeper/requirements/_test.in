@@ -20,7 +20,7 @@ docker
 faker
 fakeredis[lua]
 filelock
-httpx
+httpx2
 moto[server]
 parse
 psutil

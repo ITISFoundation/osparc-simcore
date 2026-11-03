@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, cast
 
-import httpx
+import httpx2
 import yarl
 from fastapi import FastAPI, HTTPException, status
 from fastapi_lifespan_manager import LifespanManager
@@ -39,7 +39,7 @@ def configure_director_v0(
         director_v0_settings = DirectorV0Settings()
 
     async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-        client = httpx.AsyncClient(
+        client = httpx2.AsyncClient(
             base_url=f"{director_v0_settings.endpoint}",
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
@@ -64,21 +64,21 @@ def configure_director_v0(
 
 @dataclass
 class DirectorV0Client:
-    client: httpx.AsyncClient
+    client: httpx2.AsyncClient
 
     @classmethod
-    def create(cls, app: FastAPI, **kwargs) -> "DirectorV0Client":
+    def create(cls, app: FastAPI, **kwargs) -> DirectorV0Client:
         app.state.director_v0_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI) -> "DirectorV0Client":
+    def instance(cls, app: FastAPI) -> DirectorV0Client:
         client: DirectorV0Client = app.state.director_v0_client
         return client
 
     @handle_errors("Director", logger)
     @handle_retry(logger)
-    async def _request(self, method: str, tail_path: str, **kwargs) -> httpx.Response:
+    async def _request(self, method: str, tail_path: str, **kwargs) -> httpx2.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
     @log_decorator(logger=logger)

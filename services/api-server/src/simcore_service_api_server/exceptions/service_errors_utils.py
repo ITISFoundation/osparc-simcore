@@ -6,7 +6,7 @@ from functools import wraps
 from inspect import signature
 from typing import Any, Concatenate, NamedTuple, NewType
 
-import httpx
+import httpx2
 from common_library.user_messages import user_message
 from fastapi import HTTPException, status
 from pydantic import ValidationError
@@ -65,7 +65,7 @@ type RabbitMqRpcExceptionMap[RpcExcT: Exception, BackEndErrorT: BaseBackEndError
 
 def _get_http_exception_kwargs(
     service_name: str,
-    service_error: httpx.HTTPStatusError,
+    service_error: httpx2.HTTPStatusError,
     http_status_map: HttpStatusMap,
     **exception_ctx: Any,
 ):
@@ -117,7 +117,7 @@ def service_exception_handler(
         _logger.exception("Invalid data exchanged with %s service. %s", service_name, detail)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail, headers=headers) from exc
 
-    except httpx.HTTPStatusError as exc:
+    except httpx2.HTTPStatusError as exc:
         status_code, detail, headers = _get_http_exception_kwargs(
             service_name, exc, http_status_map=http_status_map, **context
         )

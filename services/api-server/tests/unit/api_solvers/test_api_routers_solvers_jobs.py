@@ -13,7 +13,7 @@ from zipfile import ZipFile
 
 import arrow
 import boto3
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -127,7 +127,7 @@ def mocked_directorv2_rest_api(
 
 def test_download_presigned_link(presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str):
     """Checks that the generation of presigned_download_link works as expected"""
-    r = httpx.get(f"{presigned_download_link}")
+    r = httpx2.get(f"{presigned_download_link}")
     assert r.status_code == status.HTTP_200_OK
 
     expected_fname = f"{project_id}-{node_id}.log"
@@ -147,9 +147,9 @@ def test_download_presigned_link(presigned_download_link: AnyUrl, tmp_path: Path
 
 
 async def test_solver_logs(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_directorv2_rest_api: MockRouter,
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_id: str,
     presigned_download_link: AnyUrl,
     solver_key: str,
@@ -192,8 +192,8 @@ async def test_solver_logs(
     ],
 )
 async def test_solver_job_outputs(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     job_outputs: dict[str, Any] | None,
     project_id: ProjectID,
     job_state: RunningState,
@@ -230,14 +230,14 @@ async def test_solver_job_outputs(
 
 @pytest.mark.acceptance_test("New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940")
 async def test_run_solver_job(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
     catalog_service_openapi_specs: dict[str, Any],
     mocked_catalog_rpc_api: dict[str, MockType],
     mocked_directorv2_rest_api: MockRouter,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
-    auth: httpx.BasicAuth,
+    auth: httpx2.BasicAuth,
     project_id: str,
     solver_key: str,
     solver_version: str,
