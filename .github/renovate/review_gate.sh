@@ -11,10 +11,8 @@
 #    review is what the PR then waits for;
 #  - failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so
 #    Renovate can push its own fix; then the PR is marked ready (which requests
-#    the owners), labeled 🤖-ci-failing and a comment lists the failing checks.
-#    Once all checks of the head commit pass (after a Renovate rebase, a rerun,
-#    ...), the label is removed. Renovate does not remove it: it only manages
-#    the labels of its own configuration.
+#    the owners) and a comment lists the failing checks. A ready PR is not
+#    looked at again.
 #
 #  Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS.
 #  Uses gh for API calls (GH_TOKEN must be set). GH_TOKEN must belong to the
@@ -49,10 +47,6 @@ for pr in $DRAFTS; do
   labels=$(gh pr view "$pr" --repo "$REPO" --json labels --jq '.labels[].name')
   if jq -e 'any(.bucket == "fail")' <<<"$checks" >/dev/null; then
     # Renovate pushes fixes itself; request a review only once it stops trying
-    if grep -qx '🤖-ci-failing' <<<"$labels"; then
-      echo "PR #$pr: failing and already reported"
-      continue
-    fi
     sha=$(gh pr view "$pr" --repo "$REPO" --json headRefOid --jq .headRefOid)
     when=$(gh api "repos/${REPO}/commits/${sha}" --jq .commit.committer.date)
     age_hours=$((( $(date -u +%s) - $(date -u -d "$when" +%s) ) / 3600))
@@ -61,8 +55,7 @@ for pr in $DRAFTS; do
       continue
     fi
     failed=$(jq -r '.[] | select(.bucket == "fail") | "- " + .name' <<<"$checks")
-    body="The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them:"$'\n\n'"${failed}"$'\n\n'"Marking the pull request ready so the code owners get requested. The review gate removes the 🤖-ci-failing label once all checks of the head commit pass."
-    gh pr edit "$pr" --repo "$REPO" --add-label '🤖-ci-failing'
+    body="The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them:"$'\n\n'"${failed}"$'\n\n'"Marking the pull request ready so the code owners get requested."
     gh pr ready "$pr" --repo "$REPO"
     gh pr comment "$pr" --repo "$REPO" --body "$body"
     echo "PR #$pr: failing past the cool-down, marked ready"
@@ -74,19 +67,4 @@ for pr in $DRAFTS; do
       echo "PR #$pr: checks passed, marked ready for review"
     fi
   fi
-done
-
-# a reported PR is no longer a draft, so the loop above does not see it again
-REPORTED="$(gh pr list --repo "$REPO" --state open --base master --limit 200 \
-  --author "$BOT" --label '🤖-ci-failing' --json number,isDraft \
-  --jq '.[] | select(.isDraft | not) | .number')"
-for pr in $REPORTED; do
-  checks=$(gh pr checks "$pr" --repo "$REPO" --json name,bucket 2>/dev/null || true)
-  if [ -z "$checks" ] || [ "$checks" = "[]" ] ||
-    ! jq -e 'all(.bucket == "pass" or .bucket == "skipping")' <<<"$checks" >/dev/null; then
-    echo "PR #$pr: reported as failing, checks not all passed yet"
-    continue
-  fi
-  gh pr edit "$pr" --repo "$REPO" --remove-label '🤖-ci-failing'
-  echo "PR #$pr: checks pass again, removed 🤖-ci-failing"
 done

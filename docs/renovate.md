@@ -81,11 +81,10 @@ only after the checks have finished:
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
      commit is still failing, the pull request is marked ready (which requests
-     the code owners), labeled `🤖-ci-failing`, and a comment lists the failing
-     checks. The gate removes the label once all checks of the head commit
-     pass, for example after Renovate rebased the branch. A
-     `🤖-renovate-fast-lane` pull request then merges through the fast lane
-     without waiting for the requested review.
+     the code owners) and a comment lists the failing checks. If a later commit
+     passes, for example after Renovate rebased the branch, a
+     `🤖-renovate-fast-lane` pull request merges through the fast lane without
+     waiting for the requested review.
 3. The reviewed path merges once Mergify's conditions match: the branch is
    up to date with `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
