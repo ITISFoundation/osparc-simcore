@@ -64,6 +64,55 @@ pull request.
 
 ## From pull request to merge
 
+How each kind of pull request reaches `master`:
+
+```mermaid
+flowchart TD
+    human["Human PR"]
+    fast["Renovate: patch, pin, digest,<br/>security fix<br/>(🤖-renovate-fast-lane)"]
+    other["Renovate: minor, major"]
+    gate{"review gate, every 15 min:<br/>checks of the draft"}
+    ready["ready: GitHub requests<br/>the code owners"]
+    held["ready + 🤖-do-not-merge<br/>+ warning comment"]
+    fastq["renovate-fast queue:<br/>checks only"]
+    defq["default queue: 2 approvals,<br/>one by a code owner, checks"]
+    merge["Mergify merges master in,<br/>CI runs again, squash-merge"]
+
+    human -- "opened or marked ready" --> defq
+    fast -- "draft" --> gate
+    other -- "draft" --> gate
+    gate -- "passed" --> ready
+    gate -- "failing for 3 h" --> held
+    held -- "reviewer fixes it,<br/>removes the label" --> ready
+    ready -- "fast-lane label" --> fastq
+    ready -- "other Renovate PRs" --> defq
+    fastq --> merge
+    defq --> merge
+```
+
+Every commit runs CI Build Test. Chore Rerun Flaky Jobs retries the failed jobs
+of a run once, when it is the first attempt on a pull request from a fork, a
+Renovate pull request (drafts included) or `master`, 1 to 3 jobs failed, and
+none of them is linting or a typecheck. A human pull request from this
+repository is retried by hand:
+
+```mermaid
+flowchart LR
+    commit["new commit"]
+    ci["CI Build Test"]
+    pass["checks pass"]
+    flaky{"eligible for<br/>a retry?"}
+    rerun["Chore Rerun Flaky Jobs:<br/>reruns failed jobs once"]
+    fail["checks fail"]
+
+    commit --> ci
+    ci -- "passed" --> pass
+    ci -- "failed" --> flaky
+    flaky -- "yes" --> rerun
+    rerun --> ci
+    flaky -- "no" --> fail
+```
+
 Renovate never merges. `automerge` stays `false`. Mergify merges its pull
 requests, either reviewed or through a fast lane, and reviewers are requested
 only after the checks have finished:
