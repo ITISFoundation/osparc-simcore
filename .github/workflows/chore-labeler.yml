@@ -1,5 +1,6 @@
 # Automatically apply area / type labels to a PR based on which files
-# it changes. Uses .github/labeler.yml as the rule set.
+# it changes (rule set: .github/labeler.yml), and put every new PR into the
+# current milestone.
 #
 # `pull_request_target` is required so that labels can also be applied to
 # PRs opened from forks (the workflow then runs with the base repo's
@@ -20,13 +21,14 @@ on:
       - synchronize
       - ready_for_review
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   label:
     name: Apply area labels
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Label PR based on changed files
@@ -37,3 +39,27 @@ jobs:
           # (e.g. priority, type) survive subsequent pushes.
           sync-labels: false
           dot: true
+
+  milestone:
+    # .github/labeler/set_current_milestone.sh; a milestone set by hand is kept
+    name: Set current milestone
+    if: github.event.action == 'opened' && github.event.pull_request.milestone == null
+    # a PR is an issue to the API: pull-requests: write covers PATCH /issues/{n}
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # pull_request_target checks out the base branch: the script comes from
+      # master, no code of the PR is checked out or run
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: set the current milestone
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: ./.github/labeler/set_current_milestone.sh
