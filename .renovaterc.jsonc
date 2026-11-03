@@ -35,6 +35,11 @@
   "labels": [
     "t:maintenance"
   ],
+  // the machine user Mergify merges the fast lane as (merge_bot_account in
+  // .github/mergify.yml); set when Renovate opens a pull request
+  "assignees": [
+    "osparc-shared"
+  ],
   // GitHub's Dependabot alerts cover transitive dependencies but briefly vanish while
   // GitHub rescans after a push; OSV covers direct dependencies only, independently
   // of GitHub, and also blocks updates to known-malicious versions
