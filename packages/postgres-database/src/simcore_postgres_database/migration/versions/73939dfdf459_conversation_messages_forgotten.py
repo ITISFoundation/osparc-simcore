@@ -1,4 +1,4 @@
-"""test
+"""conversation messages forgotten index migration
 
 Revision ID: 73939dfdf459
 Revises: b7e4f9c21a35
