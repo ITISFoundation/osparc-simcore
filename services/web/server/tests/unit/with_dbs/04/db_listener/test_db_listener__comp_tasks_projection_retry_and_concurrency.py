@@ -40,6 +40,12 @@ from simcore_service_webserver.db_listener.models import ClaimableAggregate
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import func
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _COUNT_LISTENER_CONNECTIONS_SQL = (
     "select count(*) from pg_stat_activity where application_name like :pattern and pid != pg_backend_pid()"
 )

@@ -17,6 +17,12 @@ from simcore_service_webserver.login.constants import (
 )
 from simcore_service_webserver.login.settings import LoginOptions
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def new_password(user_password: str) -> str:

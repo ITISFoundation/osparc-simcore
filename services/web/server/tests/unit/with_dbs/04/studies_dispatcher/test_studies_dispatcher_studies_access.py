@@ -49,6 +49,8 @@ from simcore_service_webserver.users.users_service import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

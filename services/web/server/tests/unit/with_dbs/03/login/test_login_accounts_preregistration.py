@@ -23,6 +23,12 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.constants import MSG_USER_DELETED
 from simcore_service_webserver.login_accounts import _controller_rest, _service
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize("user_role", [role for role in UserRole if role < UserRole.USER])
 async def test_unregister_account_access_rights(client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture):

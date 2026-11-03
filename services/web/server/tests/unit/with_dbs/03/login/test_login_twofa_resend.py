@@ -16,6 +16,12 @@ from simcore_service_webserver.login._controller.rest.auth_schemas import (
 )
 from simcore_service_webserver.login.constants import CODE_2FA_SMS_CODE_REQUIRED
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def postgres_db(postgres_db_with_2fa_enabled_for_osparc: sa.engine.Engine) -> sa.engine.Engine:
