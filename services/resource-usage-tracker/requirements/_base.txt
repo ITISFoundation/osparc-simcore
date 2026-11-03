@@ -329,7 +329,7 @@ packaging==26.3
     #   opentelemetry-instrumentation-sqlalchemy
 pamqp==4.0.1
     # via aiormq
-pandas==2.3.3
+pandas==3.0.6
     # via prometheus-api-client
 pillow==13.0.0
     # via matplotlib
@@ -400,9 +400,7 @@ python-dotenv==1.2.3
 python-multipart==0.0.32
     # via fastapi
 pytz==2024.1
-    # via
-    #   dateparser
-    #   pandas
+    # via dateparser
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -517,8 +515,6 @@ typing-inspection==0.4.2
     #   fastapi
     #   pydantic
     #   pydantic-settings
-tzdata==2024.1
-    # via pandas
 tzlocal==5.2
     # via dateparser
 urllib3==2.8.0
