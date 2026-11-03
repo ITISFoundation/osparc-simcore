@@ -1,3 +1,14 @@
+shared:
+  # A pull request Renovate wrote alone: its author, and every commit by Renovate
+  # or Mergify (the "Merge branch 'master'" commits of the queue), verified by
+  # GitHub. A commit pushed by anyone else, or one claiming the bot's identity
+  # without its signature, takes the pull request off the fast lane and into the
+  # default queue, which waits for reviews.
+  renovate_only: &renovate_only
+    - author=osparc-simcore-renovate[bot]
+    - "-commits[*].email_author~=^(?!(346457310\\+osparc-simcore-renovate\\[bot\\]|37929162\\+mergify\\[bot\\])@users\\.noreply\\.github\\.com$)"
+    - "#commits-unverified=0"
+
 merge_queue:
   max_parallel_checks: 1
 
@@ -44,7 +55,7 @@ queue_rules:
     # ci-build-test.yml; renaming it stalls this queue.
     queue_conditions:
       - base=master
-      - author=osparc-simcore-renovate[bot]
+      - and: *renovate_only
       - label=🤖-renovate-fast-lane
       - label!=🤖-do-not-merge
       - -draft
@@ -55,7 +66,7 @@ queue_rules:
 
     merge_conditions: # (identical to queue_conditions)
       - base=master
-      - author=osparc-simcore-renovate[bot]
+      - and: *renovate_only
       - label=🤖-renovate-fast-lane
       - label!=🤖-do-not-merge
       - -draft
@@ -73,7 +84,7 @@ pull_request_rules:
   - name: queue low-risk Renovate PRs without waiting for reviews
     conditions:
       - base=master
-      - author=osparc-simcore-renovate[bot]
+      - and: *renovate_only
       - label=🤖-renovate-fast-lane
       - label!=🤖-do-not-merge
       - -draft
@@ -87,13 +98,16 @@ pull_request_rules:
   # those instead of for a human. A PR leaves the queue automatically when it
   # goes back to draft, gets 🤖-do-not-merge, or loses an approval.
   # To hold a PR back from the queue, add 🤖-do-not-merge.
-  # 🤖-renovate-fast-lane PRs go to the renovate-fast queue by the rule above and
-  # must not join this one too.
+  # Pull requests the rule above sends to renovate-fast must not join this one
+  # too; a 🤖-renovate-fast-lane pull request that is not renovate_only does.
   - name: queue every pull request that is not a draft anymore
     conditions:
       - base=master
       - label!=🤖-do-not-merge
-      - label!=🤖-renovate-fast-lane
       - -draft
+      - or:
+          - label!=🤖-renovate-fast-lane
+          - not:
+              and: *renovate_only
     actions:
       queue:

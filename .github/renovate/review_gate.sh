@@ -10,10 +10,10 @@
 #  - all checks done + passed without the label (minors/majors): the requested
 #    review is what the PR then waits for;
 #  - failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so
-#    Renovate can push its own fix; then the PR gets 🤖-do-not-merge, is marked
-#    ready (which requests the owners), and a comment lists the failing checks.
-#    The label holds the PR in both Mergify queues, so a fast-lane PR that
-#    passes later still waits for a reviewer to remove it.
+#    Renovate can push its own fix; then the PR gets 🤖-do-not-merge, loses
+#    🤖-renovate-fast-lane, is marked ready (which requests the owners), and a
+#    comment lists the failing checks. It then goes through the reviewed queue,
+#    also once a fix makes its checks pass.
 #  A draft that already has requested reviewers or reviews is left alone: the
 #  gate reported it before or a person handles it (e.g. turned it back into a
 #  draft on purpose).
@@ -66,8 +66,11 @@ for pr in $DRAFTS; do
       continue
     fi
     failed=$(jq -r '.[] | select(.bucket == "fail") | "- " + .name' <<<"$checks")
-    body="> [!WARNING]"$'\n'"> The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them. This pull request is held with 🤖-do-not-merge, also if a later commit passes."$'\n\n'"Failing checks:"$'\n\n'"${failed}"$'\n\n'"Reviewers: fix or close it, or remove 🤖-do-not-merge once the checks pass and the update is fine to merge."
+    body="> [!WARNING]"$'\n'"> The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them. This pull request is held with 🤖-do-not-merge and needs reviews, also if a later commit passes."$'\n\n'"Failing checks:"$'\n\n'"${failed}"$'\n\n'"Reviewers: fix or close it, or remove 🤖-do-not-merge once the checks pass and the update is fine to merge."
     gh pr edit "$pr" --repo "$REPO" --add-label '🤖-do-not-merge'
+    if grep -qx '🤖-renovate-fast-lane' <<<"$labels"; then
+      gh pr edit "$pr" --repo "$REPO" --remove-label '🤖-renovate-fast-lane'
+    fi
     gh pr ready "$pr" --repo "$REPO"
     gh pr comment "$pr" --repo "$REPO" --body "$body"
     echo "PR #$pr: failing past the cool-down, held and marked ready"

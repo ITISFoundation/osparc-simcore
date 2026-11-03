@@ -73,7 +73,7 @@ flowchart TD
     other["Renovate: minor, major"]
     gate{"review gate, every 15 min:<br/>checks of the draft"}
     ready["ready: GitHub requests<br/>the code owners"]
-    held["ready + 🤖-do-not-merge<br/>+ warning comment"]
+    held["ready, 🤖-do-not-merge,<br/>fast-lane label removed"]
     fastq["renovate-fast queue:<br/>checks only"]
     defq["default queue: 2 approvals,<br/>one by a code owner, checks"]
     merge["Mergify merges master in,<br/>CI runs again, squash-merge"]
@@ -83,7 +83,7 @@ flowchart TD
     other -- "draft" --> gate
     gate -- "passed" --> ready
     gate -- "failing for 3 h" --> held
-    held -- "reviewer fixes it,<br/>removes the label" --> ready
+    held -- "fixed, reviewed,<br/>label removed" --> defq
     ready -- "fast-lane label" --> fastq
     ready -- "other Renovate PRs" --> defq
     fastq --> merge
@@ -129,10 +129,10 @@ only after the checks have finished:
    - **all passed, no label** (minors, majors, everything else): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit is still failing, the pull request gets `🤖-do-not-merge`, is
-     marked ready (which requests the code owners), and a warning comment lists
-     the failing checks. The label holds it in both queues even if a later
-     commit passes, until a reviewer removes it.
+     commit is still failing, the pull request gets `🤖-do-not-merge`, loses
+     `🤖-renovate-fast-lane`, is marked ready (which requests the code owners),
+     and a warning comment lists the failing checks. From then on it goes
+     through the reviewed path, also once a fix makes its checks pass.
 
    The gate leaves a draft alone once it has requested reviewers or reviews, so
    a pull request turned back into a draft stays a draft.
@@ -174,9 +174,19 @@ How the fast lane gets past the review requirement:
   checks, push protections) has no Mergify entry, so GitHub itself still
   refuses Mergify a merge with a failing required check. Human pull requests
   lose nothing: the default queue keeps the injected conditions;
-- Renovate applies the `🤖-renovate-fast-lane` label; the catch-all Mergify rule
-  excludes it, so on a human pull request it keeps the pull request out of both
-  queues. It replaces `🤖-automerge`, which no Mergify rule reads anymore.
+- the fast lane only takes a pull request Renovate wrote alone: Renovate opened
+  it, and every commit is authored by Renovate or Mergify and verified by
+  GitHub (`renovate_only` in `mergify.yml`). A commit pushed by anyone else
+  sends the pull request to the default queue, which waits for reviews; so
+  does the label on a human pull request;
+- Renovate applies the `🤖-renovate-fast-lane` label. It replaces
+  `🤖-automerge`, which no Mergify rule reads anymore.
+
+To fix a failing Renovate pull request, do not push to its branch. Fix the
+cause on `master` in a pull request of your own (code that breaks with the new
+version, a constraint, the Renovate configuration) and let Renovate regenerate
+its branch on top of it, or close it and open your own pull request with the
+update and the fix.
 
 When the resync task cannot propagate a pin to every directory that constrains
 it, it leaves `renovate-resync-report.md` in the pull request and Renovate
