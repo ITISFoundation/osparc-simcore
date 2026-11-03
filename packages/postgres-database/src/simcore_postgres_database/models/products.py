@@ -14,9 +14,8 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
 
-from ._common import RefActions
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 from .groups import groups
 from .users import users
@@ -235,21 +234,8 @@ products = sa.Table(
         doc="Front-end owned UI configuration",
     ),
     # lifecycle
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-        doc="Automatically updates on modification of the row",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.Column(
         "priority",
         sa.Integer(),
