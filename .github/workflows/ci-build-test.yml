@@ -2157,6 +2157,7 @@ jobs:
 
   system-tests:
     # NOTE: this is a github required status check!
+    # NOTE: the renovate-fast queue in .github/mergify.yml requires it by name
     if: ${{ always() }}
     needs:
       [
