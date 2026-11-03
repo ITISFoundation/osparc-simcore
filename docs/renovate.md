@@ -80,11 +80,13 @@ only after the checks have finished:
    - **all passed, no label** (minors, majors, everything else): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit is still failing, the pull request is marked ready (which requests
-     the code owners) and a comment lists the failing checks. If a later commit
-     passes, for example after Renovate rebased the branch, a
-     `🤖-renovate-fast-lane` pull request merges through the fast lane without
-     waiting for the requested review.
+     commit is still failing, the pull request gets `🤖-do-not-merge`, is
+     marked ready (which requests the code owners), and a warning comment lists
+     the failing checks. The label holds it in both queues even if a later
+     commit passes, until a reviewer removes it.
+
+   The gate leaves a draft alone once it has requested reviewers or reviews, so
+   a pull request turned back into a draft stays a draft.
 3. The reviewed path merges once Mergify's conditions match: the branch is
    up to date with `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
@@ -97,7 +99,8 @@ only after the checks have finished:
    reviewers.
 
 Add the `🤖-do-not-merge` label to hold a pull request back, from either lane.
-Remove it to let the pull request go. On the reviewed path, anyone else may
+Remove it to let the pull request go; a fast-lane pull request then merges
+without waiting for a review. On the reviewed path, anyone else may
 still approve, and their review counts toward the two approvals, but it does not
 clear the code-owner gate.
 
