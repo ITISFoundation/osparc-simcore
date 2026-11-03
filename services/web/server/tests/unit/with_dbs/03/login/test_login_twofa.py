@@ -42,6 +42,12 @@ from simcore_service_webserver.user_preferences.models import (
 )
 from twilio.base.exceptions import TwilioRestException
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def postgres_db(postgres_db_with_2fa_enabled_for_osparc: sa.engine.Engine) -> sa.engine.Engine:

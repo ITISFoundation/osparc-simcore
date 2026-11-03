@@ -28,6 +28,12 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.constants import MSG_LOGGED_OUT, MSG_REGISTRATION_SUCCESS
 from simcore_service_webserver.models import PhoneNumberStr
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "user_role,expected_status",

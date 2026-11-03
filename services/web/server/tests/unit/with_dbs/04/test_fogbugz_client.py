@@ -22,6 +22,12 @@ from simcore_service_webserver.fogbugz._client import (
 )
 from simcore_service_webserver.fogbugz.settings import FogbugzSettings
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def fake_api_base_url() -> str:

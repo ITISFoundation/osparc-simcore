@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - "services/static-webserver/client/source/class/**/*.js"
-      - "services/static-webserver/client/.eslintrc.json"
+      - "eslint.config.js"
       - "package.json"
   workflow_dispatch:
 

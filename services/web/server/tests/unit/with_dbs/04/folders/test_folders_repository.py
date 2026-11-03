@@ -12,6 +12,12 @@ from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from simcore_service_webserver.folders import _folders_repository
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role():

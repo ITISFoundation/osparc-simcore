@@ -13,7 +13,10 @@ never moves a pin in a parent layer (_base -> _test -> _tools, see
 scripts/makefiles/requirements.mk), so an update can leave the lockfiles
 inconsistent or even unresolvable. This re-runs `make reqs upgrade="<pkg==ver ...>"`
 in every requirements directory the update touches or that pins one of the updated
-packages at another version. Renovate's versions are passed as exact pins on purpose:
+packages at another version. Directories are regenerated constraint-sources-first:
+a lockfile consumed by another directory through --constraint/--requirement must
+hold the new pin before its consumers resolve against it, or those resolutions are
+unsatisfiable. Renovate's versions are passed as exact pins on purpose:
 a bare `make reqs` upgrades everything and a bare package name lets uv pick the
 latest release. Only packages that block the update are passed by name (see
 resync_dir below). A directory that cannot be regenerated is restored and listed in
@@ -47,6 +50,11 @@ PIN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+
 # a line starting with such a pin, as lockfiles and uv error messages write them
 PIN_AT_LINE_START: Final[re.Pattern[str]] = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?)==([^ ;]+)")
 MAKE_LOG: Final[re.Pattern[str]] = re.compile(r"^make(\[\d+\])?: ")
+
+# a line of a pip-compile input consuming another file, e.g. `--constraint
+# ../../dask-sidecar/requirements/_dask-distributed.txt`; the path is relative to the
+# input file, so such a reference names a directory that must resolve before this one
+REFERENCE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:--constraint|--requirement|-c|-r)[\s=]+(?P<path>\S+)")
 
 # rounds of letting uv's blamed packages move before giving up on a directory
 MAX_UNBLOCK_ROUNDS: Final[int] = 5
@@ -98,7 +106,8 @@ def directories_to_resync(pins: list[str]) -> list[str]:
     """Directories Renovate modified, plus every directory pinning one of the updated
     packages at another version, so the version Renovate replaces cannot survive
     elsewhere in the monorepo. Names are compared PEP 503-normalized and without extras
-    (`uvicorn[standard]==1.2` matches `uvicorn==1.2`)."""
+    (`uvicorn[standard]==1.2` matches `uvicorn==1.2`). Ordered so that every directory
+    comes after the directories whose lockfiles it consumes."""
     targets: dict[str, str] = {}
     for pin in pins:
         name, _, version = pin.partition("==")
@@ -119,7 +128,50 @@ def directories_to_resync(pins: list[str]) -> list[str]:
                 if targets.get(normalized(name), version) != version:
                     lagging.add(str(Path(lock).parent))
                     break
-    return sorted(changed | lagging)
+    return sort_by_constraints(changed | lagging)
+
+
+def constraint_graph(directories: set[str]) -> dict[str, set[str]]:
+    """Per directory, the other directories whose managed lockfiles one of its `*.in`
+    files consumes through a `--constraint`/`--requirement`. uv treats the pins in a
+    consumed lockfile as hard constraints, so those directories must be regenerated
+    first. Same-directory references are left out (the directory Makefiles chain their
+    own layers), and references to files no `make reqs` regenerates (e.g. the global
+    `constraints.txt`) produce no edge because no order can move their pins."""
+    by_absolute = {str(Path(directory).resolve()): directory for directory in directories}
+    consumed_from: dict[str, set[str]] = {directory: set[str]() for directory in directories}
+    for directory in directories:
+        for template in Path(directory).glob("*.in"):
+            for line in template.read_text().splitlines():
+                if not (match := REFERENCE.match(line)):
+                    continue
+                consumed = (template.parent / match["path"]).resolve()
+                if not MANAGED.match(consumed.as_posix()):
+                    continue
+                source = by_absolute.get(str(consumed.parent))
+                if source and source != directory:
+                    consumed_from[directory].add(source)
+    return consumed_from
+
+
+def sort_by_constraints(directories: set[str]) -> list[str]:
+    """Orders the directories so each is regenerated after every directory whose
+    lockfiles it consumes (Kahn's algorithm), alphabetically among the ready ones so
+    runs stay deterministic. A cycle would make `make` itself deadlock on its
+    prerequisites; rather than loop, the remainder keeps alphabetical order."""
+    pending = {directory: set(sources) for directory, sources in constraint_graph(directories).items()}
+    order: list[str] = []
+    while pending:
+        ready = sorted(directory for directory, sources in pending.items() if not sources)
+        if not ready:
+            order.extend(sorted(pending))
+            break
+        for directory in ready:
+            del pending[directory]
+            order.append(directory)
+        for sources in pending.values():
+            sources.difference_update(ready)
+    return order
 
 
 class DirectorySnapshot:

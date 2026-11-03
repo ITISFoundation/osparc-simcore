@@ -45,7 +45,6 @@ attrs==25.4.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
-    #   pytest-docker
     #   referencing
 certifi==2026.10.19
     # via
@@ -65,7 +64,7 @@ click==8.2.1
     #   -r requirements/_test.in
     #   rich-toolkit
     #   uvicorn
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -96,7 +95,7 @@ fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.15.0
     # via fastapi-cli
-fastapi-pagination==0.15.16
+fastapi-pagination==0.16.1
     # via -r requirements/_test.in
 fastar==0.11.0
     # via
@@ -256,7 +255,6 @@ pytest==9.1.1
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
-    #   pytest-docker
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
@@ -267,8 +265,6 @@ pytest-asyncio==1.4.0
 pytest-benchmark==5.3.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
-    # via -r requirements/_test.in
-pytest-docker==3.2.5
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in

@@ -21,6 +21,12 @@ from simcore_service_webserver.users import _users_service
 from simcore_service_webserver.wallets import _api as _wallets_service
 from simcore_service_webserver.wallets import _db as _wallets_repository
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 CreateTokenCallable: TypeAlias = Callable[[int, ActionLiteralStr, str | None], Coroutine[Any, Any, Confirmation]]
 
 

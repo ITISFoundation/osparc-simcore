@@ -512,16 +512,18 @@ class RabbitMQClient(RabbitMQClientBase):
         self,
         queue_name: QueueName,
     ) -> None:
-        """This will delete the queue if there are no consumers left"""
+        """This will delete the queue if there are no consumers left.
+
+        It is a no-op if the queue is already gone.
+        """
         assert self._connection_pool  # nosec
         if self._connection_pool.is_closed:
             _logger.warning("Connection to RabbitMQ is already closed, skipping unsubscribe from queue...")
             return
         assert self._channel_pool  # nosec
         async with self._channel_pool.acquire() as channel:
-            queue = await channel.get_queue(queue_name)
             # NOTE: we force delete here
-            await queue.delete(if_unused=False, if_empty=False)
+            await channel.queue_delete(queue_name, if_unused=False, if_empty=False)
         backlog_monitor_task = self._backlog_monitor_tasks.pop(queue_name, None)
         if backlog_monitor_task is not None:
             await cancel_wait_task(backlog_monitor_task, max_delay=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S)

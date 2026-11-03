@@ -21,6 +21,12 @@ from simcore_service_webserver.users import _accounts_repository
 from simcore_service_webserver.users._models_pre_registration_extras import PreRegistrationExtraKey
 from simcore_service_webserver.users.errors import AlreadyPreRegisteredError
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_create_user_pre_registration(
     app: web.Application,
@@ -29,7 +35,7 @@ async def test_create_user_pre_registration(
     pre_registration_details_db_cleanup: list[int],
 ):
     # Arrange
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     test_email = "test.user@example.com"
     created_by_user_id = product_owner_user["id"]
@@ -42,7 +48,7 @@ async def test_create_user_pre_registration(
 
     # Act
     pre_registration_id = await _accounts_repository.create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=test_email,
         created_by=created_by_user_id,
         product_name=product_name,
@@ -53,7 +59,7 @@ async def test_create_user_pre_registration(
     pre_registration_details_db_cleanup.append(pre_registration_id)
 
     # Assert
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(users_pre_registration_details).where(
                 (users_pre_registration_details.c.pre_email == test_email)
@@ -76,7 +82,7 @@ async def test_review_user_pre_registration(
     pre_registration_details_db_cleanup: list[int],
 ):
     # Arrange
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     test_email = "review.test@example.com"
     created_by_user_id = product_owner_user["id"]
@@ -89,7 +95,7 @@ async def test_review_user_pre_registration(
     }
 
     pre_registration_id = await _accounts_repository.create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=test_email,
         created_by=created_by_user_id,
         product_name=product_name,
@@ -100,7 +106,7 @@ async def test_review_user_pre_registration(
     # Act
     new_status = AccountRequestStatus.APPROVED
     await _accounts_repository.review_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=new_status,
@@ -108,7 +114,7 @@ async def test_review_user_pre_registration(
 
     # Assert
     registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_pre_email=test_email,
         filter_by_product_name=product_name,
     )
@@ -137,7 +143,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     product_owner_user: dict[str, Any],
     pre_registration_details_db_cleanup: list[int],
 ):
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     test_email = "review.with.invitation@example.com"
     created_by_user_id = product_owner_user["id"]
@@ -150,7 +156,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     }
 
     pre_registration_id = await _accounts_repository.create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=test_email,
         created_by=created_by_user_id,
         product_name=product_name,
@@ -171,7 +177,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
 
     new_status = AccountRequestStatus.APPROVED
     await _accounts_repository.review_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=new_status,
@@ -179,7 +185,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     )
 
     registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_pre_email=test_email,
         filter_by_product_name=product_name,
     )
@@ -219,12 +225,12 @@ async def test_create_pre_registration_with_existing_user_linking(
     pre_registration_details_db_cleanup: list[int],
 ):
     """Test that creating a pre-registration for an existing user correctly handles auto-linking."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     existing_user_id = product_owner_user["id"]
     existing_user_email = product_owner_user["email"]
 
     pre_registration_id = await _accounts_repository.create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=existing_user_email,
         created_by=existing_user_id,
         product_name=product_name,
@@ -236,7 +242,7 @@ async def test_create_pre_registration_with_existing_user_linking(
     pre_registration_details_db_cleanup.append(pre_registration_id)
 
     registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_pre_email=existing_user_email,
         filter_by_product_name=product_name,
     )
@@ -267,11 +273,11 @@ async def test_create_pre_registration_auto_approves_if_existing_user_in_request
     pre_registration_details_db_cleanup: list[int],
 ):
     """Test that linked existing users are auto-approved only when already in the requested product group."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     existing_user_id = product_owner_user["id"]
     existing_user_email = product_owner_user["email"]
 
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         product_group_id = await conn.scalar(sa.select(products.c.group_id).where(products.c.name == product_name))
         if product_group_id is None:
             product_group_id = await conn.scalar(
@@ -297,7 +303,7 @@ async def test_create_pre_registration_auto_approves_if_existing_user_in_request
             await conn.execute(sa.insert(user_to_groups).values(uid=existing_user_id, gid=product_group_id))
 
     pre_registration_id = await _accounts_repository.create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=existing_user_email,
         created_by=existing_user_id,
         product_name=product_name,
@@ -308,7 +314,7 @@ async def test_create_pre_registration_auto_approves_if_existing_user_in_request
     pre_registration_details_db_cleanup.append(pre_registration_id)
 
     registrations, count = await _accounts_repository.list_user_pre_registrations(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_pre_email=existing_user_email,
         filter_by_product_name=product_name,
     )

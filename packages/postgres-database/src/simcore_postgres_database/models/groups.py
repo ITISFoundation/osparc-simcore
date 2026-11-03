@@ -9,7 +9,7 @@ from common_library.groups_enums import GroupType
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
-from ._common import RefActions
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 __all__: tuple[str, ...] = ("GroupType",)
@@ -47,21 +47,8 @@ groups = sa.Table(
         doc="Maps user's column and regular expression."
         "Used to automatically assign a user to this group based on it's attributes",
     ),
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),  # this will auto-update on modification
-        doc="Timestamp with last update",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.CheckConstraint("check_group_uniqueness(name, text(type)) = 0"),
 )
 

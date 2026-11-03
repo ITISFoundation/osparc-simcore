@@ -58,11 +58,11 @@ charset-normalizer==3.4.6
     # via requests
 click==8.3.1
     # via flask
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -92,7 +92,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-graphql-core==3.3.0
+graphql-core==3.3.1
     # via moto
 h11==0.16.0
     # via

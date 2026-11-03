@@ -30,7 +30,11 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
-pytest_simcore_core_services_selection = ["rabbit"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.mark.parametrize(
