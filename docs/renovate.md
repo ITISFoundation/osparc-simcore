@@ -7,7 +7,7 @@ as a vulnerability source only.
 
 | What | Where |
 | --- | --- |
-| Runner, review gate and milestone assignment (one job each) | [.github/workflows/chore-renovate.yml](../.github/workflows/chore-renovate.yml) |
+| Runner and review gate (one job each) | [.github/workflows/chore-renovate.yml](../.github/workflows/chore-renovate.yml) |
 | Repository configuration | [.renovaterc.jsonc](../.renovaterc.jsonc) |
 | Admin configuration (`allowedCommands`, `platformCommit`) | [.github/renovate/global-config.json5](../.github/renovate/global-config.json5) |
 | Lockfile re-resolution post-upgrade task | [.github/renovate/resync_lockfiles.py](../.github/renovate/resync_lockfiles.py) |
@@ -32,8 +32,10 @@ The `renovate` job runs:
   Renovate pull request;
 - on demand (*Run workflow*, job `renovate`).
 
-The `review-gate` job runs every 15 minutes and the `milestone` job when a
-Renovate pull request is opened. Neither runs Renovate.
+The `review-gate` job runs every 15 minutes and does not run Renovate. New
+Renovate pull requests get the current milestone from
+[chore-labeler.yml](../.github/workflows/chore-labeler.yml), like every other
+pull request.
 
 ## Update policies
 
