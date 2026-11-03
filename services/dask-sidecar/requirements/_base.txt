@@ -73,8 +73,14 @@ botocore==1.40.61
     #   s3transfer
 botocore-stubs==1.43.14
     # via types-aiobotocore
+certifi==2026.10.23
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 cffi==2.0.0
     # via cryptography
+charset-normalizer==3.5.2
+    # via requests
 click==8.5.0
     # via
     #   dask
@@ -141,6 +147,7 @@ idna==3.19
     #   anyio
     #   email-validator
     #   httpx2
+    #   requests
     #   yarl
 jinja2==3.1.6
     # via
@@ -201,21 +208,21 @@ opentelemetry-api==1.45.1
     #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-http-transport==0.66b0
+opentelemetry-exporter-http-transport==0.66b1
     # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp==1.45.0
+opentelemetry-exporter-otlp==1.45.1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-common==0.66b0
+opentelemetry-exporter-otlp-common==0.66b1
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-common==1.45.0
+opentelemetry-exporter-otlp-proto-common==1.45.1
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.45.0
+opentelemetry-exporter-otlp-proto-grpc==1.45.1
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.45.0
+opentelemetry-exporter-otlp-proto-http==1.45.1
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.66b1
     # via
@@ -248,7 +255,7 @@ opentelemetry-instrumentation-threading==0.66b1
     # via -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-propagator-aws-xray==1.0.2
     # via opentelemetry-instrumentation-botocore
-opentelemetry-proto==1.45.0
+opentelemetry-proto==1.45.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -365,6 +372,10 @@ referencing==0.35.1
     #   jsonschema-specifications
 repro-zipfile==0.4.1
     # via -r requirements/_base.in
+requests==2.34.2
+    # via
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
 rich==14.2.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -453,7 +464,7 @@ urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
-    #   opentelemetry-exporter-http-transport
+    #   requests
 wrapt==1.17.3
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in

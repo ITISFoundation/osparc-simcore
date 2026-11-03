@@ -45,8 +45,10 @@ certifi==2026.10.19
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-charset-normalizer==3.4.1
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.16.2
     # via pytest-cov
 docker==7.1.0
@@ -147,6 +149,7 @@ redis==7.4.0
     #   fakeredis
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 s3transfer==0.14.0
