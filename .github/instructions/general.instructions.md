@@ -79,6 +79,9 @@ that file type or service over a general rule.
   reviewers can see the incremental fix and identify responses to their reviews.
 - Create pull requests as drafts unless explicitly told otherwise. If intent
   is unclear, ask.
+- Never push to `renovate/*` branches. Fix a failing Renovate pull request as
+  described in
+  [docs/renovate.md](../../docs/renovate.md#fixing-a-failing-renovate-pull-request).
 
 ## Pull request descriptions
 

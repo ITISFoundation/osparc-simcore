@@ -240,7 +240,8 @@ images — are handled by the self-hosted Renovate
 [`.github/workflows/chore-renovate.yml`](../.github/workflows/chore-renovate.yml)),
 which compiles the `*.txt` lockfiles from their `*.in` sources through the
 `pip-compile` manager instead of editing generated files in place. Dependabot
-is not used.
+is not used. How its pull requests merge, and how to fix a failing one, is in
+[docs/renovate.md](../docs/renovate.md).
 
 ### `requirements/constraints.txt` — the security override layer
 
