@@ -45,7 +45,7 @@ coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-debugpy==1.8.20
+debugpy==1.8.22
     # via pytest-celery
 docker==7.1.0
     # via

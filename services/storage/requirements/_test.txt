@@ -108,7 +108,7 @@ cryptography==50.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-debugpy==1.8.20
+debugpy==1.8.22
     # via pytest-celery
 docker==7.1.0
     # via
