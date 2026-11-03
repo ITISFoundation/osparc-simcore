@@ -54,7 +54,7 @@ pytest-asyncio==1.4.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
-pytest-docker==3.2.5
+pytest-docker==3.2.6
     # via -r requirements/_test.in
 pytest-mock==3.15.1
     # via -r requirements/_test.in
