@@ -5,12 +5,13 @@
 # pylint: disable=unused-variable
 
 
+import base64
 from collections.abc import Callable
+from typing import Final
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from cryptography.fernet import Fernet
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
@@ -109,10 +110,15 @@ async def test_security_identity_is_email_and_product(
         assert unencrypted_session.get("AIOHTTP_SECURITY") is None
 
 
+# a key of fixed content: Fernet.generate_key() would give every xdist worker a different
+# test id, and the workers then fail to agree on the collected tests
+_SESSION_KEY: Final[bytes] = base64.urlsafe_b64encode(b"0" * 32)
+
+
 @pytest.mark.parametrize(
     "session_key",
     [
-        Fernet.generate_key(),
+        _SESSION_KEY,
         # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32],
         # FAILS: value has at least 44 characters (any_str.min_length; limit_value=44)
         b"REPLACE_ME-with_a-key_of-length_44-12345678=",

@@ -69,8 +69,11 @@ pytest_simcore_core_services_selection = [
 
 logger = logging.getLogger(__name__)
 
+# scoped to the current database: pg_stat_activity also lists the backends of the
+# databases other pytest-xdist workers use
 _COUNT_LISTENER_CONNECTIONS_SQL = (
-    "select count(*) from pg_stat_activity where application_name like :pattern and pid != pg_backend_pid()"
+    "select count(*) from pg_stat_activity where application_name like :pattern"
+    " and datname = current_database() and pid != pg_backend_pid()"
 )
 
 

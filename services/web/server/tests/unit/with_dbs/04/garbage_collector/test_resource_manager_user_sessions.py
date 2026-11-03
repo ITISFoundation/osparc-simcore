@@ -3,7 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-import asyncio
+import contextlib
 from collections.abc import Callable
 from random import randint
 from uuid import uuid4
@@ -34,7 +34,13 @@ from simcore_service_webserver.resource_manager.settings import get_plugin_setti
 from simcore_service_webserver.resource_manager.user_sessions import (
     managed_resource,
 )
-from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
+from tenacity import (
+    AsyncRetrying,
+    RetryError,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -173,8 +179,12 @@ async def test_redis_registry(
         assert all(x in [user_session, user_session2] for x in found_keys)
         assert not await redis_registry.find_keys(invalid_resource)
 
-    DEAD_KEY_TIMEOUT = 1
-    STILL_ALIVE_KEY_TIMEOUT = DEAD_KEY_TIMEOUT + 1
+    DEAD_KEY_TIMEOUT = 2
+    # the key vanishes at some point after its expiration time, so the test polls for it
+    # instead of sleeping the expiration time: that leaves no margin when the worker
+    # shares the machine with other workers
+    KEY_EXPIRY_POLL_TIMEOUT = 10
+    STILL_ALIVE_KEY_TIMEOUT = DEAD_KEY_TIMEOUT + KEY_EXPIRY_POLL_TIMEOUT + 10
 
     # create a key which will be alive when testing
     await redis_registry.set_key_alive(user_session, expiration_time=STILL_ALIVE_KEY_TIMEOUT)
@@ -186,7 +196,14 @@ async def test_redis_registry(
     assert all(x in alive_keys for x in [user_session, user_session2])
     assert all(x in [user_session, user_session2] for x in alive_keys)
 
-    await asyncio.sleep(DEAD_KEY_TIMEOUT)
+    with contextlib.suppress(RetryError):
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(DEAD_KEY_TIMEOUT + KEY_EXPIRY_POLL_TIMEOUT),
+            wait=wait_fixed(0.1),
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                assert not await redis_registry.is_key_alive(user_session2)
 
     assert await redis_registry.is_key_alive(user_session2) is False
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()

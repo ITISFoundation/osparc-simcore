@@ -345,7 +345,9 @@ async def test_insert_project_to_db(
     "user_role",
     [UserRole.USER],
 )
-@pytest.mark.parametrize("number_of_nodes", [1, randint(200, 300)])  # noqa: S311
+# fixed count: each pytest-xdist worker evaluates parametrization on its own, and a
+# per-worker value makes the collected ids differ, which aborts the whole session
+@pytest.mark.parametrize("number_of_nodes", [1, 250])
 async def test_update_project_nodes_concurrently(
     fake_project: dict[str, Any],
     logged_user: dict[str, Any],

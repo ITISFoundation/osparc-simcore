@@ -42,7 +42,11 @@ pytest_simcore_core_services_selection = [
 ]
 
 _TIMEOUT_S: Final[float] = 30.0
-_SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'"
+# scoped to the current database so that a lock wait in the database of another
+# pytest-xdist worker cannot satisfy it
+_SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = (
+    "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()"
+)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

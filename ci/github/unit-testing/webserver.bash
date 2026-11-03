@@ -30,14 +30,17 @@ test_isolated() {
   popd
 }
 
-# pytest-simcore gives each xdist worker its own database, RabbitMQ vhost and Valkey logical database
+# pytest-simcore gives each xdist worker its own database, RabbitMQ vhost and Valkey logical
+# database, and deploys the stack it needs once per worker rather than once per module
 test_with_db() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/web/server
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
   # NOTE: per-folder --junitxml so the folders do not overwrite each other's report
-  make test-ci-unit test-path="with_dbs/$1" pytest-parameters="--numprocesses=auto --junitxml=junit-$1.xml -o junit_family=legacy"
+  # NOTE: loadscope keeps a module's tests on one worker, which is both less overhead
+  # (the module-scoped stack fixture then deploys once) and what these modules assume
+  make test-ci-unit test-path="with_dbs/$1" pytest-parameters="--numprocesses=auto --dist loadscope --junitxml=junit-$1.xml -o junit_family=legacy"
   popd
 }
 

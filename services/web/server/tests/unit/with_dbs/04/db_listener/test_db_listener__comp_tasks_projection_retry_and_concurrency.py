@@ -50,8 +50,11 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
+# pg_stat_activity lists the backends of every database in the cluster, and a
+# pytest-xdist worker runs against its own database, so the count must be scoped to it
 _COUNT_LISTENER_CONNECTIONS_SQL = (
-    "select count(*) from pg_stat_activity where application_name like :pattern and pid != pg_backend_pid()"
+    "select count(*) from pg_stat_activity where application_name like :pattern"
+    " and datname = current_database() and pid != pg_backend_pid()"
 )
 
 
