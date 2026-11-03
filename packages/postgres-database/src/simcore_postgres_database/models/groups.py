@@ -7,7 +7,6 @@
 import sqlalchemy as sa
 from common_library.groups_enums import GroupType
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
@@ -85,21 +84,8 @@ user_to_groups = sa.Table(
         server_default=sa.text('\'{"read": true, "write": false, "delete": false}\'::jsonb'),
         doc="User's access rights to the group",
     ),
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        doc="Timestamp auto-generated upon creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=func.now(),
-        onupdate=func.now(),
-        doc="Timestamp with last row update",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.UniqueConstraint("uid", "gid"),
 )
 
