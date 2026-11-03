@@ -101,7 +101,7 @@ fastar==0.11.0
     # via
     #   fastapi
     #   fastapi-cloud-cli
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
