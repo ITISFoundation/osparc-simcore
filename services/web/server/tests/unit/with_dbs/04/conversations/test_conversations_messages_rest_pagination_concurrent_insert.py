@@ -31,6 +31,12 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role() -> UserRole:

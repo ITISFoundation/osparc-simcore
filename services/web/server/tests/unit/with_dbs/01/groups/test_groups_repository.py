@@ -13,6 +13,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.groups import _groups_repository
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 async def create_test_group(

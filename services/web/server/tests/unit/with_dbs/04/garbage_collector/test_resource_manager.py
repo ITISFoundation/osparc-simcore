@@ -30,6 +30,12 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:

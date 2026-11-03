@@ -32,6 +32,12 @@ from simcore_service_webserver.licenses._licensed_resources_service import (
     RegistrationState,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture(scope="session")
 def fake_api_base_url() -> str:

@@ -89,6 +89,8 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -966,13 +968,13 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
 @pytest.fixture
 async def second_product_with_limit(
     app_products_names: list[ProductName],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     osparc_product_name: str,
 ) -> AsyncIterator[ProductName]:
     """Sets max_open_studies_per_user=1 on a second product and yields its name."""
     second_product = next((p for p in app_products_names if p != osparc_product_name), None)
     assert second_product is not None, "Test requires at least two products in the DB"
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         old_value = await conn.scalar(
             sa.select(products.c.max_open_studies_per_user).where(products.c.name == second_product)
         )
@@ -980,7 +982,7 @@ async def second_product_with_limit(
             products.update().values(max_open_studies_per_user=1).where(products.c.name == second_product)
         )
     yield second_product
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             products.update().values(max_open_studies_per_user=old_value).where(products.c.name == second_product)
         )

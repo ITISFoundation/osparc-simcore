@@ -38,6 +38,12 @@ from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from simcore_service_webserver.trash import trash_service
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def _request_delete_project(client: TestClient, project: ProjectDict, expected: HTTPStatus) -> None:
     assert client.app

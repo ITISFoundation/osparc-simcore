@@ -24,6 +24,12 @@ from simcore_service_webserver.workspaces._workspaces_rest import (
     WorkspacesListQueryParams,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def test_workspaces_order_query_model_post_validator():
     # on default

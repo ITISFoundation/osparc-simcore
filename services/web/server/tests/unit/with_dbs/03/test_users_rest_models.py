@@ -21,6 +21,12 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
     UserAccountRestPreRegister,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def account_request_form(faker: Faker, user_phone_number: PhoneNumberStr) -> dict[str, Any]:
