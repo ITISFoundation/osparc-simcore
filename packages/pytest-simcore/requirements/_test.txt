@@ -99,7 +99,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-orjson==3.11.9
+orjson==3.13.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
