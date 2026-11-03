@@ -30,8 +30,8 @@ test_isolated() {
   popd
 }
 
-# pytest-simcore gives each xdist worker its own database, RabbitMQ vhost and Valkey logical
-# database, and deploys the stack it needs once per worker rather than once per module
+# xdist workers share ONE docker stack and get their own database, RabbitMQ vhost and Valkey
+# logical database (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py)
 test_with_db() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
