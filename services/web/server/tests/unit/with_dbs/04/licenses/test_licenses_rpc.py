@@ -33,6 +33,8 @@ from simcore_service_webserver.licenses import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

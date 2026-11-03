@@ -37,6 +37,12 @@ from simcore_service_webserver.products._web_middlewares import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture(scope="module")
 def products_raw_data() -> dict[ProductName, dict[str, Any]]:
@@ -186,10 +192,10 @@ async def product_repository(app: web.Application) -> ProductRepository:
 async def test_utils_products_and_webserver_default_product_in_sync(
     app: web.Application,
     product_repository: ProductRepository,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     # tests definitions of default from utle_products and web-server.products are in sync
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         default_product_name = await utils_products.get_default_product_name(conn)
         assert default_product_name == _get_default_product_name(app)
 

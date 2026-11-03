@@ -17,10 +17,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @pytest.fixture
 async def drop_all_preferences(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[None]:
     yield
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(user_preferences_frontend.delete())
 
 
@@ -44,7 +44,7 @@ def app_environment(
 
 @pytest.fixture
 async def support_group_before_app_starts(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     product_name: str,
 ) -> AsyncIterator[dict[str, Any]]:
     """Creates a standard support group and assigns it to the current product
@@ -64,7 +64,7 @@ async def support_group_before_app_starts(
 
     # pylint: disable=contextmanager-generator-missing-cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=groups,
         values=group_values,
         pk_col=groups.c.gid,
@@ -72,7 +72,7 @@ async def support_group_before_app_starts(
         group_id = group_row["gid"]
 
         # Update product to set support_standard_group_id
-        async with asyncpg_engine.begin() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(
                 sa.update(products).where(products.c.name == product_name).values(support_standard_group_id=group_id)
             )

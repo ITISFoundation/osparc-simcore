@@ -31,6 +31,12 @@ from simcore_service_webserver.announcements._redis import (
     Announcement,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _TEXT_FORMAT = "YYYY-MM-DDTHH:mm:ss+00:00"
 
 

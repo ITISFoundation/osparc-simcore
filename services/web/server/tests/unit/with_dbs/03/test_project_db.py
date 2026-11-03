@@ -50,6 +50,12 @@ from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def group_id() -> int:
@@ -118,8 +124,8 @@ def _assert_added_project(
     assert added_prj == expected_prj
 
 
-async def _assert_projects_nodes_db_rows(asyncpg_engine: AsyncEngine, project: dict[str, Any]) -> None:
-    async with asyncpg_engine.connect() as conn:
+async def _assert_projects_nodes_db_rows(sqlalchemy_async_engine: AsyncEngine, project: dict[str, Any]) -> None:
+    async with sqlalchemy_async_engine.connect() as conn:
         repo = ProjectNodesRepo(project_uuid=ProjectID(f"{project['uuid']}"))
         list_of_nodes = await repo.list(conn)
         project_workbench = project.get("workbench", {})
@@ -163,7 +169,7 @@ def _assert_project_db_row(postgres_db: sa.engine.Engine, project: dict[str, Any
 
 @pytest.fixture
 async def insert_project_in_db(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     db_api: ProjectDBAPI,
     osparc_product_name: str,
     client: TestClient,
@@ -200,7 +206,7 @@ async def insert_project_in_db(
     yield _inserter
 
     print(f"<-- removing {len(inserted_projects)} projects...")
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(projects.delete().where(projects.c.uuid.in_(inserted_projects)))
     print(f"<-- removal of {len(inserted_projects)} projects done.")
 
@@ -217,7 +223,7 @@ async def test_insert_project_to_db(
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
     osparc_product_name: str,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
 ):
     expected_project = deepcopy(fake_project)
@@ -234,7 +240,7 @@ async def test_insert_project_to_db(
         },
     )
     _assert_project_db_row(postgres_db, new_project, type=ProjectType.TEMPLATE)
-    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+    await _assert_projects_nodes_db_rows(sqlalchemy_async_engine, new_project)
 
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
@@ -267,7 +273,7 @@ async def test_insert_project_to_db(
         new_project,
         prj_owner=logged_user["id"],
     )
-    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+    await _assert_projects_nodes_db_rows(sqlalchemy_async_engine, new_project)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
     new_project = await insert_project_in_db(
@@ -292,7 +298,7 @@ async def test_insert_project_to_db(
         prj_owner=logged_user["id"],
         type=ProjectType.TEMPLATE,
     )
-    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+    await _assert_projects_nodes_db_rows(sqlalchemy_async_engine, new_project)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
 
     with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -330,7 +336,7 @@ async def test_insert_project_to_db(
         new_project,
         prj_owner=logged_user["id"],
     )
-    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+    await _assert_projects_nodes_db_rows(sqlalchemy_async_engine, new_project)
 
 
 @pytest.mark.parametrize(
@@ -341,7 +347,7 @@ async def test_insert_project_to_db(
 async def test_update_project_nodes_concurrently(
     fake_project: dict[str, Any],
     logged_user: dict[str, Any],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
     number_of_nodes: int,
 ):
@@ -359,7 +365,7 @@ async def test_update_project_nodes_concurrently(
     }
 
     new_project = await insert_project_in_db(deepcopy(fake_project), user_id=logged_user["id"])
-    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+    await _assert_projects_nodes_db_rows(sqlalchemy_async_engine, new_project)
 
     # concurrently update outputs on all nodes
     randomly_created_outputs = [
@@ -372,13 +378,13 @@ async def test_update_project_nodes_concurrently(
     async def _update_node(node_uuid_str: str, outputs: dict) -> None:
         async with _semaphore:
             repo = ProjectNodesRepo(project_uuid=ProjectID(new_project["uuid"]))
-            async with asyncpg_engine.begin() as conn:
+            async with sqlalchemy_async_engine.begin() as conn:
                 await repo.update(conn, node_id=NodeID(node_uuid_str), outputs=outputs)
 
     await asyncio.gather(*[_update_node(node_uuids[n], randomly_created_outputs[n]) for n in range(number_of_nodes)])
 
     # verify all updates persisted
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         repo = ProjectNodesRepo(project_uuid=ProjectID(new_project["uuid"]))
         nodes = await repo.list(conn)
 
@@ -394,7 +400,7 @@ async def test_update_project_nodes_concurrently(
     # concurrently clear outputs
     await asyncio.gather(*[_update_node(node_uuids[n], {}) for n in range(number_of_nodes)])
 
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         nodes_after_clear = await repo.list(conn)
 
     for node in nodes_after_clear:
@@ -405,7 +411,7 @@ async def test_update_project_nodes_concurrently(
 async def some_projects_and_nodes(
     logged_user: dict[str, Any],
     fake_project: dict[str, Any],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
 ) -> dict[ProjectID, list[NodeID]]:
     """Will create a few projects, no need to go crazy here"""
@@ -437,7 +443,7 @@ async def some_projects_and_nodes(
         )
 
     created_projects = await logged_gather(*project_creation_tasks)
-    await asyncio.gather(*(_assert_projects_nodes_db_rows(asyncpg_engine, prj) for prj in created_projects))
+    await asyncio.gather(*(_assert_projects_nodes_db_rows(sqlalchemy_async_engine, prj) for prj in created_projects))
     print(f"---> created {len(all_created_projects)} projects in the database")
     return all_created_projects
 
@@ -481,7 +487,7 @@ async def test_has_permission(
     access_rights: dict[str, bool],
     user_role: UserRole,
     client: TestClient,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
     exit_stack: contextlib.AsyncExitStack,
 ):
@@ -503,7 +509,7 @@ async def test_has_permission(
         user_id=owner_id,
     )
 
-    await _assert_projects_nodes_db_rows(asyncpg_engine, new_project)
+    await _assert_projects_nodes_db_rows(sqlalchemy_async_engine, new_project)
     for permission in get_args(PermissionStr):
         assert permission in access_rights
 

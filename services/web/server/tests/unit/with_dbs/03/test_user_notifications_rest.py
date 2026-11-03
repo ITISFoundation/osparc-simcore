@@ -38,6 +38,12 @@ from simcore_service_webserver.user_notifications._repository import (
     UserNotificationsRepository,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def _get_user_notifications(
     redis_client,
