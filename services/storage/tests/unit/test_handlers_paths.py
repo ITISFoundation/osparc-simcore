@@ -785,7 +785,7 @@ async def test_path_compute_size(
 @pytest.mark.regression
 async def test_path_compute_size_with_file_currently_uploading(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
