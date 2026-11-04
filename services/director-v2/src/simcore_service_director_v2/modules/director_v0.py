@@ -7,6 +7,8 @@ from typing import Any, cast
 
 import httpx2
 import yarl
+from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI, HTTPException, status
 from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.dynamic_services_service import (
@@ -33,14 +35,18 @@ def _parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningD
     for service in raw_services:
         try:
             running_services.append(RunningDynamicServiceDetails(**service))
-        except ValidationError:
+        except ValidationError as exc:
             logger.exception(
-                "Service is running in LEGACY mode (director-v0) but its details cannot be parsed, "
-                "so it is excluded from this listing. A service created recently should not run in "
-                "LEGACY mode: check that 'paths-mapping' is part of the image labels. This service "
-                "must now be removed manually (docker service rm or via Portainer). "
-                "Service details as returned by director-v0: %s",
-                service,
+                **create_troubleshooting_log_kwargs(
+                    "Service is running in LEGACY mode (director-v0) but its details cannot be "
+                    "parsed, so it is excluded from this listing",
+                    error=exc,
+                    error_context={"service_as_returned_by_director_v0": service},
+                    error_code=create_error_code(exc),
+                    tip="A service created recently should not run in LEGACY mode: check that "
+                    "'paths-mapping' is part of the image labels. Remove this service manually "
+                    "(docker service rm or via Portainer).",
+                )
             )
     return running_services
 
