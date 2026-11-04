@@ -240,7 +240,7 @@ pydantic-extra-types==2.11.1
     # via
     #   -c requirements/_base.txt
     #   fastapi
-pydantic-settings==2.14.2
+pydantic-settings==2.15.0
     # via
     #   -c requirements/_base.txt
     #   fastapi
