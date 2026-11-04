@@ -320,6 +320,7 @@ async def test_email_provider_attaches_invoice_pdf(
 
 @pytest.mark.parametrize("lookup_fails", [False, True], ids=["no-extra-recipients", "recipient-lookup-fails"])
 async def test_email_provider_propagates_bcc(
+    *,
     app_environment: EnvVarsDict,
     mocker: MockerFixture,
     user_id: UserID,
