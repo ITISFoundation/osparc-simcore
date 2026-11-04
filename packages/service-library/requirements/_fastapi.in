@@ -5,8 +5,6 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
 
-# Adds base AS CONSTRAINT specs, not requirement, so shared transitives
-# (e.g. protobuf, opentelemetry-*) resolve to the same pins as _base.txt.
 --constraint _base.txt
 
 asgi-lifespan
