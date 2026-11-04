@@ -224,7 +224,7 @@ class EmailProvider(NotificationProvider):
             attachments=attachments or None,
         )
         primary_email = str(data.email).casefold()
-        seen_emails = {primary_email}
+        seen_emails = {primary_email} | ({str(self._bcc_email).casefold()} if self._bcc_email else set())
         additional_contacts: list[EmailContact] = []
         for email in additional_emails:
             normalized_email = str(email).casefold()

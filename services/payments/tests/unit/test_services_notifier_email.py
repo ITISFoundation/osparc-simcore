@@ -318,6 +318,7 @@ async def test_email_provider_attaches_invoice_pdf(
     assert type(addressing).model_validate(dumped).attachments[0].content == pdf_bytes
 
 
+@pytest.mark.parametrize("lookup_fails", [False, True], ids=["no-extra-recipients", "recipient-lookup-fails"])
 async def test_email_provider_propagates_bcc(
     app_environment: EnvVarsDict,
     mocker: MockerFixture,
@@ -331,6 +332,8 @@ async def test_email_provider_propagates_bcc(
     mock_rabbitmq_rpc_client: AsyncMock,
     mock_send_message_from_template: AsyncMock,
     users_repo: PaymentsUsersRepo,
+    lookup_fails: bool,
+    caplog: pytest.LogCaptureFixture,
 ):
     mocker.patch.object(
         users_repo,
@@ -351,13 +354,30 @@ async def test_email_provider_propagates_bcc(
 
     bcc = "billing@example.com"
     provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email=bcc)
+    if lookup_fails:
+        mocker.patch.object(
+            users_repo,
+            "get_invoice_email_recipients",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("Preference lookup failed"),
+        )
 
-    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+    with caplog.at_level(logging.WARNING, logger=notifier_email.__name__):
+        await provider.notify_payment_completed(user_id=user_id, payment=transaction)
 
-    assert mock_send_message_from_template.called
+    mock_send_message_from_template.assert_awaited_once()
     addressing = mock_send_message_from_template.call_args.kwargs["addressing"]
+    assert [contact.email for contact in addressing.to] == [user_email]
     assert addressing.bcc is not None
-    assert addressing.bcc[0].email == bcc
+    assert [contact.email for contact in addressing.bcc] == [bcc]
+    if lookup_fails:
+        assert any(
+            record.name == notifier_email.__name__
+            and record.levelno == logging.WARNING
+            and "Failed to load additional invoice email recipients; sending to primary email only"
+            in record.getMessage()
+            for record in caplog.records
+        )
 
 
 async def test_email_provider_sends_additional_recipients_without_repeating_bcc(
@@ -394,6 +414,7 @@ async def test_email_provider_sends_additional_recipients_without_repeating_bcc(
         "billing@example.com",
         "accounts@example.com",
         "BILLING@example.com",
+        "FINANCE@example.com",
         str(user_email),
     ]
     mocker.patch.object(users_repo, "get_invoice_email_recipients", new_callable=AsyncMock, return_value=extra_emails)

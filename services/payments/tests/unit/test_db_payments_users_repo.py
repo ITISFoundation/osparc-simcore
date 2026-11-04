@@ -146,10 +146,34 @@ async def test_get_notification_data(
     assert data.language == "es_ES"
 
 
-async def test_get_invoice_email_recipients_is_scoped_to_user_and_product(
+async def test_get_invoice_email_recipients_without_preference_returns_empty(
     app: FastAPI,
     user: dict[str, Any],
     product: dict[str, Any],
+):
+    repo = PaymentsUsersRepo(get_engine(app))
+
+    assert await repo.get_invoice_email_recipients(user["id"], product["name"]) == []
+
+
+@pytest.mark.parametrize(
+    "payload, expected_emails",
+    [
+        pytest.param(
+            {"value": ["billing@example.com", "accounts@example.com"]},
+            ["billing@example.com", "accounts@example.com"],
+            id="valid-emails",
+        ),
+        pytest.param({"value": ["not-an-email"]}, [], id="invalid-email"),
+        pytest.param({"value": "billing@example.com"}, [], id="wrong-value-type"),
+    ],
+)
+async def test_get_invoice_email_recipients_validates_preference(
+    app: FastAPI,
+    user: dict[str, Any],
+    product: dict[str, Any],
+    payload: dict[str, Any],
+    expected_emails: list[str],
 ):
     preference_name = f"{user['id']}/{InvoiceEmailRecipientsFrontendUserPreference.get_preference_name()}"
     async with insert_and_get_row_lifespan(
@@ -159,7 +183,7 @@ async def test_get_invoice_email_recipients_is_scoped_to_user_and_product(
             "user_id": user["id"],
             "product_name": product["name"],
             "preference_name": preference_name,
-            "payload": {"value": ["billing@example.com", "accounts@example.com"]},
+            "payload": payload,
         },
         pk_cols=[
             user_preferences_frontend.c.user_id,
@@ -169,7 +193,4 @@ async def test_get_invoice_email_recipients_is_scoped_to_user_and_product(
     ):
         repo = PaymentsUsersRepo(get_engine(app))
 
-        assert await repo.get_invoice_email_recipients(user["id"], product["name"]) == [
-            "billing@example.com",
-            "accounts@example.com",
-        ]
+        assert await repo.get_invoice_email_recipients(user["id"], product["name"]) == expected_emails
