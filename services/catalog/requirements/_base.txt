@@ -348,7 +348,7 @@ requests==2.34.2
     # via
     #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-http
-rich==14.1.0
+rich==14.3.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   rich-toolkit

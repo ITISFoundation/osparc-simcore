@@ -102,7 +102,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rich==14.3.3
+rich==14.3.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
