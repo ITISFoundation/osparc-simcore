@@ -315,7 +315,7 @@ pydantic-settings==2.14.2
     #   fastapi
 pygments==2.21.0
     # via rich
-pyinstrument==5.1.1
+pyinstrument==5.1.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via
