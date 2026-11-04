@@ -58,7 +58,7 @@ frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.76.0
+googleapis-common-protos==1.73.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -197,7 +197,7 @@ propcache==0.4.1
     # via
     #   aiohttp
     #   yarl
-protobuf==7.36.2
+protobuf==6.33.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   googleapis-common-protos
