@@ -330,7 +330,7 @@ python-dateutil==2.9.0.post0
     #   celery
     #   pandas
     #   simcore-service-storage-sdk
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
