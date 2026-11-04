@@ -40,7 +40,7 @@ def _replace_basemodel_in_annotation(annotation, new_type):
     # Handle Optionals, Unions, or other generic types
     if origin in (Optional, Union, list, dict, tuple):  # Extendable for other generics
         new_args = tuple(_replace_basemodel_in_annotation(arg, new_type) for arg in get_args(annotation))
-        return origin[new_args]
+        return origin[new_args]  # pyright: ignore[reportInvalidTypeArguments]
 
     # Replace BaseModel subclass directly
     if isinstance(annotation, type) and issubclass(annotation, BaseModel):
@@ -59,7 +59,6 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             "alias": field_info.alias,
             "title": field_info.title,
             "description": field_info.description,
-            "metadata": field_info.metadata,
             "json_schema_extra": field_info.json_schema_extra,
         }
 
