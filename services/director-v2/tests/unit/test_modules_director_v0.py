@@ -6,7 +6,7 @@ import pytest
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
-from simcore_service_director_v2.modules.director_v0 import parse_running_services
+from simcore_service_director_v2.modules.director_v0 import _parse_running_services
 
 pytest_simcore_core_services_selection = ["director"]
 pytest_simcore_deps_services_selection = ["director_v0"]
@@ -27,8 +27,8 @@ _VALID_SERVICE: dict = {
     "product_name": "osparc",
 }
 
-# e.g. a service started from an image incompatible with legacy mode: it never
-# publishes a port, so director-v0 reports service_port as null
+# A service started from the wrong image is incompatible with legacy mode:
+# it publishes no port, so director-v0 reports service_port as null
 _BROKEN_SERVICE: dict = {
     "service_key": "simcore/services/dynamic/parto-app",
     "service_version": "2.0.0",
@@ -47,14 +47,13 @@ _BROKEN_SERVICE: dict = {
 
 
 def test_parse_running_services_all_valid():
-    assert parse_running_services([_VALID_SERVICE]) == [RunningDynamicServiceDetails(**_VALID_SERVICE)]
+    assert _parse_running_services([_VALID_SERVICE]) == [RunningDynamicServiceDetails(**_VALID_SERVICE)]
 
 
 def test_parse_running_services_skips_unparsable_entry_and_logs_error(caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.ERROR)
 
-    # an unparsable entry must not fail the whole listing
-    services = parse_running_services([_VALID_SERVICE, _BROKEN_SERVICE])
+    services = _parse_running_services([_VALID_SERVICE, _BROKEN_SERVICE])
     assert services == [RunningDynamicServiceDetails(**_VALID_SERVICE)]
 
     error_messages = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]

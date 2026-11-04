@@ -28,13 +28,7 @@ from ..utils.clients import unenvelope_or_raise_error
 logger = logging.getLogger(__name__)
 
 
-def parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningDynamicServiceDetails]:
-    """Parses director-v0 entries, skipping those that cannot be validated.
-
-    An entry with a payload incompatible with legacy mode (e.g. a service started
-    from the wrong image) must not fail the whole listing. The raw entry is logged
-    so ops can identify it and remove it manually.
-    """
+def _parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningDynamicServiceDetails]:
     running_services: list[RunningDynamicServiceDetails] = []
     for service in raw_services:
         try:
@@ -128,5 +122,5 @@ class DirectorV0Client:
         resp.raise_for_status()
 
         if resp.status_code == status.HTTP_200_OK:
-            return parse_running_services(cast(list[dict[str, Any]], unenvelope_or_raise_error(resp)))
+            return _parse_running_services(cast(list[dict[str, Any]], unenvelope_or_raise_error(resp)))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
