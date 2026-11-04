@@ -168,7 +168,7 @@ markupsafe==3.0.2
     #   flask
     #   jinja2
     #   werkzeug
-moto==5.2.2
+moto==5.2.4
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -274,8 +274,6 @@ rpds-py==0.28.0
     #   referencing
 s3transfer==0.14.0
     # via boto3
-setuptools==84.2.1
-    # via moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt

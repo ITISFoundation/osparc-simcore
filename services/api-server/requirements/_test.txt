@@ -45,7 +45,7 @@ attrs==24.2.0
     #   referencing
 aws-sam-translator==1.106.0
     # via cfn-lint
-aws-xray-sdk==0.95
+aws-xray-sdk==2.16.0
     # via moto
 billiard==4.2.1
     # via
@@ -61,6 +61,7 @@ boto3==1.40.61
 botocore==1.40.61
     # via
     #   -c requirements/_base.txt
+    #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
@@ -190,8 +191,6 @@ jsonpatch==1.33
     # via cfn-lint
 jsonpath-ng==1.8.0
     # via moto
-jsonpickle==4.1.1
-    # via aws-xray-sdk
 jsonpointer==3.1.1
     # via jsonpatch
 jsonref==1.1.0
@@ -232,7 +231,7 @@ markupsafe==3.0.2
     #   jinja2
     #   mako
     #   werkzeug
-moto==5.2.2
+moto==5.2.4
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -355,7 +354,6 @@ regex==2026.7.19
 requests==2.34.2
     # via
     #   -c requirements/_base.txt
-    #   aws-xray-sdk
     #   docker
     #   jsonschema-path
     #   moto
@@ -375,8 +373,6 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==84.2.1
-    # via moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt
