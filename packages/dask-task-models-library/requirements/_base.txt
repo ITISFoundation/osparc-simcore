@@ -91,7 +91,7 @@ pygments==2.21.0
     # via rich
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via pydantic-settings
 pyyaml==6.0.3
     # via
@@ -102,7 +102,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rich==14.3.3
+rich==14.3.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
