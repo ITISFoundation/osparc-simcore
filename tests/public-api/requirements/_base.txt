@@ -63,7 +63,7 @@ python-dateutil==2.9.0.post0
     # via osparc-client
 python-dotenv==1.2.4
     # via pydantic-settings
-rich==14.3.3
+rich==14.3.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer

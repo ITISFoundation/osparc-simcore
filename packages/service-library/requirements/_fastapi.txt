@@ -124,7 +124,7 @@ pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   uvicorn
-rich==14.3.3
+rich==14.3.4
     # via
     #   rich-toolkit
     #   typer

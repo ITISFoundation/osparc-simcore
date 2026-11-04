@@ -298,7 +298,7 @@ requests==2.34.2
     #   docker
     #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-http
-rich==14.3.3
+rich==14.3.4
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
