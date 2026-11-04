@@ -27,7 +27,7 @@ from settings_library.tracing import TracingSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningDynamicServiceDetails]:
@@ -36,7 +36,7 @@ def _parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningD
         try:
             running_services.append(RunningDynamicServiceDetails(**service))
         except ValidationError as exc:
-            logger.exception(
+            _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Service is running in LEGACY mode (director-v0) but its details cannot be "
                     "parsed, so it is excluded from this listing",
@@ -77,12 +77,12 @@ def configure_director_v0(
             app,
             client=client,
         )
-        logger.debug("created client for director-v0: %s", director_v0_settings.endpoint)
+        _logger.debug("created client for director-v0: %s", director_v0_settings.endpoint)
         try:
             yield
         finally:
             await client.aclose()
-            logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
+            _logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
 
     app_lifespan.add(_lifespan)
 
@@ -101,19 +101,19 @@ class DirectorV0Client:
         client: DirectorV0Client = app.state.director_v0_client
         return client
 
-    @handle_errors("Director", logger)
-    @handle_retry(logger)
+    @handle_errors("Director", _logger)
+    @handle_retry(_logger)
     async def _request(self, method: str, tail_path: str, **kwargs) -> httpx2.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def get_running_service_details(self, service_uuid: NodeID) -> RunningDynamicServiceDetails:
         resp = await self._request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
             return RunningDynamicServiceDetails.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def get_running_services(
         self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
