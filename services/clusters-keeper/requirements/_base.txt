@@ -387,7 +387,7 @@ python-dateutil==2.9.0.post0
     #   aiobotocore
     #   arrow
     #   botocore
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   pydantic-settings
     #   uvicorn
