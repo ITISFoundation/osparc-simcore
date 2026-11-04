@@ -1,11 +1,19 @@
+import logging
+
 import sqlalchemy as sa
 from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.groups import GroupID, GroupIDAdapter
+from models_library.products import ProductName
+from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.users import UserID
+from pydantic import EmailStr, ValidationError
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils_user_preferences import FrontendUserPreferencesRepo
 
 from .base import BaseRepository
+
+_logger = logging.getLogger(__name__)
 
 
 class PaymentsUsersRepo(BaseRepository):
@@ -55,3 +63,27 @@ class PaymentsUsersRepo(BaseRepository):
 
         msg = f"{payment_id=} for {user_id=} was not found"
         raise ValueError(msg)
+
+    async def get_invoice_email_recipients(self, user_id: UserID, product_name: ProductName) -> list[EmailStr]:
+        preference_name = f"{user_id}/{InvoiceEmailRecipientsFrontendUserPreference.get_preference_name()}"
+        async with self.db_engine.begin() as conn:
+            payload = await FrontendUserPreferencesRepo.load(
+                conn,
+                user_id=user_id,
+                product_name=product_name,
+                preference_name=preference_name,
+            )
+
+        if payload is None:
+            return []
+
+        try:
+            preference = InvoiceEmailRecipientsFrontendUserPreference.model_validate(payload)
+        except ValidationError:
+            _logger.warning(
+                "Ignoring invalid invoice email recipient preference for %s and %s",
+                user_id,
+                product_name,
+            )
+            return []
+        return preference.value

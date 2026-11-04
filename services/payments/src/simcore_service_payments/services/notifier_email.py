@@ -11,6 +11,7 @@ from fastapi import status
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.notifications import Channel
 from models_library.notifications.rpc import EmailAddressing, EmailAttachment, EmailContact, TemplateRef
+from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -84,6 +85,24 @@ def _extract_file_name(response: httpx2.Response, url: str) -> str:
     if url_filename.lower().endswith(".pdf"):
         return url_filename
     return _DEFAULT_INVOICE_FILENAME
+
+
+async def _get_additional_invoice_email_recipients(
+    users_repo: PaymentsUsersRepo,
+    user_id: UserID,
+    product_name: ProductName,
+) -> list[EmailStr]:
+    try:
+        return await users_repo.get_invoice_email_recipients(user_id, product_name)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "Failed to load additional invoice email recipients; sending to primary email only",
+                error=exc,
+                error_context={"user_id": user_id, "product": product_name},
+            )
+        )
+        return []
 
 
 async def _download_invoice_pdf(
@@ -173,6 +192,7 @@ class EmailProvider(NotificationProvider):
             return
 
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
+        additional_emails = await _get_additional_invoice_email_recipients(self._users_repo, user_id, data.product_name)
 
         attachments: list[EmailAttachment] = []
         if payment.invoice_pdf_url:
@@ -193,7 +213,7 @@ class EmailProvider(NotificationProvider):
 
         full_name = " ".join(part for part in (data.first_name, data.last_name) if part) or (data.user_name or "")
 
-        addressing = EmailAddressing(
+        primary_addressing = EmailAddressing(
             to=[
                 EmailContact(
                     name=full_name,
@@ -202,6 +222,17 @@ class EmailProvider(NotificationProvider):
             ],
             bcc=[EmailContact(name="", email=self._bcc_email)] if self._bcc_email else None,
             attachments=attachments or None,
+        )
+        primary_email = str(data.email).casefold()
+        seen_emails = {primary_email}
+        additional_contacts: list[EmailContact] = []
+        for email in additional_emails:
+            normalized_email = str(email).casefold()
+            if normalized_email not in seen_emails:
+                seen_emails.add(normalized_email)
+                additional_contacts.append(EmailContact(name="", email=email))
+        additional_addressing = (
+            EmailAddressing(to=additional_contacts, attachments=attachments or None) if additional_contacts else None
         )
 
         context: dict[str, Any] = {
@@ -219,17 +250,19 @@ class EmailProvider(NotificationProvider):
         }
 
         try:
-            await send_message_from_template(
-                self._rabbitmq_rpc_client,
-                product_name=data.product_name,
-                addressing=addressing,
-                template_ref=TemplateRef(
-                    channel=Channel.email,
-                    template_name=_PAID_TEMPLATE_NAME,
-                ),
-                context=context,
-                locale=data.language or DEFAULT_LOCALE,
-            )
+            for addressing in (primary_addressing, additional_addressing):
+                if addressing is not None:
+                    await send_message_from_template(
+                        self._rabbitmq_rpc_client,
+                        product_name=data.product_name,
+                        addressing=addressing,
+                        template_ref=TemplateRef(
+                            channel=Channel.email,
+                            template_name=_PAID_TEMPLATE_NAME,
+                        ),
+                        context=context,
+                        locale=data.language or DEFAULT_LOCALE,
+                    )
         except Exception as exc:  # pylint: disable=broad-except
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
