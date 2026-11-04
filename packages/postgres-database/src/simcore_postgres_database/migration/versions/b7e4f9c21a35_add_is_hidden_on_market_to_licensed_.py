@@ -1,7 +1,7 @@
 """add is_hidden_on_market to licensed_resources
 
 Revision ID: b7e4f9c21a35
-Revises: 3d6dfe186abe
+Revises: d955a654eab3
 Create Date: 2026-11-02 15:17:52.000000+00:00
 
 """
@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "b7e4f9c21a35"
-down_revision = "3d6dfe186abe"
+down_revision = "d955a654eab3"
 branch_labels = None
 depends_on = None
 
