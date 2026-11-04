@@ -15,6 +15,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import ValidationError
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
 from servicelib.tracing import setup_httpx_client_tracing
@@ -25,6 +26,30 @@ from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
 logger = logging.getLogger(__name__)
+
+
+def parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningDynamicServiceDetails]:
+    """Parses director-v0 entries, skipping those that cannot be validated.
+
+    An entry with a payload incompatible with legacy mode (e.g. a service started
+    from the wrong image) must not fail the whole listing. The raw entry is logged
+    so ops can identify it and remove it manually.
+    """
+    running_services: list[RunningDynamicServiceDetails] = []
+    for service in raw_services:
+        try:
+            running_services.append(RunningDynamicServiceDetails(**service))
+        except ValidationError:
+            logger.exception(
+                "Service is running in LEGACY mode (director-v0) but its details cannot be parsed, "
+                "so it is excluded from this listing. A service created recently should not run in "
+                "LEGACY mode: check that 'paths-mapping' is part of the image labels. This service "
+                "must now be removed manually (docker service rm or via Portainer). "
+                "Service details as returned by director-v0: %s",
+                service,
+            )
+    return running_services
+
 
 # Module's setup logic ---------------------------------------------
 
@@ -103,7 +128,5 @@ class DirectorV0Client:
         resp.raise_for_status()
 
         if resp.status_code == status.HTTP_200_OK:
-            return [
-                RunningDynamicServiceDetails(**x) for x in cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
-            ]
+            return parse_running_services(cast(list[dict[str, Any]], unenvelope_or_raise_error(resp)))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
