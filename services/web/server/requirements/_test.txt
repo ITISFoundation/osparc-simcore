@@ -278,7 +278,7 @@ pytest-sugar==1.1.1
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -314,7 +314,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rich==14.1.0
+rich==14.3.4
     # via
     #   -c requirements/_base.txt
     #   rich-toolkit

@@ -114,7 +114,7 @@ pydantic-settings==2.14.2
     # via fastapi
 pygments==2.21.0
     # via rich
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   pydantic-settings
     #   uvicorn
@@ -124,7 +124,7 @@ pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   uvicorn
-rich==14.3.3
+rich==14.3.4
     # via
     #   rich-toolkit
     #   typer
