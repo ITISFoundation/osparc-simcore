@@ -3,12 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 
-import httpx
+import httpx2
 from starlette import status
 
 
 async def test_users_profile_entrypoint(
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     pennsieve_subsystem_mock,
     pennsieve_api_headers: dict[str, str],
 ):

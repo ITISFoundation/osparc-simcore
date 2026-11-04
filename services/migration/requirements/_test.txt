@@ -15,7 +15,7 @@ coverage==7.16.2
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 greenlet==3.5.6
     # via sqlalchemy
@@ -54,13 +54,13 @@ pytest-asyncio==1.4.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
-pytest-docker==3.2.5
+pytest-docker==3.2.6
     # via -r requirements/_test.in
 pytest-mock==3.15.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via -r requirements/_test.in
 pyyaml==6.0.3
     # via

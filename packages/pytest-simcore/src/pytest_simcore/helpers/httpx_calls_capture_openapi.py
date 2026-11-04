@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Final, Literal
 from urllib.parse import unquote
 
-import httpx
+import httpx2
 import jsonref
 from pydantic import TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
@@ -43,14 +43,14 @@ settings_classes: Final = [
 ]
 
 
-def _get_openapi_specs(url: httpx.URL) -> dict[str, Any]:
+def _get_openapi_specs(url: httpx2.URL) -> dict[str, Any]:
     openapi_url = None
     target = (url.host, url.port)
 
     for prefix, cls, openapi_path in settings_classes:
         with suppress(ValidationError):
             settings = cls.create_from_envs()
-            base_url = httpx.URL(settings.base_url)
+            base_url = httpx2.URL(settings.base_url)
             if (base_url.host, base_url.port) == target:
                 vtag = getattr(settings, f"{prefix}_VTAG")
                 openapi_url = settings.base_url + openapi_path.format(vtag)
@@ -60,7 +60,7 @@ def _get_openapi_specs(url: httpx.URL) -> dict[str, Any]:
         msg = f"{url=} has not been added yet to the testing system. Please do so yourself"
         raise OpenApiSpecError(msg)
 
-    response = httpx.get(openapi_url)
+    response = httpx2.get(openapi_url)
     response.raise_for_status()
 
     if not response.content:
@@ -120,7 +120,7 @@ def _determine_path(openapi_spec: dict[str, Any], response_path: Path) -> PathDe
 
 
 def enhance_path_description_from_openapi_spec(
-    response: httpx.Response,
+    response: httpx2.Response,
 ) -> PathDescription:
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url)
     return _determine_path(openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0]))

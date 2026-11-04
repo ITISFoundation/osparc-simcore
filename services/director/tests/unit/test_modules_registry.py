@@ -11,7 +11,6 @@ import logging
 import time
 from unittest import mock
 
-import httpx
 import pytest
 import respx
 from fastapi import FastAPI, status
@@ -523,17 +522,17 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
     app_settings = get_application_settings(app)
     realm_url = f"http://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}/v2/token"
 
-    def _bearer_manifest_handler(request: httpx.Request) -> httpx.Response:
-        if f"Bearer {fake_token}" not in request.headers.get("authorization", ""):
-            return httpx.Response(
-                status.HTTP_401_UNAUTHORIZED,
-                headers={
-                    "WWW-Authenticate": (
-                        f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
-                    )
-                },
-            )
-        return httpx.Response(
+    bearer_scheme = f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
+
+    with respx.mock(assert_all_called=False) as respx_mock:
+        respx_mock.get(url__regex=r".*/v2/token.*").respond(status.HTTP_200_OK, json={"token": fake_token})
+        # routes match in registration order: the Bearer-specific variant must be
+        # registered before the challenge route, so an authenticated request is
+        # never answered with 401
+        respx_mock.get(
+            url__regex=f".*{image}/manifests/{tag}.*",
+            headers={"authorization": f"Bearer {fake_token}"},
+        ).respond(
             status.HTTP_200_OK,
             json=_make_manifest_response(config_digest),
             headers={
@@ -541,26 +540,21 @@ async def test_get_image_labels_follows_blob_redirect_with_bearer_auth(
                 "Content-Type": "application/vnd.docker.distribution.manifest.v2+json",
             },
         )
-
-    def _bearer_blob_handler(request: httpx.Request) -> httpx.Response:
-        if f"Bearer {fake_token}" not in request.headers.get("authorization", ""):
-            return httpx.Response(
-                status.HTTP_401_UNAUTHORIZED,
-                headers={
-                    "WWW-Authenticate": (
-                        f'Bearer realm="{realm_url}",service="registry.example.com",scope="repository:{image}:pull"'
-                    )
-                },
-            )
-        return httpx.Response(
+        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").respond(
+            status.HTTP_401_UNAUTHORIZED,
+            headers={"WWW-Authenticate": bearer_scheme},
+        )
+        respx_mock.get(
+            url__regex=f".*{image}/blobs/{config_digest}.*",
+            headers={"authorization": f"Bearer {fake_token}"},
+        ).respond(
             status.HTTP_307_TEMPORARY_REDIRECT,
             headers={"Location": s3_presigned_url},
         )
-
-    with respx.mock(assert_all_called=False) as respx_mock:
-        respx_mock.get(url__regex=r".*/v2/token.*").respond(status.HTTP_200_OK, json={"token": fake_token})
-        respx_mock.get(url__regex=f".*{image}/manifests/{tag}.*").mock(side_effect=_bearer_manifest_handler)
-        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").mock(side_effect=_bearer_blob_handler)
+        respx_mock.get(url__regex=f".*{image}/blobs/{config_digest}.*").respond(
+            status.HTTP_401_UNAUTHORIZED,
+            headers={"WWW-Authenticate": bearer_scheme},
+        )
         respx_mock.get(url__regex=r".*s3\.us-east-1\.amazonaws\.com.*").respond(
             status.HTTP_200_OK, json=config_blob_response
         )

@@ -5,12 +5,12 @@
 import json
 from typing import Final
 
-import httpx
+import httpx2
 import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import TypeAdapter
 from simcore_service_api_server.core.settings import ChatbotSettings
 from simcore_service_api_server.models.domain.chatbot import (
@@ -218,7 +218,7 @@ async def test_stream_chat_completion_raises_on_error(
 ):
     mocked_chatbot_backend.post("/v1/chat/completions").respond(500, text="downstream error")
 
-    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+    with pytest.raises(httpx2.HTTPStatusError) as exc_info:
         await chatbot_session.stream_chat_completion(
             messages=[
                 _chat_message_adapter.validate_python({"role": "user", "content": faker.sentence()}),

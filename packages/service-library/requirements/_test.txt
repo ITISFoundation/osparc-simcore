@@ -34,7 +34,7 @@ attrs==26.1.0
     #   referencing
 botocore==1.42.70
     # via -r requirements/_test.in
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -42,8 +42,10 @@ certifi==2026.10.19
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.6
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.16.2
     # via
     #   -r requirements/_test.in
@@ -58,7 +60,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -77,13 +79,11 @@ h11==0.16.0
     #   httpcore
 httpcore==1.0.9
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   httpx
 httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   respx
 icdiff==2.0.10
@@ -208,7 +208,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
@@ -233,6 +233,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
 respx==0.22.0

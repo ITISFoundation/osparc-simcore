@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 
 
 @dataclass
@@ -42,12 +42,12 @@ class Registry:
     def api_version_check(self):
         # https://docs.docker.com/registry/spec/api/#api-version-check
 
-        r = httpx.get(f"{self.data.url}/v2/", auth=self.data.auth)
+        r = httpx2.get(f"{self.data.url}/v2/", auth=self.data.auth)
         r.raise_for_status()
 
     def iter_repositories(self, limit: int = 100) -> Iterator[RepoName]:
         def _req(**kwargs):
-            r = httpx.get(auth=self.data.auth, **kwargs)
+            r = httpx2.get(auth=self.data.auth, **kwargs)
             r.raise_for_status()
 
             yield from r.json()["repositories"]
@@ -66,7 +66,7 @@ class Registry:
         yield from _req(url=f"{self.data.url}/v2/_catalog", params=query)
 
     def get_digest(self, repo_name: str, repo_reference: str) -> str:
-        r = httpx.head(
+        r = httpx2.head(
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
@@ -75,7 +75,7 @@ class Registry:
         return r.headers["Docker-Content-Digest"]
 
     def check_manifest(self, repo_name: RepoName, repo_reference: str) -> bool:
-        r = httpx.head(
+        r = httpx2.head(
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
@@ -86,7 +86,7 @@ class Registry:
         return True
 
     def list_tags(self, repo_name: RepoName) -> list[RepoTag]:
-        r = httpx.get(
+        r = httpx2.get(
             f"{self.data.url}/v2/{repo_name}/tags/list",
             auth=self.data.auth,
         )
@@ -96,7 +96,7 @@ class Registry:
         return data["tags"]
 
     def get_manifest(self, repo_name: str, repo_reference: str):
-        r = httpx.get(
+        r = httpx2.get(
             f"{self.data.url}/v2/{repo_name}/manifests/{repo_reference}",
             auth=self.data.auth,
         )
@@ -158,7 +158,7 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
         # list tags
         try:
             tags = registry.list_tags(repo_name=repo)
-        except httpx.HTTPStatusError as err:
+        except httpx2.HTTPStatusError as err:
             print(f"Failed to get tags from {repo=}", err, FAILED)
             continue
 

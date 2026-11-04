@@ -18,6 +18,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "aiobotocore",
     "botocore",
     "httpcore",
+    "httpcore2",
     "werkzeug",
 )
 

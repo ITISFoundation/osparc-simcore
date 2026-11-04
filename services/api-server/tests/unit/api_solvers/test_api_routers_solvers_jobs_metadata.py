@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import TypedDict
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
@@ -80,8 +80,8 @@ def mocked_backend(
 
 @pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4110")
 async def test_get_and_update_job_metadata(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     solver_key: str,
     solver_version: str,
     faker: Faker,

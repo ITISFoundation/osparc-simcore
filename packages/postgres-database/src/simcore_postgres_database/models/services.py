@@ -2,7 +2,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression
 
-from ._common import RefActions
+from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
 
 services_meta_data = sa.Table(
@@ -190,21 +190,8 @@ services_access_rights = sa.Table(
         doc="Product Identifier",
     ),
     # LIFECYCLE ----------------------------
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=sa.func.now(),
-        doc="Timestamp of creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=sa.func.now(),
-        onupdate=sa.func.now(),
-        doc="Timestamp on last update",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.ForeignKeyConstraint(
         ["key", "version"],
         ["services_meta_data.key", "services_meta_data.version"],

@@ -45,8 +45,10 @@ certifi==2026.10.19
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-charset-normalizer==3.4.1
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 coverage==7.16.2
     # via pytest-cov
 docker==7.1.0
@@ -57,7 +59,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -136,7 +138,7 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   aiobotocore
     #   botocore
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -147,6 +149,7 @@ redis==7.4.0
     #   fakeredis
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 s3transfer==0.14.0

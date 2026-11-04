@@ -101,7 +101,7 @@ fastar==0.11.0
     # via
     #   fastapi
     #   fastapi-cloud-cli
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -120,15 +120,12 @@ h11==0.16.0
     #   httpcore
     #   uvicorn
 httpcore==1.0.9
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
+    # via httpx
 httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-cloud-cli
     #   respx
@@ -281,7 +278,7 @@ pytest-sugar==1.1.1
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -317,7 +314,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rich==14.1.0
+rich==14.3.4
     # via
     #   -c requirements/_base.txt
     #   rich-toolkit

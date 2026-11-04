@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi_lifespan_manager import LifespanManager
-from httpx import QueryParams
+from httpx2 import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataArray,
