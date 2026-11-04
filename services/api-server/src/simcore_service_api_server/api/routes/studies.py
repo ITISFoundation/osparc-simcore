@@ -91,7 +91,7 @@ async def clone_study(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
-    hidden: Annotated[bool, Query()] = False,  # noqa: FBT002
+    hidden: Annotated[bool, Query()] = False,
     title: Annotated[ShortTruncatedStr | None, Body()] = None,
     description: Annotated[LongTruncatedStr | None, Body()] = None,
 ):
