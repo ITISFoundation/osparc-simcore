@@ -941,6 +941,40 @@ async def test_delete_file_twice_keeps_prefix_sharing_sibling(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
+async def test_delete_file_with_unused_connection_commits(
+    user_id: UserID,
+    sqlalchemy_async_engine: AsyncEngine,
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[[ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+):
+    """The deletion must be committed when the caller passes a fresh connection
+
+    This mirrors how the export cleaner calls it: a connection borrowed from the
+    pool but never used. If any statement runs on that connection before the
+    transaction block, SQLAlchemy autobegins it, `transaction_context` degrades to
+    a savepoint, and closing the connection rolls the deletion back -- the object
+    would be gone from S3 while its registration survives forever.
+    """
+    _, file_id = await upload_file(file_size, "report.txt", None)
+
+    # exactly `pass_or_acquire_connection`: connect, hand over, close without commit
+    conn = await sqlalchemy_async_engine.connect()
+    try:
+        await simcore_s3_dsm.delete_file(user_id, file_id, connection=conn)
+    finally:
+        await conn.close()
+
+    with pytest.raises(FileMetaDataNotFoundError):
+        await simcore_s3_dsm.get_file(user_id, file_id)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
 async def test_delete_file_soft_link_keeps_the_target_object(
     user_id: UserID,
     storage_s3_bucket: S3BucketName,

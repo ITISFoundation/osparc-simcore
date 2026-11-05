@@ -679,7 +679,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         keys that only start with `file_id` (e.g. `report.txt.gz`) untouched
 
         An id without registration is a folder path, so whatever is registered or
-        stored below `file_id/` belongs to it and goes away with it.
+        stored below `file_id/` belongs to it and goes away with it. Deleting an
+        absent key is a success for S3, so the subfolder deletion always runs.
         """
         await s3_client.delete_object(bucket=self.simcore_bucket_name, object_key=f"{file_id}")
         await s3_client.delete_objects_recursively(
