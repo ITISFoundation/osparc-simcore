@@ -3,9 +3,8 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any, Final
 
 import distributed
@@ -93,6 +92,40 @@ def dask_workers_config() -> dict[str, Any]:
     }
 
 
+_DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
+
+_DASK_SCHEDULER_POLL_TIME_S: Final[float] = 0.1
+
+# long enough that the scheduler reports the task as running while the test polls for it
+_TASK_REMOTE_RUN_TIME_S: Final[int] = 4
+
+
+@retry(stop=stop_after_delay(_DASK_SCHEDULER_REACTION_TIME_S), wait=wait_fixed(1))
+async def _wait_for_task_done(future: distributed.Future) -> None:
+    assert future.done() is True
+
+
+async def _wait_until_scheduler_reports(
+    read_state: Callable[[], Awaitable[Any]],
+    expected_state: Any,
+    *,
+    timeout_s: float = _DASK_SCHEDULER_REACTION_TIME_S,
+) -> None:
+    """Polls a scheduler query until it returns ``expected_state``.
+
+    The scheduler updates its task bookkeeping outside the client's submit/release call, so a
+    read issued immediately after can still report the previous state.
+    """
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(timeout_s),
+        wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S),
+        reraise=True,
+    ):
+        with attempt:
+            state = await read_state()
+            assert state == expected_state, f"scheduler still reports {state}, expected {expected_state}"
+
+
 async def test__scheduler_client(scheduler_url: AnyUrl, scheduler_authentication: ClusterAuthentication):
     async with _scheduler_client(scheduler_url, scheduler_authentication):
         ...
@@ -116,15 +149,24 @@ async def test_list_unrunnable_tasks(
     dask_task_impossible_resources = DaskTaskResources(XRAM=213, threads=1)  # type: ignore
     future = create_dask_task(dask_task_impossible_resources)
     assert future
-    assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == [
+
+    expected_unrunnable_tasks = [
         DaskTask(
-            task_id=future.key,
+            task_id=TypeAdapter(DaskTaskId).validate_python(future.key),
             required_resources=(dask_task_impossible_resources),
         )
     ]
+    await _wait_until_scheduler_reports(
+        lambda: list_unrunnable_tasks(scheduler_url, scheduler_authentication),
+        expected_unrunnable_tasks,
+    )
+
     # remove that future, will remove the task
     del future
-    assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == []
+    await _wait_until_scheduler_reports(
+        lambda: list_unrunnable_tasks(scheduler_url, scheduler_authentication),
+        [],
+    )
 
 
 _REMOTE_FCT_SLEEP_TIME_S: Final[int] = 3
@@ -152,7 +194,8 @@ async def test_list_processing_tasks(
     # get_scheduler_details's docstring), so we query the scheduler directly.
     scheduler_identity = await get_scheduler_details(dask_spec_cluster_client)
     worker_address = next(iter(scheduler_identity["workers"]))
-    assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {
+
+    expected_processing_tasks = {
         worker_address: [
             DaskTask(
                 task_id=TypeAdapter(DaskTaskId).validate_python(future_queued_task.key),
@@ -160,25 +203,19 @@ async def test_list_processing_tasks(
             )
         ]
     }
+    await _wait_until_scheduler_reports(
+        lambda: list_processing_tasks_per_worker(scheduler_url, scheduler_authentication),
+        expected_processing_tasks,
+    )
 
     result = await future_queued_task.result(timeout=_REMOTE_FCT_SLEEP_TIME_S + 4)  # type: ignore
     assert result == 7
 
     # nothing processing anymore
-    assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {}
-
-
-_DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
-
-
-@retry(stop=stop_after_delay(_DASK_SCHEDULER_REACTION_TIME_S), wait=wait_fixed(1))
-async def _wait_for_task_done(future: distributed.Future) -> None:
-    assert future.done() is True
-
-
-async def _wait_for_dask_scheduler_to_change_state() -> None:
-    # NOTE: I know this is kind of stupid
-    await asyncio.sleep(_DASK_SCHEDULER_REACTION_TIME_S)
+    await _wait_until_scheduler_reports(
+        lambda: list_processing_tasks_per_worker(scheduler_url, scheduler_authentication),
+        {},
+    )
 
 
 @pytest.fixture
@@ -255,11 +292,11 @@ async def test_get_worker_still_has_results_in_memory(
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5)
     assert future_queued_task
     await _wait_for_task_done(future_queued_task)
-    assert (
-        await get_worker_still_has_results_in_memory(
+    await _wait_until_scheduler_reports(
+        lambda: get_worker_still_has_results_in_memory(
             scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
-        == 1
+        ),
+        1,
     )
 
     # get the result will NOT bring the data back
@@ -272,22 +309,20 @@ async def test_get_worker_still_has_results_in_memory(
         result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
         assert result == 7
 
-    await _wait_for_dask_scheduler_to_change_state()
-    assert (
-        await get_worker_still_has_results_in_memory(
+    await _wait_until_scheduler_reports(
+        lambda: get_worker_still_has_results_in_memory(
             scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
-        == 1
+        ),
+        1,
     )
 
     # this should remove the memory
     del future_queued_task
-    await _wait_for_dask_scheduler_to_change_state()
-    assert (
-        await get_worker_still_has_results_in_memory(
+    await _wait_until_scheduler_reports(
+        lambda: get_worker_still_has_results_in_memory(
             scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
-        == 0
+        ),
+        0,
     )
 
 
@@ -338,29 +373,32 @@ async def test_worker_used_resources(
     def _add_fct(x: int, y: int) -> int:
         import time  # noqa: PLC0415
 
-        time.sleep(_DASK_SCHEDULER_REACTION_TIME_S * 2)
+        time.sleep(_TASK_REMOTE_RUN_TIME_S)
         return x + y
 
     # run something that uses resources
     num_cpus = 2
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5, resources={"CPU": num_cpus})
     assert future_queued_task
-    await _wait_for_dask_scheduler_to_change_state()
-    assert await get_worker_used_resources(
-        scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-    ) == Resources(
+
+    expected_used_resources = Resources(
         cpus=num_cpus,
         ram=ByteSize(0),
         generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
     )
+    await _wait_until_scheduler_reports(
+        lambda: get_worker_used_resources(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data),
+        expected_used_resources,
+    )
 
-    result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
+    # the timeout must cover the remote function's own run time
+    result = await future_queued_task.result(timeout=_TASK_REMOTE_RUN_TIME_S + 4)  # type: ignore
     assert result == 7
 
     # back to no use
-    assert (
-        await get_worker_used_resources(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data)
-        == Resources.create_as_empty()
+    await _wait_until_scheduler_reports(
+        lambda: get_worker_used_resources(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data),
+        Resources.create_as_empty(),
     )
 
 
