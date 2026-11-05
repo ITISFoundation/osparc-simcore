@@ -16,9 +16,9 @@ requested on its own:
   Mergify queue merges on the checks alone;
 - checks all passed without that label: marked ready, so the code-owner review is what
   the pull request waits for;
-- checks failed: held with 🤖-do-not-merge, the fast-lane label removed and a comment
-  naming the failing checks, but only after FAIL_COOLDOWN_HOURS on the last commit so
-  that Renovate can push its own fix first;
+- checks failed: the fast-lane label removed, marked ready and a comment naming the
+  failing checks and the commands to take the update over, but only after
+  FAIL_COOLDOWN_HOURS on the last commit so that Renovate can push its own fix first;
 - a draft whose reviewers were already requested, or which has reviews, is left alone;
 - every draft gets the pins its diff moved besides the dependency of its title
   commented, each with what carried the new version, edited in place on later runs.
@@ -67,10 +67,6 @@ DRIFT_MARKER: Final[
 FAST_LANE_LABEL: Final[
     Annotated[str, doc("Label of the pull requests the renovate-fast Mergify queue merges without reviews")]
 ] = "🤖-renovate-fast-lane"
-
-DO_NOT_MERGE_LABEL: Final[
-    Annotated[str, doc("Label that keeps a pull request out of both queues until a person removes it")]
-] = "🤖-do-not-merge"
 
 ARTIFACT_CHECK: Final[
     Annotated[
@@ -147,6 +143,7 @@ class PullRequest:
     number: int
     repo: str
     title: str = ""
+    head_branch: str = ""
     labels: tuple[str, ...] = ()
     checks: tuple[Check, ...] = ()
 
@@ -163,11 +160,12 @@ class PullRequest:
         return len(requested.get("users", [])) + len(requested.get("teams", [])) + len(reviews) > 0
 
     def read(self) -> None:
-        """Fills in title, labels and checks. A pull request with no checks reported yet
-        keeps an empty list"""
-        info = gh_json("pr", "view", f"{self.number}", "--repo", self.repo, "--json", "labels,title")
+        """Fills in title, head branch, labels and checks. A pull request with no checks
+        reported yet keeps an empty list"""
+        info = gh_json("pr", "view", f"{self.number}", "--repo", self.repo, "--json", "labels,title,headRefName")
         assert isinstance(info, dict)
         self.title = str(info.get("title", ""))
+        self.head_branch = str(info.get("headRefName", ""))
         self.labels = tuple(str(label["name"]) for label in info.get("labels", []))
         try:
             reported = gh_json("pr", "checks", f"{self.number}", "--repo", self.repo, "--json", "name,bucket")
@@ -469,21 +467,43 @@ def post_drift_comment(pr: PullRequest, body: str) -> bool:
     return True
 
 
+def take_over_recipe(repo: str, branch: str) -> str:
+    """The commands that carry this pull request's update in one a person opened: the head
+    branch content pushed to their fork, and the comparison link the push prints to open a
+    pull request from it. A fix cannot always land on `master` first — dropping a
+    `# type: ignore` the new version made unused fails the type check of the version
+    `master` still pins — and GitHub cannot point a pull request at another repository, so
+    the update has to travel with the fix"""
+    return (
+        "To carry this update in a pull request of your own, take the branch to your fork:\n\n"
+        "```bash\n"
+        f"git fetch https://github.com/{repo}.git {branch}\n"
+        "git push -u origin FETCH_HEAD:chore/<name>\n"
+        "```\n\n"
+        "The push prints a link that opens the comparison with `master`: open your pull request"
+        " there, copy the description of this one across so the changelog and release-note links"
+        " come with it, then close this one with a link to yours. Bring the fix with the update,"
+        " because closing hands it over: Renovate matches a pull request by branch name and title"
+        " and does not propose again a version whose pull request was closed. Committing on this"
+        " branch is the smaller change, but Renovate makes no further commits to a branch someone"
+        " else committed to, so the lockfiles stop resyncing and it stops following `master`."
+    )
+
+
 def hold_for_review(pr: PullRequest, age_hours: int, failing: list[str]) -> None:
-    """Marks a pull request that kept failing past the cool-down ready and holds it with
-    🤖-do-not-merge, so it goes through the reviewed queue instead of the fast lane"""
+    """Takes a pull request that kept failing past the cool-down out of the fast lane and
+    marks it ready, so it waits for reviews; 🤖-do-not-merge stays a lever only a person sets"""
     failed = "\n".join(f"- {name}" for name in failing)
-    pr.set_labels(add=DO_NOT_MERGE_LABEL, remove=FAST_LANE_LABEL if FAST_LANE_LABEL in pr.labels else "")
+    pr.set_labels(remove=FAST_LANE_LABEL if FAST_LANE_LABEL in pr.labels else "")
     pr.mark_ready()
     pr.comment(
         "> [!WARNING]\n"
         f"> The checks have been failing for {age_hours} h on the last commit and Renovate did not fix them."
-        f" This pull request is held with {DO_NOT_MERGE_LABEL} and needs reviews, also if a later commit passes."
+        " This pull request lost its fast lane and goes through reviews now."
         f"\n\nFailing checks:\n\n{failed}\n\n"
-        f"Reviewers: do not push to this branch; fix or close it as described in"
-        f" https://github.com/{pr.repo}/blob/master/{_FIXING_DOCS}, and remove {DO_NOT_MERGE_LABEL} once the"
-        f" checks pass and the update is fine to merge. {FAST_LANE_LABEL} was removed with the hold; add it back"
-        " to send the pull request through the fast lane."
+        f"{take_over_recipe(pr.repo, pr.head_branch)}\n\n"
+        f"Other options: https://github.com/{pr.repo}/blob/master/{_FIXING_DOCS}. Add {FAST_LANE_LABEL} back"
+        " once the checks pass to take the pull request through the fast lane."
     )
 
 

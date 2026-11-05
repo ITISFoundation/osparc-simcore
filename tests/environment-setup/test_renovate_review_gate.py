@@ -143,3 +143,15 @@ def test_the_comment_lists_the_reason_and_truncates(review_gate):
     assert "- and 1 more" in body
     # the truncation stays inside the list, before the closing sentence
     assert body.index("- and 1 more") < body.index("If one of these")
+
+
+def test_the_hold_comment_carries_the_take_over_commands(review_gate):
+    body = review_gate.take_over_recipe("ITISFoundation/osparc-simcore", "renovate/redis")
+    assert "git fetch https://github.com/ITISFoundation/osparc-simcore.git renovate/redis\n" in body
+    # the name of the fork branch is left for the developer to fill in
+    assert "git push -u origin FETCH_HEAD:chore/<name>" in body
+    assert body.count("```") == 2
+    # git is all the recipe needs: the push prints the link that opens the pull request
+    assert "gh pr" not in body
+    # closing is what hands the update over, so the fix has to travel with it
+    assert "does not propose again a version whose pull request was closed" in body
