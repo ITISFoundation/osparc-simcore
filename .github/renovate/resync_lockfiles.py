@@ -1,8 +1,8 @@
 #!/usr/bin/env -S uv run --script --no-project
 # /// script
 # requires-python = ">=3.14"
-# dependencies = [] # stdlib-only on purpose: this is the only command the Renovate
-#                   # runner may execute, so it must never fetch anything to start
+# dependencies = ["packaging>=24.2"]  # only for PEP 440 version ordering; the resolutions
+#                                     # this script drives reach PyPI anyway
 # ///
 # ruff: noqa: T201  # the report of a Renovate post-upgrade task is its stdout/stderr log
 """Renovate post-upgrade task (postUpgradeTasks in .renovaterc.jsonc), run by the
@@ -41,6 +41,8 @@ import tempfile
 from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Final
+
+from packaging.version import InvalidVersion, Version
 
 if TYPE_CHECKING:
     # documentation metadata only, and `annotated-types` is not a dependency of this
@@ -120,10 +122,13 @@ def normalized(name: str) -> str:
     return re.sub(r"[-_.]+", "-", re.sub(r"\[[^\]]*\]", "", name).lower())
 
 
-def _version_key(version: str) -> list[tuple[int, str]]:
-    """Orders versions like GNU `sort -V`: digit runs compare numerically (3.14.10 >
-    3.14.9), other characters compare as text and rank below digits"""
-    return [(int(part), "") if part.isdigit() else (0, part) for part in re.split(r"(\d+)", version) if part]
+def _version_of(version: str) -> Version | None:
+    """The PEP 440 version, or None for something PEP 440 cannot order. A lockfile pin is a
+    PyPI version and parses; the alternative keeps a hand-edited line from stopping a run"""
+    try:
+        return Version(version)
+    except InvalidVersion:
+        return None
 
 
 def parse_pins(text: str) -> list[str]:
@@ -134,16 +139,17 @@ def parse_pins(text: str) -> list[str]:
     satisfy two exact pins of one package, so only the highest version of each
     (PEP 503-normalized) name is kept.
     """
-    highest: dict[str, tuple[list[tuple[int, str]], str]] = {}
+    highest: dict[str, tuple[Version, str]] = {}
     for raw_line in text.splitlines():
         line = raw_line.strip(" \r")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*(\[[^\]]+\])?==[A-Za-z0-9._+!-]+", line):
             continue
         name, _, version = line.partition("==")
+        if (parsed := _version_of(version)) is None:
+            continue
         name = normalized(name)
-        key = _version_key(version)
-        if name not in highest or key > highest[name][0]:
-            highest[name] = (key, line)
+        if name not in highest or parsed > highest[name][0]:
+            highest[name] = (parsed, line)
     return [highest[name][1] for name in sorted(highest)]
 
 
@@ -154,15 +160,18 @@ def git(*args: str) -> str:
 
 def _highest_pinned_of(paths: Iterable[Path]) -> dict[str, str]:
     """Highest version found for each (normalized) package name in the given lockfiles"""
-    highest: dict[str, str] = {}
+    highest: dict[str, tuple[Version, str]] = {}
     for path in paths:
         for line in path.read_text().splitlines():
             if match := PIN_AT_LINE_START.match(line):
-                name, version = match.groups()
+                name, raw = match.groups()
+                version = _version_of(raw)
+                if version is None:
+                    continue
                 name = normalized(name)
-                if name not in highest or _version_key(version) > _version_key(highest[name]):
-                    highest[name] = version
-    return highest
+                if name not in highest or version > highest[name][0]:
+                    highest[name] = (version, raw)
+    return {name: raw for name, (_, raw) in highest.items()}
 
 
 def highest_pinned() -> dict[str, str]:
@@ -356,8 +365,10 @@ def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot, ceilings:
         for name in sorted(names):
             cap = ceilings.get(name, "")
             pinned = own.get(name, "")
-            # free when a capped round already failed, or when the cap reaches no above the pin here
-            if round_ or not cap or not pinned or _version_key(cap) <= _version_key(pinned):
+            # free when a capped round already failed, or when the cap reaches no higher
+            # than the pin here
+            capped, here = _version_of(cap), _version_of(pinned)
+            if round_ or capped is None or here is None or capped <= here:
                 freed[name] = name
             else:
                 freed[name] = f"{name}<={cap}"

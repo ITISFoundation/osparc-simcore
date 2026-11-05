@@ -347,8 +347,11 @@ def test_resync_lockfiles_blames_a_blocking_pin_with_extras(resync_lockfiles_scr
         pytest.param("# comment\nnot-a-pin\n", [], id="no valid pin"),
         pytest.param("uvicorn[standard]==1.2.0\n", ["uvicorn[standard]==1.2.0"], id="extras kept verbatim"),
         # a security branch can list one package at two versions: uv cannot satisfy two
-        # exact pins, so only the highest (sort -V style: 3.14.10 > 3.14.9) survives
+        # exact pins, so only the highest (PEP 440: 3.14.10 > 3.14.9) survives
         pytest.param("a==3.14.9\nA==3.14.10\n", ["A==3.14.10"], id="highest of same name"),
+        # PEP 440 ranks a pre-release below the release it leads, which a digit-by-digit
+        # comparison of the version strings gets the other way round
+        pytest.param("otel==0.66b1\notel==0.66\n", ["otel==0.66"], id="release over pre-release"),
         pytest.param("b==1.0\na==2.0\n", ["a==2.0", "b==1.0"], id="sorted by normalized name"),
     ],
 )
