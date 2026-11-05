@@ -5,10 +5,11 @@
 
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 import distributed
 import pytest
+from annotated_types import doc
 from arrow import utcnow
 from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
@@ -92,16 +93,21 @@ def dask_workers_config() -> dict[str, Any]:
     }
 
 
-_DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
+_DASK_SCHEDULER_REACTION_TIME_S: Final[
+    Annotated[int, doc("time the scheduler is given to apply a task state transition")]
+] = 4
 
-# interval between two scheduler reads while polling. What is being waited for happens on the
-# scheduler's own clock, so polling faster only reduces the delay between the transition
-# happening and the test noticing it
-_DASK_SCHEDULER_POLL_TIME_S: Final[float] = 0.1
+_DASK_SCHEDULER_POLL_TIME_S: Final[Annotated[float, doc("interval between two scheduler reads while polling")]] = 0.1
 
-# how long a function submitted to a worker keeps running, so that the scheduler reports it as
-# unrunnable/processing/using-resources long enough for the test polling for that state
-_TASK_REMOTE_RUN_TIME_S: Final[int] = 4
+_TASK_REMOTE_RUN_TIME_S: Final[
+    Annotated[
+        int,
+        doc(
+            "how long a submitted function keeps running, at least as long as the scheduler is "
+            "given to report it as running"
+        ),
+    ]
+] = 4
 
 
 @retry(stop=stop_after_delay(_DASK_SCHEDULER_REACTION_TIME_S), wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S))
