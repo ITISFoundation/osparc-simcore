@@ -129,7 +129,7 @@ def remap_file_link_paths(
         if isinstance(value, dict):
             store = value.get("store")
             path = value.get("path")
-            if isinstance(path, str) and store in {0, "0"}:
+            if isinstance(path, str) and store in (0, "0"):
                 return {**value, "path": _rewrite_path(path)}
         return value
 

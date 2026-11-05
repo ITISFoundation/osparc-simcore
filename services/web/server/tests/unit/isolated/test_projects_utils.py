@@ -222,6 +222,9 @@ def test_remap_file_link_paths_leaves_other_references_untouched(faker: Faker):
         "dict_nested_link": {"meta": {"store": 0, "path": f"{src_uuid}/{old_node}/f.dat"}},
         # fewer than the 3 path sections means no remainder to carry over
         "short_path": {"store": 0, "path": f"{src_uuid}/{old_node}"},
+        # object ports carry arbitrary JSON: a dict/list store must not raise
+        "object_port_dict_store": {"path": "settings.json", "store": {"region": "local"}},
+        "object_port_list_store": {"path": "settings.json", "store": ["a", "b"]},
         "scalar": "text",
     }
 
