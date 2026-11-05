@@ -21,9 +21,8 @@ test_all() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/service-library
-  # NOTE: xdist workers share ONE docker stack (see packages/pytest-simcore/src/pytest_simcore/helpers/xdist.py);
-  # the rabbit/valkey containers are shared too, so tests pausing or restarting them are marked
-  # `docker_exclusive` and run alone (see the pytest_simcore.xdist_docker_daemon plugin)
+  # NOTE: workers share one docker stack, so tests pausing or restarting its rabbit/valkey
+  # containers are marked `docker_exclusive` and run alone (pytest_simcore.xdist_docker_daemon)
   make "test-ci[all]" pytest-parameters="--numprocesses=auto"
   popd
 }

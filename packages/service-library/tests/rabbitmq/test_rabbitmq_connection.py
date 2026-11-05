@@ -110,8 +110,7 @@ def _assert_rabbitmq_has_connections(rabbit_service: RabbitSettings, num_connect
     )
     response = requests.get(rabbit_list_connections_url, timeout=5)
     response.raise_for_status()
-    # counts only this worker's vhost: with xdist the other workers keep their own
-    # connections open on the same broker
+    # other xdist workers hold their own connections on this broker, each in its own vhost
     list_connections = [conn for conn in response.json() if conn["vhost"] == rabbit_service.RABBIT_VHOST]
     assert len(list_connections) == num_connections, f"got {list_connections}"
     return [conn["name"] for conn in list_connections]

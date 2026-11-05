@@ -263,8 +263,7 @@ async def test_pull_image_without_layer_information(
     [
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
     ],
-    # sorted: `str(set)` depends on the per-process hash seed, so xdist workers would
-    # each build a different test id out of it
+    # str(set) depends on the per-process hash seed, so pytest's own id differs per worker
     ids=lambda images: "-".join(sorted(images)),
 )
 async def test_pull_images_set(
