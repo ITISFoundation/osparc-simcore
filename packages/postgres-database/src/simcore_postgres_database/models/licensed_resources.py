@@ -50,7 +50,17 @@ licensed_resources = sa.Table(
         sa.SmallInteger,
         nullable=False,
         server_default="0",
-        doc="Used for sorting 0 (first) > 1 (second) > 2 (third) (ex. if we want to manually adjust how it is presented in the Market)",
+        doc="Used for sorting 0 (first) > 1 (second) > 2 (third) "
+        "(ex. if we want to manually adjust how it is presented in the Market)",
+    ),
+    sa.Column(
+        "is_hidden_on_market",
+        sa.Boolean(),
+        nullable=False,
+        server_default=sa.text("false"),
+        doc="If true, the resource is not offered on the Market (front-end). NOTE: it is ALWAYS returned by "
+        "the APIs (e.g. clients like Sim4Life need every resource to keep their "
+        "license_key/license_version -> licensed_item mapping complete, even for resources not offered anymore)",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),

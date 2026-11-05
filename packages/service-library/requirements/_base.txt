@@ -265,7 +265,7 @@ stream-zip==0.0.84
     # via -r requirements/_base.in
 tenacity==9.1.4
     # via -r requirements/_base.in
-toolz==1.1.0
+toolz==1.2.0
     # via -r requirements/_base.in
 tqdm==4.67.3
     # via -r requirements/_base.in
