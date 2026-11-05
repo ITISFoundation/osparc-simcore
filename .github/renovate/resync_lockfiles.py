@@ -56,8 +56,11 @@ MAKE_LOG: Final[re.Pattern[str]] = re.compile(r"^make(\[\d+\])?: ")
 # input file, so such a reference names a directory that must resolve before this one
 REFERENCE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:--constraint|--requirement|-c|-r)[\s=]+(?P<path>\S+)")
 
-# rounds of letting uv's blamed packages move before giving up on a directory
-MAX_UNBLOCK_ROUNDS: Final[int] = 5
+# rounds of letting uv's blamed packages move before giving up on a directory. Each round
+# frees more packages, and uv takes a freed package to its newest release rather than to the
+# version that would unblock it, so rounds beyond the first turn a patch bump into a
+# monorepo-wide upgrade; a directory that needs more than these goes to the report instead
+MAX_UNBLOCK_ROUNDS: Final[int] = 2
 
 # failure report of the last resync, committed to the PR through
 # postUpgradeTasks.fileFilters so reviewers cannot miss it; removed once a

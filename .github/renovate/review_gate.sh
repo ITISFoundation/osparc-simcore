@@ -17,6 +17,9 @@
 #  A draft that already has requested reviewers or reviews is left alone: the
 #  gate reported it before or a person handles it (e.g. turned it back into a
 #  draft on purpose).
+#  Each draft also gets a comment listing the lockfile pins its diff moved besides the
+#  dependency named in the title, updated in place on later runs. It informs reviewers;
+#  it holds nothing back.
 #
 #  Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS.
 #  Uses gh for API calls (GH_TOKEN must be set). GH_TOKEN must belong to the
@@ -27,6 +30,55 @@
 set -o errexit  # abort on nonzero exitstatus
 set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
+
+# First line of the comment listing the packages the resync moved; identifies the
+# comment so the next poll updates it instead of adding another
+DRIFT_MARKER='<!-- renovate-drift-summary -->'
+
+# Packages listed in that comment before it truncates
+DRIFT_LIST_LIMIT="${DRIFT_LIST_LIMIT:-40}"
+
+# Reads a pull request diff on stdin and prints one "<name>: <old> -> <new>" line per
+# package whose pin it moved, alphabetically. Skips packages that only appear on one
+# side (a dependency added or dropped, not moved), those whose pins are the same on both
+# sides (a lockfile comment touched), and the one whose new version is the version in the
+# pull request title. A lockfile pin is a line starting at column 1, so lines inside a
+# diff hunk of any other file cannot match.
+moved_pins() {
+  local headline="$1"
+  awk -v headline="$headline" '
+    /^[+-][A-Za-z0-9._-]+(\[[A-Za-z0-9._-]+\])?==[A-Za-z0-9._+!-]+/ {
+      side = substr($0, 1, 1)
+      line = substr($0, 2)
+      eq = index(line, "==")
+      name = substr(line, 1, eq - 1)
+      version = substr(line, eq + 2)
+      sub(/[ \t\r]+$/, "", version)
+      sub(/\[[^]]*\]$/, "", name)
+      gsub(/[-_.]+/, "-", name)
+      name = tolower(name)
+      # the versions are collected deduplicated: one package moves in dozens of
+      # lockfiles and usually to the same version in all of them
+      if (side == "-") {
+        seen[name] = 1
+        if (index(" " old[name] " ", " " version " ") == 0) old[name] = old[name] " " version
+      } else if (index(" " new[name] " ", " " version " ") == 0) {
+        new[name] = new[name] " " version
+      }
+    }
+    END {
+      for (name in seen) {
+        if (old[name] == "" || new[name] == "") continue
+        if (headline != "" && index(" " new[name] " ", " " headline " ") > 0) continue
+        olds = substr(old[name], 2)
+        gsub(/ /, ", ", olds)
+        news = substr(new[name], 2)
+        gsub(/ /, ", ", news)
+        print name ": " olds " -> " news
+      }
+    }
+  ' | sort
+}
 
 # --author filters server-side; GitHub search resolves the bot name to both
 # the "<name>[bot]" and the "app/<name>" form the gh CLI reports in
@@ -63,7 +115,37 @@ for pr in $DRAFTS; do
     echo "PR #$pr: checks still pending"
     continue
   fi
-  labels=$(gh pr view "$pr" --repo "$REPO" --json labels --jq '.labels[].name')
+  info=$(gh pr view "$pr" --repo "$REPO" --json labels,title)
+  labels=$(jq -r '.labels[].name' <<<"$info")
+  # The version Renovate wrote into the title, which is the one the pull request is about:
+  # "Update dependency redis to v7.4.1 [Renovate]" -> 7.4.1. Empty on any other wording,
+  # which then lists every moved package including that one.
+  headline=$(sed -n 's/.* to v\{1,\}\([0-9][^ ]*\) .*/\1/p' <<<"$(jq -r .title <<<"$info")")
+  # What the resync moved besides that package. It runs inside Renovate's own commit, before
+  # the pull request exists, so it cannot report this itself; the title names one dependency
+  # and the diff moves dozens of pins.
+  if ! drift=$(gh pr diff "$pr" --repo "$REPO" | moved_pins "$headline"); then
+    echo "PR #$pr: diff not readable, skipping the moved-packages comment"
+    drift=""
+  fi
+  if [ -n "$drift" ]; then
+    total=$(grep -c . <<<"$drift")
+    # shellcheck disable=SC2016 # the backticks are markdown, not a command substitution
+    listed=$(head -n "$DRIFT_LIST_LIMIT" <<<"$drift" | sed 's/^/- `/; s/$/`/')
+    if [ "$total" -gt "$DRIFT_LIST_LIMIT" ]; then
+      listed="${listed}"$'\n'"- and $((total - DRIFT_LIST_LIMIT)) more"
+    fi
+    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about. The resync re-resolves every \`requirements/\` directory the pin reaches, and a package it has to free to make that resolve goes to its newest release rather than to the version that unblocks it."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
+    existing=$(gh api "repos/${REPO}/issues/${pr}/comments" --paginate \
+      --jq ".[] | select(.body | startswith(\"$DRIFT_MARKER\")) | .id" | head -n 1 || true)
+    if [ -z "$existing" ]; then
+      gh pr comment "$pr" --repo "$REPO" --body "$body" >/dev/null
+      echo "PR #$pr: commented the ${total} packages the resync moved"
+    elif [ "$(gh api "repos/${REPO}/issues/comments/${existing}" --jq .body)" != "$body" ]; then
+      gh api -X PATCH "repos/${REPO}/issues/comments/${existing}" -f body="$body" >/dev/null
+      echo "PR #$pr: updated the moved-packages comment"
+    fi
+  fi
   if jq -e 'any(.bucket == "fail")' <<<"$checks" >/dev/null; then
     # Renovate pushes fixes itself; request a review only once it stops trying
     sha=$(gh pr view "$pr" --repo "$REPO" --json headRefOid --jq .headRefOid)
