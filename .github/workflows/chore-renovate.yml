@@ -7,7 +7,7 @@
 #   CI, which waits for approval, and Renovate, which stops updating an "edited"
 #   branch);
 # - review-gate: marks Renovate's draft PRs ready once their checks are done
-#   (.github/renovate/review_gate.sh).
+#   (.github/renovate/review_gate.py).
 # New PRs get their milestone from chore-labeler.yml, like every other PR.
 # How a PR gets from here to master is in docs/renovate.md.
 #
@@ -180,10 +180,15 @@ jobs:
           # script only talks to the API through gh
           persist-credentials: false
 
+      - name: setup python environment
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+
       - name: run review gate
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           BOT: osparc-simcore-renovate[bot]
           FAIL_COOLDOWN_HOURS: 3
-        run: ./.github/renovate/review_gate.sh
+        run: python .github/renovate/review_gate.py

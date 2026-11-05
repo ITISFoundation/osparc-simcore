@@ -11,7 +11,7 @@ as a vulnerability source only.
 | Repository configuration | [.renovaterc.jsonc](../.renovaterc.jsonc) |
 | Admin configuration (`allowedCommands`, `platformCommit`) | [.github/renovate/global-config.json5](../.github/renovate/global-config.json5) |
 | Lockfile re-resolution post-upgrade task | [.github/renovate/resync_lockfiles.py](../.github/renovate/resync_lockfiles.py) |
-| Review gate script (drafts go ready) | [.github/renovate/review_gate.sh](../.github/renovate/review_gate.sh) |
+| Review gate script (drafts go ready) | [.github/renovate/review_gate.py](../.github/renovate/review_gate.py) |
 | Who reviews them | [CODEOWNERS](../.github/CODEOWNERS), last block |
 | Who merges them | [mergify.yml](../.github/mergify.yml) |
 

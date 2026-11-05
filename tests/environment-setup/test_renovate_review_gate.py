@@ -1,8 +1,7 @@
 # pylint: disable=redefined-outer-name
 
-import re
-import subprocess
-from collections.abc import Callable
+import importlib.util
+import sys
 from pathlib import Path
 from typing import Final
 
@@ -61,38 +60,23 @@ index 3333333..4444444 100644
 """
 
 
-@pytest.fixture(name="moved_pins")
-def moved_pins_fixture(tmp_path: Path, review_gate_script: Path) -> Callable[..., list[str]]:
-    """Callable running the gate's `moved_pins` over a diff on stdin, returning its lines"""
-
-    def _moved(diff: str, headline: str = "") -> list[str]:
-        source = review_gate_script.read_text()
-        # sourcing the script would run its gh calls, so only the function is extracted:
-        # definition down to the closing brace at column 0
-        match = re.search(r"^moved_pins\(\) \{.*?^\}$", source, re.MULTILINE | re.DOTALL)
-        assert match, "moved_pins() not found in review_gate.sh"
-        script = tmp_path / "moved_pins.sh"
-        script.write_text(f'{match.group()}\nmoved_pins "{headline}"\n')
-        run = subprocess.run(  # noqa: S603
-            ["bash", str(script)],  # noqa: S607
-            encoding="utf8",
-            check=True,
-            input=diff,
-            capture_output=True,
-        )
-        return run.stdout.splitlines()
-
-    return _moved
+@pytest.fixture(name="review_gate")
+def review_gate_fixture(osparc_simcore_root_dir: Path):
+    """The gate as a module. Importing it runs no gh calls, only `main` does"""
+    path = osparc_simcore_root_dir / ".github/renovate/review_gate.py"
+    spec = importlib.util.spec_from_file_location("review_gate", path)
+    assert spec
+    assert spec.loader
+    module = importlib.util.module_from_spec(spec)
+    # a dataclass with slots resolves its string annotations through sys.modules, and a
+    # module loaded by hand is not in there until it is put in
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
-@pytest.fixture(name="review_gate_script")
-def review_gate_script_fixture(osparc_simcore_root_dir: Path) -> Path:
-    """Path of the review gate script the tests read their function out of"""
-    return osparc_simcore_root_dir / ".github/renovate/review_gate.sh"
-
-
-def test_only_packages_whose_pin_moved_are_listed(moved_pins):
-    assert moved_pins(_DIFF) == [
+def test_only_packages_whose_pin_moved_are_listed(review_gate):
+    assert review_gate.moved_pins(_DIFF) == [
         "amqp: 5.3.1 -> 5.4.2\tkombu",
         "attrs: 25.1.0, 24.2.0 -> 26.1.0\tpackages/service-library/requirements/_base.txt",
         "redis: 7.4.0 -> 7.4.1\tpackages/service-library/requirements/_base.txt",
@@ -102,9 +86,9 @@ def test_only_packages_whose_pin_moved_are_listed(moved_pins):
     ]
 
 
-def test_the_package_of_the_pull_request_is_left_out(moved_pins):
+def test_the_package_of_the_pull_request_is_left_out(review_gate):
     # a patch bump of redis still moves attrs: the title says redis, the diff says both
-    assert moved_pins(_DIFF, headline="7.4.1") == [
+    assert review_gate.moved_pins(_DIFF, headline="7.4.1") == [
         "amqp: 5.3.1 -> 5.4.2\tkombu",
         "attrs: 25.1.0, 24.2.0 -> 26.1.0\tpackages/service-library/requirements/_base.txt",
         "starlette: 0.49.1 -> 0.50.0\tservices/director-v2/requirements/_base.txt",
@@ -113,8 +97,8 @@ def test_the_package_of_the_pull_request_is_left_out(moved_pins):
     ]
 
 
-def test_the_reason_names_what_carried_the_new_version(moved_pins):
-    reasons = {line.split("\t")[0].split(":")[0]: line.split("\t")[1:] for line in moved_pins(_DIFF)}
+def test_the_reason_names_what_carried_the_new_version(review_gate):
+    reasons = {line.split("\t")[0].split(":")[0]: line.split("\t")[1:] for line in review_gate.moved_pins(_DIFF)}
     # another directory pins attrs at the new version and aiohttp requires it: the pinning
     # file is the constraint the resolve had to honour
     assert reasons["attrs"] == ["packages/service-library/requirements/_base.txt"]
@@ -126,12 +110,36 @@ def test_the_reason_names_what_carried_the_new_version(moved_pins):
     assert reasons["tqdm"] == []
 
 
-def test_pins_are_matched_across_extras_and_spelling(moved_pins):
+def test_pins_are_matched_across_extras_and_spelling(review_gate):
     # werkzeug[async] and Werkzeug== are the same package moving
     diff = _DIFF.replace("+werkzeug[async]==3.1.8", "+Werkzeug[async]==3.1.8\n-werkzeug==3.1.7")
-    assert moved_pins(diff)[-1] == "werkzeug: 3.1.7 -> 3.1.8"
+    assert review_gate.moved_pins(diff)[-1] == "werkzeug: 3.1.7 -> 3.1.8"
 
 
-def test_a_diff_without_pin_moves_lists_nothing(moved_pins):
+def test_a_diff_without_pin_moves_lists_nothing(review_gate):
     # a docker or GitHub Actions pull request touches no lockfile pin
-    assert moved_pins("--- a/Dockerfile\n+++ b/Dockerfile\n-FROM caddy:2.11.7\n+FROM caddy:2.11.8\n") == []
+    assert review_gate.moved_pins("--- a/Dockerfile\n+++ b/Dockerfile\n-FROM caddy:2.11.7\n+FROM caddy:2.11.8\n") == []
+
+
+def test_the_title_names_the_version_that_is_not_drift(review_gate):
+    assert review_gate.headline_version("Update dependency redis to v7.4.1 [Renovate]") == "7.4.1"
+    # the version runs to the next space, so a title naming several versions matches none
+    assert review_gate.headline_version("Update redis to v7, v6 [Renovate]") == "7,"
+    # a lock file maintenance pull request names no version, so nothing is excluded
+    assert review_gate.headline_version("Lock file maintenance [Renovate]") == ""
+
+
+def test_the_comment_lists_the_reason_and_truncates(review_gate):
+    pins = [
+        "amqp: 5.3.1 -> 5.4.2\tkombu",
+        "attrs: 25.1.0 -> 26.1.0",
+        "uvicorn: 0.40.0 -> 0.41.0\tfastapi",
+    ]
+    body = review_gate.drift_comment("ITISFoundation/osparc-simcore", pins, list_limit=2)
+    assert body.startswith(review_gate.DRIFT_MARKER)
+    assert "**3** package(s)" in body
+    assert "- `amqp: 5.3.1 -> 5.4.2` — via `kombu`" in body
+    assert "- `attrs: 25.1.0 -> 26.1.0`" in body
+    assert "- and 1 more" in body
+    # the truncation stays inside the list, before the closing sentence
+    assert body.index("- and 1 more") < body.index("If one of these")
