@@ -165,12 +165,15 @@ class Nodeports(BaseModel):
         old_value: DataItemValue | None,
         new_value: DataItemValue | None,
     ) -> None:
-        """Delete the storage object a replaced port value pointed to, best-effort
+        """Delete the storage object that a replaced port value pointed to
 
-        Must run after the new value was uploaded and persisted. Skips re-uploads
-        to the same path, objects outside the simcore store or outside this node's
-        prefix, and objects another port of this node still references. Storage
-        errors are logged, not raised.
+        Failures don't abort the caller. Call this only after the new value has been
+        uploaded and persisted. The object is kept if any of these hold:
+
+        - the new value uses the same path
+        - the object is outside the simcore store
+        - the object is outside this node's prefix
+        - another port of this node still references it
         """
         if not isinstance(old_value, FileLink):
             return

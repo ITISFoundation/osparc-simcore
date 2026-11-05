@@ -763,7 +763,7 @@ def _own_node_file_link_file_value(path: str, store: LocationID) -> dict[str, An
     return {"store": store, "path": path, "eTag": "some-etag"}
 
 
-def _create_node_ports_with_outputs(project: str, node: str, outputs: OutputsList) -> Nodeports:
+def _wire_node_ports_with_outputs(project: str, node: str, outputs: OutputsList) -> Nodeports:
     async def _save_to_db_cb(_node_ports) -> None:
         return
 
@@ -816,7 +816,7 @@ async def test_old_file_link_deleted_on_replacement(
             value=_own_node_file_link_file_value(old_path, old_store),
         )
     )
-    _create_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
 
     await port.set(new_file)
 
@@ -845,7 +845,7 @@ async def test_old_file_link_deleted_when_port_cleared(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    _create_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
 
     await port.set(cast("ItemConcreteValue", None))
 
@@ -871,7 +871,7 @@ async def test_old_file_link_kept_when_still_referenced_by_another_port(
     new_file = tmp_path / "new_file.txt"
     new_file.write_text("some new data")
 
-    _create_node_ports_with_outputs(
+    _wire_node_ports_with_outputs(
         project_id, node_uuid, OutputsList(root={"output_1": replaced_port, "output_2": other_port})
     )
 
@@ -907,7 +907,7 @@ async def test_set_still_succeeds_when_old_file_deletion_fails(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    _create_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
     new_file = tmp_path / "new_file.txt"
     new_file.write_text("some new data")
 
@@ -935,7 +935,7 @@ async def test_old_file_link_of_other_node_is_not_deleted(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    _create_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
 
     await port.set(new_file)
 
@@ -963,7 +963,7 @@ async def test_set_still_succeeds_when_deletion_log_callback_fails(
             value=_own_node_file_link_file_value(old_path, simcore_store_id()),
         )
     )
-    node_ports = _create_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    node_ports = _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
     node_ports.io_log_redirect_cb = _failing_log_cb
     new_file = tmp_path / "new_file.txt"
     new_file.write_text("some new data")

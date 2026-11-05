@@ -350,7 +350,7 @@ class Port(BaseServiceIOModel):
         """sets a value to the port, by default it is also stored in the database
 
         If the new value replaces a previously uploaded file, the old object is
-        deleted from storage after the database update, best-effort, see
+        deleted from storage after the database update, see
         `Nodeports.safe_delete_replaced_file_link`.
 
         :raises InvalidItemTypeError
