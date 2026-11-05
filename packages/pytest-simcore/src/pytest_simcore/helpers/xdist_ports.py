@@ -71,18 +71,18 @@ class TcpPortAllocator:
         raise NoFreeTCPPortError(msg)
 
 
-def get_port_allocator(*, worker_id: str, max_workers: int, checkout_uid: str) -> TcpPortAllocator:
+def get_port_allocator(*, worker_id: str, worker_count: int, checkout_uid: str) -> TcpPortAllocator:
     """Slice of ports reserved for `worker_id`, disjoint from the other workers of the run and from
     the workers of any other checkout sharing the same network namespace
 
-    NOTE: `max_workers` (see `helpers.xdist.get_max_xdist_workers`) bounds the number of workers, so
-    a slice cannot run past its checkout's range when xdist spawns fewer of them.
+    `worker_count` (see `helpers.xdist.get_xdist_worker_count`) is the number of workers of the run,
+    so a slice cannot run past its checkout's range and does not shrink with the host's CPU count.
     """
     checkout_slot = int(checkout_uid, 16) % _CHECKOUT_SLOTS
-    max_workers = max(max_workers, 1)
-    ports_per_worker = _PORTS_PER_CHECKOUT // max_workers
+    worker_count = max(worker_count, 1)
+    ports_per_worker = _PORTS_PER_CHECKOUT // worker_count
     worker_index = _get_worker_index(worker_id)
-    assert worker_index < max_workers
+    assert worker_index < worker_count
     first = FIRST_TEST_PORT + checkout_slot * _PORTS_PER_CHECKOUT + worker_index * ports_per_worker
     return TcpPortAllocator(range(first, first + ports_per_worker))
 

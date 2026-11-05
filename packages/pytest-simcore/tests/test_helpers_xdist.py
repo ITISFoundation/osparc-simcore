@@ -12,6 +12,7 @@ from filelock import Timeout
 from pytest_simcore.helpers.xdist import (
     ReaderWriterLock,
     SharedResourceSetupError,
+    get_xdist_worker_count,
     is_xdist_controller,
     read_shared_resources,
     record_shared_resource,
@@ -143,3 +144,17 @@ def test_write_lock_releases_marker_when_reader_drain_times_out(tmp_path_factory
     # the abandoned writer's marker must be gone: a later writer acquires cleanly
     with lock.write_lock(token=next_writer, timeout=timedelta(seconds=5)):
         pass
+
+
+@pytest.mark.parametrize(
+    "workerinput,expected_count",
+    [
+        pytest.param(None, 1, id="run-without-xdist"),
+        pytest.param({"workerid": "gw0", "workercount": 4}, 4, id="xdist-worker"),
+    ],
+)
+def test_get_xdist_worker_count_returns_the_processes_of_the_run(workerinput, expected_count):
+    # not the host's CPU count: a run with fewer workers than cores must still get whole slices
+    request = SimpleNamespace(config=SimpleNamespace(workerinput=workerinput))
+
+    assert get_xdist_worker_count(request) == expected_count  # type: ignore[arg-type]

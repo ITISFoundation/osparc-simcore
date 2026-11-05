@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from .helpers.stack_names import get_checkout_uid
-from .helpers.xdist import get_max_xdist_workers, get_worker_id
+from .helpers.xdist import get_worker_id, get_xdist_worker_count
 from .helpers.xdist_ports import get_port_allocator
 
 
@@ -22,7 +22,7 @@ from .helpers.xdist_ports import get_port_allocator
 def unused_tcp_port_factory(request: pytest.FixtureRequest, osparc_simcore_root_dir: Path) -> Callable[[], int]:
     allocator = get_port_allocator(
         worker_id=get_worker_id(request),
-        max_workers=get_max_xdist_workers(request.config),
+        worker_count=get_xdist_worker_count(request),
         checkout_uid=get_checkout_uid(osparc_simcore_root_dir),
     )
     return allocator.get

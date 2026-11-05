@@ -9,6 +9,7 @@ from typing import Annotated, Final
 import pytest
 from annotated_types import doc
 from pytest_simcore.helpers.xdist_ports import (
+    _PORTS_PER_CHECKOUT,
     FIRST_TEST_PORT,
     NoFreeTCPPortError,
     TcpPortAllocator,
@@ -61,32 +62,40 @@ def test_allocator_hands_out_every_port_of_its_slice_once():
         allocator.get()
 
 
-@pytest.mark.parametrize("max_workers", [1, 4, 24])
-def test_allocators_of_the_workers_of_a_run_have_disjoint_slices(max_workers: int):
+@pytest.mark.parametrize("worker_count", [1, 4, 24])
+def test_allocators_of_the_workers_of_a_run_have_disjoint_slices(worker_count: int):
     allocators = [
         get_port_allocator(
             worker_id=f"gw{index}",
-            max_workers=max_workers,
+            worker_count=worker_count,
             checkout_uid=_CHECKOUT_UID,
         )
-        for index in range(max_workers)
+        for index in range(worker_count)
     ]
     slices = [set(allocator.ports) for allocator in allocators]
 
     assert sum(len(one) for one in slices) == len(set().union(*slices))
 
 
+def test_a_run_without_workers_gets_the_whole_checkout_range():
+    # dividing by the host's CPU count instead of the run's worker count would leave a serial run
+    # with a slice too small for its thousands of port draws
+    serial = get_port_allocator(worker_id="master", worker_count=1, checkout_uid=_CHECKOUT_UID)
+
+    assert len(serial.ports) == _PORTS_PER_CHECKOUT
+
+
 @pytest.mark.parametrize("checkout_uid,other_checkout_uid", [("0a0b0c00", "0a0b0c01"), ("abcdef01", "abcdef02")])
 def test_allocators_of_different_checkouts_have_disjoint_slices(checkout_uid: str, other_checkout_uid: str):
-    allocator = get_port_allocator(worker_id="gw0", max_workers=4, checkout_uid=checkout_uid)
-    other_allocator = get_port_allocator(worker_id="gw0", max_workers=4, checkout_uid=other_checkout_uid)
+    allocator = get_port_allocator(worker_id="gw0", worker_count=4, checkout_uid=checkout_uid)
+    other_allocator = get_port_allocator(worker_id="gw0", worker_count=4, checkout_uid=other_checkout_uid)
 
     assert set(allocator.ports).isdisjoint(other_allocator.ports)
 
 
 @pytest.mark.parametrize("worker_id", ["master", "gw0", "gw3"])
 def test_allocators_stay_out_of_the_ranges_other_processes_allocate_from(worker_id: str):
-    ports = get_port_allocator(worker_id=worker_id, max_workers=4, checkout_uid=_CHECKOUT_UID).ports
+    ports = get_port_allocator(worker_id=worker_id, worker_count=4, checkout_uid=_CHECKOUT_UID).ports
 
     assert ports.start >= FIRST_TEST_PORT
     assert ports.stop < 30000  # docker swarm publishes service ports from here on
@@ -95,7 +104,7 @@ def test_allocators_stay_out_of_the_ranges_other_processes_allocate_from(worker_
 
 def test_a_run_without_workers_shares_the_slice_of_its_first_worker():
     # the controller runs no tests once xdist spawns workers, so both may use the same slice
-    master = get_port_allocator(worker_id="master", max_workers=4, checkout_uid=_CHECKOUT_UID)
-    worker = get_port_allocator(worker_id="gw0", max_workers=4, checkout_uid=_CHECKOUT_UID)
+    master = get_port_allocator(worker_id="master", worker_count=4, checkout_uid=_CHECKOUT_UID)
+    worker = get_port_allocator(worker_id="gw0", worker_count=4, checkout_uid=_CHECKOUT_UID)
 
     assert master.ports == worker.ports
