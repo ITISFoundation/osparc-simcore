@@ -94,36 +94,34 @@ def dask_workers_config() -> dict[str, Any]:
 
 _DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
 
+# interval between two scheduler reads while polling. What is being waited for happens on the
+# scheduler's own clock, so polling faster only reduces the delay between the transition
+# happening and the test noticing it
 _DASK_SCHEDULER_POLL_TIME_S: Final[float] = 0.1
 
-# long enough that the scheduler reports the task as running while the test polls for it
+# how long a function submitted to a worker keeps running, so that the scheduler reports it as
+# unrunnable/processing/using-resources long enough for the test polling for that state
 _TASK_REMOTE_RUN_TIME_S: Final[int] = 4
 
 
-@retry(stop=stop_after_delay(_DASK_SCHEDULER_REACTION_TIME_S), wait=wait_fixed(1))
+@retry(stop=stop_after_delay(_DASK_SCHEDULER_REACTION_TIME_S), wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S))
 async def _wait_for_task_done(future: distributed.Future) -> None:
     assert future.done() is True
 
 
-async def _wait_until_scheduler_reports(
-    read_state: Callable[[], Awaitable[Any]],
-    expected_state: Any,
-    *,
-    timeout_s: float = _DASK_SCHEDULER_REACTION_TIME_S,
-) -> None:
-    """Polls a scheduler query until it returns ``expected_state``.
+@retry(
+    stop=stop_after_delay(_DASK_SCHEDULER_REACTION_TIME_S),
+    wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S),
+    reraise=True,
+)
+async def _wait_until_scheduler_reports(read_state: Callable[[], Awaitable[Any]], expected_state: Any) -> None:
+    """Raises until ``read_state`` returns ``expected_state``.
 
     The scheduler updates its task bookkeeping outside the client's submit/release call, so a
     read issued immediately after can still report the previous state.
     """
-    async for attempt in AsyncRetrying(
-        stop=stop_after_delay(timeout_s),
-        wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S),
-        reraise=True,
-    ):
-        with attempt:
-            state = await read_state()
-            assert state == expected_state, f"scheduler still reports {state}, expected {expected_state}"
+    state = await read_state()
+    assert state == expected_state, f"scheduler still reports {state}, expected {expected_state}"
 
 
 async def test__scheduler_client(scheduler_url: AnyUrl, scheduler_authentication: ClusterAuthentication):
@@ -169,9 +167,6 @@ async def test_list_unrunnable_tasks(
     )
 
 
-_REMOTE_FCT_SLEEP_TIME_S: Final[int] = 3
-
-
 async def test_list_processing_tasks(
     scheduler_url: AnyUrl,
     scheduler_authentication: ClusterAuthentication,
@@ -180,7 +175,7 @@ async def test_list_processing_tasks(
     def _add_fct(x: int, y: int) -> int:
         import time  # noqa: PLC0415 # this is sent as remote fct, so it's ok to import here
 
-        time.sleep(_REMOTE_FCT_SLEEP_TIME_S)
+        time.sleep(_TASK_REMOTE_RUN_TIME_S)
         return x + y
 
     # there is nothing now
@@ -208,7 +203,7 @@ async def test_list_processing_tasks(
         expected_processing_tasks,
     )
 
-    result = await future_queued_task.result(timeout=_REMOTE_FCT_SLEEP_TIME_S + 4)  # type: ignore
+    result = await future_queued_task.result(timeout=_TASK_REMOTE_RUN_TIME_S + _DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
     assert result == 7
 
     # nothing processing anymore
@@ -391,8 +386,7 @@ async def test_worker_used_resources(
         expected_used_resources,
     )
 
-    # the timeout must cover the remote function's own run time
-    result = await future_queued_task.result(timeout=_TASK_REMOTE_RUN_TIME_S + 4)  # type: ignore
+    result = await future_queued_task.result(timeout=_TASK_REMOTE_RUN_TIME_S + _DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
     assert result == 7
 
     # back to no use
@@ -490,7 +484,11 @@ async def test_is_worker_retired(
 
     # retire localhost worker
     await try_retire_nodes(scheduler_url, scheduler_authentication)
-    async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(10),
+        wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S),
+        reraise=True,
+    ):
         with attempt:
             assert (
                 await is_worker_retired(
@@ -551,7 +549,11 @@ async def test_get_scheduler_info_returns_all_workers_reliably(
         assert client.scheduler_info()["workers"] == {}
 
         with log_context(logging.INFO, "wait for get_scheduler_details() to report all workers") as ctx:
-            async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
+            async for attempt in AsyncRetrying(
+                stop=stop_after_delay(10),
+                wait=wait_fixed(_DASK_SCHEDULER_POLL_TIME_S),
+                reraise=True,
+            ):
                 with attempt:
                     identity = await get_scheduler_details(client)
                     num_workers = len(identity["workers"])
