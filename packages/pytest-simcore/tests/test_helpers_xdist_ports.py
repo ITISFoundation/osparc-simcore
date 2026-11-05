@@ -62,9 +62,9 @@ def _reserved_by(reservations_path: Path, port: int, pid: int) -> None:
 
 def _a_finished_pid() -> int:
     """A PID that runs nothing anymore"""
-    proc = subprocess.Popen([sys.executable, "-c", "pass"])
-    proc.wait()
-    return proc.pid
+    with subprocess.Popen([sys.executable, "-c", "pass"]) as proc:
+        proc.wait()
+        return proc.pid
 
 
 def test_port_is_free_only_when_nothing_holds_it():
