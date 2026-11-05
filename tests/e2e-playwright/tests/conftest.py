@@ -37,6 +37,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
+    start_websocket_tracking,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 
@@ -407,6 +408,9 @@ def log_in_and_out(
     context: BrowserContext,
 ) -> Iterator[RobustWebSocket]:
     _browser_info = f"{browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})"
+    # NOTE: before navigating, so that every websocket this page creates is recorded and can be
+    # picked up again later (see `start_websocket_tracking`)
+    start_websocket_tracking(page)
     with log_context(
         logging.INFO,
         f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {_browser_info}",
