@@ -18,8 +18,7 @@ a lockfile consumed by another directory through --constraint/--requirement must
 hold the new pin before its consumers resolve against it, or those resolutions are
 unsatisfiable. Renovate's versions are passed as exact pins on purpose:
 a bare `make reqs` upgrades everything and a bare package name lets uv pick the
-latest release. Only packages that block the update are passed on, the first time
-capped at the highest version another lockfile here already pins (see resync_dir
+latest release. Only packages that block the update are passed on (see resync_dir
 below). A directory that cannot be regenerated is restored and listed in
 renovate-resync-report.md, which Renovate commits to its PR (fileFilters).
 
@@ -30,6 +29,8 @@ Usage: resync_lockfiles.py [PINS_FILE]
   .github/renovate/resync_lockfiles.example.txt inside a scratch git worktree.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -39,41 +40,79 @@ import sys
 import tempfile
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Annotated, Final
 
-# the pip-compile lockfiles, same set as pip-compile.managerFilePatterns in .renovaterc.jsonc
-MANAGED: Final[re.Pattern[str]] = re.compile(
+if TYPE_CHECKING:
+    # documentation metadata only, and `annotated-types` is not a dependency of this
+    # script (see the metadata block above): `from __future__ import annotations` keeps
+    # these annotations from ever being evaluated at runtime
+    from annotated_types import doc
+
+MANAGED: Final[
+    Annotated[
+        re.Pattern[str],
+        doc("The managed pip-compile lockfiles, same set as pip-compile.managerFilePatterns in .renovaterc.jsonc"),
+    ]
+] = re.compile(
     r"^(?:.*/)?requirements/_[^/]+\.txt$"
     r"|^(?:api/tests|ci/helpers/requirements|tests/environment-setup/requirements)/requirements\.txt$"
 )
 
-# a "<package>==<version>" pin, extras included, as in `python-socketio[asyncio-client]==5.16.4`
-PIN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?==[A-Za-z0-9._+!-]*[A-Za-z0-9]")
-# a line starting with such a pin, as lockfiles and uv error messages write them
-PIN_AT_LINE_START: Final[re.Pattern[str]] = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?)==([^ ;]+)")
-MAKE_LOG: Final[re.Pattern[str]] = re.compile(r"^make(\[\d+\])?: ")
-# an entry of a `make reqs upgrade="..."` list that lets its package move: a bare name or
-# an exact pin. A cap (`attrs<=25.4.0`) does not, uv may still need more than it allows
-UPGRADE_ENTRY: Final[re.Pattern[str]] = re.compile(r"[^<>=!~]+(?:==[^<>=!~]+)?")
+PIN: Final[
+    Annotated[
+        re.Pattern[str],
+        doc("A `<package>==<version>` pin, extras included, as in `python-socketio[asyncio-client]==5.16.4`"),
+    ]
+] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?==[A-Za-z0-9._+!-]*[A-Za-z0-9]")
 
-# a line of a pip-compile input consuming another file, e.g. `--constraint
-# ../../dask-sidecar/requirements/_dask-distributed.txt`; the path is relative to the
-# input file, so such a reference names a directory that must resolve before this one
-REFERENCE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:--constraint|--requirement|-c|-r)[\s=]+(?P<path>\S+)")
+PIN_AT_LINE_START: Final[
+    Annotated[re.Pattern[str], doc("A line starting with such a pin, as lockfiles and uv error messages write them")]
+] = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?)==([^ ;]+)")
 
-# rounds of letting uv's blamed packages move before giving up on a directory. This is the
-# fallback for a directory that resolves at nothing at all because a consumed lockfile pins
-# a conflicting version, not for the moves a resolve propagates on its own. Without a cap uv
-# takes a freed package to its newest release rather than to the version that would unblock
-# it, so each round widens the diff; a directory that needs more than these goes to the
-# report. The first round caps a freed package at the highest version another lockfile here
-# pins for it (see highest_pinned), the rounds after that free it
-MAX_UNBLOCK_ROUNDS: Final[int] = 5
+MAKE_LOG: Final[
+    Annotated[re.Pattern[str], doc("A line `make` writes as it enters a layer, which ends uv's error block above it")]
+] = re.compile(r"^make(\[\d+\])?: ")
 
-# failure report of the last resync, committed to the PR through
-# postUpgradeTasks.fileFilters so reviewers cannot miss it; removed once a
-# resync runs clean again
-REPORT_FILE: Final[Path] = Path("renovate-resync-report.md")
+UPGRADE_ENTRY: Final[
+    Annotated[
+        re.Pattern[str],
+        doc(
+            'An entry of a `make reqs upgrade="..."` list that lets its package move: a bare name (`attrs`) or an'
+            " exact pin (`redis==7.4.1`). A cap (`attrs<=25.4.0`) does not, uv may need more than it allows"
+        ),
+    ]
+] = re.compile(r"[^<>=!~]+(?:==[^<>=!~]+)?")
+
+REFERENCE: Final[
+    Annotated[
+        re.Pattern[str],
+        doc(
+            "A line of a pip-compile input consuming another file, e.g."
+            " `--constraint ../../dask-sidecar/requirements/_dask-distributed.txt`. The path is relative to the"
+            " input file, so such a reference names a directory that must resolve before this one"
+        ),
+    ]
+] = re.compile(r"^\s*(?:--constraint|--requirement|-c|-r)[\s=]+(?P<path>\S+)")
+
+MAX_UNBLOCK_ROUNDS: Final[
+    Annotated[
+        int,
+        doc(
+            "Rounds in which the packages uv blames may move before the directory goes to the report. A resolve"
+            " propagates its own moves without them; they only unblock a directory that resolves at nothing"
+        ),
+    ]
+] = 5
+
+REPORT_FILE: Final[
+    Annotated[
+        Path,
+        doc(
+            "The failure report of the last resync, committed to the PR through postUpgradeTasks.fileFilters and"
+            " removed once a resync runs clean"
+        ),
+    ]
+] = Path("renovate-resync-report.md")
 
 
 def normalized(name: str) -> str:
@@ -82,8 +121,8 @@ def normalized(name: str) -> str:
 
 
 def _version_key(version: str) -> list[tuple[int, str]]:
-    # orders versions like GNU `sort -V`: runs of digits compare numerically (so
-    # 3.14.10 > 3.14.9), other characters compare as text and rank below digits
+    """Orders versions like GNU `sort -V`: digit runs compare numerically (3.14.10 >
+    3.14.9), other characters compare as text and rank below digits"""
     return [(int(part), "") if part.isdigit() else (0, part) for part in re.split(r"(\d+)", version) if part]
 
 
@@ -129,9 +168,8 @@ def _highest_pinned_of(paths: Iterable[Path]) -> dict[str, str]:
 def highest_pinned() -> dict[str, str]:
     """Highest version every managed lockfile pins for a package, by normalized name.
 
-    Read before any directory is regenerated: the ceiling of a freed package is the
-    version this repository already runs, not the newest release, and not what a
-    directory regenerated earlier in the same run took.
+    Read before any directory is regenerated: a ceiling read later would count the
+    versions this very run moved to, which no lockfile here pinned before.
     """
     return _highest_pinned_of(Path(path) for path in git("ls-files").splitlines() if MANAGED.match(path))
 
@@ -273,8 +311,6 @@ def blamed_packages(output: str, directory: str, upgrade: str) -> set[str]:
         name, _, version = pin.partition("==")
         blamed.add(f"{normalized(name)}=={version}")
 
-    # an entry frees a package when it names it (`attrs`) or pins it (`redis==7.4.1`); a
-    # cap (`attrs<=25.4.0`) does not, uv may need more than it allows
     free = {normalized(entry.partition("==")[0]) for entry in upgrade.split() if UPGRADE_ENTRY.fullmatch(entry)}
     names: set[str] = set()
     for lockfile in Path(directory).glob("*.txt"):
@@ -293,9 +329,9 @@ def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot, ceilings:
     Renovate's pins without a solution, e.g. a new virtualenv in _tools.txt needs
     packaging>=26.3 while _base.txt pins packaging==24.1. uv names such a pin in its
     error, so up to MAX_UNBLOCK_ROUNDS rounds let the blamed packages move as well.
-    Only packages that block the update move. A freed one may first rise no higher than
-    its `ceilings` entry, and the round after that frees it if the cap did not resolve;
-    a package nothing here pins above its own version is free from the first round.
+    Only packages that block the update move. A freed one may rise no higher than its
+    `ceilings` entry, and a round that fails at that cap frees it afterwards; a package
+    with no ceiling above its pinned version starts free.
 
     Returns (solved, the extra pins that had to move).
     """
@@ -320,8 +356,7 @@ def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot, ceilings:
         for name in sorted(names):
             cap = ceilings.get(name, "")
             pinned = own.get(name, "")
-            # free move: a later round after the cap failed, or a cap that would allow no
-            # more than the version pinned here already
+            # free when a capped round already failed, or when the cap reaches no above the pin here
             if round_ or not cap or not pinned or _version_key(cap) <= _version_key(pinned):
                 freed[name] = name
             else:

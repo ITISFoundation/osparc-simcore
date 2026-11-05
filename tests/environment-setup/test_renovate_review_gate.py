@@ -2,7 +2,9 @@
 
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
+from typing import Final
 
 import pytest
 
@@ -10,7 +12,7 @@ import pytest
 # requires it, uvicorn moves with a package that requires it and a pin of its own directory,
 # starlette only has the pin of its own directory, tqdm has no `# via` block, click is only
 # added, faker is only dropped, and the header comment lines change without moving a pin.
-_DIFF = """\
+_DIFF: Final[str] = """\
 diff --git a/packages/service-library/requirements/_base.txt b/packages/service-library/requirements/_base.txt
 index 1111111..2222222 100644
 --- a/packages/service-library/requirements/_base.txt
@@ -60,8 +62,8 @@ index 3333333..4444444 100644
 
 
 @pytest.fixture(name="moved_pins")
-def moved_pins_fixture(tmp_path: Path, review_gate_script: Path):
-    """Runs the `moved_pins` shell function of the review gate over a diff on stdin"""
+def moved_pins_fixture(tmp_path: Path, review_gate_script: Path) -> Callable[..., list[str]]:
+    """Callable running the gate's `moved_pins` over a diff on stdin, returning its lines"""
 
     def _moved(diff: str, headline: str = "") -> list[str]:
         source = review_gate_script.read_text()
@@ -85,6 +87,7 @@ def moved_pins_fixture(tmp_path: Path, review_gate_script: Path):
 
 @pytest.fixture(name="review_gate_script")
 def review_gate_script_fixture(osparc_simcore_root_dir: Path) -> Path:
+    """Path of the review gate script the tests read their function out of"""
     return osparc_simcore_root_dir / ".github/renovate/review_gate.sh"
 
 

@@ -228,8 +228,7 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
 def test_resync_lockfiles_caps_a_freed_pin_at_the_highest_version_pinned_here(
     resync_lockfiles_script: Path, tmp_path: Path
 ):
-    # the ceiling of a freed package is what this repository already pins: 26.1 from
-    # another directory, not uv's newest release
+    # the ceiling comes from another directory's pin (26.1), not from uv's newest release
     repo = tmp_path / "repo"
     (repo / "requirements").mkdir(parents=True)
     (repo / "requirements/_base.txt").write_text("click==8.1.0\npackaging==25.2\n")
@@ -247,7 +246,7 @@ def test_resync_lockfiles_caps_a_freed_pin_at_the_highest_version_pinned_here(
     assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging<=26.1"]
     lockfiles = repo / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.1\nvirtualenv==21.14.10\n"
-    # the report keeps the cap, so a reviewer sees what bounded the move
+    # the warning names the cap, so a reviewer sees what bounded the move
     assert "these packages had to move too: requirements (packaging<=26.1)" in result.stderr
 
 
@@ -358,10 +357,9 @@ def test_parse_pins(resync_module, text: str, expected: list[str]):
 
 
 def test_no_lockfile_resync_left_behind(osparc_simcore_root_dir: Path):
-    # A directory the resync could not regenerate keeps its old lockfile, and the report
-    # is how that reaches the pull request. `renovate/artifacts` fails both for that and
-    # for a lockfile Renovate compiles while its parent layer still pins the old version,
-    # so that check cannot gate the fast lane; this test does (see docs/renovate.md)
+    # `renovate/artifacts` fails both for a directory the resync could not regenerate and
+    # for a lockfile compiled while its parent layer still pins the old version, so this
+    # test gates the fast lane on the report the resync leaves behind (see docs/renovate.md)
     report = osparc_simcore_root_dir / "renovate-resync-report.md"
     assert not report.exists(), (
         "the lockfile resync failed for at least one directory, which left its"
