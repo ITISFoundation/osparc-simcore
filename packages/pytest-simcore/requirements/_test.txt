@@ -55,7 +55,7 @@ email-validator==2.3.0
     # via pydantic
 faker==40.38.0
     # via -r requirements/_test.in
-fastapi==0.141.1
+fastapi==0.160.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
@@ -111,6 +111,8 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
+opentelemetry-api==1.45.2
+    # via fastapi
 orjson==3.13.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -230,6 +232,7 @@ typing-extensions==4.16.0
     #   anyio
     #   fastapi
     #   mypy
+    #   opentelemetry-api
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
