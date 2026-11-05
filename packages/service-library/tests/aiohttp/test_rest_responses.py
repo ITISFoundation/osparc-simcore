@@ -21,6 +21,7 @@ from servicelib.aiohttp.rest_responses import (
     MAX_STATUS_MESSAGE_LENGTH,
     create_http_error,
     exception_to_response,
+    safe_status_message,
 )
 from servicelib.aiohttp.web_exceptions_extension import (
     _STATUS_CODE_TO_HTTP_ERRORS,
@@ -56,7 +57,13 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
     assert issubclass(http_error_cls, HTTPError)
 
 
-@pytest.mark.parametrize("error_code", [None, create_error_code(Exception("fake"))])
+@pytest.mark.parametrize(
+    "error_code",
+    [None, create_error_code(Exception("fake"))],
+    # explicit ids: the generated error code embeds the instant it was created, so letting
+    # pytest build the id out of it gives each xdist worker a different test id
+    ids=["no_error_code", "with_error_code"],
+)
 @pytest.mark.parametrize(
     "http_error_cls",
     [
@@ -148,8 +155,6 @@ def tests_exception_to_response(error_code: ErrorCodeStr | None, http_error_cls:
     ],
 )
 def test_safe_status_message(input_message: str | None, expected_output: str | None):
-    from servicelib.aiohttp.rest_responses import safe_status_message
-
     result = safe_status_message(input_message)
     assert result == expected_output
 

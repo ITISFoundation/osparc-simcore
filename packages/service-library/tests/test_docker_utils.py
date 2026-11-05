@@ -7,7 +7,9 @@ import pytest
 from servicelib.docker_utils import DOCKER_HUB_HOST, get_image_complete_url, to_datetime
 from settings_library.docker_registry import RegistrySettings
 
-NOW = datetime.now(tz=UTC)
+# fixed instant: `datetime.now()` here would make every parametrized test id depend on the
+# moment of collection, which xdist workers cannot agree on
+NOW = datetime(2024, 6, 1, 12, 30, 15, 123456, tzinfo=UTC)
 
 
 @pytest.fixture

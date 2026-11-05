@@ -296,6 +296,7 @@ async def test_rpc_reconnection_without_registered_handlers(rpc_client: RabbitMQ
     assert rpc_client.healthy is True
 
 
+@pytest.mark.docker_exclusive(reason="pauses the 'rabbit' container every xdist worker connects to")
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rpc_client_recovers_after_broker_disruption(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
@@ -444,19 +445,32 @@ async def test_rpc_concurrent_reconnections_are_serialized(rpc_client: RabbitMQR
 
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rpc_client_recovers_when_broker_closes_all_connections(
-    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
+    rpc_client: RabbitMQRPCClient,
+    namespace: RPCNamespace,
+    rabbit_service: RabbitSettings,
+    stack_rabbit_container_filters: dict[str, Any],
 ):
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
     assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
     queue_before = _get_rpc_result_queue_name(rpc_client)
 
-    # force a broker-side disconnect of every client, mirroring the AWS maintenance
+    # force a broker-side disconnect of this client, mirroring the AWS maintenance
     # `CONNECTION_FORCED` event; the robust connection reconnects and fires
-    # `_on_safe_reconnect`, which rebuilds the RPC surface with a fresh mailbox
+    # `_on_safe_reconnect`, which rebuilds the RPC surface with a fresh mailbox.
+    # `--vhost` is required: without it the tool only closes connections of the default vhost,
+    # which is not the one an xdist worker connects to.
     async with aiodocker.Docker() as docker_client:
-        containers = await docker_client.containers.list(filters={"name": ["rabbit"]})
+        containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
         assert len(containers) == 1, "missing rabbit container!"
-        exec_instance = await containers[0].exec(["rabbitmqctl", "close_all_connections", "pytest simulate reconnect"])
+        exec_instance = await containers[0].exec(
+            [
+                "rabbitmqctl",
+                "close_all_connections",
+                "--vhost",
+                rabbit_service.RABBIT_VHOST,
+                "pytest simulate reconnect",
+            ]
+        )
         await exec_instance.start(detach=True)
 
     async for attempt in AsyncRetrying(stop=stop_after_delay(60), wait=wait_fixed(1), reraise=True):
@@ -466,14 +480,19 @@ async def test_rpc_client_recovers_when_broker_closes_all_connections(
             assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=4, y=5) == 9
 
 
+@pytest.mark.docker_exclusive(reason="stops and restarts the broker app shared with the other xdist workers")
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
-async def test_rpc_client_recovers_after_broker_restart(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+async def test_rpc_client_recovers_after_broker_restart(
+    rpc_client: RabbitMQRPCClient,
+    namespace: RPCNamespace,
+    stack_rabbit_container_filters: dict[str, Any],
+):
     await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
     assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
     queue_before = _get_rpc_result_queue_name(rpc_client)
 
     async with aiodocker.Docker() as docker_client:
-        containers = await docker_client.containers.list(filters={"name": ["rabbit"]})
+        containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
         assert len(containers) == 1, "missing rabbit container!"
         rabbit_container = containers[0]
         stop_instance = await rabbit_container.exec(["rabbitmqctl", "stop_app"])

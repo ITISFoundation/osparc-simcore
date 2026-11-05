@@ -125,6 +125,7 @@ async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
     await client.shutdown()
 
 
+@pytest.mark.docker_exclusive(reason="pauses the 'redis' container every xdist worker connects to")
 async def test_regression_fails_on_redis_service_outage(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
