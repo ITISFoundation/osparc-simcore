@@ -10418,6 +10418,10 @@
               }
             ],
             "title": "Terms Of Use Url"
+          },
+          "is_hidden_on_market": {
+            "type": "boolean",
+            "title": "Is Hidden On Market"
           }
         },
         "type": "object",
@@ -10425,7 +10429,8 @@
           "source",
           "category_id",
           "category_display",
-          "terms_of_use_url"
+          "terms_of_use_url",
+          "is_hidden_on_market"
         ],
         "title": "LicensedResource"
       },
