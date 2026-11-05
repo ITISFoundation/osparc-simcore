@@ -5,39 +5,32 @@
 #                   # API through gh, so it has nothing to install
 # ///
 # ruff: noqa: T201  # what the poll decided is reported on stdout, which the Actions run keeps as its log
-"""Renovate review gate, run by the review-gate job of
+"""Review gate for Renovate drafts, run by the review-gate job of
 .github/workflows/chore-renovate.yml every 15 minutes.
 
-Renovate opens every PR as a draft (draftPR in .renovaterc.jsonc), so GitHub
-does not auto-request the code owners until the checks are done. This poller
-marks the drafts ready once their checks have all finished; the ready
-transition makes GitHub request the code owners from CODEOWNERS by itself:
-- all checks done + passed + 🤖-renovate-fast-lane (patch/pin/digest bumps,
-  Python minors, security fixes): the request comes out but nothing waits on
-  it, the renovate-fast Mergify queue merges the PR;
-- all checks done + passed without the label (majors, other minors): the
-  requested review is what the PR then waits for;
-- failing checks: nothing for FAIL_COOLDOWN_HOURS on the last commit, so
-  Renovate can push its own fix; then the PR gets 🤖-do-not-merge, loses
-  🤖-renovate-fast-lane, is marked ready (which requests the owners), and a
-  comment lists the failing checks. It then goes through the reviewed queue,
-  also once a fix makes its checks pass.
-A draft that already has requested reviewers or reviews is left alone: the gate
-reported it before or a person handles it (e.g. turned it back into a draft on
-purpose).
-Each draft also gets a comment listing the lockfile pins its diff moved besides
-the dependency named in the title, each with what carried the new version,
-updated in place on later runs. It changes no label and no ready state.
+GitHub requests the code owners when a pull request stops being a draft, and Renovate
+opens all of them as drafts (draftPR in .renovaterc.jsonc), so no review would ever get
+requested on its own:
 
-Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS. DRIFT_LIST_LIMIT is the
-number of packages the comment lists before it truncates and defaults to 40.
+- checks all passed with 🤖-renovate-fast-lane: marked ready, and the renovate-fast
+  Mergify queue merges on the checks alone;
+- checks all passed without that label: marked ready, so the code-owner review is what
+  the pull request waits for;
+- checks failed: held with 🤖-do-not-merge, the fast-lane label removed and a comment
+  naming the failing checks, but only after FAIL_COOLDOWN_HOURS on the last commit so
+  that Renovate can push its own fix first;
+- a draft whose reviewers were already requested, or which has reviews, is left alone;
+- every draft gets the pins its diff moved besides the dependency of its title
+  commented, each with what carried the new version, edited in place on later runs.
 
-Every call goes through gh, so GH_TOKEN must be set and must belong to the
-Renovate App: a GitHub App cannot mark a pull request opened by another App
-ready, so a github.token (github-actions App) run fails on the ready call.
+`renovate/artifacts` is not part of the fail decision: it reports a lockfile the
+post-upgrade resync settles, and docs/renovate.md explains why it fails at all.
+moved_pins parses the `# via` blocks of pip-compile.
 
-The `# via` block format it parses is pip-compile's, documented in
-docs/renovate.md; see moved_pins below.
+Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS, plus GH_TOKEN of the Renovate App
+(a GitHub App cannot mark a pull request opened by another App ready, so a
+github-actions token fails on that call). DRIFT_LIST_LIMIT, 40 by default, caps the
+packages the comment lists.
 """
 
 from __future__ import annotations
