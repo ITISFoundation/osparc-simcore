@@ -8,13 +8,14 @@
 import asyncio
 import datetime as dt
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any
+from typing import Annotated, Any, Final
 from unittest import mock
 
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
 from aiohttp.test_utils import TestClient
+from annotated_types import doc
 from faker import Faker
 from models_library.projects import ProjectAtDB
 from pytest_mock.plugin import MockerFixture
@@ -50,9 +51,15 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-# pg_stat_activity lists the backends of every database in the cluster, and a
-# pytest-xdist worker runs against its own database, so the count must be scoped to it
-_COUNT_LISTENER_CONNECTIONS_SQL = (
+_COUNT_LISTENER_CONNECTIONS_SQL: Final[
+    Annotated[
+        str,
+        doc(
+            "scoped to the current database: pg_stat_activity also lists the backends of the databases"
+            " the other pytest-xdist workers run against"
+        ),
+    ]
+] = (
     "select count(*) from pg_stat_activity where application_name like :pattern"
     " and datname = current_database() and pid != pg_backend_pid()"
 )

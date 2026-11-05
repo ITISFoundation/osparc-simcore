@@ -13,7 +13,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Final
 from unittest import mock
 
 import pytest
@@ -23,6 +23,7 @@ import simcore_service_webserver.db_listener._service
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
+from annotated_types import doc
 from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB, ProjectID
@@ -69,9 +70,15 @@ pytest_simcore_core_services_selection = [
 
 logger = logging.getLogger(__name__)
 
-# scoped to the current database: pg_stat_activity also lists the backends of the
-# databases other pytest-xdist workers use
-_COUNT_LISTENER_CONNECTIONS_SQL = (
+_COUNT_LISTENER_CONNECTIONS_SQL: Final[
+    Annotated[
+        str,
+        doc(
+            "scoped to the current database: pg_stat_activity also lists the backends of the databases"
+            " the other pytest-xdist workers run against"
+        ),
+    ]
+] = (
     "select count(*) from pg_stat_activity where application_name like :pattern"
     " and datname = current_database() and pid != pg_backend_pid()"
 )

@@ -73,8 +73,11 @@ def test_preuserprofile_parse_model_from_request_form_data(
     account_request_form: dict[str, Any],
     institution_key: str,
 ):
-    # a name with a lowercase word (e.g. "Cooke and Little") gets capitalized by the model, so
-    # this test uses an institution the model returns unchanged
+    """Parses the institution from every accepted form field name.
+
+    The institution has a name the model returns unchanged: a name with a
+    lowercase word (e.g. "Cooke and Little") gets capitalized instead.
+    """
     institution = "Simcore Core"
 
     data = deepcopy(account_request_form)

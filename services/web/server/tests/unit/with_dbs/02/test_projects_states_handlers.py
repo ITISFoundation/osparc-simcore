@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Final
 from unittest import mock
 from unittest.mock import call
 
@@ -23,6 +23,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
+from annotated_types import doc
 from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -98,9 +99,15 @@ pytest_simcore_core_services_selection = [
 RESOURCE_NAME = "projects"
 API_PREFIX = f"/{API_VTAG}"
 
-# `docker_exclusive` is the only cross-worker barrier the suite has: these tests need the web
-# server of their worker uninterrupted, not the docker daemon to themselves
-_EVENTS_TO_MANY_CLIENTS = (
+_EVENTS_TO_MANY_CLIENTS: Final[
+    Annotated[
+        str,
+        doc(
+            "reason for `docker_exclusive` on the multi-user tests: the mark is the only cross-worker"
+            " barrier the suite has, and these tests need the web server of their worker uninterrupted"
+        ),
+    ]
+] = (
     "several socketio clients must all receive every project state event: tests running in other "
     "xdist workers starve the web server's event loop and the events are dropped"
 )

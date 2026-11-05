@@ -4,8 +4,10 @@
 import socket
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
+from typing import Annotated, Final
 
 import pytest
+from annotated_types import doc
 from pytest_simcore.helpers.xdist_ports import (
     FIRST_TEST_PORT,
     NoFreeTCPPortError,
@@ -14,9 +16,14 @@ from pytest_simcore.helpers.xdist_ports import (
     is_port_free,
 )
 
-# just above the ranges the allocators hand out, so a concurrent test run cannot be holding these
-_FREE_PORTS = range(FIRST_TEST_PORT + 8000, FIRST_TEST_PORT + 8010)
-_CHECKOUT_UID = "0a0b0c0d"
+_FREE_PORTS: Final[
+    Annotated[
+        range,
+        doc("just above every slice an allocator can hand out, so a concurrent run cannot hold these"),
+    ]
+] = range(FIRST_TEST_PORT + 8000, FIRST_TEST_PORT + 8010)
+
+_CHECKOUT_UID: Final[Annotated[str, doc("uid of a checkout whose slot is the second one")]] = "0a0b0c0d"
 
 
 @contextmanager

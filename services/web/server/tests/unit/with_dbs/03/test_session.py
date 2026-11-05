@@ -7,11 +7,12 @@
 
 import base64
 from collections.abc import Callable
-from typing import Final
+from typing import Annotated, Final
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from annotated_types import doc
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
@@ -110,9 +111,15 @@ async def test_security_identity_is_email_and_product(
         assert unencrypted_session.get("AIOHTTP_SECURITY") is None
 
 
-# a key of fixed content: Fernet.generate_key() would give every xdist worker a different
-# test id, and the workers then fail to agree on the collected tests
-_SESSION_KEY: Final[bytes] = base64.urlsafe_b64encode(b"0" * 32)
+_SESSION_KEY: Final[
+    Annotated[
+        bytes,
+        doc(
+            "a key of fixed content: Fernet.generate_key() would give every xdist worker a different"
+            " test id, and the workers then fail to agree on the collected tests"
+        ),
+    ]
+] = base64.urlsafe_b64encode(b"0" * 32)
 
 
 @pytest.mark.parametrize(

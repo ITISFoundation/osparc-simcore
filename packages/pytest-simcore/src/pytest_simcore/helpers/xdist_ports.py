@@ -1,7 +1,7 @@
 """TCP ports for the servers tests bind, sliced so that pytest-xdist workers cannot get the same one.
 
-pytest-asyncio's and pytest-aiohttp's ``unused_tcp_port_factory`` learn a free port by binding port 0
-and releasing it, and remember only the ports handed to their own process. Two xdist workers can
+pytest-asyncio's ``unused_tcp_port_factory`` learns a free port by binding port 0 and releasing it, and
+remembers only the ports handed to its own process. Two xdist workers can
 therefore receive the same port, and the one that binds it last fails with ``Address already in
 use``. Two properties remove the race here: ports are drawn from a range the kernel does not allocate
 on its own, so no unrelated socket takes a port between the hand-out and the bind, and every worker of
@@ -10,17 +10,25 @@ a run draws from a slice that no other worker of the run (or of another checkout
 
 import random
 import socket
-from typing import Final
+from typing import Annotated, Final
+
+from annotated_types import doc
 
 from .xdist import WORKER_ID_MASTER
 
-# below the kernel's ephemeral range (32768-60999 on Linux) and below the ports docker swarm
-# publishes service ports from (30000-32767)
-FIRST_TEST_PORT: Final[int] = 20000
+FIRST_TEST_PORT: Final[
+    Annotated[
+        int,
+        doc(
+            "first port a test server binds, below the kernel's ephemeral range (32768-60999 on Linux)"
+            " and below what docker swarm publishes service ports from (30000-32767)"
+        ),
+    ]
+] = 20000
 
-# one checkout owns _PORTS_PER_CHECKOUT ports, split over the workers of its run
-_PORTS_PER_CHECKOUT: Final[int] = 4000
-_CHECKOUT_SLOTS: Final[int] = 2
+_PORTS_PER_CHECKOUT: Final[Annotated[int, doc("ports one checkout owns, split over the workers of its run")]] = 4000
+
+_CHECKOUT_SLOTS: Final[Annotated[int, doc("port ranges that co-tenant checkouts alternate between")]] = 2
 
 
 class NoFreeTCPPortError(RuntimeError):

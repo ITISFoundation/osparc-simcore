@@ -516,9 +516,13 @@ def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
 
 @pytest.fixture
 def max_number_of_user_sessions(faker: Faker) -> int:
-    # a project locks once RTC_MAX_NUMBER_OF_USERS sessions have it open, so the tests using
-    # this fixture assume at least two: the first user to open expects it unlocked.
-    # with_enabled_rtc_collaboration_limited_to_1_user covers the single-user case.
+    """Number of users that may open a project concurrently.
+
+    A project locks once RTC_MAX_NUMBER_OF_USERS sessions have it open, so the
+    tests using this fixture assume at least two: the first user to open it
+    expects it unlocked. with_enabled_rtc_collaboration_limited_to_1_user covers
+    the single-user case.
+    """
     return faker.pyint(min_value=2, max_value=5)
 
 

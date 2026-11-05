@@ -6,7 +6,7 @@
 
 import contextlib
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Final
 
 import pytest
 import sqlalchemy as sa
@@ -21,13 +21,16 @@ from simcore_postgres_database.models.user_preferences import user_preferences_f
 from simcore_service_webserver.users._controller.rest._rest_schemas import CountryNameStr
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-_COUNTRY_NAME = TypeAdapter(CountryNameStr)
+_COUNTRY_NAME: Final[TypeAdapter[CountryNameStr]] = TypeAdapter(CountryNameStr)
 
 
 @pytest.fixture
 def country_name(faker: Faker) -> str:
-    # the web-server resolves countries with pycountry, which does not know every name that
-    # faker draws, e.g. "Micronesia" or "Turkey", so these are drawn until one is accepted
+    """Draws a country accepted by the web-server.
+
+    The web-server resolves country names with pycountry, which does not know
+    every name faker draws, e.g. "Micronesia" or "Turkey".
+    """
     for _ in range(10):
         with contextlib.suppress(ValidationError):
             return _COUNTRY_NAME.validate_python(faker.country())
