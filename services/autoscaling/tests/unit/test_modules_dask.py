@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Any, Final
@@ -128,6 +129,28 @@ async def _wait_until_scheduler_reports(read_state: Callable[[], Awaitable[Any]]
     """
     state = await read_state()
     assert state == expected_state, f"scheduler still reports {state}, expected {expected_state}"
+
+
+async def _assert_scheduler_keeps_reporting(
+    read_state: Callable[[], Awaitable[Any]],
+    expected_state: Any,
+    *,
+    window_s: float = _DASK_SCHEDULER_REACTION_TIME_S,
+) -> None:
+    """Raises if any read within ``window_s`` fails to return ``expected_state``.
+
+    For a state that must not change, waiting for one matching read proves nothing: a single read
+    can still be the report taken before the last client action. Sampling across a window catches
+    a change that the first read missed.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + window_s
+    while True:
+        state = await read_state()
+        assert state == expected_state, f"scheduler reports {state}, expected {expected_state} to hold"
+        if loop.time() >= deadline:
+            return
+        await asyncio.sleep(_DASK_SCHEDULER_POLL_TIME_S)
 
 
 async def test__scheduler_client(scheduler_url: AnyUrl, scheduler_authentication: ClusterAuthentication):
@@ -310,7 +333,9 @@ async def test_get_worker_still_has_results_in_memory(
         result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
         assert result == 7
 
-    await _wait_until_scheduler_reports(
+    # the metrics the scheduler holds are refreshed on the worker's own schedule, so check the
+    # count over a window instead of trusting a single read
+    await _assert_scheduler_keeps_reporting(
         lambda: get_worker_still_has_results_in_memory(
             scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
         ),
