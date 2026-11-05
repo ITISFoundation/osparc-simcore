@@ -200,17 +200,30 @@ leaves `renovate-resync-report.md` in the pull request — and
 `test_no_lockfile_resync_left_behind` of `tests/environment-setup` fails on that
 file, which is what keeps a real resync failure out of the fast lane.
 
-A resync also moves packages the title does not name. It gets the dependency of
-the pull request as an exact pin, so that one never moves, but uv treats an
-already pinned version as a preference rather than a requirement: re-resolving a
-directory can lift its neighbours. When a directory refuses to resolve, the
-resync frees the packages uv blames, up to `MAX_UNBLOCK_ROUNDS` rounds; a freed
-package may first rise only as high as another lockfile of this repository
-already pins it, and only a round that cannot resolve on that ceiling lets uv
-take its newest release. Directories regenerate constraint-sources-first, so
-whatever moved becomes the constraint every consumer resolves against, which is
-how a patch bump ends up rewriting 41 lockfiles. The gate's checks decide whether
-such a pull request merges; the moved pins are commented, not blocked.
+A resync also moves packages the title does not name, and those moves are forced
+rather than free. uv takes the pins of a lockfile consumed through `--constraint`
+as requirements, and `master` does not agree on one version per package: one
+commit pinned `psutil` at 6.0.0, 6.1.0, 7.0.0 and 7.2.2 in 33 lockfiles. Because
+the regeneration is constraint-sources-first, every directory pinned below its
+constraint source moves up to the version that source carries. Metadata forces
+the rest: `redis` 7.4.1 falls outside `kombu` 5.6.2's `redis` extra (`<6.5`), so
+`kombu` goes to 5.7.0, which requires `amqp>=5.4.2`. Nothing else moves — one
+`--upgrade-package` request in `packages/service-library/requirements` changed
+that one package.
+
+The size of such a diff is the distance the branch lags: resyncing
+`redis==7.4.1` at the commit #10001 branched from rewrote 41 lockfiles and 28
+packages, and the same command on a `master` that had converged moved 2. The
+moves are normally the right ones — the lagging lockfile is the stale one — so
+what breaks is repository code coupled to the older version, like a test
+importing a private `psutil` type that 7.2 removed. The gate's checks decide
+whether such a pull request merges; the moved pins are commented, not blocked.
+
+A directory that resolves at nothing gets the `MAX_UNBLOCK_ROUNDS` fallback
+instead: uv names the pin in its way, the first round lets that package rise no
+higher than another lockfile here pins it, and the round after frees it. That is
+the one path on which the resync can reach a version nobody chose, so it is
+capped; the resync of #10001 needed no round at all.
 
 ## Keeping a pull request up to date
 

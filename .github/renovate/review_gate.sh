@@ -130,7 +130,7 @@ for pr in $DRAFTS; do
     if [ "$total" -gt "$DRIFT_LIST_LIMIT" ]; then
       listed="${listed}"$'\n'"- and $((total - DRIFT_LIST_LIMIT)) more"
     fi
-    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about. The resync re-resolves every \`requirements/\` directory the pin reaches, uv keeps an existing pin only as a preference, and a package the resync has to free may end up at its newest release rather than at the version that unblocks it."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
+    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about. It regenerates every \`requirements/\` directory the pin reaches, and uv treats the pins of a lockfile consumed through \`--constraint\` as requirements: a directory pinned below its constraint source moves up to that source's version, and package metadata forces a few more (a \`redis\` 7.x bump takes \`kombu\` and \`amqp\` with it). Nothing else moves."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
     existing=$(gh api "repos/${REPO}/issues/${pr}/comments" --paginate \
       --jq ".[] | select(.body | startswith(\"$DRIFT_MARKER\")) | .id" | head -n 1 || true)
     if [ -z "$existing" ]; then

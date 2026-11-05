@@ -61,12 +61,13 @@ UPGRADE_ENTRY: Final[re.Pattern[str]] = re.compile(r"[^<>=!~]+(?:==[^<>=!~]+)?")
 # input file, so such a reference names a directory that must resolve before this one
 REFERENCE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:--constraint|--requirement|-c|-r)[\s=]+(?P<path>\S+)")
 
-# rounds of letting uv's blamed packages move before giving up on a directory. Without a
-# cap uv takes a freed package to its newest release rather than to the version that would
-# unblock it, so rounds beyond the first turn a patch bump into a monorepo-wide upgrade; a
-# directory that needs more than these goes to the report. The first round caps a freed
-# package at the highest version another lockfile here pins for it (see highest_pinned),
-# the round after that frees it
+# rounds of letting uv's blamed packages move before giving up on a directory. This is the
+# fallback for a directory that resolves at nothing at all because a consumed lockfile pins
+# a conflicting version, not for the moves a resolve propagates on its own. Without a cap uv
+# takes a freed package to its newest release rather than to the version that would unblock
+# it, so each round widens the diff; a directory that needs more than these goes to the
+# report. The first round caps a freed package at the highest version another lockfile here
+# pins for it (see highest_pinned), the round after that frees it
 MAX_UNBLOCK_ROUNDS: Final[int] = 2
 
 # failure report of the last resync, committed to the PR through
