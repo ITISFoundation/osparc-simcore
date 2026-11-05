@@ -1,11 +1,13 @@
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
-from typing import cast
+from typing import Any, cast
 
 import aiodocker
 import arrow
 import pytest
 from faker import Faker
 from models_library.rabbitmq_basic_types import RPCNamespace
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.xdist import get_max_xdist_workers, is_xdist_worker
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
@@ -21,20 +23,42 @@ def namespace() -> RPCNamespace:
     return RPCNamespace.from_entries({f"test{i}": f"test{i}" for i in range(8)})
 
 
+@pytest.fixture
+def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> dict[str, Any]:
+    """aiodocker filters selecting only the `rabbit` container of THIS run's stack
+
+    Several checkouts can share one daemon, each with its own stack, so a name-only filter
+    would match foreign rabbits and break the single-container assertion.
+    """
+    stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
+    return {
+        "name": ["rabbit"],
+        "label": [f"com.docker.stack.namespace={stack_name}"],
+    }
+
+
 @pytest.fixture(autouse=True)
 async def cleanup_check_rabbitmq_server_has_no_errors(
     request: pytest.FixtureRequest,
+    stack_rabbit_container_filters: dict[str, Any],
 ) -> AsyncIterator[None]:
     now = arrow.utcnow()
     yield
     if "no_cleanup_check_rabbitmq_server_has_no_errors" in request.keywords:
         return
     print("--> checking for errors/warnings in rabbitmq logs...")
+    shared_broker = is_xdist_worker(request) and get_max_xdist_workers(request.config) > 1
     async with aiodocker.Docker() as docker_client:
-        containers = await docker_client.containers.list(filters=({"name": ["rabbit"]}))
+        containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
         assert len(containers) == 1, "missing rabbit container!"
-        rabbit_container = containers[0]
 
+        if shared_broker:
+            # every worker's clients share this broker container, so a warning/error in its logs
+            # cannot be attributed to this test. The container itself is still checked to be up.
+            print("--> skipped the rabbitmq log check: the broker is shared with the other xdist workers")
+            return
+
+        rabbit_container = containers[0]
         all_logs = await cast(
             Coroutine,
             rabbit_container.log(

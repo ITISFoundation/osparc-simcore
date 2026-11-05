@@ -263,7 +263,9 @@ async def test_pull_image_without_layer_information(
     [
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
     ],
-    ids=str,
+    # sorted: `str(set)` depends on the per-process hash seed, so xdist workers would
+    # each build a different test id out of it
+    ids=lambda images: "-".join(sorted(images)),
 )
 async def test_pull_images_set(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
