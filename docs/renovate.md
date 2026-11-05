@@ -76,7 +76,7 @@ flowchart TD
     other["Renovate: major,<br/>non-Python minor"]
     gate{"review gate, every 15 min:<br/>checks of the draft"}
     ready["ready: GitHub requests<br/>the code owners"]
-    held["ready, 🤖-do-not-merge,<br/>fast-lane label removed"]
+    held["ready,<br/>fast-lane label removed"]
     fastq["renovate-fast queue:<br/>checks only"]
     defq["default queue: 2 approvals,<br/>one by a code owner, checks"]
     merge["Mergify merges master in,<br/>CI runs again, squash-merge"]
@@ -86,7 +86,7 @@ flowchart TD
     other -- "draft" --> gate
     gate -- "passed" --> ready
     gate -- "failing for 3 h" --> held
-    held -- "fixed, reviewed,<br/>label removed" --> defq
+    held -- "fixed, reviewed" --> defq
     ready -- "fast-lane label" --> fastq
     ready -- "other Renovate PRs" --> defq
     fastq --> merge
@@ -133,10 +133,10 @@ only after the checks have finished:
    - **all passed, no label** (majors, other minors): the requested
      code-owner review is what the pull request then waits for;
    - **failing**: nothing for 3 h so Renovate can push its own fix. If the last
-     commit is still failing, the pull request gets `🤖-do-not-merge`, loses
-     `🤖-renovate-fast-lane`, is marked ready (which requests the code owners),
-     and a warning comment lists the failing checks. From then on it goes
-     through the reviewed path, also once a fix makes its checks pass.
+     commit is still failing, the pull request loses `🤖-renovate-fast-lane`, is
+     marked ready (which requests the code owners), and a warning comment lists
+     the failing checks and how to take the update over. From then on it goes
+     through the reviewed path.
 
    The gate leaves a draft alone once it has requested reviewers or reviews, so
    a pull request turned back into a draft stays a draft.
@@ -248,9 +248,9 @@ dependency merge.
 
 ## Fixing a failing Renovate pull request
 
-Do not push to a `renovate/*` branch. The fast lane refuses a pull request with
-a commit Renovate did not write, and Renovate stops maintaining a branch someone
-else committed to, so its lockfiles are no longer regenerated. Instead:
+Do not push to a `renovate/*` branch: Renovate makes no further commits to a
+branch someone else committed to, so the lockfiles stop resyncing and the branch
+stops following `master`. Instead:
 
 1. **Flaky failure**: tick the rebase box in the pull request description;
    Renovate recreates the branch and CI runs again.
@@ -258,16 +258,32 @@ else committed to, so its lockfiles are no longer regenerated. Instead:
    request of your own (code that needs the new API, a constraint in
    `requirements/constraints.txt`, the Renovate configuration). Once it merges,
    Renovate regenerates its branch on top of it.
-3. **The update needs code changes in the same commit**: close the Renovate pull
-   request and open your own with the update and the fix; it goes through
-   review like any other pull request.
+3. **The update needs code changes in the same commit**: take the branch over.
+   GitHub cannot point an existing pull request at another repository, and a
+   push from a fork lands in that fork, so carry the branch content over
+   yourself:
+
+   ```bash
+   git fetch https://github.com/ITISFoundation/osparc-simcore.git renovate/<branch>
+   git push -u origin FETCH_HEAD:chore/<name>
+   ```
+
+   The push prints a link that opens the comparison with `master`. Open your
+   pull request there, and copy the description of Renovate's across: its update
+   type and its changelog and release-note links are what a reviewer reads
+   first. Then close Renovate's with a link to yours. Bring the fix along with
+   the update, because closing hands the update over: Renovate matches a pull
+   request by branch name and title, and takes a closed one whose title names a
+   single version to mean the version is unwanted, so it does not propose it
+   again. This is also the option when the fix is only correct with the new
+   version, like dropping a `# type: ignore` the new version made unused — on
+   `master` that fails the type check of the version still pinned there.
 4. **The version cannot be used for now**: close the pull request, or exclude
    the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
 
-A pull request the review gate held keeps `🤖-do-not-merge` after its checks turn
-green again, and it lost `🤖-renovate-fast-lane` when it was held. Removing the
-first label sends it through the reviewed path; re-adding the second one too
-takes it through the fast lane instead.
+A pull request the review gate held lost `🤖-renovate-fast-lane`. The reviewed
+path does not need that label: the pull request merges once its checks pass and
+two reviewers approve. Re-adding the label sends it through the fast lane again.
 
 ## Adding something new for Renovate to manage
 
