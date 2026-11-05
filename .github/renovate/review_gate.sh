@@ -18,8 +18,8 @@
 #  gate reported it before or a person handles it (e.g. turned it back into a
 #  draft on purpose).
 #  Each draft also gets a comment listing the lockfile pins its diff moved besides the
-#  dependency named in the title, updated in place on later runs. It changes no label
-#  and no ready state.
+#  dependency named in the title, each with what carried the new version, updated in place
+#  on later runs. It changes no label and no ready state.
 #
 #  Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS.
 #  Uses gh for API calls (GH_TOKEN must be set). GH_TOKEN must belong to the
@@ -38,31 +38,157 @@ DRIFT_MARKER='<!-- renovate-drift-summary -->'
 # Packages the comment lists before it truncates
 DRIFT_LIST_LIMIT="${DRIFT_LIST_LIMIT:-40}"
 
-# Reads a pull request diff on stdin and prints "<name>: <old> -> <new>" for every package
-# whose lockfile pin moved, alphabetically. A pin starts at column 1, so the hunk of
-# another file cannot match. Left out: a package the diff only adds or only drops, a pin
-# it touches without changing, and the version the title names.
+# Reads a pull request diff on stdin and prints "<name>: <old> -> <new>" plus, after a tab,
+# why a lockfile now carries the new version, for every package whose pin moved.
+# Alphabetically. A pin starts at column 1, so the hunk of another file cannot match. Left
+# out: a package the diff only adds or only drops, a pin it touches without changing, and the
+# version the title names. The reason is left empty when the diff gives no clue.
+#
+# The reason is read from the `# via` block under the moved pin, which names the file that
+# constrained it (`-c`/`-r`) or the package requiring it. A file of another requirements
+# directory wins over a requiring package, since that file is the constraint the resolve had
+# to honour; then a requiring package; then the directory's own layer. Candidates are counted
+# over every lockfile of the pull request and the most frequent one of the winning kind is
+# reported.
 moved_pins() {
   local headline="$1"
   awk -v headline="$headline" '
-    /^[+-][A-Za-z0-9._-]+(\[[A-Za-z0-9._-]+\])?==[A-Za-z0-9._+!-]+/ {
-      side = substr($0, 1, 1)
-      line = substr($0, 2)
-      eq = index(line, "==")
-      name = substr(line, 1, eq - 1)
-      version = substr(line, eq + 2)
-      sub(/[ \t\r]+$/, "", version)
-      sub(/\[[^]]*\]$/, "", name)
-      gsub(/[-_.]+/, "-", name)
-      name = tolower(name)
-      # one package moves in dozens of lockfiles, usually to the same version there, so
-      # keep each version once
-      if (side == "-") {
-        seen[name] = 1
-        if (index(" " old[name] " ", " " version " ") == 0) old[name] = old[name] " " version
-      } else if (index(" " new[name] " ", " " version " ") == 0) {
-        new[name] = new[name] " " version
+    function dirname_p(p) {
+      sub(/\/[^\/]*$/, "", p)
+      return p
+    }
+    # the directory `make reqs` runs in: a lockfile sits in <dir>/requirements/ and the paths
+    # of its `# via` block are relative to <dir>
+    function base_of(p,   parts, n, i, res) {
+      n = split(p, parts, "/")
+      res = ""
+      for (i = 1; i <= n - 2; i++) res = res (i > 1 ? "/" : "") parts[i]
+      return res
+    }
+    function resolve(path,   parts, n, i, out, depth, res) {
+      depth = split(base, out, "/")
+      n = split(path, parts, "/")
+      for (i = 1; i <= n; i++) {
+        if (parts[i] == "" || parts[i] == ".") continue
+        if (parts[i] == "..") {
+          if (depth > 0) depth--
+          continue
+        }
+        out[++depth] = parts[i]
       }
+      if (depth < 1) return ""
+      res = out[1]
+      for (i = 2; i <= depth; i++) res = res "/" out[i]
+      return res
+    }
+    function add_reason(name, entry,   path, full) {
+      sub(/[ \t\r]+$/, "", entry)
+      if (entry == "") return
+      if (entry ~ /^--?(constraint|requirement|[cr])([ \t=]|$)/) {
+        path = entry
+        sub(/^--constraint[ \t=]*/, "", path)
+        sub(/^--requirement[ \t=]*/, "", path)
+        sub(/^-[cr][ \t=]*/, "", path)
+        full = resolve(path)
+        if (full == "") return
+        if (dirname_p(full) == own_dir) own[name, full]++
+        else outside[name, full]++
+        return
+      }
+      sub(/[<>=!~].*$/, "", entry)
+      if (entry !~ /^[A-Za-z0-9][A-Za-z0-9._-]*$/) return
+      gsub(/[-_.]+/, "-", entry)
+      requiring[name, tolower(entry)]++
+    }
+    # highest count of `name` in `tally`, alphabetically first when counts tie
+    function best_of(name, tally,   key, value, count, cut, best, best_count) {
+      best = ""
+      best_count = 0
+      for (key in tally) {
+        cut = index(key, SUBSEP)
+        if (substr(key, 1, cut - 1) != name) continue
+        value = substr(key, cut + 1)
+        count = tally[key]
+        if (count > best_count || (count == best_count && value < best)) {
+          best = value
+          best_count = count
+        }
+      }
+      return best
+    }
+    function reason_of(name) {
+      r = best_of(name, outside)
+      if (r != "") return r
+      r = best_of(name, requiring)
+      if (r != "") return r
+      return best_of(name, own)
+    }
+
+    /^diff --git / { pending = ""; in_block = 0; next }
+    /^\+\+\+ / {
+      curfile = substr($0, 5)
+      sub(/^[ab]\//, "", curfile)
+      sub(/[ \t].*$/, "", curfile)
+      base = base_of(curfile)
+      own_dir = dirname_p(curfile)
+      pending = ""
+      in_block = 0
+      next
+    }
+    {
+      side = substr($0, 1, 1)
+      if (side != "+" && side != " " && side != "-") next
+      line = substr($0, 2)
+      if (side == "-") {
+        pending = ""
+        in_block = 0
+        if (line !~ /^[A-Za-z0-9][A-Za-z0-9._-]*(\[[^]]+\])?==[A-Za-z0-9._+!-]+/) next
+        eq = index(line, "==")
+        name = substr(line, 1, eq - 1)
+        version = substr(line, eq + 2)
+        sub(/[ \t\r]+$/, "", version)
+        sub(/\[[^]]*\]$/, "", name)
+        gsub(/[-_.]+/, "-", name)
+        name = tolower(name)
+        seen[name] = 1
+        # one package moves in dozens of lockfiles, usually from the same version there, so
+        # keep each version once
+        if (index(" " old[name] " ", " " version " ") == 0) old[name] = old[name] " " version
+        next
+      }
+      if (line ~ /^[A-Za-z0-9][A-Za-z0-9._-]*(\[[^]]+\])?==[A-Za-z0-9._+!-]+/) {
+        in_block = 0
+        eq = index(line, "==")
+        name = substr(line, 1, eq - 1)
+        version = substr(line, eq + 2)
+        sub(/[ \t\r]+$/, "", version)
+        sub(/\[[^]]*\]$/, "", name)
+        gsub(/[-_.]+/, "-", name)
+        name = tolower(name)
+        # an unchanged pin (context) ends the block of the pin above it
+        pending = (side == "+" ? name : "")
+        if (side != "+" ) next
+        if (index(" " new[name] " ", " " version " ") == 0) new[name] = new[name] " " version
+        next
+      }
+      if (pending != "" && line ~ /^[ \t]*#/) {
+        entry = line
+        sub(/^[ \t]*#[ \t]*/, "", entry)
+        if (entry ~ /^via([ \t]|$)/) {
+          sub(/^via[ \t]*/, "", entry)
+          if (entry == "") {
+            in_block = 1
+            next
+          }
+          add_reason(pending, entry)
+          next
+        }
+        if (in_block) {
+          add_reason(pending, entry)
+          next
+        }
+      }
+      in_block = 0
     }
     END {
       for (name in seen) {
@@ -72,7 +198,9 @@ moved_pins() {
         gsub(/ /, ", ", olds)
         news = substr(new[name], 2)
         gsub(/ /, ", ", news)
-        print name ": " olds " -> " news
+        reason = reason_of(name)
+        if (reason == "") print name ": " olds " -> " news
+        else print name ": " olds " -> " news "\t" reason
       }
     }
   ' | sort
@@ -126,11 +254,15 @@ for pr in $DRAFTS; do
   if [ -n "$drift" ]; then
     total=$(grep -c . <<<"$drift")
     # shellcheck disable=SC2016 # the backticks are markdown, not a command substitution
-    listed=$(head -n "$DRIFT_LIST_LIMIT" <<<"$drift" | sed 's/^/- `/; s/$/`/')
+    listed=$(head -n "$DRIFT_LIST_LIMIT" <<<"$drift" \
+      | awk -F'\t' '{
+          if ($2 != "") printf "- `%s` — via `%s`\n", $1, $2
+          else printf "- `%s`\n", $1
+        }')
     if [ "$total" -gt "$DRIFT_LIST_LIMIT" ]; then
       listed="${listed}"$'\n'"- and $((total - DRIFT_LIST_LIMIT)) more"
     fi
-    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about. It regenerates every \`requirements/\` directory the pin reaches, and uv treats the pins of a lockfile consumed through \`--constraint\` as requirements: a directory pinned below its constraint source moves up to that source's version, and package metadata forces a few more (a \`redis\` 7.x bump takes \`kombu\` and \`amqp\` with it). Nothing else moves."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
+    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about: it regenerates every \`requirements/\` directory the pin reaches. Each line names the file or the package that carried the new version. Nothing else moves."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
     existing=$(gh api "repos/${REPO}/issues/${pr}/comments" --paginate \
       --jq ".[] | select(.body | startswith(\"$DRIFT_MARKER\")) | .id" | head -n 1 || true)
     if [ -z "$existing" ]; then

@@ -142,9 +142,10 @@ only after the checks have finished:
    a pull request turned back into a draft stays a draft.
 
    The gate also comments the lockfile pins a pull request moved besides the
-   dependency of its title, and updates that comment on later runs instead of
-   adding one: a "patch" bump rewrites dozens of lockfiles and the title names one
-   package. It changes no label and no ready state.
+   dependency of its title, each with the file or package that carried the new
+   version, and updates that comment on later runs instead of adding one: a
+   "patch" bump rewrites dozens of lockfiles and the title names one package.
+   It changes no label and no ready state.
 3. The reviewed path merges once Mergify's conditions match: the branch is
    up to date with `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
