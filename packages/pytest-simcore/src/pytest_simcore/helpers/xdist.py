@@ -61,17 +61,6 @@ def get_max_xdist_workers(config: pytest.Config) -> int:
     return max(workers, os.cpu_count() or 1)
 
 
-def get_xdist_worker_count(request: pytest.FixtureRequest) -> int:
-    """Number of worker processes this run spreads its tests over, 1 when not distributed
-
-    Use this to divide a resource among the workers of a run: `get_max_xdist_workers` bounds the
-    count from above instead, which is what a resource set up before the workers exist needs, but
-    dividing by it would size a per-worker slice by the CPU count rather than by the workers.
-    """
-    workerinput = getattr(request.config, "workerinput", None)
-    return 1 if workerinput is None else int(workerinput["workercount"])
-
-
 def get_xdist_root_tmp_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """Temp dir of the current run, shared by the controller and all its workers"""
     return tmp_path_factory.getbasetemp().parent

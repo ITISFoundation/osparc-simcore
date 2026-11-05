@@ -1,15 +1,20 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import contextlib
+import json
+import os
 import socket
-from collections.abc import Iterator
+import subprocess
+import sys
+from collections.abc import Iterator, Sequence
 from contextlib import ExitStack, contextmanager
+from pathlib import Path
 from typing import Annotated, Final
 
 import pytest
 from annotated_types import doc
 from pytest_simcore.helpers.xdist_ports import (
-    _PORTS_PER_CHECKOUT,
     FIRST_TEST_PORT,
     NoFreeTCPPortError,
     TcpPortAllocator,
@@ -17,94 +22,124 @@ from pytest_simcore.helpers.xdist_ports import (
     is_port_free,
 )
 
-_FREE_PORTS: Final[
-    Annotated[
-        range,
-        doc("just above every slice an allocator can hand out, so a concurrent run cannot hold these"),
-    ]
+_ABOVE_THE_BAND: Final[
+    Annotated[range, doc("ports just above the band, so a concurrent pytest run cannot hold these")]
 ] = range(FIRST_TEST_PORT + 8000, FIRST_TEST_PORT + 8010)
 
-_CHECKOUT_UID: Final[Annotated[str, doc("uid of a checkout whose slot is the second one")]] = "0a0b0c0d"
+_DOCKER_SWARM_FIRST_PUBLISHED_PORT: Final[Annotated[int, doc("docker swarm publishes service ports from here")]] = 30000
+
+
+def _free_ports(count: int) -> tuple[int, ...]:
+    """Ports of the tested range that nothing holds right now"""
+    free = tuple(port for port in _ABOVE_THE_BAND if is_port_free(port))
+    if len(free) < count:
+        pytest.skip(f"{count} free ports needed in {list(_ABOVE_THE_BAND)}, {len(free)} found")
+    return free[:count]
 
 
 @contextmanager
-def _bound_ports(*ports: int) -> Iterator[None]:
+def _only_these_are_selectable(selectable: Sequence[int]) -> Iterator[None]:
+    """Holds every port of the tested range but `selectable`, so those are the only ones the allocator can pick"""
     with ExitStack() as stack:
-        for port in ports:
+        for port in _ABOVE_THE_BAND:
+            if port in selectable:
+                continue
             sock = stack.enter_context(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
-            sock.bind(("127.0.0.1", port))
+            with contextlib.suppress(OSError):
+                # a port somebody else holds is held, which is all this helper is after
+                sock.bind(("127.0.0.1", port))
         yield
 
 
-def test_port_is_free_only_when_nothing_binds_it():
-    port = next(p for p in _FREE_PORTS if is_port_free(p))
+def _allocator(reservations_path: Path) -> TcpPortAllocator:
+    return TcpPortAllocator(ports=_ABOVE_THE_BAND, reservations_path=reservations_path)
 
-    with _bound_ports(port):
+
+def _reserved_by(reservations_path: Path, port: int, pid: int) -> None:
+    """Writes a reservation the way `pid` left it behind"""
+    reservations_path.write_text(json.dumps({str(port): pid}))
+
+
+def _a_finished_pid() -> int:
+    """A PID that runs nothing anymore"""
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    return proc.pid
+
+
+def test_port_is_free_only_when_nothing_holds_it():
+    (port,) = _free_ports(1)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", port))
         assert is_port_free(port) is False
+
     assert is_port_free(port) is True
 
 
-def test_allocator_skips_ports_bound_by_another_process():
-    bound, *not_bound = _FREE_PORTS
+def test_allocator_hands_out_a_port_nothing_holds(tmp_path: Path):
+    selectable = _free_ports(2)
+    with _only_these_are_selectable(selectable):
+        port = _allocator(tmp_path / "ports.json").get()
 
-    with _bound_ports(bound):
-        port = TcpPortAllocator(_FREE_PORTS).get()
-
-    assert port in not_bound
-
-
-def test_allocator_hands_out_every_port_of_its_slice_once():
-    ports = range(FIRST_TEST_PORT + 8020, FIRST_TEST_PORT + 8023)
-    allocator = TcpPortAllocator(ports)
-
-    assert sorted(allocator.get() for _ in ports) == sorted(ports)
-    with pytest.raises(NoFreeTCPPortError):
-        allocator.get()
+    assert port in selectable
 
 
-@pytest.mark.parametrize("worker_count", [1, 4, 24])
-def test_allocators_of_the_workers_of_a_run_have_disjoint_slices(worker_count: int):
-    allocators = [
-        get_port_allocator(
-            worker_id=f"gw{index}",
-            worker_count=worker_count,
-            checkout_uid=_CHECKOUT_UID,
-        )
-        for index in range(worker_count)
-    ]
-    slices = [set(allocator.ports) for allocator in allocators]
+def test_allocator_skips_a_port_a_live_process_reserved(tmp_path: Path):
+    reservations = tmp_path / "ports.json"
+    (port,) = _free_ports(1)
+    _reserved_by(reservations, port, os.getppid())
 
-    assert sum(len(one) for one in slices) == len(set().union(*slices))
+    with _only_these_are_selectable((port,)):
+        with pytest.raises(NoFreeTCPPortError):
+            _allocator(reservations).get()
+        # only the reservation kept it out of the run
+        assert _allocator(tmp_path / "nothing-else.json").get() == port
 
 
-def test_a_run_without_workers_gets_the_whole_checkout_range():
-    # dividing by the host's CPU count instead of the run's worker count would leave a serial run
-    # with a slice too small for its thousands of port draws
-    serial = get_port_allocator(worker_id="master", worker_count=1, checkout_uid=_CHECKOUT_UID)
+def test_allocator_reclaims_a_port_a_dead_process_reserved(tmp_path: Path):
+    reservations = tmp_path / "ports.json"
+    (port,) = _free_ports(1)
+    _reserved_by(reservations, port, _a_finished_pid())
 
-    assert len(serial.ports) == _PORTS_PER_CHECKOUT
-
-
-@pytest.mark.parametrize("checkout_uid,other_checkout_uid", [("0a0b0c00", "0a0b0c01"), ("abcdef01", "abcdef02")])
-def test_allocators_of_different_checkouts_have_disjoint_slices(checkout_uid: str, other_checkout_uid: str):
-    allocator = get_port_allocator(worker_id="gw0", worker_count=4, checkout_uid=checkout_uid)
-    other_allocator = get_port_allocator(worker_id="gw0", worker_count=4, checkout_uid=other_checkout_uid)
-
-    assert set(allocator.ports).isdisjoint(other_allocator.ports)
+    with _only_these_are_selectable((port,)):
+        assert _allocator(reservations).get() == port
 
 
-@pytest.mark.parametrize("worker_id", ["master", "gw0", "gw3"])
-def test_allocators_stay_out_of_the_ranges_other_processes_allocate_from(worker_id: str):
-    ports = get_port_allocator(worker_id=worker_id, worker_count=4, checkout_uid=_CHECKOUT_UID).ports
+def test_allocator_releases_the_ports_of_a_run_that_recycled_its_pid(tmp_path: Path):
+    # a new process must not be locked out by entries an older one with the same PID left behind
+    reservations = tmp_path / "ports.json"
+    (port,) = _free_ports(1)
+    _reserved_by(reservations, port, os.getpid())
 
-    assert ports.start >= FIRST_TEST_PORT
-    assert ports.stop < 30000  # docker swarm publishes service ports from here on
-    assert ports.stop <= FIRST_TEST_PORT + 2 * 4000  # _CHECKOUT_SLOTS * _PORTS_PER_CHECKOUT
+    with _only_these_are_selectable((port,)):
+        assert _allocator(reservations).get() == port
 
 
-def test_a_run_without_workers_shares_the_slice_of_its_first_worker():
-    # the controller runs no tests once xdist spawns workers, so both may use the same slice
-    master = get_port_allocator(worker_id="master", worker_count=4, checkout_uid=_CHECKOUT_UID)
-    worker = get_port_allocator(worker_id="gw0", worker_count=4, checkout_uid=_CHECKOUT_UID)
+def test_allocator_hands_out_a_port_once_and_gives_up_when_the_band_is_full(tmp_path: Path):
+    selectable = _free_ports(3)
+    reservations = tmp_path / "ports.json"
 
-    assert master.ports == worker.ports
+    with _only_these_are_selectable(selectable):
+        allocator = _allocator(reservations)
+        assert sorted(allocator.get() for _ in selectable) == sorted(selectable)
+
+        with pytest.raises(NoFreeTCPPortError):
+            allocator.get()
+
+
+def test_allocator_records_a_handed_out_port_with_its_pid(tmp_path: Path):
+    reservations = tmp_path / "ports.json"
+    (port,) = _free_ports(1)
+
+    with _only_these_are_selectable((port,)):
+        assert _allocator(reservations).get() == port
+
+    assert json.loads(reservations.read_text()) == {str(port): os.getpid()}
+
+
+def test_the_band_stays_below_the_ports_swarm_publishes(tmp_path: Path):
+    ports = get_port_allocator(reservations_path=tmp_path / "ports.json").ports
+
+    assert ports.start == FIRST_TEST_PORT
+    assert ports.stop < _DOCKER_SWARM_FIRST_PUBLISHED_PORT

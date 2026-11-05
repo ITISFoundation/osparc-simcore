@@ -12,7 +12,6 @@ from filelock import Timeout
 from pytest_simcore.helpers.xdist import (
     ReaderWriterLock,
     SharedResourceSetupError,
-    get_xdist_worker_count,
     is_xdist_controller,
     read_shared_resources,
     record_shared_resource,
@@ -40,7 +39,7 @@ def master_request() -> Any:
     return SimpleNamespace(config=SimpleNamespace(workerinput=None))
 
 
-def test_run_once_always_runs_without_xdist(master_request, tmp_path_factory_of_run):
+def test_run_once_always_runs_without_xdist(master_request: Any, tmp_path_factory_of_run: Any):
     for _ in range(2):
         with run_once_across_workers(
             master_request, tmp_path_factory_of_run, "res", timeout=timedelta(seconds=1)
@@ -48,7 +47,7 @@ def test_run_once_always_runs_without_xdist(master_request, tmp_path_factory_of_
             assert is_first is True
 
 
-def test_run_once_runs_only_in_the_first_worker_call(worker_request, tmp_path_factory_of_run):
+def test_run_once_runs_only_in_the_first_worker_call(worker_request: Any, tmp_path_factory_of_run: Any):
     results = []
     for _ in range(3):
         with run_once_across_workers(
@@ -59,7 +58,7 @@ def test_run_once_runs_only_in_the_first_worker_call(worker_request, tmp_path_fa
     assert results == [True, False, False]
 
 
-def test_run_once_failure_makes_next_callers_fail_fast(worker_request, tmp_path_factory_of_run):
+def test_run_once_failure_makes_next_callers_fail_fast(worker_request: Any, tmp_path_factory_of_run: Any):
     with (
         pytest.raises(_SetupBoomError),
         run_once_across_workers(worker_request, tmp_path_factory_of_run, "res", timeout=timedelta(seconds=1)),
@@ -73,7 +72,7 @@ def test_run_once_failure_makes_next_callers_fail_fast(worker_request, tmp_path_
         pytest.fail("the body must not run")
 
 
-def test_run_once_other_workers_wait_for_the_setup(worker_request, tmp_path_factory_of_run):
+def test_run_once_other_workers_wait_for_the_setup(worker_request: Any, tmp_path_factory_of_run: Any):
     setup_started = threading.Event()
     setup_can_finish = threading.Event()
 
@@ -106,7 +105,7 @@ def test_run_once_other_workers_wait_for_the_setup(worker_request, tmp_path_fact
 
 
 def test_shared_resources_are_recorded_by_workers_and_read_by_the_controller(
-    worker_request, tmp_path_factory_of_run, tmp_path
+    worker_request: Any, tmp_path_factory_of_run: Any, tmp_path: Path
 ):
     record_shared_resource(worker_request, tmp_path_factory_of_run, kind="stack", name="ops")
     record_shared_resource(worker_request, tmp_path_factory_of_run, kind="swarm")
@@ -115,7 +114,9 @@ def test_shared_resources_are_recorded_by_workers_and_read_by_the_controller(
     assert read_shared_resources(controller_config) == [{"kind": "stack", "name": "ops"}, {"kind": "swarm"}]  # type: ignore[arg-type]
 
 
-def test_shared_resources_are_not_recorded_without_xdist(master_request, tmp_path_factory_of_run, tmp_path):
+def test_shared_resources_are_not_recorded_without_xdist(
+    master_request: Any, tmp_path_factory_of_run: Any, tmp_path: Path
+):
     record_shared_resource(master_request, tmp_path_factory_of_run, kind="swarm")
 
     controller_config = SimpleNamespace(_tmp_path_factory=SimpleNamespace(getbasetemp=lambda: tmp_path))
@@ -123,12 +124,12 @@ def test_shared_resources_are_not_recorded_without_xdist(master_request, tmp_pat
 
 
 @pytest.mark.parametrize("plugins", [{"dsession"}, set()])
-def test_is_xdist_controller_requires_the_dsession_plugin(plugins):
+def test_is_xdist_controller_requires_the_dsession_plugin(plugins: set[str]):
     config = SimpleNamespace(pluginmanager=SimpleNamespace(has_plugin=lambda name: name in plugins))
     assert is_xdist_controller(config) is ("dsession" in plugins)  # type: ignore[arg-type]
 
 
-def test_write_lock_releases_marker_when_reader_drain_times_out(tmp_path_factory):
+def test_write_lock_releases_marker_when_reader_drain_times_out(tmp_path_factory: pytest.TempPathFactory):
     """a writer whose drain phase times out must NOT leave its marker behind: a stale marker
     would poison every subsequent reader/writer acquisition until removed by hand
     """
@@ -144,17 +145,3 @@ def test_write_lock_releases_marker_when_reader_drain_times_out(tmp_path_factory
     # the abandoned writer's marker must be gone: a later writer acquires cleanly
     with lock.write_lock(token=next_writer, timeout=timedelta(seconds=5)):
         pass
-
-
-@pytest.mark.parametrize(
-    "workerinput,expected_count",
-    [
-        pytest.param(None, 1, id="run-without-xdist"),
-        pytest.param({"workerid": "gw0", "workercount": 4}, 4, id="xdist-worker"),
-    ],
-)
-def test_get_xdist_worker_count_returns_the_processes_of_the_run(workerinput, expected_count):
-    # not the host's CPU count: a run with fewer workers than cores must still get whole slices
-    request = SimpleNamespace(config=SimpleNamespace(workerinput=workerinput))
-
-    assert get_xdist_worker_count(request) == expected_count  # type: ignore[arg-type]
