@@ -67,8 +67,8 @@ REFERENCE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:--constraint|--requireme
 # takes a freed package to its newest release rather than to the version that would unblock
 # it, so each round widens the diff; a directory that needs more than these goes to the
 # report. The first round caps a freed package at the highest version another lockfile here
-# pins for it (see highest_pinned), the round after that frees it
-MAX_UNBLOCK_ROUNDS: Final[int] = 2
+# pins for it (see highest_pinned), the rounds after that free it
+MAX_UNBLOCK_ROUNDS: Final[int] = 5
 
 # failure report of the last resync, committed to the PR through
 # postUpgradeTasks.fileFilters so reviewers cannot miss it; removed once a
