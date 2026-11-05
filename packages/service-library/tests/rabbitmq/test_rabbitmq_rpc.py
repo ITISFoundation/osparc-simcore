@@ -454,11 +454,9 @@ async def test_rpc_client_recovers_when_broker_closes_all_connections(
     assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1, y=3) == 4
     queue_before = _get_rpc_result_queue_name(rpc_client)
 
-    # force a broker-side disconnect of this client, mirroring the AWS maintenance
-    # `CONNECTION_FORCED` event; the robust connection reconnects and fires
-    # `_on_safe_reconnect`, which rebuilds the RPC surface with a fresh mailbox.
-    # `--vhost` is required: without it the tool only closes connections of the default vhost,
-    # which is not the one an xdist worker connects to.
+    # force a broker-side disconnect, mirroring the AWS maintenance `CONNECTION_FORCED` event:
+    # the robust connection reconnects and `_on_safe_reconnect` rebuilds the RPC surface with a
+    # fresh mailbox. `--vhost` is required, else only the default vhost is closed.
     async with aiodocker.Docker() as docker_client:
         containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
         assert len(containers) == 1, "missing rabbit container!"

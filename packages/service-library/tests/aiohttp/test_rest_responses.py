@@ -60,8 +60,7 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
 @pytest.mark.parametrize(
     "error_code",
     [None, create_error_code(Exception("fake"))],
-    # explicit ids: the generated error code embeds the instant it was created, so letting
-    # pytest build the id out of it gives each xdist worker a different test id
+    # the error code embeds its creation instant, so pytest's own id differs per xdist worker
     ids=["no_error_code", "with_error_code"],
 )
 @pytest.mark.parametrize(

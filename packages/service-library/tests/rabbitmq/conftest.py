@@ -25,10 +25,9 @@ def namespace() -> RPCNamespace:
 
 @pytest.fixture
 def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> dict[str, Any]:
-    """aiodocker filters selecting only the `rabbit` container of THIS run's stack
+    """aiodocker filters selecting the `rabbit` container of this run's stack only
 
-    Several checkouts can share one daemon, each with its own stack, so a name-only filter
-    would match foreign rabbits and break the single-container assertion.
+    A name-only filter also matches the rabbits of other checkouts sharing the daemon.
     """
     stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     return {
@@ -53,9 +52,7 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
         assert len(containers) == 1, "missing rabbit container!"
 
         if shared_broker:
-            # every worker's clients share this broker container, so a warning/error in its logs
-            # cannot be attributed to this test. The container itself is still checked to be up.
-            print("--> skipped the rabbitmq log check: the broker is shared with the other xdist workers")
+            print("--> skipped the rabbitmq log check: the broker is shared with the other workers")
             return
 
         rabbit_container = containers[0]

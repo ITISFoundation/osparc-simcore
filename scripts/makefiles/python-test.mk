@@ -9,8 +9,8 @@
 # Optional variables:
 # - TEST_TARGET: pytest target path(s), defaults to tests/unit
 # - PYTEST_ADDITIONAL_PARAMETERS: additional pytest CLI parameters
-# - pytest-parameters: same value as above, set from the command line like the service
-#   Makefiles do (make "test-ci[all]" pytest-parameters=--numprocesses=auto)
+# - pytest-parameters: command-line alias of the above, as the service Makefiles take it
+#   (make "test-ci[all]" pytest-parameters=--numprocesses=auto)
 # - PYTEST_BASE_ARGS, PYTEST_ARGS_dev, PYTEST_ARGS_ci: project-specific options
 #
 
