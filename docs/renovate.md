@@ -11,7 +11,7 @@ as a vulnerability source only.
 | Repository configuration | [.renovaterc.jsonc](../.renovaterc.jsonc) |
 | Admin configuration (`allowedCommands`, `platformCommit`) | [.github/renovate/global-config.json5](../.github/renovate/global-config.json5) |
 | Lockfile re-resolution post-upgrade task | [.github/renovate/resync_lockfiles.py](../.github/renovate/resync_lockfiles.py) |
-| Review gate script (drafts go ready) | [.github/renovate/review_gate.sh](../.github/renovate/review_gate.sh) |
+| Review gate script (drafts go ready) | [.github/renovate/review_gate.py](../.github/renovate/review_gate.py) |
 | Who reviews them | [CODEOWNERS](../.github/CODEOWNERS), last block |
 | Who merges them | [mergify.yml](../.github/mergify.yml) |
 
@@ -140,6 +140,12 @@ only after the checks have finished:
 
    The gate leaves a draft alone once it has requested reviewers or reviews, so
    a pull request turned back into a draft stays a draft.
+
+   The gate also comments the lockfile pins a pull request moved besides the
+   dependency of its title, each with the file or package that carried the new
+   version, and updates that comment on later runs instead of adding one: a
+   "patch" bump rewrites dozens of lockfiles and the title names one package.
+   It changes no label and no ready state.
 3. The reviewed path merges once Mergify's conditions match: the branch is
    up to date with `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
@@ -167,10 +173,11 @@ How the fast lane gets past the review requirement:
 - `none` also drops the required checks of the *master branch* ruleset. Instead
   of a copy of the ruleset's list, the queue requires that no check of another
   app than Mergify is pending or failed (`-check-pending~=^@(?!mergify/)`,
-  same for `check-failure`) and that `system-tests` passed. Any failing check
-  therefore keeps a pull request out of the fast lane. The `system-tests`
-  condition keeps the pull request waiting until CI has reported on the commit
-  Mergify adds; renaming that job stalls the fast lane;
+  same for `check-failure` except `renovate/artifacts`, see below) and that
+  `system-tests` passed. Any other failing check therefore keeps a pull request
+  out of the fast lane. The `system-tests` condition keeps the pull request
+  waiting until CI has reported on the commit Mergify adds; renaming that job
+  stalls the fast lane;
 - the fast lane only takes a pull request Renovate wrote alone: Renovate opened
   it, and every commit is authored by Renovate or Mergify and verified by
   GitHub (`renovate_only` in `mergify.yml`). A commit pushed by anyone else
@@ -182,11 +189,42 @@ How the fast lane gets past the review requirement:
 To fix a failing Renovate pull request, see
 [Fixing a failing Renovate pull request](#fixing-a-failing-renovate-pull-request).
 
-When the resync task cannot propagate a pin to every directory that constrains
-it, it leaves `renovate-resync-report.md` in the pull request and Renovate
-reports a failing `renovate/artifacts` check. A patch-level resync failure
-therefore keeps the pull request out of the fast lane: marking it ready after
-the 3 h cool-down requests the code owners.
+A failing `renovate/artifacts` check on its own is not a reason to act. Renovate
+compiles every lockfile of a branch on its own, and a lockfile that takes its own
+parent layer as a `--constraint` fails whenever Renovate reaches it while that
+parent still pins the old version: `Because you require redis==7.4.0 and
+redis==7.4.1`. The order the files are compiled in comes out of the file scan, so
+the failure lands on whichever lockfile is reached too early, and the resync
+post-upgrade task re-resolves the whole tree after it. What the check cannot tell
+apart from that false alarm is a resync that could not propagate a pin, which
+leaves `renovate-resync-report.md` in the pull request — and
+`test_no_lockfile_resync_left_behind` of `tests/environment-setup` fails on that
+file, which is what keeps a real resync failure out of the fast lane.
+
+A resync also moves packages the title does not name, and those moves are forced
+rather than free. uv takes the pins of a lockfile consumed through `--constraint`
+as requirements, and `master` does not agree on one version per package: one
+commit pinned `psutil` at 6.0.0, 6.1.0, 7.0.0 and 7.2.2 in 33 lockfiles. Because
+the regeneration is constraint-sources-first, every directory pinned below its
+constraint source moves up to the version that source carries. Metadata forces
+the rest: `redis` 7.4.1 falls outside `kombu` 5.6.2's `redis` extra (`<6.5`), so
+`kombu` goes to 5.7.0, which requires `amqp>=5.4.2`. Nothing else moves — one
+`--upgrade-package` request in `packages/service-library/requirements` changed
+that one package.
+
+The size of such a diff is the distance the branch lags: resyncing
+`redis==7.4.1` at the commit #10001 branched from rewrote 41 lockfiles and 28
+packages, and the same command on a `master` that had converged moved 2. The
+moves are normally the right ones — the lagging lockfile is the stale one — so
+what breaks is repository code coupled to the older version, like a test
+importing a private `psutil` type that 7.2 removed. The gate's checks decide
+whether such a pull request merges; the moved pins are commented, not blocked.
+
+A directory that resolves at nothing gets the `MAX_UNBLOCK_ROUNDS` fallback
+instead: uv names the pin in its way, the first round lets that package rise no
+higher than another lockfile here pins it, and the round after frees it. That is
+the one path on which the resync can reach a version nobody chose, so it is
+capped; the resync of #10001 needed no round at all.
 
 ## Keeping a pull request up to date
 
@@ -225,6 +263,11 @@ else committed to, so its lockfiles are no longer regenerated. Instead:
    review like any other pull request.
 4. **The version cannot be used for now**: close the pull request, or exclude
    the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
+
+A pull request the review gate held keeps `🤖-do-not-merge` after its checks turn
+green again, and it lost `🤖-renovate-fast-lane` when it was held. Removing the
+first label sends it through the reviewed path; re-adding the second one too
+takes it through the fast lane instead.
 
 ## Adding something new for Renovate to manage
 
