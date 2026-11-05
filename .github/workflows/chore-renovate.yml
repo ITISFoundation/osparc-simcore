@@ -180,10 +180,23 @@ jobs:
           # script only talks to the API through gh
           persist-credentials: false
 
-      - name: setup python environment
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - name: resolve uv version
+        id: uv-version
+        run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
+
+      # requirements/UV_VERSION is the single source of truth for the uv version, as in
+      # .github/actions/setup-simcore-env. The script needs no packages, so uv only has to
+      # provide the interpreter its requires-python asks for; caching that download is what
+      # makes the 15-minute poll cheaper than fetching CPython every run
+      - name: install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: "3.14"
+          version: ${{ steps.uv-version.outputs.version }}
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: |
+            .python-version
+            requirements/UV_VERSION
 
       - name: run review gate
         env:
@@ -191,4 +204,4 @@ jobs:
           REPO: ${{ github.repository }}
           BOT: osparc-simcore-renovate[bot]
           FAIL_COOLDOWN_HOURS: 3
-        run: python .github/renovate/review_gate.py
+        run: ./.github/renovate/review_gate.py

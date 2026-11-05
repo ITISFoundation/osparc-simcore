@@ -1,4 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script --no-project
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [] # stdlib-only on purpose: the gate runs every 15 minutes and reads the
+#                   # API through gh, so it has nothing to install
+# ///
 # ruff: noqa: T201  # what the poll decided is reported on stdout, which the Actions run keeps as its log
 """Renovate review gate, run by the review-gate job of
 .github/workflows/chore-renovate.yml every 15 minutes.
@@ -31,8 +36,7 @@ Every call goes through gh, so GH_TOKEN must be set and must belong to the
 Renovate App: a GitHub App cannot mark a pull request opened by another App
 ready, so a github.token (github-actions App) run fails on the ready call.
 
-Stdlib-only and run with the workflow's setup-python interpreter. The
-`# via` block format it parses is pip-compile's, documented in
+The `# via` block format it parses is pip-compile's, documented in
 docs/renovate.md; see moved_pins below.
 """
 
