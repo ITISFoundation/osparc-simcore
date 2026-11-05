@@ -37,6 +37,7 @@ _SERVICES_TO_SKIP: Final[set[str]] = {
     "rabbit",
     "redis",
     "static-webserver",
+    "temporal",  # gRPC only (NO http API)
     "traefik",
     "whoami",
     "notifications-worker",

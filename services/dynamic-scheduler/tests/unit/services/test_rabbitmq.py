@@ -28,6 +28,7 @@ def app_environment(
     disable_status_monitor_lifespan: None,
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    disable_t_scheduler_lifespan: None,
 ) -> EnvVarsDict:
     return app_environment
 

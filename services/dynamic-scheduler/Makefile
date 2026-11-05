@@ -11,3 +11,7 @@ include ../../scripts/makefiles/service.mk
 openapi-specs: openapi.json
 openapi.json: .env-ignore ## produces openapi.json
 	$(call generate_and_validate_openapi,$<,$@)
+
+.PHONY: workflows_signatures.json
+workflows_signatures.json: ## produces workflows_signatures.json
+	$(APP_CLI_NAME) workflows-signatures > $@
