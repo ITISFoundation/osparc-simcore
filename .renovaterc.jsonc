@@ -274,7 +274,7 @@
       ],
       "postUpgradeTasks": {
         "commands": [
-          "uv run --script --no-project .github/renovate/resync_lockfiles.py"
+          "./.github/renovate/resync_lockfiles.py"
         ],
         "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
         "fileFilters": [

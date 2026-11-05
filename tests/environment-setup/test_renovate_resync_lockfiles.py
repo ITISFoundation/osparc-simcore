@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import importlib.util
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -10,6 +12,11 @@ from typing import Final
 
 import pytest
 from packaging.specifiers import SpecifierSet
+
+# Matches the allowedCommands array of the admin configuration, which is json5 and
+# therefore not parseable as a whole here.
+_RE_ALLOWED_COMMANDS: Final = re.compile(r"allowedCommands: \[([^\]]*)\]")
+
 
 # Stands in for `make -C <dir> reqs upgrade="<...>"` and answers like uv for a
 # virtualenv update that needs packaging>=26.3: the update only resolves once packaging
@@ -368,3 +375,24 @@ def test_no_lockfile_resync_left_behind(osparc_simcore_root_dir: Path):
         "the lockfile resync failed for at least one directory, which left its"
         f" requirements pinned at the old version. Details in {report}"
     )
+
+
+def test_the_post_upgrade_task_runs_the_script_bare_and_is_allowed(
+    osparc_simcore_root_dir: Path,
+):
+    # Renovate skips a post-upgrade command that does not match allowedCommands in the
+    # admin configuration, and that shows up as a failing renovate/artifacts check rather
+    # than as a configuration error, so the two files are checked against each other here
+    renovaterc = (osparc_simcore_root_dir / ".renovaterc.jsonc").read_text()
+    post_upgrade = renovaterc[renovaterc.index('"postUpgradeTasks"') :]
+    (command,) = re.findall(r'"([^"]*resync_lockfiles\.py)"', post_upgrade)
+    assert command == "./.github/renovate/resync_lockfiles.py", (
+        "name the script bare: its PEP 723 header picks the interpreter and installs"
+        " packaging, so the command must not wrap it in a `uv run` invocation"
+    )
+
+    admin = (osparc_simcore_root_dir / ".github/renovate/global-config.json5").read_text()
+    patterns = _RE_ALLOWED_COMMANDS.search(admin)
+    assert patterns is not None, "no allowedCommands array in the admin configuration"
+    allowed = json.loads(f"[{patterns.group(1)}]")
+    assert any(re.search(pattern, command) for pattern in allowed)
