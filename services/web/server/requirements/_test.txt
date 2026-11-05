@@ -19,7 +19,7 @@ alembic==1.8.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-annotated-doc==0.0.5
+annotated-doc==0.0.4
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -40,13 +40,13 @@ asyncpg==0.32.0
     #   asyncpg-stubs
 asyncpg-stubs==0.32.0
     # via -r requirements/_test.in
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -54,7 +54,7 @@ certifi==2026.10.19
     #   httpx
     #   requests
     #   sentry-sdk
-charset-normalizer==2.0.12
+charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -74,7 +74,7 @@ dnspython==2.9.0
     #   email-validator
 docker==7.1.0
     # via -r requirements/_test.in
-email-validator==2.2.0
+email-validator==2.3.0
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -105,7 +105,7 @@ filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
-frozenlist==1.4.1
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -176,7 +176,7 @@ mako==1.4.3
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via
     #   -c requirements/_base.txt
     #   rich
@@ -217,7 +217,7 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.3.1
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -292,7 +292,7 @@ pyyaml==6.0.3
     #   -c requirements/_base.txt
     #   jsonschema-path
     #   uvicorn
-redis==6.4.0
+redis==7.4.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -325,7 +325,7 @@ rich-toolkit==0.19.7
     #   fastapi-cloud-cli
 rignore==0.7.6
     # via fastapi-cloud-cli
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -336,7 +336,7 @@ shellingham==1.5.4
     # via
     #   -c requirements/_base.txt
     #   typer
-six==1.16.0
+six==1.17.0
     # via
     #   -c requirements/_base.txt
     #   rfc3339-validator
@@ -354,7 +354,7 @@ starlette==1.6.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   fastapi
-tenacity==8.5.0
+tenacity==9.1.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
