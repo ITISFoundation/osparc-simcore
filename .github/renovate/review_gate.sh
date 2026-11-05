@@ -18,8 +18,8 @@
 #  gate reported it before or a person handles it (e.g. turned it back into a
 #  draft on purpose).
 #  Each draft also gets a comment listing the lockfile pins its diff moved besides the
-#  dependency named in the title, updated in place on later runs. It informs reviewers;
-#  it holds nothing back.
+#  dependency named in the title, updated in place on later runs. It changes no label
+#  and no ready state.
 #
 #  Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS.
 #  Uses gh for API calls (GH_TOKEN must be set). GH_TOKEN must belong to the
@@ -31,19 +31,17 @@ set -o errexit  # abort on nonzero exitstatus
 set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 
-# First line of the comment listing the packages the resync moved; identifies the
-# comment so the next poll updates it instead of adding another
+# First line of the moved-packages comment; the next poll finds its comment by it and
+# updates that one instead of adding another
 DRIFT_MARKER='<!-- renovate-drift-summary -->'
 
-# Packages listed in that comment before it truncates
+# Packages the comment lists before it truncates
 DRIFT_LIST_LIMIT="${DRIFT_LIST_LIMIT:-40}"
 
-# Reads a pull request diff on stdin and prints one "<name>: <old> -> <new>" line per
-# package whose pin it moved, alphabetically. Skips packages that only appear on one
-# side (a dependency added or dropped, not moved), those whose pins are the same on both
-# sides (a lockfile comment touched), and the one whose new version is the version in the
-# pull request title. A lockfile pin is a line starting at column 1, so lines inside a
-# diff hunk of any other file cannot match.
+# Reads a pull request diff on stdin and prints "<name>: <old> -> <new>" for every package
+# whose lockfile pin moved, alphabetically. A pin starts at column 1, so the hunk of
+# another file cannot match. Left out: a package the diff only adds or only drops, a pin
+# it touches without changing, and the version the title names.
 moved_pins() {
   local headline="$1"
   awk -v headline="$headline" '
@@ -57,8 +55,8 @@ moved_pins() {
       sub(/\[[^]]*\]$/, "", name)
       gsub(/[-_.]+/, "-", name)
       name = tolower(name)
-      # the versions are collected deduplicated: one package moves in dozens of
-      # lockfiles and usually to the same version in all of them
+      # one package moves in dozens of lockfiles, usually to the same version there, so
+      # keep each version once
       if (side == "-") {
         seen[name] = 1
         if (index(" " old[name] " ", " " version " ") == 0) old[name] = old[name] " " version
@@ -99,13 +97,11 @@ for pr in $DRAFTS; do
     continue
   fi
   checks=$(gh pr checks "$pr" --repo "$REPO" --json name,bucket 2>/dev/null || true)
-  # Renovate's per-lockfile compile is not what resolves this repository's requirements:
-  # the resync post-upgrade task rewrites the whole tree afterwards
-  # (.github/renovate/resync_lockfiles.py), and it runs after that compile. So
-  # renovate/artifacts also fails when one lockfile was compiled while the layer it
-  # constrains itself from still pinned the old version, whatever the branch ends up
-  # containing. A resync that cannot resolve a directory is caught by the
-  # [sys] environment setup test instead, which is why this check is advisory here.
+  # The check reports one lockfile's compile, which fails while the layer it takes as
+  # --constraint still pins the old version; the resync task
+  # (.github/renovate/resync_lockfiles.py) re-resolves the tree after it. Advisory here,
+  # because a resync that cannot resolve a directory fails the [sys] environment setup
+  # test instead.
   checks=$(jq -c 'map(select(.name != "renovate/artifacts"))' <<<"$checks")
   if [ -z "$checks" ] || [ "$checks" = "[]" ]; then
     echo "PR #$pr: no checks reported yet"
@@ -117,13 +113,12 @@ for pr in $DRAFTS; do
   fi
   info=$(gh pr view "$pr" --repo "$REPO" --json labels,title)
   labels=$(jq -r '.labels[].name' <<<"$info")
-  # The version Renovate wrote into the title, which is the one the pull request is about:
-  # "Update dependency redis to v7.4.1 [Renovate]" -> 7.4.1. Empty on any other wording,
-  # which then lists every moved package including that one.
+  # the version in the title is the one the pull request is about: "Update dependency
+  # redis to v7.4.1 [Renovate]" -> 7.4.1. Any other wording leaves this empty and then
+  # that package shows up in the list as well.
   headline=$(sed -n 's/.* to v\{1,\}\([0-9][^ ]*\) .*/\1/p' <<<"$(jq -r .title <<<"$info")")
-  # What the resync moved besides that package. It runs inside Renovate's own commit, before
-  # the pull request exists, so it cannot report this itself; the title names one dependency
-  # and the diff moves dozens of pins.
+  # What the resync moved on top of that package. It commits inside Renovate's own run,
+  # before the pull request exists, so it cannot say so itself.
   if ! drift=$(gh pr diff "$pr" --repo "$REPO" | moved_pins "$headline"); then
     echo "PR #$pr: diff not readable, skipping the moved-packages comment"
     drift=""

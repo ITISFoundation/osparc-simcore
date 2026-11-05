@@ -73,9 +73,9 @@ fi
 printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
 """
 
-# Answers like uv for a directory that resolves only once its `packaging==25.2` may rise --
-# and only up to the version another directory of the repository already runs, which is the
-# ceiling the resync is expected to pass as `packaging<=26.1`.
+# Answers like uv for a directory that resolves only once its `packaging==25.2` may rise,
+# and no further than `packaging<=26.1`: the version another directory here pins, which is
+# the ceiling the resync is expected to pass.
 _FAKE_MAKE_CAPS_THE_BLAMED_PIN: Final[str] = """#!/bin/bash
 dir="$2"
 upgrade="${4#upgrade=}"
@@ -215,9 +215,9 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
         sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env
     )
 
-    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed, free --
-    # nothing here pins packaging newer than the blocking 26.0, so no ceiling is worth an
-    # extra resolution (test_resync_lockfiles_caps_a_freed_pin_... covers the capped path)
+    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed, and
+    # frees it outright -- nothing here pins packaging newer than the blocking 26.0, so a
+    # cap could not resolve anything new (the capped path is the test below)
     assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging"]
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.3\nvirtualenv==21.14.10\n"
@@ -228,9 +228,8 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
 def test_resync_lockfiles_caps_a_freed_pin_at_the_highest_version_pinned_here(
     resync_lockfiles_script: Path, tmp_path: Path
 ):
-    # a package freed to unblock one directory goes to uv's newest release unless the
-    # resync caps it, and the version another service here already runs is a far better
-    # ceiling than "anything": 26.1 instead of whatever shipped yesterday
+    # the ceiling of a freed package is what this repository already pins: 26.1 from
+    # another directory, not uv's newest release
     repo = tmp_path / "repo"
     (repo / "requirements").mkdir(parents=True)
     (repo / "requirements/_base.txt").write_text("click==8.1.0\npackaging==25.2\n")
@@ -248,7 +247,7 @@ def test_resync_lockfiles_caps_a_freed_pin_at_the_highest_version_pinned_here(
     assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging<=26.1"]
     lockfiles = repo / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.1\nvirtualenv==21.14.10\n"
-    # the ceiling shows up in the report, so a reviewer sees the move was bounded
+    # the report keeps the cap, so a reviewer sees what bounded the move
     assert "these packages had to move too: requirements (packaging<=26.1)" in result.stderr
 
 
@@ -359,11 +358,10 @@ def test_parse_pins(resync_module, text: str, expected: list[str]):
 
 
 def test_no_lockfile_resync_left_behind(osparc_simcore_root_dir: Path):
-    # The resync leaves this report when a directory could not be regenerated, and that
-    # directory keeps its lockfile on the old version. Renovate reports it as a failing
-    # `renovate/artifacts` check, the same check it raises when its own compile of a
-    # single lockfile fails while a parent layer still pins the old version, so the
-    # check cannot gate the fast lane. This test is what does (see docs/renovate.md)
+    # A directory the resync could not regenerate keeps its old lockfile, and the report
+    # is how that reaches the pull request. `renovate/artifacts` fails both for that and
+    # for a lockfile Renovate compiles while its parent layer still pins the old version,
+    # so that check cannot gate the fast lane; this test does (see docs/renovate.md)
     report = osparc_simcore_root_dir / "renovate-resync-report.md"
     assert not report.exists(), (
         "the lockfile resync failed for at least one directory, which left its"

@@ -43,8 +43,8 @@ def moved_pins_fixture(tmp_path: Path, review_gate_script: Path):
 
     def _moved(diff: str, headline: str = "") -> list[str]:
         source = review_gate_script.read_text()
-        # the function runs at top level with the real `gh` calls, so only its body is
-        # sourced: from the definition down to the closing brace at column 0
+        # sourcing the script would run its gh calls, so only the function is extracted:
+        # definition down to the closing brace at column 0
         match = re.search(r"^moved_pins\(\) \{.*?^\}$", source, re.MULTILINE | re.DOTALL)
         assert match, "moved_pins() not found in review_gate.sh"
         script = tmp_path / "moved_pins.sh"

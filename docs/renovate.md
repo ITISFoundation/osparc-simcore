@@ -141,11 +141,10 @@ only after the checks have finished:
    The gate leaves a draft alone once it has requested reviewers or reviews, so
    a pull request turned back into a draft stays a draft.
 
-   Besides marking drafts ready, the gate comments the lockfile pins a pull
-   request moved besides the dependency of its title, and updates that comment on
-   later runs instead of adding one. It lists them because a "patch" bump rewrites
-   dozens of lockfiles, and nothing in the title says so. The comment informs; it
-   never holds a pull request back.
+   The gate also comments the lockfile pins a pull request moved besides the
+   dependency of its title, and updates that comment on later runs instead of
+   adding one: a "patch" bump rewrites dozens of lockfiles and the title names one
+   package. It changes no label and no ready state.
 3. The reviewed path merges once Mergify's conditions match: the branch is
    up to date with `master` (the ruleset marks the checks *strict*), reviewers
    approve twice, request no changes, leave no thread open, and a code owner
@@ -195,24 +194,23 @@ parent layer as a `--constraint` fails whenever Renovate reaches it while that
 parent still pins the old version: `Because you require redis==7.4.0 and
 redis==7.4.1`. The order the files are compiled in comes out of the file scan, so
 the failure lands on whichever lockfile is reached too early, and the resync
-post-upgrade task re-resolves the whole tree afterwards anyway. What the check
-cannot tell apart from that false alarm is a resync that could not propagate a
-pin, which leaves `renovate-resync-report.md` in the pull request — and
+post-upgrade task re-resolves the whole tree after it. What the check cannot tell
+apart from that false alarm is a resync that could not propagate a pin, which
+leaves `renovate-resync-report.md` in the pull request — and
 `test_no_lockfile_resync_left_behind` of `tests/environment-setup` fails on that
 file, which is what keeps a real resync failure out of the fast lane.
 
-What the resync does add to a pull request is movement in other packages. It gets
-the dependency of the pull request as an exact pin, so that one never moves, but
-uv treats an already pinned version as a preference rather than a requirement:
-re-resolving a directory can lift its neighbours. When a directory refuses to
-resolve, the resync frees the packages uv blames, up to `MAX_UNBLOCK_ROUNDS`
-rounds. A freed package may first rise only as high as another lockfile of this
-repository already pins it, and only a round that cannot resolve on that ceiling
-lets uv take the newest release. Because directories are regenerated
-constraint-sources-first, whatever did move then becomes the constraint every
-consumer resolves against, which is how a patch bump ends up rewriting 41
-lockfiles. The review gate's checks decide whether such a pull request merges;
-the moved pins are commented, not blocked.
+A resync also moves packages the title does not name. It gets the dependency of
+the pull request as an exact pin, so that one never moves, but uv treats an
+already pinned version as a preference rather than a requirement: re-resolving a
+directory can lift its neighbours. When a directory refuses to resolve, the
+resync frees the packages uv blames, up to `MAX_UNBLOCK_ROUNDS` rounds; a freed
+package may first rise only as high as another lockfile of this repository
+already pins it, and only a round that cannot resolve on that ceiling lets uv
+take its newest release. Directories regenerate constraint-sources-first, so
+whatever moved becomes the constraint every consumer resolves against, which is
+how a patch bump ends up rewriting 41 lockfiles. The gate's checks decide whether
+such a pull request merges; the moved pins are commented, not blocked.
 
 ## Keeping a pull request up to date
 

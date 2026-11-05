@@ -50,12 +50,11 @@ queue_rules:
     # No check of another app than Mergify is pending or failed. Mergify lists each
     # check under its name and as @<app>/<name>; matching the qualified form leaves
     # out Mergify's own check runs, which stay in progress while the PR is queued.
-    # `renovate/artifacts` is excluded from the failures: Renovate raises it for a
-    # single lockfile it compiles while the layer that lockfile constrains itself from
-    # still pins the old version, and the resync post-upgrade task re-resolves the tree
-    # right after, so it fails on branches whose lockfiles are correct. A resync that
-    # cannot resolve a directory fails the [sys] environment setup test instead, and
-    # that lands in system-tests.
+    # `renovate/artifacts` is excluded from the failures: it reports the compile of a
+    # single lockfile, which fails while the layer it takes as --constraint still pins
+    # the old version, and the resync post-upgrade task re-resolves the tree right
+    # after. A resync that cannot resolve a directory fails [sys] environment setup
+    # instead, which is part of system-tests.
     # check-success=system-tests requires CI to have reported on the commit Mergify
     # merges master into; right after that push no check exists yet, so "nothing
     # pending" alone would already hold. system-tests is a required check of
