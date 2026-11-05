@@ -167,10 +167,11 @@ How the fast lane gets past the review requirement:
 - `none` also drops the required checks of the *master branch* ruleset. Instead
   of a copy of the ruleset's list, the queue requires that no check of another
   app than Mergify is pending or failed (`-check-pending~=^@(?!mergify/)`,
-  same for `check-failure`) and that `system-tests` passed. Any failing check
-  therefore keeps a pull request out of the fast lane. The `system-tests`
-  condition keeps the pull request waiting until CI has reported on the commit
-  Mergify adds; renaming that job stalls the fast lane;
+  same for `check-failure` except `renovate/artifacts`, see below) and that
+  `system-tests` passed. Any other failing check therefore keeps a pull request
+  out of the fast lane. The `system-tests` condition keeps the pull request
+  waiting until CI has reported on the commit Mergify adds; renaming that job
+  stalls the fast lane;
 - the fast lane only takes a pull request Renovate wrote alone: Renovate opened
   it, and every commit is authored by Renovate or Mergify and verified by
   GitHub (`renovate_only` in `mergify.yml`). A commit pushed by anyone else
@@ -182,11 +183,17 @@ How the fast lane gets past the review requirement:
 To fix a failing Renovate pull request, see
 [Fixing a failing Renovate pull request](#fixing-a-failing-renovate-pull-request).
 
-When the resync task cannot propagate a pin to every directory that constrains
-it, it leaves `renovate-resync-report.md` in the pull request and Renovate
-reports a failing `renovate/artifacts` check. A patch-level resync failure
-therefore keeps the pull request out of the fast lane: marking it ready after
-the 3 h cool-down requests the code owners.
+A failing `renovate/artifacts` check on its own is not a reason to act. Renovate
+compiles every lockfile of a branch on its own, and a lockfile that takes its own
+parent layer as a `--constraint` fails whenever Renovate reaches it while that
+parent still pins the old version: `Because you require redis==7.4.0 and
+redis==7.4.1`. The order the files are compiled in comes out of the file scan, so
+the failure lands on whichever lockfile is reached too early, and the resync
+post-upgrade task re-resolves the whole tree afterwards anyway. What the check
+cannot tell apart from that false alarm is a resync that could not propagate a
+pin, which leaves `renovate-resync-report.md` in the pull request — and
+`test_no_lockfile_resync_left_behind` of `tests/environment-setup` fails on that
+file, which is what keeps a real resync failure out of the fast lane.
 
 ## Keeping a pull request up to date
 
@@ -225,6 +232,11 @@ else committed to, so its lockfiles are no longer regenerated. Instead:
    review like any other pull request.
 4. **The version cannot be used for now**: close the pull request, or exclude
    the version in `.renovaterc.jsonc` (`allowedVersions`, `ignoreDeps`).
+
+A pull request the review gate held keeps `🤖-do-not-merge` after its checks turn
+green again, and it lost `🤖-renovate-fast-lane` when it was held. Removing the
+first label sends it through the reviewed path; re-adding the second one too
+takes it through the fast lane instead.
 
 ## Adding something new for Renovate to manage
 

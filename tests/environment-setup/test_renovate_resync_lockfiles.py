@@ -308,3 +308,16 @@ def test_resync_lockfiles_blames_a_blocking_pin_with_extras(resync_lockfiles_scr
 )
 def test_parse_pins(resync_module, text: str, expected: list[str]):
     assert resync_module.parse_pins(text) == expected
+
+
+def test_no_lockfile_resync_left_behind(osparc_simcore_root_dir: Path):
+    # The resync leaves this report when a directory could not be regenerated, and that
+    # directory keeps its lockfile on the old version. Renovate reports it as a failing
+    # `renovate/artifacts` check, the same check it raises when its own compile of a
+    # single lockfile fails while a parent layer still pins the old version, so the
+    # check cannot gate the fast lane. This test is what does (see docs/renovate.md)
+    report = osparc_simcore_root_dir / "renovate-resync-report.md"
+    assert not report.exists(), (
+        "the lockfile resync failed for at least one directory, which left its"
+        f" requirements pinned at the old version. Details in {report}"
+    )

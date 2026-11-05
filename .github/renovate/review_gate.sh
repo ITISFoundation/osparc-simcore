@@ -47,6 +47,14 @@ for pr in $DRAFTS; do
     continue
   fi
   checks=$(gh pr checks "$pr" --repo "$REPO" --json name,bucket 2>/dev/null || true)
+  # Renovate's per-lockfile compile is not what resolves this repository's requirements:
+  # the resync post-upgrade task rewrites the whole tree afterwards
+  # (.github/renovate/resync_lockfiles.py), and it runs after that compile. So
+  # renovate/artifacts also fails when one lockfile was compiled while the layer it
+  # constrains itself from still pinned the old version, whatever the branch ends up
+  # containing. A resync that cannot resolve a directory is caught by the
+  # [sys] environment setup test instead, which is why this check is advisory here.
+  checks=$(jq -c 'map(select(.name != "renovate/artifacts"))' <<<"$checks")
   if [ -z "$checks" ] || [ "$checks" = "[]" ]; then
     echo "PR #$pr: no checks reported yet"
     continue
@@ -66,7 +74,7 @@ for pr in $DRAFTS; do
       continue
     fi
     failed=$(jq -r '.[] | select(.bucket == "fail") | "- " + .name' <<<"$checks")
-    body="> [!WARNING]"$'\n'"> The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them. This pull request is held with 🤖-do-not-merge and needs reviews, also if a later commit passes."$'\n\n'"Failing checks:"$'\n\n'"${failed}"$'\n\n'"Reviewers: do not push to this branch; fix or close it as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request, and remove 🤖-do-not-merge once the checks pass and the update is fine to merge."
+    body="> [!WARNING]"$'\n'"> The checks have been failing for ${age_hours} h on the last commit and Renovate did not fix them. This pull request is held with 🤖-do-not-merge and needs reviews, also if a later commit passes."$'\n\n'"Failing checks:"$'\n\n'"${failed}"$'\n\n'"Reviewers: do not push to this branch; fix or close it as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request, and remove 🤖-do-not-merge once the checks pass and the update is fine to merge. 🤖-renovate-fast-lane was removed with the hold; add it back to send the pull request through the fast lane."
     gh pr edit "$pr" --repo "$REPO" --add-label '🤖-do-not-merge'
     if grep -qx '🤖-renovate-fast-lane' <<<"$labels"; then
       gh pr edit "$pr" --repo "$REPO" --remove-label '🤖-renovate-fast-lane'
