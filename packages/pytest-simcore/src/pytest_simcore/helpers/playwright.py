@@ -10,6 +10,7 @@ import logging
 import re
 import threading
 import typing
+import weakref
 from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field
@@ -26,7 +27,6 @@ from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
 from playwright.sync_api import (
     APIRequestContext,
-    ElementHandle,
     FrameLocator,
     Locator,
     Page,
@@ -63,14 +63,16 @@ _APP_MODE_NEXT_APP_START_REQUEST_TIMEOUT: Final[int] = 5 * SECOND
 
 
 # Progress types a starting dynamic service is expected to report before its start is complete
-REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset({
-    ProgressType.SERVICE_INPUTS_PULLING,
-    ProgressType.SIDECARS_PULLING,
-    ProgressType.SERVICE_OUTPUTS_PULLING,
-    ProgressType.SERVICE_STATE_PULLING,
-    ProgressType.SERVICE_IMAGES_PULLING,
-    ProgressType.SERVICE_CONTAINERS_STARTING,
-})
+REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE: Final[frozenset[ProgressType]] = frozenset(
+    {
+        ProgressType.SERVICE_INPUTS_PULLING,
+        ProgressType.SIDECARS_PULLING,
+        ProgressType.SERVICE_OUTPUTS_PULLING,
+        ProgressType.SERVICE_STATE_PULLING,
+        ProgressType.SERVICE_IMAGES_PULLING,
+        ProgressType.SERVICE_CONTAINERS_STARTING,
+    }
+)
 
 
 class _OSparcMessages(StrEnum):
@@ -102,6 +104,70 @@ SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 _SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
 _MAX_REATTACH_ATTEMPTS: Final[int] = 100
+
+_TRACKED_WEBSOCKETS: weakref.WeakKeyDictionary[Page, list[_TrackedWebSocket]] = weakref.WeakKeyDictionary()
+
+
+@dataclass(slots=True)
+class _TrackedWebSocket:
+    socket: WebSocket
+    frames_received: bool = False
+
+
+def start_websocket_tracking(page: Page) -> None:
+    """Records every websocket ``page`` creates from now on, including the ones its frames create.
+
+    ``page.expect_websocket`` resolves for sockets created *after* it is entered, so a connection
+    that the browser's socket.io client re-establishes on its own stays invisible to a waiter that
+    started later. Recording the sockets here lets `RobustWebSocket` adopt an already connected
+    socket instead of waiting for an event that was delivered before it started listening.
+
+    Calling this again on the same page does nothing. Tracking must therefore start as early as the
+    page exists.
+    """
+    if page in _TRACKED_WEBSOCKETS:
+        return
+
+    tracked: list[_TrackedWebSocket] = []
+    _TRACKED_WEBSOCKETS[page] = tracked
+
+    def on_websocket(socket: WebSocket) -> None:
+        entry = _TrackedWebSocket(socket=socket)
+        tracked.append(entry)
+        # NOTE: a received frame proves the handshake completed, which the socket's mere existence
+        # does not: a socket.io connection refused by a cold-starting service still creates one.
+        socket.on("framereceived", lambda _: setattr(entry, "frames_received", True))
+
+    page.on("websocket", on_websocket)
+
+
+def _websocket_endpoint(socket: WebSocket) -> str:
+    """The websocket URL without its query, which socket.io fills with per-attempt parameters."""
+    return socket.url.split("?", maxsplit=1)[0]
+
+
+def _find_live_websocket(
+    page: Page, *, exclude: WebSocket | None = None, ws_predicate: typing.Callable[[WebSocket], bool] | None = None
+) -> WebSocket | None:
+    """Returns the most recently created socket of ``page`` that is open and proved its handshake.
+
+    Sockets that never received a frame are skipped: they are either still handshaking or already
+    doomed, and adopting one would hide a connection failure behind a socket that cannot deliver
+    events. Without ``ws_predicate``, only a socket on the same endpoint as ``exclude`` qualifies,
+    so that an unrelated connection is never mistaken for the reconnection of another one.
+    Returns None when the page is not tracked or no socket qualifies.
+    """
+    for entry in reversed(_TRACKED_WEBSOCKETS.get(page, ())):
+        socket = entry.socket
+        if socket is exclude or not entry.frames_received or socket.is_closed():
+            continue
+        if ws_predicate is not None:
+            if not ws_predicate(socket):
+                continue
+        elif exclude is not None and _websocket_endpoint(socket) != _websocket_endpoint(exclude):
+            continue
+        return socket
+    return None
 
 
 @dataclass
@@ -194,8 +260,9 @@ class _ReconnectableEventWaiter:
             msg = f"Timeout {self.timeout}ms exceeded while waiting for {self.event!r}."
             raise PlaywrightTimeoutError(msg)
 
-        self._ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
-        self._event_info = self._ctx.__enter__()
+        ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
+        self._ctx = ctx
+        self._event_info = ctx.__enter__()
 
 
 @dataclass
@@ -212,6 +279,7 @@ class RobustWebSocket:
     _frames_received_on: set[int] = field(init=False, repr=False, default_factory=set)
 
     def __post_init__(self) -> None:
+        start_websocket_tracking(self.page)
         self._configure_websocket_events()
         if self.ws.is_closed():
             if not self.auto_reconnect:
@@ -308,16 +376,31 @@ class RobustWebSocket:
                 return False
             return not new_websocket.is_closed()
 
+        already_connected = _find_live_websocket(self.page, exclude=self.ws, ws_predicate=self.ws_predicate)
+        if already_connected is not None:
+            # NOTE: the browser's socket.io client reconnects on its own, and it may well have
+            # finished before this wait started (a service cold start fails the first handshakes
+            # for tens of seconds). Waiting for a `websocket` event then hangs until timeout even
+            # though a healthy connection exists, so adopt the socket that was recorded instead.
+            self._use_websocket(already_connected, logger, source="already connected")
+            return
+
         with self.page.expect_websocket(_accept, timeout=self.reconnect_timeout) as ws_info:
             assert not ws_info.value.is_closed()
 
-        self.ws = ws_info.value
+        self._use_websocket(ws_info.value, logger, source="reconnected")
+
+    def _use_websocket(self, socket: WebSocket, logger: logging.Logger, *, source: str) -> None:
+        """Switches to ``socket`` and re-attaches the event listeners to it."""
+        self.ws = socket
         self._num_reconnections += 1
-        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even
-        # if its first frame raced ahead of the listeners attached below (same as in __post_init__)
+        # NOTE: a live socket completed its handshake, so it is connected even if its first frame
+        # raced ahead of the listeners attached below (same as in __post_init__)
         self._mark_connected(self.ws)
         logger.info(
-            "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
+            "🔄 WebSocket %s successfully (%s). Number of reconnections: %s",
+            source,
+            self.ws.url,
             self._num_reconnections,
         )
         self._configure_websocket_events()
@@ -1048,117 +1131,95 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
     return page.frame_locator(iframe_selector).first
 
 
-_SERVICE_IFRAME_SRC_TIMEOUT: Final[
+_SERVICE_IFRAME_NAVIGATION_TIMEOUT: Final[
     Annotated[
         timedelta,
-        doc(
-            "the UI sets the service iframe src only once its own readiness polling has seen "
-            "the service, tens of seconds after the backend-side checks pass"
-        ),
+        doc("grace given to the UI to navigate the service iframe itself before this helper forces it"),
     ]
-] = timedelta(seconds=90)
+] = timedelta(seconds=30)
 _SERVICE_FRAME_ATTACH_TIMEOUT: Final[
     Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
 ] = timedelta(seconds=10)
 _SERVICE_FRAME_POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=250)
 
 
-def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool:
-    """Whether the driver attached the content frame of the given iframe element.
+def _service_frame_attached(page: Page, node_id: str) -> bool:
+    """Whether the driver attached the content frame of the service iframe of ``node_id``.
 
-    Only the service frame URL carries the node id, so the stale frame left by
-    the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
-    Polled, so a failed read counts as unattached and the next poll retries it.
+    Only the frame URL carries the node id, so the stale frame left by the iframe's previous
+    navigation (e.g. ``about:blank``) counts as unattached, and the first iframe of a duplicate
+    pair is checked on its own instead of through any attached duplicate.
+    Checking the iframe's ``src`` attribute is not an option: the UI navigates the service iframe
+    through ``qx.bom.Iframe.setSource``, which calls ``location.replace`` on the content window and
+    therefore never writes the attribute.
+    Polled while the page may be busy, so a failed read counts as unattached and the next poll
+    retries it.
     """
     try:
+        # NOTE: `query_selector` returns immediately: a `Locator` would auto-wait for the element,
+        # which would make each poll of a not-yet-rendered iframe last its own default timeout
+        iframe_element = page.query_selector(_service_iframe_selector(node_id))
+        if iframe_element is None:
+            return False
         content_frame = iframe_element.content_frame()
     except PlaywrightError:
         return False
     return content_frame is not None and node_id in content_frame.url
 
 
-def _is_service_iframe_src_set(page: Page, node_id: str) -> bool:
-    """Whether the UI navigated the service iframe to the given node.
-
-    Polled while the page may be busy, so a failed read counts as not set yet
-    and the next poll retries it, instead of aborting the best-effort helper.
-    """
+def _wait_service_frame_attached(page: Page, node_id: str, timeout: timedelta) -> bool:
+    poller = Retrying(
+        stop=stop_after_delay(timeout.total_seconds()),
+        wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+        retry=retry_if_result(lambda attached: not attached),
+        before_sleep=before_sleep_log(_logger, logging.DEBUG),
+    )
     try:
-        return bool(
-            page.evaluate(
-                """nodeId => {
-                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
-                return !!iframe && iframe.src.includes(nodeId);
-            }""",
-                node_id,
-            )
-        )
-    except PlaywrightError:
+        return bool(poller(lambda: _service_frame_attached(page, node_id)))
+    except RetryError:
         return False
 
 
-def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
-    """Re-navigates the service iframe when the driver never attached its content frame.
+def _ensure_service_iframe_attached(page: Page, node_id: str, service_url: AnyUrl) -> None:
+    """Navigates the service iframe when the UI did not, or the driver never attached its frame.
 
     Firefox intermittently does not attach the content frame of a rendered
     cross-origin iframe (microsoft/playwright#43007), which makes every query on
     its ``FrameLocator`` hang until timeout even though the service UI is fully
-    shown. Re-setting the iframe source reloads it and re-triggers the frame
+    shown. Setting the iframe source navigates it and re-triggers the frame
     lifecycle events the driver needs to attach the content frame.
 
-    The UI sets the iframe source only once its own readiness polling has seen
-    the service, tens of seconds after the backend-side checks pass. This
-    helper therefore polls the iframe source first and checks the attachment
-    afterwards, so that a late navigation still gets the recovery. An iframe
-    the UI never navigated is left alone: re-navigating it would restart a
-    healthy navigation.
+    The UI navigates the iframe on its own, shortly after its readiness polling
+    has seen the service, so this waits for that navigation before forcing one:
+    navigating an iframe that is already loading would restart it. The service
+    endpoint has already replied at this point, so navigating to its URL here is
+    a valid fallback for an iframe the UI left on ``about:blank``.
 
     Best-effort: failed reads while polling are retried, the iframe is
-    re-navigated at most once, and Playwright errors are logged and swallowed,
+    navigated at most once, and Playwright errors are logged and swallowed,
     so that the caller still fails with its own original error.
     """
     try:
-        src_set = Retrying(
-            stop=stop_after_delay(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds()),
-            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
-            retry=retry_if_result(lambda navigated: not navigated),
-            before_sleep=before_sleep_log(_logger, logging.DEBUG),
-        )
-        try:
-            navigated = src_set(lambda: _is_service_iframe_src_set(page, node_id))
-        except RetryError:
-            navigated = False
-        if not navigated:
-            _logger.warning(
-                "Service iframe of node %s was not navigated by the UI within %s: leaving it untouched",
-                node_id,
-                _SERVICE_IFRAME_SRC_TIMEOUT,
-            )
-            return
-
-        iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
-        if iframe_element is None:
-            return
-
-        frame_attached = Retrying(
-            stop=stop_after_delay(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds()),
-            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
-            retry=retry_if_result(lambda attached: not attached),
-            before_sleep=before_sleep_log(_logger, logging.DEBUG),
-        )
-        try:
-            attached = frame_attached(lambda: _service_frame_attached(iframe_element, node_id))
-        except RetryError:
-            attached = False
-        if attached:
+        if _wait_service_frame_attached(page, node_id, _SERVICE_IFRAME_NAVIGATION_TIMEOUT):
             return
 
         _logger.warning(
-            "Service iframe content frame of node %s is not attached: "
-            "re-navigating the iframe to force the driver to attach it",
+            "Service iframe content frame of node %s did not attach within %s: navigating it to %s",
             node_id,
+            _SERVICE_IFRAME_NAVIGATION_TIMEOUT,
+            service_url,
         )
-        page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
+        page.locator(_service_iframe_selector(node_id)).first.evaluate(
+            "(element, url) => { element.src = url; }",
+            f"{service_url}",
+            timeout=int(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds() * SECOND),
+        )
+        if not _wait_service_frame_attached(page, node_id, _SERVICE_FRAME_ATTACH_TIMEOUT):
+            _logger.warning(
+                "Service iframe content frame of node %s is still not attached after navigating it to %s",
+                node_id,
+                service_url,
+            )
     except PlaywrightError:
         _logger.exception(
             "Could not ensure the service iframe content frame of node %s is attached; "
@@ -1218,7 +1279,11 @@ def expected_service_running(
             int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
-    _ensure_service_iframe_attached(page, node_id)
+    _ensure_service_iframe_attached(
+        page,
+        node_id,
+        _get_service_url(node_id, product_url, is_legacy_service=is_service_legacy),
+    )
     service_running.iframe_locator = _service_iframe_locator(page, node_id)
 
 
@@ -1275,7 +1340,11 @@ def wait_for_service_running(
         ),
     )
 
-    _ensure_service_iframe_attached(page, node_id)
+    _ensure_service_iframe_attached(
+        page,
+        node_id,
+        _get_service_url(node_id, product_url, is_legacy_service=is_service_legacy),
+    )
     return _service_iframe_locator(page, node_id)
 
 

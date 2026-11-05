@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 
 import json
+from collections import defaultdict
 from collections.abc import Callable
 from datetime import timedelta
 from types import SimpleNamespace, TracebackType
@@ -13,6 +14,7 @@ from models_library.rabbitmq_messages import ProgressType
 from playwright.sync_api import ElementHandle, Frame, Locator, Page
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers import playwright as playwright_helpers
 from pytest_simcore.helpers.playwright import (
     REQUIRED_PROGRESS_TYPES_FOR_STARTED_SERVICE,
@@ -23,6 +25,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectStateUpdatedWaiter,
     _ensure_service_iframe_attached,
     _ReconnectableEventWaiter,
+    start_websocket_tracking,
 )
 
 _NODE_ID: Final[str] = "d00cb7e0-8b78-4d5c-9b57-2a1f6c6a1234"
@@ -151,6 +154,7 @@ def test_node_progress_reaching_completion_marks_success():
 
 
 _SERVICE_FRAME_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/lab"
+_SERVICE_URL: Final[AnyUrl] = TypeAdapter(AnyUrl).validate_python(f"https://{_NODE_ID}.services.example.org")
 
 
 def _frame(url: str) -> Frame:
@@ -161,154 +165,189 @@ def _frame(url: str) -> Frame:
 
 def _page_with_service_iframe(
     *,
-    first_iframe_content: Frame | None,
-    iframe_src_set: bool = True,
+    iframe_content: Frame | None,
+    iframe_element_missing: bool = False,
+    query_selector_error: Exception | None = None,
     evaluate_error: Exception | None = None,
-    attached_duplicate: bool = False,
+    service_frame_visible: bool = False,
 ) -> tuple[Page, mock.Mock]:
-    """Autospecced `Page` whose service iframe element attaches ``first_iframe_content``.
+    """Autospecced `Page` whose service iframe element attaches ``iframe_content``.
 
-    Returns the page and the `Locator` the helper uses to reach the iframe
-    element, so that tests can observe the recovery re-navigation. With
-    ``attached_duplicate``, an attached duplicate frame is visible only through
-    ``page.frames``, never on the first iframe element.
+    Returns the page and the `Locator` the helper uses to navigate the iframe, so that tests can
+    observe the fallback navigation. With ``service_frame_visible``, an attached duplicate frame is
+    visible through ``page.frames`` only, never on the first iframe element.
     """
     page = mock.create_autospec(Page, instance=True)
     iframe_locator = mock.create_autospec(Locator, instance=True)
     iframe_element = mock.create_autospec(ElementHandle, instance=True)
 
     iframe_locator.first = iframe_locator
-    iframe_locator.element_handle.return_value = iframe_element
-    iframe_element.content_frame.return_value = first_iframe_content
+    iframe_element.content_frame.return_value = iframe_content
+    if query_selector_error is not None:
+        page.query_selector.side_effect = query_selector_error
+    else:
+        page.query_selector.return_value = None if iframe_element_missing else iframe_element
     if evaluate_error is not None:
         iframe_locator.evaluate.side_effect = evaluate_error
-    page.evaluate.return_value = iframe_src_set
-    if attached_duplicate:
-        page.frames = [_frame(_SERVICE_FRAME_URL)]
+    # NOTE: the UI navigates service iframes with `location.replace`, so this always answers "no"
+    page.evaluate.return_value = False
+    page.frames = [_frame(_SERVICE_FRAME_URL)] if service_frame_visible else []
     page.locator.return_value = iframe_locator
     return page, iframe_locator
 
 
 @pytest.fixture()
-def _no_frame_attach_grace(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Drop the content-frame attachment grace window of the helper."""
+def _no_service_iframe_waits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Drop the waiting windows of `_ensure_service_iframe_attached`."""
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(0))
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_ATTACH_TIMEOUT", timedelta(0))
-
-
-@pytest.fixture()
-def _no_src_wait_grace(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Drop the iframe-source wait window of the helper."""
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_SRC_TIMEOUT", timedelta(0))
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+
+
+def _navigated_url(iframe_locator: mock.Mock) -> str:
+    assert iframe_locator.evaluate.call_count == 1
+    expression, url = iframe_locator.evaluate.call_args.args
+    assert "element.src = url" in expression
+    return url
 
 
 def test_healthy_service_iframe_is_left_untouched():
-    page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame(_SERVICE_FRAME_URL))
+    page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
 
-    _ensure_service_iframe_attached(page, _NODE_ID)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
 
     iframe_locator.evaluate.assert_not_called()
 
 
-def test_unattached_service_iframe_is_re_navigated(_no_frame_attach_grace: None):
+def test_service_iframe_navigated_by_location_replace_is_not_re_navigated(_no_service_iframe_waits: None):
+    """Regression test for the master e2e failures.
+
+    The UI navigates the service iframe through `qx.bom.Iframe.setSource`, which calls
+    `location.replace` on the content window and therefore never writes the `src` attribute.
+    Probing that attribute made every service start wait out the whole timeout and then leave the
+    iframe untouched, although its content frame was attached and showing the service.
+    """
+    page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
+
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+
+    page.evaluate.assert_not_called()
+    iframe_locator.evaluate.assert_not_called()
+
+
+def test_unattached_service_iframe_is_navigated_to_the_service(_no_service_iframe_waits: None):
     """Regression test for microsoft/playwright#43007.
 
-    The service UI is rendered but its content frame never attaches, so the
-    driver keeps exposing the stale frame of the previous navigation and
-    queries hang forever.
+    The service UI is rendered but its content frame never attaches, so the driver keeps exposing
+    the stale frame of the previous navigation and queries hang forever. Re-setting the `src` to the
+    service URL is what recovers it; re-reading the current one would navigate nowhere.
     """
-    page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame("about:blank"))
+    page, iframe_locator = _page_with_service_iframe(iframe_content=_frame("about:blank"))
 
-    _ensure_service_iframe_attached(page, _NODE_ID)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
 
-    iframe_locator.evaluate.assert_called_once()
+    assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
 
-def test_unattached_first_service_iframe_is_re_navigated_despite_attached_duplicate(
-    _no_frame_attach_grace: None,
-):
+def test_unattached_first_service_iframe_is_navigated_despite_attached_duplicate(_no_service_iframe_waits: None):
     """An attached duplicate must not mask the unattached first iframe.
 
-    Regression test: with duplicate service iframes, the first one is what the
-    returned `FrameLocator` queries.
+    Regression test: with duplicate service iframes, the first one is what the returned
+    `FrameLocator` queries.
     """
-    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None, attached_duplicate=True)
+    page, iframe_locator = _page_with_service_iframe(iframe_content=None, service_frame_visible=True)
 
-    _ensure_service_iframe_attached(page, _NODE_ID)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
 
-    iframe_locator.evaluate.assert_called_once()
+    assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
 
-def test_late_service_iframe_navigation_is_still_rescued(
-    _no_frame_attach_grace: None,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Regression test: timing out on the iframe src must not abort the helper.
-
-    The UI sets the src late here (its readiness polling trails the backend)
-    and the frame never attaches, so only the re-navigation can recover it.
-    Pre-fix, the src wait raised TimeoutError and the recovery never ran.
+def test_service_iframe_not_rendered_yet_gets_the_navigation_attempted(_no_service_iframe_waits: None):
+    """The iframe element may still be missing when the wait ends; navigating it must then wait
+    for it instead of giving up, since the UI renders it while the service is being attached.
     """
-    page, iframe_locator = _page_with_service_iframe(first_iframe_content=_frame("about:blank"))
-    mock_page = cast("mock.Mock", page)
-    mock_page.evaluate.side_effect = [False, False, True]
-    # the pre-fix helper waited on wait_for_function and aborted on its timeout;
-    # fail it so this test reproduces that path
-    mock_page.wait_for_function.side_effect = PlaywrightTimeoutError("Timeout")
-    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    page, iframe_locator = _page_with_service_iframe(iframe_content=None, iframe_element_missing=True)
 
-    _ensure_service_iframe_attached(page, _NODE_ID)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
 
-    iframe_locator.evaluate.assert_called_once()
+    assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
 
-def test_service_iframe_not_navigated_yet_is_left_untouched(_no_src_wait_grace: None):
-    """An iframe the UI has not navigated yet must not be treated as the attach failure.
+def _read_fails_then_returns(error: Exception, element: ElementHandle) -> Callable[[str], ElementHandle]:
+    """Fails the first reads of the iframe element, as a busy page does, then serves ``element``."""
+    remaining_failures = 2
 
-    Regression test: the UI assigns the iframe src asynchronously, so reloading
-    it here would restart a healthy navigation.
-    """
-    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None, iframe_src_set=False)
+    def read(_selector: str) -> ElementHandle:
+        nonlocal remaining_failures
+        if remaining_failures > 0:
+            remaining_failures -= 1
+            raise error
+        return element
 
-    _ensure_service_iframe_attached(page, _NODE_ID)
-
-    iframe_locator.evaluate.assert_not_called()
+    return read
 
 
 def test_transient_errors_during_polling_still_run_the_recovery(
-    _no_frame_attach_grace: None,
+    _no_service_iframe_waits: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
     """Transient Playwright errors while polling must not abort the helper.
 
-    The polls run while the page is busy; a failed read counts as not yet and
-    the next poll retries it, so the recovery still runs rather than an error
-    escaping to the caller and the log.
+    The polls run while the page is busy; a failed read counts as not yet attached and the next
+    poll retries it, so the recovery still runs instead of an error escaping to the caller.
     """
-    page, iframe_locator = _page_with_service_iframe(first_iframe_content=None)
+    page, iframe_locator = _page_with_service_iframe(iframe_content=None)
     mock_page = cast("mock.Mock", page)
-    mock_page.evaluate.side_effect = [PlaywrightError("Execution context was destroyed"), True]
-    iframe_element = cast("mock.Mock", iframe_locator.element_handle.return_value)
-    iframe_element.content_frame.side_effect = PlaywrightError("Element is not attached to the DOM")
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    stale_element = mock.create_autospec(ElementHandle, instance=True)
+    stale_element.content_frame.return_value = _frame("about:blank")
+    mock_page.query_selector.side_effect = _read_fails_then_returns(
+        PlaywrightError("Execution context was destroyed"), stale_element
+    )
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # must not raise
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)  # must not raise
 
-    iframe_locator.evaluate.assert_called_once()
+    assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
 
-def test_failing_iframe_recovery_is_not_raising(_no_frame_attach_grace: None):
-    """A Playwright error during the best-effort recovery must not propagate.
+def test_transient_errors_during_polling_still_see_a_late_navigation(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The frame attaching after a failed read must still end the wait without a navigation."""
+    page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
+    mock_page = cast("mock.Mock", page)
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_IFRAME_NAVIGATION_TIMEOUT", timedelta(seconds=1))
+    monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
+    mock_page.query_selector.side_effect = _read_fails_then_returns(
+        PlaywrightError("Execution context was destroyed"),
+        cast("ElementHandle", page.query_selector.return_value),
+    )
 
-    The service-ready helpers must fail with their own original error, not with
-    an error from the recovery attempt.
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+
+    iframe_locator.evaluate.assert_not_called()
+
+
+def test_failing_service_iframe_navigation_is_not_raising(_no_service_iframe_waits: None):
+    """A Playwright error during the best-effort navigation must not propagate.
+
+    The service-ready helpers must fail with their own original error, not with an error from the
+    recovery attempt.
     """
     page, _ = _page_with_service_iframe(
-        first_iframe_content=_frame("about:blank"),
+        iframe_content=_frame("about:blank"),
         evaluate_error=PlaywrightError("boom"),
     )
 
-    _ensure_service_iframe_attached(page, _NODE_ID)  # must not raise
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)  # must not raise
+
+
+def test_failing_service_iframe_probe_is_not_raising(_no_service_iframe_waits: None):
+    """A Playwright error while probing the iframe must not propagate either."""
+    page, _ = _page_with_service_iframe(iframe_content=None, query_selector_error=PlaywrightError("boom"))
+
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)  # must not raise
 
 
 def test_project_state_waiter_matches_state_frame_seen_before_project_uuid_is_set():
@@ -458,3 +497,132 @@ def test_reconnectable_waiter_waits_for_an_event_when_the_predicate_is_not_satis
 
     assert context_manager.value_read is True
     assert context_manager.cancelled_with == []
+
+
+_S4L_WS_URL: Final[str] = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket"
+_WEBSOCKET_WAIT_TIMEOUT_MSG: Final[str] = 'Timeout 30000ms exceeded while waiting for event "websocket"'
+
+
+class _FakeWebSocket:
+    """Minimal `WebSocket` stand-in: records the listeners attached to it and reports its state."""
+
+    def __init__(self, url: str, *, closed: bool = False) -> None:
+        self.url = url
+        self.closed = closed
+        self.listeners: defaultdict[str, list[Callable[[Any], None]]] = defaultdict(list)
+
+    def on(self, event: str, listener: Callable[[Any], None]) -> None:
+        self.listeners[event].append(listener)
+
+    def emit(self, event: str, *args: Any) -> None:
+        for listener in self.listeners[event]:
+            listener(*args)
+
+    def is_closed(self) -> bool:
+        return self.closed
+
+
+class _FakePage:
+    """Minimal `Page` stand-in: records event listeners and counts `expect_websocket` waits."""
+
+    def __init__(self) -> None:
+        self.listeners: defaultdict[str, list[Callable[[Any], None]]] = defaultdict(list)
+        self.expect_websocket_calls = 0
+
+    def on(self, event: str, listener: Callable[[Any], None]) -> None:
+        self.listeners[event].append(listener)
+
+    def emit(self, event: str, *args: Any) -> None:
+        for listener in self.listeners[event]:
+            listener(*args)
+
+    def expect_websocket(self, *_args: Any, **_kwargs: Any) -> Any:
+        self.expect_websocket_calls += 1
+        raise PlaywrightTimeoutError(_WEBSOCKET_WAIT_TIMEOUT_MSG)
+
+
+def _connected_socket(page: _FakePage, url: str) -> _FakeWebSocket:
+    """Hand ``url``'s socket to the page and let it receive its first frame."""
+    socket = _FakeWebSocket(url)
+    page.emit("websocket", socket)
+    socket.emit("framereceived", "40")
+    return socket
+
+
+@pytest.fixture()
+def _no_reconnect_retry_waits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Skip the back-off sleeps between the reconnection attempts."""
+    monkeypatch.setattr("time.sleep", lambda _seconds: None)
+
+
+def test_start_websocket_tracking_records_each_page_socket_once():
+    page = _FakePage()
+
+    start_websocket_tracking(page)
+    start_websocket_tracking(page)
+
+    assert len(page.listeners["websocket"]) == 1
+
+
+def test_robust_websocket_adopts_the_socket_that_reconnected_before_it_was_created():
+    """Regression test for the master e2e failures.
+
+    s4l-core's first handshake fails while it cold starts and its socket.io client then
+    reconnects on its own, so the healthy socket can be created before the `RobustWebSocket`
+    looking for it exists. Waiting for a *future* websocket event timed out three times in a row
+    although a working connection was already there.
+    """
+    page = _FakePage()
+    start_websocket_tracking(page)
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+    live_socket = _connected_socket(page, _S4L_WS_URL)
+
+    websocket = RobustWebSocket(page=page, ws=dead_socket)
+
+    assert websocket.ws is live_socket
+    assert websocket._num_reconnections == 1  # noqa: SLF001
+    assert page.expect_websocket_calls == 0
+
+
+def test_robust_websocket_adopts_a_socket_matching_its_predicate_only(
+    _no_reconnect_retry_waits: None,
+):
+    """A live connection to another endpoint is not the reconnection of this one."""
+    page = _FakePage()
+    start_websocket_tracking(page)
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+    _connected_socket(page, "https://other-node.services.example.org/socket.io/?EIO=4&transport=websocket")
+
+    with pytest.raises(PlaywrightTimeoutError):
+        RobustWebSocket(page=page, ws=dead_socket, reconnect_timeout=1)
+
+    assert page.expect_websocket_calls > 0
+
+
+def test_robust_websocket_does_not_adopt_a_socket_that_never_proved_its_handshake(
+    _no_reconnect_retry_waits: None,
+):
+    """A socket.io connection refused by a cold-starting service still creates a socket: adopting
+    a socket that received no frame would report a dead connection as healthy."""
+    page = _FakePage()
+    start_websocket_tracking(page)
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+    handshaking_socket = _FakeWebSocket(_S4L_WS_URL)
+    page.emit("websocket", handshaking_socket)
+
+    with pytest.raises(PlaywrightTimeoutError):
+        RobustWebSocket(page=page, ws=dead_socket, reconnect_timeout=1)
+
+    assert page.expect_websocket_calls > 0
+
+
+def test_robust_websocket_falls_back_to_waiting_for_a_new_socket(_no_reconnect_retry_waits: None):
+    """Without a tracked reconnection, the original wait for a new websocket must still run."""
+    page = _FakePage()
+    start_websocket_tracking(page)
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+
+    with pytest.raises(PlaywrightTimeoutError):
+        RobustWebSocket(page=page, ws=dead_socket, reconnect_timeout=1)
+
+    assert page.expect_websocket_calls == 3
