@@ -8,6 +8,7 @@
 
 - `clone_project_data` (shared clone primitive, also used by studies_dispatcher)
 - `_clone_project_nodes` / `_remap_port_links_in_inputs` (helpers)
+- `_copy_project_nodes_from_source_project` (`_crud_api_create.py`, project-copy route)
 - `copy_allow_guests_to_push_states_and_output_ports`
 
 NOTE: `clone_project_data` is meant to (in a future PR) replace part of the copy/clone
@@ -49,6 +50,9 @@ from simcore_service_webserver.projects import (
     _projects_repository as projects_repository,
 )
 from simcore_service_webserver.projects import _projects_service
+from simcore_service_webserver.projects._crud_api_create import (
+    _copy_project_nodes_from_source_project,
+)
 from simcore_service_webserver.projects._projects_repository_legacy import (
     ProjectDBAPI,
 )
@@ -163,6 +167,67 @@ async def template_project_with_params(
         as_template=True,
     ) as template_project:
         yield template_project
+
+
+@pytest.fixture
+async def project_with_simcore_file_links(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    fake_project: ProjectDict,
+    osparc_product_name: ProductName,
+    tests_data_dir: Path,
+    faker: Faker,
+):
+    """Source project whose node inputs/outputs reference files in its own storage namespace.
+
+    The file links are seeded as `{project_uuid}/{node_id}/outputs/output_1/parameters.json`,
+    the shape a node's outputs get after a run, so the copy can be checked against the
+    storage copy scheme `{destination_uuid}/{new_node_id}/{remainder}`.
+    """
+    assert client.app
+    source_uuid = f"{faker.uuid4()}"
+    solver_node = f"{faker.uuid4()}"
+    consumer_node = f"{faker.uuid4()}"
+
+    parameters_json = {
+        "store": 0,
+        "path": f"{source_uuid}/{solver_node}/outputs/output_1/parameters.json",
+        "label": "parameters.json",
+    }
+
+    project_data = deepcopy(fake_project)
+    project_data["uuid"] = source_uuid
+    project_data["workbench"] = {
+        solver_node: {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "1.0.0",
+            "label": "solver",
+            "inputs": {},
+            "outputs": {"output_1": parameters_json},
+        },
+        consumer_node: {
+            "key": "simcore/services/dynamic/s4l-instance",
+            "version": "2.0.0",
+            "label": "s4l-instance",
+            "inputs": {
+                "input_1": deepcopy(parameters_json),
+                "port_1": {"nodeUuid": solver_node, "output": "output_1"},
+                "scalar": 3,
+            },
+            "outputs": {},
+        },
+    }
+
+    async with NewProject(
+        project_data,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+        force_uuid=True,
+    ) as project:
+        assert project["uuid"] == source_uuid
+        yield project
 
 
 async def _get_inserted_nodes(app, project_uuid: str) -> dict[NodeID, Any]:
@@ -501,6 +566,46 @@ async def test_clone_project_data_reports_progress(
     assert task_progress.percent == 1.0
 
 
+async def test_clone_project_data_remaps_file_link_paths_in_persisted_nodes(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    project_with_simcore_file_links: ProjectDict,
+    osparc_product_name: ProductName,
+    task_progress: TaskProgress,
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mock_dynamic_scheduler: None,
+    storage_subsystem_mock_override: None,
+):
+    # SETUP
+    assert client.app
+    source_project = await _fetch_source_project(
+        client.app, project_with_simcore_file_links["uuid"], UserID(logged_user["id"])
+    )
+
+    # ACT
+    cloned_project = await clone_project_data(
+        client.app,
+        source_project=source_project,
+        forced_copy_project_id=None,
+        user_id=UserID(logged_user["id"]),
+        product_name=osparc_product_name,
+        product_api_base_url="http://product.testserver.io",
+        task_progress=task_progress,
+    )
+
+    # ASSERT: the persisted nodes reference the clone's own storage namespace, matching
+    # where the data-copy relocates the files
+    inserted_nodes = await _get_inserted_nodes(client.app, cloned_project["uuid"])
+    solver_node = next(node for node in inserted_nodes.values() if node.label == "solver")
+    consumer_node = next(node for node in inserted_nodes.values() if node.label == "s4l-instance")
+
+    expected_path = f"{cloned_project['uuid']}/{solver_node.node_id}/outputs/output_1/parameters.json"
+    assert solver_node.outputs["output_1"]["path"] == expected_path
+    assert consumer_node.inputs["input_1"]["path"] == expected_path
+    assert consumer_node.inputs["port_1"]["nodeUuid"] == f"{solver_node.node_id}"
+    assert consumer_node.inputs["scalar"] == 3
+
+
 #
 # _clone_project_nodes (helper)
 #
@@ -510,6 +615,7 @@ async def test_clone_project_nodes_remaps_port_links_and_input_nodes(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
+    faker: Faker,
 ):
     # SETUP
     assert client.app
@@ -519,7 +625,9 @@ async def test_clone_project_nodes_remaps_port_links_and_input_nodes(
     }
 
     # ACT
-    cloned_nodes = await _clone_project_nodes(client.app, user_project, nodes_map)
+    cloned_nodes = await _clone_project_nodes(
+        client.app, user_project, nodes_map, destination_project_uuid=f"{faker.uuid4()}"
+    )
 
     # ASSERT
     assert {f"{node_id}" for node_id in cloned_nodes} == set(nodes_map.values())
@@ -529,6 +637,88 @@ async def test_clone_project_nodes_remaps_port_links_and_input_nodes(
         for port_value in (node_create.inputs or {}).values():
             if isinstance(port_value, dict) and "nodeUuid" in port_value:
                 assert port_value["nodeUuid"] in nodes_map.values()
+
+
+async def test_clone_project_nodes_remaps_file_link_paths(
+    client: TestClient,
+    project_with_simcore_file_links: ProjectDict,
+    faker: Faker,
+):
+    # SETUP
+    assert client.app
+    source_project = project_with_simcore_file_links
+    source_uuid = source_project["uuid"]
+    solver_node = next(node_id for node_id, data in source_project["workbench"].items() if data["label"] == "solver")
+    consumer_node = next(
+        node_id for node_id, data in source_project["workbench"].items() if data["label"] == "s4l-instance"
+    )
+    nodes_map: NodesMap = {node_id: f"{faker.uuid4()}" for node_id in source_project["workbench"]}
+    destination_uuid = f"{faker.uuid4()}"
+
+    # ACT
+    cloned_nodes = await _clone_project_nodes(
+        client.app, source_project, nodes_map, destination_project_uuid=destination_uuid
+    )
+
+    # ASSERT: file links follow the storage copy scheme {destination}/{new_node}/{remainder}
+    expected_path = f"{destination_uuid}/{nodes_map[solver_node]}/outputs/output_1/parameters.json"
+    solver_outputs = cloned_nodes[NodeID(nodes_map[solver_node])].outputs or {}
+    assert solver_outputs["output_1"]["path"] == expected_path
+    consumer_inputs = cloned_nodes[NodeID(nodes_map[consumer_node])].inputs or {}
+    assert consumer_inputs["input_1"]["path"] == expected_path
+    assert consumer_inputs["port_1"]["nodeUuid"] == nodes_map[solver_node]
+    assert consumer_inputs["scalar"] == 3
+
+    # the source project rows are left untouched
+    source_nodes = await _get_inserted_nodes(client.app, source_uuid)
+    assert source_nodes[NodeID(solver_node)].outputs["output_1"]["path"].startswith(f"{source_uuid}/")
+
+
+async def test_copy_project_nodes_from_source_project_remaps_file_links_only_on_deep_copy(
+    client: TestClient,
+    project_with_simcore_file_links: ProjectDict,
+    faker: Faker,
+):
+    # SETUP
+    assert client.app
+    source_project = project_with_simcore_file_links
+    source_uuid = source_project["uuid"]
+    solver_node = next(node_id for node_id, data in source_project["workbench"].items() if data["label"] == "solver")
+    consumer_node = next(
+        node_id for node_id, data in source_project["workbench"].items() if data["label"] == "s4l-instance"
+    )
+    nodes_map: NodesMap = {node_id: f"{faker.uuid4()}" for node_id in source_project["workbench"]}
+    destination_uuid = f"{faker.uuid4()}"
+    source_path = f"{source_uuid}/{solver_node}/outputs/output_1/parameters.json"
+
+    # ACT: deep copy — the storage copy transfers the bytes, links must follow the copies
+    deep_nodes = await _copy_project_nodes_from_source_project(
+        client.app,
+        source_project,
+        nodes_map,
+        clean_output_data=False,
+        destination_project_uuid=destination_uuid,
+    )
+
+    # ASSERT
+    expected_path = f"{destination_uuid}/{nodes_map[solver_node]}/outputs/output_1/parameters.json"
+    assert (deep_nodes[NodeID(nodes_map[solver_node])].outputs or {})["output_1"]["path"] == expected_path
+    deep_consumer_inputs = deep_nodes[NodeID(nodes_map[consumer_node])].inputs or {}
+    assert deep_consumer_inputs["input_1"]["path"] == expected_path
+
+    # ACT: shallow copy — no data is transferred, links keep pointing at the source files
+    shallow_nodes = await _copy_project_nodes_from_source_project(
+        client.app,
+        source_project,
+        nodes_map,
+        clean_output_data=True,
+        destination_project_uuid=destination_uuid,
+    )
+
+    # ASSERT
+    assert (shallow_nodes[NodeID(nodes_map[solver_node])].outputs or {}) == {}
+    shallow_consumer_inputs = shallow_nodes[NodeID(nodes_map[consumer_node])].inputs or {}
+    assert shallow_consumer_inputs["input_1"]["path"] == source_path
 
 
 #
