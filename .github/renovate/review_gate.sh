@@ -135,7 +135,7 @@ for pr in $DRAFTS; do
     if [ "$total" -gt "$DRIFT_LIST_LIMIT" ]; then
       listed="${listed}"$'\n'"- and $((total - DRIFT_LIST_LIMIT)) more"
     fi
-    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about. The resync re-resolves every \`requirements/\` directory the pin reaches, and a package it has to free to make that resolve goes to its newest release rather than to the version that unblocks it."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
+    body="${DRIFT_MARKER}"$'\n\n'"> [!NOTE]"$'\n'"> The lockfile resync moved **${total}** package(s) besides the one this pull request is about. The resync re-resolves every \`requirements/\` directory the pin reaches, uv keeps an existing pin only as a preference, and a package the resync has to free may end up at its newest release rather than at the version that unblocks it."$'\n\n'"${listed}"$'\n\n'"If one of these is what breaks a check, fix its cause on \`master\` as described in https://github.com/${REPO}/blob/master/docs/renovate.md#fixing-a-failing-renovate-pull-request."
     existing=$(gh api "repos/${REPO}/issues/${pr}/comments" --paginate \
       --jq ".[] | select(.body | startswith(\"$DRIFT_MARKER\")) | .id" | head -n 1 || true)
     if [ -z "$existing" ]; then

@@ -204,13 +204,14 @@ file, which is what keeps a real resync failure out of the fast lane.
 What the resync does add to a pull request is movement in other packages. It gets
 the dependency of the pull request as an exact pin, so that one never moves, but
 uv treats an already pinned version as a preference rather than a requirement:
-re-resolving a directory can lift its neighbours. And when a directory refuses to
+re-resolving a directory can lift its neighbours. When a directory refuses to
 resolve, the resync frees the packages uv blames, up to `MAX_UNBLOCK_ROUNDS`
-rounds, by bare name — so uv takes each of them to its newest release, not to the
-version that would have been enough. Because directories are regenerated
-constraint-sources-first, one directory's jump then becomes the constraint every
-consumer resolves against, which is how a patch bump ends up moving 41 lockfiles.
-Only the review gate's failing checks decide whether such a pull request merges:
+rounds. A freed package may first rise only as high as another lockfile of this
+repository already pins it, and only a round that cannot resolve on that ceiling
+lets uv take the newest release. Because directories are regenerated
+constraint-sources-first, whatever did move then becomes the constraint every
+consumer resolves against, which is how a patch bump ends up rewriting 41
+lockfiles. The review gate's checks decide whether such a pull request merges;
 the moved pins are commented, not blocked.
 
 ## Keeping a pull request up to date

@@ -73,6 +73,25 @@ fi
 printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
 """
 
+# Answers like uv for a directory that resolves only once its `packaging==25.2` may rise --
+# and only up to the version another directory of the repository already runs, which is the
+# ceiling the resync is expected to pass as `packaging<=26.1`.
+_FAKE_MAKE_CAPS_THE_BLAMED_PIN: Final[str] = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$upgrade" >>"$FAKE_MAKE_CALLS"
+if [[ " $upgrade " != *" packaging<=26.1 "* ]]; then
+  echo "Resolved 3 packages in 1ms"
+  echo "error: No solution found when resolving dependencies"
+  echo "  cause: Because virtualenv==21.14.10 depends on packaging>=25.3 and packaging==25.2,"
+  echo "         we can conclude that virtualenv==21.14.10 cannot be used."
+  echo "make: *** [requirements.mk:58: _tools.txt] Error 1"
+  exit 1
+fi
+printf 'click==8.1.0\\npackaging==26.1\\n' >"$dir/_base.txt"
+printf 'click==8.1.0\\npackaging==26.1\\nvirtualenv==21.14.10\\n' >"$dir/_tools.txt"
+"""
+
 
 def _run(
     program: str, *args: str, cwd: Path, env: dict[str, str] | None = None, check: bool = True
@@ -196,12 +215,41 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
         sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env
     )
 
-    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed
+    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed, free --
+    # nothing here pins packaging newer than the blocking 26.0, so no ceiling is worth an
+    # extra resolution (test_resync_lockfiles_caps_a_freed_pin_... covers the capped path)
     assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging"]
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.3\nvirtualenv==21.14.10\n"
     assert "these packages had to move too: requirements (packaging)" in result.stderr
     assert not (git_repo_behind_on_virtualenv / "renovate-resync-report.md").exists()
+
+
+def test_resync_lockfiles_caps_a_freed_pin_at_the_highest_version_pinned_here(
+    resync_lockfiles_script: Path, tmp_path: Path
+):
+    # a package freed to unblock one directory goes to uv's newest release unless the
+    # resync caps it, and the version another service here already runs is a far better
+    # ceiling than "anything": 26.1 instead of whatever shipped yesterday
+    repo = tmp_path / "repo"
+    (repo / "requirements").mkdir(parents=True)
+    (repo / "requirements/_base.txt").write_text("click==8.1.0\npackaging==25.2\n")
+    (repo / "requirements/_tools.txt").write_text("click==8.1.0\npackaging==25.2\nvirtualenv==21.14.5\n")
+    (repo / "packages/other/requirements").mkdir(parents=True)
+    (repo / "packages/other/requirements/_base.txt").write_text("packaging==26.1\n")
+    _init_git_repo(repo)
+
+    env = _fake_make_env(tmp_path, _FAKE_MAKE_CAPS_THE_BLAMED_PIN)
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("virtualenv==21.14.10\n")
+
+    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env)
+
+    assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging<=26.1"]
+    lockfiles = repo / "requirements"
+    assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.1\nvirtualenv==21.14.10\n"
+    # the ceiling shows up in the report, so a reviewer sees the move was bounded
+    assert "these packages had to move too: requirements (packaging<=26.1)" in result.stderr
 
 
 def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_it(
