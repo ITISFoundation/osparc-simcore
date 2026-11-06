@@ -8,9 +8,8 @@ import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import cast
 
-import aioboto3
 import pytest
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from aws_library.ec2 import EC2InstanceData, Resources
 from faker import Faker
 from pydantic import ByteSize
@@ -22,9 +21,9 @@ from types_aiobotocore_ec2.client import EC2Client
 async def ec2_client(
     ec2_settings: EC2Settings,
 ) -> AsyncIterator[EC2Client]:
-    session = aioboto3.Session()
+    session = get_session()
     exit_stack = contextlib.AsyncExitStack()
-    session_client = session.client(
+    session_client = session.create_client(
         "ec2",
         endpoint_url=ec2_settings.EC2_ENDPOINT,
         aws_access_key_id=ec2_settings.EC2_ACCESS_KEY_ID,

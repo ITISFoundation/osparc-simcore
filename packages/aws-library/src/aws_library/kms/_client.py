@@ -3,8 +3,7 @@ import logging
 from dataclasses import dataclass
 from typing import cast
 
-import aioboto3
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from servicelib.logging_utils import log_decorator
 from settings_library.kms import KMSSettings
 from types_aiobotocore_kms import KMSClient
@@ -17,16 +16,15 @@ _logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class SimcoreKMSAPI:
     _client: KMSClient
-    _session: aioboto3.Session
     _exit_stack: contextlib.AsyncExitStack
     _default_key_id: str
 
     @classmethod
-    async def create(cls, settings: KMSSettings) -> "SimcoreKMSAPI":
-        session = aioboto3.Session()
-        # NOTE: if no static credentials are provided, aioboto3/botocore falls back
+    async def create(cls, settings: KMSSettings) -> SimcoreKMSAPI:
+        session = get_session()
+        # NOTE: if no static credentials are provided, aiobotocore/botocore falls back
         # to the default AWS credentials chain (e.g. EC2/ECS instance IAM role)
-        session_client = session.client(
+        session_client = session.create_client(
             "kms",
             endpoint_url=settings.KMS_ENDPOINT,
             aws_access_key_id=settings.KMS_ACCESS_KEY_ID.get_secret_value() if settings.KMS_ACCESS_KEY_ID else None,
@@ -38,7 +36,7 @@ class SimcoreKMSAPI:
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
         kms_client = cast(KMSClient, await exit_stack.enter_async_context(session_client))
-        return cls(kms_client, session, exit_stack, settings.KMS_KEY_ID)
+        return cls(kms_client, exit_stack, settings.KMS_KEY_ID)
 
     async def close(self) -> None:
         await self._exit_stack.aclose()

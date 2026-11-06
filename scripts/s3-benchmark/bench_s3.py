@@ -3,13 +3,13 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "aioboto3",
+#     "aiobotocore",
 #     "httpx",
 # ]
 # ///
 """S3 benchmark and compatibility harness for the MinIO -> RustFS migration.
 
-Configured exactly like aws_library.s3.SimcoreS3API (aioboto3 + SigV4 +
+Configured exactly like aws_library.s3.SimcoreS3API (aiobotocore + SigV4 +
 custom endpoint) so results reflect what the platform actually experiences.
 
 Environment variables (same names as the platform settings):
@@ -53,11 +53,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Self
 
-import aioboto3
 import httpx
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.config import AioConfig
+from aiobotocore.session import AioSession, ClientCreatorContext, get_session
 from boto3.s3.transfer import TransferConfig
-from botocore.client import Config
 from botocore.exceptions import ClientError
 
 # --- mirrors aws_library/s3/_client.py -----------------------------------------
@@ -131,12 +130,12 @@ class Timed:
         return time.perf_counter() - self._t0
 
 
-async def _create_client(session: aioboto3.Session, settings: dict[str, str]):
-    config = Config(
+async def _create_client(session: AioSession, settings: dict[str, str]):
+    config = AioConfig(
         signature_version="s3v4",
         request_checksum_calculation="when_required",
     )
-    ctx = session.client(
+    ctx = session.create_client(
         "s3",
         endpoint_url=settings["S3_ENDPOINT"],
         aws_access_key_id=settings["S3_ACCESS_KEY"],
@@ -506,7 +505,7 @@ async def main() -> int:
         print("ERROR: S3_ACCESS_KEY and S3_SECRET_KEY must be set", file=sys.stderr)
         return 2
 
-    session = aioboto3.Session()
+    session = get_session()
     workloads: list[WorkloadResult] = []
     compat: list[CompatResult] = []
 

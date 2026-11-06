@@ -11,9 +11,9 @@ from typing import Final
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
-import aioboto3
 import aiofiles
 import pytest
+from aiobotocore.session import get_session
 from faker import Faker
 from models_library.progress_bar import ProgressReport
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -22,6 +22,7 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import r_clone
+from types_aiobotocore_s3.type_defs import ObjectIdentifierTypeDef
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -45,14 +46,16 @@ WAIT_FOR_S3_BACKEND_TO_UPDATE: Final[float] = 1.0
 async def cleanup_bucket_after_test(
     r_clone_settings: RCloneSettings,
 ) -> AsyncIterator[None]:
-    session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY.get_secret_value(),
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
-    )
+    session = get_session()
 
     yield
 
-    async with session.client("s3", endpoint_url=f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}") as s3_client:
+    async with session.create_client(
+        "s3",
+        endpoint_url=f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}",
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
+    ) as s3_client:
         # List all object versions
         paginator = s3_client.get_paginator("list_object_versions")
         async for page in paginator.paginate(Bucket=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME):
@@ -60,8 +63,10 @@ async def cleanup_bucket_after_test(
             delete_markers = page.get("DeleteMarkers", [])
             versions = page.get("Versions", [])
 
-            objects_to_delete = [
-                {"Key": obj["Key"], "VersionId": obj["VersionId"]} for obj in delete_markers + versions
+            objects_to_delete: list[ObjectIdentifierTypeDef] = [
+                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                for obj in delete_markers + versions
+                if "Key" in obj and "VersionId" in obj
             ]
 
             # Perform deletion

@@ -11,13 +11,12 @@ from pathlib import Path
 from typing import Final, cast
 from unittest.mock import AsyncMock
 
-import aioboto3
 import pytest
 import sqlalchemy as sa
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.config import AioConfig
+from aiobotocore.session import ClientCreatorContext, get_session
 from asgi_lifespan import LifespanManager
 from async_asgi_testclient import TestClient
-from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
@@ -293,14 +292,14 @@ def bucket_name(app_state: AppState) -> S3BucketName:
 
 @pytest.fixture
 async def s3_client(s3_settings: S3Settings) -> AsyncIterable[S3Client]:
-    session = aioboto3.Session()
-    session_client = session.client(
+    session = get_session()
+    session_client = session.create_client(
         "s3",
         endpoint_url=f"{s3_settings.S3_ENDPOINT}",
         aws_access_key_id=s3_settings.S3_ACCESS_KEY.get_secret_value(),
         aws_secret_access_key=s3_settings.S3_SECRET_KEY.get_secret_value(),
         region_name=s3_settings.S3_REGION,
-        config=Config(signature_version="s3v4"),
+        config=AioConfig(signature_version="s3v4"),
     )
     assert isinstance(session_client, ClientCreatorContext)  # nosec
     async with session_client as client:

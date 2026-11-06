@@ -6,10 +6,9 @@
 import contextlib
 import typing
 
-import aioboto3
 import pytest
-from aiobotocore.session import ClientCreatorContext
-from botocore.client import Config
+from aiobotocore.config import AioConfig
+from aiobotocore.session import ClientCreatorContext, get_session
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 
@@ -30,15 +29,15 @@ def s3_settings(request: pytest.FixtureRequest) -> S3Settings:
 
 @pytest.fixture
 async def s3_client(s3_settings: S3Settings) -> typing.AsyncIterator[S3Client]:
-    session = aioboto3.Session()
+    session = get_session()
     exit_stack = contextlib.AsyncExitStack()
-    session_client = session.client(
+    session_client = session.create_client(
         "s3",
         endpoint_url=f"{s3_settings.S3_ENDPOINT}" if s3_settings.S3_ENDPOINT else None,
         aws_access_key_id=s3_settings.S3_ACCESS_KEY.get_secret_value(),
         aws_secret_access_key=s3_settings.S3_SECRET_KEY.get_secret_value(),
         region_name=s3_settings.S3_REGION,
-        config=Config(signature_version="s3v4"),
+        config=AioConfig(signature_version="s3v4"),
     )
     assert isinstance(session_client, ClientCreatorContext)
     client = typing.cast(S3Client, await exit_stack.enter_async_context(session_client))  # type: ignore[arg-type]

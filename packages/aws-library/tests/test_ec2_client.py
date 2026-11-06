@@ -52,7 +52,6 @@ async def simcore_ec2_api(
     assert ec2
     assert ec2.client
     assert ec2.exit_stack
-    assert ec2.session
     yield ec2
     await ec2.close()
 

@@ -7,9 +7,8 @@ import logging
 from collections.abc import AsyncIterator
 from typing import cast
 
-import aioboto3
 import pytest
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from faker import Faker
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_iam.client import IAMClient
@@ -21,9 +20,9 @@ from .helpers.logging_tools import log_context
 async def iam_client(
     ec2_settings: EC2Settings,
 ) -> AsyncIterator[IAMClient]:
-    session = aioboto3.Session()
+    session = get_session()
     exit_stack = contextlib.AsyncExitStack()
-    session_client = session.client(
+    session_client = session.create_client(
         "iam",
         endpoint_url=ec2_settings.EC2_ENDPOINT,
         aws_access_key_id=ec2_settings.EC2_ACCESS_KEY_ID,

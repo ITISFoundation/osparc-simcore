@@ -10,7 +10,7 @@
 #
 --constraint _base.txt
 
-aioboto3
+aiobotocore
 asgi-lifespan
 coverage
 faker
