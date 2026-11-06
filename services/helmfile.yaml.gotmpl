@@ -42,6 +42,13 @@ releases:
       - _shared/helm-values.tracing.yaml.gotmpl
       - catalog/helm-values.yaml.gotmpl
 
+  - name: dask-scheduler
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - dask-sidecar/helm-values.dask-scheduler.yaml.gotmpl
+
   - name: datcore-adapter
     inherit:
       - template: simcore-service
