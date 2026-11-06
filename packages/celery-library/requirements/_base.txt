@@ -22,7 +22,7 @@ aiormq==7.2.1
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
-amqp==5.3.1
+amqp==5.4.2
     # via kombu
 annotated-doc==0.0.4
     # via typer
@@ -107,7 +107,7 @@ jsonschema==4.26.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-kombu==5.6.2
+kombu==5.7.0
     # via celery
 markdown-it-py==4.0.0
     # via rich
@@ -267,7 +267,7 @@ pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-redis==6.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -327,9 +327,7 @@ typing-inspection==0.4.2
     #   pydantic
     #   pydantic-settings
 tzdata==2025.3
-    # via
-    #   arrow
-    #   kombu
+    # via arrow
 tzlocal==5.3.1
     # via celery
 urllib3==2.8.0

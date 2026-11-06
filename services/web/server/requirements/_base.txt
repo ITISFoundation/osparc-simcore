@@ -511,7 +511,7 @@ pyyaml==6.0.3
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   swagger-ui-py
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
