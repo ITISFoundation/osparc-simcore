@@ -33,6 +33,16 @@ releases:
     inherit:
       - template: simcore-service
 
+  # no needs on webserver: webserver needs director-v2, that would be a cycle
+  - name: director-v2
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/catalog
+      - {{ $namespace }}/director
+      - {{ $namespace }}/resource-usage-tracker
+      - {{ $namespace }}/storage
+
   - name: docker-api-proxy
     inherit:
       - template: simcore-service
@@ -90,3 +100,19 @@ releases:
     values:
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
+
+  # the webserver's sources live in services/web, so no inherit (its values path
+  # would resolve to webserver/helm-values.yaml.gotmpl)
+  - name: webserver
+    namespace: {{ $namespace }}
+    createNamespace: true
+    chart: ../charts/simcore-service
+    needs:
+      - {{ $namespace }}/catalog
+      - {{ $namespace }}/director-v2
+      - {{ $namespace }}/invitations
+      - {{ $namespace }}/payments
+      - {{ $namespace }}/resource-usage-tracker
+      - {{ $namespace }}/storage
+    values:
+      - web/helm-values.webserver.yaml.gotmpl
