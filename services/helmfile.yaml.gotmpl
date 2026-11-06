@@ -161,6 +161,18 @@ releases:
     values:
       - docker-api-proxy/helm-values.yaml.gotmpl
 
+  - name: dynamic-scheduler
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - dynamic-scheduler/helm-values.yaml.gotmpl
+
   - name: invitations
     inherit:
       - template: simcore-service
