@@ -603,7 +603,7 @@ def test_robust_websocket_adopts_the_socket_that_reconnected_before_it_was_creat
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
     live_socket = _connected_socket(page, _S4L_WS_URL)
 
-    websocket = RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket))
+    websocket = RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket))
 
     assert websocket.ws is live_socket
     assert websocket._num_reconnections == 1  # noqa: SLF001
@@ -620,7 +620,7 @@ def test_robust_websocket_without_predicate_does_not_adopt_a_live_socket_on_anot
     _connected_socket(page, "https://other-node.services.example.org/socket.io/?EIO=4&transport=websocket")
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls > 0
 
@@ -637,7 +637,7 @@ def test_robust_websocket_does_not_adopt_a_socket_that_never_proved_its_handshak
     page.emit("websocket", handshaking_socket)
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls > 0
 
@@ -649,7 +649,7 @@ def test_robust_websocket_falls_back_to_waiting_for_a_new_socket(_no_reconnect_r
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls == 3
 
@@ -663,7 +663,7 @@ def test_fallback_wait_only_accepts_a_socket_on_the_dead_sockets_endpoint(
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=1)
 
     accept = page.expect_websocket_predicates[0]
     reconnected_url = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket&sid=new"
@@ -685,7 +685,7 @@ def test_robust_websocket_does_not_adopt_an_older_session_on_the_same_endpoint(
     # the older session must not be adopted: without a tracked reconnection after the dead
     # socket, the wait falls through and fails instead of consuming the wrong session
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls > 0
 
@@ -699,7 +699,7 @@ def test_robust_websocket_adopts_the_reconnection_next_to_an_older_session(_no_r
     page.emit("websocket", dead_socket)
     reconnected = _connected_socket(page, _S4L_WS_URL)
 
-    websocket = RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket))
+    websocket = RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket))
 
     assert websocket.ws is reconnected
     assert page.expect_websocket_calls == 0
@@ -716,7 +716,7 @@ def test_robust_websocket_adopts_a_tracked_socket_matching_its_predicate(_no_rec
 
     websocket = RobustWebSocket(
         page=cast("Page", page),
-        ws=cast("WebSocket", dead_socket),
+        ws=cast(WebSocket, dead_socket),
         ws_predicate=lambda ws: ws.url == matching_url,
     )
 
@@ -755,7 +755,7 @@ def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
     # timeout larger than one slice, so a wait for the full timeout would be detectable
     reconnect_timeout = 10 * playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
     websocket = RobustWebSocket(
-        page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=reconnect_timeout
+        page=cast("Page", page), ws=cast(WebSocket, dead_socket), reconnect_timeout=reconnect_timeout
     )
 
     assert websocket.ws is reconnected
