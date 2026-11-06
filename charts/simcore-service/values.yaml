@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: ""
   tag: "latest"
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 command: []
 args: []
