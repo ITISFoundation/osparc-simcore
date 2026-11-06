@@ -101,8 +101,17 @@ releases:
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
 
-  # the webserver's sources live in services/web, so no inherit (its values path
-  # would resolve to webserver/helm-values.yaml.gotmpl)
+  - name: wb-garbage-collector
+    namespace: {{ $namespace }}
+    createNamespace: true
+    chart: ../charts/simcore-service
+    needs:
+      - {{ $namespace }}/director-v2
+      - {{ $namespace }}/resource-usage-tracker
+      - {{ $namespace }}/storage
+    values:
+      - web/helm-values.wb-garbage-collector.yaml.gotmpl
+
   - name: webserver
     namespace: {{ $namespace }}
     createNamespace: true

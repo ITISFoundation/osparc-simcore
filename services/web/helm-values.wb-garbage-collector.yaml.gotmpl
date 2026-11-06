@@ -1,0 +1,109 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/webserver
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh runs update-ca-certificates, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+# gunicorn binds 8080 (services/web/server/docker/boot.sh)
+containerPort: {{ requiredEnv "WEBSERVER_PORT" | quote }}
+service:
+  port: {{ requiredEnv "WEBSERVER_PORT" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  DIRECTOR_V2_HOST: {{ requiredEnv "DIRECTOR_V2_HOST" | quote }}
+  DIRECTOR_V2_PORT: {{ requiredEnv "DIRECTOR_V2_PORT" | quote }}
+  GUNICORN_CMD_ARGS: {{ requiredEnv "WEBSERVER_GUNICORN_CMD_ARGS" | quote }}
+  LOG_FILTER_MAPPING: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  LOG_FORMAT_LOCAL_DEV_ENABLED: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: "gc"
+  POSTGRES_DB: {{ requiredEnv "POSTGRES_DB" | quote }}
+  POSTGRES_HOST: {{ requiredEnv "POSTGRES_HOST" | quote }}
+  POSTGRES_MAX_OVERFLOW: {{ requiredEnv "POSTGRES_MAX_OVERFLOW" | quote }}
+  POSTGRES_MAX_POOLSIZE: {{ requiredEnv "POSTGRES_MAX_POOLSIZE" | quote }}
+  POSTGRES_PORT: {{ requiredEnv "POSTGRES_PORT" | quote }}
+  POSTGRES_USER: {{ requiredEnv "POSTGRES_USER" | quote }}
+  RABBIT_HOST: {{ requiredEnv "RABBIT_HOST" | quote }}
+  RABBIT_PORT: {{ requiredEnv "RABBIT_PORT" | quote }}
+  RABBIT_SECURE: {{ requiredEnv "RABBIT_SECURE" | quote }}
+  RABBIT_USER: {{ requiredEnv "RABBIT_USER" | quote }}
+  REDIS_HOST: {{ requiredEnv "REDIS_HOST" | quote }}
+  REDIS_PORT: {{ requiredEnv "REDIS_PORT" | quote }}
+  REDIS_SECURE: {{ requiredEnv "REDIS_SECURE" | quote }}
+  REDIS_USER: {{ requiredEnv "REDIS_USER" | quote }}
+  RESOURCE_MANAGER_RESOURCE_TTL_S: {{ requiredEnv "WB_GC_RESOURCE_MANAGER_RESOURCE_TTL_S" | quote }}
+  RESOURCE_USAGE_TRACKER_HOST: {{ requiredEnv "RESOURCE_USAGE_TRACKER_HOST" | quote }}
+  RESOURCE_USAGE_TRACKER_PORT: {{ requiredEnv "RESOURCE_USAGE_TRACKER_EXTERNAL_PORT" | quote }}
+  REST_SWAGGER_API_DOC_ENABLED: {{ requiredEnv "WB_GC_REST_SWAGGER_API_DOC_ENABLED" | quote }}
+  STORAGE_ENDPOINT: {{ requiredEnv "STORAGE_ENDPOINT" | quote }}
+  STORAGE_HOST: {{ requiredEnv "STORAGE_HOST" | quote }}
+  STORAGE_PORT: {{ requiredEnv "STORAGE_PORT" | quote }}
+  SWARM_STACK_NAME: {{ requiredEnv "SWARM_STACK_NAME" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_IMAGE_VERSION" | quote }}
+  TRACING_OPENTELEMETRY_COLLECTOR_PORT: {{ requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT" | quote }}
+  TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" | quote }}
+  TRACING_OPENTELEMETRY_TRACED_FUNCTIONS: {{ requiredEnv "TRACING_OPENTELEMETRY_TRACED_FUNCTIONS" | quote }}
+  TRASH_RETENTION_DAYS: {{ requiredEnv "TRASH_RETENTION_DAYS" | quote }}
+  WEBSERVER_ACTIVITY: {{ requiredEnv "WB_GC_ACTIVITY" | quote }}
+  WEBSERVER_ANNOUNCEMENTS: {{ requiredEnv "WB_GC_ANNOUNCEMENTS" | quote }}
+  WEBSERVER_CATALOG: {{ requiredEnv "WB_GC_CATALOG" | quote }}
+  WEBSERVER_CHATBOT: "null"
+  WEBSERVER_CONVERSATIONS: "false"
+  WEBSERVER_DB_LISTENER: {{ requiredEnv "WB_GC_DB_LISTENER" | quote }}
+  WEBSERVER_DIAGNOSTICS: {{ requiredEnv "WB_GC_DIAGNOSTICS" | quote }}
+  WEBSERVER_EXPORTER: {{ requiredEnv "WB_GC_EXPORTER" | quote }}
+  WEBSERVER_FOGBUGZ: "null"
+  WEBSERVER_FOLDERS: {{ requiredEnv "WB_GC_FOLDERS" | quote }}
+  WEBSERVER_FRONTEND: {{ requiredEnv "WB_GC_FRONTEND" | quote }}
+  WEBSERVER_FUNCTIONS: "0"
+  WEBSERVER_GARBAGE_COLLECTOR: {{ requiredEnv "WB_GC_GARBAGE_COLLECTOR" | quote }}
+  WEBSERVER_GROUPS: {{ requiredEnv "WB_GC_GROUPS" | quote }}
+  WEBSERVER_HOST: {{ requiredEnv "WEBSERVER_HOST" | quote }}
+  WEBSERVER_INVITATIONS: {{ requiredEnv "WB_GC_INVITATIONS" | quote }}
+  WEBSERVER_LICENSES: "null"
+  WEBSERVER_LOCALIZED_MESSAGES_ENABLED: {{ requiredEnv "WEBSERVER_LOCALIZED_MESSAGES_ENABLED" | quote }}
+  WEBSERVER_LOGIN: {{ requiredEnv "WB_GC_LOGIN" | quote }}
+  WEBSERVER_LOGLEVEL: {{ requiredEnv "WB_GC_LOGLEVEL" | quote }}
+  WEBSERVER_NOTIFICATIONS: {{ requiredEnv "WB_GC_NOTIFICATIONS" | quote }}
+  WEBSERVER_PAYMENTS: {{ requiredEnv "WB_GC_PAYMENTS" | quote }}
+  WEBSERVER_PORT: {{ requiredEnv "WEBSERVER_PORT" | quote }}
+  WEBSERVER_PRODUCTS: {{ requiredEnv "WB_GC_PRODUCTS" | quote }}
+  WEBSERVER_PROJECTS: {{ requiredEnv "WB_GC_PROJECTS" | quote }}
+  WEBSERVER_RPC_NAMESPACE: "webserver"
+  WEBSERVER_SCICRUNCH: {{ requiredEnv "WB_GC_SCICRUNCH" | quote }}
+  WEBSERVER_SOCKETIO: {{ requiredEnv "WB_GC_SOCKETIO" | quote }}
+  WEBSERVER_STATICWEB: {{ requiredEnv "WB_GC_STATICWEB" | quote }}
+  WEBSERVER_STUDIES_DISPATCHER: {{ requiredEnv "WB_GC_STUDIES_DISPATCHER" | quote }}
+  WEBSERVER_TAGS: {{ requiredEnv "WB_GC_TAGS" | quote }}
+  WEBSERVER_TRACING: {{ requiredEnv "WB_GC_TRACING" | quote }}
+  WEBSERVER_USERS: {{ requiredEnv "WB_GC_USERS" | quote }}
+  WEBSERVER_WALLETS: {{ requiredEnv "WB_GC_WALLETS" | quote }}
+
+secretEnv:
+  POSTGRES_PASSWORD: {{ requiredEnv "POSTGRES_PASSWORD" | quote }}
+  RABBIT_PASSWORD: {{ requiredEnv "RABBIT_PASSWORD" | quote }}
+  REDIS_PASSWORD: {{ requiredEnv "REDIS_PASSWORD" | quote }}
+  SESSION_SECRET_KEY: {{ requiredEnv "WEBSERVER_SESSION_SECRET_KEY" | quote }}
+
+# the image's HEALTHCHECK probes /v0/health
+probes:
+  startup:
+    httpGet:
+      path: /v0/health
+  readiness:
+    httpGet:
+      path: /v0/health
+  liveness:
+    httpGet:
+      path: /v0/health
