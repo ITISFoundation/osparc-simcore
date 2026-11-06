@@ -36,6 +36,26 @@ releases:
       - _shared/helm-values.storage.yaml.gotmpl
       - _shared/helm-values.tracing.yaml.gotmpl
       - api-server/helm-values.yaml.gotmpl
+      - api-server/helm-values.api-server.yaml.gotmpl
+
+  - name: api-worker
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/catalog
+      - {{ $namespace }}/director-v2
+      - {{ $namespace }}/storage
+      - {{ $namespace }}/wb-api-server
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - api-server/helm-values.yaml.gotmpl
+      - api-server/helm-values.api-worker.yaml.gotmpl
 
   - name: autoscaling
     inherit:

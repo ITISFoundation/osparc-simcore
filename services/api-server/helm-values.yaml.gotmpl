@@ -1,3 +1,4 @@
+# image of both api-server releases: api-worker includes this file and runs the same image
 image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/api-server
   tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
@@ -11,7 +12,6 @@ resources:
     memory: 512Mi
 
 env:
-  API_SERVER_BOOT_SERVER_MODE: "AS_REST_API_SERVER"
   API_SERVER_CHATBOT: {{ env "API_SERVER_CHATBOT" | default "null" | quote }}
   API_SERVER_DEV_FEATURES_ENABLED: {{ requiredEnv "API_SERVER_DEV_FEATURES_ENABLED" | quote }}
   API_SERVER_KMS: {{ requiredEnv "API_SERVER_KMS" | quote }}
