@@ -8,14 +8,17 @@ import httpx2
 from common_library.gettext_support import DEFAULT_LOCALE
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import status
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.notifications import Channel
 from models_library.notifications.rpc import EmailAddressing, EmailAttachment, EmailContact, TemplateRef
 from models_library.products import ProductName
+from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.users import UserID
 from pydantic import EmailStr
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import send_message_from_template
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import UserPreferencesRpcApi
 from servicelib.ssl_context import get_shared_ssl_context
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
@@ -88,12 +91,19 @@ def _extract_file_name(response: httpx2.Response, url: str) -> str:
 
 
 async def _get_additional_invoice_email_recipients(
-    users_repo: PaymentsUsersRepo,
+    user_preferences_rpc: UserPreferencesRpcApi,
     user_id: UserID,
     product_name: ProductName,
 ) -> list[EmailStr]:
     try:
-        return await users_repo.get_invoice_email_recipients(user_id, product_name)
+        preference = await user_preferences_rpc.get_frontend_user_preference(
+            user_id=user_id,
+            product_name=product_name,
+            preference_class=InvoiceEmailRecipientsFrontendUserPreference,
+        )
+        if preference is None:
+            return []
+        return preference.value
     except Exception as exc:  # pylint: disable=broad-exception-caught
         _logger.warning(
             **create_troubleshooting_log_kwargs(
@@ -155,6 +165,7 @@ class EmailProvider(NotificationProvider):
         bcc_email: EmailStr | None = None,
     ):
         self._rabbitmq_rpc_client = rabbitmq_rpc_client
+        self._user_preferences_rpc = UserPreferencesRpcApi(rabbitmq_rpc_client, DEFAULT_WEBSERVER_RPC_NAMESPACE)
         self._users_repo = users_repo
         self._bcc_email = bcc_email
 
@@ -192,7 +203,9 @@ class EmailProvider(NotificationProvider):
             return
 
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
-        additional_emails = await _get_additional_invoice_email_recipients(self._users_repo, user_id, data.product_name)
+        additional_emails = await _get_additional_invoice_email_recipients(
+            self._user_preferences_rpc, user_id, data.product_name
+        )
 
         attachments: list[EmailAttachment] = []
         if payment.invoice_pdf_url:

@@ -8,6 +8,7 @@ from .api_keys import ApiKeysRpcApi
 from .functions import FunctionsRpcApi
 from .licenses import LicensesRpcApi
 from .projects import ProjectsRpcApi
+from .user_preferences import UserPreferencesRpcApi
 
 
 class WebServerRpcClient:
@@ -26,6 +27,7 @@ class WebServerRpcClient:
         self.licenses = LicensesRpcApi(rpc_client, namespace)
         self.functions = FunctionsRpcApi(rpc_client, namespace)
         self.api_keys = ApiKeysRpcApi(rpc_client, namespace)
+        self.user_preferences = UserPreferencesRpcApi(rpc_client, namespace)
 
     @property
     def namespace(self) -> RPCNamespace:

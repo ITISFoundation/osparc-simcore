@@ -4,7 +4,7 @@
 # pylint: disable=too-many-return-statements
 
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any, Final, Literal, get_args, get_origin
+from typing import Any, Final, Literal, cast, get_args, get_origin
 
 import pytest
 from aiohttp import web
@@ -13,12 +13,14 @@ from common_library.pydantic_fields_extension import get_type
 from faker import Faker
 from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.products import ProductName
+from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import NewUser
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -28,6 +30,7 @@ from simcore_service_webserver.user_preferences._models import (
     BillingCenterUsageColumnOrderFrontendUserPreference,
     UserInactivityThresholdFrontendUserPreference,
 )
+from simcore_service_webserver.user_preferences._repository import UserPreferencesRepository
 from simcore_service_webserver.user_preferences._service import (
     _get_frontend_user_preferences,
     get_frontend_user_preference,
@@ -65,12 +68,44 @@ async def user_id(client: TestClient, faker: Faker) -> AsyncIterator[UserID]:
         {"email": faker.email(), "status": UserStatus.ACTIVE.name},
         client.app,
     ) as user:
-        yield user["id"]
+        yield cast(UserID, user["id"])
 
 
 @pytest.fixture
 def product_name() -> ProductName:
     return "osparc"
+
+
+async def test_get_frontend_user_preference_rpc(
+    app: web.Application,
+    webserver_rpc_client: WebServerRpcClient,
+    user_id: UserID,
+    product_name: ProductName,
+):
+    preference_class = InvoiceEmailRecipientsFrontendUserPreference
+
+    assert (
+        await webserver_rpc_client.user_preferences.get_frontend_user_preference(
+            user_id=user_id,
+            product_name=product_name,
+            preference_class=preference_class,
+        )
+        is None
+    )
+
+    await UserPreferencesRepository.create_from_app(app).set_user_preference(
+        user_id=user_id,
+        product_name=product_name,
+        preference=preference_class.model_validate({"value": ["billing@example.com"]}),
+    )
+
+    preference = await webserver_rpc_client.user_preferences.get_frontend_user_preference(
+        user_id=user_id,
+        product_name=product_name,
+        preference_class=preference_class,
+    )
+    assert preference is not None
+    assert preference.value == ["billing@example.com"]
 
 
 def _get_model_field(model_class: type[BaseModel], field_name: str) -> FieldInfo:
@@ -79,7 +114,7 @@ def _get_model_field(model_class: type[BaseModel], field_name: str) -> FieldInfo
 
 def _get_default_field_value(model_class: type[BaseModel]) -> Any:
     model_field = _get_model_field(model_class, "value")
-    return model_field.default_factory() if model_field.default_factory else model_field.default
+    return model_field.get_default(call_default_factory=True)
 
 
 def _get_non_default_value(  # noqa: PLR0911
@@ -212,9 +247,7 @@ def test_expected_fields_in_serialization():
         assert set(preference_class().to_db().keys()) == {"value"}
 
 
-_INACTIVITY_IDENTIFIER: Final[str] = UserInactivityThresholdFrontendUserPreference.model_fields[
-    "preference_identifier"
-].default
+_INACTIVITY_IDENTIFIER: Final[str] = UserInactivityThresholdFrontendUserPreference().preference_identifier
 _MINUTE: Final[int] = 60
 _HOUR: Final[int] = 60 * _MINUTE
 

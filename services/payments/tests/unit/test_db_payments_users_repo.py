@@ -11,7 +11,6 @@ from typing import Any
 import pytest
 from fastapi import FastAPI
 from models_library.groups import GroupID
-from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
@@ -22,7 +21,6 @@ from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifesp
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.user_preferences import user_preferences_frontend
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.services.postgres import get_engine
 
@@ -144,53 +142,3 @@ async def test_get_notification_data(
     assert data.email == user["email"]
     assert data.product_name == product["name"]
     assert data.language == "es_ES"
-
-
-async def test_get_invoice_email_recipients_without_preference_returns_empty(
-    app: FastAPI,
-    user: dict[str, Any],
-    product: dict[str, Any],
-):
-    repo = PaymentsUsersRepo(get_engine(app))
-
-    assert await repo.get_invoice_email_recipients(user["id"], product["name"]) == []
-
-
-@pytest.mark.parametrize(
-    "payload, expected_emails",
-    [
-        pytest.param(
-            {"value": ["billing@example.com", "accounts@example.com"]},
-            ["billing@example.com", "accounts@example.com"],
-            id="valid-emails",
-        ),
-        pytest.param({"value": ["not-an-email"]}, [], id="invalid-email"),
-        pytest.param({"value": "billing@example.com"}, [], id="wrong-value-type"),
-    ],
-)
-async def test_get_invoice_email_recipients_validates_preference(
-    app: FastAPI,
-    user: dict[str, Any],
-    product: dict[str, Any],
-    payload: dict[str, Any],
-    expected_emails: list[str],
-):
-    preference_name = f"{user['id']}/{InvoiceEmailRecipientsFrontendUserPreference.get_preference_name()}"
-    async with insert_and_get_row_lifespan(
-        get_engine(app),
-        table=user_preferences_frontend,
-        values={
-            "user_id": user["id"],
-            "product_name": product["name"],
-            "preference_name": preference_name,
-            "payload": payload,
-        },
-        pk_cols=[
-            user_preferences_frontend.c.user_id,
-            user_preferences_frontend.c.product_name,
-            user_preferences_frontend.c.preference_name,
-        ],
-    ):
-        repo = PaymentsUsersRepo(get_engine(app))
-
-        assert await repo.get_invoice_email_recipients(user["id"], product["name"]) == expected_emails

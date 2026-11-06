@@ -14,12 +14,14 @@ from common_library.gettext_support import DEFAULT_LOCALE
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.products import ProductName
+from models_library.shared_user_preferences import InvoiceEmailRecipientsFrontendUserPreference
 from models_library.users import UserID
 from models_library.wallets import WalletIDAdapter
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import UserPreferencesRpcApi
 from simcore_postgres_database.models.payments_transactions import PaymentTransactionState
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.models.db import PaymentsTransactionsDB
@@ -54,7 +56,9 @@ def transaction(faker: Faker, successful_transaction: dict[str, Any]) -> Payment
 
 @pytest.fixture
 def mock_rabbitmq_rpc_client() -> AsyncMock:
-    return AsyncMock()
+    client = AsyncMock()
+    client.request.return_value = None
+    return client
 
 
 @pytest.fixture
@@ -67,9 +71,7 @@ def mock_send_message_from_template(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 def users_repo(mocker: MockerFixture) -> PaymentsUsersRepo:
-    repo = PaymentsUsersRepo(MagicMock())
-    mocker.patch.object(repo, "get_invoice_email_recipients", new_callable=AsyncMock, return_value=[])
-    return repo
+    return PaymentsUsersRepo(MagicMock())
 
 
 async def test_email_provider_sends_on_success(
@@ -357,8 +359,8 @@ async def test_email_provider_propagates_bcc(
     provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email=bcc)
     if lookup_fails:
         mocker.patch.object(
-            users_repo,
-            "get_invoice_email_recipients",
+            UserPreferencesRpcApi,
+            "get_frontend_user_preference",
             new_callable=AsyncMock,
             side_effect=RuntimeError("Preference lookup failed"),
         )
@@ -418,7 +420,12 @@ async def test_email_provider_sends_additional_recipients_without_repeating_bcc(
         "FINANCE@example.com",
         str(user_email),
     ]
-    mocker.patch.object(users_repo, "get_invoice_email_recipients", new_callable=AsyncMock, return_value=extra_emails)
+    mocker.patch.object(
+        UserPreferencesRpcApi,
+        "get_frontend_user_preference",
+        new_callable=AsyncMock,
+        return_value=InvoiceEmailRecipientsFrontendUserPreference(value=extra_emails),
+    )
     provider = EmailProvider(mock_rabbitmq_rpc_client, users_repo, bcc_email="finance@example.com")
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
