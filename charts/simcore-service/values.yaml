@@ -57,11 +57,8 @@ probes:
     timeoutSeconds: 5
     failureThreshold: 5
 
-# NAME: "value" or NAME: {valueFrom: {...}}. Maps merge across values files,
-# NAME: null removes an entry. Rendered sorted by name, so $(VAR) can only
-# reference names sorting earlier or coming from secretEnv.
 env: {}
-# rendered into the chart-owned Secret and injected via envFrom; env wins on name clash
+
 secretEnv: {}
 
 extraVolumes: []
