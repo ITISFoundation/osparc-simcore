@@ -9,6 +9,7 @@ import json
 import logging
 import re
 import threading
+import time
 import typing
 import weakref
 from collections import defaultdict
@@ -104,6 +105,7 @@ SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 _SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
 _MAX_REATTACH_ATTEMPTS: Final[int] = 100
+_WEBSOCKET_CREATION_WAIT_SLICE: Final[int] = 3 * SECOND
 
 _TRACKED_WEBSOCKETS: weakref.WeakKeyDictionary[Page, list[_TrackedWebSocket]] = weakref.WeakKeyDictionary()
 
@@ -140,10 +142,32 @@ def start_websocket_tracking(page: Page) -> None:
 
     page.on("websocket", on_websocket)
 
+    # NOTE: `RobustWebSocket` listeners on a tracked socket reference the page back, and the registry
+    # references the socket, so the weak key alone would keep the whole chain alive after a test ends.
+    # Forgetting the page on close drops the strong side of that cycle.
+    def _forget(_page: Page) -> None:
+        _TRACKED_WEBSOCKETS.pop(page, None)
+
+    page.on("close", _forget)
+
 
 def _websocket_endpoint(socket: WebSocket) -> str:
     """The websocket URL without its query, which socket.io fills with per-attempt parameters."""
     return socket.url.split("?", maxsplit=1)[0]
+
+
+def _tracked_entries_newest_first(page: Page, stop_at: WebSocket | None = None) -> list[_TrackedWebSocket]:
+    """The sockets recorded for ``page``, newest first, stopping before ``stop_at``.
+
+    A reconnection is recorded after the socket it replaces, so scanning past ``stop_at`` could
+    only reach sockets that predate it: stale halves of its own session, or an independent session
+    whose events this waiter must not consume.
+    """
+    tracked = _TRACKED_WEBSOCKETS.get(page, ())
+    for index, entry in enumerate(reversed(tracked)):
+        if entry.socket is stop_at:
+            return list(reversed(tracked[len(tracked) - index :]))
+    return list(reversed(tracked))
 
 
 def _find_live_websocket(
@@ -155,13 +179,13 @@ def _find_live_websocket(
     the request is sent, before the handshake completes, so a frameless socket may still be connecting
     or have failed. The engine.io protocol answers an accepted connection with an ``open`` packet, so a
     connected socket.io socket receives a frame shortly after the upgrade.
-    Searching newest first: the engine.io protocol allows one websocket per session and closes extra
-    ones, so an older open socket on the same endpoint is stale.
+    Searching newest first, and not past ``exclude``: a reconnection is always recorded after the socket
+    it replaces.
     Without ``ws_predicate``, only a socket on the same endpoint as ``exclude`` qualifies, so that an
     unrelated connection is never mistaken for the reconnection of another one.
     Returns None when the page is not tracked or no socket qualifies.
     """
-    for entry in reversed(_TRACKED_WEBSOCKETS.get(page, ())):
+    for entry in _tracked_entries_newest_first(page, stop_at=exclude):
         socket = entry.socket
         if socket is exclude or not entry.frames_received or socket.is_closed():
             continue
@@ -390,10 +414,31 @@ class RobustWebSocket:
             self._use_websocket(already_connected, logger, source="already connected")
             return
 
-        with self.page.expect_websocket(_accept, timeout=self.reconnect_timeout) as ws_info:
-            assert not ws_info.value.is_closed()
-
-        self._use_websocket(ws_info.value, logger, source="reconnected")
+        # NOTE: `expect_websocket` only resolves for sockets created after it is entered, so a socket
+        # created just before this loop -- or during one of its slices -- can never satisfy it: its
+        # handshake may complete while the slice is running, and no further creation event follows.
+        # Waiting in slices and re-checking the registry between them bounds that stall to one slice.
+        deadline = time.monotonic() + self.reconnect_timeout / SECOND
+        while True:
+            remaining = (deadline - time.monotonic()) * SECOND
+            if remaining <= 0:
+                msg = (
+                    f"Timeout {self.reconnect_timeout}ms exceeded while waiting for a websocket "
+                    f"on {self.ws.url} to reconnect."
+                )
+                raise PlaywrightTimeoutError(msg)
+            try:
+                with self.page.expect_websocket(
+                    _accept, timeout=min(_WEBSOCKET_CREATION_WAIT_SLICE, remaining)
+                ) as ws_info:
+                    assert not ws_info.value.is_closed()
+            except PlaywrightTimeoutError:
+                if reconnecting := _find_live_websocket(self.page, exclude=self.ws, ws_predicate=self.ws_predicate):
+                    self._use_websocket(reconnecting, logger, source="already connected")
+                    return
+            else:
+                self._use_websocket(ws_info.value, logger, source="reconnected")
+                return
 
     def _use_websocket(self, socket: WebSocket, logger: logging.Logger, *, source: str) -> None:
         """Switches to ``socket`` and re-attaches the event listeners to it."""
@@ -1183,7 +1228,7 @@ def _wait_service_frame_attached(page: Page, node_id: str, timeout: timedelta) -
         return False
 
 
-def _ensure_service_iframe_attached(page: Page, node_id: str, service_url: AnyUrl) -> None:
+def _ensure_service_iframe_attached(page: Page, node_id: str, service_url: AnyUrl, *, is_legacy_service: bool) -> None:
     """Navigates the service iframe when the UI did not, or the driver never attached its frame.
 
     Firefox intermittently does not attach the content frame of a rendered
@@ -1204,6 +1249,20 @@ def _ensure_service_iframe_attached(page: Page, node_id: str, service_url: AnyUr
     """
     try:
         if _wait_service_frame_attached(page, node_id, _SERVICE_IFRAME_NAVIGATION_TIMEOUT):
+            return
+
+        if is_legacy_service:
+            # NOTE: a legacy service's iframe URL is its `service_basepath` plus the optional
+            # `entry_point` (see `osparc.utils.Utils.computeServiceModelData` in the frontend), while
+            # `service_url` here is only the `/x/<node_id>` path. Navigating would load a different
+            # page than the UI intended, so leave the iframe alone and let the caller fail with its
+            # own original error.
+            _logger.warning(
+                "Service iframe content frame of node %s did not attach within %s: not navigating it "
+                "because its full URL is not known for a legacy service",
+                node_id,
+                _SERVICE_IFRAME_NAVIGATION_TIMEOUT,
+            )
             return
 
         _logger.warning(
@@ -1288,6 +1347,7 @@ def expected_service_running(
         page,
         node_id,
         _get_service_url(node_id, product_url, is_legacy_service=is_service_legacy),
+        is_legacy_service=is_service_legacy,
     )
     service_running.iframe_locator = _service_iframe_locator(page, node_id)
 
@@ -1349,6 +1409,7 @@ def wait_for_service_running(
         page,
         node_id,
         _get_service_url(node_id, product_url, is_legacy_service=is_service_legacy),
+        is_legacy_service=is_service_legacy,
     )
     return _service_iframe_locator(page, node_id)
 
