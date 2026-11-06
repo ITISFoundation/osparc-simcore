@@ -41,15 +41,37 @@ async def example(
         raise
 
 
+_SERVER_STARTUP_TIMEOUT_S = 30
+_SERVER_SHUTDOWN_TIMEOUT_S = 10
+
+
 class ServerInfo(NamedTuple):
     url: str
     proc: subprocess.Popen
 
 
+def _stop_server(server: ServerInfo) -> str:
+    """Terminates the server and returns everything it printed"""
+    proc = server.proc
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=_SERVER_SHUTDOWN_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            # uvicorn's graceful shutdown waits for the connections it still holds open:
+            # do not keep the test suite waiting on it
+            proc.kill()
+            proc.wait(timeout=_SERVER_SHUTDOWN_TIMEOUT_S)
+    assert proc.stdout
+    return proc.stdout.read().decode("utf-8")
+
+
 @contextmanager
 def server_lifetime(port: int) -> Iterator[ServerInfo]:
-    with subprocess.Popen(
-        [
+    # stderr merges into stdout so that a single stream is drained once the server is stopped,
+    # otherwise a full stderr pipe buffer stops the server from ever exiting
+    proc = subprocess.Popen(  # noqa: S603
+        [  # noqa: S607
             "uvicorn",
             f"{CURRENT_FILE.stem}:mock_app",
             "--port",
@@ -57,27 +79,33 @@ def server_lifetime(port: int) -> Iterator[ServerInfo]:
         ],
         cwd=f"{CURRENT_DIR}",
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ) as proc:
-        url = f"http://127.0.0.1:{port}"
+        stderr=subprocess.STDOUT,
+    )
+    server = ServerInfo(f"http://127.0.0.1:{port}", proc)
+    try:
         print("\nStarted", proc.args)
 
-        # some time to start
-        time.sleep(2)
+        # waits until it serves requests, a fixed sleep is not enough on a busy machine
+        deadline = time.monotonic() + _SERVER_STARTUP_TIMEOUT_S
+        while True:
+            try:
+                requests.get(f"{server.url}/openapi.json", timeout=1).raise_for_status()
+                break
+            except requests.RequestException:
+                if proc.poll() is not None or time.monotonic() > deadline:
+                    raise AssertionError(_stop_server(server)) from None
+                time.sleep(0.2)
 
-        # checks started successfully
-        assert proc.stdout
-        assert not proc.poll(), proc.stdout.read().decode("utf-8")
         print("server is up and waiting for requests...")
-        yield ServerInfo(url, proc)
+        yield server
         print("server is closing...")
-        proc.terminate()
+    finally:
+        _stop_server(server)
         print("server terminated")
 
 
 def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
     with server_lifetime(port=get_unused_port()) as server:
-        url, proc = server
         print("--> testing server")
         response = requests.get(f"{server.url}/example?wait=0", timeout=2)
         print(response.url, "->", response.text)
@@ -97,9 +125,7 @@ def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
         print("<-- testing server again done")
 
         # kill service
-        server.proc.terminate()
-        assert server.proc.stdout
-        server_log = server.proc.stdout.read().decode("utf-8")
+        server_log = _stop_server(server)
         print(
             f"{server.url=} stdout",
             "-" * 10,
