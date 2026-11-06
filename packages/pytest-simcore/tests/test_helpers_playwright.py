@@ -214,7 +214,7 @@ def _navigated_url(iframe_locator: mock.Mock) -> str:
 def test_healthy_service_iframe_is_left_untouched():
     page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)
 
     iframe_locator.evaluate.assert_not_called()
 
@@ -229,7 +229,7 @@ def test_service_iframe_navigated_by_location_replace_is_not_re_navigated(_no_se
     """
     page, iframe_locator = _page_with_service_iframe(iframe_content=_frame(_SERVICE_FRAME_URL))
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)
 
     cast("mock.Mock", page).evaluate.assert_not_called()
     iframe_locator.evaluate.assert_not_called()
@@ -244,7 +244,7 @@ def test_unattached_service_iframe_is_navigated_to_the_service(_no_service_ifram
     """
     page, iframe_locator = _page_with_service_iframe(iframe_content=_frame("about:blank"))
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)
 
     assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
@@ -257,7 +257,7 @@ def test_unattached_first_service_iframe_is_navigated_despite_attached_duplicate
     """
     page, iframe_locator = _page_with_service_iframe(iframe_content=None, service_frame_visible=True)
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)
 
     assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
@@ -268,7 +268,7 @@ def test_service_iframe_not_rendered_yet_gets_the_navigation_attempted(_no_servi
     """
     page, iframe_locator = _page_with_service_iframe(iframe_content=None, iframe_element_missing=True)
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)
 
     assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
@@ -306,7 +306,7 @@ def test_transient_errors_during_polling_still_run_the_recovery(
         PlaywrightError("Execution context was destroyed"), stale_element
     )
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)  # must not raise
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)  # must not raise
 
     assert _navigated_url(iframe_locator) == f"{_SERVICE_URL}"
 
@@ -324,7 +324,7 @@ def test_transient_errors_during_polling_still_see_a_late_navigation(
         cast("ElementHandle", mock_page.query_selector.return_value),
     )
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)
 
     iframe_locator.evaluate.assert_not_called()
 
@@ -340,14 +340,24 @@ def test_failing_service_iframe_navigation_is_not_raising(_no_service_iframe_wai
         evaluate_error=PlaywrightError("boom"),
     )
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)  # must not raise
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)  # must not raise
+
+
+def test_legacy_service_iframe_is_not_navigated(_no_service_iframe_waits: None):
+    """A legacy service's iframe URL is its `service_basepath` plus the optional entry point, which
+    the helper does not know; navigating it to the bare path could load the wrong page."""
+    page, iframe_locator = _page_with_service_iframe(iframe_content=_frame("about:blank"))
+
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=True)
+
+    iframe_locator.evaluate.assert_not_called()
 
 
 def test_failing_service_iframe_probe_is_not_raising(_no_service_iframe_waits: None):
     """A Playwright error while probing the iframe must not propagate either."""
     page, _ = _page_with_service_iframe(iframe_content=None, query_selector_error=PlaywrightError("boom"))
 
-    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)  # must not raise
+    _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL, is_legacy_service=False)  # must not raise
 
 
 def test_project_state_waiter_matches_state_frame_seen_before_project_uuid_is_set():
@@ -540,6 +550,7 @@ class _FakePage:
     def expect_websocket(self, *args: Any, **_kwargs: Any) -> Any:
         self.expect_websocket_calls += 1
         self.expect_websocket_predicates.append(args[0])
+        _FAKE_MONOTONIC["seconds"] += _WEBSOCKET_WAIT_SLICE_S
         raise PlaywrightTimeoutError(_WEBSOCKET_WAIT_TIMEOUT_MSG)
 
 
@@ -551,10 +562,21 @@ def _connected_socket(page: _FakePage, url: str) -> _FakeWebSocket:
     return socket
 
 
+_FAKE_MONOTONIC: Final[dict[str, float]] = {"seconds": 0.0}
+_WEBSOCKET_WAIT_SLICE_S: Final[float] = 3600.0
+
+
 @pytest.fixture()
 def _no_reconnect_retry_waits(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Skip the back-off sleeps between the reconnection attempts."""
+    """Skip the back-off sleeps between the reconnection attempts.
+
+    ``time.monotonic`` is faked and advanced past any deadline by each (failed)
+    `expect_websocket` wait, so the sliced reconnect wait makes exactly one
+    attempt per tenacity retry.
+    """
+    _FAKE_MONOTONIC["seconds"] = 0.0
     monkeypatch.setattr("time.sleep", lambda _seconds: None)
+    monkeypatch.setattr("time.monotonic", lambda: _FAKE_MONOTONIC["seconds"])
 
 
 def test_start_websocket_tracking_records_each_page_socket_once():
@@ -586,7 +608,7 @@ def test_robust_websocket_adopts_the_socket_that_reconnected_before_it_was_creat
     assert page.expect_websocket_calls == 0
 
 
-def test_robust_websocket_adopts_a_socket_matching_its_predicate_only(
+def test_robust_websocket_without_predicate_does_not_adopt_a_live_socket_on_another_endpoint(
     _no_reconnect_retry_waits: None,
 ):
     """A live connection to another endpoint is not the reconnection of this one."""
@@ -646,3 +668,89 @@ def test_fallback_wait_only_accepts_a_socket_on_the_dead_sockets_endpoint(
     assert accept(_FakeWebSocket(reconnected_url))
     assert not accept(_FakeWebSocket("https://other-node.services.example.org/socket.io/?EIO=4"))
     assert not accept(_FakeWebSocket(reconnected_url, closed=True))
+
+
+def test_robust_websocket_does_not_adopt_an_older_session_on_the_same_endpoint(
+    _no_reconnect_retry_waits: None,
+):
+    """A session created before the wrapped socket is not its reconnection, even on its endpoint."""
+    page = _FakePage()
+    start_websocket_tracking(cast("Page", page))
+    _older_session = _connected_socket(page, _S4L_WS_URL)
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+    page.emit("websocket", dead_socket)
+
+    # the older session must not be adopted: without a tracked reconnection after the dead
+    # socket, the wait falls through and fails instead of consuming the wrong session
+    with pytest.raises(PlaywrightTimeoutError):
+        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+
+    assert page.expect_websocket_calls > 0
+
+
+def test_robust_websocket_adopts_the_reconnection_next_to_an_older_session(_no_reconnect_retry_waits: None):
+    """With an older live session on the endpoint, the socket created after the dead one wins."""
+    page = _FakePage()
+    start_websocket_tracking(cast("Page", page))
+    _connected_socket(page, _S4L_WS_URL)
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+    page.emit("websocket", dead_socket)
+    reconnected = _connected_socket(page, _S4L_WS_URL)
+
+    websocket = RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket))
+
+    assert websocket.ws is reconnected
+    assert page.expect_websocket_calls == 0
+
+
+def test_robust_websocket_adopts_a_tracked_socket_matching_its_predicate(_no_reconnect_retry_waits: None):
+    """The newest tracked socket failing the predicate must not stop the search for a matching one."""
+    page = _FakePage()
+    start_websocket_tracking(cast("Page", page))
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+    matching_url = f"https://{_NODE_ID}.services.example.org/api/socket.io/?EIO=4&transport=websocket"
+    matching = _connected_socket(page, matching_url)
+    _connected_socket(page, _S4L_WS_URL)  # newer, on the dead socket's endpoint but rejected
+
+    websocket = RobustWebSocket(
+        page=cast("Page", page),
+        ws=cast("WebSocket", dead_socket),
+        ws_predicate=lambda ws: ws.url == matching_url,
+    )
+
+    assert websocket.ws is matching
+    assert page.expect_websocket_calls == 0
+
+
+class _SocketHandshakingDuringWaitPage(_FakePage):
+    """Answers the first websocket wait with the handshake completion of ``late_socket``.
+
+    Models a socket whose creation event was delivered before the wait was entered: it can never
+    satisfy `expect_websocket`, only the registry re-check between wait slices can find it.
+    """
+
+    def __init__(self, late_socket: _FakeWebSocket) -> None:
+        super().__init__()
+        self.late_socket = late_socket
+
+    def expect_websocket(self, *args: Any, **kwargs: Any) -> Any:
+        if self.expect_websocket_calls == 0:
+            self.emit("websocket", self.late_socket)
+            self.late_socket.emit("framereceived", "40")
+        return super().expect_websocket(*args, **kwargs)
+
+
+def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
+    _no_reconnect_retry_waits: None,
+):
+    """The registry re-check after a timed-out slice must adopt the now-live socket."""
+    reconnected = _FakeWebSocket(_S4L_WS_URL)
+    page = _SocketHandshakingDuringWaitPage(reconnected)
+    start_websocket_tracking(cast("Page", page))
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+
+    websocket = RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1000)
+
+    assert websocket.ws is reconnected
+    assert websocket._num_reconnections == 1  # noqa: SLF001
+    assert page.expect_websocket_calls == 1
