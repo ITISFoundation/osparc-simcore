@@ -50,6 +50,7 @@ EXPECTED_LICENSED_ITEMS = [
                     "thumbnail": "https://itis.swiss/assets/images/Virtual-Population/Animals-Cropped/3WeekMouse.png",
                 },
                 "terms_of_use_url": "https://raw.githubusercontent.com/ITISFoundation/licenses/refs/heads/main/models/User%20License%20Animal%20Models%20v1.x.md",
+                "is_hidden_on_market": False,
             }
         ],
         "modified_at": "2025-02-19T13:46:30.258102Z",
@@ -88,6 +89,7 @@ EXPECTED_LICENSED_ITEMS = [
                     "thumbnail": "https://itis.swiss/assets/images/Virtual-Population/Animals-Cropped/BigMaleRat567g.png",
                 },
                 "terms_of_use_url": "https://raw.githubusercontent.com/ITISFoundation/licenses/refs/heads/main/models/User%20License%20Animal%20Models%20v1.x.md",
+                "is_hidden_on_market": False,
             },
             {
                 "category_display": "Animal",
@@ -113,6 +115,7 @@ EXPECTED_LICENSED_ITEMS = [
                     "thumbnail": "https://itis.swiss/assets/images/Virtual-Population/Animals-Cropped/BigMaleRat567g.png",
                 },
                 "terms_of_use_url": "https://raw.githubusercontent.com/ITISFoundation/licenses/refs/heads/main/models/User%20License%20Animal%20Models%20v1.x.md",
+                "is_hidden_on_market": False,
             },
         ],
         "modified_at": "2025-02-19T13:46:30.302673Z",

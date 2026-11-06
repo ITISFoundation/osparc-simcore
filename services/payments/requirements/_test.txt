@@ -21,7 +21,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==24.2.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -29,7 +29,7 @@ bidict==0.23.1
     # via
     #   -c requirements/_base.txt
     #   python-socketio
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -50,7 +50,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
-frozenlist==1.5.0
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -111,7 +111,7 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.5.2
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp

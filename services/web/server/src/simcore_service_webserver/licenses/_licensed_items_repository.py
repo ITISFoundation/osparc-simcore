@@ -206,7 +206,10 @@ def _create_licensed_resource_subquery(product_name: ProductName):
     _ordered_subquery = (
         select(
             licensed_item_to_resource.c.licensed_item_id,
-            licensed_resources.c.licensed_resource_data,
+            (
+                licensed_resources.c.licensed_resource_data
+                + func.jsonb_build_object("is_hidden_on_market", licensed_resources.c.is_hidden_on_market)
+            ).label("licensed_resource_data"),
             licensed_resources.c.priority,
             licensed_resources.c.licensed_resource_id,
         )

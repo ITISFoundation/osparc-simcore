@@ -15,9 +15,11 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Final, NamedTuple
+from typing import Any, Final, NamedTuple, Self, cast
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
+import aiofiles
 import pytest
 from aiohttp.client import ClientSession
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
@@ -27,6 +29,8 @@ from models_library.projects_nodes_io import LocationID
 from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
+from simcore_sdk.node_ports_common.dbmanager import DBManager
+from simcore_sdk.node_ports_common.exceptions import StorageServerIssueError
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import exceptions
@@ -37,6 +41,7 @@ from simcore_sdk.node_ports_v2.links import (
     ItemConcreteValue,
     PortLink,
 )
+from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import CONSTANT_UUID, create_valid_port_config
@@ -596,8 +601,8 @@ async def test_valid_port(  # noqa: C901
     exp_new_get_value: float | bool | str | Path,
     another_node_file: Path,
 ):
-    async def _io_log_redirect_cb(logs: str) -> None:
-        print(f"{logs=}")
+    async def _io_log_redirect_cb(log: str) -> None:
+        print(f"{log=}")
 
     @dataclass
     class FakeNodePorts:
@@ -614,7 +619,7 @@ async def test_valid_port(  # noqa: C901
             return another_node_file if port_cfg["type"].startswith("data:") else exp_get_value
 
         @classmethod
-        async def _node_ports_creator_cb(cls, node_uuid: str) -> "FakeNodePorts":
+        async def _node_ports_creator_cb(cls, node_uuid: str) -> Self:
             return cls(
                 user_id=user_id,
                 project_id=project_id,
@@ -623,6 +628,12 @@ async def test_valid_port(  # noqa: C901
 
         @staticmethod
         async def save_to_db_cb(_node_ports):
+            return
+
+        @staticmethod
+        async def safe_delete_replaced_file_link(*_args, **_kwargs) -> None:
+            # old-file deletion is exercised against real Nodeports in
+            # test_node_ports_v2_nodeports_v2.py
             return
 
     fake_node_ports = FakeNodePorts(
@@ -649,7 +660,8 @@ async def test_valid_port(  # noqa: C901
     if isinstance(exp_get_value, Path):
         # if it's a file let's create one there already
         exp_get_value.parent.mkdir(parents=True, exist_ok=True)
-        exp_get_value.touch()
+        async with aiofiles.open(exp_get_value, "wb"):
+            pass
 
     if exp_get_value is None:
         assert await port.get() is None
@@ -668,7 +680,8 @@ async def test_valid_port(  # noqa: C901
     if isinstance(exp_new_get_value, Path):
         # if it's a file let's create one there already
         exp_new_get_value.parent.mkdir(parents=True, exist_ok=True)
-        exp_new_get_value.touch()
+        async with aiofiles.open(exp_new_get_value, "wb"):
+            pass
     if exp_new_get_value is None:
         assert await port.get() is None
     else:
@@ -736,3 +749,228 @@ async def test_invalid_file_type_setter(
     # set a folder fails too
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set_value(f"{Path(__file__).parent}")
+
+
+@pytest.fixture
+def mock_delete_file(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.delete_file",
+        autospec=True,
+    )
+
+
+def _own_node_file_link_file_value(path: str, store: LocationID) -> dict[str, Any]:
+    return {"store": store, "path": path, "eTag": "some-etag"}
+
+
+def _wire_node_ports_with_outputs(project: str, node: str, outputs: OutputsList) -> Nodeports:
+    async def _save_to_db_cb(_node_ports) -> None:
+        return
+
+    async def _node_port_creator_cb(_node_uuid: str) -> None:
+        return None
+
+    db_manager = AsyncMock(spec=DBManager)
+    return Nodeports(
+        user_id=user_id(),
+        project_id=project,
+        node_uuid=node,
+        db_manager=db_manager,
+        io_log_redirect_cb=None,
+        r_clone_settings=None,
+        save_to_db_cb=_save_to_db_cb,
+        node_port_creator_cb=_node_port_creator_cb,
+        inputs=InputsList(root={}),
+        outputs=outputs,
+    )
+
+
+@pytest.mark.parametrize(
+    "old_relative_path, old_store, expect_deleted",
+    [
+        pytest.param("old_file.txt", 0, True, id="own simcore file gets deleted"),
+        pytest.param("output_1/this_node_file.txt", 0, False, id="same path re-upload keeps the object"),
+        pytest.param("output_1/old_file.txt", 0, True, id="old file inside port folder gets deleted"),
+        pytest.param("legacy/old_file.txt", 1, False, id="object on legacy store is kept"),
+    ],
+)
+async def test_old_file_link_deleted_on_replacement(
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    tmp_path: Path,
+    project_id: str,
+    node_uuid: str,
+    old_relative_path: str,
+    old_store: LocationID,
+    expect_deleted: bool,
+):
+    # the same object path as `this_node_file.txt` exercises the re-upload guard
+    new_file = tmp_path / "this_node_file.txt"
+    new_file.write_text("some new data")
+
+    old_path = f"{project_id}/{node_uuid}/{old_relative_path}"
+    port = Port(
+        **create_valid_port_config(
+            "data:*/*",
+            key="output_1",
+            value=_own_node_file_link_file_value(old_path, old_store),
+        )
+    )
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+
+    await port.set(new_file)
+
+    assert isinstance(port.value, FileLink)
+    if expect_deleted:
+        mock_delete_file.assert_awaited_once_with(
+            user_id=user_id(),
+            store_id=0,
+            s3_object=old_path,
+        )
+    else:
+        mock_delete_file.assert_not_awaited()
+
+
+async def test_old_file_link_deleted_when_port_cleared(
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    project_id: str,
+    node_uuid: str,
+):
+    old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
+    port = Port(
+        **create_valid_port_config(
+            "data:*/*",
+            key="output_1",
+            value=_own_node_file_link_file_value(old_path, simcore_store_id()),
+        )
+    )
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+
+    await port.set(cast("ItemConcreteValue", None))
+
+    assert port.value is None
+    mock_delete_file.assert_awaited_once_with(
+        user_id=user_id(),
+        store_id=simcore_store_id(),
+        s3_object=old_path,
+    )
+
+
+async def test_old_file_link_kept_when_still_referenced_by_another_port(
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    tmp_path: Path,
+    project_id: str,
+    node_uuid: str,
+):
+    old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
+    old_value = _own_node_file_link_file_value(old_path, simcore_store_id())
+    replaced_port = Port(**create_valid_port_config("data:*/*", key="output_1", value=old_value))
+    other_port = Port(**create_valid_port_config("data:*/*", key="output_2", value=old_value))
+    new_file = tmp_path / "new_file.txt"
+    new_file.write_text("some new data")
+
+    _wire_node_ports_with_outputs(
+        project_id, node_uuid, OutputsList(root={"output_1": replaced_port, "output_2": other_port})
+    )
+
+    await replaced_port.set(new_file)
+
+    mock_delete_file.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "deletion_error",
+    [
+        StorageServerIssueError("storage unreachable"),
+        # the storage client can also raise outside the NodeportsError hierarchy
+        RuntimeError("Unhandled control flow reached, please report this issue"),
+    ],
+    ids=["storage-server-issue", "unmapped-storage-response"],
+)
+async def test_set_still_succeeds_when_old_file_deletion_fails(
+    deletion_error: Exception,
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    tmp_path: Path,
+    project_id: str,
+    node_uuid: str,
+):
+    mock_delete_file.side_effect = deletion_error
+
+    old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
+    port = Port(
+        **create_valid_port_config(
+            "data:*/*",
+            key="output_1",
+            value=_own_node_file_link_file_value(old_path, simcore_store_id()),
+        )
+    )
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    new_file = tmp_path / "new_file.txt"
+    new_file.write_text("some new data")
+
+    await port.set(new_file)
+
+    assert isinstance(port.value, FileLink)
+    mock_delete_file.assert_awaited_once()
+
+
+async def test_old_file_link_of_other_node_is_not_deleted(
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    tmp_path: Path,
+    project_id: str,
+    node_uuid: str,
+):
+    new_file = tmp_path / "new_file.txt"
+    new_file.write_text("some new data")
+
+    old_path = f"{uuid4()}/{uuid4()}/output_1/file_from_another_node.txt"
+    port = Port(
+        **create_valid_port_config(
+            "data:*/*",
+            key="output_1",
+            value=_own_node_file_link_file_value(old_path, simcore_store_id()),
+        )
+    )
+    _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+
+    await port.set(new_file)
+
+    mock_delete_file.assert_not_awaited()
+
+
+async def test_set_still_succeeds_when_deletion_log_callback_fails(
+    common_fixtures: None,
+    mock_delete_file: AsyncMock,
+    tmp_path: Path,
+    project_id: str,
+    node_uuid: str,
+):
+    mock_delete_file.side_effect = StorageServerIssueError("storage unreachable")
+
+    async def _failing_log_cb(log: str) -> None:
+        err_msg = "cannot redirect logs"
+        raise RuntimeError(err_msg)
+
+    old_path = f"{project_id}/{node_uuid}/output_1/old_file.txt"
+    port = Port(
+        **create_valid_port_config(
+            "data:*/*",
+            key="output_1",
+            value=_own_node_file_link_file_value(old_path, simcore_store_id()),
+        )
+    )
+    node_ports = _wire_node_ports_with_outputs(project_id, node_uuid, OutputsList(root={"output_1": port}))
+    node_ports.io_log_redirect_cb = _failing_log_cb
+    new_file = tmp_path / "new_file.txt"
+    new_file.write_text("some new data")
+
+    # the value was persisted: neither the failed deletion nor the broken log
+    # callback may fail the set
+    await port.set(new_file)
+
+    assert isinstance(port.value, FileLink)
+    mock_delete_file.assert_awaited_once()

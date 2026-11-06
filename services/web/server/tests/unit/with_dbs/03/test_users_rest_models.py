@@ -29,7 +29,11 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def account_request_form(faker: Faker, user_phone_number: PhoneNumberStr) -> dict[str, Any]:
+def account_request_form(
+    faker: Faker,
+    user_phone_number: PhoneNumberStr,
+    country_name: str,
+) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
         "firstName": faker.first_name(),
@@ -41,7 +45,7 @@ def account_request_form(faker: Faker, user_phone_number: PhoneNumberStr) -> dic
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "postalCode": faker.postcode(),
-        "country": faker.country(),
+        "country": country_name,
         # extras
         "application": faker.word(),
         "description": faker.sentence(),
@@ -69,8 +73,16 @@ def test_preuserprofile_parse_model_from_request_form_data(
     account_request_form: dict[str, Any],
     institution_key: str,
 ):
+    """Parses the institution from every accepted form field name.
+
+    The institution has a name the model returns unchanged: a name with a
+    lowercase word (e.g. "Cooke and Little") gets capitalized instead.
+    """
+    institution = "Simcore Core"
+
     data = deepcopy(account_request_form)
-    data[institution_key] = data.pop("company")
+    data.pop("company")
+    data[institution_key] = institution
     data["comment"] = "extra comment"
 
     # pre-processors
@@ -79,7 +91,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
     print(pre_user_profile.model_dump_json(indent=1))
 
     # institution aliases
-    assert pre_user_profile.institution == account_request_form["company"]
+    assert pre_user_profile.institution == institution
 
     # extras
     assert {
