@@ -1,4 +1,4 @@
-FROM caddy:2.11.7-alpine AS base
+FROM caddy:2.11.8-alpine AS base
 
 LABEL maintainer=GitHK
 

@@ -1,9 +1,15 @@
-# Self-hosted Renovate, replacing the Mend-hosted app.
-# It runs as the osparc Renovate GitHub App and executes
-# .github/renovate/resync_lockfiles.py as a post-upgrade task, so the layered
-# pip-compile lockfiles are fixed inside Renovate's own commit (Mend-hosted Renovate
-# cannot run commands, and a fixup commit by another author blocks both CI, which
-# waits for approval, and Renovate, which stops updating an "edited" branch).
+# Self-hosted Renovate, replacing the Mend-hosted app, and the automation around
+# its pull requests. Two jobs:
+# - renovate: runs Renovate as the osparc Renovate GitHub App, which executes
+#   .github/renovate/resync_lockfiles.py as a post-upgrade task, so the layered
+#   pip-compile lockfiles are fixed inside Renovate's own commit (Mend-hosted
+#   Renovate cannot run commands, and a fixup commit by another author blocks both
+#   CI, which waits for approval, and Renovate, which stops updating an "edited"
+#   branch);
+# - review-gate: marks Renovate's draft PRs ready once their checks are done
+#   (.github/renovate/review_gate.py).
+# New PRs get their milestone from chore-labeler.yml, like every other PR.
+# How a PR gets from here to master is in docs/renovate.md.
 #
 # Setup (org owner): a GitHub App with the permissions listed in
 # https://docs.renovatebot.com/modules/platform/github/#running-as-a-github-app,
@@ -19,21 +25,48 @@ name: Chore Renovate
 
 on:
   schedule:
-    # nightly at 02:17 UTC (03:17/04:17 in Zurich), off the top of the hour when
-    # GitHub's scheduler is busiest
+    # renovate: nightly at 02:17 UTC (03:17/04:17 in Zurich), off the top of the
+    # hour when GitHub's scheduler is busiest
     - cron: "17 2 * * *"
+    # review-gate
+    - cron: "*/15 * * * *"
+  push:
+    # renovate: a merged dependency change makes the other open Renovate branches
+    # stale or conflicted; Renovate rebases and regenerates them right away instead
+    # of the next night. The paths are the files Renovate writes (the last block of
+    # .github/CODEOWNERS) and its configuration
+    branches:
+      - master
+    paths:
+      - "**/requirements/**"
+      - "**/Dockerfile*"
+      - "**/docker-compose*.yml"
+      - ".python-version"
+      - "api/tests/requirements.txt"
+      - "package.json"
+      - "package-lock.json"
+      - ".renovaterc.jsonc"
+      - ".github/renovate/**"
+      - ".github/workflows/**"
   issues:
-    # a person ticking a box on the Dependency Dashboard (approve an update, retry,
-    # ...) gets a run right away instead of waiting for the night
+    # renovate: a person ticking a box on the Dependency Dashboard (approve an
+    # update, retry, ...) gets a run right away instead of waiting for the night
     types:
       - edited
   pull_request_target:
-    # same for the "rebase/retry" box of a Renovate PR. pull_request_target (not
+    # renovate: the "rebase/retry" box of a Renovate PR. pull_request_target (not
     # pull_request) so that no code of the PR is ever run
     types:
       - edited
   workflow_dispatch:
     inputs:
+      job:
+        description: Job to run
+        type: choice
+        default: renovate
+        options:
+          - renovate
+          - review-gate
       log-level:
         description: Renovate log level
         type: choice
@@ -46,12 +79,7 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
-
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   renovate:
@@ -60,14 +88,23 @@ jobs:
     # Dashboard or ticks the rebase/retry box of a Renovate PR
     if: >
       github.repository == 'ITISFoundation/osparc-simcore' &&
-      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
-       (github.event.sender.type == 'User' &&
+      ((github.event_name == 'schedule' && github.event.schedule == '17 2 * * *') ||
+       github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && inputs.job == 'renovate') ||
+       (github.event.sender.type == 'User' && github.event.action == 'edited' &&
         ((github.event_name == 'issues' &&
           github.event.issue.user.login == 'osparc-simcore-renovate[bot]' &&
           github.event.issue.title == 'Dependency Dashboard') ||
          (github.event_name == 'pull_request_target' &&
           github.event.pull_request.user.login == 'osparc-simcore-renovate[bot]' &&
           contains(github.event.pull_request.body, '- [x] <!-- rebase-check -->')))))
+    # one run at a time; GitHub keeps a single pending run, so a burst of merges
+    # collapses into one follow-up run
+    concurrency:
+      group: ${{ github.workflow }}-renovate
+      cancel-in-progress: false
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     # the App installation token expires after one hour
     timeout-minutes: 60
@@ -108,3 +145,63 @@ jobs:
           LOG_LEVEL: ${{ inputs.log-level || 'info' }}
           # empty (i.e. not set) unless requested
           RENOVATE_DRY_RUN: ${{ inputs.dry-run && 'full' || '' }}
+
+  review-gate:
+    # runs as the Renovate App, not as github-actions: a GitHub App cannot change
+    # the draft state of a pull request opened by another App, so marking ready
+    # with github.token fails with "Resource not accessible by integration"
+    # (markPullRequestReadyForReview). The App that owns the PRs can.
+    if: >
+      github.repository == 'ITISFoundation/osparc-simcore' &&
+      ((github.event_name == 'schedule' && github.event.schedule == '*/15 * * * *') ||
+       (github.event_name == 'workflow_dispatch' && inputs.job == 'review-gate'))
+    concurrency:
+      group: ${{ github.workflow }}-review-gate
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: create Renovate App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+          permission-checks: read
+          permission-contents: read
+          # labels and comments on a PR: the issues endpoints accept pull-requests: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # the App token must not end up in the git credential store; the
+          # script only talks to the API through gh
+          persist-credentials: false
+
+      - name: resolve uv version
+        id: uv-version
+        run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
+
+      # requirements/UV_VERSION is the single source of truth for the uv version, as in
+      # .github/actions/setup-simcore-env. The script needs no packages, so uv only has to
+      # provide the interpreter its requires-python asks for; caching that download is what
+      # makes the 15-minute poll cheaper than fetching CPython every run
+      - name: install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ steps.uv-version.outputs.version }}
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: |
+            .python-version
+            requirements/UV_VERSION
+
+      - name: run review gate
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          BOT: osparc-simcore-renovate[bot]
+          FAIL_COOLDOWN_HOURS: 3
+        run: ./.github/renovate/review_gate.py

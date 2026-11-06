@@ -17,7 +17,7 @@ from pathlib import Path
 from threading import Thread
 
 import aiohttp
-import httpx
+import httpx2
 import pytest
 import uvicorn
 from faker import Faker
@@ -56,7 +56,7 @@ _logger = logging.getLogger(__name__)
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
 async def _wait_for_server_ready(server: URL) -> None:
-    async with httpx.AsyncClient(follow_redirects=True) as client:
+    async with httpx2.AsyncClient(follow_redirects=True) as client:
         response = await client.get(f"{server}")
         response.raise_for_status()
 

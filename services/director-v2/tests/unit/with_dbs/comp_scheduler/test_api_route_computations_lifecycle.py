@@ -6,7 +6,7 @@ import datetime as dt
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-import httpx
+import httpx2
 from fastapi import status
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects import ProjectAtDB
@@ -31,7 +31,7 @@ async def test_get_computation_does_not_expose_stopped_timestamp_until_run_is_co
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -58,7 +58,7 @@ async def test_get_computation_does_not_expose_stopped_timestamp_until_run_is_co
         dag_adjacency_list=fake_workbench_adjacency,
     )
 
-    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    get_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.get(get_computation_url)
 
     assert response.status_code == status.HTTP_200_OK, response.text
@@ -81,7 +81,7 @@ async def test_get_computation_uses_comp_run_timestamps_for_top_level_lifecycle(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -110,7 +110,7 @@ async def test_get_computation_uses_comp_run_timestamps_for_top_level_lifecycle(
         dag_adjacency_list=fake_workbench_adjacency,
     )
 
-    get_computation_url = httpx.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
+    get_computation_url = httpx2.URL(f"/v2/computations/{proj.uuid}?user_id={user['id']}")
     response = await async_client.get(get_computation_url)
 
     assert response.status_code == status.HTTP_200_OK, response.text

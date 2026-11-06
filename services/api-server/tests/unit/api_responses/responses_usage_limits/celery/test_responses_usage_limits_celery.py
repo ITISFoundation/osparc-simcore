@@ -11,12 +11,12 @@ Global Budget Guard at task start and reconciles to the actual usage at task end
 import datetime
 import json
 
-import httpx
+import httpx2
 import pytest
 import respx
 from celery.contrib.testing.worker import TestWorkController  # type: ignore # pylint: disable=no-name-in-module
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.responses import (
     ResponseObject,
@@ -279,7 +279,7 @@ async def test_celery_window_quota_exhausted_rejects_at_submit(
     assert second.json()["code"] == "chatbox_window_quota_exceeded"
 
 
-def _wait_obj(submit_response: httpx.Response) -> ResponseObject:
+def _wait_obj(submit_response: httpx2.Response) -> ResponseObject:
     obj = ResponseObject.model_validate(submit_response.json())
     assert obj.status == ResponseStatus.QUEUED
     return obj

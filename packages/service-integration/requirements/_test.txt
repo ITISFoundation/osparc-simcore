@@ -6,17 +6,17 @@ attrs==26.1.0
     #   referencing
 cffi==2.0.0
     # via cryptography
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
 faker==40.39.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 iniconfig==2.3.0
     # via

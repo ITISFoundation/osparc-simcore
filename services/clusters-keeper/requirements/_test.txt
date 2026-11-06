@@ -28,11 +28,12 @@ anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
+    #   httpx2
 asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -58,7 +59,7 @@ botocore==1.40.61
     #   s3transfer
 cachebox==5.2.3
     # via deepdiff
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -69,22 +70,24 @@ cffi==2.0.0
     # via cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.4.4
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-debugpy==1.8.20
+debugpy==1.8.22
     # via -r requirements/_test.in
 deepdiff==9.1.0
     # via -r requirements/_test.in
@@ -96,7 +99,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flask==3.1.3
     # via
@@ -115,21 +118,30 @@ h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+    #   httpcore2
 httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
+httpcore2==2.16.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpx2
 httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -r requirements/_test.in
     #   respx
+httpx2==2.16.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 idna==3.19
     # via
     #   -c requirements/_base.txt
     #   anyio
     #   httpx
+    #   httpx2
     #   requests
     #   yarl
 iniconfig==2.3.0
@@ -177,7 +189,7 @@ markupsafe==3.0.3
     #   flask
     #   jinja2
     #   werkzeug
-moto==5.2.2
+moto==5.2.4
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -251,7 +263,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -278,6 +290,7 @@ regex==2026.2.28
     # via cfn-lint
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -288,7 +301,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.29.0
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -297,8 +310,6 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==84.2.1
-    # via moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -314,6 +325,11 @@ sortedcontainers==2.4.0
     #   fakeredis
 sympy==1.14.0
     # via cfn-lint
+truststore==0.10.5
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore2
+    #   httpx2
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
 typing-extensions==4.16.0

@@ -84,8 +84,9 @@ jobs:
       storage: ${{ steps.filter.outputs.storage }}
       webserver: ${{ steps.filter.outputs.webserver }}
       anything: ${{ steps.filter.outputs.anything }}
-      anything-py: ${{ steps.filter.outputs.anything-py }}
       anything-js: ${{ steps.filter.outputs.anything-js }}
+      anything-lint-env: ${{ steps.filter.outputs.anything-lint-env }}
+      anything-py: ${{ steps.filter.outputs.anything-py }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # For pull requests it's not necessary to checkout the code
@@ -285,6 +286,11 @@ jobs:
               - 'mypy.ini'
             anything-js:
               - '**/*.js'
+            anything-lint-env:
+              - 'requirements/**'
+              - '**/requirements/**'
+              - 'ci/helpers/install_pylint.bash'
+              - '.pylintrc'
   deploy-vars:
     name: compute deploy variables
     needs: changes
@@ -1219,7 +1225,7 @@ jobs:
 
   unit-test-python-linting:
     needs: changes
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.anything-lint-env == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
@@ -1531,7 +1537,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -1558,7 +1564,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml,services/web/server/junit-isolated.xml
+          files: services/web/server/junit-01.xml,services/web/server/junit-isolated.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1571,7 +1577,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -1594,7 +1600,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit-02.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1607,7 +1613,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -1630,7 +1636,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit-03.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1643,7 +1649,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -1666,7 +1672,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit-04.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -2157,6 +2163,7 @@ jobs:
 
   system-tests:
     # NOTE: this is a github required status check!
+    # NOTE: the renovate-fast queue in .github/mergify.yml requires it by name
     if: ${{ always() }}
     needs:
       [

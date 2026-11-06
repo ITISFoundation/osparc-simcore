@@ -27,6 +27,12 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:

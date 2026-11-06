@@ -6,17 +6,17 @@ attrs==26.1.0
     # via pytest-docker
 cffi==2.0.0
     # via cryptography
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   types-paramiko
 faker==40.38.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 greenlet==3.3.2
     # via
@@ -55,7 +55,7 @@ pytest-asyncio==1.4.0
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
-pytest-docker==3.2.5
+pytest-docker==3.2.6
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in

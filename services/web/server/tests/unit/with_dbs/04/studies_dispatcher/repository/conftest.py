@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-async def service_metadata_in_db(asyncpg_engine: AsyncEngine) -> AsyncIterator[dict]:
+async def service_metadata_in_db(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[dict]:
     """Pre-populate services metadata table with test data."""
     service_data = random_service_meta_data(
         key="simcore/services/dynamic/viewer",
@@ -34,7 +34,7 @@ async def service_metadata_in_db(asyncpg_engine: AsyncEngine) -> AsyncIterator[d
     )
     # pylint: disable=contextmanager-generator-missing-cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=services_meta_data,
         values=service_data,
         pk_col=services_meta_data.c.key,
@@ -45,7 +45,7 @@ async def service_metadata_in_db(asyncpg_engine: AsyncEngine) -> AsyncIterator[d
 
 
 @pytest.fixture
-async def consume_filetypes_in_db(asyncpg_engine: AsyncEngine, service_metadata_in_db: dict):
+async def consume_filetypes_in_db(sqlalchemy_async_engine: AsyncEngine, service_metadata_in_db: dict):
     """Pre-populate services consume filetypes table with test data."""
     consume_data = random_service_consume_filetype(
         service_key=service_metadata_in_db["key"],
@@ -59,7 +59,7 @@ async def consume_filetypes_in_db(asyncpg_engine: AsyncEngine, service_metadata_
 
     # pylint: disable=contextmanager-generator-missing-cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=services_consume_filetypes,
         values=consume_data,
         pk_col=services_consume_filetypes.c.service_key,
@@ -69,7 +69,7 @@ async def consume_filetypes_in_db(asyncpg_engine: AsyncEngine, service_metadata_
 
 
 @pytest.fixture
-async def service_access_rights_in_db(asyncpg_engine: AsyncEngine, service_metadata_in_db: dict):
+async def service_access_rights_in_db(sqlalchemy_async_engine: AsyncEngine, service_metadata_in_db: dict):
     """Pre-populate services access rights table with test data."""
     access_data = random_service_access_rights(
         key=service_metadata_in_db["key"],
@@ -81,7 +81,7 @@ async def service_access_rights_in_db(asyncpg_engine: AsyncEngine, service_metad
 
     # pylint: disable=contextmanager-generator-missing-cleanup
     async with insert_and_get_row_lifespan(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         table=services_access_rights,
         values=access_data,
         pk_col=services_access_rights.c.key,

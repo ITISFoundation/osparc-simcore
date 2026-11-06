@@ -20,7 +20,7 @@
 
 services:
   adminer:
-    image: adminer:6.2.0
+    image: adminer:6.3.0
     init: true
     environment:
       ADMINER_DEFAULT_SERVER: postgres
@@ -74,7 +74,7 @@ services:
 
   mailpit:
     # Fake SMTP server with web UI — https://mailpit.axllent.org
-    image: axllent/mailpit:v1.32.0
+    image: axllent/mailpit:v1.33.0
     init: true
     command:
       - --smtp-auth-accept-any

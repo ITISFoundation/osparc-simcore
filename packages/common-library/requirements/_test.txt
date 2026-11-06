@@ -4,13 +4,13 @@ annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-coverage==7.16.0
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 faker==40.38.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
@@ -61,7 +61,7 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -r requirements/_test.in
     #   pydantic-settings

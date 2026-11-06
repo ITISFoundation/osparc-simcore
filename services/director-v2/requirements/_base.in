@@ -22,6 +22,7 @@
 aio-pika
 aiocache[redis,msgpack]
 aiodocker
+httpx2 # http clients
 networkx
 opentelemetry-instrumentation-aiohttp-client
 ordered-set

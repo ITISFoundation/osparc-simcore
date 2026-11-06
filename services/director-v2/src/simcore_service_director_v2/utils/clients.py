@@ -1,15 +1,15 @@
 import logging
 from typing import Any
 
-import httpx
+import httpx2
 from fastapi import HTTPException
-from httpx import codes
+from httpx2 import codes
 from starlette import status
 
 logger = logging.getLogger(__name__)
 
 
-def unenvelope_or_raise_error(resp: httpx.Response) -> list[Any] | dict[str, Any]:
+def unenvelope_or_raise_error(resp: httpx2.Response) -> list[Any] | dict[str, Any]:
     """
     Director responses are enveloped
     If successful response, we un-envelop it and return data as a dict

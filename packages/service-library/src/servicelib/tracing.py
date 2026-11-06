@@ -9,7 +9,7 @@ from typing import Any, Final, Self, overload
 
 import pyinstrument
 import pyinstrument.renderers
-from httpx import AsyncClient, Client
+from httpx2 import AsyncClient, Client
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -19,7 +19,7 @@ from models_library.utils.enums import StrAutoEnum
 from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import metrics, trace
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPX2ClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.metrics import NoOpMeterProvider
 from opentelemetry.propagate import extract, inject
@@ -39,7 +39,7 @@ _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 # NOTE: holds the TracingConfig set up for this process/context so that utilities such as
 # `log_context` can automatically create spans without threading `TracingConfig` through every
 # call site. Set once by `setup_log_tracing()` (see `logging_utils.setup_loggers`/`async_loggers`).
-_current_tracing_config: ContextVar["TracingConfig | None"] = ContextVar("current_tracing_config", default=None)
+_current_tracing_config: ContextVar[TracingConfig | None] = ContextVar("current_tracing_config", default=None)
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
 _OTEL_NAMESPACE: Final[str] = "simcore"
@@ -107,7 +107,12 @@ class TracingConfig(BaseModel):
 
 
 def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
-    HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
+    # upstream annotates the client with whichever httpx namespace it imported first,
+    # so an httpx2 client is rejected even though instrumentation only needs its attributes
+    HTTPX2ClientInstrumentor.instrument_client(
+        client,  # type: ignore[arg-type]
+        tracer_provider=tracing_config.tracer_provider,
+    )
 
 
 def setup_meter_provider() -> None:
@@ -354,7 +359,7 @@ def _resolve_tracing_config_aiohttp(app: Any) -> TracingConfig | None:
         config = app[AIOHTTP_TRACING_CONFIG_KEY]
         assert isinstance(config, TracingConfig)  # nosec
         return config
-    except (KeyError, TypeError):
+    except KeyError, TypeError:
         return None
 
 

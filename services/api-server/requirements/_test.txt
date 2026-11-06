@@ -19,7 +19,7 @@ alembic==1.14.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-amqp==5.3.1
+amqp==5.4.2
     # via
     #   -c requirements/_base.txt
     #   kombu
@@ -37,7 +37,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==24.2.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -45,7 +45,7 @@ attrs==24.2.0
     #   referencing
 aws-sam-translator==1.106.0
     # via cfn-lint
-aws-xray-sdk==0.95
+aws-xray-sdk==2.16.0
     # via moto
 billiard==4.2.1
     # via
@@ -61,6 +61,7 @@ boto3==1.40.61
 botocore==1.40.61
     # via
     #   -c requirements/_base.txt
+    #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
@@ -72,7 +73,7 @@ celery==5.6.3
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -86,8 +87,10 @@ cffi==2.1.1
     #   pact-python-ffi
 cfn-lint==1.47.1
     # via moto
-charset-normalizer==3.4.0
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.2.1
     # via
     #   -c requirements/_base.txt
@@ -109,15 +112,15 @@ click-repl==0.3.0
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.16.0
+coverage==7.16.2
     # via pytest-cov
-cryptography==50.0.0
+cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   joserfc
     #   moto
-debugpy==1.8.20
+debugpy==1.8.22
     # via pytest-celery
 docker==7.1.0
     # via
@@ -129,7 +132,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flask==3.1.3
     # via
@@ -137,7 +140,7 @@ flask==3.1.3
     #   moto
 flask-cors==6.0.5
     # via moto
-frozenlist==1.5.0
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -188,8 +191,6 @@ jsonpatch==1.33
     # via cfn-lint
 jsonpath-ng==1.8.0
     # via moto
-jsonpickle==4.1.1
-    # via aws-xray-sdk
 jsonpointer==3.1.1
     # via jsonpatch
 jsonref==1.1.0
@@ -209,7 +210,7 @@ jsonschema-specifications==2025.9.1
     #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-schema-validator
-kombu==5.6.2
+kombu==5.7.0
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -230,7 +231,7 @@ markupsafe==3.0.2
     #   jinja2
     #   mako
     #   werkzeug
-moto==5.2.2
+moto==5.2.4
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -253,7 +254,6 @@ packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   aioresponses
-    #   kombu
     #   pytest
 pact-python==3.2.1
     # via -r requirements/_test.in
@@ -271,7 +271,7 @@ prompt-toolkit==3.0.51
     # via
     #   -c requirements/_base.txt
     #   click-repl
-propcache==0.2.1
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -298,7 +298,7 @@ pygments==2.21.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pyinstrument==5.1.1
+pyinstrument==5.1.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -336,7 +336,7 @@ pyyaml==6.0.3
     #   jsonschema-path
     #   moto
     #   responses
-redis==6.4.0
+redis==7.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -352,7 +352,7 @@ regex==2026.7.19
     # via cfn-lint
 requests==2.34.2
     # via
-    #   aws-xray-sdk
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -363,7 +363,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==2026.6.3
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -372,8 +372,6 @@ s3transfer==0.14.0
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==84.2.1
-    # via moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -393,7 +391,7 @@ sqlalchemy==2.0.51
     #   alembic
 sympy==1.14.0
     # via cfn-lint
-tenacity==9.0.0
+tenacity==9.1.4
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -425,10 +423,6 @@ typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-tzdata==2025.2
-    # via
-    #   -c requirements/_base.txt
-    #   kombu
 tzlocal==5.3.1
     # via
     #   -c requirements/_base.txt
@@ -456,7 +450,7 @@ werkzeug==3.1.9
     #   flask
     #   flask-cors
     #   moto
-wrapt==1.17.0
+wrapt==1.17.3
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk

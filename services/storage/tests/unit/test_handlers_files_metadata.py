@@ -8,7 +8,7 @@ from pathlib import Path
 from random import choice
 from typing import Protocol
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -52,7 +52,7 @@ async def test_list_files_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     create_project_access_rights: CreateProjectAccessRightsCallable,
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     other_user_id: UserID,
@@ -131,7 +131,7 @@ async def test_list_files_metadata(
 )
 async def test_get_file_metadata_is_legacy_services_compatible(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
     simcore_file_id: SimcoreS3FileID,
@@ -162,7 +162,7 @@ async def test_get_file_metadata_is_legacy_services_compatible(
 async def test_get_file_metadata(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     location_id: LocationID,
     project_id: ProjectID,

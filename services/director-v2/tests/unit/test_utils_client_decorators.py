@@ -2,10 +2,13 @@
 
 import logging
 
+# NOTE: respx only accepts plain httpx.Response values, also in mock(return_value=...), see
+# https://github.com/ITISFoundation/osparc-simcore/issues/9927
+import httpx
 import pytest
 import respx
 from fastapi import HTTPException, status
-from httpx import AsyncClient, Response
+from httpx2 import AsyncClient, Response
 from simcore_service_director_v2.utils.client_decorators import handle_errors
 
 logger = logging.getLogger(__name__)
@@ -25,7 +28,7 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
     url = "https://tea.org/"
     with respx.mock:
         respx.post(url).mock(
-            return_value=Response(
+            return_value=httpx.Response(
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
                 text="this kettle is currently\nserving the empire",
             )
@@ -47,7 +50,7 @@ async def test_handle_errors(httpx_async_client: AsyncClient):
         # accept: */*
         # accept-encoding: gzip, deflate
         # connection: keep-alive
-        # user-agent: python-httpx/0.23.0
+        # user-agent: python-httpx2/2.16.0
         # content-length: 22
         # content-type: application/x-www-form-urlencoded
         # kettle_number=royal_01

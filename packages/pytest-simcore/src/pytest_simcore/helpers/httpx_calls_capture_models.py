@@ -3,7 +3,10 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import respx
 from fastapi import status
 from pydantic import BaseModel, Field
@@ -30,12 +33,12 @@ class HttpApiCallCaptureModel(BaseModel):
     @classmethod
     def create_from_response(
         cls,
-        response: httpx.Response,
+        response: httpx2.Response,
         *,
         name: str,
         description: str = "",
         enhance_from_openapi_specs: bool = True,
-    ) -> "HttpApiCallCaptureModel":
+    ) -> HttpApiCallCaptureModel:
         request = response.request
 
         path: PathDescription | str
@@ -67,7 +70,7 @@ class HttpApiCallCaptureModel(BaseModel):
         return httpx.Response(status_code=self.status_code, json=self.response_body)
 
 
-def get_captured_model(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
+def get_captured_model(name: str, response: httpx2.Response) -> HttpApiCallCaptureModel:
     return HttpApiCallCaptureModel.create_from_response(response, name=name)
 
 

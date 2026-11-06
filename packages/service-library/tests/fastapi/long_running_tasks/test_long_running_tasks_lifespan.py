@@ -8,7 +8,7 @@ import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager

@@ -1,3 +1,14 @@
+shared:
+  # A pull request Renovate wrote alone: its author, and every commit by Renovate
+  # or Mergify (the "Merge branch 'master'" commits of the queue), verified by
+  # GitHub. A commit pushed by anyone else, or one claiming the bot's identity
+  # without its signature, takes the pull request off the fast lane and into the
+  # default queue, which waits for reviews.
+  renovate_only: &renovate_only
+    - author=osparc-simcore-renovate[bot]
+    - "-commits[*].email_author~=^(?!(346457310\\+osparc-simcore-renovate\\[bot\\]|37929162\\+mergify\\[bot\\])@users\\.noreply\\.github\\.com$)"
+    - "#commits-unverified=0"
+
 merge_queue:
   max_parallel_checks: 1
 
@@ -22,20 +33,87 @@ queue_rules:
       - "#approved-reviews-by>=2"
       - "#changes-requested-reviews-by=0"
       - "#review-threads-unresolved=0"
+
+  # Low-risk Renovate bumps merge without a review; how that is set up and what
+  # still blocks a merge is in docs/renovate.md.
+  - name: renovate-fast
+    batch_size: 1
+    # Mergify otherwise copies the master rulesets into this queue's conditions,
+    # including the review requirement of master-branch-reviews (2 approvals and a
+    # code owner), which a Renovate PR never collects. Being a bypass actor on that
+    # ruleset does not stop the copy. `none` drops the required checks of the
+    # "master branch" ruleset too: the check conditions below replace them, and
+    # GitHub still enforces those required checks when Mergify merges.
+    branch_protection_injection_mode: none
+    merge_bot_account: osparc-shared
+
+    # No check of another app than Mergify is pending or failed. Mergify lists each
+    # check under its name and as @<app>/<name>; matching the qualified form leaves
+    # out Mergify's own check runs, which stay in progress while the PR is queued.
+    # `renovate/artifacts` is excluded from the failures: it reports the compile of a
+    # single lockfile, which fails while the layer it takes as --constraint still pins
+    # the old version, and the resync post-upgrade task re-resolves the tree right
+    # after. A resync that cannot resolve a directory fails [sys] environment setup
+    # instead, which is part of system-tests.
+    # check-success=system-tests requires CI to have reported on the commit Mergify
+    # merges master into; right after that push no check exists yet, so "nothing
+    # pending" alone would already hold. system-tests is a required check of
+    # ci-build-test.yml; renaming it stalls this queue.
+    queue_conditions:
+      - base=master
+      - and: *renovate_only
+      - label=🤖-renovate-fast-lane
+      - label!=🤖-do-not-merge
+      - -draft
+      - -conflict
+      - "-check-pending~=^@(?!mergify/)"
+      - "-check-failure~=^@(?!mergify/)(?!.*renovate/artifacts)"
+      - check-success=system-tests
+
+    merge_conditions: # (identical to queue_conditions)
+      - base=master
+      - and: *renovate_only
+      - label=🤖-renovate-fast-lane
+      - label!=🤖-do-not-merge
+      - -draft
+      - -conflict
+      - "-check-pending~=^@(?!mergify/)"
+      - "-check-failure~=^@(?!mergify/)(?!.*renovate/artifacts)"
+      - check-success=system-tests
 merge_protections_settings:
   reporting_method: check-runs
 
 pull_request_rules:
+  # Low-risk Renovate bumps skip the review wait: they join renovate-fast instead of
+  # the default queue. 🤖-do-not-merge still holds them back, and removing it is enough
+  # to let one go.
+  - name: queue low-risk Renovate PRs without waiting for reviews
+    conditions:
+      - base=master
+      - and: *renovate_only
+      - label=🤖-renovate-fast-lane
+      - label!=🤖-do-not-merge
+      - -draft
+    actions:
+      queue:
+        name: renovate-fast
+
   # Every non-draft PR targeting master joins the default queue; nobody types
   # `@mergify queue` by hand. The queue only merges once its conditions match
   # (2 approvals, code-owner approval, checks green, ...), so Mergify waits for
   # those instead of for a human. A PR leaves the queue automatically when it
   # goes back to draft, gets 🤖-do-not-merge, or loses an approval.
   # To hold a PR back from the queue, add 🤖-do-not-merge.
+  # Pull requests the rule above sends to renovate-fast must not join this one
+  # too; a 🤖-renovate-fast-lane pull request that is not renovate_only does.
   - name: queue every pull request that is not a draft anymore
     conditions:
       - base=master
       - label!=🤖-do-not-merge
       - -draft
+      - or:
+          - label!=🤖-renovate-fast-lane
+          - not:
+              and: *renovate_only
     actions:
       queue:

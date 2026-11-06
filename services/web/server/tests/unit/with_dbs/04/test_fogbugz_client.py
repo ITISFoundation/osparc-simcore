@@ -7,6 +7,8 @@
 import json
 from collections.abc import Iterator
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
 import pytest
 import respx
@@ -19,6 +21,12 @@ from simcore_service_webserver.fogbugz._client import (
     get_fogbugz_rest_client,
 )
 from simcore_service_webserver.fogbugz.settings import FogbugzSettings
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.fixture

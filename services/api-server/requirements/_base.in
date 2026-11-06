@@ -22,6 +22,7 @@ aiocache
 aiofiles
 cryptography
 fastapi-pagination
+httpx2 # http clients
 orjson
 packaging
 parse

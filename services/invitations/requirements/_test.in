@@ -14,7 +14,6 @@
 coverage
 faker
 filelock
-httpx
 hypothesis
 pytest
 pytest-asyncio
