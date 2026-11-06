@@ -363,7 +363,7 @@ pyyaml==6.0.3
     #   bokeh
     #   dask
     #   distributed
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
