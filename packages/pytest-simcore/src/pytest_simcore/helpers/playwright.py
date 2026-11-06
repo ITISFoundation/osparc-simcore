@@ -375,9 +375,13 @@ class RobustWebSocket:
         """
 
         def _accept(new_websocket: WebSocket) -> bool:
-            if self.ws_predicate is not None and not self.ws_predicate(new_websocket):
+            if new_websocket.is_closed():
                 return False
-            return not new_websocket.is_closed()
+            if self.ws_predicate is not None:
+                return self.ws_predicate(new_websocket)
+            # a reconnection replaces the socket it reconnects: same endpoint, as in
+            # `_find_live_websocket`, so that an unrelated connection is never adopted
+            return _websocket_endpoint(new_websocket) == _websocket_endpoint(self.ws)
 
         already_connected = _find_live_websocket(self.page, exclude=self.ws, ws_predicate=self.ws_predicate)
         if already_connected is not None:
