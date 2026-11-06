@@ -2,16 +2,23 @@
 # pylint: disable=unused-argument
 
 import json
+import logging
+import os
 from collections.abc import Iterable
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
+from pydantic import SecretStr
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.registry import (
     DOCKER_CONFIG_JSON_PATH,
     _login_registry,
+    _RegistryNotReachableError,
 )
+from simcore_service_dynamic_sidecar.core.utils import CommandResult
 
 
 def _get_registry_config(
@@ -101,3 +108,87 @@ async def test__login_registry(
     config_json = json.loads(DOCKER_CONFIG_JSON_PATH.read_text())
     assert len(config_json["auths"]) == 1
     assert registry_settings.REGISTRY_URL in config_json["auths"]
+
+
+def _create_registry_settings(password: str) -> RegistrySettings:
+    return RegistrySettings(
+        REGISTRY_AUTH=True,
+        REGISTRY_URL="localhost:1111",
+        REGISTRY_USER="testuser",
+        REGISTRY_PW=SecretStr(password),
+        REGISTRY_SSL=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "response_message",
+    [
+        "Error response from daemon: unauthorized: authentication required",
+        "Execution timed out after 5 secs",
+    ],
+)
+async def test__login_registry_does_not_leak_password_when_login_fails(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    response_message: str,
+) -> None:
+    password = "s3cr3t-with-a-quote'-inside"  # noqa: S105
+    caplog.set_level(logging.DEBUG)
+
+    async def _finish_with_failure(command: str, **kwargs) -> CommandResult:
+        assert kwargs.get("pipe_as_input") == f"{password}\n"
+        return CommandResult(success=False, message=response_message, command=command, elapsed=5.0)
+
+    mocked_async_command = mocker.patch(
+        "simcore_service_dynamic_sidecar.core.registry.async_command",
+        side_effect=_finish_with_failure,
+    )
+
+    with pytest.raises(_RegistryNotReachableError) as exc_info:
+        await _login_registry(_create_registry_settings(password))
+
+    assert mocked_async_command.await_args is not None
+    executed_command: str = mocked_async_command.await_args.args[0]
+    assert password not in executed_command
+    assert password not in caplog.text
+    assert password not in f"{exc_info.value}"
+
+
+async def test__login_registry_passes_password_to_docker_on_stdin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Runs against a fake `docker` executable that dumps what it receives"""
+    password = "s3cr3t-with-a-quote'-inside"  # noqa: S105
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    argv_file = tmp_path / "argv.txt"
+    stdin_file = tmp_path / "stdin.txt"
+    fake_docker = fake_bin / "docker"
+    fake_docker.write_text(
+        "\n".join(
+            [
+                "#!/bin/sh",
+                'printf "%s\\n" "$*" > "$FAKE_DOCKER_ARGV"',
+                'cat > "$FAKE_DOCKER_STDIN"',
+                'echo "Login Succeeded"',
+                "",
+            ]
+        )
+    )
+    fake_docker.chmod(0o755)
+
+    monkeypatch.setenv("PATH", f"{fake_bin}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("FAKE_DOCKER_ARGV", f"{argv_file}")
+    monkeypatch.setenv("FAKE_DOCKER_STDIN", f"{stdin_file}")
+    caplog.set_level(logging.DEBUG)
+
+    await _login_registry(_create_registry_settings(password))
+
+    assert stdin_file.read_text() == f"{password}\n"
+    received_argv = argv_file.read_text()
+    assert "--password-stdin" in received_argv
+    assert password not in received_argv
+    assert password not in caplog.text
