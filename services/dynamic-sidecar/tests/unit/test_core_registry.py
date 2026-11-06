@@ -131,11 +131,11 @@ async def test__login_registry_does_not_leak_password_when_login_fails(
     mocker: MockerFixture,
     caplog: pytest.LogCaptureFixture,
     response_message: str,
-) -> None:
+):
     password = "s3cr3t-with-a-quote'-inside"  # noqa: S105
     caplog.set_level(logging.DEBUG)
 
-    async def _finish_with_failure(command: str, **kwargs) -> CommandResult:
+    async def _finish_with_failure(command: str, **kwargs: object) -> CommandResult:
         assert kwargs.get("pipe_as_input") == f"{password}\n"
         return CommandResult(success=False, message=response_message, command=command, elapsed=5.0)
 
