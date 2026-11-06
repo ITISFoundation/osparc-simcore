@@ -200,6 +200,17 @@ releases:
       - web/helm-values.webserver.yaml.gotmpl
       - web/helm-values.wb-api-server.yaml.gotmpl
 
+  # compose gives wb-auth its own env (not *webserver_environment): auth app factory,
+  # most webserver modules off
+  - name: wb-auth
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
+      - web/helm-values.wb-auth.yaml.gotmpl
+
   - name: wb-garbage-collector
     inherit:
       - template: simcore-service

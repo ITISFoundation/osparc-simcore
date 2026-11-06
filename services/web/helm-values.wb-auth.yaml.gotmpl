@@ -1,0 +1,87 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/webserver
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh runs update-ca-certificates, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+# gunicorn binds 8080 (services/web/server/docker/boot.sh)
+containerPort: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" | quote }}
+service:
+  port: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  APP_NAME: "simcore_service_wb_auth"
+  GUNICORN_CMD_ARGS: {{ requiredEnv "WEBSERVER_GUNICORN_CMD_ARGS" | quote }}
+  LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: "auth"
+  REST_SWAGGER_API_DOC_ENABLED: "0"
+  SESSION_COOKIE_HTTPONLY: {{ requiredEnv "SESSION_COOKIE_HTTPONLY" | quote }}
+  SESSION_COOKIE_MAX_AGE: {{ requiredEnv "SESSION_COOKIE_MAX_AGE" | quote }}
+  SESSION_COOKIE_SAMESITE: {{ requiredEnv "SESSION_COOKIE_SAMESITE" | quote }}
+  SESSION_COOKIE_SECURE: {{ requiredEnv "SESSION_COOKIE_SECURE" | quote }}
+  WEBSERVER_ACTIVITY: "null"
+  WEBSERVER_ANNOUNCEMENTS: "0"
+  WEBSERVER_APP_FACTORY_NAME: "WEBSERVER_AUTHZ_APP_FACTORY"
+  WEBSERVER_CATALOG: "null"
+  WEBSERVER_CELERY: "null"
+  WEBSERVER_CHATBOT: "null"
+  WEBSERVER_CONVERSATIONS: "false"
+  WEBSERVER_DB_LISTENER: "0"
+  WEBSERVER_DIAGNOSTICS: {{ requiredEnv "WB_AUTH_DIAGNOSTICS" | quote }}
+  WEBSERVER_DIRECTOR_V2: "null"
+  WEBSERVER_EXPORTER: "null"
+  WEBSERVER_FOGBUGZ: "null"
+  WEBSERVER_FOLDERS: "0"
+  WEBSERVER_FRONTEND: "null"
+  WEBSERVER_FUNCTIONS: "0"
+  WEBSERVER_GARBAGE_COLLECTOR: "null"
+  WEBSERVER_GROUPS: "0"
+  WEBSERVER_HOST: {{ requiredEnv "WB_AUTH_WEBSERVER_HOST" | quote }}
+  WEBSERVER_INVITATIONS: "null"
+  WEBSERVER_LICENSES: "null"
+  WEBSERVER_LOCALIZED_MESSAGES_ENABLED: {{ requiredEnv "WEBSERVER_LOCALIZED_MESSAGES_ENABLED" | quote }}
+  WEBSERVER_LOGIN: "null"
+  WEBSERVER_LOGLEVEL: {{ requiredEnv "WB_AUTH_LOGLEVEL" | quote }}
+  WEBSERVER_NOTIFICATIONS: "0"
+  WEBSERVER_PAYMENTS: "null"
+  WEBSERVER_PORT: {{ requiredEnv "WB_AUTH_WEBSERVER_PORT" | quote }}
+  WEBSERVER_PRODUCTS: "1"
+  WEBSERVER_PROFILING: {{ requiredEnv "WB_AUTH_PROFILING" | quote }}
+  WEBSERVER_PROJECTS: "null"
+  WEBSERVER_RABBITMQ: "null"
+  WEBSERVER_REALTIME_COLLABORATION: "null"
+  WEBSERVER_REDIS: "null"
+  WEBSERVER_RESOURCE_USAGE_TRACKER: "null"
+  WEBSERVER_RPC_NAMESPACE: "null"
+  WEBSERVER_SCICRUNCH: "null"
+  WEBSERVER_SOCKETIO: "0"
+  WEBSERVER_STATICWEB: "null"
+  WEBSERVER_STORAGE: "null"
+  WEBSERVER_STUDIES_DISPATCHER: "null"
+  WEBSERVER_TAGS: "0"
+  WEBSERVER_TRACING: {{ requiredEnv "WB_AUTH_TRACING" | quote }}
+  WEBSERVER_USERS: "null"
+
+secretEnv:
+  SESSION_SECRET_KEY: {{ requiredEnv "WEBSERVER_SESSION_SECRET_KEY" | quote }}
+
+# the image's HEALTHCHECK probes /v0/health
+probes:
+  startup:
+    httpGet:
+      path: /v0/health
+  readiness:
+    httpGet:
+      path: /v0/health
+  liveness:
+    httpGet:
+      path: /v0/health
