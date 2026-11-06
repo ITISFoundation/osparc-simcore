@@ -211,6 +211,21 @@ releases:
       - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
       - web/helm-values.wb-auth.yaml.gotmpl
 
+  - name: wb-db-event-listener
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/director-v2
+      - {{ $namespace }}/resource-usage-tracker
+    values:
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - web/helm-values.wb-db-event-listener.yaml.gotmpl
+
   - name: wb-garbage-collector
     inherit:
       - template: simcore-service
