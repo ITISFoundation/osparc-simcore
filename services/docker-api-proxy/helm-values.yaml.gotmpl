@@ -1,0 +1,84 @@
+{{- $port := 8888 -}}
+{{- $basicAuth := printf "%s:%s" (requiredEnv "DOCKER_API_PROXY_USER") (requiredEnv "DOCKER_API_PROXY_PASSWORD") | b64enc -}}
+
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/docker-api-proxy
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh adds scu to the docker socket's group, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+  # the caddy image setcaps /usr/bin/caddy, so execve of it needs that cap in the bounding set
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - DAC_READ_SEARCH
+      - SETGID
+      - SETUID
+      - CHOWN
+      - NET_BIND_SERVICE
+
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+
+containerPort: {{ $port }}
+service:
+  port: {{ $port }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  DOCKER_API_PROXY_USER: {{ requiredEnv "DOCKER_API_PROXY_USER" | quote }}
+
+secretEnv:
+  DOCKER_API_PROXY_PASSWORD: {{ requiredEnv "DOCKER_API_PROXY_PASSWORD" | quote }}
+
+# caddy puts basic auth on every route, so probe /version with credentials as the image's HEALTHCHECK does
+probes:
+  startup:
+    exec: null
+    httpGet:
+      path: /version
+      port: http
+      httpHeaders:
+        - name: Authorization
+          value: Basic {{ $basicAuth }}
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    exec: null
+    httpGet:
+      path: /version
+      port: http
+      httpHeaders:
+        - name: Authorization
+          value: Basic {{ $basicAuth }}
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    exec: null
+    httpGet:
+      path: /version
+      port: http
+      httpHeaders:
+        - name: Authorization
+          value: Basic {{ $basicAuth }}
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
