@@ -168,6 +168,18 @@ releases:
       - _shared/helm-values.tracing.yaml.gotmpl
       - notifications/helm-values.yaml.gotmpl
 
+  - name: notifications-worker
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - notifications/helm-values.yaml.gotmpl
+      - notifications/helm-values.notifications-worker.yaml.gotmpl
+
   - name: payments
     inherit:
       - template: simcore-service

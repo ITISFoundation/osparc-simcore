@@ -1,0 +1,39 @@
+# a celery worker serves no HTTP
+service:
+  enabled: false
+
+env:
+  CELERY_CONCURRENCY: {{ requiredEnv "NOTIFICATIONS_WORKER_CELERY_CONCURRENCY" | quote }}
+  CELERY_POOL: "prefork"
+  CELERY_QUEUES: "notifications"
+  HEALTHCHECK_MODE: "heartbeat"
+  NODE_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  NOTIFICATIONS_BOOT_SERVER_MODE: "AS_CELERY_WORKER"
+  NOTIFICATIONS_EMAIL_RATE_LIMIT: {{ requiredEnv "NOTIFICATIONS_EMAIL_RATE_LIMIT" | quote }}
+  NOTIFICATIONS_WORKER_NAME: "notifications-worker-$(NODE_NAME)-$(POD_NAME)-$(POD_UID)"
+  POD_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  POD_UID:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.uid
+
+# healthy == celery heartbeat written to /tmp/heartbeat, as HEALTHCHECK_MODE says
+probes:
+  startup:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+  readiness:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+  liveness:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
