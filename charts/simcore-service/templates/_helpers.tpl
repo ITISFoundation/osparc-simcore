@@ -13,15 +13,21 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
 {{- end -}}
 
+{{- /*
+Map entries (valueFrom) are rendered before plain values: Kubernetes expands
+$(VAR) only from entries earlier in the list, and range sorts map keys.
+*/ -}}
 {{- define "simcore-service.containerEnv" -}}
 {{- range $name, $v := .Values.env }}
-{{- if not (kindIs "invalid" $v) }}
+{{- if kindIs "map" $v }}
 - name: {{ $name }}
-  {{- if kindIs "map" $v }}
   {{- toYaml $v | nindent 2 }}
-  {{- else }}
+{{- end }}
+{{- end }}
+{{- range $name, $v := .Values.env }}
+{{- if not (or (kindIs "invalid" $v) (kindIs "map" $v)) }}
+- name: {{ $name }}
   value: {{ $v | toString | quote }}
-  {{- end }}
 {{- end }}
 {{- end }}
 {{- end -}}
