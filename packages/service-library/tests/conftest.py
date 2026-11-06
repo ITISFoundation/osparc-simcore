@@ -99,8 +99,11 @@ async def _get_redis_client_sdk(
             await asyncio.wait_for(client.shutdown(), timeout=5.0)
 
     async def _cleanup_redis_data(clients_manager: RedisClientsManager) -> None:
+        # flushdb (not flushall): each client is bound to its own logical database, and under
+        # xdist the workers share one valkey container, so flushall would wipe the data of the
+        # other workers running concurrently
         for db in RedisDatabase:
-            await clients_manager.client(db).redis.flushall()
+            await clients_manager.client(db).redis.flushdb()
 
     async with RedisClientsManager(
         {RedisManagerDBConfig(database=db) for db in RedisDatabase},

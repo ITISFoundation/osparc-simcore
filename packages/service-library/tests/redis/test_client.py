@@ -121,7 +121,7 @@ async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
             assert client.is_healthy is True
 
     # cleanup
-    await client.redis.flushall()
+    await client.redis.flushdb()
     await client.shutdown()
 
 
