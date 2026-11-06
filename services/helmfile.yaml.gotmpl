@@ -19,6 +19,15 @@ templates:
     chart: ../charts/simcore-service
 
 releases:
+  - name: agent
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - agent/helm-values.yaml.gotmpl
+
   - name: api-server
     inherit:
       - template: simcore-service
