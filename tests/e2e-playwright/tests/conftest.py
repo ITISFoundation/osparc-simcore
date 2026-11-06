@@ -360,6 +360,15 @@ def browser_context_args(
 
 
 @pytest.fixture
+def page(page: Page) -> Page:
+    """Overrides pytest-playwright's ``page``: every page a test uses records its websockets from
+    creation, before any navigation (see ``start_websocket_tracking``).
+    """
+    start_websocket_tracking(page)
+    return page
+
+
+@pytest.fixture
 def register(
     page: Page,
     product_url: AnyUrl,
@@ -408,9 +417,6 @@ def log_in_and_out(
     context: BrowserContext,
 ) -> Iterator[RobustWebSocket]:
     _browser_info = f"{browser.browser_type.name}:{browser.version}({browser.browser_type.executable_path})"
-    # NOTE: before navigating, so that every websocket this page creates is recorded and can be
-    # picked up again later (see `start_websocket_tracking`)
-    start_websocket_tracking(page)
     with log_context(
         logging.INFO,
         f"Open {product_url=} using {user_name=}/{user_password=}/{auto_register=} with {_browser_info}",

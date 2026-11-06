@@ -151,10 +151,14 @@ def _find_live_websocket(
 ) -> WebSocket | None:
     """Returns the most recently created socket of ``page`` that is open and proved its handshake.
 
-    Sockets that never received a frame are skipped: they are either still handshaking or already
-    doomed, and adopting one would hide a connection failure behind a socket that cannot deliver
-    events. Without ``ws_predicate``, only a socket on the same endpoint as ``exclude`` qualifies,
-    so that an unrelated connection is never mistaken for the reconnection of another one.
+    A socket is adopted only after it received a frame: Playwright emits its ``websocket`` event when
+    the request is sent, before the handshake completes, so a frameless socket may still be connecting
+    or have failed. The engine.io protocol answers an accepted connection with an ``open`` packet, so a
+    connected socket.io socket receives a frame shortly after the upgrade.
+    Searching newest first: the engine.io protocol allows one websocket per session and closes extra
+    ones, so an older open socket on the same endpoint is stale.
+    Without ``ws_predicate``, only a socket on the same endpoint as ``exclude`` qualifies, so that an
+    unrelated connection is never mistaken for the reconnection of another one.
     Returns None when the page is not tracked or no socket qualifies.
     """
     for entry in reversed(_TRACKED_WEBSOCKETS.get(page, ())):
@@ -260,9 +264,8 @@ class _ReconnectableEventWaiter:
             msg = f"Timeout {self.timeout}ms exceeded while waiting for {self.event!r}."
             raise PlaywrightTimeoutError(msg)
 
-        ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
-        self._ctx = ctx
-        self._event_info = ctx.__enter__()
+        self._ctx = self._bound_ws.expect_event(self.event, self.predicate, timeout=remaining_timeout)
+        self._event_info = self._ctx.__enter__()
 
 
 @dataclass
@@ -378,10 +381,8 @@ class RobustWebSocket:
 
         already_connected = _find_live_websocket(self.page, exclude=self.ws, ws_predicate=self.ws_predicate)
         if already_connected is not None:
-            # NOTE: the browser's socket.io client reconnects on its own, and it may well have
-            # finished before this wait started (a service cold start fails the first handshakes
-            # for tens of seconds). Waiting for a `websocket` event then hangs until timeout even
-            # though a healthy connection exists, so adopt the socket that was recorded instead.
+            # NOTE: the socket.io client may have finished reconnecting before this wait started;
+            # adopt it instead of waiting for a `websocket` event that was already delivered
             self._use_websocket(already_connected, logger, source="already connected")
             return
 
@@ -1152,12 +1153,10 @@ def _service_frame_attached(page: Page, node_id: str) -> bool:
     Checking the iframe's ``src`` attribute is not an option: the UI navigates the service iframe
     through ``qx.bom.Iframe.setSource``, which calls ``location.replace`` on the content window and
     therefore never writes the attribute.
-    Polled while the page may be busy, so a failed read counts as unattached and the next poll
-    retries it.
+    A failed read returns False instead of raising.
     """
     try:
-        # NOTE: `query_selector` returns immediately: a `Locator` would auto-wait for the element,
-        # which would make each poll of a not-yet-rendered iframe last its own default timeout
+        # NOTE: unlike `Locator`, `query_selector` does not auto-wait, keeping each poll short
         iframe_element = page.query_selector(_service_iframe_selector(node_id))
         if iframe_element is None:
             return False
@@ -1214,7 +1213,9 @@ def _ensure_service_iframe_attached(page: Page, node_id: str, service_url: AnyUr
             f"{service_url}",
             timeout=int(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds() * SECOND),
         )
-        if not _wait_service_frame_attached(page, node_id, _SERVICE_FRAME_ATTACH_TIMEOUT):
+        if _wait_service_frame_attached(page, node_id, _SERVICE_FRAME_ATTACH_TIMEOUT):
+            _logger.info("Service iframe content frame of node %s attached after navigating it", node_id)
+        else:
             _logger.warning(
                 "Service iframe content frame of node %s is still not attached after navigating it to %s",
                 node_id,
