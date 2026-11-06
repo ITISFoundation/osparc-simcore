@@ -47,7 +47,18 @@ releases:
       - template: simcore-service
     values:
       - _shared/helm-values.rabbit.yaml.gotmpl
+      - dask-sidecar/helm-values.yaml.gotmpl
       - dask-sidecar/helm-values.dask-scheduler.yaml.gotmpl
+
+  - name: dask-sidecar
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/dask-scheduler
+    values:
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - dask-sidecar/helm-values.yaml.gotmpl
+      - dask-sidecar/helm-values.dask-sidecar.yaml.gotmpl
 
   - name: datcore-adapter
     inherit:

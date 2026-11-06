@@ -1,49 +1,6 @@
-{{- $port := 8786 -}}
-
-image:
-  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/dask-sidecar
-  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
-
-# entrypoint.sh runs update-ca-certificates and boot.sh writes /home/scu/.config/dask/distributed.yaml, both need a writable rootfs
-containerSecurityContext:
-  readOnlyRootFilesystem: false
-
-containerPort: {{ $port }}
+containerPort: 8786
 service:
-  port: {{ $port }}
+  port: 8786
 
-resources:
-  requests:
-    cpu: 100m
-    memory: 100Mi
-  limits:
-    cpu: "1"
-    memory: 512Mi
-
-# DASK_TLS_* stay unset: boot.sh only enables TLS when DASK_TLS_CA_FILE is set, and the chart cannot mount the
-# .dask-certificates files, so the scheduler serves plain tcp://:8786 (see k8s/.env-devel-k8s-override)
 env:
-  DASK_LOG_FILTER_MAPPING: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
-  DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
-  DASK_SCHEDULER_HOST: {{ requiredEnv "DASK_SCHEDULER_HOST" | quote }}
-  DASK_SIDECAR_KMS: {{ requiredEnv "DASK_SIDECAR_KMS" | quote }}
-  DASK_SIDECAR_LOGLEVEL: {{ requiredEnv "DASK_SIDECAR_LOGLEVEL" | quote }}
   DASK_START_AS_SCHEDULER: "1"
-  SIDECAR_COMP_SERVICES_SHARED_FOLDER: {{ env "SIDECAR_COMP_SERVICES_SHARED_FOLDER" | default "/home/scu/computational_shared_data" | quote }}
-  SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: {{ requiredEnv "SWARM_STACK_NAME" }}_computational_shared_data
-
-# the image's HEALTHCHECK: dask dashboard on 8787; containerPort/service stay the scheduler port 8786,
-# timings are the chart defaults (120 s startup grace, 10 s period) and match the image's start-period/interval
-probes:
-  startup:
-    httpGet:
-      path: /health
-      port: 8787
-  readiness:
-    httpGet:
-      path: /health
-      port: 8787
-  liveness:
-    httpGet:
-      path: /health
-      port: 8787
