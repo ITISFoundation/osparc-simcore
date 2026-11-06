@@ -73,9 +73,9 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.40.60
+boto3==1.43.117
     # via -r requirements/_base.in
-botocore==1.40.60
+botocore==1.43.117
     # via
     #   boto3
     #   s3transfer
@@ -480,7 +480,7 @@ rpds-py==0.30.0
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.14.0
+s3transfer==0.19.3
     # via boto3
 sentry-sdk==2.35.0
     # via fastapi-cloud-cli

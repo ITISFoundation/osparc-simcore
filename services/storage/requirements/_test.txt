@@ -49,12 +49,11 @@ billiard==4.2.1
     #   celery
 blinker==1.9.0
     # via flask
-boto3==1.37.3
+boto3==1.43.117
     # via
-    #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-botocore==1.37.3
+botocore==1.43.117
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
@@ -372,10 +371,8 @@ rpds-py==0.30.0
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.11.3
-    # via
-    #   -c requirements/_base.txt
-    #   boto3
+s3transfer==0.19.3
+    # via boto3
 simcore-service-storage-sdk @ git+https://github.com/ITISFoundation/osparc-simcore.git@cfdf4f86d844ebb362f4f39e9c6571d561b72897#subdirectory=services/storage/client-sdk/python
     # via -r requirements/_test.in
 six==1.17.0

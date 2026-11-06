@@ -4,10 +4,8 @@ aio-pika==10.1.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-aioboto3==15.5.0
+aiobotocore==3.10.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-aiobotocore==2.25.1
-    # via aioboto3
 aiocache==0.12.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
@@ -26,7 +24,6 @@ aiofiles==25.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
-    #   aioboto3
 aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
@@ -81,13 +78,8 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.40.61
+botocore==1.43.117
     # via aiobotocore
-botocore==1.40.61
-    # via
-    #   aiobotocore
-    #   boto3
-    #   s3transfer
 botocore-stubs==1.40.74
     # via types-aiobotocore
 certifi==2026.10.23
@@ -227,7 +219,6 @@ jinja2==3.1.6
 jmespath==1.0.1
     # via
     #   aiobotocore
-    #   boto3
     #   botocore
 jsonref==1.1.0
     # via
@@ -547,8 +538,6 @@ rpds-py==0.30.0
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.14.0
-    # via boto3
 sentry-sdk==2.44.0
     # via fastapi-cloud-cli
 sh==2.2.4
@@ -610,15 +599,15 @@ typer==0.27.3
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiobotocore==3.3.0
+types-aiobotocore==3.10.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
-types-aiobotocore-ec2==3.3.0
+types-aiobotocore-ec2==3.10.0
     # via types-aiobotocore
-types-aiobotocore-kms==3.3.0
+types-aiobotocore-kms==3.10.0
     # via types-aiobotocore
-types-aiobotocore-s3==3.3.0
+types-aiobotocore-s3==3.10.0
     # via types-aiobotocore
-types-aiobotocore-ssm==3.3.0
+types-aiobotocore-ssm==3.10.0
     # via types-aiobotocore
 types-awscrt==0.28.4
     # via botocore-stubs
