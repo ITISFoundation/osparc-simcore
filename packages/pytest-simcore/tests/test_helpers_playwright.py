@@ -539,6 +539,7 @@ class _FakePage:
         self.listeners: defaultdict[str, list[Callable[[Any], None]]] = defaultdict(list)
         self.expect_websocket_calls = 0
         self.expect_websocket_predicates: list[Callable[[Any], bool]] = []
+        self.expect_websocket_timeouts: list[float] = []
 
     def on(self, event: str, listener: Callable[[Any], None]) -> None:
         self.listeners[event].append(listener)
@@ -547,9 +548,10 @@ class _FakePage:
         for listener in self.listeners[event]:
             listener(*args)
 
-    def expect_websocket(self, *args: Any, **_kwargs: Any) -> Any:
+    def expect_websocket(self, *args: Any, **kwargs: Any) -> Any:
         self.expect_websocket_calls += 1
         self.expect_websocket_predicates.append(args[0])
+        self.expect_websocket_timeouts.append(kwargs["timeout"])
         _FAKE_MONOTONIC["seconds"] += _WEBSOCKET_WAIT_SLICE_S
         raise PlaywrightTimeoutError(_WEBSOCKET_WAIT_TIMEOUT_MSG)
 
@@ -743,14 +745,22 @@ class _SocketHandshakingDuringWaitPage(_FakePage):
 def test_reconnecting_socket_handshaking_during_the_creation_wait_is_adopted(
     _no_reconnect_retry_waits: None,
 ):
-    """The registry re-check after a timed-out slice must adopt the now-live socket."""
+    """The registry re-check after a timed-out slice must adopt the now-live socket,
+    and each wait must be requested in a slice, never for the full reconnect timeout."""
     reconnected = _FakeWebSocket(_S4L_WS_URL)
     page = _SocketHandshakingDuringWaitPage(reconnected)
     start_websocket_tracking(cast("Page", page))
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
 
-    websocket = RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1000)
+    # timeout larger than one slice, so a wait for the full timeout would be detectable
+    reconnect_timeout = 10 * playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
+    websocket = RobustWebSocket(
+        page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=reconnect_timeout
+    )
 
     assert websocket.ws is reconnected
     assert websocket._num_reconnections == 1  # noqa: SLF001
     assert page.expect_websocket_calls == 1
+    assert (
+        page.expect_websocket_timeouts[0] == playwright_helpers._WEBSOCKET_CREATION_WAIT_SLICE  # noqa: SLF001
+    )
