@@ -7,6 +7,8 @@ from typing import Any, cast
 
 import httpx2
 import yarl
+from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI, HTTPException, status
 from fastapi_lifespan_manager import LifespanManager
 from models_library.api_schemas_directorv2.dynamic_services_service import (
@@ -15,6 +17,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import ValidationError
 from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
 from servicelib.tracing import setup_httpx_client_tracing
@@ -24,7 +27,29 @@ from settings_library.tracing import TracingSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+def _parse_running_services(raw_services: list[dict[str, Any]]) -> list[RunningDynamicServiceDetails]:
+    running_services: list[RunningDynamicServiceDetails] = []
+    for service in raw_services:
+        try:
+            running_services.append(RunningDynamicServiceDetails(**service))
+        except ValidationError as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Service is running in LEGACY mode (director-v0) but its details cannot be "
+                    "parsed, so it is excluded from this listing",
+                    error=exc,
+                    error_context={"service_as_returned_by_director_v0": service},
+                    error_code=create_error_code(exc),
+                    tip="A service created recently should not run in LEGACY mode: check that "
+                    "'paths-mapping' is part of the image labels. Remove this service manually "
+                    "(docker service rm or via Portainer).",
+                )
+            )
+    return running_services
+
 
 # Module's setup logic ---------------------------------------------
 
@@ -52,12 +77,12 @@ def configure_director_v0(
             app,
             client=client,
         )
-        logger.debug("created client for director-v0: %s", director_v0_settings.endpoint)
+        _logger.debug("created client for director-v0: %s", director_v0_settings.endpoint)
         try:
             yield
         finally:
             await client.aclose()
-            logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
+            _logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
 
     app_lifespan.add(_lifespan)
 
@@ -76,19 +101,19 @@ class DirectorV0Client:
         client: DirectorV0Client = app.state.director_v0_client
         return client
 
-    @handle_errors("Director", logger)
-    @handle_retry(logger)
+    @handle_errors("Director", _logger)
+    @handle_retry(_logger)
     async def _request(self, method: str, tail_path: str, **kwargs) -> httpx2.Response:
         return await self.client.request(method, tail_path, **kwargs)
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def get_running_service_details(self, service_uuid: NodeID) -> RunningDynamicServiceDetails:
         resp = await self._request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
             return RunningDynamicServiceDetails.model_validate(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    @log_decorator(logger=logger)
+    @log_decorator(logger=_logger)
     async def get_running_services(
         self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
@@ -103,7 +128,5 @@ class DirectorV0Client:
         resp.raise_for_status()
 
         if resp.status_code == status.HTTP_200_OK:
-            return [
-                RunningDynamicServiceDetails(**x) for x in cast(list[dict[str, Any]], unenvelope_or_raise_error(resp))
-            ]
+            return _parse_running_services(cast(list[dict[str, Any]], unenvelope_or_raise_error(resp)))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
