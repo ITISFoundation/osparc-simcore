@@ -35,5 +35,5 @@ _require-valid-kind:
 .helmfile-%: _require-valid-helmfile _require-valid-kubectl
 	cd $(REPO_BASE_DIR) || exit 1; \
 	set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
-	helmfile -f services/helmfile.local-ops.yaml.gotmpl $* && \
-	helmfile -f services/helmfile.yaml.gotmpl $*
+	HELM_DIFF_OUTPUT_CONTEXT=5 helmfile -f services/helmfile.local-ops.yaml.gotmpl $* && \
+	HELM_DIFF_OUTPUT_CONTEXT=5 helmfile -f services/helmfile.yaml.gotmpl $*

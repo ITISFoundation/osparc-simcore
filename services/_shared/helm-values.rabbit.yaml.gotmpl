@@ -1,0 +1,8 @@
+env:
+  RABBIT_HOST: {{ requiredEnv "RABBIT_HOST" | quote }}
+  RABBIT_PORT: {{ requiredEnv "RABBIT_PORT" | quote }}
+  RABBIT_SECURE: {{ requiredEnv "RABBIT_SECURE" | quote }}
+  RABBIT_USER: {{ requiredEnv "RABBIT_USER" | quote }}
+
+secretEnv:
+  RABBIT_PASSWORD: {{ requiredEnv "RABBIT_PASSWORD" | quote }}

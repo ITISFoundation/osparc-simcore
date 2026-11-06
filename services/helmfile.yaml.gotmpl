@@ -10,13 +10,13 @@ helmDefaults:
   # helm diff: avoid errors on 1st installation
   disableValidation: true
 
+# values are listed per release, not in the template: helmfile appends release
+# values after template values, and the service's own file must come last to win
 templates:
   simcore-service:
     namespace: {{ $namespace }}
     createNamespace: true
     chart: ../charts/simcore-service
-    values:
-      - "{{`{{ .Release.Name }}`}}/helm-values.yaml.gotmpl"
 
 releases:
   - name: catalog
@@ -24,14 +24,29 @@ releases:
       - template: simcore-service
     needs:
       - {{ $namespace }}/director
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - catalog/helm-values.yaml.gotmpl
 
   - name: datcore-adapter
     inherit:
       - template: simcore-service
+    values:
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - datcore-adapter/helm-values.yaml.gotmpl
 
   - name: director
     inherit:
       - template: simcore-service
+    values:
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.registry.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - director/helm-values.yaml.gotmpl
 
   # no needs on webserver: webserver needs director-v2, that would be a cycle
   - name: director-v2
@@ -42,80 +57,144 @@ releases:
       - {{ $namespace }}/director
       - {{ $namespace }}/resource-usage-tracker
       - {{ $namespace }}/storage
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.registry.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - director-v2/helm-values.yaml.gotmpl
 
   - name: docker-api-proxy
     inherit:
       - template: simcore-service
+    values:
+      - docker-api-proxy/helm-values.yaml.gotmpl
 
   - name: invitations
     inherit:
       - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - invitations/helm-values.yaml.gotmpl
 
   - name: migration
     inherit:
       - template: simcore-service
+    values:
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - migration/helm-values.yaml.gotmpl
 
   - name: notifications
     inherit:
       - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - notifications/helm-values.yaml.gotmpl
 
   - name: payments
     inherit:
       - template: simcore-service
     needs:
       - {{ $namespace }}/resource-usage-tracker
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - payments/helm-values.yaml.gotmpl
 
   - name: resource-usage-tracker
     inherit:
       - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - resource-usage-tracker/helm-values.yaml.gotmpl
 
   - name: static-webserver
     inherit:
       - template: simcore-service
+    values:
+      - static-webserver/helm-values.yaml.gotmpl
 
   - name: storage
     inherit:
       - template: simcore-service
     needs:
       - {{ $namespace }}/datcore-adapter
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - storage/helm-values.yaml.gotmpl
 
-  # celery workers of storage: no own service folder, so no inherit (its values path
-  # would resolve to sto-worker/helm-values.yaml.gotmpl); later files win
   - name: sto-worker
-    namespace: {{ $namespace }}
-    createNamespace: true
-    chart: ../charts/simcore-service
+    inherit:
+      - template: simcore-service
     needs:
       - {{ $namespace }}/storage
     values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker.yaml.gotmpl
 
   - name: sto-worker-cpu-bound
-    namespace: {{ $namespace }}
-    createNamespace: true
-    chart: ../charts/simcore-service
+    inherit:
+      - template: simcore-service
     needs:
       - {{ $namespace }}/storage
     values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.s3.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
 
   - name: wb-garbage-collector
-    namespace: {{ $namespace }}
-    createNamespace: true
-    chart: ../charts/simcore-service
+    inherit:
+      - template: simcore-service
     needs:
       - {{ $namespace }}/director-v2
       - {{ $namespace }}/resource-usage-tracker
       - {{ $namespace }}/storage
     values:
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
       - web/helm-values.wb-garbage-collector.yaml.gotmpl
 
   - name: webserver
-    namespace: {{ $namespace }}
-    createNamespace: true
-    chart: ../charts/simcore-service
+    inherit:
+      - template: simcore-service
     needs:
       - {{ $namespace }}/catalog
       - {{ $namespace }}/director-v2
@@ -124,4 +203,15 @@ releases:
       - {{ $namespace }}/resource-usage-tracker
       - {{ $namespace }}/storage
     values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.invitations.yaml.gotmpl
+      - _shared/helm-values.payments.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
       - web/helm-values.webserver.yaml.gotmpl
