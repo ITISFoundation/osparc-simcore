@@ -158,7 +158,7 @@ async def test__login_registry_passes_password_to_docker_on_stdin(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
-) -> None:
+):
     """Runs against a fake `docker` executable that dumps what it receives"""
     password = "s3cr3t-with-a-quote'-inside"  # noqa: S105
 
