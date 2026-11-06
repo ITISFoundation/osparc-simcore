@@ -150,7 +150,9 @@ async def _compute_node_states(graph_data: nx.classes.reportviews.NodeDataView, 
 
 def _node_needs_computation(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
-    needs_computation: bool = node.get(_NODE_MODIFIED_STATE, False) or node.get(_NODE_DEPENDENCIES_TO_COMPUTE, None)
+    needs_computation: bool = bool(
+        node.get(_NODE_MODIFIED_STATE, False) or node.get(_NODE_DEPENDENCIES_TO_COMPUTE, None)
+    )
     return needs_computation
 
 
