@@ -11,7 +11,7 @@ from unittest import mock
 import pytest
 from models_library.projects_state import ProjectStatus, RunningState
 from models_library.rabbitmq_messages import ProgressType
-from playwright.sync_api import ElementHandle, Frame, Locator, Page
+from playwright.sync_api import ElementHandle, Frame, Locator, Page, WebSocket
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
@@ -231,7 +231,7 @@ def test_service_iframe_navigated_by_location_replace_is_not_re_navigated(_no_se
 
     _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
 
-    page.evaluate.assert_not_called()
+    cast("mock.Mock", page).evaluate.assert_not_called()
     iframe_locator.evaluate.assert_not_called()
 
 
@@ -321,7 +321,7 @@ def test_transient_errors_during_polling_still_see_a_late_navigation(
     monkeypatch.setattr(playwright_helpers, "_SERVICE_FRAME_POLL_INTERVAL", timedelta(0))
     mock_page.query_selector.side_effect = _read_fails_then_returns(
         PlaywrightError("Execution context was destroyed"),
-        cast("ElementHandle", page.query_selector.return_value),
+        cast("ElementHandle", mock_page.query_selector.return_value),
     )
 
     _ensure_service_iframe_attached(page, _NODE_ID, _SERVICE_URL)
@@ -523,11 +523,12 @@ class _FakeWebSocket:
 
 
 class _FakePage:
-    """Minimal `Page` stand-in: records event listeners and counts `expect_websocket` waits."""
+    """Minimal `Page` stand-in: records event listeners and the predicates of `expect_websocket` waits."""
 
     def __init__(self) -> None:
         self.listeners: defaultdict[str, list[Callable[[Any], None]]] = defaultdict(list)
         self.expect_websocket_calls = 0
+        self.expect_websocket_predicates: list[Callable[[Any], bool]] = []
 
     def on(self, event: str, listener: Callable[[Any], None]) -> None:
         self.listeners[event].append(listener)
@@ -536,8 +537,9 @@ class _FakePage:
         for listener in self.listeners[event]:
             listener(*args)
 
-    def expect_websocket(self, *_args: Any, **_kwargs: Any) -> Any:
+    def expect_websocket(self, *args: Any, **_kwargs: Any) -> Any:
         self.expect_websocket_calls += 1
+        self.expect_websocket_predicates.append(args[0])
         raise PlaywrightTimeoutError(_WEBSOCKET_WAIT_TIMEOUT_MSG)
 
 
@@ -558,8 +560,8 @@ def _no_reconnect_retry_waits(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_start_websocket_tracking_records_each_page_socket_once():
     page = _FakePage()
 
-    start_websocket_tracking(page)
-    start_websocket_tracking(page)
+    start_websocket_tracking(cast("Page", page))
+    start_websocket_tracking(cast("Page", page))
 
     assert len(page.listeners["websocket"]) == 1
 
@@ -573,11 +575,11 @@ def test_robust_websocket_adopts_the_socket_that_reconnected_before_it_was_creat
     although a working connection was already there.
     """
     page = _FakePage()
-    start_websocket_tracking(page)
+    start_websocket_tracking(cast("Page", page))
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
     live_socket = _connected_socket(page, _S4L_WS_URL)
 
-    websocket = RobustWebSocket(page=page, ws=dead_socket)
+    websocket = RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket))
 
     assert websocket.ws is live_socket
     assert websocket._num_reconnections == 1  # noqa: SLF001
@@ -589,12 +591,12 @@ def test_robust_websocket_adopts_a_socket_matching_its_predicate_only(
 ):
     """A live connection to another endpoint is not the reconnection of this one."""
     page = _FakePage()
-    start_websocket_tracking(page)
+    start_websocket_tracking(cast("Page", page))
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
     _connected_socket(page, "https://other-node.services.example.org/socket.io/?EIO=4&transport=websocket")
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=page, ws=dead_socket, reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls > 0
 
@@ -605,13 +607,13 @@ def test_robust_websocket_does_not_adopt_a_socket_that_never_proved_its_handshak
     """A socket.io connection refused by a cold-starting service still creates a socket: adopting
     a socket that received no frame would report a dead connection as healthy."""
     page = _FakePage()
-    start_websocket_tracking(page)
+    start_websocket_tracking(cast("Page", page))
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
     handshaking_socket = _FakeWebSocket(_S4L_WS_URL)
     page.emit("websocket", handshaking_socket)
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=page, ws=dead_socket, reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls > 0
 
@@ -619,10 +621,28 @@ def test_robust_websocket_does_not_adopt_a_socket_that_never_proved_its_handshak
 def test_robust_websocket_falls_back_to_waiting_for_a_new_socket(_no_reconnect_retry_waits: None):
     """Without a tracked reconnection, the original wait for a new websocket must still run."""
     page = _FakePage()
-    start_websocket_tracking(page)
+    start_websocket_tracking(cast("Page", page))
     dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
 
     with pytest.raises(PlaywrightTimeoutError):
-        RobustWebSocket(page=page, ws=dead_socket, reconnect_timeout=1)
+        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
 
     assert page.expect_websocket_calls == 3
+
+
+def test_fallback_wait_only_accepts_a_socket_on_the_dead_sockets_endpoint(
+    _no_reconnect_retry_waits: None,
+):
+    """Without a ws_predicate, a new socket on another URL is not this socket's reconnection."""
+    page = _FakePage()
+    start_websocket_tracking(cast("Page", page))
+    dead_socket = _FakeWebSocket(_S4L_WS_URL, closed=True)
+
+    with pytest.raises(PlaywrightTimeoutError):
+        RobustWebSocket(page=cast("Page", page), ws=cast("WebSocket", dead_socket), reconnect_timeout=1)
+
+    accept = page.expect_websocket_predicates[0]
+    reconnected_url = f"https://{_NODE_ID}.services.example.org/socket.io/?EIO=4&transport=websocket&sid=new"
+    assert accept(_FakeWebSocket(reconnected_url))
+    assert not accept(_FakeWebSocket("https://other-node.services.example.org/socket.io/?EIO=4"))
+    assert not accept(_FakeWebSocket(reconnected_url, closed=True))

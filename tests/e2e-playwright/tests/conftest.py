@@ -37,9 +37,11 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
-    start_websocket_tracking,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
+from pytest_simcore.playwright_tracking import context, page
+
+__all__ = ["context", "page"]  # re-exported pytest fixtures
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
 _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
@@ -357,15 +359,6 @@ def browser_context_args(
             "password": basic_auth_password,
         }
     return context_args
-
-
-@pytest.fixture
-def page(page: Page) -> Page:
-    """Overrides pytest-playwright's ``page``: every page a test uses records its websockets from
-    creation, before any navigation (see ``start_websocket_tracking``).
-    """
-    start_websocket_tracking(page)
-    return page
 
 
 @pytest.fixture
