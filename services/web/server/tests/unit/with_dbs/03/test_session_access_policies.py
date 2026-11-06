@@ -27,6 +27,12 @@ from simcore_service_webserver.session.access_policies import (
 )
 from simcore_service_webserver.session.plugin import setup_session
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 async def client(

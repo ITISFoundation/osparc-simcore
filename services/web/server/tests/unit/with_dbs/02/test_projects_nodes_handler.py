@@ -76,6 +76,8 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -380,7 +382,7 @@ async def test_create_node(
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
     postgres_db: sa.engine.Engine,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -416,7 +418,7 @@ async def test_create_node(
         # the dask formula (t3.medium: 1.9 CPU / 3865470566 B) right away; dynamic
         # and frontend nodes are stored with the catalog's default resources and no
         # link (a dynamic node links at start).
-        state = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+        state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
         new_node_state = state[NodeID(node_id)]
         if node_class == "comp":
             mocked_director_v2_node_sizing.assert_called_once()
@@ -442,6 +444,11 @@ def standard_user_role() -> tuple[str, tuple]:
 
 
 @pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.docker_exclusive(
+    reason="150 node creations and 150 deletions in parallel saturate this worker's event loop "
+    "and the shared services, which makes other workers lose their redis locks and socketio "
+    "notifications"
+)
 async def test_create_and_delete_many_nodes_in_parallel(
     mock_dynamic_scheduler: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],

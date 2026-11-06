@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator
 from typing import Any
 
 import distributed
@@ -49,14 +49,12 @@ def dask_workers_config() -> dict[str, Any]:
 
 
 @pytest.fixture
-def dask_scheduler_config(
-    unused_tcp_port_factory: Callable,
-) -> dict[str, Any]:
+def dask_scheduler_config() -> dict[str, Any]:
     return {
         "cls": distributed.Scheduler,
         "options": {
-            "port": unused_tcp_port_factory(),
-            "dashboard_address": f":{unused_tcp_port_factory()}",
+            "port": 0,
+            "dashboard_address": ":0",
             "preload": ("dask_task_models_library.plugins.task_life_cycle_scheduler_plugin",),
         },
     }

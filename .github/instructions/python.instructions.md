@@ -37,6 +37,17 @@ Target the Python version in `.python-version`.
   never rebound even though its value changes per context, so declare it as
   `Final[Annotated[ContextVar[T], doc(...)]]`.
 
+  ```python
+  # wrong: the rationale sits in a comment above the constant
+  # per-request timeout
+  _MGMT_API_TIMEOUT_S: Final[int] = 10
+
+  # right: the rationale travels with the declaration
+  _MGMT_API_TIMEOUT_S: Final[Annotated[int, doc("per-request timeout")]] = 10
+  ```
+
+  Import `doc` from `annotated_types` and `Annotated`/`Final` from `typing`.
+
 ## Documentation
 
 - Prefer clear names, types, and small functions over comments.

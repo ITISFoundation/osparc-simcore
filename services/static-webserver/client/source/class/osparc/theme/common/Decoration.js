@@ -191,7 +191,6 @@ qx.Theme.define("osparc.theme.common.Decoration",
             style:
               {width: [0, 1, 0, 0]}
           },
-      // eslint-disable-next-line no-dupe-keys
       "main-bottom":
           {
             include: "main",

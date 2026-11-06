@@ -3,13 +3,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import httpx
+import httpx2
 from fastapi import status
 
 
 async def test_healthcheck(
     configure_registry_access,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     api_version_prefix: str,
 ):
     resp = await client.get(f"/{api_version_prefix}/")

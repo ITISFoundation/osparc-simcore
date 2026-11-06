@@ -1,12 +1,11 @@
+# pylint:disable=too-many-arguments
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
-from collections.abc import Callable, Mapping
-from typing import Any
+from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 
-import aiodocker
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -15,6 +14,8 @@ from models_library.rabbitmq_messages import (
     RabbitAutoscalingStatusMessage,
     RabbitMessageBase,
 )
+from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
@@ -23,7 +24,6 @@ from simcore_service_autoscaling.modules.rabbitmq import (
     get_rabbitmq_client,
     post_message,
 )
-from tenacity import retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -61,7 +61,7 @@ def rabbit_autoscaling_message(faker: Faker) -> RabbitAutoscalingStatusMessage:
 @pytest.fixture
 def rabbit_log_message(faker: Faker) -> LoggerRabbitMessage:
     return LoggerRabbitMessage(
-        user_id=faker.pyint(min_value=1),
+        user_id=TypeAdapter(UserID).validate_python(faker.pyint(min_value=1)),
         project_id=faker.uuid4(cast_to=None),  # type: ignore
         node_id=faker.uuid4(cast_to=None),  # type: ignore
         messages=faker.pylist(allowed_types=(str,)),
@@ -114,15 +114,19 @@ async def test_post_message(
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    wait_till_queue_has_consumer: Callable[[str, str], Awaitable[None]],
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
     mocker: MockerFixture,
 ):
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
+    queue_name, _ = await client.subscribe(
         rabbit_message.channel_name,
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS] if rabbit_message.routing_key() else None,
     )
+    await wait_till_queue_has_consumer(queue_name, enabled_rabbitmq.RABBIT_VHOST)
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_message(initialized_app, message=rabbit_message)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -146,36 +150,20 @@ async def test_post_message_with_disabled_rabbit_does_not_raise(
     await post_message(initialized_app, message=rabbit_message)
 
 
-async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) -> None:
-    # remove the rabbit MQ instance
-    rabbit_services = [s for s in await async_docker_client.services.list() if "rabbit" in s["Spec"]["Name"]]
-    await asyncio.gather(*(async_docker_client.services.delete(s["ID"]) for s in rabbit_services))
-
-    @retry(**_TENACITY_RETRY_PARAMS)
-    async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
-        print(f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone...")
-        list_of_tasks = await async_docker_client.containers.list(
-            all=True,
-            filters={
-                "label": [f"com.docker.swarm.service.id={service['ID']}"],
-            },
-        )
-        assert not list_of_tasks
-        print(f"<-- service {service['ID']}:{service['Spec']['Name']} is gone.")
-
-    await asyncio.gather(*(_check_service_task_gone(s) for s in rabbit_services))
-
-
+@pytest.mark.docker_exclusive(
+    reason="pauses the 'rabbit' container of the docker stack shared by all xdist workers, "
+    "freezing the broker the other workers' apps are connected to",
+)
 async def test_post_message_when_rabbit_disconnected(
+    paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_autoscaling_message: RabbitAutoscalingStatusMessage,
-    async_docker_client: aiodocker.Docker,
 ):
-    await _switch_off_rabbit_mq_instance(async_docker_client)
-
-    # now posting should not raise out
     await post_message(initialized_app, message=rabbit_autoscaling_message)
+    async with paused_container("rabbit"):
+        # now posting should not raise out
+        await post_message(initialized_app, message=rabbit_autoscaling_message)

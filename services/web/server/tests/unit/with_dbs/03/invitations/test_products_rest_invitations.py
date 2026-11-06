@@ -28,6 +28,12 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.constants import MSG_LOGGED_OUT, MSG_REGISTRATION_SUCCESS
 from simcore_service_webserver.models import PhoneNumberStr
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "user_role,expected_status",
@@ -132,6 +138,7 @@ async def test_pre_registration_and_invitation_workflow(
     guest_email: str,
     faker: Faker,
     user_phone_number: PhoneNumberStr,
+    country_name: str,
 ):
     requester_info = {
         "firstName": faker.first_name(),
@@ -144,7 +151,7 @@ async def test_pre_registration_and_invitation_workflow(
         "city": faker.city(),
         "state": faker.state(),
         "postalCode": faker.postcode(),
-        "country": faker.country(),
+        "country": country_name,
     }
 
     invitation = InvitationGenerate(

@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 class HasClientInterface(ABC):
     @property
     @abstractmethod
-    def client(self) -> httpx.AsyncClient: ...
+    def client(self) -> httpx2.AsyncClient: ...
 
 
 class HasClientSetupInterface(ABC):
@@ -27,7 +27,7 @@ class HasClientSetupInterface(ABC):
     async def teardown_client(self) -> None: ...
 
 
-class AttachLifespanMixin(HasClientSetupInterface):
+class AttachLifespanMixin(HasClientSetupInterface):  # pylint: disable=abstract-method
     @contextlib.asynccontextmanager
     async def lifespan(self) -> AsyncIterator[None]:
         try:
@@ -45,17 +45,17 @@ class AttachLifespanMixin(HasClientSetupInterface):
 
 
 class BaseHTTPApi(HasClientSetupInterface):
-    def __init__(self, client: httpx.AsyncClient):
+    def __init__(self, client: httpx2.AsyncClient):
         self._client = client
         # Controls all resources lifespan in sync
         self._exit_stack: contextlib.AsyncExitStack = contextlib.AsyncExitStack()
 
     @classmethod
     def from_client_kwargs(cls, **kwargs):
-        return cls(client=httpx.AsyncClient(**kwargs))
+        return cls(client=httpx2.AsyncClient(**kwargs))
 
     @property
-    def client(self) -> httpx.AsyncClient:
+    def client(self) -> httpx2.AsyncClient:
         return self._client
 
     async def setup_client(self) -> None:
@@ -67,13 +67,13 @@ class BaseHTTPApi(HasClientSetupInterface):
             await self._exit_stack.aclose()
 
 
-class HealthMixinMixin(HasClientInterface):
+class HealthMixinMixin(HasClientInterface):  # pylint: disable=abstract-method
     async def ping(self) -> bool:
         """Check whether server is reachable"""
         try:
             await self.client.get("/")
             return True
-        except httpx.RequestError:
+        except httpx2.RequestError:
             return False
 
     async def is_healthy(self) -> bool:
@@ -82,12 +82,12 @@ class HealthMixinMixin(HasClientInterface):
             response = await self.client.get("/")
             response.raise_for_status()
             return True
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             return False
 
     async def check_liveness(self) -> LivenessResult:
         try:
             response = await self.client.get("/")
             return IsResponsive(elapsed=response.elapsed)
-        except httpx.RequestError as err:
+        except httpx2.RequestError as err:
             return IsNonResponsive(reason=f"{err}")

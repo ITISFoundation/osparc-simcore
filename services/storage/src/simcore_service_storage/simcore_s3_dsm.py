@@ -15,6 +15,7 @@ from aws_library.s3 import (
     S3DirectoryMetaData,
     S3KeyNotFoundError,
     S3MetaData,
+    SimcoreS3API,
     UploadedBytesTransferredCallback,
     UploadID,
 )
@@ -332,7 +333,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             if is_file_entry_valid(metadata):
                 updated_fmds.append(convert_db_to_model(metadata))
                 continue
-            updated_fmds.append(convert_db_to_model(await self._update_database_from_storage(metadata)))
+            with suppress(S3KeyNotFoundError):
+                updated_fmd = await self._update_database_from_storage(metadata)
+                updated_fmds.append(convert_db_to_model(updated_fmd))
 
         return ByteSize(sum(fmd.file_size for fmd in updated_fmds))
 
@@ -671,6 +674,20 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         return link
 
+    async def _delete_object_and_subfolders(self, s3_client: SimcoreS3API, file_id: StorageFileID) -> None:
+        """Delete the object stored under `file_id` and its subfolders, leaving
+        keys that only start with `file_id` (e.g. `report.txt.gz`) untouched
+
+        An id without registration is a folder path, so whatever is registered or
+        stored below `file_id/` belongs to it and goes away with it. Deleting an
+        absent key is a success for S3, so the subfolder deletion always runs.
+        """
+        await s3_client.delete_object(bucket=self.simcore_bucket_name, object_key=f"{file_id}")
+        await s3_client.delete_objects_recursively(
+            bucket=self.simcore_bucket_name,
+            prefix=ensure_ends_with(f"{file_id}", "/"),
+        )
+
     async def delete_file(
         self,
         user_id: UserID,
@@ -679,6 +696,21 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         enforce_access_rights: bool = True,
         connection: AsyncConnection | None = None,
     ) -> None:
+        """Delete `file_id` from S3 and from `file_meta_data`
+
+        A stored key is a plain string, so a registered file removes only its exact
+        object, a registered directory removes its `object_name/` subtree, and a soft
+        link removes nothing in S3.
+
+        An id with no registration left is a folder path: the delete then cascades to
+        everything registered under the `file_id/` prefix, which is what deleting an
+        unregistered folder must do (see
+        tests/unit/test_handlers_files.py::test_delete_parent_folder_path_removes_descendants_from_db).
+        Nothing records what an unregistered path used to be, so a repeated delete of a
+        file id cannot be told apart from a folder delete. Entries nested under the id of
+        a registered file are not a supported layout either way -- a file holds no
+        children -- and a repeated delete removes them like any other child entry.
+        """
         #   _   _  ___ _____ _____
         #  | \ | |/ _ \_   _| ____|
         #  |  \| | | | || | |  _|
@@ -698,19 +730,45 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 if not can.delete:
                     raise FileAccessRightError(access_right="delete", file_id=file_id)
 
+            s3_client = get_s3_client(self.app)
+            file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
             try:
-                await get_s3_client(self.app).delete_objects_recursively(
-                    bucket=self.simcore_bucket_name,
-                    prefix=file_id,
-                )
+                # no `connection` here on purpose: reading on a caller-owned connection
+                # autobegins it, which turns the transaction below into a savepoint
+                # nothing ever commits
+                fmd = await file_meta_data_repo.get(file_id=file_id)
+            except FileMetaDataNotFoundError:
+                # e.g. a file stored inside a registered folder: it has no entry of its own
+                fmd = None
+
+            try:
+                if fmd is None:
+                    await self._delete_object_and_subfolders(s3_client, file_id)
+                elif fmd.is_soft_link:
+                    _logger.debug("Removing soft link %s without S3 deletion", file_id)
+                elif fmd.is_directory:
+                    await s3_client.delete_objects_recursively(
+                        bucket=self.simcore_bucket_name,
+                        prefix=ensure_ends_with(f"{fmd.object_name}", "/"),
+                    )
+                else:
+                    # delete exactly this object, keys merely starting with it stay
+                    await s3_client.delete_object(
+                        bucket=self.simcore_bucket_name,
+                        object_key=f"{fmd.object_name}",
+                    )
             except S3KeyNotFoundError:
                 _logger.warning("File %s not found in S3", file_id)
                 # we still need to clean up the database entry (it exists)
                 # and to invalidate the size of the parent directory
 
             async with transaction_context(get_db_engine(self.app), connection) as conn:
-                file_meta_data_repo = FileMetaDataRepository.instance(get_db_engine(self.app))
-                deleted_fmds = await file_meta_data_repo.delete(connection=conn, file_ids=[file_id], recursive=True)
+                # remove child entries only when their objects were deleted above:
+                # an unregistered folder cleanup or a registered directory delete
+                remove_children = fmd is None or (fmd.is_directory and not fmd.is_soft_link)
+                deleted_fmds = await file_meta_data_repo.delete(
+                    connection=conn, file_ids=[file_id], recursive=remove_children
+                )
 
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (
@@ -1202,7 +1260,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         2. if nothing exists in S3, deletes the file metadata entry and aborts the multipart
            upload, if any.
         """
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
 
         list_of_expired_uploads = [
             fmd async for fmd in FileMetaDataRepository.instance(get_db_engine(self.app)).list_fmds(expired_after=now)
@@ -1280,7 +1338,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         older than `STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL` and removes them, S3 object first then the
         file_meta_data entry.
         """
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
         retention = get_application_settings(self.app).STORAGE_CLEANER.STORAGE_CLEANER_EXPORT_RETENTION_INTERVAL
         threshold = now - retention
 
@@ -1446,7 +1504,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         is_directory: bool,
         sha256_checksum: SHA256Str | None,
     ) -> FileMetaDataAtDB:
-        now = datetime.datetime.now(tz=datetime.UTC).replace(tzinfo=None)
+        now = datetime.datetime.now(tz=datetime.UTC)
         upload_expiration_date = now + datetime.timedelta(
             seconds=get_application_settings(self.app).STORAGE_DEFAULT_PRESIGNED_LINK_EXPIRATION_SECONDS
         )

@@ -1,8 +1,8 @@
 #!/usr/bin/env -S uv run --script --no-project
 # /// script
 # requires-python = ">=3.14"
-# dependencies = [] # stdlib-only on purpose: this is the only command the Renovate
-#                   # runner may execute, so it must never fetch anything to start
+# dependencies = ["packaging>=24.2"]  # only for PEP 440 version ordering; the resolutions
+#                                     # this script drives reach PyPI anyway
 # ///
 # ruff: noqa: T201  # the report of a Renovate post-upgrade task is its stdout/stderr log
 """Renovate post-upgrade task (postUpgradeTasks in .renovaterc.jsonc), run by the
@@ -13,10 +13,13 @@ never moves a pin in a parent layer (_base -> _test -> _tools, see
 scripts/makefiles/requirements.mk), so an update can leave the lockfiles
 inconsistent or even unresolvable. This re-runs `make reqs upgrade="<pkg==ver ...>"`
 in every requirements directory the update touches or that pins one of the updated
-packages at another version. Renovate's versions are passed as exact pins on purpose:
+packages at another version. Directories are regenerated constraint-sources-first:
+a lockfile consumed by another directory through --constraint/--requirement must
+hold the new pin before its consumers resolve against it, or those resolutions are
+unsatisfiable. Renovate's versions are passed as exact pins on purpose:
 a bare `make reqs` upgrades everything and a bare package name lets uv pick the
-latest release. Only packages that block the update are passed by name (see
-resync_dir below). A directory that cannot be regenerated is restored and listed in
+latest release. Only packages that block the update are passed on (see resync_dir
+below). A directory that cannot be regenerated is restored and listed in
 renovate-resync-report.md, which Renovate commits to its PR (fileFilters).
 
 Usage: resync_lockfiles.py [PINS_FILE]
@@ -26,6 +29,8 @@ Usage: resync_lockfiles.py [PINS_FILE]
   .github/renovate/resync_lockfiles.example.txt inside a scratch git worktree.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -33,28 +38,83 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Annotated, Final
 
-# the pip-compile lockfiles, same set as pip-compile.managerFilePatterns in .renovaterc.jsonc
-MANAGED: Final[re.Pattern[str]] = re.compile(
+from packaging.version import InvalidVersion, Version
+
+if TYPE_CHECKING:
+    # documentation metadata only, and `annotated-types` is not a dependency of this
+    # script (see the metadata block above): `from __future__ import annotations` keeps
+    # these annotations from ever being evaluated at runtime
+    from annotated_types import doc
+
+MANAGED: Final[
+    Annotated[
+        re.Pattern[str],
+        doc("The managed pip-compile lockfiles, same set as pip-compile.managerFilePatterns in .renovaterc.jsonc"),
+    ]
+] = re.compile(
     r"^(?:.*/)?requirements/_[^/]+\.txt$"
     r"|^(?:api/tests|ci/helpers/requirements|tests/environment-setup/requirements)/requirements\.txt$"
 )
 
-# a "<package>==<version>" pin, extras included, as in `python-socketio[asyncio-client]==5.16.4`
-PIN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?==[A-Za-z0-9._+!-]*[A-Za-z0-9]")
-# a line starting with such a pin, as lockfiles and uv error messages write them
-PIN_AT_LINE_START: Final[re.Pattern[str]] = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?)==([^ ;]+)")
-MAKE_LOG: Final[re.Pattern[str]] = re.compile(r"^make(\[\d+\])?: ")
+PIN: Final[
+    Annotated[
+        re.Pattern[str],
+        doc("A `<package>==<version>` pin, extras included, as in `python-socketio[asyncio-client]==5.16.4`"),
+    ]
+] = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?==[A-Za-z0-9._+!-]*[A-Za-z0-9]")
 
-# rounds of letting uv's blamed packages move before giving up on a directory
-MAX_UNBLOCK_ROUNDS: Final[int] = 5
+PIN_AT_LINE_START: Final[
+    Annotated[re.Pattern[str], doc("A line starting with such a pin, as lockfiles and uv error messages write them")]
+] = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*(?:\[[^\]]+\])?)==([^ ;]+)")
 
-# failure report of the last resync, committed to the PR through
-# postUpgradeTasks.fileFilters so reviewers cannot miss it; removed once a
-# resync runs clean again
-REPORT_FILE: Final[Path] = Path("renovate-resync-report.md")
+MAKE_LOG: Final[
+    Annotated[re.Pattern[str], doc("A line `make` writes as it enters a layer, which ends uv's error block above it")]
+] = re.compile(r"^make(\[\d+\])?: ")
+
+UPGRADE_ENTRY: Final[
+    Annotated[
+        re.Pattern[str],
+        doc(
+            'An entry of a `make reqs upgrade="..."` list that lets its package move: a bare name (`attrs`) or an'
+            " exact pin (`redis==7.4.1`). A cap (`attrs<=25.4.0`) does not, uv may need more than it allows"
+        ),
+    ]
+] = re.compile(r"[^<>=!~]+(?:==[^<>=!~]+)?")
+
+REFERENCE: Final[
+    Annotated[
+        re.Pattern[str],
+        doc(
+            "A line of a pip-compile input consuming another file, e.g."
+            " `--constraint ../../dask-sidecar/requirements/_dask-distributed.txt`. The path is relative to the"
+            " input file, so such a reference names a directory that must resolve before this one"
+        ),
+    ]
+] = re.compile(r"^\s*(?:--constraint|--requirement|-c|-r)[\s=]+(?P<path>\S+)")
+
+MAX_UNBLOCK_ROUNDS: Final[
+    Annotated[
+        int,
+        doc(
+            "Rounds in which the packages uv blames may move before the directory goes to the report. A resolve"
+            " propagates its own moves without them; they only unblock a directory that resolves at nothing"
+        ),
+    ]
+] = 5
+
+REPORT_FILE: Final[
+    Annotated[
+        Path,
+        doc(
+            "The failure report of the last resync, committed to the PR through postUpgradeTasks.fileFilters and"
+            " removed once a resync runs clean"
+        ),
+    ]
+] = Path("renovate-resync-report.md")
 
 
 def normalized(name: str) -> str:
@@ -62,10 +122,13 @@ def normalized(name: str) -> str:
     return re.sub(r"[-_.]+", "-", re.sub(r"\[[^\]]*\]", "", name).lower())
 
 
-def _version_key(version: str) -> list[tuple[int, str]]:
-    # orders versions like GNU `sort -V`: runs of digits compare numerically (so
-    # 3.14.10 > 3.14.9), other characters compare as text and rank below digits
-    return [(int(part), "") if part.isdigit() else (0, part) for part in re.split(r"(\d+)", version) if part]
+def _version_of(version: str) -> Version | None:
+    """The PEP 440 version, or None for something PEP 440 cannot order. A lockfile pin is a
+    PyPI version and parses; the alternative keeps a hand-edited line from stopping a run"""
+    try:
+        return Version(version)
+    except InvalidVersion:
+        return None
 
 
 def parse_pins(text: str) -> list[str]:
@@ -76,16 +139,17 @@ def parse_pins(text: str) -> list[str]:
     satisfy two exact pins of one package, so only the highest version of each
     (PEP 503-normalized) name is kept.
     """
-    highest: dict[str, tuple[list[tuple[int, str]], str]] = {}
+    highest: dict[str, tuple[Version, str]] = {}
     for raw_line in text.splitlines():
         line = raw_line.strip(" \r")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*(\[[^\]]+\])?==[A-Za-z0-9._+!-]+", line):
             continue
         name, _, version = line.partition("==")
+        if (parsed := _version_of(version)) is None:
+            continue
         name = normalized(name)
-        key = _version_key(version)
-        if name not in highest or key > highest[name][0]:
-            highest[name] = (key, line)
+        if name not in highest or parsed > highest[name][0]:
+            highest[name] = (parsed, line)
     return [highest[name][1] for name in sorted(highest)]
 
 
@@ -94,11 +158,42 @@ def git(*args: str) -> str:
     return output.stdout
 
 
+def _highest_pinned_of(paths: Iterable[Path]) -> dict[str, str]:
+    """Highest version found for each (normalized) package name in the given lockfiles"""
+    highest: dict[str, tuple[Version, str]] = {}
+    for path in paths:
+        for line in path.read_text().splitlines():
+            if match := PIN_AT_LINE_START.match(line):
+                name, raw = match.groups()
+                version = _version_of(raw)
+                if version is None:
+                    continue
+                name = normalized(name)
+                if name not in highest or version > highest[name][0]:
+                    highest[name] = (version, raw)
+    return {name: raw for name, (_, raw) in highest.items()}
+
+
+def highest_pinned() -> dict[str, str]:
+    """Highest version every managed lockfile pins for a package, by normalized name.
+
+    Read before any directory is regenerated: a ceiling read later would count the
+    versions this very run moved to, which no lockfile here pinned before.
+    """
+    return _highest_pinned_of(Path(path) for path in git("ls-files").splitlines() if MANAGED.match(path))
+
+
+def highest_pinned_in(directory: str) -> dict[str, str]:
+    """Highest version the lockfiles of one directory pin for each package in them"""
+    return _highest_pinned_of(Path(directory).glob("*.txt"))
+
+
 def directories_to_resync(pins: list[str]) -> list[str]:
     """Directories Renovate modified, plus every directory pinning one of the updated
     packages at another version, so the version Renovate replaces cannot survive
     elsewhere in the monorepo. Names are compared PEP 503-normalized and without extras
-    (`uvicorn[standard]==1.2` matches `uvicorn==1.2`)."""
+    (`uvicorn[standard]==1.2` matches `uvicorn==1.2`). Ordered so that every directory
+    comes after the directories whose lockfiles it consumes."""
     targets: dict[str, str] = {}
     for pin in pins:
         name, _, version = pin.partition("==")
@@ -119,7 +214,50 @@ def directories_to_resync(pins: list[str]) -> list[str]:
                 if targets.get(normalized(name), version) != version:
                     lagging.add(str(Path(lock).parent))
                     break
-    return sorted(changed | lagging)
+    return sort_by_constraints(changed | lagging)
+
+
+def constraint_graph(directories: set[str]) -> dict[str, set[str]]:
+    """Per directory, the other directories whose managed lockfiles one of its `*.in`
+    files consumes through a `--constraint`/`--requirement`. uv treats the pins in a
+    consumed lockfile as hard constraints, so those directories must be regenerated
+    first. Same-directory references are left out (the directory Makefiles chain their
+    own layers), and references to files no `make reqs` regenerates (e.g. the global
+    `constraints.txt`) produce no edge because no order can move their pins."""
+    by_absolute = {str(Path(directory).resolve()): directory for directory in directories}
+    consumed_from: dict[str, set[str]] = {directory: set[str]() for directory in directories}
+    for directory in directories:
+        for template in Path(directory).glob("*.in"):
+            for line in template.read_text().splitlines():
+                if not (match := REFERENCE.match(line)):
+                    continue
+                consumed = (template.parent / match["path"]).resolve()
+                if not MANAGED.match(consumed.as_posix()):
+                    continue
+                source = by_absolute.get(str(consumed.parent))
+                if source and source != directory:
+                    consumed_from[directory].add(source)
+    return consumed_from
+
+
+def sort_by_constraints(directories: set[str]) -> list[str]:
+    """Orders the directories so each is regenerated after every directory whose
+    lockfiles it consumes (Kahn's algorithm), alphabetically among the ready ones so
+    runs stay deterministic. A cycle would make `make` itself deadlock on its
+    prerequisites; rather than loop, the remainder keeps alphabetical order."""
+    pending = {directory: set(sources) for directory, sources in constraint_graph(directories).items()}
+    order: list[str] = []
+    while pending:
+        ready = sorted(directory for directory, sources in pending.items() if not sources)
+        if not ready:
+            order.extend(sorted(pending))
+            break
+        for directory in ready:
+            del pending[directory]
+            order.append(directory)
+        for sources in pending.values():
+            sources.difference_update(ready)
+    return order
 
 
 class DirectorySnapshot:
@@ -182,7 +320,7 @@ def blamed_packages(output: str, directory: str, upgrade: str) -> set[str]:
         name, _, version = pin.partition("==")
         blamed.add(f"{normalized(name)}=={version}")
 
-    free = {normalized(entry.partition("==")[0]) for entry in upgrade.split()}
+    free = {normalized(entry.partition("==")[0]) for entry in upgrade.split() if UPGRADE_ENTRY.fullmatch(entry)}
     names: set[str] = set()
     for lockfile in Path(directory).glob("*.txt"):
         for line in lockfile.read_text().splitlines():
@@ -193,19 +331,23 @@ def blamed_packages(output: str, directory: str, upgrade: str) -> set[str]:
     return names
 
 
-def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot) -> tuple[bool, str]:
+def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot, ceilings: dict[str, str]) -> tuple[bool, str]:
     """Regenerates one directory.
 
     uv treats a lockfile as a hard constraint, so a pin in another layer can leave
     Renovate's pins without a solution, e.g. a new virtualenv in _tools.txt needs
     packaging>=26.3 while _base.txt pins packaging==24.1. uv names such a pin in its
     error, so up to MAX_UNBLOCK_ROUNDS rounds let the blamed packages move as well.
-    Only packages that block the update move.
+    Only packages that block the update move. A freed one may rise no higher than its
+    `ceilings` entry, and a round that fails at that cap frees it afterwards; a package
+    with no ceiling above its pinned version starts free.
 
     Returns (solved, the extra pins that had to move).
     """
-    upgrade = pins
-    for _ in range(MAX_UNBLOCK_ROUNDS + 1):
+    own = highest_pinned_in(directory)
+    freed: dict[str, str] = {}
+    for round_ in range(MAX_UNBLOCK_ROUNDS + 1):
+        upgrade = " ".join([pins, *sorted(freed.values())]).strip()
         process = regenerate(directory, upgrade)
         print(process.stdout, end="")
         if process.returncode == 0:
@@ -220,7 +362,16 @@ def resync_dir(directory: str, pins: str, snapshot: DirectorySnapshot) -> tuple[
             f'warning: {directory}: {" ".join(sorted(names))} blocks "{pins}", letting it move too',
             file=sys.stderr,
         )
-        upgrade = f"{upgrade} {' '.join(sorted(names))}"
+        for name in sorted(names):
+            cap = ceilings.get(name, "")
+            pinned = own.get(name, "")
+            # free when a capped round already failed, or when the cap reaches no higher
+            # than the pin here
+            capped, here = _version_of(cap), _version_of(pinned)
+            if round_ or capped is None or here is None or capped <= here:
+                freed[name] = name
+            else:
+                freed[name] = f"{name}<={cap}"
 
     return False, ""
 
@@ -300,12 +451,13 @@ def main() -> int:
         snapshot = DirectorySnapshot(backup_dir)
 
         upgrade = " ".join(pins)
+        ceilings = highest_pinned()
         unblocked: list[str] = []
         failed: list[str] = []
         for directory in directories:
             print(f"--- {directory}")
             snapshot.snapshot(directory)
-            solved, moved = resync_dir(directory, upgrade, snapshot)
+            solved, moved = resync_dir(directory, upgrade, snapshot, ceilings)
             if solved:
                 if moved:
                     unblocked.append(f"{directory} ({moved})")

@@ -13,16 +13,17 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_storage.storage_schemas import (
+    MAX_NUMBER_OF_PATHS_PER_PAGE,
+    FileUploadSchema,
     PathMetaDataGet,
     PathTotalSizeCreate,
 )
-from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -63,7 +64,7 @@ def _filter_and_group_paths_one_level_deeper(paths: list[Path], prefix: Path) ->
 
 async def _assert_list_paths(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -122,7 +123,7 @@ async def _assert_list_paths(
 
 async def test_list_paths_root_folder_of_empty_returns_nothing(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -158,7 +159,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
 )
 async def test_list_paths_pagination(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -300,7 +301,7 @@ async def test_list_child_paths_empty_page_still_reports_total(
 )
 async def test_list_paths_pagination_large_page(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -349,7 +350,7 @@ async def test_list_paths_pagination_large_page(
 )
 async def test_list_paths(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -505,7 +506,7 @@ async def test_list_paths(
 )
 async def test_list_paths_with_display_name_containing_slashes(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -615,7 +616,7 @@ async def test_list_paths_with_display_name_containing_slashes(
 
 async def _assert_compute_path_size(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -662,7 +663,7 @@ async def _assert_compute_path_size(
 )
 async def test_path_compute_size(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -764,9 +765,84 @@ async def test_path_compute_size(
     assert workspace_total_size == accumulated_subfolder_size
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=5,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=10,
+        )
+    ],
+    ids=str,
+)
+@pytest.mark.regression
+async def test_path_compute_size_with_file_currently_uploading(
+    initialized_app: FastAPI,
+    client: httpx2.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    product_name: ProductName,
+    project_with_seeded_files: tuple[
+        dict[str, Any],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ],
+    project_params: ProjectWithFilesParams,
+):
+    """compute_path_size reports size 0 for a file currently uploading and
+    excludes it from its parent path's total.
+
+    Before https://github.com/ITISFoundation/osparc-simcore/pull/9949, the
+    request on an uploading file's path raised S3KeyNotFoundError (HTTP 404).
+    """
+    assert len(project_params.allowed_file_sizes) == 1, (
+        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    )
+    project, list_of_files = project_with_seeded_files
+    single_file_size = project_params.allowed_file_sizes[0]
+    all_file_ids = [file_id for files_in_node in list_of_files.values() for file_id in files_in_node]
+    in_flight_file_id = all_file_ids[0]
+
+    url = url_from_operation_id(
+        client,
+        initialized_app,
+        "upload_file",
+        location_id=f"{location_id}",
+        file_id=in_flight_file_id,
+    ).with_query(user_id=user_id, product_name=product_name, file_size=f"{int(single_file_size)}")
+    response = await client.put(f"{url}")
+    assert_status(response, status.HTTP_200_OK, FileUploadSchema)
+
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name,
+        path=Path(project["uuid"]),
+        expected_total_size=single_file_size * (len(all_file_ids) - 1),
+    )
+
+    await _assert_compute_path_size(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name,
+        path=Path(in_flight_file_id),
+        expected_total_size=0,
+    )
+
+
 async def test_path_compute_size_inexistent_path(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -803,7 +879,7 @@ async def test_path_compute_size_inexistent_path(
 )
 async def test_list_paths_filters_by_product(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
     create_product: Callable[..., Awaitable[dict[str, Any]]],

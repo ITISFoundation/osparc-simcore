@@ -7,7 +7,7 @@
 import re
 from pathlib import Path
 
-import httpx
+import httpx2
 import jinja2
 import respx
 from faker import Faker
@@ -18,11 +18,11 @@ from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCapture
 
 async def test_capture_http_call(httpbin_base_url: HttpUrl):
     # CAPTURE
-    async with httpx.AsyncClient() as client:
-        response: httpx.Response = await client.get(f"{httpbin_base_url}json")
+    async with httpx2.AsyncClient() as client:
+        response: httpx2.Response = await client.get(f"{httpbin_base_url}json")
         print(response)
 
-        _request: httpx.Request = response.request
+        _request: httpx2.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(
@@ -46,7 +46,7 @@ async def test_capture_http_call(httpbin_base_url: HttpUrl):
                 json=captured.response_body,
             )
 
-            response: httpx.Response = await client.get("http://test.it/json")
+            response: httpx2.Response = await client.get("http://test.it/json")
 
             assert respx_mock[captured.name].called
             assert response.json() == captured.response_body
@@ -55,10 +55,10 @@ async def test_capture_http_call(httpbin_base_url: HttpUrl):
 
 async def test_capture_http_dynamic_call(faker: Faker, httpbin_base_url: str):
     # CAPTURE
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         sample_uid = faker.uuid4()  # used during test sampling
 
-        response: httpx.Response = await client.post(
+        response: httpx2.Response = await client.post(
             f"{httpbin_base_url}anything/{sample_uid}",
             params={"n": 42},
             json={
@@ -68,7 +68,7 @@ async def test_capture_http_dynamic_call(faker: Faker, httpbin_base_url: str):
         )
         print(response)
 
-        _request: httpx.Request = response.request
+        _request: httpx2.Request = response.request
         assert response.request
 
         captured = HttpApiCallCaptureModel.create_from_response(

@@ -5,12 +5,14 @@
 # pylint: disable=unused-variable
 
 
+import base64
 from collections.abc import Callable
+from typing import Annotated, Final
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from cryptography.fernet import Fernet
+from annotated_types import doc
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
@@ -21,6 +23,12 @@ from simcore_service_webserver.session._cookie_storage import (
 )
 from simcore_service_webserver.session.api import get_session
 from simcore_service_webserver.session.settings import SessionSettings
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.fixture
@@ -103,25 +111,41 @@ async def test_security_identity_is_email_and_product(
         assert unencrypted_session.get("AIOHTTP_SECURITY") is None
 
 
+_SESSION_KEY: Final[
+    Annotated[
+        bytes,
+        doc(
+            "a key of fixed content: Fernet.generate_key() would give every xdist worker a different"
+            " test id, and the workers then fail to agree on the collected tests"
+        ),
+    ]
+] = base64.urlsafe_b64encode(b"0" * 32)
+
+
 @pytest.mark.parametrize(
     "session_key",
     [
-        Fernet.generate_key(),
-        # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32], # FAILS: ensure this value has at least 44 characters (type=value_error.any_str.min_length; limit_value=44)
+        _SESSION_KEY,
+        # "REPLACE ME with a key of at least length 44.".encode("utf-8")[:32],
+        # FAILS: value has at least 44 characters (any_str.min_length; limit_value=44)
         b"REPLACE_ME-with_a-key_of-length_44-12345678=",
         b"REPLACE_ME_with_result__Fernet_generate_key=",
         "REPLACE_ME_with_result__Fernet_generate_key=",
-        # "REPLACE_ME_with_a_key_of_44__character_long".encode("utf-8"),  # FAILS: ensure this value has at least 44 characters (type=value_error.any_str.min_length; limit_value=44)
-        # "REPLACE ME with a key of at least length 44.".encode("utf-8"), # FAILS: Invalid session key value='REPLACE ME with a key of at least length 44.': Incorrect padding (type=value_error)
+        # "REPLACE_ME_with_a_key_of_44__character_long".encode("utf-8"),
+        # FAILS: value has at least 44 characters (any_str.min_length; limit_value=44)
+        # "REPLACE ME with a key of at least length 44.".encode("utf-8"),
+        # FAILS: Incorrect padding (type=value_error)
         "REPLACE-ME-with-a-key-of-at-least-length-44=",
         None,
     ],
 )
 def test_session_settings(session_key: str | bytes | None, mock_env_devel_environment: EnvVarsDict):
     if session_key is not None:
-        settings = SessionSettings(WEBSERVER_SESSION_SECRET_KEY=session_key)
+        settings = SessionSettings(
+            WEBSERVER_SESSION_SECRET_KEY=session_key  # pyright: ignore[reportCallIssue]
+        )
     else:
-        settings = SessionSettings()
+        settings = SessionSettings()  # pyright: ignore[reportCallIssue]
 
         WEBSERVER_SESSION_SECRET_KEY = mock_env_devel_environment["WEBSERVER_SESSION_SECRET_KEY"]
         assert settings.SESSION_SECRET_KEY.get_secret_value() == WEBSERVER_SESSION_SECRET_KEY
@@ -130,4 +154,4 @@ def test_session_settings(session_key: str | bytes | None, mock_env_devel_enviro
         # NOTE: we pass here a string!
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value()
     )
-    assert _should_not_raise._fernet is not None  # pylint: disable=protected-access
+    assert _should_not_raise._fernet is not None  # noqa: SLF001  # pylint: disable=protected-access

@@ -1,6 +1,6 @@
 """Interface to communicate with the Resource Usage Tracker (RUT)
 
-- httpx client with base_url to PAYMENTS_RESOURCE_USAGE_TRACKER
+- httpx2 client with base_url to PAYMENTS_RESOURCE_USAGE_TRACKER
 
 """
 

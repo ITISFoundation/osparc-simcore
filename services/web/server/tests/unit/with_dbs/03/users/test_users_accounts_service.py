@@ -37,6 +37,12 @@ from simcore_service_webserver.users.errors import (
 from simcore_service_webserver.users.schemas import UserAccountRestPreRegister
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def _get_other_existing_product_name(
     app: web.Application,
@@ -60,7 +66,7 @@ async def pre_registered_user_created(
     """Creates a pre-registered user and returns the details.
     Automatically cleans up after the test."""
 
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     pre_registered_email = "pre-registered@example.com"
     created_by_user_id = product_owner_user["id"]
 
@@ -77,7 +83,7 @@ async def pre_registered_user_created(
 
     # Create a pre-registered user
     pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=pre_registered_email,
         created_by=created_by_user_id,
         product_name=product_name,
@@ -93,7 +99,7 @@ async def pre_registered_user_created(
     }
 
     # Clean up after test
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(
             sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.id == pre_registration_id)
         )
@@ -166,7 +172,7 @@ async def test_search_users_as_admin_wildcard(
 ):
     """Test searching for users with wildcards"""
     # Arrange
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     email_domain = "@example.com"
 
     # Create multiple pre-registered users with the same domain
@@ -176,7 +182,7 @@ async def test_search_users_as_admin_wildcard(
     # Create pre-registered users
     for email in emails:
         await create_user_pre_registration(
-            asyncpg_engine,
+            sqlalchemy_async_engine,
             email=email,
             created_by=created_by_user_id,
             product_name=product_name,
@@ -201,13 +207,13 @@ async def test_move_user_account_request_to_product_happy_path(
     product_name: ProductName,
     product_owner_user: dict[str, Any],
 ):
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     email = "move-happy@example.com"
     source_product = product_name
     target_product = await _get_other_existing_product_name(app, current_product_name=source_product)
 
     pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=email,
         created_by=product_owner_user["id"],
         product_name=source_product,
@@ -221,7 +227,7 @@ async def test_move_user_account_request_to_product_happy_path(
         moved_by=product_owner_user["id"],
     )
 
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(
                 users_pre_registration_details.c.product_name,
@@ -266,12 +272,12 @@ async def test_move_user_account_request_to_product_fails_if_target_product_not_
     product_owner_user: dict[str, Any],
 ):
     """Test moving pre-registration to non-existent product raises ProductNotFoundError."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     email = "move-invalid-product@example.com"
     invalid_product_name = "non-existent-product-xyz"
 
     pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=email,
         created_by=product_owner_user["id"],
         product_name=product_name,
@@ -292,16 +298,16 @@ async def test_move_user_account_request_to_product_fails_if_reviewed(
     product_name: ProductName,
     product_owner_user: dict[str, Any],
 ):
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email="move-reviewed@example.com",
         created_by=product_owner_user["id"],
         product_name=product_name,
         institution="Reviewed University",
     )
 
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(
             users_pre_registration_details.update()
             .values(account_request_status=AccountRequestStatus.APPROVED)
@@ -323,12 +329,12 @@ async def test_move_user_account_request_to_product_fails_if_linked(
     product_name: ProductName,
     product_owner_user: dict[str, Any],
 ):
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     target_product = await _get_other_existing_product_name(app, current_product_name=product_name)
 
     # Create pre-reg WITHOUT auto-linking so status stays PENDING
     pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email="linked-pending@example.com",
         created_by=product_owner_user["id"],
         product_name=product_name,
@@ -338,7 +344,7 @@ async def test_move_user_account_request_to_product_fails_if_linked(
 
     # Manually set user_id while keeping status=PENDING to simulate
     # a pre-registration linked to an account but not yet reviewed
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         await conn.execute(
             users_pre_registration_details.update()
             .values(user_id=product_owner_user["id"])
@@ -360,19 +366,19 @@ async def test_move_user_account_request_to_product_fails_on_duplicate_target(
     product_name: ProductName,
     product_owner_user: dict[str, Any],
 ):
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
     email = "duplicate-move@example.com"
     target_product = await _get_other_existing_product_name(app, current_product_name=product_name)
 
     source_pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=email,
         created_by=product_owner_user["id"],
         product_name=product_name,
         institution="Source University",
     )
     await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=email,
         created_by=product_owner_user["id"],
         product_name=target_product,
@@ -400,7 +406,7 @@ async def test_pre_register_user_on_second_product_after_reviewed_on_first(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     first_product_final_status: AccountRequestStatus,
 ):
     """A user pre-registered (and reviewed) on product A must be allowed to
@@ -416,12 +422,12 @@ async def test_pre_register_user_on_second_product_after_reviewed_on_first(
     email = "cross-product-prereg@example.com"
     reviewer_id = product_owner_user["id"]
 
-    async with insert_and_get_product_lifespan(asyncpg_engine) as product_b_row:
+    async with insert_and_get_product_lifespan(sqlalchemy_async_engine) as product_b_row:
         product_b = ProductName(product_b_row["name"])
 
         # 1. Pre-register on product A
         pre_registration_id = await create_user_pre_registration(
-            asyncpg_engine,
+            sqlalchemy_async_engine,
             email=email,
             created_by=reviewer_id,
             product_name=product_a,
@@ -433,7 +439,7 @@ async def test_pre_register_user_on_second_product_after_reviewed_on_first(
         # 2. Review the product-A pre-registration (approve or reject)
 
         await _accounts_repository.review_user_pre_registration(
-            asyncpg_engine,
+            sqlalchemy_async_engine,
             pre_registration_id=pre_registration_id,
             reviewed_by=reviewer_id,
             new_status=first_product_final_status,
@@ -468,7 +474,7 @@ async def test_pre_register_user_on_second_product_after_reviewed_on_first(
             )
         finally:
             # Clean up both rows — must run even if the test fails
-            async with asyncpg_engine.connect() as conn:
+            async with sqlalchemy_async_engine.connect() as conn:
                 await conn.execute(
                     sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.pre_email == email)
                 )
@@ -479,7 +485,7 @@ async def test_pre_register_existing_account_user_on_new_product(
     app: web.Application,
     product_name: ProductName,
     product_owner_user: dict[str, Any],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """A user with an existing account (row in `users`) that is pre-registered and
     linked on product A must still be allowed to pre-register on a different product B.
@@ -494,12 +500,12 @@ async def test_pre_register_existing_account_user_on_new_product(
     email = product_owner_user["email"]
     user_id = product_owner_user["id"]
 
-    async with insert_and_get_product_lifespan(asyncpg_engine) as product_b_row:
+    async with insert_and_get_product_lifespan(sqlalchemy_async_engine) as product_b_row:
         product_b = ProductName(product_b_row["name"])
 
         # 1. Pre-register the existing account on product A (auto-links user_id)
         pre_registration_id = await create_user_pre_registration(
-            asyncpg_engine,
+            sqlalchemy_async_engine,
             email=email,
             created_by=user_id,
             product_name=product_a,
@@ -509,7 +515,7 @@ async def test_pre_register_existing_account_user_on_new_product(
         )
 
         # Sanity: the pre-registration is linked to the existing account
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             linked_user_id = await conn.scalar(
                 sa.select(users_pre_registration_details.c.user_id).where(
                     users_pre_registration_details.c.id == pre_registration_id
@@ -546,7 +552,7 @@ async def test_pre_register_existing_account_user_on_new_product(
             )
         finally:
             # Clean up both rows — must run even if the test fails
-            async with asyncpg_engine.connect() as conn:
+            async with sqlalchemy_async_engine.connect() as conn:
                 await conn.execute(
                     sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.pre_email == email)
                 )
@@ -556,8 +562,9 @@ async def test_pre_register_existing_account_user_on_new_product(
 async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
     app: web.Application,
     product_name: ProductName,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     faker: Faker,
+    country_name: str,
     mocker: MockerFixture,
 ):
     email = faker.email()
@@ -571,14 +578,14 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
             "address": faker.address().replace("\n", ", "),
             "city": faker.city(),
             "postalCode": faker.postcode(),
-            "country": faker.country(),
+            "country": country_name,
             "phone": None,
         }
     )
 
     # A concurrent request inserts and commits first ...
     await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=email,
         product_name=product_name,
         pre_first_name=first_name,
@@ -602,7 +609,7 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
             )
 
         # the losing insert left no partial row behind
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             num_rows = await conn.scalar(
                 sa.select(sa.func.count())
                 .select_from(users_pre_registration_details)
@@ -610,7 +617,7 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
             )
         assert num_rows == 1
     finally:
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             await conn.execute(
                 sa.delete(users_pre_registration_details).where(users_pre_registration_details.c.pre_email == email)
             )

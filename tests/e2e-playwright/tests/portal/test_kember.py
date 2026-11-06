@@ -13,7 +13,7 @@ from pytest_simcore.helpers.logging_tools import (
 from pytest_simcore.helpers.playwright import (
     SECOND,
     app_mode_trigger_next_app,
-    check_node_outputs,
+    check_node_files_panel,
     get_node_id_from_service_key,
     run_pipeline_and_wait_done,
 )
@@ -54,7 +54,7 @@ def test_kember(
         run_button_test_id="AppMode_RunBtn",
         timeout_ms=run_pipeline_timeout,
     )
-    check_node_outputs(
+    check_node_files_panel(
         page,
         study_id=project_data["uuid"],
         workbench=workbench,

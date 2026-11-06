@@ -68,7 +68,7 @@ markupsafe==3.0.3
     #   flask
     #   jinja2
     #   werkzeug
-msgpack==1.2.2
+msgpack==1.2.4
     # via locust
 packaging==26.3
     # via pytest
@@ -93,7 +93,7 @@ pygments==2.21.0
     # via pytest
 pytest==9.1.1
     # via locust
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via pydantic-settings
 python-engineio==4.13.5
     # via

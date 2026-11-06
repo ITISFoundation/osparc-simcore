@@ -26,7 +26,8 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     const confirmButton = this.getChildControl("confirm-button");
     this.bind("confirmText", confirmButton, "label");
 
-    this.addCancelButton();
+    const cancelButton = this.addCancelButton();
+    osparc.utils.Utils.setIdToWidget(cancelButton, "confirmationModalCancelBtn");
   },
 
   properties: {
@@ -59,6 +60,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
             center: true,
             minWidth: 100,
           });
+          osparc.utils.Utils.setIdToWidget(control, "confirmationModalOkBtn");
           control.addListener("execute", () => {
             this.setConfirmed(true);
             this.close(1);

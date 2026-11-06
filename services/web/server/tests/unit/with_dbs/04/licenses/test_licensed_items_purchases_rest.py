@@ -20,6 +20,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _LICENSED_ITEM_PURCHASE_GET = rut_licensed_items_purchases.LicensedItemPurchaseGet.model_validate(
     {
         "licensed_item_purchase_id": "beb16d18-d57d-44aa-a638-9727fa4a72ef",

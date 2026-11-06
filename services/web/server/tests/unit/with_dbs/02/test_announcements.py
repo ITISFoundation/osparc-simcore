@@ -25,11 +25,18 @@ from pytest_simcore.pydantic_models import (
     iter_model_examples_in_module,
 )
 from servicelib.aiohttp import status
+from servicelib.redis import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver.announcements._redis import (
     _PUBLIC_ANNOUNCEMENTS_REDIS_KEY,
     Announcement,
 )
+
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 _TEXT_FORMAT = "YYYY-MM-DDTHH:mm:ss+00:00"
 
@@ -50,6 +57,11 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 async def push_announcements_in_redis(
     redis_service: RedisSettings,
 ) -> AsyncIterator[Callable]:
+    """Pushes announcements to the valkey database of this pytest process
+
+    The teardown clears that database only: the valkey server is shared with the other xdist
+    workers, each on its own logical database.
+    """
     ar = aioredis.from_url(
         redis_service.build_redis_dsn(RedisDatabase.ANNOUNCEMENTS),
         decode_responses=True,
@@ -57,14 +69,14 @@ async def push_announcements_in_redis(
 
     async def _push(values: list[Any]) -> list[str]:
         items = [v if isinstance(v, str) else json.dumps(v) for v in values]
-        count = await ar.lpush(_PUBLIC_ANNOUNCEMENTS_REDIS_KEY, *items)
+        count = await handle_redis_returns_union_types(ar.lpush(_PUBLIC_ANNOUNCEMENTS_REDIS_KEY, *items))
         assert count == len(values)
 
         return items
 
     yield _push
 
-    await ar.flushall()
+    await ar.flushdb()
 
 
 async def test_list_empty_announcements(client: TestClient):
@@ -179,7 +191,7 @@ async def test_list_announcements_filtered(client: TestClient, push_announcement
         simcore_service_webserver.announcements._models  # noqa: SLF001
     ),
 )
-def test_model_examples(model_cls: type[BaseModel], example_name: int, example_data: Any):
+def test_model_examples(model_cls: type[BaseModel], example_name: str, example_data: Any):
     assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
 

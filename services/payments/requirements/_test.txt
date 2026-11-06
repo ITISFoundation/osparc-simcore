@@ -21,7 +21,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==24.2.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -29,16 +29,18 @@ bidict==0.23.1
     # via
     #   -c requirements/_base.txt
     #   python-socketio
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.0
-    # via requests
-coverage==7.16.0
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+coverage==7.16.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -46,9 +48,9 @@ docker==7.1.0
     # via -r requirements/_test.in
 faker==40.38.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
-frozenlist==1.5.0
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -109,7 +111,7 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.5.2
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -138,7 +140,7 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -151,7 +153,9 @@ python-socketio==5.16.4
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 requests==2.34.2
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.22.0
     # via -r requirements/_test.in
 simple-websocket==1.1.0

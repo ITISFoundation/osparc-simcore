@@ -52,6 +52,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Information..."),
             icon: "@MaterialIcons/info_outline/14",
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyMenuInfoBtn");
           control.addListener("execute", () => this.__openStudyDetails(), this);
           break;
         case "study-menu-share":
@@ -59,6 +60,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Share..."),
             icon: "@FontAwesomeSolid/share-alt/14",
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyMenuShareBtn");
           control.addListener("execute", () => this.__openAccessRights(), this);
           break;
         case "study-menu-reload":
@@ -66,6 +68,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Reload"),
             icon: "@FontAwesomeSolid/redo-alt/12",
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyMenuReloadBtn");
           control.addListener("execute", () => this.__reloadIFrame(), this);
           break;
         case "study-menu-conversations":
@@ -73,6 +76,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Conversations"),
             icon: "@FontAwesomeSolid/comments/12",
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyMenuConversationsBtn");
           control.addListener("execute", () => osparc.study.Conversations.popUpInWindow(this.getStudy().serialize()), this);
           break;
         case "study-menu-convert-to-pipeline":
@@ -80,6 +84,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Convert to Pipeline"),
             icon: null,
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyMenuConvertToPipelineBtn");
           control.addListener("execute", () => this.__convertToPipelineClicked(), this);
           break;
         case "study-menu-open-logger":
@@ -87,6 +92,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             label: this.tr("Platform Logs..."),
             icon: "@FontAwesomeSolid/download/14"
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyMenuLoggerBtn");
           control.addListener("execute", () => this.fireEvent("openLogger"));
           break;
         case "study-menu-button": {
@@ -107,6 +113,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             allowGrowY: false,
             width: 24,
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyOptionsMenuBtn");
           this._add(control);
           break;
         }

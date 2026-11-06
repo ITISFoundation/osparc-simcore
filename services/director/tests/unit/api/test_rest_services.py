@@ -5,14 +5,14 @@
 
 from urllib.parse import quote
 
-import httpx
+import httpx2
 from fastapi import status
 from fixtures.fake_services import ServiceInRegistryInfoDict
 from models_library.api_schemas_director.services import ServiceDataGet
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
-def _assert_response_and_unwrap_envelope(got: httpx.Response):
+def _assert_response_and_unwrap_envelope(got: httpx2.Response):
     assert got.headers["content-type"] == "application/json"
     assert got.encoding == "utf-8"
 
@@ -42,7 +42,7 @@ def _assert_services(
 async def test_list_services_with_empty_registry(
     docker_registry: str,
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     api_version_prefix: str,
 ):
     assert docker_registry, "docker-registry is not ready?"
@@ -61,7 +61,7 @@ async def test_list_services_with_empty_registry(
 async def test_list_services(
     docker_registry: str,
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
 ):
@@ -80,7 +80,7 @@ async def test_list_services(
 async def test_get_service_bad_request(
     docker_registry: str,
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
 ):
@@ -96,7 +96,7 @@ async def test_get_service_bad_request(
 async def test_list_services_by_service_type(
     docker_registry: str,
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
 ):
@@ -122,7 +122,7 @@ async def test_list_services_by_service_type(
 
 async def test_get_services_by_key_and_version_with_empty_registry(
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     api_version_prefix: str,
 ):
     resp = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
@@ -137,7 +137,7 @@ async def test_get_services_by_key_and_version_with_empty_registry(
 
 async def test_get_services_by_key_and_version(
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
 ):
@@ -165,7 +165,7 @@ async def test_get_services_by_key_and_version(
 
 async def test_get_service_labels(
     configure_registry_access: EnvVarsDict,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
 ):

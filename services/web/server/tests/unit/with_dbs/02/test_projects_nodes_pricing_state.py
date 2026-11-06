@@ -87,12 +87,18 @@ _WORKBENCH: dict[str, Any] = {
     },
 }
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_project_creation_links_default_unit_and_sizes_computational_nodes(
     client: TestClient,
     logged_user: UserInfoDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     project_db_cleaner: None,
     mock_dynamic_scheduler: None,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -138,7 +144,7 @@ async def test_project_creation_links_default_unit_and_sizes_computational_nodes
     # only the computational node is sized at creation: exactly one RPC call
     mocked_director_v2_node_sizing.assert_called_once()
 
-    state = await get_node_pricing_state(asyncpg_engine, new_project["uuid"])
+    state = await get_node_pricing_state(sqlalchemy_async_engine, new_project["uuid"])
     assert len(state) == len(_WORKBENCH)
 
     # computational node: linked to the default plan/unit and dask-sized
@@ -213,7 +219,7 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     billed_product: None,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mock_project_wallet_with_credits: None,
@@ -233,12 +239,12 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
 
     # deterministic starting point: single-container resources, no link
     await set_node_required_resources(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         project_id,
         dynamic_node_id,
         single_container_required_resources(user_project["workbench"][dynamic_node_id]["key"]),
     )
-    state_before = await get_node_pricing_state(asyncpg_engine, project_id)
+    state_before = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     assert state_before[NodeID(dynamic_node_id)].pricing_plan_id is None
     assert state_before[NodeID(dynamic_node_id)].pricing_unit_id is None
 
@@ -249,7 +255,7 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
     mocked_director_v2_node_sizing.assert_called_once()
 
-    state_after = await get_node_pricing_state(asyncpg_engine, project_id)
+    state_after = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     node_state = state_after[NodeID(dynamic_node_id)]
     assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
     assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID

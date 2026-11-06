@@ -235,7 +235,7 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | ItemConcreteValue = await port_utils.get_value_from_link(
+                other_port_concretevalue: ItemConcreteValue | None = await port_utils.get_value_from_link(
                     # pylint: disable=protected-access
                     key=self.key,
                     value=self.value,
@@ -349,15 +349,21 @@ class Port(BaseServiceIOModel):
     ) -> None:
         """sets a value to the port, by default it is also stored in the database
 
+        If the new value replaces a previously uploaded file, the old object is
+        deleted from storage after the database update, see
+        `Nodeports.safe_delete_replaced_file_link`.
+
         :raises InvalidItemTypeError
         :raises ValidationError
         """
+        previous_value = self.value
         await self._set(
             new_concrete_value=new_value,
             **set_kwargs,
             progress_bar=progress_bar or ProgressBarData(num_steps=1, description="set"),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
+        await self._node_ports.safe_delete_replaced_file_link(self.key, previous_value, self.value)
 
     async def set_value(self, new_item_value: ItemValue | None) -> None:
         """set the value on the port using an item-value

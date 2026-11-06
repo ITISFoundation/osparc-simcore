@@ -33,6 +33,7 @@ from ..exception_handling import (
 from ..login.decorators import login_required
 from ..payments.errors import (
     InvalidPaymentMethodError,
+    PaymentAlreadyAckedError,
     PaymentCompletedError,
     PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
@@ -117,6 +118,7 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
         except (
             PaymentUniqueViolationError,
             PaymentCompletedError,
+            PaymentAlreadyAckedError,
             PaymentMethodAlreadyAckedError,
             PaymentMethodUniqueViolationError,
             InvalidPaymentMethodError,

@@ -16,6 +16,7 @@
 
 
 cryptography
+httpx2 # gateway/stripe clients
 packaging
 python-jose
 python-multipart

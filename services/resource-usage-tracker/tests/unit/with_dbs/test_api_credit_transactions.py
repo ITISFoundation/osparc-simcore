@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from faker import Faker
@@ -67,7 +67,7 @@ async def test_credit_transactions_workflow(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_redis_server: None,
     postgres_db: sa.engine.Engine,
-    async_client: httpx.AsyncClient,
+    async_client: httpx2.AsyncClient,
     resource_tracker_credit_transactions_db: None,
     rpc_client: RabbitMQRPCClient,
     faker: Faker,

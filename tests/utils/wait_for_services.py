@@ -17,6 +17,7 @@ import logging
 import os
 import sys
 import time
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -214,7 +215,7 @@ def _ops_services() -> list[str]:
         return list(dc_specs["services"].keys())
 
 
-def _by_service_creation(service: dict[str, Any]) -> datetime:
+def _by_service_creation(service: Mapping[str, Any]) -> datetime:
     datetime_str = service["CreatedAt"]
     return arrow.get(datetime_str).datetime
 
@@ -224,9 +225,9 @@ def _by_service_creation(service: dict[str, Any]) -> datetime:
     wait=wait_fixed(_WAIT_BEFORE_RETRY),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
-async def _retrieve_started_services() -> list[dict[str, Any]]:
+async def _retrieve_started_services() -> list[Mapping[str, Any]]:
     expected_services = _core_services() + _ops_services()
-    started_services: list[dict[str, Any]] = []
+    started_services: list[Mapping[str, Any]] = []
     async with aiodocker.Docker() as client:
         services_list = await client.services.list()
 
@@ -255,7 +256,7 @@ async def _retrieve_started_services() -> list[dict[str, Any]]:
 
 
 async def _check_service_status(
-    service: dict[str, Any],
+    service: Mapping[str, Any],
     service_statuses: dict[str, dict[str, Any]],
     ops_services: list[str],
 ) -> bool:
@@ -268,13 +269,13 @@ async def _check_service_status(
         )
         service_name = service["Spec"]["Name"].split("_")[-1]
 
-        service_tasks: list[dict[str, Any]] = await client.tasks.list(filters={"service": service["Spec"]["Name"]})
+        service_tasks: list[Mapping[str, Any]] = await client.tasks.list(filters={"service": service["Spec"]["Name"]})
 
         running_replicas = sum(task["Status"]["State"] == _RUNNING_STATE for task in service_tasks)
         task_states = [task["Status"]["State"] for task in service_tasks]
 
         # Consistent status logic
-        if running_replicas == expected_replicas and expected_replicas > 0:
+        if 0 < expected_replicas == running_replicas:
             state = _RUNNING_STATE
         elif any(task["Status"]["State"] in _FAILED_STATES for task in service_tasks):
             state = "failed"
@@ -306,7 +307,7 @@ async def _check_service_status(
             "service_type": service_type,
         }
 
-        return running_replicas == expected_replicas and expected_replicas > 0
+        return 0 < expected_replicas == running_replicas
 
 
 async def _wait_for_services() -> int:
@@ -318,7 +319,7 @@ async def _wait_for_services() -> int:
         )
     )
 
-    started_services: list[dict[str, Any]] = await _retrieve_started_services()
+    started_services: list[Mapping[str, Any]] = await _retrieve_started_services()
     ops_services = _ops_services()
 
     service_statuses: dict[str, dict[str, Any]] = {}

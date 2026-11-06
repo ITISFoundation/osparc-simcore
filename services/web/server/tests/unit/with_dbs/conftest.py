@@ -6,7 +6,6 @@
 
 import random
 import re
-import sys
 import textwrap
 import uuid
 from collections.abc import (
@@ -20,13 +19,11 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
-import redis
 import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp import web
@@ -48,10 +45,8 @@ from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
-from pytest_docker.plugin import Services
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.docker import filter_compose_file_for_ci
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.project_nodes_pricing import (
@@ -64,11 +59,11 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from redis import Redis
 from servicelib import tracing
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
-from settings_library.redis import RedisDatabase, RedisSettings
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
@@ -98,12 +93,7 @@ from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
-from sqlalchemy import exc as sql_exceptions
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-# DEPLOYED SERVICES FOR TESTSUITE SESSION -----------------------------------
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture(autouse=True)
@@ -113,32 +103,6 @@ def disable_swagger_doc_generation(monkeypatch: pytest.MonkeyPatch, osparc_simco
     """
     monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
-
-
-@pytest.fixture(scope="session")
-def docker_compose_env(default_app_cfg: AppConfigDict) -> Iterator[pytest.MonkeyPatch]:
-    postgres_cfg = default_app_cfg["db"]["postgres"]
-    redis_cfg = default_app_cfg["resource_manager"]["redis"]
-
-    # docker-compose reads these environs
-    with pytest.MonkeyPatch().context() as patcher:
-        patcher.setenv("TEST_POSTGRES_DB", postgres_cfg["database"])
-        patcher.setenv("TEST_POSTGRES_USER", postgres_cfg["user"])
-        patcher.setenv("TEST_POSTGRES_PASSWORD", postgres_cfg["password"])
-        # Redis
-        patcher.setenv("TEST_REDIS_PASSWORD", redis_cfg["password"])
-        yield patcher
-
-
-@pytest.fixture(scope="session")
-def docker_compose_file(docker_compose_env: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory) -> str:
-    """Overrides pytest-docker fixture"""
-    compose_path = CURRENT_DIR / "docker-compose-devel.yml"
-    assert compose_path.exists()
-    compose_path = filter_compose_file_for_ci(
-        compose_path, ("postgres", "rabbit", "redis"), tmp_path_factory.mktemp("compose")
-    )
-    return f"{compose_path}"
 
 
 # WEB SERVER/CLIENT FIXTURES ------------------------------------------------
@@ -166,6 +130,9 @@ def app_environment(
     storage_test_server_port: int,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
     service_name: str,
+    postgres_env_vars_dict: EnvVarsDict,
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overridden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -182,9 +149,32 @@ def app_environment(
     cfg["storage"]["port"] = storage_test_server_port
     envs_app_cfg = monkeypatch_setenv_from_app_config(cfg)
 
+    # the legacy config hardcodes 127.0.0.1 with the fixed ports of the old docker-compose
+    # file; the swarm stack publishes its ports dynamically, so the coordinates of the
+    # deployed postgres/redis/rabbit services always win over it
+    envs_core_services = setenvs_from_dict(
+        monkeypatch,
+        {
+            **postgres_env_vars_dict,
+            "REDIS_HOST": redis_service.REDIS_HOST,
+            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+            "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value()
+            if redis_service.REDIS_PASSWORD
+            else "null",
+            "REDIS_DB_OFFSET": f"{redis_service.REDIS_DB_OFFSET}",
+            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
+            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
+            "RABBIT_USER": rabbit_service.RABBIT_USER,
+            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
+            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "RABBIT_VHOST": rabbit_service.RABBIT_VHOST,
+        },
+    )
+
     return (
         mock_env_devel_environment
         | envs_app_cfg
+        | envs_core_services
         | setenvs_from_dict(
             monkeypatch,
             {
@@ -231,11 +221,11 @@ async def web_server(
 
     assert isinstance(postgres_db, sa.engine.Engine)
 
-    asyncpg_engine = get_asyncpg_engine(app)
-    assert asyncpg_engine is not None
-    assert str(asyncpg_engine.url.host) == str(postgres_db.url.host)
-    assert asyncpg_engine.url.port == postgres_db.url.port
-    assert asyncpg_engine.url.username == postgres_db.url.username
+    app_async_engine = get_asyncpg_engine(app)
+    assert app_async_engine is not None
+    assert str(app_async_engine.url.host) == str(postgres_db.url.host)
+    assert app_async_engine.url.port == postgres_db.url.port
+    assert app_async_engine.url.username == postgres_db.url.username
 
     return server
 
@@ -245,7 +235,7 @@ async def client(
     aiohttp_client: Callable,
     web_server: TestServer,
     mock_orphaned_services,
-    redis_client: Redis,
+    redis_client: aioredis.Redis,
 ) -> TestClient:
     """
     Deployed web-server + postgres + redis services
@@ -536,117 +526,6 @@ def create_dynamic_service_mock(
     return _create
 
 
-def _is_postgres_responsive(url: str):
-    """Check if something responds to url"""
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sql_exceptions.OperationalError:
-        return False
-    return True
-
-
-@pytest.fixture(scope="session")
-def postgres_dsn(docker_services: Services, docker_ip: str | Any, default_app_cfg: dict) -> dict:
-    cfg = deepcopy(default_app_cfg["db"]["postgres"])
-    cfg["host"] = docker_ip
-    cfg["port"] = docker_services.port_for("postgres", 5432)
-    return cfg
-
-
-@pytest.fixture(scope="session")
-def postgres_service(docker_services: Services, postgres_dsn: dict) -> str:
-    DSN = "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-    url = DSN.format(**postgres_dsn)
-
-    # Wait until service is responsive.
-    docker_services.wait_until_responsive(
-        check=lambda: _is_postgres_responsive(url),
-        timeout=30.0,
-        pause=0.1,
-    )
-
-    return url
-
-
-@pytest.fixture
-async def asyncpg_engine(postgres_db: sa.engine.Engine, is_pdb_enabled: bool) -> AsyncIterable[AsyncEngine]:
-    # NOTE: call to postgres BEFORE app starts
-    sync_dsn = postgres_db.url.render_as_string(hide_password=False)
-    dsn = sync_dsn.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
-    minsize = 1
-    maxsize = 50
-
-    engine: AsyncEngine = create_async_engine(
-        dsn,
-        pool_size=minsize,
-        max_overflow=maxsize - minsize,
-        connect_args={"server_settings": {"application_name": "webserver_tests_with_dbs:asyncpg_engine"}},
-        pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
-        future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
-        echo=is_pdb_enabled,
-    )
-
-    yield engine
-
-    await engine.dispose()
-
-
-# REDIS CORE SERVICE ------------------------------------------------------
-def _is_redis_responsive(host: str, port: int, password: str) -> bool:
-    # username via https://stackoverflow.com/a/78236235
-    r = redis.Redis(host=host, username="default", port=port, password=password)
-    return r.ping() is True
-
-
-@pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip, default_app_cfg: dict) -> RedisSettings:
-    # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
-
-    host = docker_ip
-    port = docker_services.port_for("redis", 6379)
-    password = default_app_cfg["resource_manager"]["redis"]["password"]
-    redis_settings = RedisSettings(REDIS_HOST=docker_ip, REDIS_PORT=port, REDIS_PASSWORD=password)
-
-    docker_services.wait_until_responsive(
-        check=lambda: _is_redis_responsive(host, port, password),
-        timeout=30.0,
-        pause=0.1,
-    )
-    return redis_settings
-
-
-@pytest.fixture
-async def redis_client(redis_service: RedisSettings) -> AsyncIterator[aioredis.Redis]:
-    client = aioredis.from_url(
-        redis_service.build_redis_dsn(RedisDatabase.RESOURCES),
-        encoding="utf-8",
-        decode_responses=True,
-    )
-    yield client
-
-    await client.flushall()
-    await client.aclose(close_connection_pool=True)  # type: ignore[attr-defined]
-
-
-@pytest.fixture
-async def redis_locks_client(
-    redis_service: RedisSettings,
-) -> AsyncIterator[aioredis.Redis]:
-    """Creates a redis client to communicate with a redis service ready"""
-    client = aioredis.from_url(
-        redis_service.build_redis_dsn(RedisDatabase.LOCKS),
-        encoding="utf-8",
-        decode_responses=True,
-    )
-
-    yield client
-
-    await client.flushall()
-    await client.aclose(close_connection_pool=True)
-
-
 # SOCKETS FIXTURES  --------------------------------------------------------
 # Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
 
@@ -755,10 +634,10 @@ async def user_project(
 
 @pytest.fixture
 async def with_permitted_override_services_specifications(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[None]:
     old_value = False
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         old_value = bool(
             (
                 await conn.execute(
@@ -769,7 +648,7 @@ async def with_permitted_override_services_specifications(
             ).scalar_one_or_none()
         )
 
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.update()
             .where(groups_extra_properties.c.group_id == 1)
@@ -778,7 +657,7 @@ async def with_permitted_override_services_specifications(
 
     yield
 
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.update()
             .where(groups_extra_properties.c.group_id == 1)
@@ -791,9 +670,9 @@ async def with_permitted_override_services_specifications(
 
 @pytest.fixture
 async def app_products_names(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterable[list[ProductName]]:
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         # default product
         result = await conn.execute(products.select().order_by(products.c.priority))
         rows = result.fetchall()
@@ -807,7 +686,7 @@ async def app_products_names(
     priority = 1
     for name in FRONTEND_APPS_AVAILABLE:
         if name != FRONTEND_APP_DEFAULT:
-            async with asyncpg_engine.begin() as conn:
+            async with sqlalchemy_async_engine.begin() as conn:
                 result = await conn.execute(
                     products.insert().values(
                         random_product(
@@ -821,21 +700,21 @@ async def app_products_names(
                 await get_or_create_product_group(conn, product_name=name)
             priority += 1
 
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         # get all products
         result = await conn.execute(sa.select(products.c.name).order_by(products.c.priority))
         rows = result.fetchall()
 
     yield [r.name for r in rows]
 
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(products_prices.delete())
         await conn.execute(products.delete().where(products.c.name != FRONTEND_APP_DEFAULT))
 
 
 @pytest.fixture
 async def all_product_prices(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     app_products_names: list[ProductName],
     faker: Faker,
 ) -> dict[ProductName, Decimal | None]:
@@ -855,7 +734,7 @@ async def all_product_prices(
     for product_name in app_products_names:
         usd_or_none = product_price.get(product_name)
         if usd_or_none is not None:
-            async with asyncpg_engine.begin() as conn:
+            async with sqlalchemy_async_engine.begin() as conn:
                 await conn.execute(
                     products_prices.insert().values(
                         product_name=product_name,
@@ -875,12 +754,12 @@ async def all_product_prices(
 @pytest.fixture
 async def latest_osparc_price(
     all_product_prices: dict[ProductName, Decimal],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> Decimal:
     """This inserts a new price for osparc in the history
     (i.e. the old price of osparc is still in the database)
     """
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         usd = await conn.scalar(
             products_prices.insert()
             .values(
