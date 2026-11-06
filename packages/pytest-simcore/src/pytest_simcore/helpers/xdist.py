@@ -156,6 +156,18 @@ class ReaderWriterLock:
     def _has_readers(self) -> bool:
         return any(self._readers_dir.iterdir())
 
+    def _state(self) -> str:
+        """Who holds the lock right now, read from the control files. Used in timeout messages,
+        so a stalled lock is diagnosable from the test report alone. Unlocked on purpose: this
+        runs on the timeout path only and must never wait on the control lock itself.
+        """
+        try:
+            writer = self._writer_marker.read_text().strip()
+        except OSError:
+            writer = "none"
+        readers = sorted(p.name.removesuffix(".reader") for p in self._readers_dir.iterdir())
+        return f"writer={writer} readers={readers or 'none'}"
+
     @contextmanager
     def read_lock(self, token: str, *, timeout: timedelta = timedelta(minutes=5)) -> Generator[None]:
         """Waits for any in-progress writer to finish, then registers as a reader."""
@@ -174,7 +186,7 @@ class ReaderWriterLock:
         try:
             _register_reader()
         except AssertionError as err:
-            msg = f"Timed out waiting for an active writer to release {self._writer_marker}"
+            msg = f"Timed out waiting for an active writer to release {self._writer_marker}: {self._state()}"
             raise TimeoutError(msg) from err
         log.info("reader %s entered %s", token, self.name)
         try:
@@ -226,7 +238,7 @@ class ReaderWriterLock:
             try:
                 _acquire_writer_slot()
             except AssertionError as err:
-                msg = f"Timed out waiting to become the writer for {self._writer_marker}"
+                msg = f"Timed out waiting to become the writer for {self._writer_marker}: {self._state()}"
                 raise TimeoutError(msg) from err
         # phase 2: drain the readers already in the section (fresh `timeout` budget, so a
         # slow phase 1 cannot starve the drain phase)
@@ -242,7 +254,7 @@ class ReaderWriterLock:
                 try:
                     _drain_readers()
                 except AssertionError as err:
-                    msg = f"Timed out waiting for readers to finish for {self._writer_marker}"
+                    msg = f"Timed out waiting for readers to finish for {self._writer_marker}: {self._state()}"
                     raise TimeoutError(msg) from err
         except BaseException:
             # the writer section was NEVER entered: release the slot we hold, or a timed-out
