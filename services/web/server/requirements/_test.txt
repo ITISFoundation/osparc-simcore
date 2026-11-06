@@ -88,7 +88,7 @@ faker==40.38.0
     #   -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-fastapi==0.160.0
+fastapi==0.161.1
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
