@@ -22,7 +22,7 @@ aiormq==7.2.1
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
-amqp==5.3.1
+amqp==5.4.2
     # via kombu
 annotated-doc==0.0.4
     # via typer
@@ -42,9 +42,9 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-billiard==4.2.4
+billiard==4.3.2
     # via celery
-celery==5.6.3
+celery==5.7.0
     # via -r requirements/_base.in
 certifi==2026.10.23
     # via
@@ -62,7 +62,7 @@ click-didyoumean==0.3.1
     # via celery
 click-plugins==1.1.1.2
     # via celery
-click-repl==0.3.0
+click-repl==0.4.1
     # via celery
 dnspython==2.9.0
     # via email-validator
@@ -107,7 +107,7 @@ jsonschema==4.26.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2025.9.1
     # via jsonschema
-kombu==5.6.2
+kombu==5.7.0
     # via celery
 markdown-it-py==4.0.0
     # via rich
@@ -310,6 +310,7 @@ typing-extensions==4.16.0
     # via
     #   aiodebug
     #   anyio
+    #   click-repl
     #   fast-depends
     #   faststream
     #   grpcio
@@ -327,9 +328,7 @@ typing-inspection==0.4.2
     #   pydantic
     #   pydantic-settings
 tzdata==2025.3
-    # via
-    #   arrow
-    #   kombu
+    # via arrow
 tzlocal==5.3.1
     # via celery
 urllib3==2.8.0
