@@ -19,6 +19,17 @@ templates:
     chart: ../charts/simcore-service
 
 releases:
+  - name: autoscaling
+    inherit:
+      - template: simcore-service
+    values:
+      - _shared/helm-values.logging.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.registry.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - autoscaling/helm-values.yaml.gotmpl
+
   - name: catalog
     inherit:
       - template: simcore-service
