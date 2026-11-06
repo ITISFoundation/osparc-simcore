@@ -564,6 +564,7 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
     product_name: ProductName,
     sqlalchemy_async_engine: AsyncEngine,
     faker: Faker,
+    country_name: str,
     mocker: MockerFixture,
 ):
     email = faker.email()
@@ -577,7 +578,7 @@ async def test_pre_register_user_concurrent_duplicate_submission_is_a_conflict(
             "address": faker.address().replace("\n", ", "),
             "city": faker.city(),
             "postalCode": faker.postcode(),
-            "country": faker.country(),
+            "country": country_name,
             "phone": None,
         }
     )

@@ -19,11 +19,13 @@ import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.users import MyPermissionGet
 from models_library.products import ProductName
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.redis import handle_redis_returns_union_types
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.redis import get_redis_user_notifications_client
 from simcore_service_webserver.user_notifications._models import (
@@ -70,10 +72,15 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 async def notification_redis_client(
     client: TestClient,
 ) -> AsyncIterable[aioredis.Redis]:
+    """Client on the valkey database of this pytest process, cleared at teardown
+
+    The teardown uses `flushdb` and not `flushall`: the valkey server is shared with the other xdist
+    workers, each on its own logical database.
+    """
     assert client.app
     redis_client = get_redis_user_notifications_client(client.app)
     yield redis_client
-    await redis_client.flushall()
+    await redis_client.flushdb()
 
 
 def _create_notification(
@@ -87,7 +94,7 @@ def _create_notification(
         UserNotificationCreate.model_validate(
             {
                 "user_id": user_id,
-                "category": random.choice(notification_categories),
+                "category": random.choice(notification_categories),  # noqa: S311
                 "actionable_path": "a/path",
                 "title": "test_title",
                 "text": "text_text",
@@ -111,15 +118,15 @@ async def _create_notifications(
         _create_notification(logged_user=logged_user, product_name=product_name) for _ in range(count)
     ]
 
-    user_id = logged_user["id"]
+    user_id = UserID(logged_user["id"])
     redis_key = get_notification_key(user_id)
     if user_notifications:
         for notification in user_notifications:
-            await redis_client.lpush(redis_key, notification.model_dump_json())
+            await handle_redis_returns_union_types(redis_client.lpush(redis_key, notification.model_dump_json()))
 
     yield user_notifications
 
-    await redis_client.flushall()
+    await redis_client.flushdb()
 
 
 @pytest.mark.parametrize(
@@ -379,12 +386,14 @@ async def test_update_user_notification_at_correct_index(
     notification_count: int,
 ):
     assert client.app
-    user_id = logged_user["id"]
+    user_id = UserID(logged_user["id"])
 
     async def _get_stored_notifications() -> list[UserNotification]:
         return [
             UserNotification.model_validate_json(x)
-            for x in await notification_redis_client.lrange(get_notification_key(user_id), 0, -1)
+            for x in await handle_redis_returns_union_types(
+                notification_redis_client.lrange(get_notification_key(user_id), 0, -1)
+            )
         ]
 
     def _marked_as_read(

@@ -18,8 +18,10 @@ import sqlalchemy as sa
 import sqlalchemy.exc
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.groups import GroupID
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -47,7 +49,7 @@ from simcore_service_webserver.projects.exceptions import (
 )
 from simcore_service_webserver.users.errors import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
-from sqlalchemy.engine.result import Row
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -194,7 +196,7 @@ async def insert_project_in_db(
                 await update_or_insert_project_group(
                     client.app,
                     project_id=new_project["uuid"],
-                    group_id=int(group_id),
+                    group_id=GroupID(int(group_id)),
                     read=permissions["read"],
                     write=permissions["write"],
                     delete=permissions["delete"],
@@ -343,7 +345,7 @@ async def test_insert_project_to_db(
     "user_role",
     [UserRole.USER],
 )
-@pytest.mark.parametrize("number_of_nodes", [1, randint(200, 300)])  # noqa: S311
+@pytest.mark.parametrize("number_of_nodes", [1, 250])
 async def test_update_project_nodes_concurrently(
     fake_project: dict[str, Any],
     logged_user: dict[str, Any],
@@ -351,7 +353,12 @@ async def test_update_project_nodes_concurrently(
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
     number_of_nodes: int,
 ):
-    """Concurrent updates to different nodes in the same project must all succeed."""
+    """Concurrent updates to different nodes in the same project must all succeed.
+
+    The number of nodes is a fixed count: each pytest-xdist worker evaluates
+    parametrization on its own, and a per-worker value makes the collected test
+    ids differ, which aborts the whole session.
+    """
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     node_uuids = [str(uuid5(BASE_UUID, f"{n}")) for n in range(number_of_nodes)]
 
@@ -528,7 +535,7 @@ async def test_has_permission(
         # user does not exits
         assert (
             await has_user_project_access_rights(
-                client.app, project_id=project_id, user_id=99999, permission=permission
+                client.app, project_id=project_id, user_id=UserID(99999), permission=permission
             )
             is False
         )
@@ -538,7 +545,7 @@ async def test_has_permission(
             await has_user_project_access_rights(
                 client.app,
                 project_id=project_id,
-                user_id=second_user["id"],
+                user_id=UserID(second_user["id"]),
                 permission=permission,
             )
             is access_rights[permission]

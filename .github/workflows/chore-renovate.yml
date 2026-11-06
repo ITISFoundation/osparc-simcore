@@ -7,7 +7,7 @@
 #   CI, which waits for approval, and Renovate, which stops updating an "edited"
 #   branch);
 # - review-gate: marks Renovate's draft PRs ready once their checks are done
-#   (.github/renovate/review_gate.sh).
+#   (.github/renovate/review_gate.py).
 # New PRs get their milestone from chore-labeler.yml, like every other PR.
 # How a PR gets from here to master is in docs/renovate.md.
 #
@@ -180,10 +180,28 @@ jobs:
           # script only talks to the API through gh
           persist-credentials: false
 
+      - name: resolve uv version
+        id: uv-version
+        run: echo "version=$(tr -d '[:space:]' < requirements/UV_VERSION)" >> "$GITHUB_OUTPUT"
+
+      # requirements/UV_VERSION is the single source of truth for the uv version, as in
+      # .github/actions/setup-simcore-env. The script needs no packages, so uv only has to
+      # provide the interpreter its requires-python asks for; caching that download is what
+      # makes the 15-minute poll cheaper than fetching CPython every run
+      - name: install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ steps.uv-version.outputs.version }}
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: |
+            .python-version
+            requirements/UV_VERSION
+
       - name: run review gate
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           BOT: osparc-simcore-renovate[bot]
           FAIL_COOLDOWN_HOURS: 3
-        run: ./.github/renovate/review_gate.sh
+        run: ./.github/renovate/review_gate.py

@@ -3,6 +3,10 @@
   "info": {
     "title": "simcore-service-webserver",
     "description": "Main service with an interface (http-API & websockets) to the web front-end",
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE"
+    },
     "version": "0.92.0"
   },
   "servers": [

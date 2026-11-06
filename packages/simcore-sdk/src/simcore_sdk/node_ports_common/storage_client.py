@@ -58,7 +58,7 @@ def handle_client_exception[**P, R](
                 raise exceptions.StorageInvalidCallError(msg) from err
             if status.HTTP_500_INTERNAL_SERVER_ERROR > err.status >= status.HTTP_400_BAD_REQUEST:
                 raise exceptions.StorageInvalidCallError(err.message) from err
-            if err.status > status.HTTP_500_INTERNAL_SERVER_ERROR:
+            if err.status >= status.HTTP_500_INTERNAL_SERVER_ERROR:
                 raise exceptions.StorageServerIssueError(err.message) from err
         except ClientConnectionError as err:
             msg = f"{err}"

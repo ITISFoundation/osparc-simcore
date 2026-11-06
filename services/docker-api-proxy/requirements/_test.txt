@@ -65,7 +65,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 fast-depends==3.0.8
     # via faststream
-fastapi==0.141.1
+fastapi==0.160.0
     # via
     #   -r requirements/_test.in
     #   fastapi-lifespan-manager
@@ -125,6 +125,7 @@ multidict==6.9.1
 opentelemetry-api==1.45.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   fastapi
     #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http

@@ -74,7 +74,7 @@ docker==7.1.0
     # via moto
 faker==40.38.0
     # via -r requirements/_test.in
-fastapi==0.141.1
+fastapi==0.160.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -168,6 +168,10 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via moto
+opentelemetry-api==1.45.1
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
 packaging==26.3
     # via
     #   -c requirements/_base.txt
@@ -322,6 +326,7 @@ typing-extensions==4.16.0
     #   fastapi
     #   flexcache
     #   flexparser
+    #   opentelemetry-api
     #   pint
     #   pydantic
     #   pydantic-core

@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Final
 from unittest import mock
 from unittest.mock import call
 
@@ -23,6 +23,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
+from annotated_types import doc
 from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -97,6 +98,19 @@ pytest_simcore_core_services_selection = [
 
 RESOURCE_NAME = "projects"
 API_PREFIX = f"/{API_VTAG}"
+
+_EVENTS_TO_MANY_CLIENTS: Final[
+    Annotated[
+        str,
+        doc(
+            "reason for `docker_exclusive` on the multi-user tests: the mark is the only cross-worker"
+            " barrier the suite has, and these tests need the web server of their worker uninterrupted"
+        ),
+    ]
+] = (
+    "several socketio clients must all receive every project state event: tests running in other "
+    "xdist workers starve the web server's event loop and the events are dropped"
+)
 
 
 def assert_replaced(current_project, update_data):
@@ -485,10 +499,10 @@ async def test_open_project(
                     app=client.app,
                     dynamic_service_start=DynamicServiceStart(
                         project_id=user_project["uuid"],
-                        service_key=service["key"],
-                        service_uuid=service_uuid,
-                        service_version=service["version"],
-                        user_id=logged_user["id"],
+                        key=service["key"],
+                        node_uuid=service_uuid,
+                        version=service["version"],
+                        user_id=UserID(logged_user["id"]),
                         request_scheme=request_scheme,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
@@ -636,10 +650,10 @@ async def test_open_template_project_for_edition(
                     app=client.app,
                     dynamic_service_start=DynamicServiceStart(
                         project_id=template_project["uuid"],
-                        service_key=service["key"],
-                        service_uuid=service_uuid,
-                        service_version=service["version"],
-                        user_id=logged_user["id"],
+                        key=service["key"],
+                        node_uuid=service_uuid,
+                        version=service["version"],
+                        user_id=UserID(logged_user["id"]),
                         request_scheme=request_scheme,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
@@ -1010,7 +1024,9 @@ async def test_open_project_limit_is_scoped_to_product(
     """Opening a project in product A must not consume the open-project quota for product B."""
     assert client.app
     # Register the user in the second product's group so the product access check passes
-    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=second_product_with_limit)
+    await auto_add_user_to_product_group(
+        client.app, user_id=UserID(logged_user["id"]), product_name=second_product_with_limit
+    )
 
     # Open user_project in the default product (osparc, limit=1) — should succeed
     _, client_id_1, _ = await create_socketio_connection_with_handlers(None, client)
@@ -1102,7 +1118,7 @@ async def test_close_project(
             call(
                 app=client.app,
                 dynamic_service_stop=DynamicServiceStop(
-                    user_id=user_id,
+                    user_id=UserID(user_id),
                     project_id=service.project_id,
                     node_id=service.node_uuid,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -1343,6 +1359,7 @@ def clean_redis_table(redis_client) -> None:
 
 
 @pytest.mark.acceptance_test
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_multiple_users(
     max_number_of_user_sessions: int,
@@ -1492,6 +1509,7 @@ async def test_open_shared_project_multiple_users(
         await _state_project(client_i, shared_project, expected.ok, opened_project_state)
 
 
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_refreshing_tab_of_opened_project_multiple_users(
     with_enabled_rtc_collaboration_limited_to_1_user: None,
@@ -1581,6 +1599,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     )
 
 
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     with_enabled_rtc_collaboration_limited_to_1_user: None,
@@ -1660,6 +1679,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     )
 
 
+@pytest.mark.docker_exclusive(reason=_EVENTS_TO_MANY_CLIENTS)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
     with_disabled_rtc_collaboration: None,
@@ -1834,7 +1854,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
                 "share_state": ProjectShareStateOutputSchema(
                     locked=True,
                     status=ProjectStatus.OPENED,
-                    current_user_groupids=[int(user_2["primary_gid"])],
+                    current_user_groupids=[GroupIDAdapter.validate_python(user_2["primary_gid"])],
                 ),
             }
         )
@@ -1843,7 +1863,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
                 "share_state": ProjectShareStateOutputSchema(
                     locked=True,
                     status=ProjectStatus.OPENED,
-                    current_user_groupids=[int(user_2["primary_gid"])],
+                    current_user_groupids=[GroupIDAdapter.validate_python(user_2["primary_gid"])],
                 ),
             }
         )
@@ -1928,7 +1948,9 @@ async def test_open_shared_project_at_same_time(
     # one should be opened, the other locked
     if user_role != UserRole.ANONYMOUS:
         num_assertions = 0
-        for data, error in results:
+        for result in results:
+            assert not isinstance(result, BaseException), f"could not open project: {result}"
+            data, error = result
             assert data or error
             if error:
                 num_assertions += 1

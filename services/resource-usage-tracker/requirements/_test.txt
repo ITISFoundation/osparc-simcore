@@ -19,7 +19,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==23.2.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -42,7 +42,7 @@ botocore==1.37.3
     #   boto3
     #   moto
     #   s3transfer
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -53,7 +53,7 @@ cffi==2.0.0
     # via cryptography
 cfn-lint==1.41.0
     # via moto
-charset-normalizer==3.3.2
+charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -151,7 +151,7 @@ jsonschema==4.26.0
     #   openapi-spec-validator
 jsonschema-path==0.3.4
     # via openapi-spec-validator
-jsonschema-specifications==2023.7.1
+jsonschema-specifications==2025.9.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -258,7 +258,7 @@ redis==7.4.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-referencing==0.29.3
+referencing==0.35.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -284,7 +284,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -293,7 +293,7 @@ s3transfer==0.11.3
     # via
     #   -c requirements/_base.txt
     #   boto3
-six==1.16.0
+six==1.17.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
@@ -351,7 +351,7 @@ werkzeug==3.1.9
     #   flask
     #   flask-cors
     #   moto
-wrapt==1.16.0
+wrapt==1.17.3
     # via
     #   -c requirements/_base.txt
     #   aws-xray-sdk
