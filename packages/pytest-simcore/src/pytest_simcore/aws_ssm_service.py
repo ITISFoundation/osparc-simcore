@@ -6,9 +6,8 @@ import contextlib
 from collections.abc import AsyncIterator
 from typing import cast
 
-import aioboto3
 import pytest
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from pytest_mock.plugin import MockerFixture
 from settings_library.ssm import SSMSettings
 from types_aiobotocore_ssm.client import SSMClient
@@ -19,9 +18,9 @@ async def ssm_client(
     mocked_ssm_server_settings: SSMSettings,
     mocker: MockerFixture,
 ) -> AsyncIterator[SSMClient]:
-    session = aioboto3.Session()
+    session = get_session()
     exit_stack = contextlib.AsyncExitStack()
-    session_client = session.client(
+    session_client = session.create_client(
         "ssm",
         endpoint_url=f"{mocked_ssm_server_settings.SSM_ENDPOINT}",
         aws_access_key_id=mocked_ssm_server_settings.SSM_ACCESS_KEY_ID.get_secret_value(),

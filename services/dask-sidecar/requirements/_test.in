@@ -7,7 +7,6 @@
 #
 --constraint _base.txt
 
-aioboto3
 coverage
 docker
 faker
@@ -23,6 +22,5 @@ pytest-mock
 pytest-sugar
 python-dotenv
 # mypy
-types-aioboto3
 types-aiobotocore[s3]
 types-aiofiles

@@ -11,9 +11,9 @@ from typing import Final
 from unittest.mock import patch
 from uuid import uuid4
 
-import aioboto3
 import aiodocker
 import pytest
+from aiobotocore.session import ClientCreatorContext, get_session
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -114,19 +114,23 @@ async def test_backup_volume(
 
     settings: ApplicationSettings = initialized_app.state.settings
 
-    session = aioboto3.Session(
-        aws_access_key_id=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
-        aws_secret_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
-    )
+    session = get_session()
 
     expected_files = _FILES_TO_CREATE_IN_VOLUME * len(VOLUMES_TO_CREATE)
 
-    async with session.client("s3", endpoint_url=f"{settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}") as s3_client:  # type: ignore
+    session_client = session.create_client(
+        "s3",
+        endpoint_url=f"{settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}",
+        aws_access_key_id=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
+        aws_secret_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
+    )
+    assert isinstance(session_client, ClientCreatorContext)  # nosec
+    async with session_client as s3_client:
         list_response = await s3_client.list_objects_v2(
             Bucket=settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
             Prefix=f"{swarm_stack_name}/{project_id}/{node_id}/{service_run_id}",
         )
-        synced_keys: list[str] = [o["Key"] for o in list_response["Contents"]]
+        synced_keys: list[str] = [o["Key"] for o in list_response.get("Contents", []) if "Key" in o]
 
         assert len(synced_keys) == expected_files
 
@@ -136,12 +140,12 @@ async def test_backup_volume(
             await s3_client.download_file(
                 settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
                 key,
-                downloaded_from_s3 / key_path.parent.name / key_path.name,
+                f"{downloaded_from_s3 / key_path.parent.name / key_path.name}",
             )
 
         await asyncio.gather(*[_download_file(key) for key in synced_keys])
 
-        assert len([x for x in downloaded_from_s3.rglob("*") if x.is_file()]) == expected_files
+        assert len([x for x in downloaded_from_s3.rglob("*") if x.is_file()]) == expected_files  # noqa: ASYNC240
 
 
 async def test_store_in_s3_skips_backup_on_stale_fuse_mount(

@@ -59,7 +59,7 @@ pull request.
   exceptions move a family in one PR (majors on their own branch): the
   `opentelemetry-*` packages, which ship in two coordinated release trains that
   pin each other (`renovate/opentelemetry`); the AWS SDK (`boto3`, `botocore`,
-  `s3transfer`, `aioboto3`, `aiobotocore`) with its stubs (`renovate/boto`); the
+  `s3transfer`, `aiobotocore`) with its stubs (`renovate/boto`); the
   other type stubs (`types-*`, `*-stubs`, `renovate/type-stubs`); and the
   `pytest-*` plugins (`renovate/pytest-plugins`). Security pull
   requests are never grouped: Renovate's `vulnerabilityAlerts` default resets

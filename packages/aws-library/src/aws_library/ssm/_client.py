@@ -5,11 +5,10 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final, cast
 
-import aioboto3
 import arrow
 import botocore
 import botocore.exceptions
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from servicelib.logging_utils import log_decorator
 from settings_library.ssm import SSMSettings
 from types_aiobotocore_ssm import SSMClient
@@ -41,13 +40,12 @@ class SSMCommand:
 @dataclass(frozen=True)
 class SimcoreSSMAPI:
     _client: SSMClient
-    _session: aioboto3.Session
     _exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    async def create(cls, settings: SSMSettings) -> "SimcoreSSMAPI":
-        session = aioboto3.Session()
-        session_client = session.client(
+    async def create(cls, settings: SSMSettings) -> SimcoreSSMAPI:
+        session = get_session()
+        session_client = session.create_client(
             "ssm",
             endpoint_url=settings.SSM_ENDPOINT,
             aws_access_key_id=settings.SSM_ACCESS_KEY_ID.get_secret_value(),
@@ -57,7 +55,7 @@ class SimcoreSSMAPI:
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
         ec2_client = cast(SSMClient, await exit_stack.enter_async_context(session_client))
-        return cls(ec2_client, session, exit_stack)
+        return cls(ec2_client, exit_stack)
 
     async def close(self) -> None:
         await self._exit_stack.aclose()

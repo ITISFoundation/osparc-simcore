@@ -254,7 +254,7 @@
       "groupSlug": "pytest-plugins"
     },
     {
-      "description": "The AWS SDK release train and its stubs: aiobotocore pins the botocore versions it accepts, so boto3/botocore/s3transfer/aioboto3/aiobotocore and their type stubs move in one PR. opentelemetry-instrumentation-botocore stays in the opentelemetry group",
+      "description": "The AWS SDK release train and its stubs: aiobotocore pins the botocore versions it accepts, so boto3/botocore/s3transfer/aiobotocore and their type stubs move in one PR. opentelemetry-instrumentation-botocore stays in the opentelemetry group",
       "matchManagers": [
         "pip-compile"
       ],

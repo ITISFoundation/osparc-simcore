@@ -1429,7 +1429,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             # Downloads DATCore -> local
             await download_to_file_or_raise(client, f"{dc_link}", local_file_path)
 
-            # copying will happen using aioboto3, therefore multipart might happen
+            # copying will happen using aiobotocore, therefore multipart might happen
             new_fmd = await self._create_fmd_for_upload(
                 user_id,
                 dst_file_id,
@@ -1465,7 +1465,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             logging.INFO,
             f"copying {src_fmd.file_id=} to {dst_file_id=}, {src_fmd.is_directory=}",
         ):
-            # copying will happen using aioboto3, therefore multipart might happen
+            # copying will happen using aiobotocore, therefore multipart might happen
             # NOTE: connection must be released to ensure database update
             new_fmd = await self._create_fmd_for_upload(
                 user_id,

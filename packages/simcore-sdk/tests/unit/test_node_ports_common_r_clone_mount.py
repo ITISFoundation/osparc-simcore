@@ -11,15 +11,14 @@ from pathlib import Path
 from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
-import aioboto3
 import aiodocker
 import aiofiles
 import pytest
 from _pytest._py.path import LocalPath
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.config import AioConfig
+from aiobotocore.session import ClientCreatorContext, get_session
 from aiodocker import Docker
 from aiodocker.types import JSONObject
-from botocore.client import Config
 from common_library.async_tools import cancel_wait_task
 from faker import Faker
 from httpx2 import HTTPError
@@ -59,7 +58,7 @@ from tenacity import (
 )
 from types_aiobotocore_s3 import S3Client
 
-_dampen_noisy_loggers(("botocore", "aiobotocore", "aioboto3", "moto.server"))
+_dampen_noisy_loggers(("botocore", "aiobotocore", "moto.server"))
 
 
 @pytest.fixture
@@ -99,14 +98,14 @@ def r_clone_settings(mock_environment: EnvVarsDict) -> RCloneSettings:
 @pytest.fixture
 async def s3_client(r_clone_settings: RCloneSettings, bucket_name: S3BucketName) -> AsyncIterable[S3Client]:
     s3_settings = r_clone_settings.R_CLONE_S3
-    session = aioboto3.Session()
-    session_client = session.client(
+    session = get_session()
+    session_client = session.create_client(
         "s3",
         endpoint_url=f"{s3_settings.S3_ENDPOINT}".replace("moto", "localhost"),
         aws_access_key_id=s3_settings.S3_ACCESS_KEY.get_secret_value(),
         aws_secret_access_key=s3_settings.S3_SECRET_KEY.get_secret_value(),
         region_name=s3_settings.S3_REGION,
-        config=Config(signature_version="s3v4"),
+        config=AioConfig(signature_version="s3v4"),
     )
     assert isinstance(session_client, ClientCreatorContext)  # nosec
     async with session_client as client:

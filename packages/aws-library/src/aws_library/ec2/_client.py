@@ -5,9 +5,8 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Literal, cast
 
-import aioboto3
 import botocore.exceptions
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.session import ClientCreatorContext, get_session
 from aiocache import cached  # type: ignore[import-untyped]
 from pydantic import ByteSize, PositiveInt
 from servicelib.logging_utils import log_context
@@ -47,13 +46,12 @@ _logger = logging.getLogger(__name__)
 @dataclass()
 class SimcoreEC2API:
     client: EC2Client
-    session: aioboto3.Session
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    async def create(cls, settings: EC2Settings) -> "SimcoreEC2API":
-        session = aioboto3.Session()
-        session_client = session.client(
+    async def create(cls, settings: EC2Settings) -> SimcoreEC2API:
+        session = get_session()
+        session_client = session.create_client(
             "ec2",
             endpoint_url=settings.EC2_ENDPOINT,
             aws_access_key_id=settings.EC2_ACCESS_KEY_ID,
@@ -63,7 +61,7 @@ class SimcoreEC2API:
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
         ec2_client = cast(EC2Client, await exit_stack.enter_async_context(session_client))
-        return cls(ec2_client, session, exit_stack)
+        return cls(ec2_client, exit_stack)
 
     async def close(self) -> None:
         await self.exit_stack.aclose()

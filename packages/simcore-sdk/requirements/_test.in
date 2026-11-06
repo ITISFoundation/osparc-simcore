@@ -9,7 +9,7 @@
 --constraint _base.txt
 
 
-aioboto3
+aiobotocore
 aioresponses
 alembic
 click

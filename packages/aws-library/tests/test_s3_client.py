@@ -83,7 +83,6 @@ async def simcore_s3_api(
     assert s3
     assert s3._client  # noqa: SLF001
     assert s3._exit_stack  # noqa: SLF001
-    assert s3._session  # noqa: SLF001
     yield s3
     await s3.close()
 
@@ -123,7 +122,7 @@ async def upload_to_presigned_link(
             file,
             MultiPartUploadLinks(
                 upload_id="fake",
-                chunk_size=TypeAdapter(ByteSize).validate_python(file.stat().st_size),
+                chunk_size=TypeAdapter(ByteSize).validate_python(file.stat().st_size),  # noqa: ASYNC240
                 urls=[presigned_url],
             ),
         )
@@ -306,14 +305,15 @@ async def upload_file(
         if base_path:
             object_key = f"{file.relative_to(base_path)}"
         with log_context(logging.INFO, msg=f"uploading {file} to {with_s3_bucket}/{object_key}") as ctx:
-            progress_cb = _UploadProgressCallback(file_size=file.stat().st_size, action="uploaded", logger=ctx.logger)
+            file_size_bytes = file.stat().st_size  # noqa: ASYNC240
+            progress_cb = _UploadProgressCallback(file_size=file_size_bytes, action="uploaded", logger=ctx.logger)
             response = await simcore_s3_api.upload_file(
                 bucket=with_s3_bucket,
                 file=file,
                 object_key=object_key,
                 bytes_transferred_cb=progress_cb,
             )
-        # there is no response from aioboto3...
+        # there is no response from aiobotocore...
         assert not response
 
         assert await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=object_key) is True
@@ -1477,7 +1477,7 @@ async def test_copy_file_invalid_raises(
     file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1MiB"))
     uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
-    # NOTE: since aioboto3 13.1.0 this raises S3KeyNotFoundError instead of S3BucketInvalidError
+    # NOTE: an unknown bucket raises S3KeyNotFoundError instead of S3BucketInvalidError
     with pytest.raises(S3KeyNotFoundError, match=f"{non_existing_s3_bucket}"):
         await simcore_s3_api.copy_object(
             bucket=non_existing_s3_bucket,
@@ -1775,7 +1775,7 @@ async def test_read_from_bytes_streamer(
         async for chunk in bytes_streamer.with_progress_bytes_iter(AsyncMock()):
             await f.write(chunk)
 
-    assert bytes_streamer.data_size == fake_file_name.stat().st_size
+    assert bytes_streamer.data_size == fake_file_name.stat().st_size  # noqa: ASYNC240
 
     await assert_same_file_content(with_uploaded_file_on_s3.local_path, fake_file_name)
 

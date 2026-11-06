@@ -9,11 +9,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Literal, Protocol, Self, cast
 
-import aioboto3
-from aiobotocore.session import ClientCreatorContext
+from aiobotocore.config import AioConfig
+from aiobotocore.session import ClientCreatorContext, get_session
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
-from botocore.client import Config
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     S3BucketName,
@@ -75,17 +74,16 @@ class CopiedBytesTransferredCallback(Protocol):
 @dataclass(frozen=True)
 class SimcoreS3API:  # pylint: disable=too-many-public-methods
     _client: S3Client
-    _session: aioboto3.Session
     _exit_stack: contextlib.AsyncExitStack = field(default_factory=contextlib.AsyncExitStack)
     transfer_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
 
     @classmethod
     async def create(cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT) -> Self:
-        session = aioboto3.Session()
+        session = get_session()
         session_client = None
         exit_stack = contextlib.AsyncExitStack()
         try:
-            config = Config(
+            config = AioConfig(
                 # This setting tells the S3 client to only calculate checksums when explicitly required
                 # by the operation. This avoids unnecessary checksum calculations for operations that
                 # don't need them, improving performance.
@@ -93,7 +91,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 signature_version="s3v4",
                 request_checksum_calculation="when_required",
             )
-            session_client = session.client(  # type: ignore[call-overload]
+            session_client = session.create_client(
                 "s3",
                 endpoint_url=f"{settings.S3_ENDPOINT}",
                 aws_access_key_id=settings.S3_ACCESS_KEY.get_secret_value(),
@@ -107,7 +105,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
             await s3_client.list_buckets()
 
-            return cls(s3_client, session, exit_stack, s3_max_concurrency)
+            return cls(s3_client, exit_stack, s3_max_concurrency)
         except Exception:
             await exit_stack.aclose()
 
@@ -500,7 +498,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         object_key: S3ObjectKey,
         bytes_transferred_cb: UploadedBytesTransferredCallback | None,
     ) -> None:
-        """upload a file using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
+        """upload a file using aiobotocore transfer manager (e.g. works >5Gb and creates multiple threads)"""
         upload_options: dict[str, Any] = {
             "Bucket": bucket,
             "Key": object_key,
@@ -520,7 +518,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bytes_transferred_cb: CopiedBytesTransferredCallback | None,
         object_metadata: S3MetaData | None = None,
     ) -> None:
-        """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
+        """copy a file in S3 using aiobotocore transfer manager (e.g. works >5Gb and creates multiple threads)"""
         copy_options: dict[str, Any] = {
             "CopySource": {"Bucket": bucket, "Key": src_object_key},
             "Bucket": bucket,
