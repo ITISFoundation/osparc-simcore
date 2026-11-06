@@ -10,6 +10,7 @@ from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 
 import pytest
+from pytest_simcore.helpers.valkey_tools import flush_databases
 from redis.exceptions import LockError, LockNotOwnedError
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -121,7 +122,7 @@ async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
             assert client.is_healthy is True
 
     # cleanup
-    await client.redis.flushdb()
+    await flush_databases(client.redis)
     await client.shutdown()
 
 
