@@ -174,6 +174,32 @@ releases:
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
 
+  # compose: <<: *webserver_environment, so the webserver values plus overrides
+  - name: wb-api-server
+    inherit:
+      - template: simcore-service
+    needs:
+      - {{ $namespace }}/catalog
+      - {{ $namespace }}/director-v2
+      - {{ $namespace }}/invitations
+      - {{ $namespace }}/payments
+      - {{ $namespace }}/resource-usage-tracker
+      - {{ $namespace }}/storage
+    values:
+      - _shared/helm-values.catalog.yaml.gotmpl
+      - _shared/helm-values.director-v2.yaml.gotmpl
+      - _shared/helm-values.invitations.yaml.gotmpl
+      - _shared/helm-values.payments.yaml.gotmpl
+      - _shared/helm-values.postgres.yaml.gotmpl
+      - _shared/helm-values.rabbit.yaml.gotmpl
+      - _shared/helm-values.redis.yaml.gotmpl
+      - _shared/helm-values.resource-usage-tracker.yaml.gotmpl
+      - _shared/helm-values.storage.yaml.gotmpl
+      - _shared/helm-values.tracing.yaml.gotmpl
+      - _shared/helm-values.webserver-diagnostics.yaml.gotmpl
+      - web/helm-values.webserver.yaml.gotmpl
+      - web/helm-values.wb-api-server.yaml.gotmpl
+
   - name: wb-garbage-collector
     inherit:
       - template: simcore-service
