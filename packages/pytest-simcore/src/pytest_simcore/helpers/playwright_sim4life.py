@@ -16,7 +16,6 @@ from .playwright import (
     RobustWebSocket,
     SocketIOEvent,
     decode_socketio_42_message,
-    start_websocket_tracking,
     wait_for_service_running,
 )
 
@@ -119,10 +118,6 @@ def wait_for_launched_s4l(
     is_service_legacy: bool,
 ) -> WaitForS4LDict:
     with log_context(logging.INFO, "launch S4L") as ctx:
-        # NOTE: start recording the page's websockets before the service starts, so that the
-        # socket the socket.io client reconnects with is known even if it appears before this
-        # function looks for it (see `start_websocket_tracking`)
-        start_websocket_tracking(page)
         predicate = S4LWaitForWebsocket(logger=ctx.logger)
         with page.expect_websocket(
             predicate,
