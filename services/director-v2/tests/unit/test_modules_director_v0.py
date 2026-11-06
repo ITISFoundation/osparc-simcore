@@ -8,9 +8,6 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from simcore_service_director_v2.modules.director_v0 import _parse_running_services
 
-pytest_simcore_core_services_selection = ["director"]
-pytest_simcore_deps_services_selection = ["director_v0"]
-
 _VALID_SERVICE: dict = {
     "service_key": "simcore/services/dynamic/raw-graphs",
     "service_version": "2.10.6",
