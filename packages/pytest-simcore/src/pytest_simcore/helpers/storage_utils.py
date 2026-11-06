@@ -1,11 +1,13 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Protocol, TypedDict
 
 import sqlalchemy as sa
 from faker import Faker
 from models_library.basic_types import SHA256Str
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pydantic import ByteSize
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects
@@ -62,4 +64,18 @@ class ProjectWithFilesParams:
             object.__setattr__(self, "allowed_file_checksums", checksums)
 
     def __repr__(self) -> str:
-        return f"ProjectWithFilesParams: #nodes={self.num_nodes}, file sizes={[_.human_readable() for _ in self.allowed_file_sizes]}"
+        sizes = [_.human_readable() for _ in self.allowed_file_sizes]
+        return f"ProjectWithFilesParams: #nodes={self.num_nodes}, file sizes={sizes}"
+
+
+class CreateProjectAccessRightsCallable(Protocol):
+    """Type of the ``create_project_access_rights`` pytest fixture."""
+
+    async def __call__(
+        self,
+        project_id: ProjectID,
+        user_id: UserID,
+        read: bool,
+        write: bool,
+        delete: bool,
+    ) -> None: ...

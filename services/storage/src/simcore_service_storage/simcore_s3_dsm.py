@@ -65,6 +65,7 @@ from .exceptions.errors import (
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
+    ProjectNodeAccessRightError,
     ProjectNotFoundError,
     SelectionNotAllowedError,
 )
@@ -814,8 +815,11 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         can = await AccessLayerRepository.instance(get_db_engine(self.app)).get_project_access_rights(
             user_id=user_id, project_id=project_id
         )
-        if not can.delete:
-            raise ProjectAccessRightError(access_right="delete", project_id=project_id)
+        if node_id is None:
+            if not can.delete:
+                raise ProjectAccessRightError(access_right="delete", project_id=project_id)
+        elif not can.write:
+            raise ProjectNodeAccessRightError(access_right="write", project_id=project_id, node_id=node_id)
 
         if not node_id:
             await FileMetaDataRepository.instance(get_db_engine(self.app)).delete_all_from_project(
