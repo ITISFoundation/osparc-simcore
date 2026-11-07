@@ -10,6 +10,10 @@ helmDefaults:
   # helm diff: avoid errors on 1st installation
   disableValidation: true
 
+repositories:
+  - name: traefik
+    url: https://helm.traefik.io/traefik
+
 # values are listed per release, not in the template: helmfile appends release
 # values after template values, and the service's own file must come last to win
 templates:
@@ -283,6 +287,16 @@ releases:
       - _shared/helm-values.tracing.yaml.gotmpl
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
+
+  # edge proxy: the compose routes are swarm labels, so they are Ingresses in
+  # ../charts/traefik/values.yaml.gotmpl
+  - name: traefik
+    namespace: {{ $namespace }}
+    createNamespace: true
+    chart: traefik/traefik
+    version: 39.0.0 # traefik v3.6.7, same as services/docker-compose.yml
+    values:
+      - ../charts/traefik/values.yaml.gotmpl
 
   # compose: <<: *webserver_environment, so the webserver values plus overrides
   - name: wb-api-server

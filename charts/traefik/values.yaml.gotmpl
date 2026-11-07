@@ -1,0 +1,246 @@
+api:
+  dashboard: true
+
+logs:
+  general:
+    level: WARN
+
+additionalArguments:
+  - --ping
+
+ingressRoute:
+  dashboard:
+    enabled: true
+
+tracing:
+  addInternals: true
+  sampleRate: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" }}
+  otlp:
+    enabled: true
+    http:
+      enabled: true
+      endpoint: {{ printf "%s:%s/v1/tracing" (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT") (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT") | quote }}
+
+service:
+  type: NodePort
+
+ports:
+  traefik:
+    expose:
+      default: true
+    nodePort: 30880 # host 8080, dashboard
+  web:
+    # container stays on 8000: the chart's pod runs as non-root and cannot bind 80
+    nodePort: 30081 # host 9081
+    forwardedHeaders:
+      insecure: true
+    transport:
+      respondingTimeouts:
+        readTimeout: 21600s
+        writeTimeout: 21600s
+  simcoreapi:
+    port: 10081
+    exposedPort: 10081
+    expose:
+      default: true
+    nodePort: 31081 # host 10081
+    forwardedHeaders:
+      insecure: true
+    transport:
+      respondingTimeouts:
+        readTimeout: 21600s
+        writeTimeout: 21600s
+  metrics:
+    port: 8082
+
+# the compose routes are swarm labels; an Ingress cannot carry the /study/<uuid>
+# PathRegexp, so it is a /study prefix here, and the compose sticky router is
+# left out because its paths already match the /v0/ prefix below
+extraObjects:
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: api-server
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: simcoreapi
+    spec:
+      ingressClassName: traefik
+      rules:
+        - http:
+            paths:
+              - path: /
+                pathType: Exact
+                backend:
+                  service:
+                    name: api-server
+                    port:
+                      name: http
+              - path: /v0
+                pathType: Exact
+                backend:
+                  service:
+                    name: api-server
+                    port:
+                      name: http
+              - path: /v0/
+                pathType: Prefix
+                backend:
+                  service:
+                    name: api-server
+                    port:
+                      name: http
+              - path: /api/v0/openapi.json
+                pathType: Exact
+                backend:
+                  service:
+                    name: api-server
+                    port:
+                      name: http
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: webserver
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: web
+    spec:
+      ingressClassName: traefik
+      rules:
+        - http:
+            paths:
+              - path: /
+                pathType: Exact
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+              - path: /v0
+                pathType: Exact
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+              - path: /v0/
+                pathType: Prefix
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+              - path: /socket.io/
+                pathType: Prefix
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+              - path: /static-frontend-data.json
+                pathType: Exact
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+              - path: /view
+                pathType: Exact
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+              - path: /study
+                pathType: Prefix
+                backend:
+                  service:
+                    name: webserver
+                    port:
+                      name: http
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: static-webserver
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: web
+    spec:
+      ingressClassName: traefik
+      rules:
+        - http:
+            paths:
+              - path: /osparc
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /s4l
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /s4llite
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /s4lacad
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /s4lengine
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /s4ldesktop
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /s4ldesktopacad
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /tis
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /tiplite
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /transpiled
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http
+              - path: /resource
+                pathType: Prefix
+                backend:
+                  service:
+                    name: static-webserver
+                    port:
+                      name: http

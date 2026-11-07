@@ -37,6 +37,21 @@ nodes:
         hostPort: 9000
         listenAddress: 127.0.0.1
         protocol: TCP
+      # traefik http entrypoint
+      - containerPort: 30081
+        hostPort: 9081
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # traefik simcoreapi entrypoint
+      - containerPort: 31081
+        hostPort: 10081
+        listenAddress: 127.0.0.1
+        protocol: TCP
+      # traefik dashboard
+      - containerPort: 30880
+        hostPort: 8080
+        listenAddress: 127.0.0.1
+        protocol: TCP
       # adminer
       - containerPort: 31808
         hostPort: 18080
