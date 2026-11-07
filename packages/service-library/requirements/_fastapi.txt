@@ -45,7 +45,7 @@ email-validator==2.3.0
     #   -c requirements/_base.txt
     #   fastapi
     #   pydantic
-fastapi==0.161.1
+fastapi==0.162.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-lifespan-manager
