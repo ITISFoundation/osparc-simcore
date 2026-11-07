@@ -12,9 +12,9 @@ packaging==26.0
     # via pytest
 pluggy==1.6.0
     # via pytest
-pydantic==2.13.5
+pydantic==2.14.1
     # via -r requirements/requirements.in
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via pydantic
 pygments==2.21.0
     # via pytest
@@ -43,5 +43,5 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via pydantic
