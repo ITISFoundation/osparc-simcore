@@ -15,6 +15,42 @@ from ._utils import BaseLogParser
 
 _logger = logging.getLogger(__name__)
 
+_PLACEHOLDER: Final[str] = "*" * 8
+_SENSITIVE_RCLONE_FLAGS: Final[set[str]] = {
+    "--pass",
+    "--password",
+    "--secret-access-key",
+    "--access-key-id",
+    "--auth",
+    "--api-key",
+    "--bearer-token",
+    "--client-secret",
+    "--client-id",
+}
+
+
+def _sanitize_rclone_command(command: list[str]) -> list[str]:
+    """Sanitize rclone command by masking sensitive credentials before logging."""
+    skip_indices = set()
+    result = []
+
+    for i, arg in enumerate(command):
+        if i in skip_indices:
+            continue
+
+        if "=" in arg:
+            flag_part = arg.split("=", 1)[0]
+            result.append(f"{flag_part}={_PLACEHOLDER}" if flag_part in _SENSITIVE_RCLONE_FLAGS else arg)
+        elif arg in _SENSITIVE_RCLONE_FLAGS:
+            result.append(arg)
+            if i + 1 < len(command) and not command[i + 1].startswith("-"):
+                result.append(_PLACEHOLDER)
+                skip_indices.add(i + 1)
+        else:
+            result.append(arg)
+
+    return result
+
 
 class _RCloneSyncMessageBase(BaseModel):
     level: str = Field(..., description="log level")
@@ -144,7 +180,7 @@ def overwrite_command(source_command: list[str], *, edit: EditArguments, remove:
             _logger.warning(
                 "cannot remove entry='%s' as it does not exist in command='%s'",
                 search_entry,
-                source_command,
+                _sanitize_rclone_command(source_command),
             )
 
     return new_command
@@ -160,12 +196,13 @@ def get_effective_vfs_write_back_seconds(resolved_command: list[str]) -> int:
         ValueError: If the flag is missing or has no value
     """
     if _VFS_WRITE_BACK_FLAG not in resolved_command:
-        msg = f"'{_VFS_WRITE_BACK_FLAG}' not found in resolved command={resolved_command}"
+        msg = f"'{_VFS_WRITE_BACK_FLAG}' not found in resolved command={_sanitize_rclone_command(resolved_command)}"
         raise ValueError(msg)
 
     idx = resolved_command.index(_VFS_WRITE_BACK_FLAG)
     if idx + 1 >= len(resolved_command):
-        msg = f"'{_VFS_WRITE_BACK_FLAG}' is missing its value in resolved command={resolved_command}"
+        sanitized_cmd = _sanitize_rclone_command(resolved_command)
+        msg = f"'{_VFS_WRITE_BACK_FLAG}' is missing its value in resolved command={sanitized_cmd}"
         raise ValueError(msg)
 
     value_str = resolved_command[idx + 1]
@@ -175,7 +212,7 @@ def get_effective_vfs_write_back_seconds(resolved_command: list[str]) -> int:
             "could not parse value '%s' for '%s' in resolved command='%s'",
             value_str,
             _VFS_WRITE_BACK_FLAG,
-            resolved_command,
+            _sanitize_rclone_command(resolved_command),
         )
     return total
 
