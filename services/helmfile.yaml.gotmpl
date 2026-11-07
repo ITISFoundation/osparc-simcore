@@ -39,6 +39,7 @@ releases:
       - {{ $namespace }}/catalog
       - {{ $namespace }}/director-v2
       - {{ $namespace }}/storage
+      - {{ $namespace }}/traefik
       - {{ $namespace }}/wb-api-server
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
@@ -138,11 +139,10 @@ releases:
       - _shared/helm-values.tracing.yaml.gotmpl
       - director/helm-values.yaml.gotmpl
 
-  # no needs on webserver: webserver needs director-v2, that would be a cycle
   - name: director-v2
     inherit:
       - template: simcore-service
-    needs:
+    needs: # no needs on webserver: webserver needs director-v2, that would be a cycle
       - {{ $namespace }}/catalog
       - {{ $namespace }}/director
       - {{ $namespace }}/resource-usage-tracker
@@ -241,6 +241,8 @@ releases:
   - name: static-webserver
     inherit:
       - template: simcore-service
+    needs:
+      - {{ $namespace }}/traefik
     values:
       - static-webserver/helm-values.yaml.gotmpl
 
@@ -288,8 +290,8 @@ releases:
       - storage/helm-values.yaml.gotmpl
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
 
-  # edge proxy: the compose routes are swarm labels, so they are Ingresses in
-  # traefik/helm-values.yaml.gotmpl
+  # edge proxy: the compose routes are swarm labels; the routed services carry
+  # their Ingresses and Middlewares, shared ones live in traefik/helm-values.yaml.gotmpl
   - name: traefik
     namespace: {{ $namespace }}
     createNamespace: true
@@ -378,6 +380,7 @@ releases:
       - {{ $namespace }}/payments
       - {{ $namespace }}/resource-usage-tracker
       - {{ $namespace }}/storage
+      - {{ $namespace }}/traefik
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
       - _shared/helm-values.director-v2.yaml.gotmpl
