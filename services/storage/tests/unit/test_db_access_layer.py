@@ -5,6 +5,7 @@
 
 from collections.abc import Awaitable, Callable
 from typing import Any
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -15,6 +16,7 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.workspaces import workspaces
+from simcore_service_storage.exceptions.errors import ProjectNotFoundError
 from simcore_service_storage.modules.db.access_layer import (
     AccessLayerRepository,
     AccessRights,
@@ -144,3 +146,34 @@ async def test_get_readable_project_ids_no_access(
     )
     assert project_id not in readable
     assert other_project_id in readable
+
+
+async def test_get_project_access_rights_of_project_not_in_db_raises(
+    user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    """a project with no row in the database raises instead of reporting no access"""
+    with pytest.raises(ProjectNotFoundError):
+        await AccessLayerRepository.instance(sqlalchemy_async_engine).get_project_access_rights(
+            user_id=user_id, project_id=ProjectID(str(uuid4()))
+        )
+
+
+async def test_get_project_access_rights_of_project_without_access(
+    project_id: ProjectID, other_user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    """a project the user has no rights on returns no access, not an error"""
+    access = await AccessLayerRepository.instance(sqlalchemy_async_engine).get_project_access_rights(
+        user_id=other_user_id, project_id=project_id
+    )
+    assert access == AccessRights.none()
+
+
+async def test_get_file_access_rights_of_file_in_project_not_in_db(
+    user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+):
+    """the file APIs degrade to no access instead of failing on a missing project"""
+    access = await AccessLayerRepository.instance(sqlalchemy_async_engine).get_file_access_rights(
+        user_id=user_id,
+        file_id=f"{ProjectID(str(uuid4()))}/node_id/not-in-file-metadata-table.txt",
+    )
+    assert access == AccessRights.none()

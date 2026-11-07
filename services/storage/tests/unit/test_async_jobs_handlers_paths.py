@@ -27,10 +27,15 @@ from models_library.api_schemas_async_jobs.async_jobs import (
 from models_library.api_schemas_async_jobs.exceptions import JobError
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from pytest_simcore.helpers.storage_utils import (
+    CreateProjectAccessRightsCallable,
+    FileIDDict,
+    ProjectWithFilesParams,
+)
 from servicelib.celery.async_jobs.storage.paths import submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -505,5 +510,130 @@ async def test_delete_paths_of_node_folder_of_another_project(
         user_id,
         path=Path(other_project["uuid"]) / f"{other_node_id}",
         expected_total_size=len(other_node_files),
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_node_folder_requires_write_and_not_delete(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+):
+    """the web server lets a read+write collaborator remove a node, so storage must accept the
+    node's data delete with `write` -- requiring the project's `delete` right left the data behind
+    """
+    project_params = ProjectWithFilesParams(
+        num_nodes=_NUM_NODES,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=0,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    project_path = Path(project["uuid"])
+    await create_project_access_rights(
+        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=True, write=True, delete=False
+    )
+
+    (deleted_node_id, _), (kept_node_id, kept_node_files) = node_files.items()
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        other_user_id,
+        product_name,
+        paths={project_path / f"{deleted_node_id}"},
+    )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{deleted_node_id}",
+        expected_total_size=0,
+        product_name=product_name,
+    )
+
+    # deleting one node's data must not touch another node's
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{kept_node_id}",
+        expected_total_size=len(kept_node_files),
+        product_name=product_name,
+    )
+
+    # the whole project folder stays reserved to users allowed to delete the project
+    with pytest.raises(JobError, match="Insufficient access rights to delete project"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path},
+        )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_node_folder_denied_to_read_only_user(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+):
+    """a read-only collaborator may not remove a node's data either"""
+    project_params = ProjectWithFilesParams(
+        num_nodes=1,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=0,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    project_path = Path(project["uuid"])
+    await create_project_access_rights(
+        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=True, write=False, delete=False
+    )
+    node_id, node_files_of_node = next(iter(node_files.items()))
+
+    with pytest.raises(JobError, match="Insufficient access rights to write node"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path / f"{node_id}"},
+        )
+
+    # the refusal must not have removed anything
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{node_id}",
+        expected_total_size=len(node_files_of_node),
         product_name=product_name,
     )
