@@ -289,14 +289,14 @@ releases:
       - storage/helm-values.sto-worker-cpu-bound.yaml.gotmpl
 
   # edge proxy: the compose routes are swarm labels, so they are Ingresses in
-  # ../charts/traefik/values.yaml.gotmpl
+  # traefik/helm-values.yaml.gotmpl
   - name: traefik
     namespace: {{ $namespace }}
     createNamespace: true
     chart: traefik/traefik
     version: 39.0.0 # traefik v3.6.7, same as services/docker-compose.yml
     values:
-      - ../charts/traefik/values.yaml.gotmpl
+      - traefik/helm-values.yaml.gotmpl
 
   # compose: <<: *webserver_environment, so the webserver values plus overrides
   - name: wb-api-server

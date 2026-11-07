@@ -30,10 +30,9 @@ ports:
   traefik:
     expose:
       default: true
-    nodePort: 30880 # host 8080, dashboard
+    nodePort: 30880
   web:
-    # container stays on 8000: the chart's pod runs as non-root and cannot bind 80
-    nodePort: 30081 # host 9081
+    nodePort: 30081
     forwardedHeaders:
       insecure: true
     transport:
@@ -55,13 +54,6 @@ ports:
   metrics:
     port: 8082
 
-# routes and middlewares of the swarm labels in services/docker-compose.yml.
-# Differences:
-# - the loadbalancer healthchecks are covered by the readiness probes
-# - the fallback and catchall routers (port 0 tricks) are not carried over:
-#   with allowEmptyServices a router without ready endpoints already answers 503
-# - Ingress paths must start with `/`, so PathRegexp paths cannot carry the
-#   leading `^` and Traefik matches them anywhere in the path
 extraObjects:
   - apiVersion: traefik.io/v1alpha1
     kind: Middleware
@@ -69,9 +61,8 @@ extraObjects:
       name: gzip
     spec:
       compress: {}
-  # on a websocket upgrade Traefik sends X-Forwarded-Proto: ws, from which
-  # socket.io derives ws://<host> as the only accepted origin and rejects the
-  # browser's http:// Origin with 400
+  # ssl header necessary so that socket.io upgrades correctly from polling to websocket mode
+  # the middleware must be attached to the right connection.
   - apiVersion: traefik.io/v1alpha1
     kind: Middleware
     metadata:
@@ -94,7 +85,6 @@ extraObjects:
     spec:
       retry:
         attempts: 2
-  # requests = average / period, the burst is computed over 1 second
   - apiVersion: traefik.io/v1alpha1
     kind: Middleware
     metadata:
@@ -106,7 +96,6 @@ extraObjects:
         burst: 10
         sourceCriterion:
           ipStrategy:
-            # second IP from the right of X-Forwarded-For
             depth: 2
   - apiVersion: traefik.io/v1alpha1
     kind: Middleware
@@ -220,7 +209,6 @@ extraObjects:
         - name: http
           port: 8080
           targetPort: http
-  # above the webserver router (6), below the dynamic service proxies
   - apiVersion: networking.k8s.io/v1
     kind: Ingress
     metadata:
