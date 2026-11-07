@@ -24,15 +24,13 @@ tracing:
       endpoint: {{ printf "%s:%s/v1/tracing" (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT") (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT") | quote }}
 
 service:
-  type: NodePort
+  type: ClusterIP
 
 ports:
   traefik:
     expose:
       default: true
-    nodePort: 30880
   web:
-    nodePort: 30081
     forwardedHeaders:
       insecure: true
     transport:
@@ -44,7 +42,6 @@ ports:
     exposedPort: 10081
     expose:
       default: true
-    nodePort: 31081 # host 10081
     forwardedHeaders:
       insecure: true
     transport:
