@@ -335,15 +335,15 @@ truststore==0.10.5
     #   httpx2
 typer==0.27.3
     # via -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==3.8.0
+types-aiobotocore==3.10.0
     # via -r requirements/_base.in
-types-aiobotocore-ec2==3.8.0
+types-aiobotocore-ec2==3.10.0
     # via types-aiobotocore
-types-aiobotocore-kms==3.8.0
+types-aiobotocore-kms==3.10.0
     # via types-aiobotocore
-types-aiobotocore-s3==3.8.0
+types-aiobotocore-s3==3.10.0
     # via types-aiobotocore
-types-aiobotocore-ssm==3.8.0
+types-aiobotocore-ssm==3.10.0
     # via types-aiobotocore
 types-awscrt==0.31.3
     # via botocore-stubs
