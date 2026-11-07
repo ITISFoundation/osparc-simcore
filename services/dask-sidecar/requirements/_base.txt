@@ -322,7 +322,7 @@ pycparser==3.0
     # via cffi
 pycryptodome==3.23.0
     # via stream-zip
-pydantic==2.13.5
+pydantic==2.14.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -335,7 +335,7 @@ pydantic==2.13.5
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
@@ -454,7 +454,7 @@ typing-extensions==4.16.0
     #   pydantic-core
     #   pydantic-extra-types
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   fastapi
     #   pydantic
