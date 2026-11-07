@@ -395,7 +395,7 @@ tenacity==9.1.4
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-awscrt==0.34.1
     # via
@@ -403,7 +403,7 @@ types-awscrt==0.34.1
     #   botocore-stubs
 types-boto3==1.42.70
     # via -r requirements/_test.in
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via types-boto3
