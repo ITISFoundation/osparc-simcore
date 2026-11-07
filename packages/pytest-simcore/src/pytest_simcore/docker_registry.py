@@ -7,9 +7,11 @@ import logging
 import os
 import time
 from collections.abc import Awaitable, Callable, Iterator
+from contextlib import suppress
 from copy import deepcopy
+from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 import docker
@@ -17,29 +19,51 @@ import jsonschema
 import pytest
 import pytest_asyncio
 import tenacity
+from docker.errors import DockerException, NotFound
 from settings_library.docker_registry import RegistrySettings
 
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 from .helpers.host import get_localhost_ip
+from .helpers.xdist import (
+    is_xdist_controller,
+    is_xdist_worker,
+    read_shared_resources,
+    record_shared_resource,
+    run_once_across_workers,
+)
 
 _logger = logging.getLogger(__name__)
 
+# upper bound on the first worker's setup (pulls `hello-world` and pushes it to the local registry)
+_REGISTRY_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
+
 
 @pytest.fixture(scope="session")
-def docker_registry(keep_docker_up: bool) -> Iterator[str]:
+def docker_registry(
+    keep_docker_up: bool, request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
-    yield from _docker_registry_impl(keep_docker_up, registry_version="3")
+    yield from _docker_registry_impl(
+        keep_docker_up, registry_version="3", request=request, tmp_path_factory=tmp_path_factory
+    )
 
 
 @pytest.fixture(scope="session")
-def docker_registry_v2() -> Iterator[str]:
+def docker_registry_v2(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     """sets up and runs a docker registry v2 container locally and returns its URL"""
-    yield from _docker_registry_impl(keep_docker_up=False, registry_version="2")
+    yield from _docker_registry_impl(
+        keep_docker_up=False, registry_version="2", request=request, tmp_path_factory=tmp_path_factory
+    )
 
 
-def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterator[str]:
+def _docker_registry_impl(
+    keep_docker_up: bool,
+    registry_version: str,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
     # run the registry outside of the stack
     docker_client = docker.from_env()
@@ -50,43 +74,51 @@ def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterat
     container_name = f"pytest_registry_v{registry_version}"
     volume_name = f"pytest_registry_v{registry_version}_data"
 
-    container = None
-    try:
-        docker_client.login(registry=url, username="simcore")
-        container = docker_client.containers.list(filters={"name": container_name})[0]
-        print("Warning: docker registry is already up!")
-    except Exception:  # pylint: disable=broad-except
-        container = docker_client.containers.run(
-            f"registry:{registry_version}",
-            ports={"5000": port},
-            name=container_name,
-            environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
-            restart_policy={"Name": "always"},
-            volumes={volume_name: {"bind": "/var/lib/registry", "mode": "rw"}},
-            detach=True,
-        )
+    with run_once_across_workers(
+        request,
+        tmp_path_factory,
+        f"docker_registry_{container_name}",
+        timeout=_REGISTRY_SETUP_TIMEOUT,
+    ) as is_first:
+        if is_first:
+            try:
+                docker_client.login(registry=url, username="simcore")
+                print("Warning: docker registry is already up!")
+            except Exception:  # pylint: disable=broad-except
+                docker_client.containers.run(
+                    f"registry:{registry_version}",
+                    ports={"5000": port},
+                    name=container_name,
+                    environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
+                    restart_policy={"Name": "always"},
+                    volumes={volume_name: {"bind": "/var/lib/registry", "mode": "rw"}},
+                    detach=True,
+                )
+                # Wait until we can connect
+                assert wait_till_registry_is_responsive(url)
 
-        # Wait until we can connect
-        assert wait_till_registry_is_responsive(url)
+            # get the hello world example from docker hub
+            hello_world_image = docker_client.images.pull("hello-world", "latest")
+            # login to private registry
+            docker_client.login(registry=url, username="simcore")
+            # tag the image
+            repo = url + "/hello-world:dev"
+            assert hello_world_image.tag(repo)
+            # push the image to the private registry
+            docker_client.images.push(repo)
+            # wipe the images
+            docker_client.images.remove(image="hello-world:latest")
+            docker_client.images.remove(image=hello_world_image.id)
+            # pull the image from the private registry
+            private_image = docker_client.images.pull(repo)
+            docker_client.images.remove(image=private_image.id)
 
-    # get the hello world example from docker hub
-    hello_world_image = docker_client.images.pull("hello-world", "latest")
-    # login to private registry
-    docker_client.login(registry=url, username="simcore")
-    # tag the image
-    repo = url + "/hello-world:dev"
-    assert hello_world_image.tag(repo)
-    # push the image to the private registry
-    docker_client.images.push(repo)
-    # wipe the images
-    docker_client.images.remove(image="hello-world:latest")
-    docker_client.images.remove(image=hello_world_image.id)
-    # pull the image from the private registry
-    private_image = docker_client.images.pull(repo)
-    docker_client.images.remove(image=private_image.id)
+            # recorded whatever the outcome: a registry the run took over is also removed by it,
+            # like a non-xdist run would
+            record_shared_resource(request, tmp_path_factory, kind="registry", name=container_name)
 
     # provide os.environs
-    # TODO: use monkey-patch
+    # NOTE: monkey-patching the settings instead would scope them to the test using them
     old = deepcopy(os.environ)
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
@@ -100,15 +132,50 @@ def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterat
     yield url
 
     # restore environs
-    os.environ = old
+    os.environ.clear()
+    os.environ.update(old)
 
-    # remove registry
-    if not keep_docker_up:
+    # under xdist the controller removes the container at session end (see `pytest_sessionfinish`):
+    # removing it here would take the registry away from the workers still running
+    if not keep_docker_up and not is_xdist_worker(request):
+        _remove_registry_container(docker_client, container_name)
+
+
+def _remove_registry_container(docker_client: docker.DockerClient, container_name: str) -> None:
+    """Stops and removes the registry container, if still there, and waits until it is gone"""
+    with suppress(NotFound):
+        container = docker_client.containers.get(container_name)
         container.stop()
         container.remove(force=True)
 
-        while docker_client.containers.list(filters={"name": container.name}):
+        while docker_client.containers.list(filters={"name": container_name}):
             time.sleep(1)
+
+
+def pytest_sessionfinish(session: pytest.Session) -> None:
+    """Removes at session end the registry containers the xdist workers recorded"""
+    config = session.config
+    if getattr(config, "workerinput", None) is not None or not is_xdist_controller(config):
+        return  # an xdist worker's controller removes them, and a non-xdist session did it already
+
+    if bool(config.getoption("--keep-docker-up", default=False)):
+        return
+
+    names = [resource["name"] for resource in read_shared_resources(config) if resource["kind"] == "registry"]
+    if not names:
+        return
+
+    try:
+        docker_client = docker.from_env()
+    except DockerException:
+        _logger.warning("docker daemon is not reachable: skipping session registry cleanup")
+        return
+
+    try:
+        for name in names:
+            _remove_registry_container(docker_client, name)
+    finally:
+        docker_client.close()
 
 
 @pytest.fixture
@@ -171,12 +238,12 @@ async def _pull_push_service(
             image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
             image_labels.update(
                 {
-                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
+                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'  # noqa: E501
                 }
             )
             image_labels.update({"maintainer": f"{owner_email}"})
 
-            df_path = Path("Dockerfile").resolve()
+            df_path = Path("Dockerfile").resolve()  # noqa: ASYNC240
             df_path.write_text(f"FROM {pull_key}:{tag}")
 
             try:
@@ -223,7 +290,7 @@ async def _pull_push_service(
     }
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")  # pyright: ignore[reportArgumentType]
 def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict
 ) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
@@ -239,7 +306,7 @@ def docker_registry_image_injector(
     return inject_image
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")  # pyright: ignore[reportArgumentType]
 def existing_docker_registry_image_injector(
     node_meta_schema: dict,
 ) -> Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]]:
