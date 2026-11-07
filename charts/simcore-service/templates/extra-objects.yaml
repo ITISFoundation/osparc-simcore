@@ -1,0 +1,9 @@
+{{- range .Values.extraObjects }}
+{{- $object := tpl (toYaml .) $ | fromYaml }}
+{{- $metadata := $object.metadata | default dict }}
+{{- /* labels set on the object win over the chart labels */ -}}
+{{- $_ := set $metadata "labels" (merge ($metadata.labels | default dict) (include "simcore-service.labels" $ | fromYaml)) }}
+{{- $_ := set $object "metadata" $metadata }}
+---
+{{ toYaml $object }}
+{{- end }}

@@ -1,0 +1,9 @@
+env:
+  REGISTRY_AUTH: {{ requiredEnv "REGISTRY_AUTH" | quote }}
+  REGISTRY_PATH: {{ env "REGISTRY_PATH" | quote }}
+  REGISTRY_SSL: {{ requiredEnv "REGISTRY_SSL" | quote }}
+  REGISTRY_URL: {{ requiredEnv "REGISTRY_URL" | quote }}
+  REGISTRY_USER: {{ requiredEnv "REGISTRY_USER" | quote }}
+
+secretEnv:
+  REGISTRY_PW: {{ requiredEnv "REGISTRY_PW" | quote }}

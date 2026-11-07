@@ -1,0 +1,46 @@
+service:
+  enabled: false
+
+env:
+  CELERY_CONCURRENCY: "1"
+  CELERY_POOL: "prefork"
+  CELERY_QUEUES: "cpu_bound"
+  HEALTHCHECK_MODE: "heartbeat"
+  NODE_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  POD_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  POD_UID:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.uid
+  STORAGE_BOOT_SERVER_MODE: "AS_CELERY_WORKER"
+  STORAGE_WORKER_NAME: "sto-worker-cpu-bound-$(NODE_NAME)-$(POD_NAME)-$(POD_UID)"
+
+# a celery worker serves no HTTP: healthy == worker heartbeat written to /tmp/heartbeat
+probes:
+  startup:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5

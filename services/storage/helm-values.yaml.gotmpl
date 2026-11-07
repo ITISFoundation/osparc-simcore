@@ -1,0 +1,54 @@
+# image of the storage releases: sto-worker* include this file and run the same image
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/storage
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh runs update-ca-certificates, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+containerPort: {{ requiredEnv "STORAGE_PORT" | quote }}
+service:
+  port: {{ requiredEnv "STORAGE_PORT" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  DATCORE_ADAPTER_HOST: {{ env "DATCORE_ADAPTER_HOST" | default "datcore-adapter" | quote }}
+  STORAGE_BOOT_SERVER_MODE: "AS_REST_API_SERVER"
+  STORAGE_CLEANER: {{ requiredEnv "STORAGE_CLEANER" | quote }}
+  STORAGE_LOGLEVEL: {{ requiredEnv "STORAGE_LOGLEVEL" | quote }}
+  STORAGE_MONITORING_ENABLED: {{ env "STORAGE_MONITORING_ENABLED" | default "1" | quote }}
+  STORAGE_PORT: {{ requiredEnv "STORAGE_PORT" | quote }}
+  STORAGE_PROFILING: {{ requiredEnv "STORAGE_PROFILING" | quote }}
+  STORAGE_TRACING: {{ requiredEnv "STORAGE_TRACING" | quote }}
+
+# no route served at "/", the image's HEALTHCHECK probes /v0/
+probes:
+  startup:
+    httpGet:
+      path: /v0/
+      port: http
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet:
+      path: /v0/
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /v0/
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5

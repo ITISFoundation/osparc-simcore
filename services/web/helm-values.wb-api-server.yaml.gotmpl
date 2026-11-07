@@ -1,0 +1,12 @@
+env:
+  LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: "api"
+  WEBSERVER_CHATBOT: "null"
+  WEBSERVER_CONVERSATIONS: "false"
+  WEBSERVER_FOGBUGZ: "null"
+  WEBSERVER_HOST: {{ requiredEnv "WB_API_WEBSERVER_HOST" | quote }}
+  WEBSERVER_PORT: {{ requiredEnv "WB_API_WEBSERVER_PORT" | quote }}
+  WEBSERVER_RPC_NAMESPACE: {{ requiredEnv "WB_API_WEBSERVER_HOST" | quote }}
+  WEBSERVER_STATICWEB: "null"
+
+ingresses: [] # drop all ingresses defined in webserver values
+extraObjects: [] # drop all extra objects defined in webserver values

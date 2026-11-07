@@ -8,12 +8,6 @@ receivers:
 exporters:
   otlp_http:
     endpoint: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}  # Adjust to your Jaeger endpoint
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [otlp_http]
-      processors: [batch,probabilistic_sampler,filter/drop_healthcheck]
 processors:
   batch:
     timeout: 5s
@@ -26,3 +20,13 @@ processors:
       span:
         - attributes["http.route"] == "healthcheck_readiness_probe"
         - attributes["db.statement"] == "PING" and attributes["db.system"] == "redis"
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp_http]
+      processors: [batch,probabilistic_sampler,filter/drop_healthcheck]

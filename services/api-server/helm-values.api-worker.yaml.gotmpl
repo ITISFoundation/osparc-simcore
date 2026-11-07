@@ -1,0 +1,37 @@
+# a celery worker serves no HTTP
+service:
+  enabled: false
+
+env:
+  API_SERVER_BOOT_SERVER_MODE: "AS_CELERY_WORKER"
+  API_SERVER_WORKER_NAME: "api-worker-$(NODE_NAME)-$(POD_NAME)-$(POD_UID)"
+  CELERY_CONCURRENCY: {{ requiredEnv "API_SERVER_CELERY_CONCURRENCY" | quote }}
+  CELERY_POOL: "threads"
+  CELERY_QUEUES: "api_server"
+  HEALTHCHECK_MODE: "heartbeat"
+  NODE_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  POD_NAME:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  POD_UID:
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.uid
+
+probes:
+  startup:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+  readiness:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+  liveness:
+    httpGet: null
+    exec:
+      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]

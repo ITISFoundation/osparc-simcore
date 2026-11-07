@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbit
+type: Opaque
+stringData:
+  RABBITMQ_DEFAULT_USER: {{ .Values.user | quote }}
+  RABBITMQ_DEFAULT_PASS: {{ .Values.password | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbit
+spec:
+  type: NodePort
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+      nodePort: 30672
+    - name: management
+      port: 15672
+      targetPort: 15672
+      nodePort: 31672
+  selector:
+    app: rabbit
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbit
+spec:
+  serviceName: rabbit
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbit
+  template:
+    metadata:
+      labels:
+        app: rabbit
+    spec:
+      containers:
+        - name: rabbit
+          image: itisfoundation/rabbitmq:4.1.6-management
+          envFrom:
+            - secretRef:
+                name: rabbit
+          readinessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

@@ -1,0 +1,40 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/datcore-adapter
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  DATCORE_ADAPTER_LOG_FILTER_MAPPING: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  DATCORE_ADAPTER_TRACING: {{ requiredEnv "DATCORE_ADAPTER_TRACING" | quote }}
+
+# no route served at "/", and /v0/ready probes external pennsieve.io, so probe /v0/live as the image's HEALTHCHECK does
+probes:
+  startup:
+    httpGet:
+      path: /v0/live
+      port: http
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet:
+      path: /v0/live
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /v0/live
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5

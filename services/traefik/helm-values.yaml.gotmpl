@@ -1,0 +1,60 @@
+api:
+  dashboard: true
+
+logs:
+  general:
+    level: WARN
+
+additionalArguments:
+  - --ping
+
+ingressRoute:
+  dashboard:
+    enabled: true
+    middlewares:
+      - name: gzip
+
+tracing:
+  addInternals: true
+  sampleRate: {{ requiredEnv "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY" }}
+  otlp:
+    enabled: true
+    http:
+      enabled: true
+      endpoint: {{ printf "%s:%s/v1/tracing" (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT") (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT") | quote }}
+
+service:
+  type: ClusterIP
+
+ports:
+  traefik:
+    expose:
+      default: true
+  web:
+    forwardedHeaders:
+      insecure: true
+    transport:
+      respondingTimeouts:
+        readTimeout: 21600s
+        writeTimeout: 21600s
+  simcoreapi:
+    port: 10081
+    exposedPort: 10081
+    expose:
+      default: true
+    forwardedHeaders:
+      insecure: true
+    transport:
+      respondingTimeouts:
+        readTimeout: 21600s
+        writeTimeout: 21600s
+  metrics:
+    port: 8082
+
+extraObjects:
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: gzip
+    spec:
+      compress: {}
