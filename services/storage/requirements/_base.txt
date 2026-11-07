@@ -618,17 +618,17 @@ typer==0.27.3
     #   -r requirements/_base.in
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiobotocore==3.3.0
+types-aiobotocore==3.10.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/_base.in
-types-aiobotocore-ec2==3.3.0
+types-aiobotocore-ec2==3.10.0
     # via types-aiobotocore
-types-aiobotocore-kms==3.3.0
+types-aiobotocore-kms==3.10.0
     # via types-aiobotocore
-types-aiobotocore-s3==3.3.0
+types-aiobotocore-s3==3.10.0
     # via types-aiobotocore
-types-aiobotocore-ssm==3.3.0
+types-aiobotocore-ssm==3.10.0
     # via types-aiobotocore
 types-awscrt==0.23.10
     # via botocore-stubs
