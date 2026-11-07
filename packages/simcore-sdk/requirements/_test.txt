@@ -321,13 +321,11 @@ types-aiobotocore==3.3.0
     # via -r requirements/_test.in
 types-aiobotocore-s3==3.3.0
     # via types-aiobotocore
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-awscrt==0.31.3
     # via botocore-stubs
-types-requests==2.32.4.20260107
-    # via types-tqdm
-types-tqdm==4.67.3.20260303
+types-tqdm==4.70.0.20260906
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
@@ -352,7 +350,6 @@ urllib3==2.8.0
     #   docker
     #   requests
     #   responses
-    #   types-requests
 werkzeug==3.1.9
     # via
     #   flask

@@ -224,7 +224,7 @@ tenacity==9.1.4
     # via -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
