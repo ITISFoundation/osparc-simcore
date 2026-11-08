@@ -311,7 +311,7 @@ types-awscrt==0.31.3
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.42.70
+types-boto3==1.43.118
     # via -r requirements/_test.in
 types-s3transfer==0.16.0
     # via

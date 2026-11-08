@@ -401,7 +401,7 @@ types-awscrt==0.34.1
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.42.70
+types-boto3==1.43.118
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in

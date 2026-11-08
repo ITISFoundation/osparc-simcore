@@ -169,7 +169,7 @@ sqlalchemy==2.0.51
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-types-aiobotocore-s3==3.2.1
+types-aiobotocore-s3==3.10.0
     # via -r requirements/_test.in
 types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
