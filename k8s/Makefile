@@ -26,6 +26,11 @@ create-cluster: _require-valid-kind ## Creates Kubernetes cluster
 delete-cluster destroy-cluster: _require-valid-kind ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
 
+.PHONY: recreate-cluster
+recreate-cluster: ## Recreates Kubernetes cluster
+	@$(MAKE) delete-cluster
+	@$(MAKE) create-cluster
+
 ##@ Development
 
 .PHONY: down-devel up-devel

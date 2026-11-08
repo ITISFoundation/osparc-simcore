@@ -30,8 +30,6 @@ _require-valid-kubectl:
 _require-valid-kind:
 	$(call verify_tool_installation,kind,$(KIND_VERSION))
 
-# Listing this helper in .PHONY would stop GNU Make from applying its pattern
-# rule, so leave it undeclared.
 .helmfile-%: _require-valid-helmfile _require-valid-kubectl
 	cd $(REPO_BASE_DIR) || exit 1; \
 	set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
