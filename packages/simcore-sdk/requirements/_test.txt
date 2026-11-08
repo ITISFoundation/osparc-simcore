@@ -220,11 +220,11 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.13.5
+pydantic==2.14.1
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -342,7 +342,7 @@ typing-extensions==4.16.0
     #   pydantic-core
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
