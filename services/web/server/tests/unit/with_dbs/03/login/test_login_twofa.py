@@ -632,3 +632,41 @@ async def test_email_2fa_login_completes_with_email_code(
         )
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert MSG_LOGGED_IN in data["message"]
+
+
+async def test_resend_2fa_code_uses_session_email_not_body(
+    client: TestClient,
+    mocked_twilio_service: dict[str, MockType],
+):
+    """The code resend acts on the account of this session (its pending login),
+    not on the email taken from the request body
+    """
+    assert client.app
+
+    attacker_phone = "+41770000031"
+    victim_phone = "+41770000032"
+
+    async with AsyncExitStack() as stack:
+        attacker = await stack.enter_async_context(NewUser(user_data={"phone": attacker_phone}, app=client.app))
+        victim = await stack.enter_async_context(NewUser(user_data={"phone": victim_phone}, app=client.app))
+
+        # attacker starts a login: 2FA is pending and grants the resend step
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": attacker["email"], "password": attacker["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+
+        # resend naming the VICTIM's email
+        response = await client.post(
+            f"{client.app.router['auth_resend_2fa_code'].url_for()}",
+            json={"email": victim["email"], "via": "SMS"},
+        )
+        await assert_status(response, status.HTTP_200_OK)
+
+        # the new code was sent to the session's own account and no code exists
+        # for the named email
+        last_sms = mocked_twilio_service["send_sms_code_for_login"].call_args
+        assert last_sms.kwargs["phone_number"] == attacker_phone
+        assert await has_2fa_code(client.app, victim["email"]) is False
+        assert await verify_2fa_code(client.app, user_email=attacker["email"], code=last_sms.kwargs["code"]) is True
