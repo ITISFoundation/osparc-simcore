@@ -18,6 +18,7 @@ from ._projects_service import (
     notify_project_node_update,
     notify_project_state_update,
     patch_project_and_notify_users,
+    repair_projects_nodes_pricing_and_resources,
     update_project_node_state,
 )
 from .nodes_utils import update_node_outputs
@@ -35,6 +36,7 @@ __all__: tuple[str, ...] = (
     "notify_project_node_update",
     "notify_project_state_update",
     "patch_project_and_notify_users",
+    "repair_projects_nodes_pricing_and_resources",
     "update_node_outputs",
     "update_project_node_state",
 )  # nopycln: file
