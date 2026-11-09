@@ -21,6 +21,7 @@ from ...exception_handling import (
 from ...projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
+from ...workspaces.errors import WorkspaceAccessForbiddenError
 from ..exceptions import DirectorV2ServiceError
 
 _exceptions_handlers_map: ExceptionHandlersMap = {}
@@ -88,6 +89,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("Project {project_uuid} could not be found.", _version=1),
+    ),
+    WorkspaceAccessForbiddenError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        user_message("Access to this workspace is forbidden: {details}", _version=1),
     ),
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,

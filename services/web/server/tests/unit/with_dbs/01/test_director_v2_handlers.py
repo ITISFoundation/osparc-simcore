@@ -52,8 +52,10 @@ from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMo
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
+from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.projects.models import ProjectDict
@@ -300,6 +302,46 @@ async def foreign_project(
         yield project
 
 
+@pytest.fixture
+async def foreign_workspace_project(
+    client: TestClient,
+    sqlalchemy_async_engine: AsyncEngine,
+    tests_data_dir: Path,
+    osparc_product_name: ProductName,
+) -> AsyncIterator[ProjectDict]:
+    """project inside a shared workspace owned by another user, invisible to the logged user"""
+    assert client.app
+    async with NewUser(None, client.app) as other_user:
+        async with sqlalchemy_async_engine.begin() as conn:
+            workspace_id = (
+                await conn.execute(
+                    sa.insert(workspaces)
+                    .values(
+                        name="foreign-workspace",
+                        owner_primary_gid=int(other_user["primary_gid"]),
+                        product_name=osparc_product_name,
+                    )
+                    .returning(workspaces.c.workspace_id)
+                )
+            ).scalar_one()
+        try:
+            async with NewProject(
+                {},
+                client.app,
+                user_id=other_user["id"],
+                product_name=osparc_product_name,
+                tests_data_dir=tests_data_dir,
+            ) as project:
+                async with sqlalchemy_async_engine.begin() as conn:
+                    await conn.execute(
+                        sa.update(projects).where(projects.c.uuid == project["uuid"]).values(workspace_id=workspace_id)
+                    )
+                yield project
+        finally:
+            async with sqlalchemy_async_engine.begin() as conn:
+                await conn.execute(sa.delete(workspaces).where(workspaces.c.workspace_id == workspace_id))
+
+
 async def _share_project_with_logged_user(
     sqlalchemy_async_engine: AsyncEngine,
     project: ProjectDict,
@@ -419,6 +461,30 @@ async def test_computations_on_unknown_project_are_not_found(
     url = client.app.router["stop_computation"].url_for(project_id=project_id)
     rsp = await client.post(f"{url}")
     await assert_status(rsp, status.HTTP_404_NOT_FOUND)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_computations_on_project_in_inaccessible_workspace_are_forbidden(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    foreign_workspace_project: ProjectDict,
+):
+    """workspace-access denial must surface as 403, not 500"""
+    assert client.app
+    project_id = foreign_workspace_project["uuid"]
+
+    url = client.app.router["get_computation"].url_for(project_id=project_id)
+    rsp = await client.get(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["start_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["stop_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
 
 
 @pytest.fixture
