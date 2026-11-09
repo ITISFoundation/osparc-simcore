@@ -336,7 +336,7 @@ types-awscrt==0.28.4
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
