@@ -268,13 +268,63 @@
       "groupSlug": "boto"
     },
     {
-      "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
+      // aioboto3 pins aiobotocore[boto3]==2.25.1, whose botocore/boto3 range
+      // ends below 1.40.62 (see requirements/constraints.txt), so 1.43.x never
+      // resolves while aioboto3 is installed. Hold the runtime SDK and the
+      // stubs that type it at their current line, so the boto group proposes a
+      // set that resolves. aioboto3/aiobotocore stay free: a release that lifts
+      // the pin arrives as its own PR. Removal is tracked in
+      // https://github.com/ITISFoundation/osparc-simcore/issues/10035
+      "description": "Hold the boto family at the aiobotocore-compatible ceiling while aioboto3 is installed (#10035)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "boto3",
+        "botocore"
+      ],
+      "allowedVersions": "<1.40.62"
+    },
+    {
+      "description": "s3transfer: boto3 1.40.61 pulls s3transfer<0.15; keep the held ceiling (#10035)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "s3transfer"
+      ],
+      "allowedVersions": "<0.15.0"
+    },
+    {
+      "description": "boto3/botocore typing stubs: keep them on the boto3 1.40 line the runtime is held at, so pyright/mypy do not type against a newer SDK (#10035)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchDepNames": [
+        "boto3-stubs",
+        "botocore-stubs",
+        "types-boto3"
+      ],
+      "allowedVersions": "<1.43.0"
+    },
+    {
+      "description": "types-aiobotocore and its per-service stubs: hold on the aiobotocore 2.25.1 line (currently 3.8.0) while aioboto3 pins that aiobotocore (#10035)",
+      "matchManagers": [
+        "pip-compile"
+      ],
+      "matchPackagePatterns": [
+        "^types[-_]aiobotocore"
+      ],
+      "allowedVersions": "<3.9.0"
+    },
+    {
+      "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). A lockfile that takes its parent layer as --constraint therefore fails to compile while that parent still pins the old version, and that failure is what the renovate/artifacts check reports (see docs/renovate.md). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
       "matchManagers": [
         "pip-compile"
       ],
       "postUpgradeTasks": {
         "commands": [
-          "uv run --script --no-project .github/renovate/resync_lockfiles.py"
+          "./.github/renovate/resync_lockfiles.py"
         ],
         "dataFileTemplate": "{{#each upgrades}}{{{depName}}}=={{{newVersion}}}\n{{/each}}",
         "fileFilters": [

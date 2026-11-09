@@ -138,6 +138,7 @@ async def test_pre_registration_and_invitation_workflow(
     guest_email: str,
     faker: Faker,
     user_phone_number: PhoneNumberStr,
+    country_name: str,
 ):
     requester_info = {
         "firstName": faker.first_name(),
@@ -150,7 +151,7 @@ async def test_pre_registration_and_invitation_workflow(
         "city": faker.city(),
         "state": faker.state(),
         "postalCode": faker.postcode(),
-        "country": faker.country(),
+        "country": country_name,
     }
 
     invitation = InvitationGenerate(

@@ -8,7 +8,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -131,7 +131,7 @@ python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -155,7 +155,7 @@ sqlalchemy==2.0.51
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-types-psycopg2==2.9.21.20260223
+types-psycopg2==2.9.21.20261008
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

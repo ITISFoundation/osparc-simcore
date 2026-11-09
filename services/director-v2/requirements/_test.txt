@@ -24,7 +24,7 @@ async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 bokeh==3.9.0
     # via dask
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -148,7 +148,6 @@ numpy==2.5.2
     #   -c requirements/_base.txt
     #   bokeh
     #   contourpy
-    #   types-networkx
 packaging==26.3
     # via
     #   -c requirements/_base.txt
@@ -213,7 +212,7 @@ pyyaml==6.0.3
     #   bokeh
     #   dask
     #   distributed
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -255,11 +254,11 @@ tornado==6.6
     #   -c requirements/_base.txt
     #   bokeh
     #   distributed
-types-networkx==3.6.1.20260303
+types-networkx==3.6.1.20261024
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20260223
+types-psycopg2==2.9.21.20261008
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

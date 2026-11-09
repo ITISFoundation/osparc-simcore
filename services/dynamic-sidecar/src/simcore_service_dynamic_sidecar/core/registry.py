@@ -27,12 +27,12 @@ def _get_login_url(registry_settings: RegistrySettings) -> str:
 async def _login_registry(registry_settings: RegistrySettings) -> None:
     command_result: CommandResult = await async_command(
         (
-            f"echo '{registry_settings.REGISTRY_PW.get_secret_value()}' | "
             f"docker login {_get_login_url(registry_settings)} "
             f"--username '{registry_settings.REGISTRY_USER}' "
             "--password-stdin"
         ),
         timeout=DOCKER_LOGIN_TIMEOUT,
+        pipe_as_input=f"{registry_settings.REGISTRY_PW.get_secret_value()}\n",
     )
     if "Login Succeeded" not in command_result.message:
         _logger.error("Response: %s", command_result)

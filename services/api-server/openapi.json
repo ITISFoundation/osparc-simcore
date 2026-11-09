@@ -9268,8 +9268,7 @@
               {
                 "type": "null"
               }
-            ],
-            "empty": true
+            ]
           },
           "description": {
             "anyOf": [
@@ -9279,8 +9278,7 @@
               {
                 "type": "null"
               }
-            ],
-            "empty": true
+            ]
           }
         },
         "type": "object",

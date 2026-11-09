@@ -15,7 +15,7 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -44,7 +44,7 @@ botocore-stubs==1.40.74
     #   types-aiobotocore
 cachebox==5.2.3
     # via deepdiff
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -257,7 +257,7 @@ pyyaml==6.0.3
     #   jsonschema-path
     #   moto
     #   responses
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -283,7 +283,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.29.0
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -336,7 +336,7 @@ types-awscrt==0.28.4
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

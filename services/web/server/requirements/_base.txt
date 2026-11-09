@@ -2,30 +2,38 @@
 #    uv pip compile --output-file=requirements/_base.txt requirements/_base.in
 aio-pika==10.1.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 aiocache==0.12.3
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiodebug==2.3.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 aiodocker==0.27.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==25.1.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiohappyeyeballs==2.6.1
-    # via aiohttp
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   aiohttp
 aiohttp==3.14.5
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
@@ -38,32 +46,43 @@ aiohttp-security==0.5.0
 aiohttp-session==2.11.0
     # via -r requirements/_base.in
 aiormq==7.2.1
-    # via aio-pika
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   aio-pika
 aiosignal==1.4.0
-    # via aiohttp
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   aiohttp
 alembic==1.8.1
     # via -r requirements/../../../../packages/postgres-database/requirements/_base.in
-amqp==5.3.1
+amqp==5.4.2
     # via kombu
-annotated-doc==0.0.5
-    # via typer
+annotated-doc==0.0.4
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   typer
 annotated-types==0.8.0
-    # via pydantic
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   pydantic
 anyio==4.15.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   fast-depends
     #   faststream
     #   httpx2
-arrow==1.3.0
+arrow==1.4.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 asyncpg==0.32.0
     # via
     #   -r requirements/_base.in
     #   sqlalchemy
-attrs==25.4.0
+attrs==26.1.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
     #   jsonschema
@@ -78,14 +97,17 @@ captcha==0.5.0
     # via -r requirements/_base.in
 celery==5.6.3
     # via -r requirements/../../../../packages/celery-library/requirements/_base.in
-certifi==2026.10.19
+certifi==2026.10.23
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
 cffi==2.1.1
     # via cryptography
-charset-normalizer==2.0.12
-    # via requests
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   requests
 click==8.2.1
     # via
     #   celery
@@ -106,55 +128,78 @@ cryptography==50.0.2
 deepdiff==9.1.0
     # via -r requirements/_base.in
 dnspython==2.9.0
-    # via email-validator
-email-validator==2.2.0
-    # via pydantic
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   email-validator
+email-validator==2.3.0
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   pydantic
 et-xmlfile==1.1.0
     # via openpyxl
 faker==40.38.0
     # via -r requirements/_base.in
 fast-depends==3.0.8
-    # via faststream
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   faststream
 faststream==0.6.7
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-frozenlist==1.4.1
+frozenlist==1.8.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/./constraints.txt
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.70.0
+googleapis-common-protos==1.73.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via sqlalchemy
-grpcio==1.76.0
-    # via opentelemetry-exporter-otlp-proto-grpc
+grpcio==1.78.0
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-grpc
 gunicorn==23.0.0
     # via -r requirements/_base.in
 h11==0.16.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   httpcore2
     #   wsproto
 h2==4.4.1
-    # via httpx2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   httpx2
 hpack==4.2.0
-    # via h2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   h2
 httpcore2==2.16.0
-    # via httpx2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   httpx2
 httpx2==2.16.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 hyperframe==6.1.0
-    # via h2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   h2
 idna==3.19
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   anyio
     #   email-validator
     #   httpx2
@@ -167,38 +212,49 @@ jinja2==3.1.6
 jsondiff==2.0.0
     # via -r requirements/_base.in
 jsonref==1.1.0
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==4.26.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 jsonschema-specifications==2025.9.1
-    # via jsonschema
-kombu==5.6.2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   jsonschema
+kombu==5.7.0
     # via celery
 mako==1.4.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   alembic
-markdown-it-py==3.0.0
-    # via rich
+markdown-it-py==4.0.0
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   rich
 markupsafe==3.0.2
     # via
     #   jinja2
     #   mako
     #   werkzeug
 mdurl==0.1.2
-    # via markdown-it-py
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   markdown-it-py
 msgpack==1.2.4
     # via -r requirements/_base.in
 multidict==6.9.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiohttp
     #   yarl
 openpyxl==3.0.9
     # via -r requirements/_base.in
 opentelemetry-api==1.45.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -218,23 +274,34 @@ opentelemetry-api==1.45.1
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-exporter-http-transport==0.66b1
-    # via opentelemetry-exporter-otlp-proto-http
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-exporter-otlp==1.45.1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-exporter-otlp-common==0.66b1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-exporter-otlp-proto-common==1.45.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-exporter-otlp-proto-grpc==1.45.1
-    # via opentelemetry-exporter-otlp
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   opentelemetry-exporter-otlp
 opentelemetry-exporter-otlp-proto-http==1.45.1
-    # via opentelemetry-exporter-otlp
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.66b1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
@@ -247,40 +314,59 @@ opentelemetry-instrumentation==0.66b1
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-instrumentation-threading
 opentelemetry-instrumentation-aio-pika==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-aiohttp-client==0.66b1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 opentelemetry-instrumentation-aiohttp-server==0.66b1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 opentelemetry-instrumentation-asyncpg==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-celery==0.66b1
     # via -r requirements/../../../../packages/celery-library/requirements/_base.in
 opentelemetry-instrumentation-httpx==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-redis==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-sqlalchemy==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-threading==0.66b1
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-proto==1.45.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-sdk==1.45.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.66b1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-aiohttp-client
@@ -295,6 +381,7 @@ opentelemetry-semantic-conventions==0.66b1
     #   opentelemetry-sdk
 opentelemetry-util-http==0.66b1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-httpx
@@ -303,6 +390,7 @@ orderly-set==5.5.0
     # via deepdiff
 orjson==3.13.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -310,6 +398,7 @@ orjson==3.13.0
     #   deepdiff
 packaging==26.3
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
     #   gunicorn
@@ -318,7 +407,9 @@ packaging==26.3
     #   opentelemetry-instrumentation-sqlalchemy
     #   swagger-ui-py
 pamqp==4.0.1
-    # via aiormq
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   aiormq
 passlib==1.7.4
     # via -r requirements/_base.in
 phonenumbers==9.0.41
@@ -335,27 +426,34 @@ prometheus-client==0.26.0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 prompt-toolkit==3.0.52
     # via click-repl
-propcache==0.3.1
+propcache==0.4.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiohttp
     #   yarl
-protobuf==5.29.6
+protobuf==6.33.5
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==6.0.0
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+psutil==7.2.2
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.11
     # via sqlalchemy
 pycountry==23.12.11
     # via -r requirements/_base.in
 pycparser==2.21
     # via cffi
-pycryptodome==3.21.0
-    # via stream-zip
+pycryptodome==3.23.0
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   stream-zip
 pydantic==2.13.5
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -367,27 +465,38 @@ pydantic==2.13.5
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.46.5
-    # via pydantic
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   pydantic
 pydantic-extra-types==2.11.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
 pydantic-settings==2.14.2
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.21.0
-    # via rich
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   rich
 pyinstrument==5.1.3
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 pyjwt==2.15.1
     # via twilio
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   arrow
     #   celery
 python-dotenv==1.2.4
-    # via pydantic-settings
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   pydantic-settings
 python-engineio==4.13.5
     # via python-socketio
 python-magic==0.4.27
@@ -398,40 +507,50 @@ pytz==2022.1
     # via twilio
 pyyaml==6.0.3
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   swagger-ui-py
-redis==6.4.0
+redis==7.4.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   kombu
 referencing==0.35.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-http
     #   twilio
 rich==14.3.4
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   jsonschema
     #   referencing
 setproctitle==1.3.7
     # via gunicorn
 shellingham==1.5.4
-    # via typer
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   typer
 simple-websocket==1.1.0
     # via python-engineio
-six==1.16.0
-    # via python-dateutil
+six==1.17.0
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   python-dateutil
 sqlalchemy==2.0.51
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -439,32 +558,40 @@ sqlalchemy==2.0.51
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   alembic
 stream-zip==0.0.84
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
 swagger-ui-py==23.9.23
     # via -r requirements/_base.in
-tenacity==8.5.0
+tenacity==9.1.4
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-toolz==0.12.0
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
-tqdm==4.66.3
+toolz==1.2.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+tqdm==4.67.3
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
 truststore==0.10.5
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   httpcore2
     #   httpx2
 twilio==7.12.0
     # via -r requirements/_base.in
 typer==0.27.3
-    # via -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
-types-python-dateutil==2.9.0.20250516
-    # via arrow
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.16.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiodebug
     #   anyio
     #   fast-depends
@@ -485,14 +612,18 @@ typing-extensions==4.16.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   pydantic
     #   pydantic-settings
-tzdata==2025.2
-    # via kombu
+tzdata==2025.3
+    # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
+    #   arrow
 tzlocal==5.3.1
     # via celery
 urllib3==2.8.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
 uvloop==0.22.1
@@ -506,8 +637,9 @@ wcwidth==0.2.13
     # via prompt-toolkit
 werkzeug==3.1.9
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-wrapt==1.16.0
+wrapt==1.17.3
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
@@ -521,6 +653,7 @@ wsproto==1.2.0
     # via simple-websocket
 yarl==1.25.1
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in

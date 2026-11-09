@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.groups import AccessRightsDict
 from models_library.notifications import Channel
 from models_library.products import ProductName
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -83,7 +84,7 @@ async def support_user(
         await _groups_repository.add_new_user_in_group(
             client.app,
             group_id=support_group_before_app_starts["gid"],
-            new_user_id=user_info["id"],
+            new_user_id=UserID(user_info["id"]),
             access_rights=AccessRightsDict(read=True, write=False, delete=False),
         )
 
@@ -94,6 +95,7 @@ async def support_user(
 def account_request_form(
     faker: Faker,
     user_phone_number: PhoneNumberStr,
+    country_name: str,
 ) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
@@ -106,7 +108,7 @@ def account_request_form(
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "postalCode": faker.postcode(),
-        "country": faker.country(),
+        "country": country_name,
         # extras
         "application": faker.word(),
         "description": faker.sentence(),

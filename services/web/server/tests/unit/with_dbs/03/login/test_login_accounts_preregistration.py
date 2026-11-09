@@ -159,6 +159,7 @@ async def test_cannot_unregister_invalid_credentials(
 async def test_request_an_account(
     client: TestClient,
     faker: Faker,
+    country_name: str,
     mocked_send_notification: MagicMock,
     mocked_captcha_session: MagicMock,
 ):
@@ -171,7 +172,7 @@ async def test_request_an_account(
         "lastName": faker.last_name(),
         "email": faker.email(),
         "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace("\n", ", "),
-        "country": faker.country(),
+        "country": country_name,
     }
 
     response = await client.post(
