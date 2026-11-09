@@ -54,8 +54,7 @@ async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: 
             nor a completed login identity (i.e. it never started a login here)
     """
     session = await get_session(request)
-    pending = session.get(PENDING_2FA_EMAIL_KEY)
-    if pending:
+    if pending := session.get(PENDING_2FA_EMAIL_KEY):
         return TrustedLoginEmail(
             email=pending["email"].lower(),
             fully_authenticated=False,
