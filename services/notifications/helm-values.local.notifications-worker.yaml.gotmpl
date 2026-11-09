@@ -9,9 +9,11 @@ resources:
   limits:
     memory: 2Gi
 
+# healthcheck disabled in dev mode
 probes:
-  startup:
-    failureThreshold: 120
+  startup: null
+  readiness: null
+  liveness: null
 
 # only for the debug NodePort; the celery worker itself serves no API
 service:
