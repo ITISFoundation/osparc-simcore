@@ -316,7 +316,7 @@ class ProjectNodesRepo:
         insert_stmt = await self._make_pricing_unit_insert(
             connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
         )
-        on_update_stmt = insert_stmt.on_conflict_do_update(
+        on_update_stmt = insert_stmt.on_conflict_do_update(  # NOSONAR
             index_elements=[
                 projects_node_to_pricing_unit.c.project_node_id,
             ],
@@ -345,11 +345,10 @@ class ProjectNodesRepo:
         insert_stmt = await self._make_pricing_unit_insert(
             connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
         )
-        await connection.execute(
-            insert_stmt.on_conflict_do_nothing(
-                index_elements=[projects_node_to_pricing_unit.c.project_node_id],
-            )
+        on_nothing_stmt = insert_stmt.on_conflict_do_nothing(  # NOSONAR
+            index_elements=[projects_node_to_pricing_unit.c.project_node_id],
         )
+        await connection.execute(on_nothing_stmt)
         link = await self.get_project_node_pricing_unit_id(connection, node_uuid=node_uuid)
         assert link  # nosec  # the link is either inserted above or already there
         return link
