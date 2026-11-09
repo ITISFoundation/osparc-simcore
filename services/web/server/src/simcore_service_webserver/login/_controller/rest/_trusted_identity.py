@@ -1,15 +1,3 @@
-"""Session-bound email for the two-factor authentication flows
-
-The 2FA login endpoints run *before* a session identity exists (credentials were
-checked but the second factor is still pending). They are allowed through by
-one-shot session access tokens, which only prove that this session completed the
-previous step -- not which account it is about.
-
-Therefore these handlers must act on the email kept server-side (the identity of
-a completed login, else the email whose login is pending 2FA) and never on an
-email taken from the request body.
-"""
-
 from dataclasses import dataclass
 from typing import Annotated, Final
 
