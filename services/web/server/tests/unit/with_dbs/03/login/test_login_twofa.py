@@ -773,6 +773,7 @@ async def test_successful_login_clears_an_abandoned_pending_login(
 async def test_login_2fa_ignores_a_code_valid_for_another_account(
     client: TestClient,
     mocked_twilio_service: dict[str, MockType],
+    mocker: MockerFixture,
 ):
     """A code valid for another account does not log that account in: the
     endpoint verifies against the session's pending login, not the body email
@@ -792,9 +793,17 @@ async def test_login_2fa_ignores_a_code_valid_for_another_account(
             json={"email": first_account["email"], "password": first_account["raw_password"]},
         )
         await assert_status(response, status.HTTP_202_ACCEPTED)
+        first_code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
 
-        # a code valid for the second account, minted outside this session
-        second_code = await create_2fa_code(client.app, user_email=second_account["email"], expiration_in_seconds=60)
+        # a code valid for the second account, minted outside this session with
+        # a fixed value: a random one could equal first_code, and then
+        # verifying it against the pending login would legitimately succeed
+        second_code = "000000" if first_code != "000000" else "111111"
+        mocker.patch(
+            "simcore_service_webserver.login._twofa_service.generate_passcode",
+            return_value=second_code,
+        )
+        await create_2fa_code(client.app, user_email=second_account["email"], expiration_in_seconds=60)
 
         # submitting it under the second account's email does not log that
         # account in
@@ -810,7 +819,6 @@ async def test_login_2fa_ignores_a_code_valid_for_another_account(
         assert await verify_2fa_code(client.app, user_email=second_account["email"], code=second_code) is True
 
         # the session's own login is intact and completes with its own code
-        first_code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
         response = await client.post(
             f"{client.app.router['auth_login_2fa'].url_for()}",
             json={"email": first_account["email"], "code": first_code},
