@@ -88,7 +88,7 @@ faker==40.38.0
     #   -r requirements/_test.in
 fakeredis==2.34.1
     # via -r requirements/_test.in
-fastapi==0.161.1
+fastapi==0.162.0
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
@@ -432,15 +432,15 @@ typer==0.27.3
     #   -c requirements/_base.txt
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-openpyxl==3.1.5.20260316
+types-openpyxl==3.1.5.20261017
     # via -r requirements/_test.in
 types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

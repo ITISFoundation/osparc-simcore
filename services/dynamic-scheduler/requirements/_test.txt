@@ -155,7 +155,7 @@ sqlalchemy==2.0.51
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-types-psycopg2==2.9.21.20260223
+types-psycopg2==2.9.21.20261008
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

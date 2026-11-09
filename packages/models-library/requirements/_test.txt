@@ -85,9 +85,9 @@ rpds-py==0.30.0
     #   referencing
 termcolor==3.3.0
     # via pytest-sugar
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260906
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
