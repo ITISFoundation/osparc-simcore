@@ -418,7 +418,7 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
     # written once, for the dynamic node only
     assert mocked_director_v2_node_sizing.called
     assert update_node.call_count == 1
-    written_node_ids = {NodeID(call.args[2]) for call in update_node.call_args_list}
+    written_node_ids = {call.args[2] for call in update_node.call_args_list}
     assert written_node_ids == {dynamic_node_id}
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
