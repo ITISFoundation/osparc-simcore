@@ -1,3 +1,9 @@
+environments:
+  default: {}
+  local:
+    values:
+      - helmfile-environments.local.yaml
+---
 {{- $namespace := "simcore" -}}
 
 helmDefaults:
@@ -51,6 +57,9 @@ releases:
       - _shared/helm-values.tracing.yaml.gotmpl
       - api-server/helm-values.yaml.gotmpl
       - api-server/helm-values.api-server.yaml.gotmpl
+      {{- range (.Values | get "api_server.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
 
   - name: api-worker
     inherit:

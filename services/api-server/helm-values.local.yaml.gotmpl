@@ -1,0 +1,43 @@
+image:
+  repository: local/api-server
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+env:
+  API_SERVER_LOGLEVEL: DEBUG
+  API_SERVER_REMOTE_DEBUG_PORT: 3000
+  SC_BOOT_MODE: debug
+
+extraVolumes:
+  - name: api-server-src
+    hostPath:
+      path: /osparc-simcore/services/api-server
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: api-server-src
+    mountPath: /devel/services/api-server
+  - name: packages-src
+    mountPath: /devel/packages
+
+service:
+  type: NodePort
+  nodePort: 30006
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 33006

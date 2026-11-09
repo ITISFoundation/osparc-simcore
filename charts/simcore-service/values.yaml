@@ -11,7 +11,10 @@ args: []
 containerPort: 8000
 service:
   enabled: true
+  type: ClusterIP
   port: 8000
+  nodePort: null
+  extraServicePorts: []
 
 podSecurityContext: # simcore services start as root
   runAsNonRoot: false

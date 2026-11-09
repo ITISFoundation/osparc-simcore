@@ -20,7 +20,7 @@ KIND_CLUSTER_NAME := simcore
 
 .PHONY: create-cluster
 create-cluster: _require-valid-kind ## Creates Kubernetes cluster
-	kind create cluster --name $(KIND_CLUSTER_NAME) --config $(_K8S_DIR)kind-config.yaml
+	cd $(_K8S_DIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
 
 .PHONY: delete-cluster destroy-cluster
 delete-cluster destroy-cluster: _require-valid-kind ## Deletes Kubernetes cluster

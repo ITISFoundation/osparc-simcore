@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "simcore-service.labels" . | nindent 4 }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.type }}
   selector:
     app.kubernetes.io/name: {{ include "simcore-service.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -15,4 +15,16 @@ spec:
       port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- range .Values.service.extraServicePorts }}
+    - name: {{ .name }}
+      port: {{ .port }}
+      targetPort: {{ .targetPort | default .port }}
+      protocol: {{ .protocol | default "TCP" }}
+      {{- if and (eq $.Values.service.type "NodePort") .nodePort }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+    {{- end }}
 {{- end }}

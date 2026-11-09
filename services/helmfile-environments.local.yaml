@@ -1,0 +1,3 @@
+api_server:
+  extra_values_files:
+    - api-server/helm-values.local.yaml.gotmpl

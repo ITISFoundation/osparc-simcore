@@ -6,6 +6,8 @@ KUBECTL_VERSION := 1.36.1
 KIND_VERSION := 0.32.0
 HELMFILE_VERSION := 1.1.6
 
+HELMFILE := HELM_DIFF_OUTPUT_CONTEXT=5 helmfile -e local
+
 # $(1) command, $(2) expected version
 define verify_tool_installation
 	@if ! command -v $(1) >/dev/null 2>&1; then \
@@ -33,5 +35,5 @@ _require-valid-kind:
 .helmfile-%: _require-valid-helmfile _require-valid-kubectl
 	cd $(REPO_BASE_DIR) || exit 1; \
 	set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
-	HELM_DIFF_OUTPUT_CONTEXT=5 helmfile -f services/helmfile.local-ops.yaml.gotmpl $* && \
-	HELM_DIFF_OUTPUT_CONTEXT=5 helmfile -f services/helmfile.yaml.gotmpl $*
+	$(HELMFILE) -f services/helmfile.local-ops.yaml.gotmpl $* && \
+	$(HELMFILE) -f services/helmfile.yaml.gotmpl $*
