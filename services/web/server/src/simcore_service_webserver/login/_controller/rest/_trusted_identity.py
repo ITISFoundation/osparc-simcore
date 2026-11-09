@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from typing import Annotated, Final
 
 from aiohttp import web
-from aiohttp_security.api import IDENTITY_KEY
 from annotated_types import doc
 
+from ....security import security_web
 from ....session.api import get_session
 
 PENDING_2FA_EMAIL_KEY: Final[
@@ -62,11 +62,7 @@ async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: 
             phone_registration_allowed=pending["phone_registration_allowed"],
         )
 
-    # the identity policy stores the user's email (see security/_identity_policy.py);
-    # aiohttp_security.api.authorized_userid cannot be used here because the
-    # authorization policy maps it to the user id
-    identity_policy = request.config_dict[IDENTITY_KEY]
-    email = await identity_policy.identify(request)
+    email = await security_web.get_identity(request)
     if email:
         return TrustedLoginEmail(email=email.lower(), fully_authenticated=True, phone_registration_allowed=True)
 
