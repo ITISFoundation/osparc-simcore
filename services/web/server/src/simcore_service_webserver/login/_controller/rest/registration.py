@@ -54,7 +54,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._trusted_identity import get_trusted_login_email
+from ._trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
@@ -230,6 +230,9 @@ async def register(request: web.Request):
         # Don't fail registration if email fails to send
 
     # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
+    # an abandoned earlier login may have left a pending email: drop it so
+    # that it cannot shadow this new account
+    await clear_pending_2fa_email(request)
     return await _security_service.login_granted_response(
         request,
         user=user,

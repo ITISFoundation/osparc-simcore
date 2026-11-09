@@ -88,6 +88,9 @@ async def login(request: web.Request):
     # Check if user role allows skipping 2FA or if 2FA is not required
     skip_2fa = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
+        # an abandoned earlier login may have left a pending email: drop it so
+        # that it cannot shadow this authenticated account
+        await clear_pending_2fa_email(request)
         return await _security_service.login_granted_response(request, user=user)
 
     # 2FA login process continuation
@@ -113,6 +116,7 @@ async def login(request: web.Request):
         )
 
     if user_2fa_authentication_method == TwoFactorAuthenticationMethod.DISABLED:
+        await clear_pending_2fa_email(request)
         return await _security_service.login_granted_response(request, user=user)
 
     phone_registration_allowed = (

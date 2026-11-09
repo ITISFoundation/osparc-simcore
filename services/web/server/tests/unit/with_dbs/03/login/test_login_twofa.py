@@ -723,3 +723,47 @@ async def test_login_continuation_in_authenticated_session_acts_on_pending_login
 
         # the second account's code was consumed by the login
         assert await has_2fa_code(client.app, second_account["email"]) is False
+
+
+async def test_successful_login_clears_an_abandoned_pending_login(
+    client: TestClient,
+    mocked_twilio_service: dict[str, MockType],
+):
+    """A successful login that skips 2FA clears the pending email left behind by
+    an abandoned login attempt, so the session keeps acting on its own account
+    """
+    assert client.app
+
+    first_phone = "+41770000051"
+    second_phone = "+41770000052"
+
+    async with AsyncExitStack() as stack:
+        first_account = await stack.enter_async_context(NewUser(user_data={"phone": first_phone}, app=client.app))
+        second_account = await stack.enter_async_context(
+            NewUser(user_data={"role": "TESTER", "phone": second_phone}, app=client.app)
+        )
+
+        # the first account starts a login that is abandoned at the 2FA step
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": first_account["email"], "password": first_account["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+
+        # the second account signs in through the 2FA-skipping path (TESTER role)
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": second_account["email"], "password": second_account["raw_password"]},
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
+
+        # resend acts on the signed-in account, not on the abandoned pending login
+        response = await client.post(
+            f"{client.app.router['auth_resend_2fa_code'].url_for()}",
+            json={"email": second_account["email"], "via": "SMS"},
+        )
+        await assert_status(response, status.HTTP_200_OK)
+
+        last_sms = mocked_twilio_service["send_sms_code_for_login"].call_args
+        assert last_sms.kwargs["phone_number"] == second_phone
