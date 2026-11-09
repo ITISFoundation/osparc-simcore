@@ -51,7 +51,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_dependencies import get_confirmation_service
-from ._trusted_identity import clear_pending_2fa_email, get_trusted_login_email
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .confirmation_schemas import (
     CodePathParam,
     PhoneConfirmationBody,

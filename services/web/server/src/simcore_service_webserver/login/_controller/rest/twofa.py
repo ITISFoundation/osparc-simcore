@@ -22,7 +22,7 @@ from ...constants import (
 )
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._trusted_identity import get_trusted_login_email
+from ._session_trusted_identity import get_trusted_login_email
 from .twofa_schemas import Resend2faBody
 
 _logger = logging.getLogger(__name__)

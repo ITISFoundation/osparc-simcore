@@ -54,7 +54,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._trusted_identity import clear_pending_2fa_email, get_trusted_login_email
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
