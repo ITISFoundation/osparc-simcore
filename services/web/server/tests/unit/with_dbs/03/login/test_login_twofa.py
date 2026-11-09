@@ -457,6 +457,9 @@ async def test_phone_reconfirmation_cannot_take_over_another_account(
     client: TestClient,
     mocked_twilio_service: dict[str, MockType],
 ):
+    """A fully authenticated session naming another account's email acts on
+    its own account only
+    """
     assert client.app
 
     first_phone = "+41770000001"
@@ -512,6 +515,9 @@ async def test_phone_reconfirmation_of_account_with_phone_requires_second_factor
     client: TestClient,
     mocked_twilio_service: dict[str, MockType],
 ):
+    """A password-only login cannot re-point the phone number of an account
+    that already has one
+    """
     assert client.app
 
     new_phone = "+41770000009"

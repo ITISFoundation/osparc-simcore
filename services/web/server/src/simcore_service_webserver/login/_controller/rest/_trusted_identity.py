@@ -43,6 +43,8 @@ async def clear_pending_2fa_email(request: web.Request) -> None:
 async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: str) -> TrustedLoginEmail:
     """Email of the account this session may act on in a 2FA flow
 
+    2FA handlers act on it and never on an email from the request body.
+
     Raises:
         web.HTTPUnauthorized: if the session has neither a completed login identity
             nor a pending 2FA email (i.e. it never started a login here)
