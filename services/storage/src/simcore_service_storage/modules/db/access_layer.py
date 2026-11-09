@@ -55,10 +55,9 @@ from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...constants import EXPORTS_S3_PREFIX
-from ...exceptions.errors import InvalidFileIdentifierError, ProjectNotFoundError
+from ...exceptions.errors import InvalidFileIdentifierError
 from ...models import AccessRights
 from ._base import BaseRepository
-from .projects import ProjectRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -200,9 +199,6 @@ class AccessLayerRepository(BaseRepository):
     ) -> AccessRights:
         """
         Returns access-rights of user (user_id) over a project resource (project_id)
-
-        Raises:
-            ProjectNotFoundError: if `project_id` is not in the database
         """
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
@@ -238,14 +234,9 @@ class AccessLayerRepository(BaseRepository):
             result = await conn.execute(combined_query)
             row = result.one_or_none()
 
-            if row is None:
-                # both queries above join on the access-rights entries, so a missing row means
-                # either the project is not in the database or `user_id` has no access to it
-                if not await ProjectRepository.instance(self.db_engine).project_exists(
-                    connection=conn, project_uuid=project_id
-                ):
-                    raise ProjectNotFoundError(project_id=project_id)
-                return AccessRights.none()
+        if not row:
+            # Either project does not exists OR user_id has NO access
+            return AccessRights.none()
 
         assert row.prj_owner is None or isinstance(row.prj_owner, int)  # nosec
         assert isinstance(row.access_rights, dict)  # nosec
@@ -285,9 +276,8 @@ class AccessLayerRepository(BaseRepository):
             return AccessRights.none()
 
         # has associated project
-        try:
-            return await self.get_project_access_rights(user_id=user_id, project_id=row.project_id)
-        except ProjectNotFoundError:
+        access_rights = await self.get_project_access_rights(user_id=user_id, project_id=row.project_id)
+        if not access_rights:
             _logger.warning(
                 "File %s references a project %s that does not exists in db. "
                 " TIP: Audit sync between files_meta_data and projects tables",
@@ -295,6 +285,8 @@ class AccessLayerRepository(BaseRepository):
                 row.project_id,
             )
             return AccessRights.none()
+
+        return access_rights
 
     async def _get_access_without_metardata_entry(
         self,
@@ -324,14 +316,15 @@ class AccessLayerRepository(BaseRepository):
                 return AccessRights.all()
 
             # otherwise assert 'parent' string corresponds to a valid UUID
-            try:
-                return await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(parent))
-            except ProjectNotFoundError:
+            access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(parent))
+            if not access_rights:
                 _logger.warning(
                     "File %s references a project that does not exists in db",
                     file_id,
                 )
                 return AccessRights.none()
+
+            return access_rights
 
         except (ValueError, AttributeError) as err:
             raise InvalidFileIdentifierError(

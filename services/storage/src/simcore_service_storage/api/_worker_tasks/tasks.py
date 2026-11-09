@@ -13,7 +13,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from servicelib.logging_utils import log_context
 
-from ...exceptions.errors import ProjectAccessRightError, ProjectNotFoundError
+from ...exceptions.errors import ProjectAccessRightError
 from ...models import FileMetaData
 from ._files import complete_upload_file
 from ._paths import compute_path_size, delete_paths
@@ -40,6 +40,6 @@ def register_worker_tasks(app: Celery) -> None:
         register_task(app, export_data_as_download_link, dont_autoretry_for=(AccessRightError,))
         register_task(app, compute_path_size)
         register_task(app, complete_upload_file)
-        register_task(app, delete_paths, dont_autoretry_for=(ProjectNotFoundError, ProjectAccessRightError))
+        register_task(app, delete_paths, dont_autoretry_for=(ProjectAccessRightError,))
         register_task(app, deep_copy_files_from_project, dont_autoretry_for=(S3KeyNotFoundError,))
         register_task(app, search, task_name=SEARCH_TASK_NAME)
