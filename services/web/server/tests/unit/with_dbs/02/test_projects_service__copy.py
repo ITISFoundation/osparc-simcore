@@ -57,6 +57,7 @@ from simcore_service_webserver.projects import (
 )
 from simcore_service_webserver.projects import _projects_service
 from simcore_service_webserver.projects._crud_api_create import (
+    _compose_project_data,
     _copy_project_nodes_from_source_project,
 )
 from simcore_service_webserver.projects._projects_repository_legacy import (
@@ -852,6 +853,7 @@ async def _assert_clone_pricing_state(
 @pytest.mark.parametrize("source_kind", ["standard_project", "template"])
 async def test_clone_project_data_copies_pricing_links_and_sizes_unlinked_comp_nodes(
     source_kind: str,
+    *,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -955,3 +957,86 @@ async def test_copy_allow_guests_to_push_states_and_output_ports_keeps_disabled_
         )
         is False
     )
+
+
+async def test_copy_pricing_links_validates_each_distinct_unit_once(
+    client: TestClient,
+    user_project: ProjectDict,
+    shared_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    mocker: MockerFixture,
+):
+    """Several nodes of a project typically share one pricing unit: the copy asks the
+    resource-usage-tracker about every DISTINCT plan/unit once, not once per node, which
+    an unreachable tracker would otherwise pay for with one timeout per node.
+    """
+    assert client.app
+    # both projects were inserted from the same workbench, so their node ids match
+    nodes_map: NodesMap = {
+        node_id: node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]
+    }
+    assert len(nodes_map) > 1
+
+    for node_id in nodes_map:
+        await set_node_pricing_link(
+            sqlalchemy_async_engine,
+            user_project["uuid"],
+            node_id,
+            pricing_plan_id=_PRICING_PLAN_ID,
+            pricing_unit_id=_PRICING_UNIT_ID,
+        )
+    settings = get_rut_plugin_settings(client.app)
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID),
+        payload=jsonable_encoder(
+            make_pricing_unit(
+                pricing_unit_id=_PRICING_UNIT_ID,
+                default=False,
+                aws_ec2_instance=R5_4XLARGE_NAME,
+            )
+        ),
+        repeat=True,
+    )
+    validate_link = mocker.spy(_projects_service.rut_api, "get_pricing_plan_unit")
+
+    await _projects_service.copy_pricing_links(
+        client.app,
+        source_project_id=ProjectID(user_project["uuid"]),
+        destination_project_id=ProjectID(shared_project["uuid"]),
+        nodes_map=nodes_map,
+        product_name=osparc_product_name,
+    )
+
+    assert validate_link.call_count == 1
+    destination_state = await get_node_pricing_state(sqlalchemy_async_engine, shared_project["uuid"])
+    for node_id in nodes_map:
+        node_state = destination_state[NodeID(node_id)]
+        assert node_state.pricing_plan_id == _PRICING_PLAN_ID
+        assert node_state.pricing_unit_id == _PRICING_UNIT_ID
+
+
+async def test_compose_project_data_of_a_copy_says_nothing_about_the_nodes(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    faker: Faker,
+):
+    """Overriding fields of a copy (its name, e.g. when an api-server job renames it)
+    must not replace the nodes prepared from the source project: the caller keeps the
+    source's `required_resources` (and the pricing links copied on top of them).
+    """
+    assert client.app
+    new_project, project_nodes = await _compose_project_data(
+        client.app,
+        user_id=UserID(logged_user["id"]),
+        product_name=osparc_product_name,
+        new_project={"uuid": f"{faker.uuid4()}", "name": "copy of source", "description": "from the source"},
+        predefined_project={"name": "renamed copy", "description": None},
+    )
+
+    assert project_nodes is None
+    assert new_project["name"] == "renamed copy"
+    # a field the override leaves empty keeps the source project's value
+    assert new_project["description"] == "from the source"

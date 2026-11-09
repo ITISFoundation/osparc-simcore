@@ -13,6 +13,8 @@ from models_library.api_schemas_webserver.computations import (
     ComputationStarted,
 )
 from models_library.projects import CommitID, ProjectID
+from models_library.users import UserID
+from models_library.wallets import WalletInfo
 from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.common_headers import (
@@ -41,6 +43,25 @@ _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+async def _repair_pricing_state_if_billed(
+    request: web.Request,
+    *,
+    user_id: UserID,
+    product_name: str,
+    project_ids: list[ProjectID],
+    wallet_info: WalletInfo | None,
+) -> None:
+    if wallet_info is None:
+        # not a billed run: the web-server must not touch the nodes' pricing state
+        return
+    await repair_projects_nodes_pricing_and_resources(
+        request.app,
+        user_id=user_id,
+        project_ids=project_ids,
+        product_name=product_name,
+    )
 
 
 @routes.post(f"/{VTAG}/computations/{{project_id}}:start", name="start_computation")
@@ -150,14 +171,13 @@ async def start_computation(request: web.Request) -> web.Response:
         len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
     )
 
-    if wallet_info is not None:
-        # billed product: repair the pricing links/sizes the run will be billed on
-        await repair_projects_nodes_pricing_and_resources(
-            request.app,
-            user_id=req_ctx.user_id,
-            project_ids=running_project_ids,
-            product_name=req_ctx.product_name,
-        )
+    await _repair_pricing_state_if_billed(
+        request,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        project_ids=running_project_ids,
+        wallet_info=wallet_info,
+    )
 
     computations = DirectorV2RestClient(request.app)
     _started_results: list[tuple[str, int]] = await asyncio.gather(

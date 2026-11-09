@@ -8,6 +8,7 @@ import sqlalchemy.exc
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.dialects.postgresql import Insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -281,6 +282,29 @@ class ProjectNodesRepo:
             return (row["pricing_plan_id"], row["pricing_unit_id"])
         return None
 
+    async def _make_pricing_unit_insert(
+        self,
+        connection: AsyncConnection,
+        *,
+        node_uuid: uuid.UUID,
+        pricing_plan_id: int,
+        pricing_unit_id: int,
+    ) -> Insert:
+        result = await connection.scalar(
+            sqlalchemy.select(projects_nodes.c.project_node_id).where(
+                (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")
+            )
+        )
+        project_node_id = int(result) if result else 0
+
+        return pg_insert(projects_node_to_pricing_unit).values(
+            project_node_id=project_node_id,
+            pricing_plan_id=pricing_plan_id,
+            pricing_unit_id=pricing_unit_id,
+            created=sqlalchemy.func.now(),
+            modified=sqlalchemy.func.now(),
+        )
+
     async def connect_pricing_unit_to_project_node(
         self,
         connection: AsyncConnection,
@@ -289,19 +313,8 @@ class ProjectNodesRepo:
         pricing_plan_id: int,
         pricing_unit_id: int,
     ) -> None:
-        result = await connection.scalar(
-            sqlalchemy.select(projects_nodes.c.project_node_id).where(
-                (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")
-            )
-        )
-        project_node_id = int(result) if result else 0
-
-        insert_stmt = pg_insert(projects_node_to_pricing_unit).values(
-            project_node_id=project_node_id,
-            pricing_plan_id=pricing_plan_id,
-            pricing_unit_id=pricing_unit_id,
-            created=sqlalchemy.func.now(),
-            modified=sqlalchemy.func.now(),
+        insert_stmt = await self._make_pricing_unit_insert(
+            connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
         )
         on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[
@@ -314,6 +327,32 @@ class ProjectNodesRepo:
             },
         )
         await connection.execute(on_update_stmt)
+
+    async def connect_pricing_unit_to_project_node_if_not_linked(
+        self,
+        connection: AsyncConnection,
+        *,
+        node_uuid: uuid.UUID,
+        pricing_plan_id: int,
+        pricing_unit_id: int,
+    ) -> tuple[int, int]:
+        """Links a pricing unit to the node only when it has no link yet.
+
+        Returns the link that is in place afterwards, which is the one above when the node
+        was unlinked and the pre-existing one otherwise: a link created concurrently (e.g.
+        a user selecting a unit while this runs) is kept, not overwritten.
+        """
+        insert_stmt = await self._make_pricing_unit_insert(
+            connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
+        )
+        await connection.execute(
+            insert_stmt.on_conflict_do_nothing(
+                index_elements=[projects_node_to_pricing_unit.c.project_node_id],
+            )
+        )
+        link = await self.get_project_node_pricing_unit_id(connection, node_uuid=node_uuid)
+        assert link  # nosec  # the link is either inserted above or already there
+        return link
 
     @staticmethod
     async def get_project_id_from_node_id(connection: AsyncConnection, *, node_id: uuid.UUID) -> uuid.UUID:

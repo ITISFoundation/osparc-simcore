@@ -293,11 +293,11 @@ class ProjectDBAPI(BaseProjectDB):
         # Build ProjectNodeCreate from workbench JSON (camelCase → snake_case)
         workbench_nodes: dict[NodeID, ProjectNodeCreate] = {}
         for node_id_str, node_data in workbench.items():
-            create_kwargs = {
+            create_kwargs: dict[str, Any] = {
                 WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
-            }
+            }  # pyright: ignore[reportAssignmentType]
             workbench_nodes[NodeID(node_id_str)] = ProjectNodeCreate(node_id=NodeID(node_id_str), **create_kwargs)
 
         # Caller-provided nodes take precedence (e.g. richer metadata from cloning)
@@ -974,6 +974,28 @@ class ProjectDBAPI(BaseProjectDB):
                 pricing_plan_id=pricing_plan_id,
                 pricing_unit_id=pricing_unit_id,
             )
+
+    async def connect_pricing_unit_to_project_node_if_not_linked(
+        self,
+        project_uuid: ProjectID,
+        node_uuid: NodeID,
+        pricing_plan_id: PricingPlanId,
+        pricing_unit_id: PricingUnitId,
+    ) -> PricingPlanAndUnitIdsTuple:
+        """Links a pricing unit only when the node has none, and returns the link that
+        is in place afterwards: a link set concurrently is kept, not overwritten."""
+        async with self.engine.begin() as conn:
+            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+            (
+                linked_plan_id,
+                linked_unit_id,
+            ) = await project_nodes_repo.connect_pricing_unit_to_project_node_if_not_linked(
+                conn,
+                node_uuid=node_uuid,
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+            )
+            return PricingPlanAndUnitIdsTuple(linked_plan_id, linked_unit_id)
 
     #
     # Project TAGS

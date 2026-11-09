@@ -700,8 +700,9 @@ async def test_start_computation_forwards_every_runnable_project(
     )
 
     # the run policy yields 2 runnable variants: the caller project and a fork
-    forked_project_id = f"{faker.uuid4()}"
-    runnable_project_ids = [user_project["uuid"], forked_project_id]
+    # (a run policy always answers with ProjectIDs, which is what the repair below receives)
+    forked_project_id = ProjectID(f"{faker.uuid4()}")
+    runnable_project_ids: list[ProjectID] = [ProjectID(user_project["uuid"]), forked_project_id]
     run_policy = mocker.Mock()
     run_policy.get_or_create_runnable_projects = mocker.AsyncMock(return_value=(runnable_project_ids, []))
     mocker.patch(
