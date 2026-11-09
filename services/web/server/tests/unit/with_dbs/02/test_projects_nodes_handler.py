@@ -369,9 +369,10 @@ _DEFAULT_PRICING_PLAN_ID = 1  # see `mock_rut_default_pricing_unit`
 )
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_node(
-    mock_dynamic_scheduler: None,
     node_class: str,
     expect_run_service_call: bool,
+    *,
+    mock_dynamic_scheduler: None,
     client: TestClient,
     user_project: ProjectDict,
     expected: ExpectedResponse,

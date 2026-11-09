@@ -865,7 +865,7 @@ def _same_required_resources(persisted: Any, sized: dict[str, Any]) -> bool:
         return False
     adapter = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict)
     try:
-        return adapter.dump_python(adapter.validate_python(persisted), mode="json") == sized
+        return bool(adapter.dump_python(adapter.validate_python(persisted), mode="json") == sized)
     except ValidationError:
         return False
 
