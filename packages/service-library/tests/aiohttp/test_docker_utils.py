@@ -18,6 +18,10 @@ from servicelib.aiohttp.docker_utils import retrieve_image_layer_information
 from servicelib.docker_utils import pull_image
 from settings_library.docker_registry import RegistrySettings
 
+# NOTE: this module pulls, tags and deletes images on the daemon shared with the other xdist
+# workers, so it must not overlap with the other module doing the same (see `docker_images_exclusive`)
+pytestmark = pytest.mark.usefixtures("docker_images_exclusive")
+
 
 @pytest.mark.parametrize(
     "service_repo, service_tag",

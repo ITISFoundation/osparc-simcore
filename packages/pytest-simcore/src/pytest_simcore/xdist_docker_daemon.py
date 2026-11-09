@@ -5,6 +5,9 @@ against ONE shared docker stack: every test then holds the daemon lock, so tests
 `docker_exclusive(reason="...")` (e.g. those listing ALL swarm services) never overlap tests of
 other workers. The `reason` kwarg is mandatory: it states why the test needs exclusive access and
 is shown in the lock diagnostics while the exclusive section runs.
+
+A module that churns the daemon's image store (pull/tag/delete by name) opts into
+`docker_images_exclusive` as well, which holds a second lock for the whole module.
 """
 
 from collections.abc import Iterator
@@ -18,8 +21,15 @@ from .helpers.xdist import ReaderWriterLock, get_worker_id, get_xdist_root_tmp_p
 
 _DOCKER_DAEMON_LOCK_NAME: Final[str] = "docker_daemon"
 
+# a dedicated lock name: reusing `docker_daemon` here would deadlock, since the module's writer
+# marker would block the same worker's own per-test read lock on that name
+_DOCKER_IMAGE_STORE_LOCK_NAME: Final[str] = "docker_image_store"
+
 # an exclusive test waits for the tests running in the other workers: must exceed the longest of them
 _EXCLUSIVE_LOCK_TIMEOUT: timedelta = timedelta(minutes=15)
+
+# an exclusive module waits for the module running in another worker: must exceed the longest of them
+_EXCLUSIVE_MODULE_LOCK_TIMEOUT: timedelta = timedelta(minutes=20)
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -34,6 +44,38 @@ def pytest_configure(config: pytest.Config) -> None:
 @pytest.fixture(scope="session")
 def _xdist_docker_daemon_lock(tmp_path_factory: pytest.TempPathFactory) -> ReaderWriterLock:
     return ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_DAEMON_LOCK_NAME)
+
+
+@pytest.fixture(scope="session")
+def _xdist_docker_image_store_lock(tmp_path_factory: pytest.TempPathFactory) -> ReaderWriterLock:
+    return ReaderWriterLock(get_xdist_root_tmp_path(tmp_path_factory), _DOCKER_IMAGE_STORE_LOCK_NAME)
+
+
+@pytest.fixture(scope="module")
+def docker_images_exclusive(
+    request: pytest.FixtureRequest,
+    _xdist_docker_image_store_lock: ReaderWriterLock,
+) -> Iterator[None]:
+    """Runs the whole test module with exclusive access to the docker daemon's image store.
+
+    For modules that pull, tag or delete images by name: the image store is one namespace shared by
+    every worker (unlike the valkey databases, Postgres databases and RabbitMQ vhosts, which the xdist
+    fixtures bank per worker), and a `delete(force=True)` of a name removes the image ID a concurrent
+    pull of that same image is about to tag. Opt in with
+    `pytestmark = pytest.mark.usefixtures("docker_images_exclusive")`.
+
+    Module-scoped on purpose: the store stays free for the other workers' modules that do not opt in.
+    No-op outside xdist.
+    """
+    if not is_xdist_worker(request):
+        yield
+        return
+
+    # the holder shows up in `cat <root>/docker_image_store.rw.writer`
+    with _xdist_docker_image_store_lock.write_lock(
+        token=f"{get_worker_id(request)} ({request.node.name})", timeout=_EXCLUSIVE_MODULE_LOCK_TIMEOUT
+    ):
+        yield
 
 
 @pytest.fixture

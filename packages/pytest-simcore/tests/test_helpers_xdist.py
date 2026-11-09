@@ -129,6 +129,19 @@ def test_is_xdist_controller_requires_the_dsession_plugin(plugins: set[str]):
     assert is_xdist_controller(config) is ("dsession" in plugins)  # type: ignore[arg-type]
 
 
+def test_locks_with_different_names_are_independent(tmp_path_factory: pytest.TempPathFactory):
+    """a writer on one lock name must not block a reader on another: the plugins hold several of
+    these locks at once (e.g. the daemon lock per test and the image store lock per module)
+    """
+    writer_lock = ReaderWriterLock(tmp_path_factory.mktemp("rw"), "docker_image_store")
+    reader_lock = ReaderWriterLock(tmp_path_factory.mktemp("rw"), "docker_daemon")
+    writer = "image-store-writer"
+    reader = "daemon-reader"
+
+    with writer_lock.write_lock(token=writer, timeout=timedelta(seconds=5)), reader_lock.read_lock(token=reader):
+        pass
+
+
 def test_write_lock_releases_marker_when_reader_drain_times_out(tmp_path_factory: pytest.TempPathFactory):
     """a writer whose drain phase times out must NOT leave its marker behind: a stale marker
     would poison every subsequent reader/writer acquisition until removed by hand

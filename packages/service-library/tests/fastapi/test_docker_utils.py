@@ -20,6 +20,7 @@ from servicelib.docker_utils import (
     _ESTIMATED_EXTRACTION_THROUGHPUT_PER_SEC,
     _EXTRACTION_ESTIMATED_MAX_PROGRESS_RATIO,
     _DockerPullImage,
+    _DockerPullImageProgressDetail,
     _parse_pull_information,
     _PulledStatus,
     pull_image,
@@ -29,6 +30,10 @@ from servicelib.fastapi.docker_utils import (
     retrieve_image_layer_information,
 )
 from settings_library.docker_registry import RegistrySettings
+
+# NOTE: this module pulls, tags and deletes images on the daemon shared with the other xdist
+# workers, so it must not overlap with the other module doing the same (see `docker_images_exclusive`)
+pytestmark = pytest.mark.usefixtures("docker_images_exclusive")
 
 
 @pytest.mark.parametrize(
@@ -56,7 +61,7 @@ async def test_retrieve_image_layer_information(
         image_name = f"{service_repo}@{service_tag}"
     await remove_images_from_host([image_name])
     docker_image = TypeAdapter(DockerGenericTag).validate_python(
-        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
+        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['registry_name']}:{osparc_service['image']['tag']}",
     )
     layer_information = await retrieve_image_layer_information(docker_image, registry_settings)
 
@@ -313,7 +318,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         progress_1s = _DockerPullImage(
             status="extracting",
             id=layer_id,
-            progress_detail={"current": 1, "total": 0, "units": "seconds"},
+            progress_detail=_DockerPullImageProgressDetail(current=1, total=0, units="seconds"),
         )
         await _parse_pull_information(
             progress_1s,
@@ -330,7 +335,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         progress_2s = _DockerPullImage(
             status="extracting",
             id=layer_id,
-            progress_detail={"current": 2, "total": 0, "units": "seconds"},
+            progress_detail=_DockerPullImageProgressDetail(current=2, total=0, units="seconds"),
         )
         await _parse_pull_information(
             progress_2s,
@@ -353,7 +358,7 @@ async def test_parse_pull_information_with_non_byte_extraction_units(
         progress_large = _DockerPullImage(
             status="extracting",
             id=layer_id,
-            progress_detail={"current": 9999, "total": 0, "units": "seconds"},
+            progress_detail=_DockerPullImageProgressDetail(current=9999, total=0, units="seconds"),
         )
         await _parse_pull_information(
             progress_large,
