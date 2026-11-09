@@ -39,6 +39,9 @@ from pytest_simcore.helpers.playwright import (
     decode_socketio_42_message,
 )
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
+from pytest_simcore.playwright_tracking import context, page
+
+__all__ = ["context", "page"]  # re-exported pytest fixtures
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
 _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
