@@ -304,6 +304,7 @@ class RobustWebSocket:
     _reconnect_lock: threading.Lock = field(init=False, repr=False, default_factory=threading.Lock)
     _reconnect_handled: set[int] = field(init=False, repr=False, default_factory=set)
     _frames_received_on: set[int] = field(init=False, repr=False, default_factory=set)
+    _adopted_unproven: set[int] = field(init=False, repr=False, default_factory=set)
 
     def __post_init__(self) -> None:
         start_websocket_tracking(self.page)
@@ -328,6 +329,24 @@ class RobustWebSocket:
     def _mark_connected(self, socket: WebSocket) -> None:
         self._frames_received_on.add(id(socket))
 
+    def _drop_unproven_reconnection(self, socket: WebSocket, logger: logging.Logger) -> None:
+        """Un-counts an adopted socket that died before receiving any frame.
+
+        A socket adopted by `_attempt_reconnect` can still fail its handshake, since
+        `page.expect_websocket` resolves as soon as the browser creates it. Its first frame is what
+        tells a reconnection apart from such a failed attempt, so the count is only kept once it
+        arrives.
+        """
+        if id(socket) not in self._adopted_unproven:
+            return
+        self._adopted_unproven.discard(id(socket))
+        self._num_reconnections = max(0, self._num_reconnections - 1)
+        logger.info(
+            "%s❌ Dropped WebSocket adopted while reconnecting. Number of reconnections: %s",
+            self.log_prefix,
+            self._num_reconnections,
+        )
+
     def _configure_websocket_events(self) -> None:
         # NOTE: bind the current socket in the closure: the 'socketerror' event only carries the
         # error message, so the socket must be identified through the closure instead.
@@ -345,6 +364,7 @@ class RobustWebSocket:
                 # NOTE: receiving a frame is the proof that this socket's handshake succeeded
                 # (a socket.io server sends its 'open' packet immediately on connect)
                 self._frames_received_on.add(id(socket))
+                self._adopted_unproven.discard(id(socket))
                 ctx.logger.debug("%s⬆️ Frame received: %s", self.log_prefix, payload)
 
             def _trigger_reconnect(reason: str) -> None:
@@ -363,6 +383,7 @@ class RobustWebSocket:
                 # the stale proof, `wait_until_connected` would return immediately on the
                 # dead socket while its (event-dispatched) reconnection has not completed yet.
                 self._frames_received_on.discard(id(socket))
+                self._drop_unproven_reconnection(socket, ctx.logger)
                 if not self.auto_reconnect:
                     ctx.logger.info("%s WebSocket closed.", self.log_prefix)
                     return
@@ -370,6 +391,7 @@ class RobustWebSocket:
 
             def on_socketerror(error_msg: str) -> None:
                 self._frames_received_on.discard(id(socket))
+                self._drop_unproven_reconnection(socket, ctx.logger)
                 if not self.auto_reconnect:
                     ctx.logger.error("%s❌ WebSocket error: %s", self.log_prefix, error_msg)
                     return
@@ -444,8 +466,12 @@ class RobustWebSocket:
         """Switches to ``socket`` and re-attaches the event listeners to it."""
         self.ws = socket
         self._num_reconnections += 1
-        # NOTE: a live socket completed its handshake, so it is connected even if its first frame
-        # raced ahead of the listeners attached below (same as in __post_init__)
+        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even if
+        # its first frame raced ahead of the listeners attached below (same as in __post_init__).
+        # The browser also creates a websocket for a connection attempt whose handshake then fails
+        # (the socket.io client retries on its own while offline), so this socket must still receive
+        # a frame before its reconnection counts: see `_drop_unproven_reconnection`.
+        self._adopted_unproven.add(id(self.ws))
         self._mark_connected(self.ws)
         logger.info(
             "🔄 WebSocket %s successfully (%s). Number of reconnections: %s",
