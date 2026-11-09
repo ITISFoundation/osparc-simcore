@@ -46,6 +46,16 @@ aiodocker>0.6  # uv aborts the whole resolution when it backtracks into this 201
 # Compatibility/coordination -----------------------------------------------------------------------------------------
 #
 
+# aioboto3 hard-pins aiobotocore[boto3]==2.25.1, which pins botocore/boto3
+# >=1.40.46,<1.40.62 (boto3 1.40.61 pulls s3transfer<0.15). The boto family
+# therefore cannot reach 1.43.x while aioboto3 is installed, and the resync of
+# the boto group fails on it. Hold it at the aiobotocore-compatible ceiling until
+# https://github.com/ITISFoundation/osparc-simcore/issues/10035 replaces aioboto3;
+# drop these lines together with that dependency. Mirrored in .renovaterc.jsonc.
+boto3<1.40.62
+botocore<1.40.62
+s3transfer<0.15.0
+
 #
 # Blocked -----------------------------------------------------------------------------------------
 #
