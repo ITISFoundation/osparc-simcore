@@ -73,6 +73,7 @@ from models_library.resource_tracker import (
     HardwareInfo,
     PricingAndHardwareInfoTuple,
     PricingInfo,
+    PricingPlanAndUnitIdsTuple,
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_constants import FRONTEND_SERVICE_KEY_PREFIX
@@ -85,7 +86,7 @@ from models_library.users import UserID, UserIDAdapter
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletIDAdapter, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import PositiveInt, TypeAdapter, ValidationError
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
@@ -834,20 +835,96 @@ async def update_project_node_resources_from_hardware_info(
         raise ClustersKeeperNotAvailableError from exc
 
     db = ProjectDBAPI.get_from_app_context(app)
+    required_resources = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
+        new_node_resources, mode="json"
+    )
+    if _same_required_resources(
+        (await db.get_project_node(project_id, node_id)).required_resources, required_resources
+    ):
+        # the node is already sized for this machine: writing it again would take the
+        # project's write lock for nothing, which every billed start would repeat per node
+        return
+
     await db.update_project_node(
         user_id,
         project_id,
         node_id,
         product_name,
-        required_resources=TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).dump_python(
-            new_node_resources, mode="json"
-        ),
+        required_resources=required_resources,
         check_update_allowed=False,
     )
 
 
+def _same_required_resources(persisted: Any, sized: dict[str, Any]) -> bool:
+    """True when the persisted resources already are the sizing result
+
+    A node that was never sized (empty resources) is never the same, so that it still gets
+    written.
+    """
+    if not persisted:
+        return False
+    adapter = TypeAdapter[ServiceResourcesDict](ServiceResourcesDict)
+    try:
+        return adapter.dump_python(adapter.validate_python(persisted), mode="json") == sized
+    except ValidationError:
+        return False
+
+
 def _is_node_computational(service_key: ServiceKey) -> bool:
     return "/dynamic/" not in f"{service_key}" and not f"{service_key}".startswith(FRONTEND_SERVICE_KEY_PREFIX)
+
+
+async def _aws_ec2_instances_of_pricing_link(
+    app: web.Application,
+    product_name: str,
+    link: PricingPlanAndUnitIdsTuple,
+) -> list[str] | None:
+    """The machine types of ``link``, or None when the resource-usage-tracker does not
+    know that plan/unit in this product."""
+    try:
+        pricing_unit_get = await rut_api.get_pricing_plan_unit(app, product_name, link[0], link[1])
+    except web.HTTPNotFound:
+        return None
+    return pricing_unit_get.specific_info.aws_ec2_instances
+
+
+async def _link_default_pricing_unit(
+    app: web.Application,
+    *,
+    db: ProjectDBAPI,
+    current_link: PricingPlanAndUnitIdsTuple | None,
+    project_id: ProjectID,
+    node_id: NodeID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: str,
+) -> list[str]:
+    """Links the service's DEFAULT pricing unit to the node and returns its machine types.
+
+    ``current_link`` is the link the node has (None when it has none, or when that link
+    is unusable in this product and shall be replaced). A link that appears while the
+    default is looked up (e.g. the user selecting a unit) is kept rather than
+    overwritten, and its machine types are the ones returned.
+    """
+    (
+        pricing_plan_id,
+        pricing_unit_id,
+        _,
+        aws_ec2_instances,
+    ) = await _get_default_pricing_and_hardware_info(
+        app, product_name, service_key, service_version, project_id, node_id
+    )
+    if current_link is not None:
+        await db.connect_pricing_unit_to_project_node(project_id, node_id, pricing_plan_id, pricing_unit_id)
+        return aws_ec2_instances
+
+    default_link = PricingPlanAndUnitIdsTuple(pricing_plan_id, pricing_unit_id)
+    link = await db.connect_pricing_unit_to_project_node_if_not_linked(
+        project_id, node_id, pricing_plan_id, pricing_unit_id
+    )
+    if link != default_link:
+        return await _aws_ec2_instances_of_pricing_link(app, product_name, link) or []
+    return aws_ec2_instances
 
 
 async def _link_pricing_unit_and_size_node(
@@ -860,25 +937,39 @@ async def _link_pricing_unit_and_size_node(
     service_version: ServiceVersion,
     product_name: str,
 ) -> None:
-    """Ensures the node has a pricing link (the service's default unit when it has
-    none) and that its ``required_resources`` are sized for the machine of its
-    pricing unit."""
+    """Ensures the node has a pricing link and that its ``required_resources`` are sized
+    for the machine of the unit that ends up linked.
+
+    The service's DEFAULT unit is linked when the node has no link, or when its link is
+    one the resource-usage-tracker does not know in this product (a link copied from
+    another product's template while the tracker was unreachable), so that such a link
+    does not stay unusable forever.
+    """
     db = ProjectDBAPI.get_from_app_context(app)
+
     link = await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id)
-    if link is not None:
-        pricing_plan_id, pricing_unit_id = link
-        pricing_unit_get = await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
-        aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
-    else:
-        (
-            pricing_plan_id,
-            pricing_unit_id,
-            _,
-            aws_ec2_instances,
-        ) = await _get_default_pricing_and_hardware_info(
-            app, product_name, service_key, service_version, project_id, node_id
+    aws_ec2_instances = await _aws_ec2_instances_of_pricing_link(app, product_name, link) if link is not None else None
+
+    if aws_ec2_instances is None:
+        if link is not None:
+            _logger.warning(
+                "Pricing plan %s/unit %s of node %s of project %s is unknown in product %s: linking the default unit",
+                link[0],
+                link[1],
+                node_id,
+                project_id,
+                product_name,
+            )
+        aws_ec2_instances = await _link_default_pricing_unit(
+            app,
+            db=db,
+            current_link=link,
+            project_id=project_id,
+            node_id=node_id,
+            service_key=service_key,
+            service_version=service_version,
+            product_name=product_name,
         )
-        await db.connect_pricing_unit_to_project_node(project_id, node_id, pricing_plan_id, pricing_unit_id)
 
     await update_project_node_resources_from_hardware_info(
         app,
@@ -1009,41 +1100,69 @@ async def copy_pricing_links(
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
-    for source_node_id, destination_node_id in nodes_map.items():
-        link = await db.get_project_node_pricing_unit_id(
-            project_uuid=source_project_id, node_uuid=NodeID(source_node_id)
-        )
+    # one tracker call per distinct plan/unit, not per node: several nodes typically share
+    # a unit, and an unreachable tracker would otherwise cost one timeout per node
+    validated: dict[PricingPlanAndUnitIdsTuple, bool | None] = {}
+
+    for mapped_source_node_id, destination_node_id in nodes_map.items():
+        source_node_id = NodeID(mapped_source_node_id)
+        link = await db.get_project_node_pricing_unit_id(project_uuid=source_project_id, node_uuid=source_node_id)
         if link is None:
             continue
-        pricing_plan_id, pricing_unit_id = link
-        try:
-            await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
-        except web.HTTPNotFound:
-            _logger.warning(
-                "Pricing plan %s/unit %s of node %s of project %s does not exist in product %s: not copying the link",
-                pricing_plan_id,
-                pricing_unit_id,
-                source_node_id,
-                source_project_id,
-                product_name,
+        if link not in validated:
+            validated[link] = await _validate_pricing_link_for_copy(
+                app,
+                source_project_id=source_project_id,
+                source_node_id=source_node_id,
+                link=link,
+                product_name=product_name,
             )
+        if validated[link] is False:
+            # unknown in this product: the caller links the destination's default unit instead
             continue
-        except Exception:  # pylint: disable=broad-exception-caught
-            _logger.warning(
-                "Cannot validate pricing plan %s/unit %s of node %s of project %s"
-                " in product %s: copying it unvalidated",
-                pricing_plan_id,
-                pricing_unit_id,
-                source_node_id,
-                source_project_id,
-                product_name,
-            )
+        # True: validated; None: could not be validated, copied rather than lost
         await db.connect_pricing_unit_to_project_node(
             destination_project_id,
             NodeID(destination_node_id),
+            link[0],
+            link[1],
+        )
+
+
+async def _validate_pricing_link_for_copy(
+    app: web.Application,
+    *,
+    source_project_id: ProjectID,
+    source_node_id: NodeID,
+    link: PricingPlanAndUnitIdsTuple,
+    product_name: str,
+) -> bool | None:
+    """True when the tracker knows ``link`` in this product, False when it does not and
+    None when it could not be asked."""
+    pricing_plan_id, pricing_unit_id = link
+    try:
+        await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
+    except web.HTTPNotFound:
+        _logger.warning(
+            "Pricing plan %s/unit %s of node %s of project %s does not exist in product %s: not copying the link",
             pricing_plan_id,
             pricing_unit_id,
+            source_node_id,
+            source_project_id,
+            product_name,
         )
+        return False
+    except Exception:  # pylint: disable=broad-exception-caught
+        _logger.warning(
+            "Cannot validate pricing plan %s/unit %s of node %s of project %s in product %s: copying it unvalidated",
+            pricing_plan_id,
+            pricing_unit_id,
+            source_node_id,
+            source_project_id,
+            product_name,
+        )
+        return None
+    return True
 
 
 async def _check_project_node_has_all_required_inputs(  # noqa: C901

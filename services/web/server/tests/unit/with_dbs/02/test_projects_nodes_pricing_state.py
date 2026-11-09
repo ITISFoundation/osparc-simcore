@@ -31,14 +31,20 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDict
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.project_nodes_pricing import (
+    fake_compute_node_resources_for_hardware,
     get_node_pricing_state,
+    regex_for_rut_pricing_unit,
+    set_node_pricing_link,
     set_node_required_resources,
     single_container_required_resources,
 )
@@ -47,7 +53,12 @@ from servicelib.aiohttp import status
 from servicelib.long_running_tasks.models import TaskStatus
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
+from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
+from simcore_service_webserver.projects.api import repair_projects_nodes_pricing_and_resources
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.resource_usage.settings import (
+    get_plugin_settings as get_rut_plugin_settings,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -270,3 +281,190 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     for node_id, other_state in state_after.items():
         if node_id != NodeID(dynamic_node_id):
             assert other_state == state_before[node_id]
+
+
+#
+# The repair that a billed start runs (see test_director_v2_handlers.py): links the
+# nodes that have no usable link and sizes them. It runs on EVERY start, so it must be
+# cheap for the nodes it already brought up to date, must never lose a node when
+# director-v2 or the resource-usage-tracker is unreachable, and must not keep a node
+# stuck on a link that is unusable in this product.
+#
+
+_UNKNOWN_PRICING_PLAN_ID = 66
+_UNKNOWN_PRICING_UNIT_ID = 77
+
+
+def _comp_node_id(user_project: ProjectDict) -> NodeID:
+    return NodeID(next(node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]))
+
+
+async def _repair(client: TestClient, logged_user: UserInfoDict, project_id: str, product_name: str) -> None:
+    await repair_projects_nodes_pricing_and_resources(
+        client.app,
+        user_id=UserID(logged_user["id"]),
+        project_ids=[ProjectID(project_id)],
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """A node linked to a plan/unit the resource-usage-tracker does not know in this
+    product (e.g. a link copied from another product's template while the tracker was
+    unreachable) is re-linked to the DEFAULT unit and sized for its machine, instead of
+    staying unusable for every future run.
+    """
+    assert client.app
+    project_id = user_project["uuid"]
+    node_id = _comp_node_id(user_project)
+
+    await set_node_required_resources(
+        sqlalchemy_async_engine,
+        project_id,
+        node_id,
+        single_container_required_resources(user_project["workbench"][f"{node_id}"]["key"], cpu=0.1),
+    )
+    await set_node_pricing_link(
+        sqlalchemy_async_engine,
+        project_id,
+        node_id,
+        pricing_plan_id=_UNKNOWN_PRICING_PLAN_ID,
+        pricing_unit_id=_UNKNOWN_PRICING_UNIT_ID,
+    )
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(
+            f"{get_rut_plugin_settings(client.app).api_base_url}",
+            _UNKNOWN_PRICING_PLAN_ID,
+            _UNKNOWN_PRICING_UNIT_ID,
+        ),
+        status=status.HTTP_404_NOT_FOUND,
+        repeat=True,
+    )
+
+    await _repair(client, logged_user, project_id, osparc_product_name)
+
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    node_state = state[node_id]
+    assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert node_state.required_resources
+    resources = node_state.required_resources["container"]["resources"]
+    assert resources["CPU"]["limit"] == pytest.approx(1.9)
+    assert resources["RAM"]["limit"] == 3865470566
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_repair_writes_nothing_for_a_node_already_sized(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    mocker: MockerFixture,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """Every billed start repairs every node, so a node that is already sized for the
+    machine of its linked unit must not be written again: only the not-yet-sized dynamic
+    node of the test project gets a write here.
+    """
+    assert client.app
+    project_id = user_project["uuid"]
+    node_id = _comp_node_id(user_project)
+    dynamic_node_id = NodeID(
+        next(node_id_ for node_id_, node in user_project["workbench"].items() if "/dynamic/" in node["key"])
+    )
+
+    # the node is linked to the default unit and its resources ARE the sizing result of
+    # that unit's machine (t3.medium, dask-worker formula: 1.9 CPU / 3865470566 B)
+    await set_node_pricing_link(
+        sqlalchemy_async_engine,
+        project_id,
+        node_id,
+        pricing_plan_id=_DEFAULT_PRICING_PLAN_ID,
+        pricing_unit_id=_DEFAULT_PRICING_UNIT_ID,
+    )
+    await set_node_required_resources(
+        sqlalchemy_async_engine,
+        project_id,
+        node_id,
+        single_container_required_resources(
+            user_project["workbench"][f"{node_id}"]["key"], cpu=1.9, ram_bytes=3865470566
+        ),
+    )
+    # the dynamic node still needs its default link and sizing, so the repair below has
+    # exactly one node left to write
+    await set_node_required_resources(
+        sqlalchemy_async_engine,
+        project_id,
+        dynamic_node_id,
+        single_container_required_resources(user_project["workbench"][f"{dynamic_node_id}"]["key"]),
+    )
+    update_node = mocker.spy(ProjectDBAPI.get_from_app_context(client.app), "update_project_node")
+
+    await _repair(client, logged_user, project_id, osparc_product_name)
+
+    # the sizing was computed (the web-server cannot know the result without asking) and
+    # written once, for the dynamic node only
+    assert mocked_director_v2_node_sizing.called
+    assert update_node.call_count == 1
+    written_node_ids = {NodeID(call.args[2]) for call in update_node.call_args_list}
+    assert written_node_ids == {dynamic_node_id}
+
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    sized_resources = state[node_id].required_resources
+    assert sized_resources
+    assert sized_resources["container"]["resources"]["CPU"]["limit"] == pytest.approx(1.9)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_repair_keeps_link_and_resources_when_sizing_fails_and_completes_later(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """director-v2 unreachable: the repair still links the DEFAULT unit (the link is
+    written before the sizing) and leaves `required_resources` untouched, and the next
+    repair completes the sizing.
+    """
+    assert client.app
+    project_id = user_project["uuid"]
+    node_id = _comp_node_id(user_project)
+    seed = single_container_required_resources(
+        user_project["workbench"][f"{node_id}"]["key"], cpu=0.1, ram_bytes=1024**3
+    )
+    await set_node_required_resources(sqlalchemy_async_engine, project_id, node_id, seed)
+
+    # clusters-keeper unreachable -> ClustersKeeperNotAvailableError, swallowed here
+    mocked_director_v2_node_sizing.side_effect = TimeoutError("clusters-keeper unreachable")
+    await _repair(client, logged_user, project_id, osparc_product_name)
+
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    node_state = state[node_id]
+    assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert node_state.required_resources == jsonable_encoder(seed)
+
+    mocked_director_v2_node_sizing.side_effect = fake_compute_node_resources_for_hardware
+    await _repair(client, logged_user, project_id, osparc_product_name)
+
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    required_resources = state[node_id].required_resources
+    assert required_resources
+    resources = required_resources["container"]["resources"]
+    assert resources["CPU"]["limit"] == pytest.approx(1.9)
+    assert resources["RAM"]["limit"] == 3865470566

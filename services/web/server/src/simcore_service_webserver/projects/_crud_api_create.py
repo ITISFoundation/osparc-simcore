@@ -471,13 +471,17 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             if predefined_project:
                 # 2. overrides with optional body and re-validate
-                new_project, project_nodes = await _compose_project_data(
+                new_project, override_project_nodes = await _compose_project_data(
                     app,
                     user_id=user_id,
                     product_name=product_name,
                     new_project=new_project,
                     predefined_project=predefined_project,
                 )
+                if override_project_nodes is not None:
+                    project_nodes = override_project_nodes
+                # else: overriding fields of a copy (e.g. its name) says nothing about the
+                # nodes, so the ones prepared from the source project are kept
 
             # 3.1 save new project in DB
             new_project = await _projects_repository_legacy.insert_project(
