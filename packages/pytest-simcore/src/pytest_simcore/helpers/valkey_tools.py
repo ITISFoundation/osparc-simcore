@@ -10,9 +10,14 @@ reserved for them:
 - clearing data must therefore use ``flushdb`` on a client of that bank, see `flush_databases`.
 """
 
-from typing import Final
+from __future__ import annotations
 
-from redis.asyncio import Redis
+from typing import TYPE_CHECKING, Final
+
+if TYPE_CHECKING:
+    # imported for annotations only: pytest-simcore does not depend on redis, and
+    # helpers imported by plugins (e.g. docker_swarm) must stay loadable without it
+    from redis.asyncio import Redis
 
 _VALKEY_DATABASES_FLAG: Final[str] = "--databases"
 
