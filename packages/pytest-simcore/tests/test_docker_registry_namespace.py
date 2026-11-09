@@ -15,9 +15,6 @@ from pytest_simcore.docker_registry import _get_worker_registry_namespace
 def test_registry_namespace_is_per_worker_and_empty_outside_xdist(
     workerinput: dict[str, str] | None, expected_namespace: str
 ):
-    """outside xdist the injected images must keep their unchanged repository paths, since the
-    suites referring to them by their oSparc name only run serially
-    """
     request: Any = SimpleNamespace(config=SimpleNamespace(workerinput=workerinput))
 
     assert _get_worker_registry_namespace(request) == expected_namespace

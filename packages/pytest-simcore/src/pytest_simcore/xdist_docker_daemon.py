@@ -71,7 +71,7 @@ def docker_images_exclusive(
         yield
         return
 
-    # the holder shows up in `cat <root>/docker_image_store.rw.writer`
+    # the holder is in <root>/docker_image_store.rw.writer
     with _xdist_docker_image_store_lock.write_lock(
         token=f"{get_worker_id(request)} ({request.node.name})", timeout=_EXCLUSIVE_MODULE_LOCK_TIMEOUT
     ):

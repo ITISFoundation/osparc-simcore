@@ -216,8 +216,8 @@ def _get_worker_registry_namespace(request: pytest.FixtureRequest) -> str:
 
     The workers share one registry, and injecting the same image from two workers would make them
     push different content to the same repository:tag (an injector with an `owner_email` relabels
-    the image), so the last push would win for every worker. Empty outside xdist, where the images
-    of the consumers keep their unchanged repository paths.
+    the image), so the last push would win for every worker. Empty outside xdist, so a serial run keeps
+    the repository paths it has always used.
     """
     if not is_xdist_worker(request):
         return ""
@@ -302,8 +302,8 @@ async def _pull_push_service(
             # the oSparc service key, as the services and the registry's consumers refer to it
             "name": f"{io_simcore_labels['key']}",
             "tag": io_simcore_labels["version"],
-            # the repository path as the registry knows it: `name`, prefixed with the namespace this
-            # worker pushes under (see `_get_worker_registry_namespace`); pull with this
+            # the repository path as the registry knows it: `name` under this worker's namespace
+            # (see `_get_worker_registry_namespace`), which is what a pull must use
             "registry_name": f"{registry_namespace}{io_simcore_labels['key']}",
         },
     }

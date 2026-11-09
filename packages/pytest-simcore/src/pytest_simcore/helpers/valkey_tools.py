@@ -2,12 +2,12 @@
 
 The workers share one server, so their data must stay inside the bank of logical databases
 reserved for them:
-- ``--databases`` can only be set when the server starts (it is NOT ``CONFIG SET``-able), so the
-  number of logical databases must be fixed in the compose file BEFORE the stack is deployed. The
+- ``--databases`` can only be set when the server starts (it is not ``CONFIG SET``-able), so the
+  number of logical databases must be fixed in the compose file before the stack is deployed. The
   deployed ``services/docker-compose.yml`` keeps a small default; under pytest-xdist the test
   fixtures widen it in the *generated* union compose (never the deployed one) to reserve one bank
   of logical databases per worker, so concurrent workers never collide on the same DB indices.
-- clearing data must therefore use ``flushdb`` on a client of that bank, see `flush_databases`.
+- clearing data must use ``flushdb``, see `flush_databases`.
 """
 
 from __future__ import annotations

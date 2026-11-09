@@ -157,9 +157,9 @@ class ReaderWriterLock:
         return any(self._readers_dir.iterdir())
 
     def _state(self) -> str:
-        """Who holds the lock right now, read from the control files. Used in timeout messages,
-        so a stalled lock is diagnosable from the test report alone. Unlocked on purpose: this
-        runs on the timeout path only and must never wait on the control lock itself.
+        """Who holds the lock, read from the control files. Only used in timeout messages, so a
+        stalled lock is diagnosable from the test report alone. Takes no lock on purpose: it runs
+        on the timeout path and must never wait on the control lock itself.
         """
         try:
             writer = self._writer_marker.read_text().strip()
