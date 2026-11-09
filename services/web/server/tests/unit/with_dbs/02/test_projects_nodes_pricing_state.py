@@ -468,3 +468,72 @@ async def test_repair_keeps_link_and_resources_when_sizing_fails_and_completes_l
     resources = required_resources["container"]["resources"]
     assert resources["CPU"]["limit"] == pytest.approx(1.9)
     assert resources["RAM"]["limit"] == 3865470566
+
+
+_SECOND_COMP_NODE_ID = "5b2af27d-b4a4-4a4b-9c9c-42ce9dd3a5f1"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_project_creation_keeps_the_default_links_when_sizing_fails(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    sqlalchemy_async_engine: AsyncEngine,
+    project_db_cleaner: None,
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    mock_catalog_api: dict[str, mock.Mock],
+    mock_service_resources: ServiceResourcesDict,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """An unreachable director-v2 must not break project creation: every computational
+    node keeps the DEFAULT unit it was linked to (the link is written before the sizing),
+    keeps the catalog resources it was inserted with, and the nodes after the failing one
+    are still processed. The next billed start completes the sizing (see the repair
+    tests above).
+    """
+    assert client.app
+    mocked_director_v2_node_sizing.side_effect = TimeoutError("director-v2 unreachable")
+
+    workbench = _WORKBENCH | {
+        _SECOND_COMP_NODE_ID: {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.1.7",
+            "label": "sleeper_2",
+            "inputs": {},
+            "outputs": {},
+        }
+    }
+    create_url = client.app.router["create_project"].url_for()
+    resp = await client.post(
+        f"{create_url}",
+        json={"name": "sizing-failure-project", "workbench": workbench, "accessRights": {}},
+    )
+    data, _ = await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(60),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            rsp = await client.get(urlparse(data["status_href"]).path)
+            status_data, _ = await assert_status(rsp, status.HTTP_200_OK)
+            assert TaskStatus.model_validate(status_data).done
+
+    rsp = await client.get(urlparse(data["result_href"]).path)
+    new_project, _ = await assert_status(rsp, status.HTTP_201_CREATED)
+
+    state = await get_node_pricing_state(sqlalchemy_async_engine, new_project["uuid"])
+    # both computational nodes are linked to the default unit despite the failures, and
+    # keep the catalog resources they were inserted with
+    for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
+        node_state = state[NodeID(node_id)]
+        assert node_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+        assert node_state.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+        assert node_state.required_resources == jsonable_encoder(mock_service_resources)
+
+    # dynamic and frontend nodes are never linked at creation, failure or not
+    for node_id in (_DYNAMIC_NODE_ID, _FILE_PICKER_NODE_ID):
+        assert state[NodeID(node_id)].pricing_unit_id is None
