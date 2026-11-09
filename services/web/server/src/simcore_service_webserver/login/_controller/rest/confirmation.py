@@ -51,6 +51,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_dependencies import get_confirmation_service
+from ._trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .confirmation_schemas import (
     CodePathParam,
     PhoneConfirmationBody,
@@ -208,17 +209,21 @@ async def phone_confirmation(request: web.Request):
 
     request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
+    # the code is verified for the account this session is about (completed or
+    # pending login), never for the body's email, which could name any other user
+    trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION)
+
     if await _twofa_service.verify_2fa_code(
-        request.app, user_email=request_body.email, code=request_body.code.get_secret_value()
+        request.app, user_email=trusted.email, code=request_body.code.get_secret_value()
     ):
         # consumes code
-        await _twofa_service.delete_2fa_code(request.app, request_body.email)
+        await _twofa_service.delete_2fa_code(request.app, trusted.email)
 
-        user = _auth_service.check_not_null_user(
-            await _auth_service.get_user_or_none(request.app, email=request_body.email)
-        )
+        user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))
 
         await _registration_service.register_user_phone(request.app, user_id=user["id"], user_phone=request_body.phone)
+
+        await clear_pending_2fa_email(request)
 
         return await _security_service.login_granted_response(request, user=user)
 
