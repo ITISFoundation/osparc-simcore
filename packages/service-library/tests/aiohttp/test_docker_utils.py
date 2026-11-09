@@ -48,7 +48,7 @@ async def test_retrieve_image_layer_information(
         image_name = f"{service_repo}@{service_tag}"
     await remove_images_from_host([image_name])
     docker_image = TypeAdapter(DockerGenericTag).validate_python(
-        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
+        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['registry_name']}:{osparc_service['image']['tag']}",
     )
     layer_information = await retrieve_image_layer_information(docker_image, registry_settings)
 

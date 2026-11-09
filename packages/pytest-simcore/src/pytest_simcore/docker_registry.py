@@ -27,6 +27,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 from .helpers.host import get_localhost_ip
 from .helpers.xdist import (
+    get_worker_id,
     is_xdist_controller,
     is_xdist_worker,
     read_shared_resources,
@@ -210,12 +211,26 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 # ********************************************************* Services ***************************************
 
 
+def _get_worker_registry_namespace(request: pytest.FixtureRequest) -> str:
+    """Repository path prefix that makes this xdist worker's injected images its own, e.g. "gw0/".
+
+    The workers share one registry, and injecting the same image from two workers would make them
+    push different content to the same repository:tag (an injector with an `owner_email` relabels
+    the image), so the last push would win for every worker. Empty outside xdist, where the images
+    of the consumers keep their unchanged repository paths.
+    """
+    if not is_xdist_worker(request):
+        return ""
+    return f"{get_worker_id(request)}/"
+
+
 async def _pull_push_service(
     pull_key: str,
     tag: str,
     new_registry: str,
     node_meta_schema: dict,
     owner_email: str | None = None,
+    registry_namespace: str = "",
 ) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
@@ -267,7 +282,7 @@ async def _pull_push_service(
     jsonschema.validate(io_simcore_labels, node_meta_schema)
 
     # tag image
-    new_image_tag = f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
+    new_image_tag = f"{new_registry}/{registry_namespace}{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     assert image.tag(new_image_tag)
 
     # push the image to the new location
@@ -284,16 +299,22 @@ async def _pull_push_service(
     return {
         "schema": io_simcore_labels,
         "image": {
+            # the oSparc service key, as the services and the registry's consumers refer to it
             "name": f"{io_simcore_labels['key']}",
             "tag": io_simcore_labels["version"],
+            # the repository path as the registry knows it: `name`, prefixed with the namespace this
+            # worker pushes under (see `_get_worker_registry_namespace`); pull with this
+            "registry_name": f"{registry_namespace}{io_simcore_labels['key']}",
         },
     }
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")  # pyright: ignore[reportArgumentType]
 def docker_registry_image_injector(
-    docker_registry: str, node_meta_schema: dict
+    docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
 ) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
+    registry_namespace = _get_worker_registry_namespace(request)
+
     def inject_image(source_image_repo: str, source_image_tag: str, owner_email: str | None = None):
         return _pull_push_service(
             source_image_repo,
@@ -301,6 +322,7 @@ def docker_registry_image_injector(
             docker_registry,
             node_meta_schema,
             owner_email,
+            registry_namespace=registry_namespace,
         )
 
     return inject_image
@@ -308,8 +330,10 @@ def docker_registry_image_injector(
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")  # pyright: ignore[reportArgumentType]
 def existing_docker_registry_image_injector(
-    node_meta_schema: dict,
+    node_meta_schema: dict, request: pytest.FixtureRequest
 ) -> Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]]:
+    registry_namespace = _get_worker_registry_namespace(request)
+
     def inject_image(
         docker_registry: str, source_image_repo: str, source_image_tag: str, owner_email: str | None = None
     ):
@@ -319,6 +343,7 @@ def existing_docker_registry_image_injector(
             docker_registry,
             node_meta_schema,
             owner_email,
+            registry_namespace=registry_namespace,
         )
 
     return inject_image
@@ -326,28 +351,45 @@ def existing_docker_registry_image_injector(
 
 @pytest.fixture
 async def osparc_service(
-    docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
+    docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str, request: pytest.FixtureRequest
 ) -> dict[str, Any]:
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
     NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
-    return await _pull_push_service(service_repo, service_tag, docker_registry, node_meta_schema)
+    return await _pull_push_service(
+        service_repo,
+        service_tag,
+        docker_registry,
+        node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+    )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def sleeper_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+async def sleeper_service(
+    docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
+) -> dict[str, Any]:
     """Adds a itisfoundation/sleeper in docker registry"""
-    return await _pull_push_service("itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema)
+    return await _pull_push_service(
+        "itisfoundation/sleeper",
+        "1.0.0",
+        docker_registry,
+        node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+    )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+async def jupyter_service(
+    docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
+) -> dict[str, Any]:
     """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
     return await _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
         "2.13.0",
         docker_registry,
         node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
     )
 
 
@@ -358,7 +400,10 @@ def dy_static_file_server_version(request: pytest.FixtureRequest):
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_service(
-    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+    docker_registry: str,
+    node_meta_schema: dict,
+    dy_static_file_server_version: str,
+    request: pytest.FixtureRequest,
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
@@ -369,12 +414,16 @@ async def dy_static_file_server_service(
         dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
     )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_dynamic_sidecar_service(
-    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+    docker_registry: str,
+    node_meta_schema: dict,
+    dy_static_file_server_version: str,
+    request: pytest.FixtureRequest,
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
@@ -385,12 +434,16 @@ async def dy_static_file_server_dynamic_sidecar_service(
         dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
     )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_dynamic_sidecar_compose_spec_service(
-    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+    docker_registry: str,
+    node_meta_schema: dict,
+    dy_static_file_server_version: str,
+    request: pytest.FixtureRequest,
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
