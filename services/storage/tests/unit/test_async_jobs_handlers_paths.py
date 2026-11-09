@@ -593,7 +593,12 @@ async def test_delete_paths_of_node_folder_requires_write_and_not_delete(
     ids=[SimcoreS3DataManager.get_location_name()],
     indirect=True,
 )
-async def test_delete_paths_of_node_folder_denied_to_read_only_user(
+@pytest.mark.parametrize(
+    "read,write,delete",
+    [(True, False, False), (True, False, True)],
+    ids=["read-only", "delete-right-without-write"],
+)
+async def test_delete_paths_of_node_folder_denied_without_write(
     initialized_app: FastAPI,
     task_manager: TaskManager,
     with_storage_celery_worker: WorkController,
@@ -605,8 +610,11 @@ async def test_delete_paths_of_node_folder_denied_to_read_only_user(
     create_project_access_rights: CreateProjectAccessRightsCallable,
     other_user_id: UserID,
     product_name: ProductName,
+    read: bool,
+    write: bool,
+    delete: bool,
 ):
-    """a read-only collaborator may not remove a node's data either"""
+    """removing a node's data requires `write`: neither read alone nor the project's delete right grants it"""
     project_params = ProjectWithFilesParams(
         num_nodes=1,
         allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
@@ -615,7 +623,7 @@ async def test_delete_paths_of_node_folder_denied_to_read_only_user(
     project, node_files = await project_with_seeded_files_factory(project_params)
     project_path = Path(project["uuid"])
     await create_project_access_rights(
-        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=True, write=False, delete=False
+        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=read, write=write, delete=delete
     )
     node_id, node_files_of_node = next(iter(node_files.items()))
 
