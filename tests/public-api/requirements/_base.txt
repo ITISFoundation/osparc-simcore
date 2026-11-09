@@ -41,7 +41,7 @@ osparc-client==0.8.5
     # via osparc
 packaging==26.3
     # via osparc
-pydantic==2.14.1
+pydantic==2.14.3
     # via
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -49,7 +49,7 @@ pydantic==2.14.1
     #   osparc-client
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in

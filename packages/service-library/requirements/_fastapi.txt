@@ -179,14 +179,14 @@ protobuf==6.33.5
     #   -c requirements/_base.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-pydantic==2.14.1
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic

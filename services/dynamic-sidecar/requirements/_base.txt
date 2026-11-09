@@ -409,7 +409,7 @@ pycryptodome==3.23.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   stream-zip
-pydantic==2.14.1
+pydantic==2.14.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
@@ -424,7 +424,7 @@ pydantic==2.14.1
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic

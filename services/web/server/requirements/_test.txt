@@ -284,7 +284,7 @@ protobuf==6.33.5
     #   opentelemetry-proto
 py-cpuinfo2==10.1.1
     # via pytest-benchmark
-pydantic==2.14.1
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -292,7 +292,7 @@ pydantic==2.14.1
     #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic

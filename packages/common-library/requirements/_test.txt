@@ -26,11 +26,11 @@ polib==1.2.0
     # via -r requirements/_test.in
 pprintpp==0.4.0
     # via pytest-icdiff
-pydantic==2.14.1
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   pydantic-settings
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic

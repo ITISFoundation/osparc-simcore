@@ -45,9 +45,9 @@ propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
-pydantic==2.14.1
+pydantic==2.14.3
     # via fastapi
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via pydantic
 requests==2.34.2
     # via docker
