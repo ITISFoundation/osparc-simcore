@@ -247,6 +247,64 @@ async def test_update_project_node(
     assert updated_node.required_resources == required_resources
 
 
+async def test_connect_pricing_unit_to_project_node_overwrites_the_link(
+    asyncpg_connection: AsyncConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+    faker: Faker,
+):
+    node = (await projects_nodes_repo.add(asyncpg_connection, nodes=[create_fake_projects_node()]))[0]
+    pricing_plan_id, pricing_unit_id = faker.pyint(), faker.pyint(min_value=100)
+
+    await projects_nodes_repo.connect_pricing_unit_to_project_node(
+        asyncpg_connection,
+        node_uuid=node.node_id,
+        pricing_plan_id=1,
+        pricing_unit_id=1,
+    )
+    await projects_nodes_repo.connect_pricing_unit_to_project_node(
+        asyncpg_connection,
+        node_uuid=node.node_id,
+        pricing_plan_id=pricing_plan_id,
+        pricing_unit_id=pricing_unit_id,
+    )
+
+    assert await projects_nodes_repo.get_project_node_pricing_unit_id(asyncpg_connection, node_uuid=node.node_id) == (
+        pricing_plan_id,
+        pricing_unit_id,
+    )
+
+
+async def test_connect_pricing_unit_to_project_node_if_not_linked_keeps_an_existing_link(
+    asyncpg_connection: AsyncConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+    create_fake_projects_node: Callable[..., ProjectNodeCreate],
+):
+    """The link set first wins: a pricing unit the user selected while the DEFAULT unit
+    was being looked up must not be overwritten by that default."""
+    node = (await projects_nodes_repo.add(asyncpg_connection, nodes=[create_fake_projects_node()]))[0]
+
+    # the node has no link: the default gets inserted and answered
+    assert await projects_nodes_repo.connect_pricing_unit_to_project_node_if_not_linked(
+        asyncpg_connection,
+        node_uuid=node.node_id,
+        pricing_plan_id=1,
+        pricing_unit_id=1,
+    ) == (1, 1)
+
+    # the node is linked: neither the link in the table nor the answer changes
+    assert await projects_nodes_repo.connect_pricing_unit_to_project_node_if_not_linked(
+        asyncpg_connection,
+        node_uuid=node.node_id,
+        pricing_plan_id=99,
+        pricing_unit_id=99,
+    ) == (1, 1)
+    assert await projects_nodes_repo.get_project_node_pricing_unit_id(asyncpg_connection, node_uuid=node.node_id) == (
+        1,
+        1,
+    )
+
+
 async def test_delete_invalid_node_does_nothing(
     asyncpg_connection: AsyncConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
