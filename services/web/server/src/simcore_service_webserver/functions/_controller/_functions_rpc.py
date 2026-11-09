@@ -57,8 +57,7 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
-from ...application_settings import get_application_settings
-from ...rabbitmq import get_rabbitmq_rpc_client
+from ...rabbitmq import register_webserver_rpc_router
 from .. import (
     _functions_service,
 )
@@ -653,13 +652,7 @@ async def get_functions_user_api_access_rights(
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
-    rpc_client = get_rabbitmq_rpc_client(app)
-    settings = get_application_settings(app)
-    if not settings.WEBSERVER_RPC_NAMESPACE:
-        msg = "RPC namespace is not configured"
-        raise ValueError(msg)
-
-    await rpc_client.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)
+    await register_webserver_rpc_router(app, router)
 
 
 @router.expose(reraise_if_error_type=())

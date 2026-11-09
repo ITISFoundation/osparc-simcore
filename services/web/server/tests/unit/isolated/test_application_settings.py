@@ -239,7 +239,7 @@ def mock_service_environment(
     return setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
 
 
-@pytest.mark.parametrize("service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"])
+@pytest.mark.parametrize("service_name", ["webserver"])
 def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
     # NOTE: This requirement will change when https://github.com/ITISFoundation/osparc-simcore/issues/8448  is implemented
     settings = ApplicationSettings.create_from_envs()
@@ -260,7 +260,7 @@ def test_webserver_rpc_namespace_must_be_non_default(
     assert env_devel_dict["WB_API_WEBSERVER_HOST"] == settings.WEBSERVER_RPC_NAMESPACE
 
 
-@pytest.mark.parametrize("service_name", ["wb-auth"])
+@pytest.mark.parametrize("service_name", ["wb-auth", "wb-db-event-listener", "wb-garbage-collector"])
 def test_webserver_rpc_namespace_must_be_disabled(
     mock_service_environment: EnvVarsDict,
 ):
@@ -268,3 +268,5 @@ def test_webserver_rpc_namespace_must_be_disabled(
     assert settings
 
     assert settings.WEBSERVER_RPC_NAMESPACE is None
+    # the api-keys RPC entrypoint is not set up on these variants
+    assert settings.WEBSERVER_API_KEYS is False

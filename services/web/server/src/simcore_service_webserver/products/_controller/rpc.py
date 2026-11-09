@@ -6,8 +6,7 @@ from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
 
 from ...application_keys import APP_SETTINGS_APPKEY
-from ...application_settings import get_application_settings
-from ...rabbitmq import get_rabbitmq_rpc_client, setup_rabbitmq
+from ...rabbitmq import register_webserver_rpc_router, setup_rabbitmq
 from .. import _service
 from .._models import CreditResult
 
@@ -28,13 +27,7 @@ async def get_credit_amount(
 
 
 async def _register_rpc_routes_on_startup(app: web.Application):
-    rpc_client = get_rabbitmq_rpc_client(app)
-    settings = get_application_settings(app)
-    if not settings.WEBSERVER_RPC_NAMESPACE:
-        msg = "RPC namespace is not configured"
-        raise ValueError(msg)
-
-    await rpc_client.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)
+    await register_webserver_rpc_router(app, router)
 
 
 def setup_rpc(app: web.Application):
