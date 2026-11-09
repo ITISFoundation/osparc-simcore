@@ -7,7 +7,7 @@ previous step -- not which account it is about.
 
 Therefore these handlers must act on the email kept server-side (the identity of
 a completed login, else the email whose login is pending 2FA) and never on an
-email taken from the request body, which is attacker-controlled.
+email taken from the request body.
 """
 
 from dataclasses import dataclass
@@ -71,8 +71,6 @@ async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: 
     pending = session.get(PENDING_2FA_EMAIL_KEY)
     if not pending:
         raise web.HTTPUnauthorized(text=unauthorized_reason)
-    if isinstance(pending, str):  # sessions written before the flag existed
-        pending = {"email": pending, "phone_registration_allowed": False}
 
     return TrustedLoginEmail(
         email=pending["email"].lower(),
