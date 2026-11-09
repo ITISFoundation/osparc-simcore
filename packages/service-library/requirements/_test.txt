@@ -32,8 +32,10 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-botocore==1.42.70
-    # via -r requirements/_test.in
+botocore==1.40.61
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt

@@ -87,9 +87,12 @@ attrs==26.1.0
     #   jsonschema
     #   referencing
 boto3==1.37.3
-    # via aiobotocore
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
 botocore==1.37.3
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   boto3
     #   s3transfer
@@ -457,7 +460,7 @@ pycryptodome==3.23.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   stream-zip
-pydantic==2.13.5
+pydantic==2.14.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -471,7 +474,7 @@ pydantic==2.13.5
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic
@@ -558,7 +561,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.11.3
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 sentry-sdk==2.35.0
     # via fastapi-cloud-cli
 sh==2.2.4
@@ -645,7 +650,7 @@ typing-extensions==4.16.0
     #   rich-toolkit
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   fastapi
