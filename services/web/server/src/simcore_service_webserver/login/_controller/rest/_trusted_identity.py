@@ -10,7 +10,7 @@ from ....session.api import get_session
 PENDING_2FA_EMAIL_KEY: Final[
     Annotated[
         str,
-        doc("state of a login awaiting 2FA completion; written by auth_login, cleared on every successful login"),
+        doc("State of a login awaiting 2FA completion; written by auth_login, cleared on every successful login"),
     ]
 ] = f"{__name__}.pending_2fa_email"
 
