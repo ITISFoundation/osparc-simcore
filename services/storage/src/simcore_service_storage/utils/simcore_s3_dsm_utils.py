@@ -26,7 +26,11 @@ from servicelib.utils import ensure_ends_with, limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..constants import EXPORTS_S3_PREFIX, MAX_CONCURRENT_S3_TASKS
-from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
+from ..exceptions.errors import (
+    FileMetaDataNotFoundError,
+    ProjectAccessRightError,
+    ProjectNotFoundError,
+)
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
 from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
@@ -349,9 +353,13 @@ async def get_accessible_project_ids(
 ) -> list[ProjectID]:
     access_layer_repo = AccessLayerRepository.instance(db_engine)
     if project_id:
-        project_access_rights = await access_layer_repo.get_project_access_rights(
-            user_id=user_id, project_id=project_id
-        )
+        try:
+            project_access_rights = await access_layer_repo.get_project_access_rights(
+                user_id=user_id, project_id=project_id
+            )
+        except ProjectNotFoundError as err:
+            # a project missing from the database has no data a user can access
+            raise ProjectAccessRightError(access_right="read", project_id=project_id) from err
         if not project_access_rights.read:
             raise ProjectAccessRightError(access_right="read", project_id=project_id)
         return [project_id]
