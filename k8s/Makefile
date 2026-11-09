@@ -26,7 +26,7 @@ create-cluster: _require-valid-kind ## Creates Kubernetes cluster
 delete-cluster destroy-cluster: _require-valid-kind ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
 
-.PHONY: load-images
+.PHONY: load-images-into-cluster
 load-images-into-cluster: _require-valid-kind ## Loads simcore images into Kubernetes cluster
 	@images=$$(docker images --filter 'reference=local/*:development' --format '{{.Repository}}:{{.Tag}}'); \
 	test -n "$$images" || { echo "no local/{service}:development images. Build them first with 'make build-devel'."; exit 1; }; \

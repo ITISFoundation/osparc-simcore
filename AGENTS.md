@@ -14,6 +14,7 @@ globs. Read the one that matches what you are editing:
 - [Requirements file conventions](.github/instructions/requirements.instructions.md)
 - [Makefile authoring conventions](.github/instructions/makefiles.instructions.md)
 - [GitHub workflow instructions](.github/instructions/github-workflows.instructions.md)
+- [Kubernetes instructions](.github/instructions/helmfile-go-templates.instructions.md)
 - [JavaScript](.github/instructions/node.instructions.md)
 
 ## graphify
