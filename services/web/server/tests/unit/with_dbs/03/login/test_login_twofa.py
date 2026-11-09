@@ -37,6 +37,7 @@ from simcore_service_webserver.login.constants import (
     MSG_LOGGED_IN,
     MSG_PHONE_REGISTER_2FA_REQUIRED,
     MSG_REGISTRATION_SUCCESS,
+    MSG_WRONG_2FA_CODE__INVALID,
 )
 from simcore_service_webserver.user_preferences import user_preferences_service
 from simcore_service_webserver.user_preferences.models import (
@@ -767,3 +768,52 @@ async def test_successful_login_clears_an_abandoned_pending_login(
 
         last_sms = mocked_twilio_service["send_sms_code_for_login"].call_args
         assert last_sms.kwargs["phone_number"] == second_phone
+
+
+async def test_login_2fa_ignores_a_code_valid_for_another_account(
+    client: TestClient,
+    mocked_twilio_service: dict[str, MockType],
+):
+    """A code valid for another account does not log that account in: the
+    endpoint verifies against the session's pending login, not the body email
+    """
+    assert client.app
+
+    first_phone = "+41770000061"
+    second_phone = "+41770000062"
+
+    async with AsyncExitStack() as stack:
+        first_account = await stack.enter_async_context(NewUser(user_data={"phone": first_phone}, app=client.app))
+        second_account = await stack.enter_async_context(NewUser(user_data={"phone": second_phone}, app=client.app))
+
+        # the first account starts a login: its 2FA is pending in this session
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": first_account["email"], "password": first_account["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+
+        # a code valid for the second account, minted outside this session
+        second_code = await create_2fa_code(client.app, user_email=second_account["email"], expiration_in_seconds=60)
+
+        # submitting it under the second account's email does not log that
+        # account in
+        response = await client.post(
+            f"{client.app.router['auth_login_2fa'].url_for()}",
+            json={"email": second_account["email"], "code": second_code},
+        )
+        _, error = await assert_status(response, status.HTTP_401_UNAUTHORIZED)
+        assert error is not None
+        assert MSG_WRONG_2FA_CODE__INVALID.split(".")[0] in error["message"]
+
+        # the second account's code was neither consumed nor replaced
+        assert await verify_2fa_code(client.app, user_email=second_account["email"], code=second_code) is True
+
+        # the session's own login is intact and completes with its own code
+        first_code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+        response = await client.post(
+            f"{client.app.router['auth_login_2fa'].url_for()}",
+            json={"email": first_account["email"], "code": first_code},
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
