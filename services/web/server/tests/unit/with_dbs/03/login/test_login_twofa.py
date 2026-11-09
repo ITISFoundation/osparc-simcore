@@ -673,3 +673,53 @@ async def test_resend_2fa_code_uses_session_email_not_body(
         assert (
             await verify_2fa_code(client.app, user_email=first_account["email"], code=last_sms.kwargs["code"]) is True
         )
+
+
+async def test_login_continuation_in_authenticated_session_acts_on_pending_login(
+    client: TestClient,
+    mocked_twilio_service: dict[str, MockType],
+):
+    """A second login started in a session already authenticated with another
+    account completes against the account whose login is pending
+    """
+    assert client.app
+
+    first_phone = "+41770000041"
+    second_phone = "+41770000042"
+
+    async with AsyncExitStack() as stack:
+        first_account = await stack.enter_async_context(NewUser(user_data={"phone": first_phone}, app=client.app))
+        second_account = await stack.enter_async_context(NewUser(user_data={"phone": second_phone}, app=client.app))
+
+        # the first account completes a full 2FA login: the session holds its identity
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": first_account["email"], "password": first_account["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+        code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+        response = await client.post(
+            f"{client.app.router['auth_login_2fa'].url_for()}",
+            json={"email": first_account["email"], "code": code},
+        )
+        await assert_status(response, status.HTTP_200_OK)
+
+        # the same session starts a login for the second account
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": second_account["email"], "password": second_account["raw_password"]},
+        )
+        await assert_status(response, status.HTTP_202_ACCEPTED)
+        second_code = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs["code"]
+
+        # the continuation belongs to the pending login, not to the session's
+        # existing identity
+        response = await client.post(
+            f"{client.app.router['auth_login_2fa'].url_for()}",
+            json={"email": second_account["email"], "code": second_code},
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
+
+        # the second account's code was consumed by the login
+        assert await has_2fa_code(client.app, second_account["email"]) is False

@@ -45,10 +45,23 @@ async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: 
 
     2FA handlers act on it and never on an email from the request body.
 
+    A login in progress takes precedence over the session's identity: a session
+    authenticated with one account can start a login for another, and the second
+    factor belongs to the account whose login is pending.
+
     Raises:
-        web.HTTPUnauthorized: if the session has neither a completed login identity
-            nor a pending 2FA email (i.e. it never started a login here)
+        web.HTTPUnauthorized: if the session has neither a pending 2FA email
+            nor a completed login identity (i.e. it never started a login here)
     """
+    session = await get_session(request)
+    pending = session.get(PENDING_2FA_EMAIL_KEY)
+    if pending:
+        return TrustedLoginEmail(
+            email=pending["email"].lower(),
+            fully_authenticated=False,
+            phone_registration_allowed=pending["phone_registration_allowed"],
+        )
+
     # the identity policy stores the user's email (see security/_identity_policy.py);
     # aiohttp_security.api.authorized_userid cannot be used here because the
     # authorization policy maps it to the user id
@@ -57,13 +70,4 @@ async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: 
     if email:
         return TrustedLoginEmail(email=email.lower(), fully_authenticated=True, phone_registration_allowed=True)
 
-    session = await get_session(request)
-    pending = session.get(PENDING_2FA_EMAIL_KEY)
-    if not pending:
-        raise web.HTTPUnauthorized(text=unauthorized_reason)
-
-    return TrustedLoginEmail(
-        email=pending["email"].lower(),
-        fully_authenticated=False,
-        phone_registration_allowed=pending["phone_registration_allowed"],
-    )
+    raise web.HTTPUnauthorized(text=unauthorized_reason)
