@@ -6,7 +6,7 @@ KUBECTL_VERSION := 1.36.1
 KIND_VERSION := 0.32.0
 HELMFILE_VERSION := 1.1.6
 
-HELMFILE := HELM_DIFF_OUTPUT_CONTEXT=5 helmfile -e local
+HELMFILE := HELM_DIFF_OUTPUT_CONTEXT=5 helmfile --environment local
 
 # $(1) command, $(2) expected version
 define verify_tool_installation
