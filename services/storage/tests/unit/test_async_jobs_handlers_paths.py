@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from celery.app.task import Task
 from celery.worker.worker import WorkController
 from celery_library.async_jobs import (
     submit_job,
@@ -31,6 +32,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.storage_utils import (
     CreateProjectAccessRightsCallable,
     FileIDDict,
@@ -645,3 +647,74 @@ async def test_delete_paths_of_node_folder_denied_without_write(
         expected_total_size=len(node_files_of_node),
         product_name=product_name,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_denied_paths_fails_without_retry(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+    mocker: MockerFixture,
+):
+    """a denied delete must fail the job on the first attempt: ProjectNodeAccessRightError and
+    ProjectAccessRightError are excluded from the task's automatic retries"""
+    retry_spy = mocker.spy(Task, "retry")
+
+    project_params = ProjectWithFilesParams(
+        num_nodes=1,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=0,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    project_path = Path(project["uuid"])
+    await create_project_access_rights(
+        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=True, write=False, delete=False
+    )
+    node_id, _ = next(iter(node_files.items()))
+
+    with pytest.raises(JobError, match="Insufficient access rights to write node"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path / f"{node_id}"},
+        )
+
+    with pytest.raises(JobError, match="Insufficient access rights to delete project"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path},
+        )
+
+    assert retry_spy.call_count == 0
+
+    # control: compute_path_size raises the same error class but does not exclude it, so the
+    # worker retries it -- proving the spy observes the worker's attempts at all
+    other_project, _ = await project_with_seeded_files_factory(project_params)
+    with pytest.raises(JobError, match="Insufficient access rights to read project"):
+        await _assert_compute_path_size(
+            task_manager,
+            location_id,
+            other_user_id,
+            path=Path(other_project["uuid"]),
+            expected_total_size=0,
+            product_name=product_name,
+        )
+    assert retry_spy.call_count > 0, "the spy must observe the worker's retried attempts"
