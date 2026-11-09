@@ -38,6 +38,10 @@ router = APIRouter(
 @router.get(
     "/computations/{project_id}",
     response_model=Envelope[ComputationGet],
+    responses={
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient access rights on the project"},
+        status.HTTP_404_NOT_FOUND: {"description": "Project not found"},
+    },
 )
 async def get_computation(_path: Annotated[ComputationPathParams, Depends()]): ...
 
@@ -52,6 +56,7 @@ async def get_computation(_path: Annotated[ComputationPathParams, Depends()]): .
             "model": Envelope[ComputationGet],
         },
         status.HTTP_402_PAYMENT_REQUIRED: {"description": "Insufficient credits to run computation"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient access rights on the project"},
         status.HTTP_404_NOT_FOUND: {"description": "Project/wallet/pricing/cluster details were not found"},
         status.HTTP_409_CONFLICT: {"description": "Project already started or contains deprecated services"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service not available or configuration error"},
@@ -66,6 +71,10 @@ async def start_computation(
 @router.post(
     "/computations/{project_id}:stop",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient access rights on the project"},
+        status.HTTP_404_NOT_FOUND: {"description": "Project not found"},
+    },
 )
 async def stop_computation(_path: Annotated[ComputationPathParams, Depends()]): ...
 

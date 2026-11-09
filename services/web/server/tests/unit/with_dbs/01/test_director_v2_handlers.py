@@ -4,7 +4,9 @@
 
 
 import base64
+from collections.abc import AsyncIterator
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -28,9 +30,11 @@ from models_library.api_schemas_directorv2.encryption import (
 from models_library.api_schemas_webserver.computations import (
     ComputationCollectionRunRestGet,
     ComputationCollectionRunTaskRestGet,
+    ComputationGet,
     ComputationRunRestGet,
     ComputationTaskRestGet,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel
@@ -42,10 +46,14 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
+from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_metadata import projects_metadata
+from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.projects.models import ProjectDict
@@ -65,8 +73,10 @@ def _first_schema_example(model_cls: type[BaseModel]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return ProjectID(faker.uuid4())
+def project_id(user_project: ProjectDict) -> ProjectID:
+    # a real project row, owned by the logged user (computations handlers check
+    # project access rights against the database)
+    return ProjectID(user_project["uuid"])
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -267,6 +277,148 @@ async def test_stop_computation(
         rsp,
         (status.HTTP_204_NO_CONTENT if user_role == UserRole.GUEST else expected.no_content),
     )
+
+
+@pytest.fixture
+async def foreign_project(
+    client: TestClient,
+    tests_data_dir: Path,
+    osparc_product_name: ProductName,
+) -> AsyncIterator[ProjectDict]:
+    """project owned by another USER that the logged user has no access rights to"""
+    assert client.app
+    async with (
+        NewUser(None, client.app) as other_user,
+        NewProject(
+            {},
+            client.app,
+            user_id=other_user["id"],
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as project,
+    ):
+        yield project
+
+
+async def _share_project_with_logged_user(
+    sqlalchemy_async_engine: AsyncEngine,
+    project: ProjectDict,
+    logged_user: UserInfoDict,
+    *,
+    read: bool,
+    write: bool,
+) -> None:
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            sa.insert(project_to_groups).values(
+                project_uuid=project["uuid"],
+                gid=int(logged_user["primary_gid"]),
+                read=read,
+                write=write,
+                delete=False,
+                created=sa.func.now(),
+                modified=sa.func.now(),
+            )
+        )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_computations_are_denied_on_projects_without_access(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    foreign_project: ProjectDict,
+):
+    assert client.app
+    project_id = foreign_project["uuid"]
+
+    url = client.app.router["get_computation"].url_for(project_id=project_id)
+    rsp = await client.get(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["start_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["stop_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_computation_start_does_not_link_wallet_of_foreign_project(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    foreign_project: ProjectDict,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    """a denied start must not connect the attacker's wallet to the foreign project"""
+    assert client.app
+
+    url = client.app.router["start_computation"].url_for(project_id=foreign_project["uuid"])
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    async with sqlalchemy_async_engine.connect() as conn:
+        count = (
+            await conn.execute(
+                sa.select(sa.func.count())
+                .select_from(projects_to_wallet)
+                .where(projects_to_wallet.c.project_uuid == foreign_project["uuid"])
+            )
+        ).scalar_one()
+    assert count == 0
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_read_only_collaborator_can_get_but_not_run_computation(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    foreign_project: ProjectDict,
+    sqlalchemy_async_engine: AsyncEngine,
+):
+    assert client.app
+    await _share_project_with_logged_user(sqlalchemy_async_engine, foreign_project, logged_user, read=True, write=False)
+    project_id = foreign_project["uuid"]
+
+    url = client.app.router["get_computation"].url_for(project_id=project_id)
+    rsp = await client.get(f"{url}")
+    data, _ = await assert_status(rsp, status.HTTP_200_OK)
+    assert data
+    assert ComputationGet.model_validate(data[0])
+
+    url = client.app.router["start_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["stop_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_computations_on_unknown_project_are_not_found(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    faker: Faker,
+):
+    assert client.app
+    project_id = f"{faker.uuid4()}"
+
+    url = client.app.router["get_computation"].url_for(project_id=project_id)
+    rsp = await client.get(f"{url}")
+    await assert_status(rsp, status.HTTP_404_NOT_FOUND)
+
+    url = client.app.router["start_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_404_NOT_FOUND)
+
+    url = client.app.router["stop_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_404_NOT_FOUND)
 
 
 @pytest.fixture
