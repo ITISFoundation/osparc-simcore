@@ -36,7 +36,8 @@ from models_library.api_schemas_webserver.computations import (
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.wallets import WalletID, WalletInfo
+from models_library.users import UserID
+from models_library.wallets import WalletID, WalletInfo, WalletStatus
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -55,10 +56,14 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
+from simcore_postgres_database.models.wallets import wallets as wallets_table
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2._client import DirectorV2RestClient
+from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.user_preferences import user_preferences_service
+from simcore_service_webserver.user_preferences.models import PreferredWalletIdFrontendUserPreference
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -387,6 +392,59 @@ async def test_computations_are_denied_on_projects_without_access(
     await assert_status(rsp, status.HTTP_403_FORBIDDEN)
 
 
+@pytest.fixture
+def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    # wallet connection in get_wallet_info is gated on this flag; products stay
+    # payment-disabled per test, so other tests are unaffected
+    monkeypatch.setenv("WEBSERVER_CREDIT_COMPUTATION_ENABLED", "1")
+    return app_environment | {"WEBSERVER_CREDIT_COMPUTATION_ENABLED": "1"}
+
+
+@pytest.fixture
+def billed_product(client: TestClient, osparc_product_name: ProductName) -> None:
+    """marks the product as payment-enabled (products are read per request from the
+    app-cached dictionary)"""
+    assert client.app
+    products = client.app[PRODUCTS_APPKEY]
+    products[osparc_product_name] = products[osparc_product_name].model_copy(update={"is_payment_enabled": True})
+
+
+@pytest.fixture
+async def logged_user_default_wallet(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[WalletID]:
+    """wallet owned by the logged user, set as their default preference"""
+    assert client.app
+    async with sqlalchemy_async_engine.begin() as conn:
+        wallet_id = (
+            await conn.execute(
+                sa.insert(wallets_table)
+                .values(
+                    name="logged-user-default-wallet",
+                    owner=int(logged_user["primary_gid"]),
+                    status=WalletStatus.ACTIVE,
+                    product_name=osparc_product_name,
+                )
+                .returning(wallets_table.c.wallet_id)
+            )
+        ).scalar_one()
+    try:
+        await user_preferences_service.set_frontend_user_preference(
+            client.app,
+            user_id=UserID(logged_user["id"]),
+            product_name=osparc_product_name,
+            frontend_preference_identifier=PreferredWalletIdFrontendUserPreference().preference_identifier,
+            value=wallet_id,
+        )
+        yield WalletID(wallet_id)
+    finally:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(sa.delete(wallets_table).where(wallets_table.c.wallet_id == wallet_id))
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_computation_start_does_not_link_wallet_of_foreign_project(
     director_v2_service_mock: AioResponsesMock,
@@ -394,6 +452,8 @@ async def test_computation_start_does_not_link_wallet_of_foreign_project(
     logged_user: UserInfoDict,
     foreign_project: ProjectDict,
     sqlalchemy_async_engine: AsyncEngine,
+    billed_product: None,
+    logged_user_default_wallet: WalletID,
 ):
     """a denied start must not connect the attacker's wallet to the foreign project"""
     assert client.app
