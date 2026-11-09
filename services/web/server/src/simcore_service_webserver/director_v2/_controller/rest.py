@@ -54,7 +54,6 @@ async def start_computation(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ComputationPathParams, request)
 
-    # the caller must have write access on the project before any wallet/collection side effect below
     await check_user_project_permission(
         request.app,
         project_id=path_params.project_id,
