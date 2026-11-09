@@ -17,9 +17,6 @@ x-webserver-diagnostics: &webserver_diagnostics_environments
   DIAGNOSTICS_MAX_TASK_DELAY: ${DIAGNOSTICS_MAX_TASK_DELAY}
   DIAGNOSTICS_SLOW_DURATION_SECS: ${DIAGNOSTICS_SLOW_DURATION_SECS}
 
-x-webserver-rpc-disabled: &webserver_rpc_disabled
-  WEBSERVER_RPC_NAMESPACE: "null"
-
 x-tracing-open-telemetry: &tracing_open_telemetry_environments
   TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
   TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
@@ -1143,7 +1140,6 @@ services:
         - *storage_settings
         - *resource_usage_tracker_settings
         - *tracing_open_telemetry_environments
-        - *webserver_rpc_disabled
 
       # WEBSERVER_DIRECTOR_V2
 
@@ -1195,6 +1191,7 @@ services:
       WEBSERVER_PORT: ${WEBSERVER_PORT}
       WEBSERVER_PRODUCTS: ${WB_GC_PRODUCTS}
       WEBSERVER_PROJECTS: ${WB_GC_PROJECTS}
+      WEBSERVER_RPC_NAMESPACE: webserver
       WEBSERVER_SCICRUNCH: ${WB_GC_SCICRUNCH}
       WEBSERVER_SOCKETIO: ${WB_GC_SOCKETIO}
       WEBSERVER_STATICWEB: ${WB_GC_STATICWEB}
@@ -1315,7 +1312,6 @@ services:
         - *postgres_settings
         - *rabbit_settings
         - *redis_settings
-        - *webserver_rpc_disabled
 
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
@@ -1324,6 +1320,7 @@ services:
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_PORT: ${WEBSERVER_PORT}
+      WEBSERVER_RPC_NAMESPACE: webserver
 
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}

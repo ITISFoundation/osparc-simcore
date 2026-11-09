@@ -15,7 +15,8 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectNotFoundRpcError,
 )
 
-from ...rabbitmq import register_webserver_rpc_router
+from ...application_settings import get_application_settings
+from ...rabbitmq import get_rabbitmq_rpc_client
 from .. import _jobs_service
 from ..exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 
@@ -154,4 +155,10 @@ async def get_project_marked_as_job(
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
-    await register_webserver_rpc_router(app, router)
+    rpc_client = get_rabbitmq_rpc_client(app)
+    settings = get_application_settings(app)
+    if not settings.WEBSERVER_RPC_NAMESPACE:
+        msg = "RPC namespace is not configured"
+        raise ValueError(msg)
+
+    await rpc_client.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)

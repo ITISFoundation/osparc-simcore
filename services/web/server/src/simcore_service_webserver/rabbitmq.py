@@ -9,11 +9,9 @@ from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
     RabbitMQClient,
     RabbitMQRPCClient,
-    RPCRouter,
     wait_till_rabbitmq_responsive,
 )
 
-from .application_settings import get_application_settings
 from .application_setup import ModuleCategory, app_setup_func
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 from .rest.healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
@@ -81,19 +79,3 @@ def get_rabbitmq_rpc_client(app: web.Application) -> RabbitMQRPCClient:
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
     return app[RABBITMQ_CLIENT_APPKEY]
-
-
-async def register_webserver_rpc_router(app: web.Application, router: RPCRouter) -> None:
-    """Serve `router` under `WEBSERVER_RPC_NAMESPACE`
-
-    Webserver variants that do not expose an RPC server set the namespace to
-    null (e.g. wb-garbage-collector, wb-auth, wb-db-event-listener) and skip
-    the registration here.
-    """
-    settings = get_application_settings(app)
-    if not settings.WEBSERVER_RPC_NAMESPACE:
-        _logger.debug("Skipping RPC router registration: WEBSERVER_RPC_NAMESPACE is not set")
-        return
-
-    rpc_client = get_rabbitmq_rpc_client(app)
-    await rpc_client.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)
