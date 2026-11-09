@@ -90,7 +90,7 @@ def _extract_file_name(response: httpx2.Response, url: str) -> str:
     return _DEFAULT_INVOICE_FILENAME
 
 
-async def _get_additional_invoice_email_recipients(
+async def _list_additional_invoice_email_recipients(
     user_preferences_rpc: UserPreferencesRpcApi,
     user_id: UserID,
     product_name: ProductName,
@@ -105,7 +105,7 @@ async def _get_additional_invoice_email_recipients(
             return []
         return preference.value
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        _logger.warning(
+        _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Failed to load additional invoice email recipients; sending to primary email only",
                 error=exc,
@@ -203,7 +203,7 @@ class EmailProvider(NotificationProvider):
             return
 
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
-        additional_emails = await _get_additional_invoice_email_recipients(
+        additional_emails = await _list_additional_invoice_email_recipients(
             self._user_preferences_rpc, user_id, data.product_name
         )
 
