@@ -40,7 +40,10 @@ from pytest_simcore.helpers.storage_utils import (
 )
 from servicelib.celery.async_jobs.storage.paths import submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
+from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -134,6 +137,18 @@ async def _assert_delete_paths(
             return
 
     pytest.fail("Job did not finish")
+
+
+async def _count_file_meta_data_rows(
+    sqlalchemy_async_engine: AsyncEngine, *, project_id: ProjectID, node_id: NodeID
+) -> int:
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(
+            select(func.count())
+            .select_from(file_meta_data)
+            .where((file_meta_data.c.project_id == f"{project_id}") & (file_meta_data.c.node_id == f"{node_id}"))
+        )
+        return result.scalar_one()
 
 
 @pytest.mark.parametrize(
@@ -572,6 +587,106 @@ async def test_delete_paths_of_node_folder_denied_without_write(
         other_user_id,
         path=project_path / f"{node_id}",
         expected_total_size=len(node_files_of_node),
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_node_folder_by_collaborator_with_write_and_no_delete_right(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    sqlalchemy_async_engine: AsyncEngine,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+):
+    """`write` on the study is what grants a non-owner the removal of a node's data: `delete` on the
+    project is not needed, and does not come with it either"""
+    project_params = ProjectWithFilesParams(
+        num_nodes=2,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=1,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    assert len(node_files) == 2, "test preconditions are not filled! two nodes are needed for this test"
+
+    project_id = ProjectID(project["uuid"])
+    project_path = Path(project["uuid"])
+    (deleted_node_id, deleted_node_files), (kept_node_id, kept_node_files) = list(node_files.items())
+    await create_project_access_rights(
+        project_id=project_id, user_id=other_user_id, read=True, write=True, delete=False
+    )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{deleted_node_id}",
+        expected_total_size=len(deleted_node_files),
+        product_name=product_name,
+    )
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        other_user_id,
+        product_name,
+        paths={project_path / f"{deleted_node_id}"},
+    )
+
+    # both the S3 objects and their file metadata are gone
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{deleted_node_id}",
+        expected_total_size=0,
+        product_name=product_name,
+    )
+    assert (
+        await _count_file_meta_data_rows(sqlalchemy_async_engine, project_id=project_id, node_id=deleted_node_id) == 0
+    )
+
+    # the sibling node is untouched
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{kept_node_id}",
+        expected_total_size=len(kept_node_files),
+        product_name=product_name,
+    )
+    assert await _count_file_meta_data_rows(sqlalchemy_async_engine, project_id=project_id, node_id=kept_node_id) == (
+        len(kept_node_files)
+    )
+
+    # removing a node does not grant removing the whole project
+    with pytest.raises(JobError, match="Insufficient access rights to delete project"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path},
+        )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path,
+        expected_total_size=len(kept_node_files),
         product_name=product_name,
     )
 
