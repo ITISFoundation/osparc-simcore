@@ -1,0 +1,57 @@
+{{- $sharedFolder := env "SIDECAR_COMP_SERVICES_SHARED_FOLDER" | default "/home/scu/computational_shared_data" -}}
+
+image:
+  repository: local/dask-sidecar
+  tag: development
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30786
+  extraServicePorts:
+    # dask dashboard UI
+    - name: dashboard
+      port: 8787
+      nodePort: 30787
+
+env:
+  SIDECAR_LOGLEVEL: DEBUG
+
+# re-declares the base docker-socket/computational-shared-data volumes: Helm
+# replaces lists, so dropping them here would remove them from the pod
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: computational-shared-data
+    emptyDir: {}
+  - name: dask-sidecar-src
+    hostPath:
+      path: /osparc-simcore/services/dask-sidecar
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+  # compose: ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+  - name: hostname
+    hostPath:
+      path: /etc/hostname
+      type: File
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: computational-shared-data
+    mountPath: {{ $sharedFolder | quote }}
+  - name: dask-sidecar-src
+    mountPath: /devel/services/dask-sidecar
+  - name: packages-src
+    mountPath: /devel/packages
+  - name: hostname
+    mountPath: /home/scu/hostname
+    readOnly: true

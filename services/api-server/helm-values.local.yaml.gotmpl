@@ -14,9 +14,9 @@ probes:
     failureThreshold: 120
 
 env:
+  API_SERVER_PROFILING: {{ requiredEnv "API_SERVER_PROFILING" }}
   API_SERVER_LOGLEVEL: DEBUG
   API_SERVER_REMOTE_DEBUG_PORT: 3000
-  SC_BOOT_MODE: debug
 
 extraVolumes:
   - name: api-server-src
@@ -40,4 +40,4 @@ service:
   extraServicePorts:
     - name: debug
       port: 3000
-      nodePort: 33006
+      nodePort: 32006

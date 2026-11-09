@@ -1,0 +1,42 @@
+image:
+  repository: local/dynamic-scheduler
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30012
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32016
+
+env:
+  DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT: 3000
+  DYNAMIC_SCHEDULER_LOGLEVEL: DEBUG
+
+extraVolumes:
+  - name: dynamic-scheduler-src
+    hostPath:
+      path: /osparc-simcore/services/dynamic-scheduler
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: dynamic-scheduler-src
+    mountPath: /devel/services/dynamic-scheduler
+  - name: packages-src
+    mountPath: /devel/packages

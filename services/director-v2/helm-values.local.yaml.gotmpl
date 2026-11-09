@@ -1,0 +1,49 @@
+image:
+  repository: local/director-v2
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+# compose publishes no fixed http host port, only the debugger
+service:
+  type: NodePort
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32009
+
+env:
+  DIRECTOR_V2_REMOTE_DEBUGGING_PORT: 3000
+  DIRECTOR_V2_LOGLEVEL: DEBUG
+  DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: "{}"
+  # compose: ${PWD}/services/dynamic-sidecar, the repo is mounted at /osparc-simcore in the kind node
+  DYNAMIC_SIDECAR_MOUNT_PATH_DEV: /osparc-simcore/services/dynamic-sidecar
+
+# re-declares the base docker-socket volume: Helm replaces lists
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: director-v2-src
+    hostPath:
+      path: /osparc-simcore/services/director-v2
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: director-v2-src
+    mountPath: /devel/services/director-v2
+  - name: packages-src
+    mountPath: /devel/packages

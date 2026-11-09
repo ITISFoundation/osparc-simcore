@@ -1,0 +1,8 @@
+image:
+  repository: local/docker-api-proxy
+  tag: development
+
+# compose local: "8014:8888"
+service:
+  type: NodePort
+  nodePort: 30014

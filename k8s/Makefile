@@ -26,6 +26,12 @@ create-cluster: _require-valid-kind ## Creates Kubernetes cluster
 delete-cluster destroy-cluster: _require-valid-kind ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
 
+.PHONY: load-images
+load-images-into-cluster: _require-valid-kind ## Loads simcore images into Kubernetes cluster
+	@images=$$(docker images --filter 'reference=local/*:development' --format '{{.Repository}}:{{.Tag}}'); \
+	test -n "$$images" || { echo "no local/{service}:development images. Build them first with 'make build-devel'."; exit 1; }; \
+	kind load docker-image --name $(KIND_CLUSTER_NAME) $$images
+
 .PHONY: recreate-cluster
 recreate-cluster: ## Recreates Kubernetes cluster
 	@$(MAKE) delete-cluster
@@ -35,7 +41,9 @@ recreate-cluster: ## Recreates Kubernetes cluster
 
 .PHONY: down-devel up-devel
 down-devel: helmfile-destroy ## Destroy services
-up-devel: helmfile-apply ## Deploys services
+up-devel: ## Deploys services
+	@$(MAKE) load-images-into-cluster
+	@$(MAKE) helmfile-apply
 
 ##@ Helmfile
 

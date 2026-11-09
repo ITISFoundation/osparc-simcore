@@ -1,0 +1,46 @@
+image:
+  repository: local/autoscaling
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30007
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32012
+
+env:
+  AUTOSCALING_REMOTE_DEBUGGING_PORT: 3000
+  AUTOSCALING_LOGLEVEL: DEBUG
+
+# re-declares the base docker-socket volume: Helm replaces lists
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: autoscaling-src
+    hostPath:
+      path: /osparc-simcore/services/autoscaling
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: autoscaling-src
+    mountPath: /devel/services/autoscaling
+  - name: packages-src
+    mountPath: /devel/packages

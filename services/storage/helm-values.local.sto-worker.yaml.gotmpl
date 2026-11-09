@@ -1,0 +1,40 @@
+image:
+  repository: local/storage
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+# only for the debug NodePort; the celery worker itself serves no API
+service:
+  enabled: true
+  type: NodePort
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32021
+
+env:
+  STORAGE_REMOTE_DEBUGGING_PORT: 3000
+  STORAGE_LOGLEVEL: DEBUG
+
+extraVolumes:
+  - name: storage-src
+    hostPath:
+      path: /osparc-simcore/services/storage
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: storage-src
+    mountPath: /devel/services/storage
+  - name: packages-src
+    mountPath: /devel/packages

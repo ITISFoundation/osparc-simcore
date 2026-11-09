@@ -1,0 +1,48 @@
+image:
+  repository: local/director
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+# compose publishes no fixed http host port, only the debugger
+service:
+  type: NodePort
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32004
+
+env:
+  DIRECTOR_REMOTE_DEBUGGING_PORT: 3000
+  # compose devel uses literal LOGLEVEL/SC_BOOT_MODE, not *common_environment
+  LOGLEVEL: debug
+  SC_BOOT_MODE: debug
+
+# re-declares the base docker-socket volume: Helm replaces lists
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: director-src
+    hostPath:
+      path: /osparc-simcore/services/director
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: director-src
+    mountPath: /devel/services/director
+  - name: packages-src
+    mountPath: /devel/packages
