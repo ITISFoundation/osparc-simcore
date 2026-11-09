@@ -109,7 +109,12 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
                 _VALUE_VALIDATOR_CLASSES[cache_key] = create_model(
                     f"{preference_name}ValueValidator",
                     __base__=BaseModel,
-                    value=(Annotated[value_annotation, Field(**constraints)], ...),
+                    # NOTE: `FieldInfo.annotation` is a `TypeForm`, which mypy does not accept
+                    # inside an `Annotated` expression
+                    value=(
+                        Annotated[value_annotation, Field(**constraints)],  # type: ignore[arg-type]
+                        ...,
+                    ),
                 )
             except SchemaError as e:
                 # a constraint whose value is malformed (wrong type, invalid regex, ...)

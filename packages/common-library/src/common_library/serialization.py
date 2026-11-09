@@ -39,6 +39,9 @@ def model_dump_with_secrets(
 
         elif isinstance(field_data, dict):
             possible_pydantic_model = settings_obj.__class__.model_fields[field_name].annotation
+            if possible_pydantic_model is None:
+                # a field without an annotation (e.g. `Field()` alone) validates nothing
+                continue
             # NOTE: data could be a dict which does not represent a pydantic model or a union of models
             with contextlib.suppress(AttributeError, ValidationError):
                 data[field_name] = model_dump_with_secrets(
