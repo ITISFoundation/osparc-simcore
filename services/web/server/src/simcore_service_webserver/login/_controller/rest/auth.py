@@ -115,15 +115,12 @@ async def login(request: web.Request):
     if user_2fa_authentication_method == TwoFactorAuthenticationMethod.DISABLED:
         return await _security_service.login_granted_response(request, user=user)
 
-    # keep the account this 2FA continuation is about: the follow-up endpoints
-    # (login_2fa, register_phone, ...) act on it and never on a body-provided email
-    await set_pending_2fa_email(request, email=user["email"])
+    phone_registration_allowed = (
+        user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS and not user["phone"]
+    )
+    await set_pending_2fa_email(request, email=user["email"], phone_registration_allowed=phone_registration_allowed)
 
-    # Check phone for SMS authentication
-    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS and not user["phone"]:
-        # this response redirects to auth_register_phone, so that step is allowed
-        # for the pending login
-        await set_pending_2fa_email(request, email=user["email"], phone_registration_allowed=True)
+    if phone_registration_allowed:
         return envelope_response(
             # LoginNextPage
             {
