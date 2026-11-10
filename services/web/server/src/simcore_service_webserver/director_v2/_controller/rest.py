@@ -56,6 +56,9 @@ async def _repair_pricing_state_if_billed(
     if wallet_info is None:
         # not a billed run: the web-server must not touch the nodes' pricing state
         return
+    # NOTE: repairing writes the nodes of every project in the run, while this endpoint
+    # only checks that the user may read them. The missing project-level check is
+    # tracked in https://github.com/ITISFoundation/osparc-simcore/issues/10036
     await repair_projects_nodes_pricing_and_resources(
         request.app,
         user_id=user_id,
