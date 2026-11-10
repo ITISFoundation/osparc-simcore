@@ -27,17 +27,20 @@ def namespace() -> RPCNamespace:
     return RPCNamespace.from_entries({f"test{i}": f"test{i}" for i in range(8)})
 
 
-@pytest.fixture
-def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> dict[str, Any]:
+def _rabbit_container_filters(stack_name: str) -> dict[str, Any]:
     """aiodocker filters selecting the `rabbit` container of this run's stack only
 
     A name-only filter also matches the rabbits of other checkouts sharing the daemon.
     """
-    stack_name = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     return {
         "name": ["rabbit"],
         "label": [f"com.docker.stack.namespace={stack_name}"],
     }
+
+
+@pytest.fixture
+def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> dict[str, Any]:
+    return _rabbit_container_filters(env_vars_for_docker_compose["SWARM_STACK_NAME"])
 
 
 @pytest.fixture(autouse=True)
@@ -54,9 +57,11 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
         return
     # looked up here instead of declared as parameters: parameters resolve during setup, which would
     # pull the docker stack fixtures (and their service-selection assertion) into the modules of this
-    # directory that deploy no stack. Any test requesting the principal already has it set up.
-    container_filters: dict[str, Any] = request.getfixturevalue("stack_rabbit_container_filters")
+    # directory that deploy no stack. Any test requesting the principal already has the other two set
+    # up, and only an already-set-up fixture can be fetched during teardown
+    env_vars: EnvVarsDict = request.getfixturevalue("env_vars_for_docker_compose")
     principal: RabbitWorkerPrincipal = request.getfixturevalue("rabbit_worker_principal")
+    container_filters = _rabbit_container_filters(env_vars["SWARM_STACK_NAME"])
 
     print("--> checking for errors/warnings in rabbitmq logs...")
     shared_broker = is_xdist_worker(request)
