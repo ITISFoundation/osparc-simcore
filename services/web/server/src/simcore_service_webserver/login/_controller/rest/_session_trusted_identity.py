@@ -27,7 +27,7 @@ class TrustedLoginEmail:
     phone_registration_allowed: bool
 
 
-async def set_pending_2fa_email(request: web.Request, *, email: str, phone_registration_allowed: bool = False) -> None:
+async def set_pending_2fa_email(request: web.Request, *, email: str, phone_registration_allowed: bool) -> None:
     session = await get_session(request)
     session[PENDING_2FA_EMAIL_KEY] = {
         "email": email.lower(),
