@@ -87,7 +87,7 @@ click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.16.2
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
