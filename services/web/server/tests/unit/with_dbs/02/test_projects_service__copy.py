@@ -19,6 +19,7 @@ here are inspired by the handler-level tests in `test_projects_crud_handlers.py`
 """
 
 import json
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -1180,3 +1181,59 @@ async def test_compose_project_data_of_a_copy_says_nothing_about_the_nodes(
     assert new_project["name"] == "renamed copy"
     # a field the override leaves empty keeps the source project's value
     assert new_project["description"] == "from the source"
+
+
+async def test_creating_a_copy_with_a_name_override_through_the_endpoint_keeps_the_priced_nodes(
+    *,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    user_project: ProjectDict,
+    sqlalchemy_async_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    storage_subsystem_mock: Any,
+    project_db_cleaner: None,
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mock_dynamic_scheduler: None,
+    mock_rut_default_pricing_unit: None,
+    mocked_director_v2_node_sizing: MockType,
+    billed_product: None,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+):
+    """The same override through `POST /v0/projects?from_study=...`: a body that renames the
+    copy says nothing about its nodes, so the copy carries the source's pricing link and the
+    resources sized for it, on one node row per source node.
+    """
+    assert client.app
+    _, sourced_resources = await _price_and_size_one_computational_node(
+        client.app, sqlalchemy_async_engine, user_project["uuid"]
+    )
+    settings = get_rut_plugin_settings(client.app)
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID),
+        payload=jsonable_encoder(
+            make_pricing_unit(pricing_unit_id=_PRICING_UNIT_ID, default=False, aws_ec2_instance=R5_4XLARGE_NAME)
+        ),
+        repeat=True,
+    )
+
+    new_project = await request_create_project(
+        client,
+        status.HTTP_202_ACCEPTED,
+        status.HTTP_201_CREATED,
+        logged_user,
+        primary_group,
+        project={"name": "renamed copy"},
+        from_study=user_project,
+        copy_data=False,
+    )
+
+    assert new_project["name"] == "renamed copy"
+    state = await get_node_pricing_state(sqlalchemy_async_engine, new_project["uuid"])
+    assert len(state) == len(new_project["workbench"])
+
+    copied_link = [node_state for node_state in state.values() if node_state.pricing_unit_id == _PRICING_UNIT_ID]
+    assert len(copied_link) == 1
+    (copied,) = copied_link
+    assert copied.pricing_plan_id == _PRICING_PLAN_ID
+    assert copied.required_resources == sourced_resources
