@@ -51,11 +51,13 @@ blinker==1.9.0
     # via flask
 boto3==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   aws-sam-translator
     #   moto
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   aws-xray-sdk
     #   boto3
@@ -273,7 +275,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 six==1.17.0
     # via
     #   -c requirements/_base.txt
