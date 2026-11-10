@@ -56,9 +56,12 @@ attrs==26.1.0
     #   jsonschema
     #   referencing
 boto3==1.40.61
-    # via aiobotocore
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   boto3
     #   s3transfer
@@ -310,7 +313,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 sh==2.2.4
     # via -r requirements/_base.in
 shellingham==1.5.4
