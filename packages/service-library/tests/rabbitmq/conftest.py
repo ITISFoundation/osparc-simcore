@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, cast
 
