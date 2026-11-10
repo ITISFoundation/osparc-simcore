@@ -8,7 +8,7 @@ from faker import Faker
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pytest_simcore.helpers.rabbitmq_logs import attribute_log_lines
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.xdist import get_max_xdist_workers, is_xdist_worker
+from pytest_simcore.helpers.xdist import is_xdist_worker
 from pytest_simcore.rabbit_service import RabbitWorkerPrincipal
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
@@ -49,7 +49,7 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
     if "no_cleanup_check_rabbitmq_server_has_no_errors" in request.keywords:
         return
     print("--> checking for errors/warnings in rabbitmq logs...")
-    shared_broker = is_xdist_worker(request) and get_max_xdist_workers(request.config) > 1
+    shared_broker = is_xdist_worker(request)
     async with aiodocker.Docker() as docker_client:
         containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
         assert len(containers) == 1, "missing rabbit container!"
