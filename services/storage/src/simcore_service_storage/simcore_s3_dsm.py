@@ -65,6 +65,7 @@ from .exceptions.errors import (
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
+    ProjectNodeAccessRightError,
     ProjectNotFoundError,
     SelectionNotAllowedError,
 )
@@ -814,7 +815,14 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         can = await AccessLayerRepository.instance(get_db_engine(self.app)).get_project_access_rights(
             user_id=user_id, project_id=project_id
         )
-        if not can.delete:
+        if node_id:
+            # NOTE: deleting the data of a single node does not remove the project itself, it is a
+            # modification *inside* the project (same as uploading/overwriting a file): therefore
+            # 'write' access is what is required here, and 'delete' is intentionally not needed.
+            if not can.write:
+                raise ProjectNodeAccessRightError(access_right="write", project_id=project_id, node_id=node_id)
+        elif not can.delete:
+            # NOTE: only removing the whole project requires the 'delete' access right
             raise ProjectAccessRightError(access_right="delete", project_id=project_id)
 
         if not node_id:
