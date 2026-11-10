@@ -69,8 +69,6 @@ class ProjectWithFilesParams:
 
 
 class CreateProjectAccessRightsCallable(Protocol):
-    """Type of the ``create_project_access_rights`` pytest fixture."""
-
     async def __call__(
         self,
         project_id: ProjectID,
