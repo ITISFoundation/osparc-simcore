@@ -11165,8 +11165,7 @@
                   "exclusiveMaximum": 0.0
                 },
                 {
-                  "type": "string",
-                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                  "type": "string"
                 }
               ],
               "title": "Amount"
@@ -14475,11 +14474,15 @@
         "properties": {
           "form": {
             "additionalProperties": true,
+            "propertyNames": {
+              "maxLength": 200
+            },
             "type": "object",
             "title": "Form"
           },
           "captcha": {
             "type": "string",
+            "maxLength": 200,
             "title": "Captcha"
           }
         },
@@ -15989,8 +15992,7 @@
           "osparcCredits": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -16327,8 +16329,7 @@
           "osparcCredits": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -16356,11 +16357,13 @@
         "properties": {
           "serviceKey": {
             "type": "string",
+            "maxLength": 200,
             "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
             "title": "Servicekey"
           },
           "serviceVersion": {
             "type": "string",
+            "maxLength": 200,
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Serviceversion"
           }
@@ -16657,10 +16660,12 @@
         "properties": {
           "displayName": {
             "type": "string",
+            "maxLength": 200,
             "title": "Displayname"
           },
           "description": {
             "type": "string",
+            "maxLength": 200,
             "title": "Description"
           },
           "classification": {
@@ -16668,6 +16673,7 @@
           },
           "pricingPlanKey": {
             "type": "string",
+            "maxLength": 200,
             "title": "Pricingplankey"
           }
         },
@@ -16684,6 +16690,7 @@
         "properties": {
           "unitName": {
             "type": "string",
+            "maxLength": 200,
             "title": "Unitname"
           },
           "unitExtraInfo": {
@@ -16711,13 +16718,14 @@
               },
               {
                 "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "maxLength": 200
               }
             ],
             "title": "Costperunit"
           },
           "comment": {
             "type": "string",
+            "maxLength": 200,
             "title": "Comment"
           }
         },
@@ -16777,8 +16785,7 @@
                 "exclusiveMinimum": 0.0
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               }
             ],
             "title": "Pricedollars"
@@ -21003,21 +21010,18 @@
           },
           "minBalanceInCredits": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Minbalanceincredits",
             "description": "Minimum balance in credits that triggers an auto-recharge [Read only]"
           },
           "topUpAmountInUsd": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Topupamountinusd",
             "description": "Amount in USD paid when auto-recharge condition is satisfied"
           },
           "monthlyLimitInUsd": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -21797,7 +21801,6 @@
           },
           "pricingUnitCost": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Pricingunitcost"
           },
           "startAt": {
@@ -23932,7 +23935,6 @@
         "properties": {
           "osparc_credits": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Osparc Credits"
           },
           "service_key": {
@@ -23942,7 +23944,6 @@
           },
           "running_time_in_hours": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Running Time In Hours"
           }
         },
@@ -24753,7 +24754,6 @@
           },
           "priceDollars": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Pricedollars"
           },
           "walletId": {
@@ -24761,7 +24761,6 @@
           },
           "osparcCredits": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Osparccredits"
           },
           "comment": {
@@ -25311,7 +25310,6 @@
           },
           "currentCostPerUnit": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -25341,8 +25339,7 @@
                 "type": "number"
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               }
             ],
             "title": "Cost Per Unit"
@@ -25383,7 +25380,6 @@
           },
           "currentCostPerUnit": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -25512,8 +25508,7 @@
           "creditsPerUsd": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -27215,8 +27210,7 @@
                 "minimum": 0.0
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               }
             ],
             "title": "Topupamountinusd"
@@ -27228,8 +27222,7 @@
                 "minimum": 0.0
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -28261,8 +28254,7 @@
           "credit_cost": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -29469,10 +29461,12 @@
         "properties": {
           "displayName": {
             "type": "string",
+            "maxLength": 200,
             "title": "Displayname"
           },
           "description": {
             "type": "string",
+            "maxLength": 200,
             "title": "Description"
           },
           "isActive": {
@@ -29492,6 +29486,7 @@
         "properties": {
           "unitName": {
             "type": "string",
+            "maxLength": 200,
             "title": "Unitname"
           },
           "unitExtraInfo": {
@@ -30090,6 +30085,9 @@
           },
           "extras": {
             "additionalProperties": true,
+            "propertyNames": {
+              "maxLength": 200
+            },
             "type": "object",
             "title": "Extras",
             "description": "Keeps extra information provided in the request form."
@@ -30513,7 +30511,6 @@
           },
           "availableCredits": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Availablecredits"
           }
         },

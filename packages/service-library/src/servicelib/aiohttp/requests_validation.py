@@ -185,4 +185,4 @@ async def parse_request_body_as(
             return model_schema_cls.model_validate(body)
 
         # used for model_schema like 'list[T]' or 'dict[T]'
-        return TypeAdapter(model_schema_cls).validate_python(body)  # type: ignore[no-any-return]
+        return TypeAdapter(model_schema_cls).validate_python(body)
