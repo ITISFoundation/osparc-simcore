@@ -15,7 +15,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.14.0
+alembic==1.20.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

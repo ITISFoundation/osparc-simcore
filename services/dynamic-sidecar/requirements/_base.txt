@@ -44,7 +44,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   aiohttp
-alembic==1.15.1
+alembic==1.20.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-doc==0.0.4
     # via
