@@ -3850,8 +3850,7 @@
                 "type": "number"
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "type": "string"
               }
             ],
             "title": "Wallet Credit Amount"
@@ -3876,7 +3875,6 @@
           },
           "wallet_credit_amount": {
             "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Wallet Credit Amount"
           }
         },

@@ -42,6 +42,7 @@ from ...constants import (
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email, set_pending_2fa_email
 from .auth_schemas import LoginBody, LoginTwoFactorAuthBody, LogoutBody
 
 log = logging.getLogger(__name__)
@@ -87,6 +88,9 @@ async def login(request: web.Request):
     # Check if user role allows skipping 2FA or if 2FA is not required
     skip_2fa = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
+        # an abandoned earlier login may have left a pending email: drop it so
+        # that it cannot shadow this authenticated account
+        await clear_pending_2fa_email(request)
         return await _security_service.login_granted_response(request, user=user)
 
     # 2FA login process continuation
@@ -112,10 +116,16 @@ async def login(request: web.Request):
         )
 
     if user_2fa_authentication_method == TwoFactorAuthenticationMethod.DISABLED:
+        # this account logs in with a single factor, so no pending email may be left around
+        await clear_pending_2fa_email(request)
         return await _security_service.login_granted_response(request, user=user)
 
-    # Check phone for SMS authentication
-    if user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS and not user["phone"]:
+    phone_registration_allowed = (
+        user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS and not user["phone"]
+    )
+    await set_pending_2fa_email(request, email=user["email"], phone_registration_allowed=phone_registration_allowed)
+
+    if phone_registration_allowed:
         return envelope_response(
             # LoginNextPage
             {
@@ -200,7 +210,11 @@ async def login(request: web.Request):
 )
 @handle_rest_requests_exceptions
 async def login_2fa(request: web.Request):
-    """Login (continuation): Submits 2FA code"""
+    """Login (continuation): Submits 2FA code
+
+    The code is validated against the account whose login is pending in this
+    session (see _trusted_identity), not against the body's email.
+    """
     product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     if not settings.LOGIN_2FA_REQUIRED:
@@ -208,21 +222,23 @@ async def login_2fa(request: web.Request):
             text=user_message("2FA login is not available"),
         )
 
-    # validates input params
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
+    trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA)
+
     # validates code
-    if not await _twofa_service.has_2fa_code(request.app, login_2fa_.email):
+    if not await _twofa_service.has_2fa_code(request.app, trusted.email):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
     if not await _twofa_service.verify_2fa_code(
-        request.app, user_email=login_2fa_.email, code=login_2fa_.code.get_secret_value()
+        request.app, user_email=trusted.email, code=login_2fa_.code.get_secret_value()
     ):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
-    user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=login_2fa_.email))
+    user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))
 
     # dispose since code was used
-    await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)
+    await _twofa_service.delete_2fa_code(request.app, trusted.email)
+    await clear_pending_2fa_email(request)
 
     return await _security_service.login_granted_response(request, user=user)
 
@@ -247,5 +263,6 @@ async def logout(request: web.Request) -> web.Response:
         response = flash_response(translate_message(MSG_LOGGED_OUT, request), "INFO")
         await _login_service.notify_user_logout(request.app, user_id, logout_.client_session_id)
         await security_web.forget_identity(request, response)
+        await clear_pending_2fa_email(request)
 
         return response
