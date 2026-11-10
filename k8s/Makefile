@@ -20,7 +20,12 @@ KIND_CLUSTER_NAME := simcore
 
 .PHONY: create-cluster
 create-cluster: _require-valid-kind ## Creates Kubernetes cluster
-	cd $(_K8S_DIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
+	@cd $(_K8S_DIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
+	# init docker swarm for dv2 to start. we are not going to use it
+	@swarm_state=$$(docker info --format '{{.Swarm.LocalNodeState}}') || exit 1; \
+	if [ "$$swarm_state" = "inactive" ]; then \
+		docker swarm init --advertise-addr 127.0.0.1; \
+	fi
 
 .PHONY: delete-cluster destroy-cluster
 delete-cluster destroy-cluster: _require-valid-kind ## Deletes Kubernetes cluster

@@ -2,6 +2,9 @@ image:
   repository: local/api-server
   tag: development
 
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
 resources:
   limits:
     memory: 2Gi
