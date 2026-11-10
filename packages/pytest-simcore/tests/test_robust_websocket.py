@@ -18,7 +18,11 @@ from playwright.sync_api import Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import WebSocket as PlaywrightWebSocket
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import RobustWebSocket, decode_socketio_42_message
+from pytest_simcore.helpers.playwright import (
+    SOCKETIO_MESSAGE_PREFIX,
+    RobustWebSocket,
+    decode_socketio_42_message,
+)
 
 # FastAPI application setup
 app = FastAPI()
@@ -62,7 +66,7 @@ def fastapi_server():
 
 
 @pytest.fixture
-def real_page() -> Page:
+def real_page() -> typing.Iterator[Page]:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context()
@@ -148,6 +152,15 @@ def _decode_socketio_message(raw_response: str) -> str:
     return typing.cast(str, event.obj)
 
 
+def _is_message_event(message: str) -> bool:
+    """Matches a socket.io message event, ignoring the packets of a connection handshake.
+
+    A wait that `RobustWebSocket` moves onto a reconnected socket starts at the frames that
+    connection delivers from then on, and a socket.io connection opens with its own packets.
+    """
+    return message.startswith(f'{SOCKETIO_MESSAGE_PREFIX}["message"')
+
+
 def _simulate_network_blip(real_page: Page, *, offline_ms: int) -> None:
     real_page.context.set_offline(True)  # Disable network
     real_page.wait_for_timeout(offline_ms)
@@ -192,11 +205,15 @@ def test_robust_websocket_reconnects_while_wait_is_pending(robust_ws: RobustWebS
     # Keep a wait open *across* the entire disconnect/reconnect cycle: the
     # message that satisfies it is only sent *after* reconnection, so this
     # wait genuinely spans the socket swap done by `RobustWebSocket`.
-    with robust_ws.expect_event("framereceived", timeout=20000) as frame_received_event:
+    with robust_ws.expect_event("framereceived", _is_message_event, timeout=20000) as frame_received_event:
         with log_context(logging.INFO, msg="Simulating a reconnect while a wait is in-flight") as ctx:
             ctx.logger.info("Disconnecting network while the wait is still pending")
             _simulate_network_blip(real_page, offline_ms=2000)
             _wait_for_connected(real_page)
+            # NOTE: the page-side socket.io client is connected well before `RobustWebSocket` adopts
+            # its socket, and a frame sent in between reaches a connection the pending wait is not
+            # listening on yet: `expect_event` only reports the frames that arrive after it starts.
+            robust_ws.wait_until_connected(timeout=10000)
 
         ctx.logger.info("Sending message only after reconnection has completed")
         real_page.evaluate("window.ws.send('SurvivedMidWaitReconnect')")  # Send a message via WebSocket
@@ -365,11 +382,14 @@ def test_robust_websocket_reconnects_when_wait_is_never_read_explicitly(robust_w
     `Error: Socket closed` instead of reattaching, even though this test never touches
     `.value`.
     """
-    with robust_ws.expect_event("framereceived", timeout=20000):
+    with robust_ws.expect_event("framereceived", _is_message_event, timeout=20000):
         with log_context(logging.INFO, msg="Simulating a reconnect while a wait is in-flight") as ctx:
             ctx.logger.info("Disconnecting network while the wait is still pending")
             _simulate_network_blip(real_page, offline_ms=2000)
             _wait_for_connected(real_page)
+            # NOTE: see `test_robust_websocket_reconnects_while_wait_is_pending`: the send below must
+            # wait for the wrapper to adopt the new socket, or its reply can precede the re-attach
+            robust_ws.wait_until_connected(timeout=10000)
 
         ctx.logger.info("Sending message only after reconnection has completed")
         real_page.evaluate("window.ws.send('SurvivedExitOnlyWait')")  # Send a message via WebSocket
