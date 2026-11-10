@@ -12,7 +12,7 @@ attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-click==8.3.1
+click==8.5.0
     # via
     #   dask
     #   distributed
