@@ -6,8 +6,10 @@ import arrow
 import pytest
 from faker import Faker
 from models_library.rabbitmq_basic_types import RPCNamespace
+from pytest_simcore.helpers.rabbitmq_logs import attribute_log_lines
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.xdist import get_max_xdist_workers, is_xdist_worker
+from pytest_simcore.rabbit_service import RabbitWorkerPrincipal
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
@@ -40,6 +42,7 @@ def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> 
 async def cleanup_check_rabbitmq_server_has_no_errors(
     request: pytest.FixtureRequest,
     stack_rabbit_container_filters: dict[str, Any],
+    rabbit_worker_principal: RabbitWorkerPrincipal,
 ) -> AsyncIterator[None]:
     now = arrow.utcnow()
     yield
@@ -50,10 +53,6 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
     async with aiodocker.Docker() as docker_client:
         containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
         assert len(containers) == 1, "missing rabbit container!"
-
-        if shared_broker:
-            print("--> skipped the rabbitmq log check: the broker is shared with the other workers")
-            return
 
         rabbit_container = containers[0]
         all_logs = await cast(
@@ -66,15 +65,29 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
             ),
         )
 
-    warning_logs = [log for log in all_logs if "warning" in log]
-    error_logs = [log for log in all_logs if "error" in log]
+    attribution = attribute_log_lines(
+        all_logs,
+        worker_user=rabbit_worker_principal.user,
+        worker_vhost=rabbit_worker_principal.vhost,
+    )
+    if not shared_broker:
+        # nothing else talks to this broker, so every line is this test's
+        lines_to_check = attribution.mine + attribution.others + attribution.unattributed
+    else:
+        lines_to_check = list(attribution.mine)
+        if "docker_exclusive" in request.keywords:
+            # this test held the broker alone, so an unattributable line cannot be another worker's
+            lines_to_check.extend(attribution.unattributed)
+
+    warning_logs = [log for log in lines_to_check if "warning" in log]
+    error_logs = [log for log in lines_to_check if "error" in log]
     RABBIT_SKIPPED_WARNINGS = [
         "rebuilding indices from scratch",
     ]
     filtered_warning_logs = [log for log in warning_logs if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)]
     assert not filtered_warning_logs, f"warning(s) found in rabbitmq logs for {request.function}"
     assert not error_logs, f"error(s) found in rabbitmq logs for {request.function}"
-    print("<-- no error founds in rabbitmq server logs, that's great. good job!")
+    print("<-- no error found in rabbitmq server logs")
 
 
 @pytest.fixture
