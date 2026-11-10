@@ -50,13 +50,13 @@ pytest==9.1.1
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-docker==3.2.6
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
