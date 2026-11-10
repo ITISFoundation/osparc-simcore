@@ -17,10 +17,12 @@ from ...constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_CODE_SENT,
     MSG_EMAIL_SENT,
+    MSG_UNAUTHORIZED_CODE_RESEND_2FA,
     MSG_UNKNOWN_EMAIL,
 )
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions
+from ._session_trusted_identity import get_trusted_login_email
 from .twofa_schemas import Resend2faBody
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +43,9 @@ async def resend_2fa_code(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
 
-    user = await _auth_service.get_user_or_none(request.app, email=resend_2fa_.email)
+    trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_CODE_RESEND_2FA)
+
+    user = await _auth_service.get_user_or_none(request.app, email=trusted.email)
     if not user:
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
 
@@ -49,8 +53,8 @@ async def resend_2fa_code(request: web.Request):
         raise web.HTTPServiceUnavailable(text=user_message("2FA login is not available"))
 
     # Already a code?
-    if await _twofa_service.has_2fa_code(request.app, user_email=resend_2fa_.email):
-        await _twofa_service.delete_2fa_code(request.app, user_email=resend_2fa_.email)
+    if await _twofa_service.has_2fa_code(request.app, user_email=trusted.email):
+        await _twofa_service.delete_2fa_code(request.app, user_email=trusted.email)
 
     # guaranteed by LoginSettingsForProduct
     assert settings.LOGIN_2FA_REQUIRED  # nosec
@@ -63,7 +67,6 @@ async def resend_2fa_code(request: web.Request):
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
-
     # sends via SMS
     if resend_2fa_.via == "SMS":
         user_phone_number = user.get("phone")
