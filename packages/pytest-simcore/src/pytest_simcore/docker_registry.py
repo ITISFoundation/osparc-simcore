@@ -19,6 +19,7 @@ import jsonschema
 import pytest
 import pytest_asyncio
 import tenacity
+from common_library.json_serialization import json_dumps
 from docker.errors import DockerException, NotFound
 from settings_library.docker_registry import RegistrySettings
 
@@ -261,8 +262,8 @@ async def _pull_push_service(
 
             image_labels.update(
                 {
-                    "io.simcore.contact": json.dumps({"contact": owner_email}),
-                    "io.simcore.authors": json.dumps(
+                    "io.simcore.contact": json_dumps({"contact": owner_email}),
+                    "io.simcore.authors": json_dumps(
                         {"authors": [{"name": "Tester", "email": owner_email, "affiliation": "IT'IS Foundation"}]}
                     ),
                     "maintainer": owner_email,
