@@ -43,17 +43,25 @@ def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> 
 @pytest.fixture(autouse=True)
 async def cleanup_check_rabbitmq_server_has_no_errors(
     request: pytest.FixtureRequest,
-    stack_rabbit_container_filters: dict[str, Any],
-    rabbit_worker_principal: RabbitWorkerPrincipal,
 ) -> AsyncIterator[None]:
     now = arrow.utcnow()
     yield
     if "no_cleanup_check_rabbitmq_server_has_no_errors" in request.keywords:
         return
+    if "rabbit_worker_principal" not in request.fixturenames:
+        # the test talks to no broker of its own, e.g. the modules here that only test the client
+        # logic, so there are no broker logs of this stack to attribute to it
+        return
+    # looked up here instead of declared as parameters: parameters resolve during setup, which would
+    # pull the docker stack fixtures (and their service-selection assertion) into the modules of this
+    # directory that deploy no stack. Any test requesting the principal already has it set up.
+    container_filters: dict[str, Any] = request.getfixturevalue("stack_rabbit_container_filters")
+    principal: RabbitWorkerPrincipal = request.getfixturevalue("rabbit_worker_principal")
+
     print("--> checking for errors/warnings in rabbitmq logs...")
     shared_broker = is_xdist_worker(request)
     async with aiodocker.Docker() as docker_client:
-        containers = await docker_client.containers.list(filters=stack_rabbit_container_filters)
+        containers = await docker_client.containers.list(filters=container_filters)
         assert len(containers) == 1, "missing rabbit container!"
 
         rabbit_container = containers[0]
@@ -69,8 +77,8 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
 
     attribution = attribute_log_lines(
         all_logs,
-        worker_user=rabbit_worker_principal.user,
-        worker_vhost=rabbit_worker_principal.vhost,
+        worker_user=principal.user,
+        worker_vhost=principal.vhost,
     )
     if not shared_broker:
         # nothing else talks to this broker, so every line is this test's
