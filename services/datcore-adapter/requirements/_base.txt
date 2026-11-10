@@ -73,10 +73,13 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-boto3==1.40.60
-    # via -r requirements/_base.in
-botocore==1.40.60
+boto3==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
+botocore==1.40.61
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   boto3
     #   s3transfer
 certifi==2026.10.23
@@ -481,7 +484,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 sentry-sdk==2.35.0
     # via fastapi-cloud-cli
 shellingham==1.5.4

@@ -95,9 +95,12 @@ attrs==26.1.0
 billiard==4.2.1
     # via celery
 boto3==1.40.61
-    # via aiobotocore
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   boto3
     #   s3transfer
@@ -579,7 +582,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 sentry-sdk==2.35.0
     # via fastapi-cloud-cli
 sh==2.3.0
