@@ -12,7 +12,7 @@ import contextlib
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from contextlib import suppress
 from decimal import Decimal
 from typing import Annotated, Any, Final, cast
@@ -129,7 +129,7 @@ from ..director_v2 import director_v2_service
 from ..director_v2.exceptions import DirectorV2PipelineStatesRetrievalError
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
-from ..products import products_web
+from ..products import products_service, products_web
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.resource_manager_service import (
@@ -743,6 +743,30 @@ async def patch_project_for_user(
     )
 
 
+async def _default_pricing_and_hardware_info(
+    app: web.Application,
+    product_name: str,
+    service_key: str,
+    service_version: str,
+) -> PricingAndHardwareInfoTuple | None:
+    """The service's DEFAULT pricing unit in this product, None when it has none."""
+    service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
+        app,
+        product_name=product_name,
+        service_key=service_key,
+        service_version=service_version,
+    )
+    for unit in service_pricing_plan_get.pricing_units or ():
+        if unit.default:
+            return PricingAndHardwareInfoTuple(
+                service_pricing_plan_get.pricing_plan_id,
+                unit.pricing_unit_id,
+                unit.current_cost_per_unit_id,
+                unit.specific_info.aws_ec2_instances,
+            )
+    return None
+
+
 async def _get_default_pricing_and_hardware_info(
     app: web.Application,
     product_name: str,
@@ -751,22 +775,13 @@ async def _get_default_pricing_and_hardware_info(
     project_uuid: ProjectID,
     node_uuid: NodeID,
 ) -> PricingAndHardwareInfoTuple:
-    service_pricing_plan_get = await rut_api.get_default_service_pricing_plan(
-        app,
-        product_name=product_name,
-        service_key=service_key,
-        service_version=service_version,
-    )
-    if service_pricing_plan_get.pricing_units:
-        for unit in service_pricing_plan_get.pricing_units:
-            if unit.default:
-                return PricingAndHardwareInfoTuple(
-                    service_pricing_plan_get.pricing_plan_id,
-                    unit.pricing_unit_id,
-                    unit.current_cost_per_unit_id,
-                    unit.specific_info.aws_ec2_instances,
-                )
-    raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}")
+    if (
+        pricing_and_hardware_info := await _default_pricing_and_hardware_info(
+            app, product_name, service_key, service_version
+        )
+    ) is None:
+        raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}")
+    return pricing_and_hardware_info
 
 
 async def update_project_node_resources_from_hardware_info(
@@ -874,6 +889,21 @@ def _is_node_computational(service_key: ServiceKey) -> bool:
     return "/dynamic/" not in f"{service_key}" and not f"{service_key}".startswith(FRONTEND_SERVICE_KEY_PREFIX)
 
 
+def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
+    """True when the product pays for the computational resources of a project's nodes.
+
+    Only then does the web-server take ownership of a node's pricing state (its pricing
+    link and the sizing of its ``required_resources``). On every other product the user
+    keeps control of them, which matters because writing them through
+    ``PUT .../nodes/{node_id}/resources`` is refused on a node that has a pricing link.
+    This is the same condition that makes the start path fetch a wallet and that makes
+    ``director_v2_service.get_wallet_info`` answer None.
+    """
+    product = products_service.get_product(app, product_name=product_name)
+    app_settings = get_application_settings(app)
+    return bool(product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED)
+
+
 async def _aws_ec2_instances_of_pricing_link(
     app: web.Application,
     product_name: str,
@@ -888,9 +918,60 @@ async def _aws_ec2_instances_of_pricing_link(
     return pricing_unit_get.specific_info.aws_ec2_instances
 
 
+async def _shared_lookup[LookupKey, LookupValue](
+    cache: dict[LookupKey, asyncio.Task[LookupValue]],
+    key: LookupKey,
+    start_lookup: Callable[[], Coroutine[Any, Any, LookupValue]],
+) -> LookupValue:
+    """Awaits ``start_lookup`` once per ``key``, sharing that task with concurrent callers"""
+    task = cache.get(key)
+    if task is None:
+        task = asyncio.create_task(start_lookup())
+        cache[key] = task
+    return await task
+
+
+class _PricingLookups:
+    """What an operation needs to know about pricing units, asked once per distinct key.
+
+    A project's nodes typically share a service and a pricing unit, and an operation
+    handles them concurrently: asked node by node, each one would pay again for the same
+    answer. Here a lookup starts once per key and its task is shared, failures included,
+    so an unreachable resource-usage-tracker costs one request per key instead of one per
+    node. The scope is a single operation, which keeps a later start from reusing an
+    answer about pricing that changed in the meantime.
+    """
+
+    def __init__(self, app: web.Application, product_name: str) -> None:
+        self._app = app
+        self._product_name = product_name
+        self._aws_ec2_instances: dict[PricingPlanAndUnitIdsTuple, asyncio.Task[list[str] | None]] = {}
+        self._default_units: dict[
+            tuple[ServiceKey, ServiceVersion], asyncio.Task[PricingAndHardwareInfoTuple | None]
+        ] = {}
+
+    async def aws_ec2_instances_of(self, link: PricingPlanAndUnitIdsTuple) -> list[str] | None:
+        return await _shared_lookup(
+            self._aws_ec2_instances,
+            link,
+            lambda: _aws_ec2_instances_of_pricing_link(self._app, self._product_name, link),
+        )
+
+    async def default_pricing_and_hardware_info(
+        self,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> PricingAndHardwareInfoTuple | None:
+        return await _shared_lookup(
+            self._default_units,
+            (service_key, service_version),
+            lambda: _default_pricing_and_hardware_info(self._app, self._product_name, service_key, service_version),
+        )
+
+
 async def _link_default_pricing_unit(
-    app: web.Application,
     *,
+    lookups: _PricingLookups,
     db: ProjectDBAPI,
     current_link: PricingPlanAndUnitIdsTuple | None,
     project_id: ProjectID,
@@ -906,14 +987,11 @@ async def _link_default_pricing_unit(
     default is looked up (e.g. the user selecting a unit) is kept rather than
     overwritten, and its machine types are the ones returned.
     """
-    (
-        pricing_plan_id,
-        pricing_unit_id,
-        _,
-        aws_ec2_instances,
-    ) = await _get_default_pricing_and_hardware_info(
-        app, product_name, service_key, service_version, project_id, node_id
-    )
+    default_info = await lookups.default_pricing_and_hardware_info(service_key, service_version)
+    if default_info is None:
+        raise DefaultPricingUnitNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
+    pricing_plan_id, pricing_unit_id, _, aws_ec2_instances = default_info
+
     if current_link is not None:
         await db.connect_pricing_unit_to_project_node(project_id, node_id, pricing_plan_id, pricing_unit_id)
         return aws_ec2_instances
@@ -923,13 +1001,25 @@ async def _link_default_pricing_unit(
         project_id, node_id, pricing_plan_id, pricing_unit_id
     )
     if link != default_link:
-        return await _aws_ec2_instances_of_pricing_link(app, product_name, link) or []
+        # someone else linked another unit while the default was looked up: it wins
+        if (machines := await lookups.aws_ec2_instances_of(link)) is None:
+            _logger.warning(
+                "Pricing plan %s/unit %s of node %s of project %s is unknown in product %s: not sizing the node",
+                link[0],
+                link[1],
+                node_id,
+                project_id,
+                product_name,
+            )
+            return []
+        return machines
     return aws_ec2_instances
 
 
 async def _link_pricing_unit_and_size_node(
     app: web.Application,
     *,
+    lookups: _PricingLookups,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -948,7 +1038,7 @@ async def _link_pricing_unit_and_size_node(
     db = ProjectDBAPI.get_from_app_context(app)
 
     link = await db.get_project_node_pricing_unit_id(project_uuid=project_id, node_uuid=node_id)
-    aws_ec2_instances = await _aws_ec2_instances_of_pricing_link(app, product_name, link) if link is not None else None
+    aws_ec2_instances = await lookups.aws_ec2_instances_of(link) if link is not None else None
 
     if aws_ec2_instances is None:
         if link is not None:
@@ -961,7 +1051,7 @@ async def _link_pricing_unit_and_size_node(
                 product_name,
             )
         aws_ec2_instances = await _link_default_pricing_unit(
-            app,
+            lookups=lookups,
             db=db,
             current_link=link,
             project_id=project_id,
@@ -986,6 +1076,7 @@ async def _link_pricing_unit_and_size_node(
 async def _link_pricing_unit_and_size_node_best_effort(
     app: web.Application,
     *,
+    lookups: _PricingLookups,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -998,6 +1089,7 @@ async def _link_pricing_unit_and_size_node_best_effort(
     try:
         await _link_pricing_unit_and_size_node(
             app,
+            lookups=lookups,
             user_id=user_id,
             project_id=project_id,
             node_id=node_id,
@@ -1023,6 +1115,11 @@ async def link_default_pricing_units_and_size_computational_nodes(
     """Links the default pricing unit and sizes every not-yet-linked computational
     node of the project. Call after the project's nodes were inserted (creation
     or copy)."""
+    if not _is_product_billed(app, product_name):
+        # the product does not pay for these nodes: their resources stay writable by
+        # `PUT .../nodes/{node_id}/resources`, which a pricing link would forbid
+        return
+
     db = ProjectDBAPI.get_from_app_context(app)
     nodes = await _projects_nodes_repository.get_by_project(app, project_id=project_id)
 
@@ -1034,10 +1131,12 @@ async def link_default_pricing_units_and_size_computational_nodes(
             continue
         to_link.append(node_id)
 
+    lookups = _PricingLookups(app, product_name)
     await logged_gather(
         *[
             _link_pricing_unit_and_size_node_best_effort(
                 app,
+                lookups=lookups,
                 user_id=user_id,
                 project_id=project_id,
                 node_id=node_id,
@@ -1063,6 +1162,7 @@ async def repair_projects_nodes_pricing_and_resources(
     (its linked one, or the default) and is resized for that unit's machine."""
     projects_nodes = await _projects_nodes_repository.get_by_projects(app, project_ids=set(project_ids))
 
+    lookups = _PricingLookups(app, product_name)
     repairs = []
     for project_id, nodes in projects_nodes.items():
         for node_id, node in nodes.items():
@@ -1071,6 +1171,7 @@ async def repair_projects_nodes_pricing_and_resources(
             repairs.append(
                 _link_pricing_unit_and_size_node_best_effort(
                     app,
+                    lookups=lookups,
                     user_id=user_id,
                     project_id=project_id,
                     node_id=node_id,
@@ -1093,11 +1194,17 @@ async def copy_pricing_links(
 ) -> None:
     """Copies the source project's pricing links onto the copied nodes.
 
-    A link is dropped when the resource-usage-tracker does not know that plan/unit
-    in the destination product (e.g. cross-product template instantiation);
-    when the tracker cannot be reached, the link is copied unvalidated rather than
-    lost.
+    A link is dropped when the resource-usage-tracker does not know that plan/unit in the
+    destination product (e.g. cross-product template instantiation); when the tracker
+    cannot be reached, the link is copied unvalidated rather than lost. Only the tracker
+    is best-effort here: a database error fails the copy, as it does every other step of
+    it, and the project created by the copy is removed again.
     """
+    if not _is_product_billed(app, product_name):
+        # the product does not pay for these nodes: the copy keeps their resources
+        # writable by `PUT .../nodes/{node_id}/resources`, which a link would forbid
+        return
+
     db = ProjectDBAPI.get_from_app_context(app)
 
     # one tracker call per distinct plan/unit, not per node: several nodes typically share
@@ -1466,9 +1573,10 @@ async def add_project_node(
         required_resources=jsonable_encoder(default_resources),
     )
 
-    if _is_node_computational(service_key):
+    if _is_node_computational(service_key) and _is_product_billed(request.app, product_name):
         await _link_pricing_unit_and_size_node_best_effort(
             request.app,
+            lookups=_PricingLookups(request.app, product_name),
             user_id=user_id,
             project_id=project_id,
             node_id=node_uuid,

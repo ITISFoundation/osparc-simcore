@@ -84,6 +84,7 @@ from simcore_service_webserver.constants import (
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.notifications import _service
+from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.resource_usage.settings import (
@@ -586,6 +587,19 @@ def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
     )
     mocked.side_effect = fake_compute_node_resources_for_hardware
     return mocked
+
+
+@pytest.fixture
+def billed_product(client: TestClient, osparc_product_name: ProductName) -> None:
+    """Marks the test's product as one that pays for computational resources.
+
+    Only for such a product does the web-server take ownership of a node's pricing state
+    (its pricing link and the sizing of its resources). Products are cached per app, so
+    this also covers the code paths that run outside a request.
+    """
+    assert client.app
+    products = client.app[PRODUCTS_APPKEY]
+    products[osparc_product_name] = products[osparc_product_name].model_copy(update={"is_payment_enabled": True})
 
 
 @pytest.fixture
