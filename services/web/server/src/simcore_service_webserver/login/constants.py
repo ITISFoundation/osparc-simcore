@@ -54,6 +54,10 @@ MSG_PASSWORD_MISMATCH: Final[str] = user_message(
     "Password and confirmation do not match. Please try again.", _version=1
 )
 MSG_PHONE_MISSING: Final[str] = user_message("No phone number is associated with this account.", _version=1)
+MSG_PHONE_REGISTER_2FA_REQUIRED: Final[str] = user_message(
+    "Please sign in with your verification code before changing the phone number of this account.",
+    _version=1,
+)
 MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
     "You can no longer resend the verification code. Please restart the verification process.",
     _version=2,
