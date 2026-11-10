@@ -15,7 +15,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-coverage==7.16.2
+coverage==7.17.0
     # via
     #   -r requirements.in
     #   pytest-cov

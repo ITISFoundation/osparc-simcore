@@ -4,7 +4,7 @@ arrow==1.4.0
     # via -r requirements/_test.in
 attrs==26.1.0
     # via pytest-docker
-coverage==7.16.2
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov

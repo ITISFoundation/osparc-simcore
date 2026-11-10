@@ -65,7 +65,7 @@ click==8.2.1
     #   -r requirements/_test.in
     #   rich-toolkit
     #   uvicorn
-coverage==7.16.2
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
