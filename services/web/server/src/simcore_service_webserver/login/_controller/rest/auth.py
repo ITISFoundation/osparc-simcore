@@ -116,6 +116,7 @@ async def login(request: web.Request):
         )
 
     if user_2fa_authentication_method == TwoFactorAuthenticationMethod.DISABLED:
+        # this account logs in with a single factor, so no pending email may be left around
         await clear_pending_2fa_email(request)
         return await _security_service.login_granted_response(request, user=user)
 
