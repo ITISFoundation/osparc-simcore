@@ -78,7 +78,7 @@ docker==7.1.0
     #   moto
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.40.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
