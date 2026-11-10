@@ -63,6 +63,7 @@ async def get_trusted_login_email(request: web.Request, *, unauthorized_reason: 
 
     email = await security_web.get_identity(request)
     if email:
+        assert "@" in email, f"Expected email as identity, got {email}"  # nosec
         return TrustedLoginEmail(email=email.lower(), fully_authenticated=True, phone_registration_allowed=True)
 
     raise web.HTTPUnauthorized(text=unauthorized_reason)
