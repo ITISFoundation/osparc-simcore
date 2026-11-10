@@ -52,6 +52,7 @@ from pytest_simcore.helpers.project_nodes_pricing import (
 )
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_service_webserver.projects import (
     _projects_repository as projects_repository,
 )
@@ -83,6 +84,14 @@ pytest_simcore_core_services_selection = [
     "redis",
     "rabbit",
 ]
+
+
+@pytest.fixture
+def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    # the web-server takes ownership of a copied project's pricing state only in a product
+    # that pays for computational resources; see the `billed_product` fixture
+    monkeypatch.setenv("WEBSERVER_CREDIT_COMPUTATION_ENABLED", "1")
+    return app_environment | {"WEBSERVER_CREDIT_COMPUTATION_ENABLED": "1"}
 
 
 @pytest.fixture
@@ -867,12 +876,13 @@ async def test_clone_project_data_copies_pricing_links_and_sizes_unlinked_comp_n
     aioresponses_mocker: AioResponsesMock,
     mock_rut_default_pricing_unit: None,
     mocked_director_v2_node_sizing: MockType,
+    billed_product: None,
 ):
-    """W6/W7: cloning (a project or a template) copies the source pricing links
-    (validated against the destination product) and keeps the source
-    `required_resources` verbatim. A computational node WITHOUT a source link
-    gets the DEFAULT unit and is sized with its machine's dask-worker formula.
-    Frontend nodes keep no link.
+    """W6/W7: cloning (a project or a template) in a BILLED product copies the source
+    pricing links (validated against the destination product) and keeps the source
+    `required_resources` verbatim. A computational node WITHOUT a source link gets the
+    DEFAULT unit and is sized with its machine's dask-worker formula. Frontend nodes keep
+    no link.
     """
     assert client.app
     source = template_project if source_kind == "template" else user_project
@@ -959,7 +969,26 @@ async def test_copy_allow_guests_to_push_states_and_output_ports_keeps_disabled_
     )
 
 
-async def test_copy_pricing_links_validates_each_distinct_unit_once(
+@pytest.mark.parametrize(
+    "tracker_answer, copied_link",
+    [
+        pytest.param(
+            {
+                "payload": jsonable_encoder(
+                    make_pricing_unit(pricing_unit_id=_PRICING_UNIT_ID, default=False, aws_ec2_instance=R5_4XLARGE_NAME)
+                )
+            },
+            (_PRICING_PLAN_ID, _PRICING_UNIT_ID),
+            id="the product knows the unit",
+        ),
+        pytest.param({"status": status.HTTP_404_NOT_FOUND}, (None, None), id="unknown in the product"),
+        pytest.param({"status": status.HTTP_503_SERVICE_UNAVAILABLE}, (_PRICING_PLAN_ID, _PRICING_UNIT_ID), id="503"),
+        pytest.param({"exception": TimeoutError}, (_PRICING_PLAN_ID, _PRICING_UNIT_ID), id="no answer"),
+    ],
+)
+async def test_copy_pricing_links_asks_the_tracker_once_per_unit_and_copies_what_it_can(
+    tracker_answer: dict[str, Any],
+    copied_link: tuple[int | None, int | None],
     client: TestClient,
     user_project: ProjectDict,
     shared_project: ProjectDict,
@@ -967,10 +996,14 @@ async def test_copy_pricing_links_validates_each_distinct_unit_once(
     sqlalchemy_async_engine: AsyncEngine,
     aioresponses_mocker: AioResponsesMock,
     mocker: MockerFixture,
+    billed_product: None,
 ):
     """Several nodes of a project typically share one pricing unit: the copy asks the
     resource-usage-tracker about every DISTINCT plan/unit once, not once per node, which
-    an unreachable tracker would otherwise pay for with one timeout per node.
+    an unreachable tracker would otherwise pay for with one timeout per node. A unit the
+    product does not know is not copied (the caller links the destination's default
+    instead); one it could not confirm is copied rather than lost, and the copy succeeds
+    either way.
     """
     assert client.app
     # both projects were inserted from the same workbench, so their node ids match
@@ -990,14 +1023,8 @@ async def test_copy_pricing_links_validates_each_distinct_unit_once(
     settings = get_rut_plugin_settings(client.app)
     aioresponses_mocker.get(
         regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID),
-        payload=jsonable_encoder(
-            make_pricing_unit(
-                pricing_unit_id=_PRICING_UNIT_ID,
-                default=False,
-                aws_ec2_instance=R5_4XLARGE_NAME,
-            )
-        ),
         repeat=True,
+        **tracker_answer,
     )
     validate_link = mocker.spy(_projects_service.rut_api, "get_pricing_plan_unit")
 
@@ -1009,12 +1036,125 @@ async def test_copy_pricing_links_validates_each_distinct_unit_once(
         product_name=osparc_product_name,
     )
 
+    # one request for the distinct plan/unit, failures memoized like successes
     assert validate_link.call_count == 1
     destination_state = await get_node_pricing_state(sqlalchemy_async_engine, shared_project["uuid"])
     for node_id in nodes_map:
         node_state = destination_state[NodeID(node_id)]
-        assert node_state.pricing_plan_id == _PRICING_PLAN_ID
-        assert node_state.pricing_unit_id == _PRICING_UNIT_ID
+        assert (node_state.pricing_plan_id, node_state.pricing_unit_id) == copied_link
+
+
+async def test_copy_pricing_links_copies_nothing_in_a_product_that_does_not_bill(
+    client: TestClient,
+    user_project: ProjectDict,
+    shared_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    mocker: MockerFixture,
+):
+    """Copying in a product that does not pay for computational resources copies no
+    pricing link, which is what keeps the copied nodes' resources writable through
+    `PUT .../nodes/{node_id}/resources`. The tracker is not asked about anything.
+    """
+    assert client.app
+    nodes_map: NodesMap = {
+        node_id: node_id for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]
+    }
+    for node_id in nodes_map:
+        await set_node_pricing_link(
+            sqlalchemy_async_engine,
+            user_project["uuid"],
+            node_id,
+            pricing_plan_id=_PRICING_PLAN_ID,
+            pricing_unit_id=_PRICING_UNIT_ID,
+        )
+    ask_tracker = mocker.spy(_projects_service.rut_api, "get_pricing_plan_unit")
+
+    await _projects_service.copy_pricing_links(
+        client.app,
+        source_project_id=ProjectID(user_project["uuid"]),
+        destination_project_id=ProjectID(shared_project["uuid"]),
+        nodes_map=nodes_map,
+        product_name=osparc_product_name,
+    )
+
+    ask_tracker.assert_not_called()
+    destination_state = await get_node_pricing_state(sqlalchemy_async_engine, shared_project["uuid"])
+    for node_id in nodes_map:
+        node_state = destination_state[NodeID(node_id)]
+        assert node_state.pricing_plan_id is None
+        assert node_state.pricing_unit_id is None
+
+
+async def test_a_link_copied_during_a_tracker_outage_is_repaired_on_the_next_billed_start(
+    *,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    task_progress: TaskProgress,
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mock_dynamic_scheduler: None,
+    storage_subsystem_mock_override: None,
+    sqlalchemy_async_engine: AsyncEngine,
+    aioresponses_mocker: AioResponsesMock,
+    mock_rut_default_pricing_unit: None,
+    mocked_director_v2_node_sizing: MockType,
+    billed_product: None,
+):
+    """Copying while the tracker is unreachable keeps the source's link and the resources
+    sized for it, so the copy costs nothing it cannot recover. If that link turns out not
+    to exist in the destination product, the next billed start replaces it with the
+    destination's default unit and sizes the node for it, instead of leaving the node
+    unusable for every run.
+    """
+    assert client.app
+    source_uuid = user_project["uuid"]
+    _, sourced_resources = await _price_and_size_one_computational_node(
+        client.app, sqlalchemy_async_engine, source_uuid
+    )
+    settings = get_rut_plugin_settings(client.app)
+    source_link_url = regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID)
+    # unreachable during the copy, and unknown in this product afterwards
+    aioresponses_mocker.get(source_link_url, exception=TimeoutError)
+    aioresponses_mocker.get(source_link_url, status=status.HTTP_404_NOT_FOUND, repeat=True)
+
+    source_project = await _fetch_source_project(client.app, source_uuid, UserID(logged_user["id"]))
+    cloned_project = await clone_project_data(
+        client.app,
+        source_project=source_project,
+        forced_copy_project_id=None,
+        user_id=UserID(logged_user["id"]),
+        product_name=osparc_product_name,
+        product_api_base_url="http://product.testserver.io",
+        task_progress=task_progress,
+    )
+    cloned_uuid = ProjectID(cloned_project["uuid"])
+    copied_node_id = f"{_sleeper_node(await _get_inserted_nodes(client.app, f'{cloned_uuid}')).node_id}"
+
+    # the copy kept the link it could not confirm, and the resources sized for it
+    state = await get_node_pricing_state(sqlalchemy_async_engine, cloned_uuid)
+    copied = state[NodeID(copied_node_id)]
+    assert copied.pricing_plan_id == _PRICING_PLAN_ID
+    assert copied.pricing_unit_id == _PRICING_UNIT_ID
+    assert copied.required_resources == sourced_resources
+
+    await _projects_service.repair_projects_nodes_pricing_and_resources(
+        client.app,
+        user_id=UserID(logged_user["id"]),
+        project_ids=[cloned_uuid],
+        product_name=osparc_product_name,
+    )
+
+    # the next billed start replaces the link the product does not know, and sizes for the
+    # unit it links instead
+    state = await get_node_pricing_state(sqlalchemy_async_engine, cloned_uuid)
+    repaired = state[NodeID(copied_node_id)]
+    assert repaired.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
+    assert repaired.pricing_unit_id == _DEFAULT_PRICING_UNIT_ID
+    assert repaired.required_resources
+    assert repaired.required_resources["container"]["resources"] == resources_limits(cpu=1.9, ram_bytes=3865470566)
 
 
 async def test_compose_project_data_of_a_copy_says_nothing_about_the_nodes(
