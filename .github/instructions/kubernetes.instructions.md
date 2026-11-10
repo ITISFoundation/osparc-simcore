@@ -6,12 +6,10 @@ applyTo: 'k8s/**,services/helmfile*,services/**/helm-values*.yaml.gotmpl'
 
 ## Layout
 
-- Infra (postgres, redis, rabbit, s3, tracing, UIs) lives in
-  `services/helmfile.local-ops.yaml.gotmpl`, namespace `ops`. simcore services
-  live in `services/helmfile.yaml.gotmpl`, namespace `simcore`.
+- OPS services (postgres, s3, ...) live in `services/helmfile.local-ops.yaml.gotmpl`;
+  simcore services live in `services/helmfile.yaml.gotmpl`.
   - Traefik is exception and lives with simcore services
 - Every simcore release inherits the `simcore-service` template
-  (`charts/simcore-service`).
 - Pin `version:` for every upstream (non-local) chart.
 
 ## Values files
