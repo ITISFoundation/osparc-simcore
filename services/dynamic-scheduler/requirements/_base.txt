@@ -93,7 +93,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   requests
-click==8.2.1
+click==8.5.0
     # via
     #   rich-toolkit
     #   uvicorn
