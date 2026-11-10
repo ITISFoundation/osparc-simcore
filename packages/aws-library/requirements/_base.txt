@@ -56,9 +56,12 @@ attrs==26.1.0
     #   jsonschema
     #   referencing
 boto3==1.40.61
-    # via aiobotocore
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   boto3
     #   s3transfer
@@ -253,7 +256,7 @@ psutil==7.2.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pycryptodome==3.23.0
     # via stream-zip
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -264,7 +267,7 @@ pydantic==2.13.5
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
@@ -310,7 +313,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 sh==2.2.4
     # via -r requirements/_base.in
 shellingham==1.5.4
@@ -364,7 +369,7 @@ typing-extensions==4.16.0
     #   pydantic-core
     #   pydantic-extra-types
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   fastapi
     #   pydantic
