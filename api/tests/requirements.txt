@@ -92,7 +92,7 @@ pytest==9.1.1
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements.in
 pytest-cov==7.1.0
     # via -r requirements.in
