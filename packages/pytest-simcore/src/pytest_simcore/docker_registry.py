@@ -98,6 +98,11 @@ def _docker_registry_impl(
                 # Wait until we can connect
                 assert wait_till_registry_is_responsive(url)
 
+            # recorded whatever the outcome of the login attempt: a registry the run took over is
+            # also removed by it, like a non-xdist run would. Recorded before seeding the image so
+            # that a failure while seeding cannot leave this container behind unrecorded
+            record_shared_resource(request, tmp_path_factory, kind="registry", name=container_name)
+
             # get the hello world example from docker hub
             hello_world_image = docker_client.images.pull("hello-world", "latest")
             # login to private registry
@@ -113,10 +118,6 @@ def _docker_registry_impl(
             # pull the image from the private registry
             private_image = docker_client.images.pull(repo)
             docker_client.images.remove(image=private_image.id)
-
-            # recorded whatever the outcome: a registry the run took over is also removed by it,
-            # like a non-xdist run would
-            record_shared_resource(request, tmp_path_factory, kind="registry", name=container_name)
 
     # provide os.environs
     # NOTE: monkey-patching the settings instead would scope them to the test using them
@@ -224,6 +225,14 @@ def _get_worker_registry_namespace(request: pytest.FixtureRequest) -> str:
     return f"{get_worker_id(request)}/"
 
 
+def _dockerfile_path() -> Path:
+    """The Dockerfile written next to the pytest process.
+
+    `Path.resolve` is blocking, so it stays out of the async caller (ruff ASYNC240).
+    """
+    return Path("Dockerfile").resolve()
+
+
 async def _pull_push_service(
     pull_key: str,
     tag: str,
@@ -250,15 +259,17 @@ async def _pull_push_service(
             # and the catalog service automatically gives full access rights for testing it
             # otherwise it does not even get read rights
 
-            image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
             image_labels.update(
                 {
-                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'  # noqa: E501
+                    "io.simcore.contact": json.dumps({"contact": owner_email}),
+                    "io.simcore.authors": json.dumps(
+                        {"authors": [{"name": "Tester", "email": owner_email, "affiliation": "IT'IS Foundation"}]}
+                    ),
+                    "maintainer": owner_email,
                 }
             )
-            image_labels.update({"maintainer": f"{owner_email}"})
 
-            df_path = Path("Dockerfile").resolve()  # noqa: ASYNC240
+            df_path = _dockerfile_path()
             df_path.write_text(f"FROM {pull_key}:{tag}")
 
             try:
