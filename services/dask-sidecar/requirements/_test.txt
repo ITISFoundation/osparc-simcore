@@ -243,7 +243,7 @@ pytest==9.1.1
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -253,7 +253,7 @@ pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-localftpserver==1.6.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
