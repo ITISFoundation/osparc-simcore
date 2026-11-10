@@ -341,6 +341,9 @@ class ProjectNodesRepo:
         Returns the link that is in place afterwards, which is the one above when the node
         was unlinked and the pre-existing one otherwise: a link created concurrently (e.g.
         a user selecting a unit while this runs) is kept, not overwritten.
+
+        Raises:
+            ProjectNodesNodeNotFoundError: the node is not in this project
         """
         insert_stmt = await self._make_pricing_unit_insert(
             connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
@@ -350,7 +353,9 @@ class ProjectNodesRepo:
         )
         await connection.execute(on_nothing_stmt)
         link = await self.get_project_node_pricing_unit_id(connection, node_uuid=node_uuid)
-        assert link  # nosec  # the link is either inserted above or already there
+        if link is None:
+            # the insert above landed on the 0 sentinel: this project has no such node
+            raise ProjectNodesNodeNotFoundError(node_id=node_uuid, project_uuid=self.project_uuid)
         return link
 
     @staticmethod
