@@ -371,6 +371,9 @@ releases:
     version: 39.0.0 # traefik v3.6.7, same as services/docker-compose.yml
     values:
       - traefik/helm-values.yaml.gotmpl
+      {{- range (.Values | get "traefik.extra_values_files" list) }}
+      - {{ . }}
+      {{- end }}
 
   # compose: <<: *webserver_environment, so the webserver values plus overrides
   - name: wb-api-server

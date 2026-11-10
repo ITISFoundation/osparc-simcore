@@ -1,0 +1,11 @@
+# kind maps these NodePorts to host ports in k8s/kind-config.yaml
+service:
+  type: NodePort
+
+ports:
+  traefik:
+    nodePort: 30880
+  web:
+    nodePort: 30081
+  simcoreapi:
+    nodePort: 31081

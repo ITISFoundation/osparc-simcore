@@ -19,9 +19,6 @@ nodes:
       - { containerPort: 30672, hostPort: 5672 }   # rabbit AMQP
       - { containerPort: 31672, hostPort: 15672 }  # rabbit management UI
       - { containerPort: 30080, hostPort: 9000 }   # headlamp
-      - { containerPort: 30081, hostPort: 9081 }   # traefik http entrypoint
-      - { containerPort: 31081, hostPort: 10081 }  # traefik simcoreapi entrypoint
-      - { containerPort: 30880, hostPort: 8080 }   # traefik dashboard
       - { containerPort: 31808, hostPort: 18080 }  # adminer
       - { containerPort: 30555, hostPort: 5555 }   # flower
       - { containerPort: 31025, hostPort: 1025 }   # mailpit SMTP
@@ -69,3 +66,6 @@ nodes:
       - { containerPort: 32019, hostPort: 3019 }   # wb-api-server debug
       - { containerPort: 32013, hostPort: 3013 }   # wb-db-event-listener debug
       - { containerPort: 32011, hostPort: 3011 }   # wb-garbage-collector debug
+      - { containerPort: 30081, hostPort: 9081 }   # traefik http entrypoint
+      - { containerPort: 31081, hostPort: 10081 }  # traefik simcoreapi entrypoint
+      - { containerPort: 30880, hostPort: 8080 }   # traefik dashboard

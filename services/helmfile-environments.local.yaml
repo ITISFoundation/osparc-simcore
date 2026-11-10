@@ -104,6 +104,10 @@ sto_worker_cpu_bound:
     - _shared/helm-values.devel.yaml.gotmpl
     - storage/helm-values.local.sto-worker-cpu-bound.yaml.gotmpl
 
+traefik:
+  extra_values_files:
+    - traefik/helm-values.local.yaml.gotmpl
+
 webserver:
   extra_values_files:
     - _shared/helm-values.devel.yaml.gotmpl
