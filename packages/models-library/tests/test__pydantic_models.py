@@ -298,9 +298,8 @@ def test_model_config_populate_by_name(populate_by_name: bool):
     assert TestModel.model_config.get("populate_by_name") is populate_by_name
     assert TestModel.model_config.get("extra") == "forbid"
 
-    # NOTE how defaults work with populate_by_name!!
-    assert TestModel.model_config.get("validate_by_name") == populate_by_name
-    assert TestModel.model_config.get("validate_by_alias") is True  # Default
+    # NOTE: `populate_by_name` is only observable through validation: `model_config` no longer
+    # exposes the `validate_by_name`/`validate_by_alias` entries derived from it
 
     # validate_by_alias BEHAVIOR defaults to True
     TestModel.model_validate({"snakeCase": "foo"})

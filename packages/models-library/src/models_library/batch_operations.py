@@ -52,7 +52,9 @@ def create_batch_ids_validator(identifier_type: type[IdentifierT]) -> TypeAdapte
         TypeAdapter configured for the specific identifier type
     """
     return TypeAdapter(
-        Annotated[
+        # NOTE: mypy cannot tell `identifier_type` is a type here and reads the built list as a
+        # string annotation, so it rejects it as a `TypeAdapter` argument
+        Annotated[  # type: ignore[maybe-unrecognized-str-typeform,arg-type]
             list[identifier_type],  # type: ignore[valid-type]
             BeforeValidator(_deduplicate_preserving_order),
             Field(

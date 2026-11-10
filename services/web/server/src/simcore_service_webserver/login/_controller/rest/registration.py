@@ -30,7 +30,6 @@ from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response
 from ... import (
     _auth_service,
-    _registration_service,
     _security_service,
     _twofa_service,
 )
@@ -45,6 +44,7 @@ from ...constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
+    MSG_PHONE_REGISTER_2FA_REQUIRED,
     MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
@@ -54,6 +54,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_exceptions import handle_rest_requests_exceptions
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
@@ -229,6 +230,9 @@ async def register(request: web.Request):
         # Don't fail registration if email fails to send
 
     # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
+    # an abandoned earlier login may have left a pending email: drop it so
+    # that it cannot shadow this new account
+    await clear_pending_2fa_email(request)
     return await _security_service.login_granted_response(
         request,
         user=user,
@@ -267,6 +271,18 @@ async def register_phone(request: web.Request):
 
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
+    trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_REGISTER_PHONE)
+    user = await _auth_service.get_user_or_none(request.app, email=trusted.email)
+    if user is None:
+        raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED_REGISTER_PHONE)
+
+    if not trusted.fully_authenticated and (user["phone"] or not trusted.phone_registration_allowed):
+        # a login that has not passed 2FA may register a phone number only when
+        # auth_login asked for one (SMS account without a phone number); changing
+        # an existing phone number, or moving an email-2FA account to SMS, first
+        # requires the second factor
+        raise web.HTTPUnauthorized(text=MSG_PHONE_REGISTER_2FA_REQUIRED)
+
     assert settings.LOGIN_2FA_REQUIRED  # nosec
     assert settings.LOGIN_TWILIO  # nosec
     if not product.twilio_messaging_sid:
@@ -282,7 +298,7 @@ async def register_phone(request: web.Request):
     try:
         code = await _twofa_service.create_2fa_code(
             app=request.app,
-            user_email=registration.email,
+            user_email=trusted.email,
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
         await _twofa_service.send_sms_code(
@@ -292,7 +308,7 @@ async def register_phone(request: web.Request):
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=_registration_service.get_user_name_from_email(registration.email),
+            first_name=user["first_name"] or user["name"],
             locale=get_locale_or_none(request),
         )
 

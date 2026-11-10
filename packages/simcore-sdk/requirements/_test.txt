@@ -26,7 +26,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.18.4
+alembic==1.20.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -50,11 +50,13 @@ blinker==1.9.0
     # via flask
 boto3==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   aws-sam-translator
     #   moto
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   aws-xray-sdk
     #   boto3
@@ -218,11 +220,11 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==3.0
     # via cffi
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -242,7 +244,7 @@ pytest==9.1.1
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -250,7 +252,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -301,7 +303,9 @@ rpds-py==0.30.0
     #   jsonschema
     #   referencing
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -317,9 +321,9 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.3.0
     # via pytest-sugar
-types-aiobotocore==3.3.0
+types-aiobotocore==3.8.0
     # via -r requirements/_test.in
-types-aiobotocore-s3==3.3.0
+types-aiobotocore-s3==3.8.0
     # via types-aiobotocore
 types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
@@ -338,7 +342,7 @@ typing-extensions==4.16.0
     #   pydantic-core
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   pydantic

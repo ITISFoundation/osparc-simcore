@@ -32,8 +32,10 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-botocore==1.42.70
-    # via -r requirements/_test.in
+botocore==1.40.61
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -185,7 +187,7 @@ pytest==9.1.1
     #   pytest-xdist
 pytest-aiohttp==1.1.1
     # via -r requirements/_test.in
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -197,7 +199,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
