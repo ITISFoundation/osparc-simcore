@@ -265,6 +265,11 @@ class _ReconnectableEventWaiter:
             try:
                 return event_info.value
             except (PlaywrightError, asyncio.CancelledError) as exc:
+                if self._failed_reattachment is not None:
+                    # a move attempt failed, which is also what cancelled this pending read on the
+                    # old socket: report why moving the wait failed, not the stale error raised by
+                    # the connection that died
+                    raise self._failed_reattachment from exc
                 if self._event_info is not event_info:
                     # a reconnection moved this wait to another connection while the read above was
                     # blocked on the socket that died (moving it cancels this pending event), so read
@@ -294,20 +299,28 @@ class _ReconnectableEventWaiter:
                 # The frame landed before the connection changed: re-arming would cancel the
                 # pending read and throw its value away. A settled event is read without waiting.
                 _ = self._event_info.value
-            except PlaywrightError, asyncio.CancelledError:
+            except (PlaywrightError, asyncio.CancelledError) as exc:
+                if not isinstance(exc, asyncio.CancelledError) and _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}":
+                    # The wait settled with its own error (e.g. Playwright's per-call timeout): that
+                    # is the error the caller must read, and re-arming would restart an expired wait
+                    return
                 # The pending event was rejected instead (closing the socket rejects everything it
                 # was still waiting for), so this wait is pending on a connection that is gone
-                pass
             else:
                 return
         with log_context(logging.INFO, msg=f"Moving wait for {self.event!r} to the reconnected websocket") as ctx:
             try:
+                # moving a wait is a reattachment like the one `.value` does when it notices the
+                # socket was replaced, so it counts against the same limit
+                self._enforce_reattach_limit(None)
                 self._attach()
             except PlaywrightError as exc:  # the deadline may have expired while disconnected
                 self._failed_reattachment = exc
                 ctx.logger.warning("could not move the wait for %s: %s", self.event, exc)
+            else:
+                self._failed_reattachment = None
 
-    def _enforce_reattach_limit(self, exc: BaseException) -> None:
+    def _enforce_reattach_limit(self, exc: BaseException | None) -> None:
         self._reattach_attempts += 1
         if self._reattach_attempts > _MAX_REATTACH_ATTEMPTS:
             msg = (
@@ -541,7 +554,15 @@ class RobustWebSocket:
     def _reattach_pending_event_waiters(self) -> None:
         """Moves the waits left on the socket this one replaced onto this socket."""
         for waiter in list(self._pending_event_waiters):
-            waiter.reattach_on_reconnection()
+            try:
+                waiter.reattach_on_reconnection()
+            except Exception:  # nosec  # pylint: disable=broad-except
+                # one wait that cannot be moved must not abort the reconnection of all the others
+                _logger.exception(
+                    "%sCould not move the wait for %s to the reconnected websocket",
+                    self.log_prefix,
+                    waiter.event,
+                )
 
     def expect_event(
         self,

@@ -4,7 +4,7 @@ import asyncio
 import json
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace, TracebackType
 from typing import Any, Final, Self, cast
 from unittest import mock
@@ -929,3 +929,110 @@ def test_a_wait_rejected_by_the_closing_socket_is_moved_to_the_new_websocket():
     assert rejected.cancelled_with
     assert [type(exc) for exc in rejected.cancelled_with] == [PlaywrightError]
     assert waiter.value == '42["message","Echo: Survived"]'
+
+
+def test_a_blocked_read_reports_a_failed_move_instead_of_the_stale_error():
+    """A read parked on the dead socket must report why moving the wait failed.
+
+    A failed move leaves `_event_info` on the cancelled event of the socket that died while it
+    records the reason in `_failed_reattachment`, so the wake-up error raised underneath the blocked
+    read (`Socket closed` here) must not be reported in its place.
+    """
+    dead_socket_context = _FakeEventContextManager(error=PlaywrightError("Error: Socket closed"))
+    dead_socket = SimpleNamespace(expect_event=lambda *_args, **_kwargs: dead_socket_context)
+    robust: SimpleNamespace = SimpleNamespace(ws=dead_socket)
+
+    waiter = _ReconnectableEventWaiter(
+        robust_websocket=cast(RobustWebSocket, robust), event="framereceived", predicate=None, timeout=10000
+    )
+    # the deadline expired while the connection was down, so the move cannot be armed anymore
+    waiter._deadline = datetime.now(UTC) - timedelta(seconds=1)  # noqa: SLF001
+    dead_socket_context.on_read = waiter.reattach_on_reconnection
+
+    robust.ws = SimpleNamespace(expect_event=lambda *_args, **_kwargs: _FakeEventContextManager())
+
+    # reading wakes the move done above: the caller gets the timeout that stopped the move, not the
+    # `Socket closed` raised by the connection that died
+    with pytest.raises(PlaywrightTimeoutError) as excinfo:
+        _ = waiter.value
+    assert isinstance(excinfo.value.__cause__, PlaywrightError)
+    assert "Socket closed" in f"{excinfo.value.__cause__}"
+
+
+def test_a_settled_timeout_is_left_for_the_caller_across_a_reconnection():
+    """A wait Playwright already timed out must not be re-armed onto the new socket.
+
+    The wrapper's `timeout=None` does not disable Playwright's per-call timeout, so the pending
+    event can settle with a timeout error while no connection is live: restarting the wait on each
+    reconnection would turn an expired wait into an indefinitely renewable one.
+    """
+    timed_out = _FakeEventContextManager(done=True, error=PlaywrightTimeoutError("Timeout 30000ms exceeded"))
+    robust: SimpleNamespace = SimpleNamespace(ws=SimpleNamespace(expect_event=lambda *_a, **_k: timed_out))
+    waiter = _ReconnectableEventWaiter(
+        robust_websocket=cast(RobustWebSocket, robust), event="framereceived", predicate=None, timeout=None
+    )
+
+    armed: list[_FakeEventContextManager] = []
+
+    def _arm(*_args: Any, **_kwargs: Any) -> _FakeEventContextManager:
+        context_manager = _FakeEventContextManager()
+        armed.append(context_manager)
+        return context_manager
+
+    robust.ws = SimpleNamespace(expect_event=_arm)
+
+    waiter.reattach_on_reconnection()
+
+    assert armed == []
+    assert timed_out.cancelled_with == []
+    with pytest.raises(PlaywrightTimeoutError):
+        _ = waiter.value
+
+
+def test_repeated_moves_count_against_the_reattachment_limit():
+    """Eager moves are reattachments like the `.value` path does, so they share its cap.
+
+    Without counting them, a connection flapping forever would renew the wait's Playwright timeout
+    on every reconnection and keep a `timeout=None` wait alive indefinitely.
+    """
+    robust: SimpleNamespace = SimpleNamespace(
+        ws=SimpleNamespace(expect_event=lambda *_a, **_k: _FakeEventContextManager())
+    )
+    waiter = _ReconnectableEventWaiter(
+        robust_websocket=cast(RobustWebSocket, robust), event="framereceived", predicate=None, timeout=None
+    )
+
+    for _attempt in range(playwright_helpers._MAX_REATTACH_ATTEMPTS):  # noqa: SLF001
+        robust.ws = SimpleNamespace(expect_event=lambda *_a, **_k: _FakeEventContextManager())
+        waiter.reattach_on_reconnection()
+        assert waiter._failed_reattachment is None  # noqa: SLF001
+
+    robust.ws = SimpleNamespace(expect_event=lambda *_a, **_k: _FakeEventContextManager())
+    waiter.reattach_on_reconnection()
+
+    with pytest.raises(PlaywrightError, match="Giving up reattaching"):
+        _ = waiter.value
+
+
+def test_a_waiter_that_fails_to_move_does_not_stop_the_other_moves():
+    """Moving the waits must be isolated per waiter: one broken wait cannot fail the reconnection."""
+    page = _FakePage()
+    start_websocket_tracking(cast("Page", page))
+    dead_socket = _connected_socket(page, _S4L_WS_URL)
+    websocket = RobustWebSocket(page=cast("Page", page), ws=cast(WebSocket, dead_socket))
+
+    broken = websocket.expect_event("framereceived")
+    healthy = websocket.expect_event("framereceived")
+
+    def _boom() -> None:
+        msg = "unexpected failure while moving a wait"
+        raise RuntimeError(msg)
+
+    broken.reattach_on_reconnection = _boom  # type: ignore[method-assign]
+
+    reconnected = _connected_socket(page, _S4L_WS_URL)
+    dead_socket.closed = True
+    dead_socket.emit("close", dead_socket)
+
+    assert websocket.ws is reconnected
+    assert healthy._bound_ws is reconnected  # noqa: SLF001
