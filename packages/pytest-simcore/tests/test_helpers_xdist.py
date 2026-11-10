@@ -133,8 +133,10 @@ def test_locks_with_different_names_are_independent(tmp_path_factory: pytest.Tem
     """a writer on one lock name must not block a reader on another: the plugins hold several of
     these locks at once (e.g. the daemon lock per test and the image store lock per module)
     """
-    writer_lock = ReaderWriterLock(tmp_path_factory.mktemp("rw"), "docker_image_store")
-    reader_lock = ReaderWriterLock(tmp_path_factory.mktemp("rw"), "docker_daemon")
+    # one shared root, as in production: the locks differ by name only
+    root = tmp_path_factory.mktemp("rw")
+    writer_lock = ReaderWriterLock(root, "docker_image_store")
+    reader_lock = ReaderWriterLock(root, "docker_daemon")
     writer = "image-store-writer"
     reader = "daemon-reader"
 
