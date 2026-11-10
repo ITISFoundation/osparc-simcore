@@ -8,7 +8,7 @@ aiormq==7.2.5
     # via
     #   -c requirements/_base.txt
     #   aio-pika
-alembic==1.17.2
+alembic==1.20.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

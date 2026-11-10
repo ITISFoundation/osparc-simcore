@@ -53,7 +53,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiohttp
-alembic==1.8.1
+alembic==1.20.1
     # via -r requirements/../../../../packages/postgres-database/requirements/_base.in
 amqp==5.4.2
     # via kombu
@@ -593,6 +593,7 @@ typing-extensions==4.16.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiodebug
+    #   alembic
     #   anyio
     #   fast-depends
     #   faststream
