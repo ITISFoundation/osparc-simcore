@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import NamedTuple
+from typing import Final, NamedTuple
 
 import pytest
 import requests
@@ -41,8 +41,8 @@ async def example(
         raise
 
 
-_SERVER_STARTUP_TIMEOUT_S = 30
-_SERVER_SHUTDOWN_TIMEOUT_S = 10
+_SERVER_STARTUP_TIMEOUT_S: Final[int] = 30
+_SERVER_SHUTDOWN_TIMEOUT_S: Final[int] = 10
 
 
 class ServerInfo(NamedTuple):
