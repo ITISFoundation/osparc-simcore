@@ -137,7 +137,7 @@ propcache==0.4.1
     #   yarl
 psycopg2-binary==2.9.13
     # via sqlalchemy
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -145,7 +145,7 @@ pydantic==2.13.5
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
@@ -240,7 +240,7 @@ typing-extensions==4.16.0
     #   pyee
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   fastapi
     #   pydantic

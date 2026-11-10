@@ -474,7 +474,7 @@ pycryptodome==3.23.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   stream-zip
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -490,7 +490,7 @@ pydantic==2.13.5
     #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic
@@ -659,7 +659,7 @@ typing-extensions==4.16.0
     #   rich-toolkit
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   fastapi
