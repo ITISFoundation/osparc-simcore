@@ -1,0 +1,40 @@
+# Renders all helmfile charts without a cluster to catch chart, values and env errors.
+name: CI K8s Charts
+
+on:
+  pull_request:
+    paths:
+      - "charts/**"
+      - "k8s/**"
+      - "services/**/helmfile*"
+      - "services/**/helm-values*"
+      - ".env-devel"
+      - "scripts/makefiles/k8s.mk"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  helmfile:
+    timeout-minutes: 10
+    name: "[unit] helmfile"
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup helmfile
+        uses: helmfile/helmfile-action@1f44bcb43e5fb17ecb2685d8b6081ec5f6aa5fcf # v2.4.7
+        with:
+          helmfile-version: v1.1.6 # keep in sync with scripts/makefiles/k8s.mk
+          helm-version: v3.20.1 # keep in sync with scripts/makefiles/k8s.mk
+          helmfile-auto-init: "true"
+          helmfile-args: --version
+      - name: helmfile-lint
+        run: make -C k8s helmfile-lint
+      - name: helmfile-template
+        run: make -C k8s helmfile-template
