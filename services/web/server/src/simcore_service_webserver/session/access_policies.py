@@ -25,6 +25,16 @@ _HTTP_400_BAD_REQUEST: Final = status.HTTP_400_BAD_REQUEST
 _logger = logging.getLogger(__name__)
 
 
+class HTTPRefundableTooManyRequests(web.HTTPTooManyRequests):
+    """429 raised from inside a session_access_required-guarded handler
+
+    The guard refunds the access this request consumed, so waiting for
+    Retry-After and retrying does not run the session out of authorization.
+    Only this error refunds: any other 429 (e.g. route rate limiting, which
+    runs outside the guard) keeps its cost.
+    """
+
+
 class _AccessToken(TypedDict, total=True):
     count: int
     expires: int  # time in seconds since the epoch as a floating point number.
@@ -121,11 +131,12 @@ def session_access_required(
             # Access granted to this handler
             try:
                 response = await handler(request)
-            except web.HTTPTooManyRequests:
-                # rate limiting did not use the step: refund the access so the
-                # retry after Retry-After works. if this request consumed the
-                # last access, the cleanup above pruned the token before the
-                # handler ran, so restore the captured one
+            except HTTPRefundableTooManyRequests:
+                # the cooldown rejected this request without using the step:
+                # refund the access so the retry after Retry-After works. if
+                # this request consumed the last access, the cleanup above
+                # pruned the token before the handler ran, so restore the
+                # captured one
                 with _access_tokens_cleanup_ctx(session) as access_tokens:
                     refund = access_tokens.get(name) or access
                     refund["count"] += 1

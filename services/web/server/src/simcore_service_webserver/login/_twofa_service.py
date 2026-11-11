@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import logging
 import secrets
+from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Annotated, Final
 
@@ -90,21 +91,6 @@ async def has_2fa_code(app: web.Application, user_email: str) -> bool:
     """Returns True if a non-expired 2FA code exists for user_email"""
     redis_client = get_redis_validation_code_client(app)
     return await redis_client.get(user_email) is not None
-
-
-@log_decorator(log, level=logging.DEBUG)
-async def verify_2fa_code(app: web.Application, *, user_email: str, code: str) -> bool:
-    """Constant-time comparison against the stored digest, consuming no trial and
-    leaving the code in place. Sign-in uses check_2fa_code instead.
-    """
-    redis_client = get_redis_validation_code_client(app)
-    stored_value: str | None = await redis_client.get(user_email)
-    if stored_value is None or len(stored_value) != _STORED_CODE_LENGTH:
-        return False
-    return are_secrets_equal(
-        got=_hash_2fa_code(app, code=code),
-        expected=stored_value[_CODE_GENERATION_LENGTH + 1 :],
-    )
 
 
 @log_decorator(log, level=logging.DEBUG)
@@ -258,23 +244,64 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
     return TrialOutcome.INVALID
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ResendCooldown:
+    """Outcome of arming the per-account resend cooldown.
+
+    When retry_after_s is set, the window belongs to another request and this
+    one must wait. Otherwise this request armed the window with its token and
+    can release it again when the code turns out not to be sent.
+    """
+
+    user_email: str
+    channel: str
+    retry_after_s: int | None = None
+    token: str | None = None
+
+
+# Releases the cooldown only while this request still owns it, so a failed
+# send cannot delete a window a later request armed.
+#
+# KEYS[1] cooldown key, ARGV[1] the token this request wrote
+_COOLDOWN_RELEASE_SCRIPT: Final = """
+    if redis.call('GET', KEYS[1]) == ARGV[1] then
+        return redis.call('DEL', KEYS[1])
+    end
+    return 0
+"""
+
+
 @log_decorator(log, level=logging.DEBUG)
 async def start_2fa_resend_cooldown(
     app: web.Application, *, user_email: str, channel: str, cooldown_in_seconds: int
-) -> int | None:
-    """Starts the per-account resend cooldown, or reports the remaining wait.
+) -> ResendCooldown:
+    """Arms the per-account resend cooldown, or reports the remaining wait
 
-    The cooldown is started atomically for the request, not for the delivery:
-    it is consumed even if sending the code fails afterwards.
-
-    Returns None when the resend is allowed now, or the seconds left to wait.
+    Arms atomically with SET NX, so concurrent resends race for one delivery.
+    A request that does not send the code releases the window it armed, so a
+    failed delivery does not lock the account out for a window that sent
+    nothing.
     """
     redis_client = get_redis_validation_code_client(app)
     key = _resend_cooldown_key(channel=channel, user_email=user_email)
-    if await redis_client.set(key, "1", ex=cooldown_in_seconds, nx=True):
-        return None
+    token = secrets.token_hex(16)
+    if await redis_client.set(key, token, ex=cooldown_in_seconds, nx=True):
+        return ResendCooldown(user_email=user_email, channel=channel, token=token)
     remaining: int = await redis_client.ttl(key)
-    return max(remaining, 1)
+    return ResendCooldown(user_email=user_email, channel=channel, retry_after_s=max(remaining, 1))
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def release_2fa_resend_cooldown(app: web.Application, cooldown: ResendCooldown) -> None:
+    """Deletes a cooldown this request armed, leaving a re-armed window in place"""
+    if cooldown.token is None:
+        return
+    redis_client = get_redis_validation_code_client(app)
+    release = redis_client.register_script(_COOLDOWN_RELEASE_SCRIPT)
+    await release(
+        keys=[_resend_cooldown_key(channel=cooldown.channel, user_email=cooldown.user_email)],
+        args=[cooldown.token],
+    )
 
 
 #

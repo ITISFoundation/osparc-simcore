@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 
 import pytest
 import sqlalchemy as sa
@@ -24,6 +24,8 @@ from simcore_service_webserver.login.constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_TRIALS,
 )
+from simcore_service_webserver.login.errors import SendingVerificationSmsError
+from simcore_service_webserver.login.settings import LOGIN_SETTINGS_PER_PRODUCT_APPKEY
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -156,14 +158,55 @@ async def test_resend_2fa_workflow(
     assert mock_send_email_code.call_count == 1, "Email was not sent??"
 
 
+@pytest.fixture
+def set_resend_cooldown_secs(client: TestClient) -> Callable[[int], None]:
+    """Overrides the per-product resend cooldown on the app settings, where
+    both the resend and the register-phone handler read it
+    """
+
+    def _set(seconds: int) -> None:
+        assert client.app
+        product_settings = client.app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY]["osparc"]
+        client.app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY]["osparc"] = product_settings.model_copy(
+            update={"LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC": seconds}
+        )
+
+    return _set
+
+
+async def _login(client: TestClient, registered_user: UserInfoDict) -> None:
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": registered_user["email"],
+            "password": registered_user["raw_password"],
+        },
+    )
+    await assert_status(response, status.HTTP_202_ACCEPTED)
+
+
+async def _resend(client: TestClient, registered_user: UserInfoDict, via: str):
+    url = client.app.router["auth_resend_2fa_code"].url_for()
+    return await client.post(
+        f"{url}",
+        json={
+            "email": registered_user["email"],
+            "via": via,
+        },
+    )
+
+
 async def test_resend_2fa_cooldown_blocks_repeat_within_window(
     client: TestClient,
     registered_user: UserInfoDict,
     mocker: MockFixture,
+    set_resend_cooldown_secs: Callable[[int], None],
 ):
     """The cooldown between resends is kept server-side per account and
-    channel: the server refuses a second SMS within the window and grants it
-    again once the window elapsed
+    channel: the server refuses repeats within the window, and repeated
+    rejections never exhaust the session's authorization. The window is long
+    enough that these assertions cannot race its expiry
     """
     assert client.app
 
@@ -175,71 +218,90 @@ async def test_resend_2fa_cooldown_blocks_repeat_within_window(
         "simcore_service_webserver.login._twofa_service.send_email_code",
         autospec=True,
     )
-    mocker.patch(
-        "simcore_service_webserver.login._controller.rest.twofa.RESEND_2FA_COOLDOWN_SECS",
-        1,
-    )
+    set_resend_cooldown_secs(30)
 
-    url = client.app.router["auth_login"].url_for()
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": registered_user["email"],
-            "password": registered_user["raw_password"],
-        },
-    )
-    await assert_status(response, status.HTTP_202_ACCEPTED)
+    await _login(client, registered_user)
 
-    url = client.app.router["auth_resend_2fa_code"].url_for()
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": registered_user["email"],
-            "via": "SMS",
-        },
-    )
+    response = await _resend(client, registered_user, "SMS")
     await assert_status(response, status.HTTP_200_OK)
 
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": registered_user["email"],
-            "via": "SMS",
-        },
-    )
+    response = await _resend(client, registered_user, "SMS")
     assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
-    assert response.headers["Retry-After"] == "1"
+    assert 25 <= int(response.headers["Retry-After"]) <= 30
 
     # a cooldown rejection is not a use of the step: repeated rejections never
     # exhaust the session's authorization, so retrying after Retry-After works
     for _ in range(MAX_2FA_CODE_TRIALS + 1):
-        response = await client.post(
-            f"{url}",
-            json={
-                "email": registered_user["email"],
-                "via": "SMS",
-            },
-        )
+        response = await _resend(client, registered_user, "SMS")
         assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
 
     # the email channel has its own window
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": registered_user["email"],
-            "via": "Email",
-        },
-    )
+    response = await _resend(client, registered_user, "Email")
     await assert_status(response, status.HTTP_200_OK)
 
-    # once the SMS window elapsed, resending via SMS is granted again;
+
+async def test_resend_2fa_cooldown_expires_after_the_window(
+    client: TestClient,
+    registered_user: UserInfoDict,
+    mocker: MockFixture,
+    set_resend_cooldown_secs: Callable[[int], None],
+):
+    """Once the window elapsed, resending via the same channel is granted again"""
+    assert client.app
+
+    mocker.patch(
+        "simcore_service_webserver.login._twofa_service.send_sms_code",
+        autospec=True,
+    )
+    set_resend_cooldown_secs(1)
+
+    await _login(client, registered_user)
+
+    response = await _resend(client, registered_user, "SMS")
+    await assert_status(response, status.HTTP_200_OK)
+
+    response = await _resend(client, registered_user, "SMS")
+    assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
+
     # Redis second-granularity expiry can stretch by up to a second
     await asyncio.sleep(2.2)
-    response = await client.post(
-        f"{url}",
-        json={
-            "email": registered_user["email"],
-            "via": "SMS",
-        },
-    )
+    response = await _resend(client, registered_user, "SMS")
     await assert_status(response, status.HTTP_200_OK)
+
+
+async def test_resend_2fa_send_failure_releases_the_cooldown(
+    client: TestClient,
+    registered_user: UserInfoDict,
+    mocker: MockFixture,
+    set_resend_cooldown_secs: Callable[[int], None],
+):
+    """A resend whose delivery failed sent no code: the retry must not be
+    charged for a window that delivered nothing
+    """
+    assert client.app
+
+    mocker.patch(
+        "simcore_service_webserver.login._twofa_service.send_email_code",
+        autospec=True,
+    )
+    sms_mock = mocker.patch(
+        "simcore_service_webserver.login._twofa_service.send_sms_code",
+        autospec=True,
+    )
+    set_resend_cooldown_secs(60)
+
+    await _login(client, registered_user)
+
+    sms_mock.side_effect = SendingVerificationSmsError(details="twilio unavailable")
+    response = await _resend(client, registered_user, "SMS")
+    _, error = await assert_status(response, status.HTTP_503_SERVICE_UNAVAILABLE)
+    assert error is not None
+
+    # the failed request released the window it armed, so an immediate retry
+    # goes through; the retry arms a new window
+    sms_mock.side_effect = None
+    response = await _resend(client, registered_user, "SMS")
+    await assert_status(response, status.HTTP_200_OK)
+
+    response = await _resend(client, registered_user, "SMS")
+    assert response.status == status.HTTP_429_TOO_MANY_REQUESTS

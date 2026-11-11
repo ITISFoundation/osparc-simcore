@@ -48,7 +48,6 @@ from ...constants import (
     MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
-    RESEND_2FA_COOLDOWN_SECS,
 )
 from ...settings import (
     LoginSettingsForProduct,
@@ -298,13 +297,14 @@ async def register_phone(request: web.Request):
 
     # register_phone sends the SMS through the same per-account cooldown as
     # the code resend, since both deliver an SMS to this account
-    if retry_after := await _twofa_service.start_2fa_resend_cooldown(
+    cooldown = await _twofa_service.start_2fa_resend_cooldown(
         request.app,
         user_email=trusted.email,
         channel="SMS",
-        cooldown_in_seconds=RESEND_2FA_COOLDOWN_SECS,
-    ):
-        raise create_resend_cooldown_error(retry_after)
+        cooldown_in_seconds=settings.LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC,
+    )
+    if cooldown.retry_after_s is not None:
+        raise create_resend_cooldown_error(cooldown.retry_after_s)
 
     try:
         code = await _twofa_service.create_2fa_code(
@@ -338,9 +338,13 @@ async def register_phone(request: web.Request):
         )
 
     except web.HTTPException:
+        # no delivery happened: release the window this request armed
+        await _twofa_service.release_2fa_resend_cooldown(request.app, cooldown)
         raise
 
     except Exception as err:  # pylint: disable=broad-except
+        # no delivery happened: release the window this request armed
+        await _twofa_service.release_2fa_resend_cooldown(request.app, cooldown)
         # Unhandled errors -> 503
         error_code = create_error_code(err)
         user_error_msg = "Currently we cannot register phone numbers"

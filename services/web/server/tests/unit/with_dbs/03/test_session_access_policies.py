@@ -5,7 +5,7 @@
 
 
 from collections.abc import Callable
-from typing import Protocol
+from typing import Final, Protocol
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -22,6 +22,7 @@ from simcore_service_webserver.login.constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
 from simcore_service_webserver.session.access_policies import (
+    HTTPRefundableTooManyRequests,
     on_success_grant_session_access_to,
     session_access_required,
 )
@@ -33,6 +34,10 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
+# sentinel return_status making the test handler raise a bare
+# web.HTTPTooManyRequests instead of the refundable cooldown error
+_PLAIN_429_STATUS: Final[int] = status.HTTP_429_TOO_MANY_REQUESTS + 1
+
 
 @pytest.fixture
 async def client(
@@ -43,10 +48,14 @@ async def client(
 
     def _handler_impl(request: web.Request, name: str):
         return_status = int(request.query.get("return_status", 200))
+        if return_status == _PLAIN_429_STATUS:
+            # a bare 429 under the guard: unlike the cooldown error it must
+            # keep costing the session an access
+            raise web.HTTPTooManyRequests(text=f"{name} rate limited")
         if return_status == status.HTTP_429_TOO_MANY_REQUESTS:
             # raised as the exception the access refund listens to, like the
             # production cooldown handlers do
-            raise web.HTTPTooManyRequests(text=f"{name} rate limited")
+            raise HTTPRefundableTooManyRequests(text=f"{name} rate limited")
         ok = return_status < status.HTTP_400_BAD_REQUEST
         if ok:
             return web.Response(text=f"{name} ok", status=return_status)
@@ -189,6 +198,23 @@ async def test_429_refunds_the_last_session_access(client: TestClient, do_reques
     assert response.ok
 
     # one_time_access=True, then after the successful retry is not auth
+    response = await do_request(client, "auth_login_2fa")
+    assert response.status == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_plain_429_keeps_the_session_access_cost(client: TestClient, do_request: ClientRequestCallable):
+    """Only the cooldown's own error refunds an access: a bare
+    web.HTTPTooManyRequests raised inside a guarded handler keeps costing one,
+    so repeated ones still exhaust the authorization
+    """
+    response = await do_request(client, "auth_login")
+    assert response.ok
+
+    for _ in range(MAX_2FA_CODE_TRIALS):
+        response = await do_request(client, "auth_login_2fa", return_status=_PLAIN_429_STATUS)
+        assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
+
+    # every access was spent: no refund widened the budget
     response = await do_request(client, "auth_login_2fa")
     assert response.status == status.HTTP_401_UNAUTHORIZED
 

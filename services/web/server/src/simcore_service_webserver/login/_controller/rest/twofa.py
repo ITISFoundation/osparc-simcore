@@ -23,7 +23,6 @@ from ...constants import (
     MSG_EMAIL_SENT,
     MSG_UNAUTHORIZED_CODE_RESEND_2FA,
     MSG_UNKNOWN_EMAIL,
-    RESEND_2FA_COOLDOWN_SECS,
 )
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import create_resend_cooldown_error, handle_rest_requests_exceptions
@@ -61,87 +60,99 @@ async def resend_2fa_code(request: web.Request):
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(text=user_message("2FA login is not available"))
 
-    # at most one code per account and channel per cooldown window; the check
-    # runs before the current code is deleted, so a rejected resend leaves it intact
-    if retry_after := await _twofa_service.start_2fa_resend_cooldown(
-        request.app,
-        user_email=trusted.email,
-        channel=resend_2fa_.via,
-        cooldown_in_seconds=RESEND_2FA_COOLDOWN_SECS,
-    ):
-        raise create_resend_cooldown_error(retry_after)
-
-    # Already a code?
-    if await _twofa_service.has_2fa_code(request.app, user_email=trusted.email):
-        await _twofa_service.delete_2fa_code(request.app, user_email=trusted.email)
-
-    # guaranteed by LoginSettingsForProduct
-    assert settings.LOGIN_2FA_REQUIRED  # nosec
-    assert settings.LOGIN_TWILIO  # nosec
-    assert product.twilio_messaging_sid  # nosec
-
-    # creates and stores code
-    code = await _twofa_service.create_2fa_code(
-        request.app,
-        user_email=user["email"],
-        expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-    )
-    # sends via SMS
+    user_phone_number: str | None = None
     if resend_2fa_.via == "SMS":
+        # checked before the cooldown is armed: this request could send nothing
+        # and must not spend the account's window
         user_phone_number = user.get("phone")
         if not user_phone_number:
             raise web.HTTPBadRequest(text=user_message("User does not have a phone number registered"))
 
-        await _twofa_service.send_sms_code(
-            request.app,
-            phone_number=user_phone_number,
-            code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=user["first_name"] or user["name"],
-            user_id=user["id"],
-            locale=get_locale_or_none(request),
-        )
+    # at most one code per account and channel per cooldown window; the check
+    # runs before the current code is deleted, so a rejected resend leaves it intact
+    cooldown = await _twofa_service.start_2fa_resend_cooldown(
+        request.app,
+        user_email=trusted.email,
+        channel=resend_2fa_.via,
+        cooldown_in_seconds=settings.LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC,
+    )
+    if cooldown.retry_after_s is not None:
+        raise create_resend_cooldown_error(cooldown.retry_after_s)
 
-        response = envelope_response(
-            {
-                "name": CODE_2FA_SMS_CODE_REQUIRED,
-                "parameters": {
-                    "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_twofa_service.mask_phone_number(user_phone_number)
-                    ),
-                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-                },
-            },
-            status=status.HTTP_200_OK,
-        )
+    try:
+        # Already a code?
+        if await _twofa_service.has_2fa_code(request.app, user_email=trusted.email):
+            await _twofa_service.delete_2fa_code(request.app, user_email=trusted.email)
 
-    # sends via Email
-    else:
-        assert resend_2fa_.via == "Email"  # nosec
-        await _twofa_service.send_email_code(
+        # guaranteed by LoginSettingsForProduct
+        assert settings.LOGIN_2FA_REQUIRED  # nosec
+        assert settings.LOGIN_TWILIO  # nosec
+        assert product.twilio_messaging_sid  # nosec
+
+        # creates and stores code
+        code = await _twofa_service.create_2fa_code(
             request.app,
             user_email=user["email"],
-            code=code,
-            first_name=user["first_name"] or user["name"],
-            user_name=user["name"],
-            product_name=product.name,
-            host=request.host,
-            ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-            user_id=user["id"],
-            locale=get_locale_or_none(request),
+            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
+        # sends via SMS
+        if resend_2fa_.via == "SMS":
+            assert user_phone_number  # nosec
+            await _twofa_service.send_sms_code(
+                request.app,
+                phone_number=user_phone_number,
+                code=code,
+                twilio_auth=settings.LOGIN_TWILIO,
+                twilio_messaging_sid=product.twilio_messaging_sid,
+                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+                first_name=user["first_name"] or user["name"],
+                user_id=user["id"],
+                locale=get_locale_or_none(request),
+            )
 
-        response = envelope_response(
-            {
-                "name": CODE_2FA_EMAIL_CODE_REQUIRED,
-                "parameters": {
-                    "message": MSG_EMAIL_SENT.format(email=user["email"]),
-                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+            response = envelope_response(
+                {
+                    "name": CODE_2FA_SMS_CODE_REQUIRED,
+                    "parameters": {
+                        "message": MSG_2FA_CODE_SENT.format(
+                            phone_number=_twofa_service.mask_phone_number(user_phone_number)
+                        ),
+                        "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    },
                 },
-            },
-            status=status.HTTP_200_OK,
-        )
+                status=status.HTTP_200_OK,
+            )
+
+        # sends via Email
+        else:
+            assert resend_2fa_.via == "Email"  # nosec
+            await _twofa_service.send_email_code(
+                request.app,
+                user_email=user["email"],
+                code=code,
+                first_name=user["first_name"] or user["name"],
+                user_name=user["name"],
+                product_name=product.name,
+                host=request.host,
+                ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                user_id=user["id"],
+                locale=get_locale_or_none(request),
+            )
+
+            response = envelope_response(
+                {
+                    "name": CODE_2FA_EMAIL_CODE_REQUIRED,
+                    "parameters": {
+                        "message": MSG_EMAIL_SENT.format(email=user["email"]),
+                        "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+    except Exception:  # pylint: disable=broad-except
+        # no delivery happened: release the window this request armed so the
+        # retry is not charged for a code that was never sent
+        await _twofa_service.release_2fa_resend_cooldown(request.app, cooldown)
+        raise
 
     return response

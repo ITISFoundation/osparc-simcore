@@ -19,6 +19,7 @@ from ....groups import groups_service
 from ....locale import translate_message
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
+from ....session.access_policies import HTTPRefundableTooManyRequests
 from ....users.errors import AlreadyPreRegisteredError
 from ....utils_rate_limiting import MSG_TOO_MANY_REQUESTS
 from ...constants import (
@@ -131,9 +132,13 @@ handle_rest_requests_exceptions = exception_handling_decorator(
 )
 
 
-def create_resend_cooldown_error(retry_after_seconds: int) -> web.HTTPTooManyRequests:
-    """429 for the per-account cooldown between 2FA code resends"""
-    return web.HTTPTooManyRequests(
+def create_resend_cooldown_error(retry_after_seconds: int) -> HTTPRefundableTooManyRequests:
+    """429 for the per-account cooldown between 2FA code resends
+
+    The refundable subclass makes session_access_required give back the access
+    this request consumed, so retrying after Retry-After still works.
+    """
+    return HTTPRefundableTooManyRequests(
         headers={
             "Content-Type": MIMETYPE_APPLICATION_JSON,
             "Retry-After": f"{retry_after_seconds}",
