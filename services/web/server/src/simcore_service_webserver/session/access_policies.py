@@ -25,7 +25,7 @@ _HTTP_400_BAD_REQUEST: Final = status.HTTP_400_BAD_REQUEST
 _logger = logging.getLogger(__name__)
 
 
-class HTTPRefundableTooManyRequests(web.HTTPTooManyRequests):
+class HTTPRefundableTooManyRequests(web.HTTPTooManyRequests):  # pylint: disable=too-many-ancestors
     """429 raised from inside a session_access_required-guarded handler
 
     The guard refunds the access this request consumed, so waiting for
