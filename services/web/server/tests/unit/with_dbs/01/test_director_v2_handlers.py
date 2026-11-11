@@ -5,6 +5,7 @@
 
 import base64
 from collections.abc import AsyncIterator
+from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -537,6 +538,61 @@ async def test_computations_on_project_in_inaccessible_workspace_are_forbidden(
     url = client.app.router["get_computation"].url_for(project_id=project_id)
     rsp = await client.get(f"{url}")
     await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["start_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+    url = client.app.router["stop_computation"].url_for(project_id=project_id)
+    rsp = await client.post(f"{url}")
+    await assert_status(rsp, status.HTTP_403_FORBIDDEN)
+
+
+@pytest.fixture
+async def published_foreign_project(
+    client: TestClient,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: ProductName,
+) -> AsyncIterator[ProjectDict]:
+    """template owned by another user, published so that everyone (incl. GUESTs) has read access"""
+    assert client.app
+    async with NewUser(None, client.app) as other_user:
+        project_data = deepcopy(fake_project)
+        project_data["name"] = "Published template"
+        project_data["published"] = True
+        project_data["access_rights"] = {
+            # everyone HAS read access
+            "1": {"read": True, "write": False, "delete": False},
+        }
+        async with NewProject(
+            project_data,
+            client.app,
+            user_id=other_user["id"],
+            as_template=True,
+            product_name=osparc_product_name,
+            tests_data_dir=tests_data_dir,
+        ) as template_project:
+            yield template_project
+
+
+@pytest.mark.parametrize("user_role", [UserRole.GUEST])
+async def test_guest_can_read_published_project_but_not_run_computation(
+    director_v2_service_mock: AioResponsesMock,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    published_foreign_project: ProjectDict,
+):
+    """a GUEST keeps read-only access to published templates: get is served, run is refused
+    (running on a project the guest owns is covered by the GUEST cases in test_start/get/stop_computation)"""
+    assert client.app
+    project_id = published_foreign_project["uuid"]
+
+    url = client.app.router["get_computation"].url_for(project_id=project_id)
+    rsp = await client.get(f"{url}")
+    data, _ = await assert_status(rsp, status.HTTP_200_OK)
+    assert data
+    assert ComputationGet.model_validate(data[0])
 
     url = client.app.router["start_computation"].url_for(project_id=project_id)
     rsp = await client.post(f"{url}")
