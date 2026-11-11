@@ -114,7 +114,7 @@ cryptography==50.0.2
     #   moto
 debugpy==1.8.22
     # via pytest-celery
-docker==7.1.0
+docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   moto

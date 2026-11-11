@@ -40,7 +40,7 @@ charset-normalizer==3.5.2
     #   requests
 coverage==7.17.0
     # via pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 faker==40.38.0
     # via -r requirements/_test.in
