@@ -268,3 +268,15 @@ def test_webserver_rpc_namespace_must_be_disabled(
     assert settings
 
     assert settings.WEBSERVER_RPC_NAMESPACE is None
+
+
+@pytest.mark.parametrize(
+    "service_name",
+    ["wb-auth", "wb-db-event-listener", "wb-garbage-collector"],
+)
+def test_api_keys_rpc_must_be_disabled_on_variants(mock_service_environment: EnvVarsDict):
+    # the api-keys RPC entrypoint must only be served by the webserver
+    settings = ApplicationSettings.create_from_envs()
+    assert settings
+
+    assert settings.WEBSERVER_API_KEYS is False
