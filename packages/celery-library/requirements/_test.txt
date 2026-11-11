@@ -25,7 +25,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.3.1
+click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -44,19 +44,19 @@ click-repl==0.3.0
     # via
     #   -c requirements/_base.txt
     #   celery
-coverage==7.16.2
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 debugpy==1.8.22
     # via pytest-celery
-docker==7.1.0
+docker==7.2.0
     # via
     #   pytest-celery
     #   pytest-docker-tools
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.40.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in

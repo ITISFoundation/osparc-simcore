@@ -27,7 +27,7 @@ aiormq==7.2.5
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
-alembic==1.18.4
+alembic==1.20.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-doc==0.0.4
     # via typer

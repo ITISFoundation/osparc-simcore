@@ -43,7 +43,7 @@ aiohttp==3.14.5
     #   aiohttp-session
 aiohttp-security==0.5.0
     # via -r requirements/_base.in
-aiohttp-session==2.11.0
+aiohttp-session==2.12.1
     # via -r requirements/_base.in
 aiormq==7.2.5
     # via
@@ -53,7 +53,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiohttp
-alembic==1.8.1
+alembic==1.20.1
     # via -r requirements/../../../../packages/postgres-database/requirements/_base.in
 amqp==5.4.2
     # via kombu
@@ -108,7 +108,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   requests
-click==8.2.1
+click==8.5.0
     # via
     #   celery
     #   click-didyoumean
@@ -209,7 +209,7 @@ jinja2==3.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   swagger-ui-py
-jsondiff==2.0.0
+jsondiff==2.2.1
     # via -r requirements/_base.in
 jsonref==1.1.0
     # via
@@ -510,6 +510,7 @@ pyyaml==6.0.3
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   jsondiff
     #   swagger-ui-py
 redis==7.4.1
     # via
@@ -593,6 +594,7 @@ typing-extensions==4.16.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiodebug
+    #   alembic
     #   anyio
     #   fast-depends
     #   faststream
