@@ -209,7 +209,7 @@ jinja2==3.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   swagger-ui-py
-jsondiff==2.0.0
+jsondiff==2.2.1
     # via -r requirements/_base.in
 jsonref==1.1.0
     # via
@@ -510,6 +510,7 @@ pyyaml==6.0.3
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   jsondiff
     #   swagger-ui-py
 redis==7.4.1
     # via
