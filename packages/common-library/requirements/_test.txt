@@ -4,7 +4,7 @@ annotated-types==0.8.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-coverage==7.16.2
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -26,11 +26,11 @@ polib==1.2.0
     # via -r requirements/_test.in
 pprintpp==0.4.0
     # via pytest-icdiff
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -47,7 +47,7 @@ pytest==9.1.1
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -55,7 +55,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -75,7 +75,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   pydantic

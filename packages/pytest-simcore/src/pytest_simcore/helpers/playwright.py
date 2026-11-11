@@ -4,6 +4,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
 
+import asyncio
 import contextlib
 import json
 import logging
@@ -198,10 +199,14 @@ def _find_live_websocket(
     return None
 
 
-@dataclass
+@dataclass(eq=False)  # identity-hashed: instances are held in a `WeakSet`
 class _ReconnectableEventWaiter:
     """Wraps `WebSocket.expect_event()` so a pending wait survives `RobustWebSocket`
     reconnections instead of raising a stale ``Socket closed`` error.
+
+    `RobustWebSocket` calls `reattach_on_reconnection` on the waiters it registered when it
+    adopts a socket, which keeps the wait listening before the caller gets a chance to send
+    anything on the new connection.
     """
 
     robust_websocket: RobustWebSocket
@@ -211,6 +216,8 @@ class _ReconnectableEventWaiter:
 
     _deadline: datetime | None = field(init=False, default=None)
     _reattach_attempts: int = field(init=False, default=0)
+    _failed_reattachment: PlaywrightError | None = field(init=False, default=None)
+    _closed: bool = field(init=False, default=False)
 
     _ctx: EventContextManager | None = field(init=False, default=None)
     _event_info: EventInfo | None = field(init=False, default=None)
@@ -230,26 +237,44 @@ class _ReconnectableEventWaiter:
         # NOTE: This pattern avoids `Error: Socked closed` from being raised.
         # If nothing went wrong, read `.value` here so a dropped connection is retried
         # even if the caller never reads `.value` themselves.
-        if exc_val is not None:
-            if self._ctx is not None:
-                self._ctx.__exit__(exc_type, exc_val, exc_tb)
-        elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
-            # The predicate saw its event but could not report it as a match at the time (e.g. its
-            # project uuid was still unknown): cancel the pending wait.
-            if self._ctx is not None:
-                self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
-        else:
-            _ = self.value
+        try:
+            if exc_val is not None:
+                if self._ctx is not None:
+                    self._ctx.__exit__(exc_type, exc_val, exc_tb)
+            elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
+                # The predicate saw its event but could not report it as a match at the time (e.g. its
+                # project uuid was still unknown): cancel the pending wait.
+                if self._ctx is not None:
+                    self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
+            else:
+                _ = self.value
+        finally:
+            # only closed once the wait is over: a reconnection happening while `.value` above is
+            # still blocked must move the wait to the new socket
+            self._closed = True
 
     @property
     def value(self) -> typing.Any:
         """returns the same value as `EventInfo.value` making the result of `socket.expect_event` behave similarly"""
 
-        assert self._event_info is not None  # nosec
         while True:
+            if self._failed_reattachment is not None:
+                raise self._failed_reattachment
+            assert self._event_info is not None  # nosec
+            event_info = self._event_info
             try:
-                return self._event_info.value
-            except PlaywrightError as exc:
+                return event_info.value
+            except (PlaywrightError, asyncio.CancelledError) as exc:
+                if self._failed_reattachment is not None:
+                    # a move attempt failed, which is also what cancelled this pending read on the
+                    # old socket: report why moving the wait failed, not the stale error raised by
+                    # the connection that died
+                    raise self._failed_reattachment from exc
+                if self._event_info is not event_info:
+                    # a reconnection moved this wait to another connection while the read above was
+                    # blocked on the socket that died (moving it cancels this pending event), so read
+                    # the pending event of the connection that replaced it
+                    continue
                 if _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}" or self.robust_websocket.ws is self._bound_ws:
                     raise
 
@@ -260,7 +285,42 @@ class _ReconnectableEventWaiter:
                 ):
                     self._attach()
 
-    def _enforce_reattach_limit(self, exc: PlaywrightError) -> None:
+    def reattach_on_reconnection(self) -> None:
+        """Moves a pending wait to the websocket `RobustWebSocket` just adopted.
+
+        `expect_event` only reports the frames that arrive after it is attached, so leaving the
+        wait on the dead socket until `.value` raises `Socket closed` loses whatever the new
+        connection delivered in the meantime.
+        """
+        if self._closed or self._ctx is None or self._bound_ws is self.robust_websocket.ws:
+            return
+        if self._event_info is not None and self._event_info.is_done():
+            try:
+                # The frame landed before the connection changed: re-arming would cancel the
+                # pending read and throw its value away. A settled event is read without waiting.
+                _ = self._event_info.value
+            except (PlaywrightError, asyncio.CancelledError) as exc:
+                if not isinstance(exc, asyncio.CancelledError) and _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}":
+                    # The wait settled with its own error (e.g. Playwright's per-call timeout): that
+                    # is the error the caller must read, and re-arming would restart an expired wait
+                    return
+                # The pending event was rejected instead (closing the socket rejects everything it
+                # was still waiting for), so this wait is pending on a connection that is gone
+            else:
+                return
+        with log_context(logging.INFO, msg=f"Moving wait for {self.event!r} to the reconnected websocket") as ctx:
+            try:
+                # moving a wait is a reattachment like the one `.value` does when it notices the
+                # socket was replaced, so it counts against the same limit
+                self._enforce_reattach_limit(None)
+                self._attach()
+            except PlaywrightError as exc:  # the deadline may have expired while disconnected
+                self._failed_reattachment = exc
+                ctx.logger.warning("could not move the wait for %s: %s", self.event, exc)
+            else:
+                self._failed_reattachment = None
+
+    def _enforce_reattach_limit(self, exc: BaseException | None) -> None:
         self._reattach_attempts += 1
         if self._reattach_attempts > _MAX_REATTACH_ATTEMPTS:
             msg = (
@@ -304,6 +364,11 @@ class RobustWebSocket:
     _reconnect_lock: threading.Lock = field(init=False, repr=False, default_factory=threading.Lock)
     _reconnect_handled: set[int] = field(init=False, repr=False, default_factory=set)
     _frames_received_on: set[int] = field(init=False, repr=False, default_factory=set)
+    _adopted_unproven: set[int] = field(init=False, repr=False, default_factory=set)
+    # waits still in flight, dropped as soon as the caller releases them
+    _pending_event_waiters: weakref.WeakSet[_ReconnectableEventWaiter] = field(
+        init=False, repr=False, default_factory=weakref.WeakSet
+    )
 
     def __post_init__(self) -> None:
         start_websocket_tracking(self.page)
@@ -328,6 +393,24 @@ class RobustWebSocket:
     def _mark_connected(self, socket: WebSocket) -> None:
         self._frames_received_on.add(id(socket))
 
+    def _drop_unproven_reconnection(self, socket: WebSocket, logger: logging.Logger) -> None:
+        """Un-counts an adopted socket that died before receiving any frame.
+
+        A socket adopted by `_attempt_reconnect` can still fail its handshake, since
+        `page.expect_websocket` resolves as soon as the browser creates it. Its first frame is what
+        tells a reconnection apart from such a failed attempt, so the count is only kept once it
+        arrives.
+        """
+        if id(socket) not in self._adopted_unproven:
+            return
+        self._adopted_unproven.discard(id(socket))
+        self._num_reconnections = max(0, self._num_reconnections - 1)
+        logger.info(
+            "%s❌ Dropped WebSocket adopted while reconnecting. Number of reconnections: %s",
+            self.log_prefix,
+            self._num_reconnections,
+        )
+
     def _configure_websocket_events(self) -> None:
         # NOTE: bind the current socket in the closure: the 'socketerror' event only carries the
         # error message, so the socket must be identified through the closure instead.
@@ -345,6 +428,7 @@ class RobustWebSocket:
                 # NOTE: receiving a frame is the proof that this socket's handshake succeeded
                 # (a socket.io server sends its 'open' packet immediately on connect)
                 self._frames_received_on.add(id(socket))
+                self._adopted_unproven.discard(id(socket))
                 ctx.logger.debug("%s⬆️ Frame received: %s", self.log_prefix, payload)
 
             def _trigger_reconnect(reason: str) -> None:
@@ -363,6 +447,7 @@ class RobustWebSocket:
                 # the stale proof, `wait_until_connected` would return immediately on the
                 # dead socket while its (event-dispatched) reconnection has not completed yet.
                 self._frames_received_on.discard(id(socket))
+                self._drop_unproven_reconnection(socket, ctx.logger)
                 if not self.auto_reconnect:
                     ctx.logger.info("%s WebSocket closed.", self.log_prefix)
                     return
@@ -370,6 +455,7 @@ class RobustWebSocket:
 
             def on_socketerror(error_msg: str) -> None:
                 self._frames_received_on.discard(id(socket))
+                self._drop_unproven_reconnection(socket, ctx.logger)
                 if not self.auto_reconnect:
                     ctx.logger.error("%s❌ WebSocket error: %s", self.log_prefix, error_msg)
                     return
@@ -444,8 +530,12 @@ class RobustWebSocket:
         """Switches to ``socket`` and re-attaches the event listeners to it."""
         self.ws = socket
         self._num_reconnections += 1
-        # NOTE: a live socket completed its handshake, so it is connected even if its first frame
-        # raced ahead of the listeners attached below (same as in __post_init__)
+        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even if
+        # its first frame raced ahead of the listeners attached below (same as in __post_init__).
+        # The browser also creates a websocket for a connection attempt whose handshake then fails
+        # (the socket.io client retries on its own while offline), so this socket must still receive
+        # a frame before its reconnection counts: see `_drop_unproven_reconnection`.
+        self._adopted_unproven.add(id(self.ws))
         self._mark_connected(self.ws)
         logger.info(
             "🔄 WebSocket %s successfully (%s). Number of reconnections: %s",
@@ -454,6 +544,25 @@ class RobustWebSocket:
             self._num_reconnections,
         )
         self._configure_websocket_events()
+        # NOTE: a wait left on the socket that just died cannot see what this connection delivers,
+        # so it is moved here instead of when the caller happens to read it. A moved wait starts at
+        # the frames this connection receives from now on, which includes whatever a protocol
+        # handshake still sends on it: a caller that must not mistake one of those for its answer
+        # filters them with a predicate.
+        self._reattach_pending_event_waiters()
+
+    def _reattach_pending_event_waiters(self) -> None:
+        """Moves the waits left on the socket this one replaced onto this socket."""
+        for waiter in list(self._pending_event_waiters):
+            try:
+                waiter.reattach_on_reconnection()
+            except Exception:  # nosec  # pylint: disable=broad-except
+                # one wait that cannot be moved must not abort the reconnection of all the others
+                _logger.exception(
+                    "%sCould not move the wait for %s to the reconnected websocket",
+                    self.log_prefix,
+                    waiter.event,
+                )
 
     def expect_event(
         self,
@@ -465,7 +574,9 @@ class RobustWebSocket:
         """
         Register an event listener that keeps waiting across reconnections.
         """
-        return _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
+        waiter = _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
+        self._pending_event_waiters.add(waiter)
+        return waiter
 
     def wait_until_connected(self, *, timeout: float) -> None:
         """

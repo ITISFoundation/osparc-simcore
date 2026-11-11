@@ -32,7 +32,7 @@ charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.3.1
+click==8.5.0
     # via
     #   rich-toolkit
     #   uvicorn
@@ -179,14 +179,14 @@ protobuf==6.33.5
     #   -c requirements/_base.txt
     #   googleapis-common-protos
     #   opentelemetry-proto
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -266,7 +266,7 @@ typing-extensions==4.16.0
     #   pydantic-extra-types
     #   rich-toolkit
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   fastapi

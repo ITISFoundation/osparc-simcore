@@ -80,12 +80,12 @@ pluggy==1.7.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest
-pydantic==2.14.1
+pydantic==2.14.3
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.50.1
+pydantic-core==2.50.4
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pydantic

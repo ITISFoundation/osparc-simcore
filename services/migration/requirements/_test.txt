@@ -11,9 +11,9 @@ certifi==2026.10.19
     #   requests
 charset-normalizer==3.4.6
     # via requests
-coverage==7.16.2
+coverage==7.17.0
     # via pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
@@ -50,13 +50,13 @@ pytest==9.1.1
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-docker==3.2.6
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in

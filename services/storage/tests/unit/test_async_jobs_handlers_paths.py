@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import pytest
+from celery.app.task import Task
 from celery.worker.worker import WorkController
 from celery_library.async_jobs import (
     submit_job,
@@ -27,13 +28,22 @@ from models_library.api_schemas_async_jobs.async_jobs import (
 from models_library.api_schemas_async_jobs.exceptions import JobError
 from models_library.celery import OwnerMetadata, TaskExecutionMetadata, Wildcard
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
-from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.storage_utils import (
+    CreateProjectAccessRightsCallable,
+    FileIDDict,
+    ProjectWithFilesParams,
+)
 from servicelib.celery.async_jobs.storage.paths import submit_delete_paths_task
 from servicelib.celery.task_manager import TaskManager
+from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -127,6 +137,18 @@ async def _assert_delete_paths(
             return
 
     pytest.fail("Job did not finish")
+
+
+async def _count_file_meta_data_rows(
+    sqlalchemy_async_engine: AsyncEngine, *, project_id: ProjectID, node_id: NodeID
+) -> int:
+    async with sqlalchemy_async_engine.connect() as conn:
+        result = await conn.execute(
+            select(func.count())
+            .select_from(file_meta_data)
+            .where((file_meta_data.c.project_id == f"{project_id}") & (file_meta_data.c.node_id == f"{node_id}"))
+        )
+        return result.scalar_one()
 
 
 @pytest.mark.parametrize(
@@ -507,3 +529,234 @@ async def test_delete_paths_of_node_folder_of_another_project(
         expected_total_size=len(other_node_files),
         product_name=product_name,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "read,write,delete",
+    [(True, False, False), (True, False, True)],
+    ids=["read-only", "delete-right-without-write"],
+)
+async def test_delete_paths_of_node_folder_denied_without_write(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+    read: bool,
+    write: bool,
+    delete: bool,
+):
+    """removing a node's data requires `write`: neither read alone nor the project's delete right grants it"""
+    project_params = ProjectWithFilesParams(
+        num_nodes=1,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=0,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    project_path = Path(project["uuid"])
+    await create_project_access_rights(
+        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=read, write=write, delete=delete
+    )
+    node_id, node_files_of_node = next(iter(node_files.items()))
+
+    with pytest.raises(JobError, match="Insufficient access rights to write node"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path / f"{node_id}"},
+        )
+
+    # the refusal must not have removed anything
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{node_id}",
+        expected_total_size=len(node_files_of_node),
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_node_folder_by_collaborator_with_write_and_no_delete_right(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    sqlalchemy_async_engine: AsyncEngine,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+):
+    """`write` on the study is what grants a non-owner the removal of a node's data: `delete` on the
+    project is not needed, and does not come with it either"""
+    project_params = ProjectWithFilesParams(
+        num_nodes=2,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=1,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    assert len(node_files) == 2, "test preconditions are not filled! two nodes are needed for this test"
+
+    project_id = ProjectID(project["uuid"])
+    project_path = Path(project["uuid"])
+    (deleted_node_id, deleted_node_files), (kept_node_id, kept_node_files) = list(node_files.items())
+    await create_project_access_rights(
+        project_id=project_id, user_id=other_user_id, read=True, write=True, delete=False
+    )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{deleted_node_id}",
+        expected_total_size=len(deleted_node_files),
+        product_name=product_name,
+    )
+
+    await _assert_delete_paths(
+        task_manager,
+        location_id,
+        other_user_id,
+        product_name,
+        paths={project_path / f"{deleted_node_id}"},
+    )
+
+    # both the S3 objects and their file metadata are gone
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{deleted_node_id}",
+        expected_total_size=0,
+        product_name=product_name,
+    )
+    assert (
+        await _count_file_meta_data_rows(sqlalchemy_async_engine, project_id=project_id, node_id=deleted_node_id) == 0
+    )
+
+    # the sibling node is untouched
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path / f"{kept_node_id}",
+        expected_total_size=len(kept_node_files),
+        product_name=product_name,
+    )
+    assert await _count_file_meta_data_rows(sqlalchemy_async_engine, project_id=project_id, node_id=kept_node_id) == (
+        len(kept_node_files)
+    )
+
+    # removing a node does not grant removing the whole project
+    with pytest.raises(JobError, match="Insufficient access rights to delete project"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path},
+        )
+
+    await _assert_compute_path_size(
+        task_manager,
+        location_id,
+        other_user_id,
+        path=project_path,
+        expected_total_size=len(kept_node_files),
+        product_name=product_name,
+    )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_delete_paths_of_denied_paths_fails_without_retry(
+    initialized_app: FastAPI,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
+    location_id: LocationID,
+    project_with_seeded_files_factory: Callable[
+        [ProjectWithFilesParams],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    ],
+    create_project_access_rights: CreateProjectAccessRightsCallable,
+    other_user_id: UserID,
+    product_name: ProductName,
+    mocker: MockerFixture,
+):
+    """a denied delete must fail the job on the first attempt: ProjectNodeAccessRightError and
+    ProjectAccessRightError are excluded from the task's automatic retries"""
+    retry_spy = mocker.spy(Task, "retry")
+
+    project_params = ProjectWithFilesParams(
+        num_nodes=1,
+        allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+        workspace_files_count=0,
+    )
+    project, node_files = await project_with_seeded_files_factory(project_params)
+    project_path = Path(project["uuid"])
+    await create_project_access_rights(
+        project_id=ProjectID(project["uuid"]), user_id=other_user_id, read=True, write=False, delete=False
+    )
+    node_id, _ = next(iter(node_files.items()))
+
+    with pytest.raises(JobError, match="Insufficient access rights to write node"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path / f"{node_id}"},
+        )
+
+    with pytest.raises(JobError, match="Insufficient access rights to delete project"):
+        await _assert_delete_paths(
+            task_manager,
+            location_id,
+            other_user_id,
+            product_name,
+            paths={project_path},
+        )
+
+    assert retry_spy.call_count == 0
+
+    # control: compute_path_size raises the same error class but does not exclude it, so the
+    # worker retries it -- proving the spy observes the worker's attempts at all
+    other_project, _ = await project_with_seeded_files_factory(project_params)
+    with pytest.raises(JobError, match="Insufficient access rights to read project"):
+        await _assert_compute_path_size(
+            task_manager,
+            location_id,
+            other_user_id,
+            path=Path(other_project["uuid"]),
+            expected_total_size=0,
+            product_name=product_name,
+        )
+    assert retry_spy.call_count > 0, "the spy must observe the worker's retried attempts"

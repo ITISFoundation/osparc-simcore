@@ -21,7 +21,7 @@ certifi==2026.10.19
     #   requests
 charset-normalizer==3.4.6
     # via requests
-click==8.3.1
+click==8.5.0
     # via
     #   -r requirements/_base.in
     #   cookiecutter
@@ -29,7 +29,7 @@ cookiecutter==2.7.1
     # via -r requirements/_base.in
 dnspython==2.9.0
     # via email-validator
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_base.in
 email-validator==2.3.0
     # via pydantic
@@ -74,13 +74,13 @@ pluggy==1.6.0
     # via pytest
 propcache==0.4.1
     # via yarl
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via pydantic
 pydantic-extra-types==2.11.1
     # via
@@ -135,7 +135,7 @@ typing-extensions==4.16.0
     #   pydantic-core
     #   pydantic-extra-types
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   pydantic
     #   pydantic-settings
