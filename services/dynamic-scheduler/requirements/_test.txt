@@ -91,7 +91,7 @@ packaging==26.3
     #   pytest
 pathspec==1.0.4
     # via mypy
-playwright==1.64.1
+playwright==1.65.0
     # via -r requirements/_test.in
 pluggy==1.6.0
     # via
@@ -101,8 +101,6 @@ pprintpp==0.4.0
     # via pytest-icdiff
 priority==2.0.0
     # via hypercorn
-pyee==13.0.1
-    # via playwright
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -162,7 +160,6 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   anyio
     #   mypy
-    #   pyee
     #   sqlalchemy
 urllib3==2.8.0
     # via
