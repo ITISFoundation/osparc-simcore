@@ -143,6 +143,8 @@ async def login(request: web.Request):
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
+    # a new code starts a fresh trial budget
+    await _twofa_service.clear_2fa_attempts(request.app, user_email=user["email"])
 
     if user_2fa_authentication_method == TwoFactorAuthenticationMethod.SMS:
         # create sms 2FA
@@ -232,12 +234,21 @@ async def login_2fa(request: web.Request):
     if not await _twofa_service.verify_2fa_code(
         request.app, user_email=trusted.email, code=login_2fa_.code.get_secret_value()
     ):
+        # the counter lives in Redis, so replaying an old session cookie
+        # cannot hand out more trials than the current code allows
+        if await _twofa_service.register_failed_2fa_attempt(
+            request.app,
+            user_email=trusted.email,
+            ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+        ):
+            raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
     user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))
 
     # dispose since code was used
     await _twofa_service.delete_2fa_code(request.app, trusted.email)
+    await _twofa_service.clear_2fa_attempts(request.app, user_email=trusted.email)
     await clear_pending_2fa_email(request)
 
     return await _security_service.login_granted_response(request, user=user)

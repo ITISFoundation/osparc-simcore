@@ -3,9 +3,11 @@ import logging
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
+from models_library.rest_error import EnvelopedError, ErrorGet
 from models_library.users import UserID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import handle_aiohttp_web_http_error
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ....exception_handling import (
     ExceptionToHttpErrorMap,
@@ -18,6 +20,7 @@ from ....locale import translate_message
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
 from ....users.errors import AlreadyPreRegisteredError
+from ....utils_rate_limiting import MSG_TOO_MANY_REQUESTS
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_INVALID_CREDENTIALS,
@@ -126,3 +129,19 @@ handle_rest_requests_exceptions = exception_handling_decorator(
         WrongPasswordError: _handle_legacy_error_response,
     },
 )
+
+
+def create_resend_cooldown_error(retry_after_seconds: int) -> web.HTTPTooManyRequests:
+    """429 for the per-account cooldown between 2FA code resends"""
+    return web.HTTPTooManyRequests(
+        headers={
+            "Content-Type": MIMETYPE_APPLICATION_JSON,
+            "Retry-After": f"{retry_after_seconds}",
+        },
+        text=EnvelopedError(
+            error=ErrorGet(
+                message=MSG_TOO_MANY_REQUESTS,
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        ).model_dump_json(),
+    )

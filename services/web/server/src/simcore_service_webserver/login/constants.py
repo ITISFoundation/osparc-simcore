@@ -1,5 +1,6 @@
-from typing import Final
+from typing import Annotated, Final
 
+from annotated_types import doc
 from common_library.user_messages import user_message
 
 MSG_2FA_CODE_SENT: Final[str] = user_message("A verification code has been sent via SMS to {phone_number}.", _version=1)
@@ -134,5 +135,9 @@ MAX_2FA_CODE_RESEND: Final[int] = 5
 
 # maximum number of trials to validate the passcode
 MAX_2FA_CODE_TRIALS: Final[int] = 5
+
+RESEND_2FA_COOLDOWN_SECS: Final[
+    Annotated[int, doc("minimum seconds between code resends to the same account and channel")]
+] = 60
 
 CAPTCHA_SESSION_KEY: Final[str] = "captcha"

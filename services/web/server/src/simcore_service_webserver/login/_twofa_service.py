@@ -11,9 +11,11 @@ import asyncio
 import hashlib
 import hmac
 import logging
+from typing import Annotated, Final
 
 import twilio.rest  # type: ignore[import-untyped]
 from aiohttp import web
+from annotated_types import doc
 from common_library.gettext_support import SupportedLocale, get_translator
 from common_library.user_messages import user_message
 from models_library.notifications import Channel
@@ -30,6 +32,7 @@ from ..notifications import notifications_service
 from ..notifications.models import EmailContact
 from ..redis import get_redis_validation_code_client
 from ..session.settings import get_plugin_settings as get_session_settings
+from .constants import MAX_2FA_CODE_TRIALS
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
 log = logging.getLogger(__name__)
@@ -97,6 +100,74 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
     await redis_client.delete(hash_key)
+
+
+# Server-side 2FA attempt and resend state. The session-cookie counters in
+# session.access_policies can be reset by replaying an old cookie, so these
+# limits are kept in Redis and keyed by account.
+
+_ATTEMPTS_KEY: Final[
+    Annotated[str, doc("namespace for the trial counter, kept apart from the bare-email code keys")]
+] = "2fa_attempts"
+
+_RESEND_COOLDOWN_KEY: Final[
+    Annotated[str, doc("namespace for the resend cooldown, kept apart from the bare-email code keys")]
+] = "2fa_resend_cd"
+
+
+def _attempts_key(user_email: str) -> str:
+    return f"{_ATTEMPTS_KEY}:{user_email}"
+
+
+def _resend_cooldown_key(*, channel: str, user_email: str) -> str:
+    return f"{_RESEND_COOLDOWN_KEY}:{channel}:{user_email}"
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def register_failed_2fa_attempt(app: web.Application, *, user_email: str, ttl: int) -> bool:
+    """Counts a failed code verification against the server-side trial limit.
+
+    The limit belongs to the current code: the counter lives in Redis keyed by
+    account and expires with the code's lifetime. Reaching it deletes the
+    stored code, so the correct code authenticates no longer either.
+
+    Returns True when the trial limit was reached (and the code invalidated).
+    """
+    redis_client = get_redis_validation_code_client(app)
+    key = _attempts_key(user_email)
+    attempts = await redis_client.incr(key)
+    if attempts == 1:
+        await redis_client.expire(key, ttl)
+    if attempts >= MAX_2FA_CODE_TRIALS:
+        await delete_2fa_code(app, user_email)
+        return True
+    return False
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def clear_2fa_attempts(app: web.Application, *, user_email: str) -> None:
+    """Forgets the trial counter of an account, e.g. when a new code is issued"""
+    redis_client = get_redis_validation_code_client(app)
+    await redis_client.delete(_attempts_key(user_email))
+
+
+@log_decorator(log, level=logging.DEBUG)
+async def start_2fa_resend_cooldown(
+    app: web.Application, *, user_email: str, channel: str, cooldown_in_seconds: int
+) -> int | None:
+    """Starts the per-account resend cooldown, or reports the remaining wait.
+
+    The cooldown is started atomically for the request, not for the delivery:
+    it is consumed even if sending the code fails afterwards.
+
+    Returns None when the resend is allowed now, or the seconds left to wait.
+    """
+    redis_client = get_redis_validation_code_client(app)
+    key = _resend_cooldown_key(channel=channel, user_email=user_email)
+    if await redis_client.set(key, "1", ex=cooldown_in_seconds, nx=True):
+        return None
+    remaining = await redis_client.ttl(key)
+    return max(remaining, 1)
 
 
 #

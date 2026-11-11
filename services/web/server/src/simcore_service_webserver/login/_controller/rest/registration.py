@@ -48,12 +48,13 @@ from ...constants import (
     MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
+    RESEND_2FA_COOLDOWN_SECS,
 )
 from ...settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from ._rest_exceptions import handle_rest_requests_exceptions
+from ._rest_exceptions import create_resend_cooldown_error, handle_rest_requests_exceptions
 from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .registration_schemas import (
     InvitationCheck,
@@ -295,12 +296,24 @@ async def register_phone(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
+    # register_phone sends the SMS through the same per-account cooldown as
+    # the code resend, since both deliver an SMS to this account
+    if retry_after := await _twofa_service.start_2fa_resend_cooldown(
+        request.app,
+        user_email=trusted.email,
+        channel="SMS",
+        cooldown_in_seconds=RESEND_2FA_COOLDOWN_SECS,
+    ):
+        raise create_resend_cooldown_error(retry_after)
+
     try:
         code = await _twofa_service.create_2fa_code(
             app=request.app,
             user_email=trusted.email,
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
+        # a new code starts a fresh trial budget
+        await _twofa_service.clear_2fa_attempts(request.app, user_email=trusted.email)
         await _twofa_service.send_sms_code(
             request.app,
             phone_number=registration.phone,

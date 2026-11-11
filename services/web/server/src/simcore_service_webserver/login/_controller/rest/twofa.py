@@ -19,9 +19,10 @@ from ...constants import (
     MSG_EMAIL_SENT,
     MSG_UNAUTHORIZED_CODE_RESEND_2FA,
     MSG_UNKNOWN_EMAIL,
+    RESEND_2FA_COOLDOWN_SECS,
 )
 from ...settings import LoginSettingsForProduct, get_plugin_settings
-from ._rest_exceptions import handle_rest_requests_exceptions
+from ._rest_exceptions import create_resend_cooldown_error, handle_rest_requests_exceptions
 from ._session_trusted_identity import get_trusted_login_email
 from .twofa_schemas import Resend2faBody
 
@@ -52,6 +53,16 @@ async def resend_2fa_code(request: web.Request):
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(text=user_message("2FA login is not available"))
 
+    # at most one code per account and channel per cooldown window; the check
+    # runs before the current code is deleted, so a rejected resend leaves it intact
+    if retry_after := await _twofa_service.start_2fa_resend_cooldown(
+        request.app,
+        user_email=trusted.email,
+        channel=resend_2fa_.via,
+        cooldown_in_seconds=RESEND_2FA_COOLDOWN_SECS,
+    ):
+        raise create_resend_cooldown_error(retry_after)
+
     # Already a code?
     if await _twofa_service.has_2fa_code(request.app, user_email=trusted.email):
         await _twofa_service.delete_2fa_code(request.app, user_email=trusted.email)
@@ -67,6 +78,8 @@ async def resend_2fa_code(request: web.Request):
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
+    # a new code starts a fresh trial budget
+    await _twofa_service.clear_2fa_attempts(request.app, user_email=user["email"])
     # sends via SMS
     if resend_2fa_.via == "SMS":
         user_phone_number = user.get("phone")
