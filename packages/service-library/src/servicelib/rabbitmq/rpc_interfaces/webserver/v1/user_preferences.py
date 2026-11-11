@@ -8,8 +8,6 @@ from ._base import BaseRpcApi
 
 
 class UserPreferencesRpcApi(BaseRpcApi):
-    """RPC client for frontend user preferences."""
-
     async def get_frontend_user_preference[PreferenceT: FrontendUserPreference](
         self,
         *,
