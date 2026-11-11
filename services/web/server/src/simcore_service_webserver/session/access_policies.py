@@ -41,7 +41,7 @@ def _is_valid(token) -> bool:
     # were not deserialized as AccessToken dicts
     try:
         return token["count"] > 0 and not _is_expired(token)
-    except (KeyError, TypeError):
+    except KeyError, TypeError:
         return False
 
 
@@ -119,7 +119,16 @@ def session_access_required(
                 access_tokens[name] = access
 
             # Access granted to this handler
-            response = await handler(request)
+            try:
+                response = await handler(request)
+            except web.HTTPTooManyRequests:
+                # the handler refused to run because of rate limiting: refund
+                # the consumed access so waiting and retrying still works
+                with _access_tokens_cleanup_ctx(session) as access_tokens:
+                    if access := access_tokens.get(name):
+                        access["count"] += 1
+                        access_tokens[name] = access
+                raise
 
             if response.status < _HTTP_400_BAD_REQUEST:  # success
                 with _access_tokens_cleanup_ctx(session) as access_tokens:

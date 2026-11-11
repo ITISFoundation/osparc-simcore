@@ -8,13 +8,17 @@ from servicelib.aiohttp import status
 from ....locale import get_locale_or_none
 from ....products import products_web
 from ....products.models import Product
-from ....session.access_policies import session_access_required
+from ....session.access_policies import (
+    on_success_grant_session_access_to,
+    session_access_required,
+)
 from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response
 from ... import _auth_service, _twofa_service
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
+    MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
     MSG_EMAIL_SENT,
     MSG_UNAUTHORIZED_CODE_RESEND_2FA,
@@ -36,6 +40,10 @@ routes = RouteTableDef()
 @session_access_required(
     name="auth_resend_2fa_code",
     one_time_access=False,
+)
+@on_success_grant_session_access_to(
+    name="auth_login_2fa",
+    max_access_count=MAX_2FA_CODE_TRIALS,
 )
 @handle_rest_requests_exceptions
 async def resend_2fa_code(request: web.Request):

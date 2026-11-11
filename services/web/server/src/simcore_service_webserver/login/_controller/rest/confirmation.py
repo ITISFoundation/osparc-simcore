@@ -211,6 +211,16 @@ async def phone_confirmation(request: web.Request):
 
     trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION)
 
+    if not await _twofa_service.consume_2fa_attempt(
+        request.app,
+        user_email=trusted.email,
+        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+    ):
+        raise web.HTTPUnauthorized(
+            text="Invalid 2FA code",
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
+
     if await _twofa_service.verify_2fa_code(
         request.app, user_email=trusted.email, code=request_body.code.get_secret_value()
     ):
@@ -226,13 +236,6 @@ async def phone_confirmation(request: web.Request):
 
         return await _security_service.login_granted_response(request, user=user)
 
-    # fails because of invalid or no code; the counter lives in Redis, so
-    # replaying an old session cookie cannot hand out more trials
-    await _twofa_service.register_failed_2fa_attempt(
-        request.app,
-        user_email=trusted.email,
-        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-    )
     raise web.HTTPUnauthorized(text="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON)
 
 

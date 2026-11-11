@@ -124,24 +124,23 @@ def _resend_cooldown_key(*, channel: str, user_email: str) -> str:
 
 
 @log_decorator(log, level=logging.DEBUG)
-async def register_failed_2fa_attempt(app: web.Application, *, user_email: str, ttl: int) -> bool:
-    """Counts a failed code verification against the server-side trial limit.
+async def consume_2fa_attempt(app: web.Application, *, user_email: str, ttl: int) -> bool:
+    """Consumes one code-verification trial of an account, before the code is checked.
 
-    The limit belongs to the current code: the counter lives in Redis keyed by
-    account and expires with the code's lifetime. Reaching it deletes the
-    stored code, so the correct code authenticates no longer either.
+    The budget belongs to the current code: the counter lives in Redis keyed
+    by account, is incremented atomically and expires with the code's
+    lifetime. Callers verify only when this returns True, so no more than
+    MAX_2FA_CODE_TRIALS verifications can reach the stored code, whatever the
+    concurrency or the client-held session cookies.
 
-    Returns True when the trial limit was reached (and the code invalidated).
+    Returns False when the budget is exhausted.
     """
     redis_client = get_redis_validation_code_client(app)
     key = _attempts_key(user_email)
     attempts = await redis_client.incr(key)
     if attempts == 1:
         await redis_client.expire(key, ttl)
-    if attempts >= MAX_2FA_CODE_TRIALS:
-        await delete_2fa_code(app, user_email)
-        return True
-    return False
+    return attempts <= MAX_2FA_CODE_TRIALS
 
 
 @log_decorator(log, level=logging.DEBUG)

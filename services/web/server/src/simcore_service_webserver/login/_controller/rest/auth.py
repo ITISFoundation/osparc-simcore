@@ -230,17 +230,18 @@ async def login_2fa(request: web.Request):
     # validates code
     if not await _twofa_service.has_2fa_code(request.app, trusted.email):
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
+    # the trial budget is consumed in Redis before the code is checked, so at
+    # most MAX_2FA_CODE_TRIALS verifications ever reach the stored code,
+    # whatever the concurrency or the client-held session cookies
+    if not await _twofa_service.consume_2fa_attempt(
+        request.app,
+        user_email=trusted.email,
+        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+    ):
+        raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
     if not await _twofa_service.verify_2fa_code(
         request.app, user_email=trusted.email, code=login_2fa_.code.get_secret_value()
     ):
-        # the counter lives in Redis, so replaying an old session cookie
-        # cannot hand out more trials than the current code allows
-        if await _twofa_service.register_failed_2fa_attempt(
-            request.app,
-            user_email=trusted.email,
-            ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-        ):
-            raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
     user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))

@@ -20,7 +20,10 @@ from simcore_service_webserver.login._controller.rest.auth_schemas import (
 from simcore_service_webserver.login._twofa_service import (
     get_redis_validation_code_client,
 )
-from simcore_service_webserver.login.constants import CODE_2FA_SMS_CODE_REQUIRED
+from simcore_service_webserver.login.constants import (
+    CODE_2FA_SMS_CODE_REQUIRED,
+    MAX_2FA_CODE_TRIALS,
+)
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -206,6 +209,18 @@ async def test_resend_2fa_cooldown_blocks_repeat_within_window(
     )
     assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
     assert response.headers["Retry-After"] == "1"
+
+    # a cooldown rejection is not a use of the step: repeated rejections never
+    # exhaust the session's authorization, so retrying after Retry-After works
+    for _ in range(MAX_2FA_CODE_TRIALS + 1):
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": registered_user["email"],
+                "via": "SMS",
+            },
+        )
+        assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
 
     # the email channel has its own window
     response = await client.post(
