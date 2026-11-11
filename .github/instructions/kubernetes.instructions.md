@@ -12,7 +12,7 @@ applyTo: 'k8s/**,services/helmfile*,services/**/helm-values*.yaml.gotmpl'
 - Every simcore release inherits the `simcore-service` template
 - Pin `version:` for every upstream (non-local) chart.
 
-## Values files
+## Release Values files
 
 - `_shared/helm-values.<dependency>.yaml.gotmpl`: env reused by multiple releases
   (postgres, rabbit, catalog, ...).
@@ -32,7 +32,7 @@ applyTo: 'k8s/**,services/helmfile*,services/**/helm-values*.yaml.gotmpl'
 - Passwords, keys and tokens go under `secretEnv`, everything else under `env`.
   Keep both maps sorted alphabetically.
 
-## Releases
+## Helmfile Releases
 
 - Define explicitly resource requests and limits for every release.
 - Keep the chart's security as strict as possible. Every relaxation
