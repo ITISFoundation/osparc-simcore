@@ -66,7 +66,9 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "redis",
+    "static-webserver",
     "storage",
+    "webserver",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -184,6 +186,9 @@ async def director_v2_client(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> AsyncIterable[_TestClient]:
+    redis_password = redis_settings.REDIS_PASSWORD
+    assert redis_password is not None
+
     setenvs_from_dict(
         monkeypatch,
         {
@@ -208,7 +213,7 @@ async def director_v2_client(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "REDIS_HOST": redis_settings.REDIS_HOST,
             "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
-            "REDIS_PASSWORD": f"{redis_settings.REDIS_PASSWORD.get_secret_value()}",
+            "REDIS_PASSWORD": redis_password.get_secret_value(),
             "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
         },
     )
@@ -357,6 +362,7 @@ async def test_start_status_stop(
     )
     assert response.status_code == 201, response.text
     assert isinstance(director_v2_client.application, FastAPI)
+    # This is failing
     await patch_dynamic_service_url(app=director_v2_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running

@@ -51,7 +51,7 @@ test-%-integration: FORCE ## run app integration tests (test-path restricts to a
 	make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/integration$(TEST_PATH))"
 
 # CI-CONTRACT: test-ci-unit is invoked by ci/github/**/*.bash (also test-dev-unit locally)
-test-%-unit: FORCE _check_venv_active ## run app unit tests (test-path restricts to a folder, target= overrides with explicit file(s)) [CI]
+test-%-unit: FORCE _check_venv_active ## run app unit tests; e.g. make test-dev-unit, make test-ci-unit, make test-dev-unit test-path=tests/unit/foo, or make test-dev-unit target=tests/unit/test_foo.py [CI]
 	# Targets tests/unit folder (or an explicit target= if provided)
 	$(if $(filter dev,$*),$(if $(_PYTEST_ARGS_dev_DROPPED),@echo "WARNING: xdist workers requested but '--pdb' is incompatible with distributing tests: dropping --pdb for this run (single-process debugging: omit pytest-parameters)";))
 	@make --no-print-directory _run-test-$* target="$(if $(target),$(target),$(CURDIR)/tests/unit$(TEST_PATH))"
