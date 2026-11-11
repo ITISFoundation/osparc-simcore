@@ -61,7 +61,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-hypercorn==0.17.3
+hypercorn==0.18.0
     # via -r requirements/_test.in
 hyperframe==6.1.0
     # via
