@@ -70,7 +70,7 @@ repos:
       - id: yamllint
         name: yaml-linter
         args: ["--config-file", ".yamllint.yaml"]
-        exclude: '^charts/.*/templates/'
+        exclude: '^charts/.*/templates/' # helm chart templates are not really YAML files
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
     hooks:
