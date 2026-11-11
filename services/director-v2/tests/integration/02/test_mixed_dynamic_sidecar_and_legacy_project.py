@@ -48,7 +48,9 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
+    "static-webserver",
     "storage",
+    "webserver",
 ]
 
 pytest_simcore_ops_services_selection = ["adminer", "s3-storage", "portainer"]
@@ -245,7 +247,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
     )
 
 
-@pytest.mark.flaky(max_runs=3)
+# @pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
     initialized_app: FastAPI,
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],

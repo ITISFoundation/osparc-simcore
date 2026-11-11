@@ -94,6 +94,7 @@ async def _list_additional_invoice_email_recipients(
     user_preferences_rpc: UserPreferencesRpcApi,
     user_id: UserID,
     product_name: ProductName,
+    payment_id: str,
 ) -> list[EmailStr]:
     try:
         preference = await user_preferences_rpc.get_frontend_user_preference(
@@ -101,18 +102,19 @@ async def _list_additional_invoice_email_recipients(
             product_name=product_name,
             preference_class=InvoiceEmailRecipientsFrontendUserPreference,
         )
-        if preference is None:
-            return []
-        return preference.value
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        _logger.exception(
+        _logger.warning(
             **create_troubleshooting_log_kwargs(
-                "Failed to load additional invoice email recipients; sending to primary email only",
+                "Failed to list additional invoice email recipients",
                 error=exc,
-                error_context={"user_id": user_id, "product": product_name},
+                error_context={"user_id": user_id, "payment_id": payment_id},
             )
         )
         return []
+
+    if preference is None:
+        return []
+    return preference.value
 
 
 async def _download_invoice_pdf(
@@ -203,8 +205,12 @@ class EmailProvider(NotificationProvider):
             return
 
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
+
         additional_emails = await _list_additional_invoice_email_recipients(
-            self._user_preferences_rpc, user_id, data.product_name
+            self._user_preferences_rpc,
+            user_id,
+            data.product_name,
+            payment.payment_id,
         )
 
         attachments: list[EmailAttachment] = []

@@ -365,7 +365,7 @@ async def test_email_provider_propagates_bcc(
             side_effect=RuntimeError("Preference lookup failed"),
         )
 
-    with caplog.at_level(logging.ERROR, logger=notifier_email.__name__):
+    with caplog.at_level(logging.WARNING, logger=notifier_email.__name__):
         await provider.notify_payment_completed(user_id=user_id, payment=transaction)
 
     mock_send_message_from_template.assert_awaited_once()
@@ -376,9 +376,8 @@ async def test_email_provider_propagates_bcc(
     if lookup_fails:
         assert any(
             record.name == notifier_email.__name__
-            and record.levelno == logging.ERROR
-            and "Failed to load additional invoice email recipients; sending to primary email only"
-            in record.getMessage()
+            and record.levelno == logging.WARNING
+            and "Failed to list additional invoice email recipients" in record.getMessage()
             for record in caplog.records
         )
 
