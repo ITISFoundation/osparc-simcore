@@ -1,3 +1,5 @@
+{{- $healthcheck := `["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]` -}}
+
 service:
   enabled: false
 
@@ -26,21 +28,21 @@ probes:
   startup:
     httpGet: null
     exec:
-      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]
+      command: {{ $healthcheck }}
     periodSeconds: 5
     timeoutSeconds: 5
     failureThreshold: 24
   readiness:
     httpGet: null
     exec:
-      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]
+      command: {{ $healthcheck }}
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   liveness:
     httpGet: null
     exec:
-      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8080/v0/"]
+      command: {{ $healthcheck }}
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 5

@@ -1,3 +1,4 @@
+{{- $healthcheck := `["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]` -}}
 # a celery worker serves no HTTP
 service:
   enabled: false
@@ -26,12 +27,12 @@ probes:
   startup:
     httpGet: null
     exec:
-      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+      command: {{ $healthcheck }}
   readiness:
     httpGet: null
     exec:
-      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+      command: {{ $healthcheck }}
   liveness:
     httpGet: null
     exec:
-      command: ["python3", "-S", "/home/scu/docker/healthcheck.py", "http://localhost:8000/"]
+      command: {{ $healthcheck }}
