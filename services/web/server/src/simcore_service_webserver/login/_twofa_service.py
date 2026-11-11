@@ -149,6 +149,10 @@ _NO_CODE: Final = 0
 _TRIALS_EXHAUSTED: Final = 1
 _TRIAL_CHARGED: Final = 2
 
+# script return codes of _CONSUME_MATCHED_CODE_SCRIPT
+_CODE_ALREADY_GONE: Final = 0
+_CODE_CONSUMED: Final = 1
+
 
 def _attempts_prefix(*, user_email: str) -> str:
     return f"{_ATTEMPTS_KEY}:{user_email}:"
@@ -163,9 +167,10 @@ def _resend_cooldown_key(*, channel: str, user_email: str) -> str:
 
 
 # Charges one trial and returns the stored value atomically, so a trial is only
-# ever charged to the generation whose digest is then compared. INCR and EXPIRE
-# are in the same script, so a counter never lacks an expiration and is bounded
-# by the remaining lifetime of its code.
+# ever charged to the generation whose digest is then compared. INCR and PEXPIRE
+# are in the same script, and the lifetime is copied from the code with
+# PTTL/PEXPIRE, so a counter expires with its code to the millisecond and can
+# never elapse early only to be recreated and refill the budget of a live code.
 #
 # KEYS[1] code key, KEYS[2] trial-counter prefix
 # ARGV[1] max trials, ARGV[2] stored-value length, ARGV[3] generation length
@@ -178,11 +183,11 @@ _CONSUME_TRIAL_SCRIPT: Final = """
     local counter_key = KEYS[2] .. string.sub(stored, 1, tonumber(ARGV[3]))
     local trials = redis.call('INCR', counter_key)
     if trials == 1 then
-        local ttl = redis.call('TTL', KEYS[1])
-        if ttl < 1 then
-            ttl = 1
+        local pttl = redis.call('PTTL', KEYS[1])
+        if pttl < 1 then
+            pttl = 1
         end
-        redis.call('EXPIRE', counter_key, ttl)
+        redis.call('PEXPIRE', counter_key, pttl)
     end
     if trials > tonumber(ARGV[1]) then
         return {1}
@@ -190,17 +195,21 @@ _CONSUME_TRIAL_SCRIPT: Final = """
     return {2, stored}
 """
 
-# Deletes the code only when it still holds the matched value, so a replacement
-# issued in the meantime survives. The counter belongs to one generation and is
-# always safe to delete.
+# Deletes the code and reports whether it did, so the caller grants access only
+# to the request that actually consumed the code. A replacement is never
+# destroyed, and the counter belongs to one generation and is always safe to
+# delete.
 #
 # KEYS[1] code key, KEYS[2] trial-counter key, ARGV[1] the matched stored value
+# returns {1} consumed here, {0} replaced or already used
 _CONSUME_MATCHED_CODE_SCRIPT: Final = """
     if redis.call('GET', KEYS[1]) == ARGV[1] then
         redis.call('DEL', KEYS[1])
+        redis.call('DEL', KEYS[2])
+        return 1
     end
     redis.call('DEL', KEYS[2])
-    return 1
+    return 0
 """
 
 
@@ -215,7 +224,8 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
 
     Returns NO_CODE when no code is stored, TRIALS_EXHAUSTED when its budget is
     spent (then nothing is compared), INVALID when a trial was consumed by a
-    wrong code, and VALID when the code matched and was consumed.
+    wrong code, and VALID only when this call consumed the code, so concurrent
+    submissions of the same code authenticate at most once.
     """
     redis_client = get_redis_validation_code_client(app)
     candidate_digest = _hash_2fa_code(app, code=code)
@@ -239,11 +249,13 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
 
     generation = stored_value[:_CODE_GENERATION_LENGTH]
     consume_code = redis_client.register_script(_CONSUME_MATCHED_CODE_SCRIPT)
-    await consume_code(
+    consumed = await consume_code(
         keys=[user_email, _attempts_key(user_email=user_email, generation=generation)],
         args=[stored_value],
     )
-    return TrialOutcome.VALID
+    if consumed == _CODE_CONSUMED:
+        return TrialOutcome.VALID
+    return TrialOutcome.INVALID
 
 
 @log_decorator(log, level=logging.DEBUG)

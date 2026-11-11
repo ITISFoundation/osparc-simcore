@@ -25,6 +25,7 @@ from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._twofa_service import (
+    _ATTEMPTS_KEY,
     TrialOutcome,
     check_2fa_code,
     create_2fa_code,
@@ -226,6 +227,45 @@ async def test_resend_during_validation_isolates_the_new_code(client: TestClient
     assert await check_2fa_code(client.app, user_email=email, code=second_code) is TrialOutcome.INVALID
     assert await check_2fa_code(client.app, user_email=email, code=third_code) is TrialOutcome.VALID
     assert await has_2fa_code(client.app, email) is False
+
+
+async def test_2fa_code_authenticates_once_under_concurrent_submissions(client: TestClient):
+    """Only the submission that consumes the code authenticates, so a concurrent
+    replay of the same code cannot reuse it
+    """
+    assert client.app
+
+    email = "one-shot@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+
+    outcomes = await asyncio.gather(*(check_2fa_code(client.app, user_email=email, code=code) for _ in range(3)))
+
+    assert outcomes.count(TrialOutcome.VALID) == 1
+    assert await has_2fa_code(client.app, email) is False
+
+
+async def test_trial_counter_expires_with_its_code(client: TestClient):
+    """The trial counter copies the code's remaining lifetime to the
+    millisecond: a whole-second copy lets the counter lapse while the code is
+    still alive, and a replay in that gap refills the budget
+    """
+    assert client.app
+
+    redis_client = get_redis_validation_code_client(client.app)
+    email = "ttl@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=2)
+    wrong_code = "000000" if code != "000000" else "111111"
+
+    assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+
+    counter_keys = [key async for key in redis_client.scan_iter(match=f"{_ATTEMPTS_KEY}:{email}:*")]
+    assert len(counter_keys) == 1
+
+    code_pttl = await redis_client.pttl(email)
+    counter_pttl = await redis_client.pttl(counter_keys[0])
+    assert counter_pttl > 0
+    # the counter never lags its code by more than the script's round-trip
+    assert code_pttl - counter_pttl <= 300
 
 
 @pytest.mark.acceptance_test
