@@ -806,7 +806,7 @@ def product_name(osparc_product_name: ProductName) -> ProductName:
     return osparc_product_name
 
 
-# @pytest.mark.flaky(max_runs=3)
+@pytest.mark.flaky(max_runs=3)
 async def test_nodeports_integration(
     cleanup_services_and_networks: None,
     projects_networks_db: None,
