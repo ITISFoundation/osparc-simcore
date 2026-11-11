@@ -45,11 +45,7 @@ releases:
     inherit:
       - template: simcore-service
     needs:
-      - {{ $namespace }}/catalog
-      - {{ $namespace }}/director-v2
-      - {{ $namespace }}/storage
       - {{ $namespace }}/traefik
-      - {{ $namespace }}/wb-api-server
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
       - _shared/helm-values.director-v2.yaml.gotmpl
@@ -67,11 +63,6 @@ releases:
   - name: api-worker
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/catalog
-      - {{ $namespace }}/director-v2
-      - {{ $namespace }}/storage
-      - {{ $namespace }}/wb-api-server
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
       - _shared/helm-values.director-v2.yaml.gotmpl
@@ -103,8 +94,6 @@ releases:
   - name: catalog
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/director
     values:
       - _shared/helm-values.logging.yaml.gotmpl
       - _shared/helm-values.postgres.yaml.gotmpl
@@ -142,8 +131,6 @@ releases:
   - name: dask-sidecar
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/dask-scheduler
     values:
       - _shared/helm-values.rabbit.yaml.gotmpl
       - dask-sidecar/helm-values.yaml.gotmpl
@@ -178,11 +165,6 @@ releases:
   - name: director-v2
     inherit:
       - template: simcore-service
-    needs: # no needs on webserver: webserver needs director-v2, that would be a cycle
-      - {{ $namespace }}/catalog
-      - {{ $namespace }}/director
-      - {{ $namespace }}/resource-usage-tracker
-      - {{ $namespace }}/storage
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
       - _shared/helm-values.logging.yaml.gotmpl
@@ -272,8 +254,6 @@ releases:
   - name: payments
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/resource-usage-tracker
     values:
       - _shared/helm-values.logging.yaml.gotmpl
       - _shared/helm-values.postgres.yaml.gotmpl
@@ -312,8 +292,6 @@ releases:
   - name: storage
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/datcore-adapter
     values:
       - _shared/helm-values.logging.yaml.gotmpl
       - _shared/helm-values.postgres.yaml.gotmpl
@@ -329,8 +307,6 @@ releases:
   - name: sto-worker
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/storage
     values:
       - _shared/helm-values.logging.yaml.gotmpl
       - _shared/helm-values.postgres.yaml.gotmpl
@@ -347,8 +323,6 @@ releases:
   - name: sto-worker-cpu-bound
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/storage
     values:
       - _shared/helm-values.logging.yaml.gotmpl
       - _shared/helm-values.postgres.yaml.gotmpl
@@ -379,13 +353,6 @@ releases:
   - name: wb-api-server
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/catalog
-      - {{ $namespace }}/director-v2
-      - {{ $namespace }}/invitations
-      - {{ $namespace }}/payments
-      - {{ $namespace }}/resource-usage-tracker
-      - {{ $namespace }}/storage
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
       - _shared/helm-values.director-v2.yaml.gotmpl
@@ -421,9 +388,6 @@ releases:
   - name: wb-db-event-listener
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/director-v2
-      - {{ $namespace }}/resource-usage-tracker
     values:
       - _shared/helm-values.director-v2.yaml.gotmpl
       - _shared/helm-values.logging.yaml.gotmpl
@@ -439,10 +403,6 @@ releases:
   - name: wb-garbage-collector
     inherit:
       - template: simcore-service
-    needs:
-      - {{ $namespace }}/director-v2
-      - {{ $namespace }}/resource-usage-tracker
-      - {{ $namespace }}/storage
     values:
       - _shared/helm-values.director-v2.yaml.gotmpl
       - _shared/helm-values.logging.yaml.gotmpl
@@ -461,12 +421,6 @@ releases:
     inherit:
       - template: simcore-service
     needs:
-      - {{ $namespace }}/catalog
-      - {{ $namespace }}/director-v2
-      - {{ $namespace }}/invitations
-      - {{ $namespace }}/payments
-      - {{ $namespace }}/resource-usage-tracker
-      - {{ $namespace }}/storage
       - {{ $namespace }}/traefik
     values:
       - _shared/helm-values.catalog.yaml.gotmpl
