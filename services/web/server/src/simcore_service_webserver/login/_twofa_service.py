@@ -261,7 +261,7 @@ async def start_2fa_resend_cooldown(
     key = _resend_cooldown_key(channel=channel, user_email=user_email)
     if await redis_client.set(key, "1", ex=cooldown_in_seconds, nx=True):
         return None
-    remaining = await redis_client.ttl(key)
+    remaining: int = await redis_client.ttl(key)
     return max(remaining, 1)
 
 
