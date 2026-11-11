@@ -139,11 +139,11 @@ et-xmlfile==1.1.0
     # via openpyxl
 faker==40.38.0
     # via -r requirements/_base.in
-fast-depends==3.0.8
+fast-depends==3.0.11
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   faststream
-faststream==0.6.7
+faststream==0.7.8
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
