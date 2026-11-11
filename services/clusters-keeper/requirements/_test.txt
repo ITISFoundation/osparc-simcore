@@ -93,7 +93,7 @@ debugpy==1.8.22
     # via -r requirements/_test.in
 deepdiff==9.1.0
     # via -r requirements/_test.in
-docker==7.1.0
+docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   moto
