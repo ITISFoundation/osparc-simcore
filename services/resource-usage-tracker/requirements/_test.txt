@@ -72,7 +72,7 @@ cryptography==50.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-docker==7.1.0
+docker==7.2.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -176,7 +176,7 @@ markupsafe==3.0.2
     #   jinja2
     #   mako
     #   werkzeug
-moto==5.2.4
+moto==5.2.5
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy

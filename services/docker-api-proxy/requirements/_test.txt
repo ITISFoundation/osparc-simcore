@@ -57,7 +57,7 @@ coverage==7.17.0
     # via pytest-cov
 dnspython==2.9.0
     # via email-validator
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 email-validator==2.3.0
     # via pydantic
