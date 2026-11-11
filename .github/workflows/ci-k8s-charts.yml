@@ -32,7 +32,7 @@ jobs:
         with:
           helmfile-version: v1.1.6 # keep in sync with scripts/makefiles/k8s.mk
           helm-version: v3.20.1 # keep in sync with scripts/makefiles/k8s.mk
-          helmfile-auto-init: "true"
+          helmfile-auto-init: "false" # avoid https://github.com/helmfile/helmfile-action/issues/816
           helmfile-args: --version
       - name: helmfile-lint
         run: make -C k8s helmfile-lint
