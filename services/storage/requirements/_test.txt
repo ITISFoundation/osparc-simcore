@@ -225,7 +225,7 @@ markupsafe==3.0.2
     #   flask
     #   jinja2
     #   werkzeug
-moto==5.2.4
+moto==5.2.5
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
