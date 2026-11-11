@@ -9,13 +9,13 @@ HELM_VERSION := 3.20.1
 
 HELMFILE := HELM_DIFF_OUTPUT_CONTEXT=5 helmfile --environment local
 
-# $(1) command, $(2) expected version
+# $(1) command, $(2) expected version, $(3) version command
 define verify_tool_installation
 	@if ! command -v $(1) >/dev/null 2>&1; then \
 		echo "'$(1)' is not installed. Install version $(2) to continue."; \
 		exit 1; \
 	fi
-	@if ! $(1) --version | grep -q "$(2)"; then \
+	@if ! $(3) | grep -q "$(2)"; then \
 		echo "WARNING: installed $(1) version does not match" >&2; \
 		echo "Expected $(1) version:'$(2)'. Please, update!" >&2; \
 		sleep 3s; \
@@ -25,13 +25,13 @@ endef
 .PHONY: _require-valid-helmfile _require-valid-kubectl _require-valid-kind
 
 _require-valid-helmfile:
-	$(call verify_tool_installation,helmfile,$(HELMFILE_VERSION))
+	$(call verify_tool_installation,helmfile,$(HELMFILE_VERSION),helmfile --version)
 
 _require-valid-kubectl:
-	$(call verify_tool_installation,kubectl,$(KUBECTL_VERSION))
+	$(call verify_tool_installation,kubectl,$(KUBECTL_VERSION),kubectl version --client)
 
 _require-valid-kind:
-	$(call verify_tool_installation,kind,$(KIND_VERSION))
+	$(call verify_tool_installation,kind,$(KIND_VERSION),kind --version)
 
 .helmfile-%: _require-valid-helmfile _require-valid-kubectl
 	cd $(REPO_BASE_DIR) || exit 1; \
