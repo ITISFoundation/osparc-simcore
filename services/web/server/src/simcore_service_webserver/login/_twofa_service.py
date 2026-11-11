@@ -11,6 +11,8 @@ import asyncio
 import hashlib
 import hmac
 import logging
+import secrets
+from enum import StrEnum, auto
 from typing import Annotated, Final
 
 import twilio.rest  # type: ignore[import-untyped]
@@ -67,12 +69,17 @@ def _hash_2fa_code(app: web.Application, *, code: str) -> str:
 
 @log_decorator(log, level=logging.DEBUG)
 async def create_2fa_code(app: web.Application, *, user_email: str, expiration_in_seconds: int) -> str:
-    """Generates a 2FA code, stores only its HMAC digest with a finite TTL and returns the plaintext code"""
+    """Generates a 2FA code and stores "<generation>:<digest>" with a finite TTL
+
+    Returns the plaintext code. Trial counters are keyed by generation, so
+    storing a code also starts a fresh trial budget.
+    """
     redis_client = get_redis_validation_code_client(app)
     code: str = generate_passcode()
+    generation = secrets.token_hex(_CODE_GENERATION_LENGTH // 2)
     await redis_client.set(
         user_email,
-        value=_hash_2fa_code(app, code=code),
+        value=f"{generation}:{_hash_2fa_code(app, code=code)}",
         ex=expiration_in_seconds,
     )
     return code
@@ -87,12 +94,17 @@ async def has_2fa_code(app: web.Application, user_email: str) -> bool:
 
 @log_decorator(log, level=logging.DEBUG)
 async def verify_2fa_code(app: web.Application, *, user_email: str, code: str) -> bool:
-    """Constant-time verification of a submitted 2FA code against the stored HMAC digest"""
+    """Constant-time comparison against the stored digest, consuming no trial and
+    leaving the code in place. Sign-in uses check_2fa_code instead.
+    """
     redis_client = get_redis_validation_code_client(app)
-    stored_digest: str | None = await redis_client.get(user_email)
-    if stored_digest is None:
+    stored_value: str | None = await redis_client.get(user_email)
+    if stored_value is None or len(stored_value) != _STORED_CODE_LENGTH:
         return False
-    return are_secrets_equal(got=_hash_2fa_code(app, code=code), expected=stored_digest)
+    return are_secrets_equal(
+        got=_hash_2fa_code(app, code=code),
+        expected=stored_value[_CODE_GENERATION_LENGTH + 1 :],
+    )
 
 
 @log_decorator(log, level=logging.DEBUG)
@@ -104,50 +116,134 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 
 # Server-side 2FA attempt and resend state. The session-cookie counters in
 # session.access_policies can be reset by replaying an old cookie, so these
-# limits are kept in Redis and keyed by account.
+# limits are kept in Redis.
 
 _ATTEMPTS_KEY: Final[
-    Annotated[str, doc("namespace for the trial counter, kept apart from the bare-email code keys")]
+    Annotated[str, doc("namespace for the trial counters, kept apart from the bare-email code keys")]
 ] = "2fa_attempts"
 
 _RESEND_COOLDOWN_KEY: Final[
     Annotated[str, doc("namespace for the resend cooldown, kept apart from the bare-email code keys")]
 ] = "2fa_resend_cd"
 
+_CODE_GENERATION_LENGTH: Final[
+    Annotated[int, doc("length of the hex generation id stored alongside the code digest")]
+] = 32
 
-def _attempts_key(user_email: str) -> str:
-    return f"{_ATTEMPTS_KEY}:{user_email}"
+_STORED_CODE_LENGTH: Final[
+    Annotated[int, doc("length of the stored value: generation, separator and HMAC-SHA256 hexdigest")]
+] = _CODE_GENERATION_LENGTH + 1 + 64
+
+
+class TrialOutcome(StrEnum):
+    """Result of consuming one verification trial of the account's current code"""
+
+    NO_CODE = auto()
+    TRIALS_EXHAUSTED = auto()
+    INVALID = auto()
+    VALID = auto()
+
+
+# script return codes of _CONSUME_TRIAL_SCRIPT
+_NO_CODE: Final = 0
+_TRIALS_EXHAUSTED: Final = 1
+_TRIAL_CHARGED: Final = 2
+
+
+def _attempts_prefix(*, user_email: str) -> str:
+    return f"{_ATTEMPTS_KEY}:{user_email}:"
+
+
+def _attempts_key(*, user_email: str, generation: str) -> str:
+    return f"{_attempts_prefix(user_email=user_email)}{generation}"
 
 
 def _resend_cooldown_key(*, channel: str, user_email: str) -> str:
     return f"{_RESEND_COOLDOWN_KEY}:{channel}:{user_email}"
 
 
+# Charges one trial and returns the stored value atomically, so a trial is only
+# ever charged to the generation whose digest is then compared. INCR and EXPIRE
+# are in the same script, so a counter never lacks an expiration and is bounded
+# by the remaining lifetime of its code.
+#
+# KEYS[1] code key, KEYS[2] trial-counter prefix
+# ARGV[1] max trials, ARGV[2] stored-value length, ARGV[3] generation length
+# returns {0} no code, {1} budget spent, {2, stored value} trial charged
+_CONSUME_TRIAL_SCRIPT: Final = """
+    local stored = redis.call('GET', KEYS[1])
+    if not stored or #stored ~= tonumber(ARGV[2]) then
+        return {0}
+    end
+    local counter_key = KEYS[2] .. string.sub(stored, 1, tonumber(ARGV[3]))
+    local trials = redis.call('INCR', counter_key)
+    if trials == 1 then
+        local ttl = redis.call('TTL', KEYS[1])
+        if ttl < 1 then
+            ttl = 1
+        end
+        redis.call('EXPIRE', counter_key, ttl)
+    end
+    if trials > tonumber(ARGV[1]) then
+        return {1}
+    end
+    return {2, stored}
+"""
+
+# Deletes the code only when it still holds the matched value, so a replacement
+# issued in the meantime survives. The counter belongs to one generation and is
+# always safe to delete.
+#
+# KEYS[1] code key, KEYS[2] trial-counter key, ARGV[1] the matched stored value
+_CONSUME_MATCHED_CODE_SCRIPT: Final = """
+    if redis.call('GET', KEYS[1]) == ARGV[1] then
+        redis.call('DEL', KEYS[1])
+    end
+    redis.call('DEL', KEYS[2])
+    return 1
+"""
+
+
 @log_decorator(log, level=logging.DEBUG)
-async def consume_2fa_attempt(app: web.Application, *, user_email: str, ttl: int) -> bool:
-    """Consumes one code-verification trial of an account, before the code is checked.
+async def check_2fa_code(app: web.Application, *, user_email: str, code: str) -> TrialOutcome:
+    """Consumes one trial of the account's current code and verifies against it
 
-    The budget belongs to the current code: the counter lives in Redis keyed
-    by account, is incremented atomically and expires with the code's
-    lifetime. Callers verify only when this returns True, so no more than
-    MAX_2FA_CODE_TRIALS verifications can reach the stored code, whatever the
-    concurrency or the client-held session cookies.
+    The trial, the comparison and the destruction on a match are bound to one
+    code generation, read atomically: late bookkeeping can neither verify nor
+    delete a replacement, and the budget is spent before the comparison, so at
+    most MAX_2FA_CODE_TRIALS verifications reach one code.
 
-    Returns False when the budget is exhausted.
+    Returns NO_CODE when no code is stored, TRIALS_EXHAUSTED when its budget is
+    spent (then nothing is compared), INVALID when a trial was consumed by a
+    wrong code, and VALID when the code matched and was consumed.
     """
     redis_client = get_redis_validation_code_client(app)
-    key = _attempts_key(user_email)
-    attempts = await redis_client.incr(key)
-    if attempts == 1:
-        await redis_client.expire(key, ttl)
-    return attempts <= MAX_2FA_CODE_TRIALS
+    candidate_digest = _hash_2fa_code(app, code=code)
 
+    consume_trial = redis_client.register_script(_CONSUME_TRIAL_SCRIPT)
+    admitted = await consume_trial(
+        keys=[user_email, _attempts_prefix(user_email=user_email)],
+        args=[MAX_2FA_CODE_TRIALS, _STORED_CODE_LENGTH, _CODE_GENERATION_LENGTH],
+    )
+    assert isinstance(admitted, list)  # nosec
+    if admitted[0] == _NO_CODE:
+        return TrialOutcome.NO_CODE
+    if admitted[0] == _TRIALS_EXHAUSTED:
+        return TrialOutcome.TRIALS_EXHAUSTED
+    assert admitted[0] == _TRIAL_CHARGED  # nosec
 
-@log_decorator(log, level=logging.DEBUG)
-async def clear_2fa_attempts(app: web.Application, *, user_email: str) -> None:
-    """Forgets the trial counter of an account, e.g. when a new code is issued"""
-    redis_client = get_redis_validation_code_client(app)
-    await redis_client.delete(_attempts_key(user_email))
+    stored_value: str = admitted[1]
+    stored_digest = stored_value[_CODE_GENERATION_LENGTH + 1 :]
+    if not are_secrets_equal(got=candidate_digest, expected=stored_digest):
+        return TrialOutcome.INVALID
+
+    generation = stored_value[:_CODE_GENERATION_LENGTH]
+    consume_code = redis_client.register_script(_CONSUME_MATCHED_CODE_SCRIPT)
+    await consume_code(
+        keys=[user_email, _attempts_key(user_email=user_email, generation=generation)],
+        args=[stored_value],
+    )
+    return TrialOutcome.VALID
 
 
 @log_decorator(log, level=logging.DEBUG)

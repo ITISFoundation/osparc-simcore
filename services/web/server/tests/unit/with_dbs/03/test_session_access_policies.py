@@ -43,6 +43,10 @@ async def client(
 
     def _handler_impl(request: web.Request, name: str):
         return_status = int(request.query.get("return_status", 200))
+        if return_status == status.HTTP_429_TOO_MANY_REQUESTS:
+            # raised as the exception the access refund listens to, like the
+            # production cooldown handlers do
+            raise web.HTTPTooManyRequests(text=f"{name} rate limited")
         ok = return_status < status.HTTP_400_BAD_REQUEST
         if ok:
             return web.Response(text=f"{name} ok", status=return_status)
@@ -157,6 +161,34 @@ async def test_login_fails_then_no_access(client: TestClient, do_request: Client
     response = await do_request(client, "auth_login", return_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
+    response = await do_request(client, "auth_login_2fa")
+    assert response.status == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_429_refunds_the_last_session_access(client: TestClient, do_request: ClientRequestCallable):
+    """A rate-limited request does not cost the session its authorization: when
+    it consumed the last access the token is pruned before the handler runs,
+    and the refund has to restore it so the retry after Retry-After works
+    """
+    response = await do_request(client, "auth_login")
+    assert response.ok
+
+    # spend all but one of the accesses granted to auth_login_2fa at login;
+    # failed submissions keep the remaining token
+    for _ in range(MAX_2FA_CODE_TRIALS - 1):
+        response = await do_request(client, "auth_login_2fa", return_status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # this request consumes the LAST access: its token is pruned before the
+    # handler runs, and the handler is then rate limited
+    response = await do_request(client, "auth_login_2fa", return_status=status.HTTP_429_TOO_MANY_REQUESTS)
+    assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
+
+    # the refund restored the access: the retry succeeds
+    response = await do_request(client, "auth_login_2fa")
+    assert response.ok
+
+    # one_time_access=True, then after the successful retry is not auth
     response = await do_request(client, "auth_login_2fa")
     assert response.status == status.HTTP_401_UNAUTHORIZED
 

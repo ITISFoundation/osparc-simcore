@@ -122,12 +122,14 @@ def session_access_required(
             try:
                 response = await handler(request)
             except web.HTTPTooManyRequests:
-                # the handler refused to run because of rate limiting: refund
-                # the consumed access so waiting and retrying still works
+                # rate limiting did not use the step: refund the access so the
+                # retry after Retry-After works. if this request consumed the
+                # last access, the cleanup above pruned the token before the
+                # handler ran, so restore the captured one
                 with _access_tokens_cleanup_ctx(session) as access_tokens:
-                    if access := access_tokens.get(name):
-                        access["count"] += 1
-                        access_tokens[name] = access
+                    refund = access_tokens.get(name) or access
+                    refund["count"] += 1
+                    access_tokens[name] = refund
                 raise
 
             if response.status < _HTTP_400_BAD_REQUEST:  # success

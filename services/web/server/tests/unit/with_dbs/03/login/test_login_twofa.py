@@ -25,8 +25,8 @@ from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._twofa_service import (
-    clear_2fa_attempts,
-    consume_2fa_attempt,
+    TrialOutcome,
+    check_2fa_code,
     create_2fa_code,
     delete_2fa_code,
     get_redis_validation_code_client,
@@ -126,28 +126,33 @@ async def test_2fa_code_operations(client: TestClient):
     assert await has_2fa_code(client.app, email) is False
 
 
-async def test_2fa_attempt_limit_and_resend_cooldown(client: TestClient):
-    """The trial budget gates verification and leaves the code intact; the
-    resend cooldown allows one code per account and channel per window
+async def test_2fa_trial_budget_and_resend_cooldown(client: TestClient):
+    """The trial budget belongs to the current code, gates verification and
+    leaves the code intact; the resend cooldown allows one code per account and
+    channel per window
     """
     assert client.app
 
     email = "attempts@bar.com"
     code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    wrong_code = "000000" if code != "000000" else "111111"
+
+    assert await check_2fa_code(client.app, user_email="nobody@bar.com", code=code) is TrialOutcome.NO_CODE
 
     for _ in range(MAX_2FA_CODE_TRIALS):
-        assert await consume_2fa_attempt(client.app, user_email=email, ttl=60) is True
-    assert await consume_2fa_attempt(client.app, user_email=email, ttl=60) is False
+        assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=code) is TrialOutcome.TRIALS_EXHAUSTED
 
-    # an exhausted budget gates verification without destroying the code,
-    # so a code replaced concurrently can never be deleted by late bookkeeping
+    # an exhausted budget gates verification without destroying the code
     assert await has_2fa_code(client.app, email) is True
     assert await verify_2fa_code(client.app, user_email=email, code=code) is True
 
-    # a cleared budget is usable again
-    await clear_2fa_attempts(client.app, user_email=email)
-    assert await consume_2fa_attempt(client.app, user_email=email, ttl=60) is True
-    await delete_2fa_code(client.app, email)
+    # a new code starts a fresh budget; the genuine code authenticates and is
+    # consumed
+    new_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    assert await check_2fa_code(client.app, user_email=email, code=code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=new_code) is TrialOutcome.VALID
+    assert await has_2fa_code(client.app, email) is False
 
     # the cooldown grants the first resend and times the following ones
     cooldown_email = "cooldown@bar.com"
@@ -167,6 +172,60 @@ async def test_2fa_attempt_limit_and_resend_cooldown(client: TestClient):
         client.app, user_email=cooldown_email, channel="Email", cooldown_in_seconds=60
     )
     assert other_channel is None
+
+
+async def test_concurrent_wrong_trials_admit_at_most_the_trial_budget(client: TestClient):
+    """Trials are charged atomically before any comparison: submitting a whole
+    budget's worth concurrently cannot let more than MAX_2FA_CODE_TRIALS
+    verifications reach the stored code
+    """
+    assert client.app
+
+    email = "concurrent@bar.com"
+    code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    wrong_code = "000000" if code != "000000" else "111111"
+
+    outcomes = await asyncio.gather(
+        *(check_2fa_code(client.app, user_email=email, code=wrong_code) for _ in range(4 * MAX_2FA_CODE_TRIALS))
+    )
+
+    assert outcomes.count(TrialOutcome.INVALID) == MAX_2FA_CODE_TRIALS
+    assert outcomes.count(TrialOutcome.TRIALS_EXHAUSTED) == 3 * MAX_2FA_CODE_TRIALS
+
+    # the budget was spent in bookkeeping only: the code was never deleted
+    assert await has_2fa_code(client.app, email) is True
+    assert await verify_2fa_code(client.app, user_email=email, code=code) is True
+
+
+async def test_resend_during_validation_isolates_the_new_code(client: TestClient):
+    """A replaced code is neither authenticated by trials admitted for the old
+    one, nor drained or deleted by their bookkeeping
+    """
+    assert client.app
+
+    email = "resend-race@bar.com"
+    first_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    wrong_code = "000000" if first_code != "000000" else "111111"
+
+    # one wrong trial charged to the first code
+    assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+
+    # the resend replaces the code mid-flow
+    second_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+
+    # the genuine old code does not authenticate the replacement, and its
+    # submission is charged to the replacement's budget, not to the old one's
+    assert await check_2fa_code(client.app, user_email=email, code=first_code) is TrialOutcome.INVALID
+    for _ in range(MAX_2FA_CODE_TRIALS - 1):
+        assert await check_2fa_code(client.app, user_email=email, code=wrong_code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=second_code) is TrialOutcome.TRIALS_EXHAUSTED
+
+    # a third code survives: neither verified by the exhausted code's trials
+    # nor drained by them
+    third_code = await create_2fa_code(client.app, user_email=email, expiration_in_seconds=60)
+    assert await check_2fa_code(client.app, user_email=email, code=second_code) is TrialOutcome.INVALID
+    assert await check_2fa_code(client.app, user_email=email, code=third_code) is TrialOutcome.VALID
+    assert await has_2fa_code(client.app, email) is False
 
 
 @pytest.mark.acceptance_test

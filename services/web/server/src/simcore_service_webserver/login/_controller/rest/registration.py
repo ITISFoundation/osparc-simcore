@@ -312,7 +312,6 @@ async def register_phone(request: web.Request):
             user_email=trusted.email,
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
-        await _twofa_service.clear_2fa_attempts(request.app, user_email=trusted.email)
         await _twofa_service.send_sms_code(
             request.app,
             phone_number=registration.phone,

@@ -211,23 +211,11 @@ async def phone_confirmation(request: web.Request):
 
     trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION)
 
-    if not await _twofa_service.consume_2fa_attempt(
-        request.app,
-        user_email=trusted.email,
-        ttl=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-    ):
-        raise web.HTTPUnauthorized(
-            text="Invalid 2FA code",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    if await _twofa_service.verify_2fa_code(
+    # validates code, consuming a trial of the stored generation
+    trial = await _twofa_service.check_2fa_code(
         request.app, user_email=trusted.email, code=request_body.code.get_secret_value()
-    ):
-        # consumes code
-        await _twofa_service.delete_2fa_code(request.app, trusted.email)
-        await _twofa_service.clear_2fa_attempts(request.app, user_email=trusted.email)
-
+    )
+    if trial is _twofa_service.TrialOutcome.VALID:
         user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))
 
         await _registration_service.register_user_phone(request.app, user_id=user["id"], user_phone=request_body.phone)

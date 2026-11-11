@@ -86,7 +86,6 @@ async def resend_2fa_code(request: web.Request):
         user_email=user["email"],
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
-    await _twofa_service.clear_2fa_attempts(request.app, user_email=user["email"])
     # sends via SMS
     if resend_2fa_.via == "SMS":
         user_phone_number = user.get("phone")
