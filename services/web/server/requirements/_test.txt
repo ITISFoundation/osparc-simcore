@@ -31,6 +31,7 @@ annotated-types==0.8.0
 anyio==4.15.1
     # via
     #   -c requirements/_base.txt
+    #   fastapi
     #   httpx
     #   httpx2
     #   starlette
@@ -88,7 +89,7 @@ faker==40.38.0
     #   -r requirements/_test.in
 fakeredis==2.40.0
     # via -r requirements/_test.in
-fastapi==0.162.0
+fastapi==0.162.4
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination

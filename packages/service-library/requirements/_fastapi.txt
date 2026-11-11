@@ -12,6 +12,7 @@ annotated-types==0.8.0
 anyio==4.15.1
     # via
     #   -c requirements/_base.txt
+    #   fastapi
     #   httpx
     #   httpx2
     #   starlette
@@ -45,7 +46,7 @@ email-validator==2.3.0
     #   -c requirements/_base.txt
     #   fastapi
     #   pydantic
-fastapi==0.162.0
+fastapi==0.162.4
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-lifespan-manager

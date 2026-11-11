@@ -60,6 +60,7 @@ anyio==4.15.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   fast-depends
+    #   fastapi
     #   faststream
     #   httpx
     #   httpx2
@@ -130,7 +131,7 @@ fast-depends==3.0.8
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   faststream
-fastapi==0.162.0
+fastapi==0.162.4
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
