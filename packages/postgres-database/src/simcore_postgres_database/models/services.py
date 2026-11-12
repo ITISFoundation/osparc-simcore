@@ -107,14 +107,14 @@ services_meta_data = sa.Table(
     # LIFECYCLE ----------------------------
     sa.Column(
         "created",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
         server_default=sa.func.now(),
         doc="Timestamp on creation",
     ),
     sa.Column(
         "modified",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
         server_default=sa.func.now(),
         onupdate=sa.func.now(),
@@ -122,7 +122,7 @@ services_meta_data = sa.Table(
     ),
     sa.Column(
         "deprecated",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=True,
         server_default=sa.null(),
         doc="Timestamp when the service is retired (editable)."

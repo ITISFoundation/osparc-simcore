@@ -179,10 +179,7 @@ async def test_batch_get_my_services(
     other_service_key = "simcore/services/comp/other-service"
     other_service_version = "2.1.2"
 
-    expected_retirement = (datetime.now(tz=UTC) + timedelta(days=1)).replace(
-        # NOTE: old offset-naive column
-        tzinfo=None
-    )
+    expected_retirement = datetime.now(tz=UTC) + timedelta(days=1)
 
     # Owned by user
     fake_service_1 = create_fake_service_data(

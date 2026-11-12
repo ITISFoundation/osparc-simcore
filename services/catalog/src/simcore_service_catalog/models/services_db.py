@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -94,6 +94,17 @@ def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
     return value
 
 
+def _as_utc(value: datetime | None) -> datetime | None:
+    # the `deprecated` column is a `timestamptz`; naive values would be encoded
+    # by asyncpg with the host local timezone, so pin them to UTC (the timezone
+    # of the historical stored values)
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 class ServiceMetaDataDBCreate(BaseModel):
     # primary-keys
     key: ServiceKey
@@ -119,6 +130,11 @@ class ServiceMetaDataDBCreate(BaseModel):
 
     # lifecycle
     deprecated: datetime | None = None
+
+    @field_validator("deprecated")
+    @classmethod
+    def _normalize_deprecated(cls, value: datetime | None) -> datetime | None:
+        return _as_utc(value)
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -164,6 +180,11 @@ class ServiceMetaDataDBPatch(BaseModel):
 
     # lifecycle
     deprecated: datetime | None = None
+
+    @field_validator("deprecated")
+    @classmethod
+    def _normalize_deprecated(cls, value: datetime | None) -> datetime | None:
+        return _as_utc(value)
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
