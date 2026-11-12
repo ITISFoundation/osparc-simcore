@@ -2,8 +2,6 @@ image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/migration
   tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
 
-{{- $doneMarkFile := "/tmp/migration.done" }}
-
 # image has no gosu entrypoint and runs non-root, so do not start it as root
 podSecurityContext:
   runAsNonRoot: true
@@ -11,6 +9,7 @@ podSecurityContext:
   runAsGroup: 8004
 
 containerSecurityContext:
+  readOnlyRootFilesystem: false # container writes into filesystem
   capabilities:
     add: []
 
@@ -25,23 +24,16 @@ resources:
     cpu: "1"
     memory: 512Mi
 
-env:
-  HOME: "/tmp"
-  SC_DONE_MARK_FILE: {{ $doneMarkFile | quote }}
-
+# docker HEALTHCHECK CMD is reused as-is; it reads $SC_DONE_MARK_FILE at runtime
 probes:
   startup:
     httpGet: null
     exec:
-      command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
+      command: ["/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]
     periodSeconds: 5
     timeoutSeconds: 5
     failureThreshold: 100
-  readiness:
-    httpGet: null
-    exec:
-      command: ["/bin/sh", "-c", "test -f {{ $doneMarkFile }}"]
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
+  # once startup probe succeeds, migration has been done successfully
+  # no need to check health further
+  readiness: null
   liveness: null
