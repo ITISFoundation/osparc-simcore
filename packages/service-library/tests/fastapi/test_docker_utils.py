@@ -56,7 +56,10 @@ async def test_retrieve_image_layer_information(
     service_tag: str,
 ):
     if external_registry_settings is not None:
-        pytest.skip("the injected image is only in the local pytest registry, not in the external one")
+        pytest.skip(
+            "the injected image is only in the local pytest registry, "
+            f"not in the external one at {external_registry_settings.REGISTRY_URL}"
+        )
     # clean first
     image_name = f"{service_repo}:{service_tag}"
     if "sha256" in service_tag:
