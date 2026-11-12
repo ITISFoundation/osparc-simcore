@@ -119,14 +119,14 @@ users = sa.Table(
     #
     sa.Column(
         "created_at",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
         server_default=sa.func.now(),
         doc="Registration timestamp",
     ),
     sa.Column(
         "modified",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
         server_default=sa.func.now(),
         onupdate=sa.func.now(),  # this will auto-update on modification
@@ -134,7 +134,7 @@ users = sa.Table(
     ),
     sa.Column(
         "expires_at",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=True,
         doc="Sets the expiration date for trial accounts.If set to NULL then the account does not expire.",
     ),
