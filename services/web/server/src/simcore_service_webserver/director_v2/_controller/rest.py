@@ -150,17 +150,16 @@ async def start_computation(request: web.Request) -> web.Response:
         len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
     )
 
-    # wallet_info is None on a product that does not pay: the web-server then leaves
-    # the nodes' pricing state to the user
-    if wallet_info is not None:
-        # NOTE: writes the nodes of every runnable project of the run, without a
-        # project-level write check: https://github.com/ITISFoundation/osparc-simcore/issues/10036
-        await repair_projects_nodes_pricing_and_resources(
-            request.app,
-            user_id=req_ctx.user_id,
-            project_ids=running_project_ids,
-            product_name=req_ctx.product_name,
-        )
+    # NOTE: writes the nodes of every runnable project of the run, without a
+    # project-level write check: https://github.com/ITISFoundation/osparc-simcore/issues/10036
+    # It writes nothing on a product that does not pay: the web-server then leaves the
+    # nodes' pricing state to the user.
+    await repair_projects_nodes_pricing_and_resources(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_ids=running_project_ids,
+        product_name=req_ctx.product_name,
+    )
 
     computations = DirectorV2RestClient(request.app)
     _started_results: list[tuple[str, int]] = await asyncio.gather(
