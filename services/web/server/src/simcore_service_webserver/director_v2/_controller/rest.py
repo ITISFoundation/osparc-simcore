@@ -150,10 +150,8 @@ async def start_computation(request: web.Request) -> web.Response:
         len(running_project_ids) == len(project_vc_commits) if project_vc_commits else True
     )
 
-    # NOTE: writes the nodes of every runnable project of the run, without a
-    # project-level write check: https://github.com/ITISFoundation/osparc-simcore/issues/10036
-    # It writes nothing on a product that does not pay: the web-server then leaves the
-    # nodes' pricing state to the user.
+    # best-effort: it writes nothing on a product that does not pay, which then keeps the
+    # nodes' pricing state writable by the user
     await repair_projects_nodes_pricing_and_resources(
         request.app,
         user_id=req_ctx.user_id,

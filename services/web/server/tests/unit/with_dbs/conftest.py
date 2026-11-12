@@ -593,7 +593,8 @@ def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
 
 @pytest.fixture
 def mark_product_billed(client: TestClient, osparc_product_name: ProductName) -> Callable[[], None]:
-    """Marks the test's product as one that pays for computational resources.
+    """Marks the test's product as one that pays for the resources its nodes use, be they
+    computational or dynamic.
 
     Only for such a product does the web-server take ownership of a node's pricing state
     (its pricing link and the sizing of its resources). Products are cached per app, so
@@ -610,7 +611,7 @@ def mark_product_billed(client: TestClient, osparc_product_name: ProductName) ->
 
 @pytest.fixture
 def with_billed_product(mark_product_billed: Callable[[], None]) -> None:
-    """Marks the test's product as one that pays for computational resources"""
+    """Marks the test's product as one that pays for the resources its nodes use"""
     mark_product_billed()
 
 
