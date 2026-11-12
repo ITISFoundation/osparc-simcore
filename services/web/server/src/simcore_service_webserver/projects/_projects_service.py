@@ -14,6 +14,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable, Coroutine, Iterable
 from contextlib import suppress
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Annotated, Any, Final, cast
 from uuid import uuid4
@@ -77,6 +78,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_constants import FRONTEND_SERVICE_KEY_PREFIX
+from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from models_library.services_resources import (
     ServiceResourcesDict,
     set_reservation_same_as_limit,
@@ -856,8 +858,7 @@ async def update_project_node_resources_from_hardware_info(
     if _same_required_resources(
         (await db.get_project_node(project_id, node_id)).required_resources, required_resources
     ):
-        # the node is already sized for this machine: writing it again would take the
-        # project's write lock for nothing, which every billed start would repeat per node
+        # the node is already sized for this machine, no need to write it again
         return
 
     await db.update_project_node(
@@ -886,7 +887,12 @@ def _same_required_resources(persisted: Any, sized: dict[str, Any]) -> bool:
 
 
 def _is_node_computational(service_key: ServiceKey) -> bool:
-    return "/dynamic/" not in f"{service_key}" and not f"{service_key}".startswith(FRONTEND_SERVICE_KEY_PREFIX)
+    """True for a node that runs on a machine the product pays for at creation time.
+
+    A dynamic service is excluded: it is sized when it starts, in
+    ``_start_dynamic_service``. The frontend is excluded because it runs on no machine.
+    """
+    return bool(COMPUTATIONAL_SERVICE_KEY_RE.fullmatch(f"{service_key}"))
 
 
 def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
@@ -896,12 +902,9 @@ def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
     link and the sizing of its ``required_resources``). On every other product the user
     keeps control of them, which matters because writing them through
     ``PUT .../nodes/{node_id}/resources`` is refused on a node that has a pricing link.
-    This is the same condition that makes the start path fetch a wallet and that makes
-    ``director_v2_service.get_wallet_info`` answer None.
     """
     product = products_service.get_product(app, product_name=product_name)
-    app_settings = get_application_settings(app)
-    return bool(product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED)
+    return products_service.is_credit_computation_enabled(app, product=product)
 
 
 async def _aws_ec2_instances_of_pricing_link(
@@ -931,6 +934,7 @@ async def _shared_lookup[LookupKey, LookupValue](
     return await task
 
 
+@dataclass
 class _PricingLookups:
     """What an operation needs to know about pricing units, asked once per distinct key.
 
@@ -942,19 +946,21 @@ class _PricingLookups:
     answer about pricing that changed in the meantime.
     """
 
-    def __init__(self, app: web.Application, product_name: str) -> None:
-        self._app = app
-        self._product_name = product_name
-        self._aws_ec2_instances: dict[PricingPlanAndUnitIdsTuple, asyncio.Task[list[str] | None]] = {}
-        self._default_units: dict[
-            tuple[ServiceKey, ServiceVersion], asyncio.Task[PricingAndHardwareInfoTuple | None]
-        ] = {}
+    app: web.Application
+    product_name: str
+
+    _aws_ec2_instances: dict[PricingPlanAndUnitIdsTuple, asyncio.Task[list[str] | None]] = field(
+        default_factory=dict, init=False
+    )
+    _default_units: dict[tuple[ServiceKey, ServiceVersion], asyncio.Task[PricingAndHardwareInfoTuple | None]] = field(
+        default_factory=dict, init=False
+    )
 
     async def aws_ec2_instances_of(self, link: PricingPlanAndUnitIdsTuple) -> list[str] | None:
         return await _shared_lookup(
             self._aws_ec2_instances,
             link,
-            lambda: _aws_ec2_instances_of_pricing_link(self._app, self._product_name, link),
+            lambda: _aws_ec2_instances_of_pricing_link(self.app, self.product_name, link),
         )
 
     async def default_pricing_and_hardware_info(
@@ -965,7 +971,7 @@ class _PricingLookups:
         return await _shared_lookup(
             self._default_units,
             (service_key, service_version),
-            lambda: _default_pricing_and_hardware_info(self._app, self._product_name, service_key, service_version),
+            lambda: _default_pricing_and_hardware_info(self.app, self.product_name, service_key, service_version),
         )
 
 
@@ -1073,7 +1079,7 @@ async def _link_pricing_unit_and_size_node(
     )
 
 
-async def _link_pricing_unit_and_size_node_best_effort(
+async def _safe_link_pricing_unit_and_size_node(
     app: web.Application,
     *,
     lookups: _PricingLookups,
@@ -1105,6 +1111,9 @@ async def _link_pricing_unit_and_size_node_best_effort(
         )
 
 
+_MAX_CONCURRENT_NODES_PRICED: Final[Annotated[int, doc("nodes linked and sized at once per operation")]] = 10
+
+
 async def link_default_pricing_units_and_size_computational_nodes(
     app: web.Application,
     *,
@@ -1132,9 +1141,9 @@ async def link_default_pricing_units_and_size_computational_nodes(
         to_link.append(node_id)
 
     lookups = _PricingLookups(app, product_name)
-    await logged_gather(
+    await limited_gather(
         *[
-            _link_pricing_unit_and_size_node_best_effort(
+            _safe_link_pricing_unit_and_size_node(
                 app,
                 lookups=lookups,
                 user_id=user_id,
@@ -1147,6 +1156,7 @@ async def link_default_pricing_units_and_size_computational_nodes(
             for node_id in to_link
         ],
         reraise=False,
+        limit=_MAX_CONCURRENT_NODES_PRICED,
     )
 
 
@@ -1157,9 +1167,13 @@ async def repair_projects_nodes_pricing_and_resources(
     project_ids: list[ProjectID],
     product_name: str,
 ) -> None:
-    """Best-effort repair before starting computations (billed products): every
-    computational or dynamic node of the runnable projects gets a pricing unit
-    (its linked one, or the default) and is resized for that unit's machine."""
+    """Best-effort repair before starting computations: every node of the runnable
+    projects that runs on a machine gets a pricing unit (its linked one, or the
+    default) and is resized for that unit's machine.
+
+    The caller calls this only on a billed run. Unlike the creation path, a dynamic
+    service is repaired here: it may have started before this product became billed.
+    """
     projects_nodes = await _projects_nodes_repository.get_by_projects(app, project_ids=set(project_ids))
 
     lookups = _PricingLookups(app, product_name)
@@ -1169,7 +1183,7 @@ async def repair_projects_nodes_pricing_and_resources(
             if f"{node.key}".startswith(FRONTEND_SERVICE_KEY_PREFIX):
                 continue
             repairs.append(
-                _link_pricing_unit_and_size_node_best_effort(
+                _safe_link_pricing_unit_and_size_node(
                     app,
                     lookups=lookups,
                     user_id=user_id,
@@ -1181,7 +1195,7 @@ async def repair_projects_nodes_pricing_and_resources(
                 )
             )
 
-    await logged_gather(*repairs, reraise=False)
+    await limited_gather(*repairs, reraise=False, limit=_MAX_CONCURRENT_NODES_PRICED)
 
 
 async def copy_pricing_links(
@@ -1399,8 +1413,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
         product = products_web.get_current_product(request)
-        app_settings = get_application_settings(request.app)
-        if product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED:
+        if products_service.is_credit_computation_enabled(request.app, product=product):
             # Deal with Wallet
             project_wallet = await _wallets_service.get_project_wallet(request.app, project_id=project_uuid)
             if project_wallet is None:
@@ -1574,7 +1587,7 @@ async def add_project_node(
     )
 
     if _is_node_computational(service_key) and _is_product_billed(request.app, product_name):
-        await _link_pricing_unit_and_size_node_best_effort(
+        await _safe_link_pricing_unit_and_size_node(
             request.app,
             lookups=_PricingLookups(request.app, product_name),
             user_id=user_id,
