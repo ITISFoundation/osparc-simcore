@@ -798,16 +798,9 @@ _SOURCED_SIZED_RESOURCES: Final[
 _PRICING_PLAN_ID: Final[Annotated[int, doc("a plan the product knows, not its default")]] = 1
 _PRICING_UNIT_ID: Final[int] = 2
 
+# the unit mocked by `mock_rut_default_pricing_unit` (t3.medium): 1.9 CPU, 3865470566 RAM bytes
 _DEFAULT_PRICING_PLAN_ID: Final[int] = 1
-_DEFAULT_PRICING_UNIT_ID: Final[
-    Annotated[
-        int,
-        doc(
-            "the unit mocked by `mock_rut_default_pricing_unit` (t3.medium), hand-computed"
-            " dask-worker sizing: cpu = 2.0 - 0.1 = 1.9, ram = int(4 GiB * 0.9) = 3865470566"
-        ),
-    ]
-] = 1
+_DEFAULT_PRICING_UNIT_ID: Final[int] = 1
 
 
 def _sleeper_node(nodes: dict[NodeID, ProjectNode]) -> ProjectNode:
@@ -1063,7 +1056,7 @@ async def test_copy_pricing_links_copies_nothing_in_a_product_that_does_not_bill
     aioresponses_mocker: AioResponsesMock,
     mocker: MockerFixture,
 ):
-    """Copying in a product that does not pay for computational resources copies no
+    """Copying in a product that does not bill for its nodes' resources copies no
     pricing link, which is what keeps the copied nodes' resources writable through
     `PUT .../nodes/{node_id}/resources`. The resource-usage-tracker is not asked.
     """

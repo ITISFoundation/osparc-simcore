@@ -896,7 +896,8 @@ def _is_node_computational(service_key: ServiceKey) -> bool:
 
 
 def _is_product_billed(app: web.Application, product_name: ProductName) -> bool:
-    """True when the product pays for the computational resources of a project's nodes.
+    """True when the product pays for the resources a project's nodes use, be they
+    computational or dynamic.
 
     Only then does the web-server take ownership of a node's pricing state (its pricing
     link and the sizing of its ``required_resources``). On every other product the user

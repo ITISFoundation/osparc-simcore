@@ -195,8 +195,7 @@ async def test_project_creation_links_default_unit_and_sizes_only_comp_nodes(
     assert comp_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
     assert comp_state.pricing_unit_id == mock_rut_default_pricing_unit.pricing_unit_id
     assert comp_state.required_resources
-    # hand-computed from t3.medium (2 CPU / 4 GiB) with the dask-worker formula:
-    # cpu = max(0.1, 2.0 - 0.1) = 1.9, ram = int(4294967296 * 0.9) = 3865470566
+    # t3.medium (2 CPU / 4 GiB) sized by the dask-worker formula: 1.9 CPU, 3865470566 RAM bytes
     comp_resources = comp_state.required_resources["container"]["resources"]
     assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
     assert comp_resources["RAM"]["limit"] == 3865470566
