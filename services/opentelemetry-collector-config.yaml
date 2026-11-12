@@ -21,7 +21,7 @@ processors:
         - attributes["http.route"] == "healthcheck_readiness_probe"
         - attributes["db.statement"] == "PING" and attributes["db.system"] == "redis"
 extensions:
-  health_check:
+  health_check: # mandatory for helm chart
     endpoint: 0.0.0.0:13133
 service:
   extensions: [health_check]

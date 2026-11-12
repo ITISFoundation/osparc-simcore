@@ -30,3 +30,11 @@ _require-valid-kind:
 	set -a; source .env-devel; source k8s/.env-devel-k8s-override; set +a; \
 	$(HELMFILE) -f services/helmfile.local-ops.yaml.gotmpl $* && \
 	$(HELMFILE) -f services/helmfile.yaml.gotmpl $*
+
+.PHONY: .init-swarm
+.init-swarm:
+	@# init docker swarm for dv2 to start. we are not going to use it
+	@swarm_state=$$(docker info --format '{{.Swarm.LocalNodeState}}') || exit 1; \
+	if [ "$$swarm_state" = "inactive" ]; then \
+		docker swarm init --advertise-addr 127.0.0.1; \
+	fi

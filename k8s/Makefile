@@ -19,28 +19,24 @@ KIND_CLUSTER_NAME := simcore
 ##@ Cluster
 
 .PHONY: create-cluster
-create-cluster: _require-valid-kind ## Creates Kubernetes cluster
-	@cd $(_K8S_DIR) && kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
-	# init docker swarm for dv2 to start. we are not going to use it
-	@swarm_state=$$(docker info --format '{{.Swarm.LocalNodeState}}') || exit 1; \
-	if [ "$$swarm_state" = "inactive" ]; then \
-		docker swarm init --advertise-addr 127.0.0.1; \
-	fi
+create-cluster: _require-valid-kind .init-swarm ## Creates Kubernetes cluster
+	@cd $(_K8S_DIR) && \
+	kind create cluster --name $(KIND_CLUSTER_NAME) --config kind-config.yaml
 
 .PHONY: delete-cluster destroy-cluster
 delete-cluster destroy-cluster: _require-valid-kind ## Deletes Kubernetes cluster
 	kind delete cluster --name $(KIND_CLUSTER_NAME)
+
+.PHONY: recreate-cluster
+recreate-cluster: ## Recreates Kubernetes cluster
+	@$(MAKE) delete-cluster
+	@$(MAKE) create-cluster
 
 .PHONY: load-images-into-cluster
 load-images-into-cluster: _require-valid-kind ## Loads simcore images into Kubernetes cluster
 	@images=$$(docker images --filter 'reference=local/*:development' --format '{{.Repository}}:{{.Tag}}'); \
 	test -n "$$images" || { echo "no local/{service}:development images. Build them first with 'make build-devel'."; exit 1; }; \
 	kind load docker-image --name $(KIND_CLUSTER_NAME) $$images
-
-.PHONY: recreate-cluster
-recreate-cluster: ## Recreates Kubernetes cluster
-	@$(MAKE) delete-cluster
-	@$(MAKE) create-cluster
 
 ##@ Development
 
