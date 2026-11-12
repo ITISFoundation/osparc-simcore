@@ -1,7 +1,7 @@
 """tags_access_rights created and modified to timestamptz
 
 Revision ID: a8ce1dff59e6
-Revises: 666829812f35
+Revises: 52ca673f8778
 Create Date: 2026-11-12 13:56:36.049606+00:00
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "a8ce1dff59e6"
-down_revision: str | None = "666829812f35"
+down_revision: str | None = "52ca673f8778"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
