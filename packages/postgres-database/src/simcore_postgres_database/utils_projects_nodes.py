@@ -324,7 +324,7 @@ class ProjectNodesRepo:
         insert_stmt = await self._make_pricing_unit_insert(
             connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
         )
-        on_update_stmt = insert_stmt.on_conflict_do_update(  # NOSONAR
+        on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[
                 projects_node_to_pricing_unit.c.project_node_id,
             ],
@@ -356,7 +356,7 @@ class ProjectNodesRepo:
         insert_stmt = await self._make_pricing_unit_insert(
             connection, node_uuid=node_uuid, pricing_plan_id=pricing_plan_id, pricing_unit_id=pricing_unit_id
         )
-        on_nothing_stmt = insert_stmt.on_conflict_do_nothing(  # NOSONAR
+        on_nothing_stmt = insert_stmt.on_conflict_do_nothing(
             index_elements=[projects_node_to_pricing_unit.c.project_node_id],
         )
         result = await connection.execute(on_nothing_stmt)
