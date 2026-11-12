@@ -14,7 +14,7 @@ from aiohttp.test_utils import TestClient
 from annotated_types import doc
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_users import UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.login._controller.rest.auth_schemas import (
     CodePageParams,
@@ -22,7 +22,9 @@ from simcore_service_webserver.login._controller.rest.auth_schemas import (
 )
 from simcore_service_webserver.login.constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
+    CODE_PHONE_NUMBER_REQUIRED,
     MAX_2FA_CODE_TRIALS,
+    MSG_LOGGED_IN,
 )
 from simcore_service_webserver.login.errors import SendingVerificationSmsError
 from simcore_service_webserver.login.settings import LOGIN_SETTINGS_PER_PRODUCT_APPKEY
@@ -315,3 +317,50 @@ async def test_resend_2fa_send_failure_releases_the_cooldown(
 
     response = await _resend(client, registered_user, "SMS")
     assert response.status == status.HTTP_429_TOO_MANY_REQUESTS
+
+
+async def test_email_resend_logs_in_an_sms_account_without_phone(
+    client: TestClient,
+    user_email: str,
+    user_password: str,
+    mocker: MockFixture,
+):
+    """An account whose 2FA method is SMS but that has no phone registered
+    (users.phone NULL) is sent to the phone-registration page on login; the
+    email button is its only way in. The email resend must not require a phone
+    number, and the rejected SMS resend must not consume the email window
+    """
+    assert client.app
+
+    send_email_mock = mocker.patch(
+        "simcore_service_webserver.login._twofa_service.send_email_code",
+        autospec=True,
+    )
+
+    async with NewUser(
+        user_data={"email": user_email, "password": user_password, "phone": None},
+        app=client.app,
+    ) as account:
+        # the SMS method without a phone asks to register a phone, no code sent
+        response = await client.post(
+            f"{client.app.router['auth_login'].url_for()}",
+            json={"email": user_email, "password": account["raw_password"]},
+        )
+        data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert data["name"] == CODE_PHONE_NUMBER_REQUIRED
+
+        # an SMS resend is rejected before arming any cooldown
+        response = await _resend(client, account, "SMS")
+        assert response.status == status.HTTP_400_BAD_REQUEST
+
+        # the email button: no phone needed, the SMS rejection cost nothing
+        response = await _resend(client, account, "Email")
+        await assert_status(response, status.HTTP_200_OK)
+        code = send_email_mock.call_args.kwargs["code"]
+
+        response = await client.post(
+            f"{client.app.router['auth_login_2fa'].url_for()}",
+            json={"email": user_email, "code": code},
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert MSG_LOGGED_IN in data["message"]
