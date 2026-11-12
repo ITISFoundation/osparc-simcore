@@ -17,5 +17,4 @@ users. Existing users receive product access without an invitation or password
 change. The backend converts the selected amount using the product's credit rate;
 its wallet-creation eligibility rules still apply.
 
-Run the approval-credit regression tests from the client directory with
-`node --test tests/approval-credits.test.cjs`.
+Run the frontend tests from the client tests directory with `node --test`.
