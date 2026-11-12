@@ -48,7 +48,13 @@ from simcore_service_webserver.socketio.constants import SOCKET_IO_PROJECT_UPDAT
 def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     # NOTE: overrides app_environment
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
-    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
+    # with the `with_billed_product` fixture, this decides whether the web-server takes
+    # ownership of a node's pricing state
+    monkeypatch.setenv("WEBSERVER_CREDIT_COMPUTATION_ENABLED", "1")
+    return app_environment | {
+        "WEBSERVER_GARBAGE_COLLECTOR": "null",
+        "WEBSERVER_CREDIT_COMPUTATION_ENABLED": "1",
+    }
 
 
 @pytest.fixture

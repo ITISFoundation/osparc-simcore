@@ -19,6 +19,7 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
+from typing import Annotated, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -28,6 +29,7 @@ import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
@@ -571,8 +573,8 @@ def mocked_conditionally_unsubscribe_project_logs(
 # pricing/resources characterization helpers (shared by with_dbs/01 and 02)
 #
 
-DEFAULT_PRICING_PLAN_ID = 1
-DEFAULT_PRICING_UNIT_ID = 1  # the default one, on t3.medium
+DEFAULT_PRICING_PLAN_ID: Final[int] = 1
+DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the unit's machine is t3.medium")]] = 1
 
 
 @pytest.fixture
@@ -590,7 +592,7 @@ def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
 
 
 @pytest.fixture
-def billed_product(client: TestClient, osparc_product_name: ProductName) -> None:
+def with_billed_product(client: TestClient, osparc_product_name: ProductName) -> None:
     """Marks the test's product as one that pays for computational resources.
 
     Only for such a product does the web-server take ownership of a node's pricing state
