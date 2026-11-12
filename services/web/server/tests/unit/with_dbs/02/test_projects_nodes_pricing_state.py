@@ -333,6 +333,31 @@ async def _repair(client: TestClient, logged_user: UserInfoDict, project_id: str
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_repair_writes_nothing_in_a_non_billed_product(
+    *,
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    osparc_product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
+    mock_rut_default_pricing_unit: RutPricingUnitGet,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+):
+    """A start in a product that does not pay for computational resources repairs
+    nothing: no link, no sizing, which is what keeps
+    `PUT .../nodes/{node_id}/resources` usable on those nodes.
+    """
+    assert client.app
+    await _repair(client, logged_user, user_project["uuid"], osparc_product_name)
+
+    mocked_director_v2_node_sizing.assert_not_called()
+    state = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
+    for node_id, node_state in state.items():
+        assert node_state.pricing_plan_id is None, f"{node_id} linked in a non-billed product"
+        assert node_state.pricing_unit_id is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -342,6 +367,7 @@ async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
     aioresponses_mocker: AioResponsesMock,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
+    with_billed_product: None,
 ):
     """A node linked to a plan/unit that RUT does not know in this
     product (e.g. a link copied from another product's template while RUT was
@@ -397,6 +423,7 @@ async def test_repair_writes_nothing_for_a_node_already_sized(
     mocker: MockerFixture,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
+    with_billed_product: None,
 ):
     """Every billed start repairs every node, so a node that is already sized for the
     machine of its linked unit must not be written again: only the not-yet-sized dynamic
@@ -460,6 +487,7 @@ async def test_repair_keeps_link_and_resources_when_sizing_fails_and_completes_l
     sqlalchemy_async_engine: AsyncEngine,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
+    with_billed_product: None,
 ):
     """director-v2 unreachable: the repair still links the DEFAULT unit (the link is
     written before the sizing) and leaves `required_resources` untouched, and the next
@@ -617,14 +645,14 @@ async def test_repair_asks_rut_once_per_distinct_pricing_unit(
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
     mocker: MockerFixture,
+    with_billed_product: None,
 ):
     """Every node of a start is repaired concurrently: nodes sharing a pricing unit share
     one request to RUT, so an unreachable RUT costs one request
     per distinct plan/unit instead of one per node.
     """
     assert client.app
-    # created unlinked (this product does not bill here), then linked by hand to the same
-    # unit: what a copy from another product leaves behind
+    # two nodes linked to the same unit
     project = await create_project("repair-dedupe-project", _TWO_COMP_NODES_WORKBENCH)
     project_id = project["uuid"]
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):

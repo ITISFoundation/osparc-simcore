@@ -1171,9 +1171,13 @@ async def repair_projects_nodes_pricing_and_resources(
     projects that runs on a machine gets a pricing unit (its linked one, or the
     default) and is resized for that unit's machine.
 
-    The caller calls this only on a billed run. Unlike the creation path, a dynamic
-    service is repaired here: it may have started before this product became billed.
+    On a product that does not pay for these nodes, nothing is written, as on the creation
+    and copy paths. Unlike the creation path, a dynamic service is repaired here: it may
+    have started before this product became billed.
     """
+    if not _is_product_billed(app, product_name):
+        return
+
     projects_nodes = await _projects_nodes_repository.get_by_projects(app, project_ids=set(project_ids))
 
     lookups = _PricingLookups(app, product_name)
