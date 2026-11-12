@@ -1,7 +1,7 @@
 """products_to_templates created and modified to timestamptz
 
 Revision ID: 52ca673f8778
-Revises: 3cf44b945687
+Revises: 8bef29afe495
 Create Date: 2026-11-12 13:31:53.450057+00:00
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "52ca673f8778"
-down_revision: str | None = "3cf44b945687"
+down_revision: str | None = "8bef29afe495"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
