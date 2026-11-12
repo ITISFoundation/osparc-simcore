@@ -5,7 +5,6 @@
 import asyncio
 import subprocess
 import sys
-import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -13,6 +12,7 @@ from typing import Final, NamedTuple
 
 import pytest
 import requests
+import tenacity
 from fastapi import FastAPI, Query, Request
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
@@ -48,6 +48,16 @@ _SERVER_SHUTDOWN_TIMEOUT_S: Final[int] = 10
 class ServerInfo(NamedTuple):
     url: str
     proc: subprocess.Popen
+
+
+class _ServerExitedError(Exception):
+    """the server process is gone and will not come up"""
+
+
+def _wait_till_server_is_up(server: ServerInfo) -> None:
+    if server.proc.poll() is not None:
+        raise _ServerExitedError
+    requests.get(f"{server.url}/openapi.json", timeout=1).raise_for_status()
 
 
 def _stop_server(server: ServerInfo) -> str:
@@ -86,15 +96,16 @@ def server_lifetime(port: int) -> Iterator[ServerInfo]:
         print("\nStarted", proc.args)
 
         # waits until it serves requests, a fixed sleep is not enough on a busy machine
-        deadline = time.monotonic() + _SERVER_STARTUP_TIMEOUT_S
-        while True:
-            try:
-                requests.get(f"{server.url}/openapi.json", timeout=1).raise_for_status()
-                break
-            except requests.RequestException:
-                if proc.poll() is not None or time.monotonic() > deadline:
-                    raise AssertionError(_stop_server(server)) from None
-                time.sleep(0.2)
+        retryer = tenacity.Retrying(
+            retry=tenacity.retry_if_not_exception_type(_ServerExitedError),
+            stop=tenacity.stop_after_delay(_SERVER_STARTUP_TIMEOUT_S),
+            wait=tenacity.wait_fixed(0.2),
+            reraise=True,
+        )
+        try:
+            retryer(_wait_till_server_is_up, server)
+        except (requests.RequestException, _ServerExitedError) as exc:
+            raise AssertionError(_stop_server(server)) from exc
 
         print("server is up and waiting for requests...")
         yield server
