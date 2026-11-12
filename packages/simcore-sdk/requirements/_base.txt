@@ -59,9 +59,9 @@ dnspython==2.9.0
     # via email-validator
 email-validator==2.3.0
     # via pydantic
-fast-depends==3.0.8
+fast-depends==3.0.11
     # via faststream
-faststream==0.6.7
+faststream==0.7.8
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 flexcache==0.3
     # via pint

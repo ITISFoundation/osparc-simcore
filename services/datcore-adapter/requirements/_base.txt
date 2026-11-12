@@ -107,7 +107,7 @@ email-validator==2.3.0
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   fastapi
     #   pydantic
-fast-depends==3.0.8
+fast-depends==3.0.11
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   faststream
@@ -126,7 +126,7 @@ fastapi-pagination==0.16.1
     # via -r requirements/_base.in
 fastar==0.11.0
     # via fastapi
-faststream==0.6.7
+faststream==0.7.8
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
