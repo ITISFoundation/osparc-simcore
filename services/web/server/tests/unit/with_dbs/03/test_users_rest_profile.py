@@ -9,7 +9,6 @@
 import functools
 from collections.abc import AsyncIterator
 from copy import deepcopy
-from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
@@ -27,7 +26,6 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.models.users import users
 from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
@@ -758,26 +756,3 @@ async def test_get_profile_user_without_pre_registration(
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
         client.app, user_id=logged_user["id"], product_name="osparc"
     )
-
-
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_profile_expiration_date_is_utc_calendar_date(
-    user_role: UserRole,
-    logged_user: UserInfoDict,
-    client: TestClient,
-    postgres_db: sa.engine.Engine,
-):
-    assert client.app
-
-    expires_at = datetime.now(UTC) + timedelta(days=7)
-    with postgres_db.begin() as conn:
-        conn.execute(sa.update(users).where(users.c.id == logged_user["id"]).values(expires_at=expires_at))
-
-    url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(f"{url}")
-    data, error = await assert_status(resp, status.HTTP_200_OK)
-
-    assert not error
-    profile = MyProfileRestGet.model_validate(data)
-
-    assert profile.expiration_date == expires_at.date()

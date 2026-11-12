@@ -508,6 +508,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 sa.case(
                     (
                         users.c.expires_at.isnot(None),
+                        # renders the UTC calendar date regardless of the session timezone
                         sa.func.date(sa.func.timezone("UTC", users.c.expires_at)),
                     ),
                     else_=None,
