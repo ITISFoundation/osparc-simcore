@@ -38,7 +38,7 @@ from ..session.settings import get_plugin_settings as get_session_settings
 from .constants import MAX_2FA_CODE_TRIALS
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
-log = logging.getLogger(__name__)
+_logger: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class ValidationCode(BaseModel):
@@ -68,7 +68,7 @@ def _hash_2fa_code(app: web.Application, *, code: str) -> str:
     return hash_2fa_code_for_storage(code=code, secret_key=get_session_settings(app).SESSION_SECRET_KEY)
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def create_2fa_code(app: web.Application, *, user_email: str, expiration_in_seconds: int) -> str:
     """Generates a 2FA code and stores "<generation>:<digest>" with a finite TTL
 
@@ -86,14 +86,14 @@ async def create_2fa_code(app: web.Application, *, user_email: str, expiration_i
     return code
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def has_2fa_code(app: web.Application, user_email: str) -> bool:
     """Returns True if a non-expired 2FA code exists for user_email"""
     redis_client = get_redis_validation_code_client(app)
     return await redis_client.get(user_email) is not None
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def delete_2fa_code(app: web.Application, user_email: str) -> None:
     redis_client = get_redis_validation_code_client(app)
     hash_key = user_email
@@ -199,7 +199,7 @@ _CONSUME_MATCHED_CODE_SCRIPT: Final = """
 """
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def check_2fa_code(app: web.Application, *, user_email: str, code: str) -> TrialOutcome:
     """Consumes one trial of the account's current code and verifies against it
 
@@ -271,7 +271,7 @@ _COOLDOWN_RELEASE_SCRIPT: Final = """
 """
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def start_2fa_resend_cooldown(
     app: web.Application, *, user_email: str, channel: str, cooldown_in_seconds: int
 ) -> ResendCooldown:
@@ -291,7 +291,7 @@ async def start_2fa_resend_cooldown(
     return ResendCooldown(user_email=user_email, channel=channel, retry_after_s=max(remaining, 1))
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def release_2fa_resend_cooldown(app: web.Application, cooldown: ResendCooldown) -> None:
     """Deletes a cooldown this request armed, leaving a re-armed window in place"""
     if cooldown.token is None:
@@ -314,7 +314,7 @@ class SMSError(RuntimeError):
     pass
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def send_sms_code(
     app: web.Application,
     *,
@@ -349,7 +349,7 @@ async def send_sms_code(
             create_kwargs["from_"] = twilio_alpha_numeric_sender
 
         def _sender():
-            log.info(
+            _logger.info(
                 "Sending sms code to %s",
                 mask_phone_number(phone_number),
             )
@@ -363,7 +363,7 @@ async def send_sms_code(
             )
             message = client.messages.create(**create_kwargs)
 
-            log.debug(
+            _logger.debug(
                 "Got twilio client %s",
                 f"{message=}",
             )
@@ -387,7 +387,7 @@ class EmailError(RuntimeError):
     pass
 
 
-@log_decorator(log, level=logging.DEBUG)
+@log_decorator(_logger, level=logging.DEBUG)
 async def send_email_code(
     app: web.Application,
     *,
