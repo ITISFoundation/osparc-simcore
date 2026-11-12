@@ -5,11 +5,12 @@
 
 
 from collections.abc import Callable
-from typing import Final, Protocol
+from typing import Annotated, Final, Protocol
 
 import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
+from annotated_types import doc
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
@@ -34,9 +35,15 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-# sentinel return_status making the test handler raise a bare
-# web.HTTPTooManyRequests instead of the refundable cooldown error
-_PLAIN_429_STATUS: Final[int] = status.HTTP_429_TOO_MANY_REQUESTS + 1
+_PLAIN_429_STATUS: Final[
+    Annotated[
+        int,
+        doc(
+            "sentinel return_status making the test handler raise a bare web.HTTPTooManyRequests"
+            " instead of the refundable cooldown error"
+        ),
+    ]
+] = status.HTTP_429_TOO_MANY_REQUESTS + 1
 
 
 @pytest.fixture

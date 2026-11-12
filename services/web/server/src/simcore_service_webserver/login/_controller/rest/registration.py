@@ -296,70 +296,70 @@ async def register_phone(request: web.Request):
         )
 
     # register_phone sends the SMS through the same per-account cooldown as
-    # the code resend, since both deliver an SMS to this account
-    cooldown = await _twofa_service.start_2fa_resend_cooldown(
+    # the code resend, since both deliver an SMS to this account; a failed
+    # delivery releases the window this request armed
+    async with _twofa_service.resend_cooldown(
         request.app,
         user_email=trusted.email,
         channel="SMS",
         cooldown_in_seconds=settings.LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC,
-    )
-    if cooldown.retry_after_s is not None:
-        raise create_resend_cooldown_error(cooldown.retry_after_s)
+    ) as cooldown:
+        if cooldown.retry_after_s is not None:
+            raise create_resend_cooldown_error(cooldown.retry_after_s)
 
-    try:
-        code = await _twofa_service.create_2fa_code(
-            app=request.app,
-            user_email=trusted.email,
-            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-        )
-        await _twofa_service.send_sms_code(
-            request.app,
-            phone_number=registration.phone,
-            code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=user["first_name"] or user["name"],
-            locale=get_locale_or_none(request),
-        )
-
-        return envelope_response(
-            # RegisterPhoneNextPage
-            data={
-                "name": CODE_2FA_SMS_CODE_REQUIRED,
-                "parameters": {
-                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-                },
-                "message": MSG_2FA_CODE_SENT.format(phone_number=_twofa_service.mask_phone_number(registration.phone)),
-                "level": "INFO",
-                "logger": "user",
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
-
-    except web.HTTPException:
-        # no delivery happened: release the window this request armed
-        await _twofa_service.release_2fa_resend_cooldown(request.app, cooldown)
-        raise
-
-    except Exception as err:  # pylint: disable=broad-except
-        # no delivery happened: release the window this request armed
-        await _twofa_service.release_2fa_resend_cooldown(request.app, cooldown)
-        # Unhandled errors -> 503
-        error_code = create_error_code(err)
-        user_error_msg = "Currently we cannot register phone numbers"
-
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                user_error_msg,
-                error=err,
-                error_code=error_code,
-                error_context={"request": request, "registration": registration},
-                tip="Phone registration failed",
+        try:
+            code = await _twofa_service.create_2fa_code(
+                app=request.app,
+                user_email=trusted.email,
+                expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             )
-        )
+            await _twofa_service.send_sms_code(
+                request.app,
+                phone_number=registration.phone,
+                code=code,
+                twilio_auth=settings.LOGIN_TWILIO,
+                twilio_messaging_sid=product.twilio_messaging_sid,
+                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+                first_name=user["first_name"] or user["name"],
+                locale=get_locale_or_none(request),
+            )
 
-        raise web.HTTPServiceUnavailable(
-            text=user_error_msg,
-            content_type=MIMETYPE_APPLICATION_JSON,
-        ) from err
+            return envelope_response(
+                # RegisterPhoneNextPage
+                data={
+                    "name": CODE_2FA_SMS_CODE_REQUIRED,
+                    "parameters": {
+                        "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    },
+                    "message": MSG_2FA_CODE_SENT.format(
+                        phone_number=_twofa_service.mask_phone_number(registration.phone)
+                    ),
+                    "level": "INFO",
+                    "logger": "user",
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        except web.HTTPException:
+            # keep its status; the cooldown context releases the window
+            raise
+
+        except Exception as err:  # pylint: disable=broad-except
+            # Unhandled errors -> 503; the cooldown context releases the window
+            error_code = create_error_code(err)
+            user_error_msg = "Currently we cannot register phone numbers"
+
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context={"request": request, "registration": registration},
+                    tip="Phone registration failed",
+                )
+            )
+
+            raise web.HTTPServiceUnavailable(
+                text=user_error_msg,
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from err

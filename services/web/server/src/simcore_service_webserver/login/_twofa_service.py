@@ -12,6 +12,8 @@ import hashlib
 import hmac
 import logging
 import secrets
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Annotated, Final
@@ -35,6 +37,7 @@ from ..notifications import notifications_service
 from ..notifications.models import EmailContact
 from ..redis import get_redis_validation_code_client
 from ..session.settings import get_plugin_settings as get_session_settings
+from ._twofa_lua import CONSUME_MATCHED_CODE_SCRIPT, CONSUME_TRIAL_SCRIPT, RELEASE_COOLDOWN_SCRIPT
 from .constants import MAX_2FA_CODE_TRIALS
 from .errors import SendingVerificationEmailError, SendingVerificationSmsError
 
@@ -130,14 +133,14 @@ class TrialOutcome(StrEnum):
     VALID = auto()
 
 
-# script return codes of _CONSUME_TRIAL_SCRIPT
-_NO_CODE: Final = 0
-_TRIALS_EXHAUSTED: Final = 1
-_TRIAL_CHARGED: Final = 2
+# script return codes of CONSUME_TRIAL_SCRIPT
+_NO_CODE: Final[int] = 0
+_TRIALS_EXHAUSTED: Final[int] = 1
+_TRIAL_CHARGED: Final[int] = 2
 
-# script return codes of _CONSUME_MATCHED_CODE_SCRIPT
-_CODE_ALREADY_GONE: Final = 0
-_CODE_CONSUMED: Final = 1
+# script return codes of CONSUME_MATCHED_CODE_SCRIPT
+_CODE_ALREADY_GONE: Final[int] = 0
+_CODE_CONSUMED: Final[int] = 1
 
 
 def _attempts_prefix(*, user_email: str) -> str:
@@ -150,53 +153,6 @@ def _attempts_key(*, user_email: str, generation: str) -> str:
 
 def _resend_cooldown_key(*, channel: str, user_email: str) -> str:
     return f"{_RESEND_COOLDOWN_KEY}:{channel}:{user_email}"
-
-
-# Charges one trial and returns the stored value atomically, so a trial is only
-# ever charged to the generation whose digest is then compared. INCR and PEXPIRE
-# are in the same script, and the lifetime is copied from the code with
-# PTTL/PEXPIRE, so a counter expires with its code to the millisecond and can
-# never elapse early only to be recreated and refill the budget of a live code.
-#
-# KEYS[1] code key, KEYS[2] trial-counter prefix
-# ARGV[1] max trials, ARGV[2] stored-value length, ARGV[3] generation length
-# returns {0} no code, {1} budget spent, {2, stored value} trial charged
-_CONSUME_TRIAL_SCRIPT: Final = """
-    local stored = redis.call('GET', KEYS[1])
-    if not stored or #stored ~= tonumber(ARGV[2]) then
-        return {0}
-    end
-    local counter_key = KEYS[2] .. string.sub(stored, 1, tonumber(ARGV[3]))
-    local trials = redis.call('INCR', counter_key)
-    if trials == 1 then
-        local pttl = redis.call('PTTL', KEYS[1])
-        if pttl < 1 then
-            pttl = 1
-        end
-        redis.call('PEXPIRE', counter_key, pttl)
-    end
-    if trials > tonumber(ARGV[1]) then
-        return {1}
-    end
-    return {2, stored}
-"""
-
-# Deletes the code and reports whether it did, so the caller grants access only
-# to the request that actually consumed the code. A replacement is never
-# destroyed, and the counter belongs to one generation and is always safe to
-# delete.
-#
-# KEYS[1] code key, KEYS[2] trial-counter key, ARGV[1] the matched stored value
-# returns {1} consumed here, {0} replaced or already used
-_CONSUME_MATCHED_CODE_SCRIPT: Final = """
-    if redis.call('GET', KEYS[1]) == ARGV[1] then
-        redis.call('DEL', KEYS[1])
-        redis.call('DEL', KEYS[2])
-        return 1
-    end
-    redis.call('DEL', KEYS[2])
-    return 0
-"""
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -216,7 +172,7 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
     redis_client = get_redis_validation_code_client(app)
     candidate_digest = _hash_2fa_code(app, code=code)
 
-    consume_trial = redis_client.register_script(_CONSUME_TRIAL_SCRIPT)
+    consume_trial = redis_client.register_script(CONSUME_TRIAL_SCRIPT)
     admitted = await consume_trial(
         keys=[user_email, _attempts_prefix(user_email=user_email)],
         args=[MAX_2FA_CODE_TRIALS, _STORED_CODE_LENGTH, _CODE_GENERATION_LENGTH],
@@ -234,7 +190,7 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
         return TrialOutcome.INVALID
 
     generation = stored_value[:_CODE_GENERATION_LENGTH]
-    consume_code = redis_client.register_script(_CONSUME_MATCHED_CODE_SCRIPT)
+    consume_code = redis_client.register_script(CONSUME_MATCHED_CODE_SCRIPT)
     consumed = await consume_code(
         keys=[user_email, _attempts_key(user_email=user_email, generation=generation)],
         args=[stored_value],
@@ -257,18 +213,6 @@ class ResendCooldown:
     channel: str
     retry_after_s: int | None = None
     token: str | None = None
-
-
-# Releases the cooldown only while this request still owns it, so a failed
-# send cannot delete a window a later request armed.
-#
-# KEYS[1] cooldown key, ARGV[1] the token this request wrote
-_COOLDOWN_RELEASE_SCRIPT: Final = """
-    if redis.call('GET', KEYS[1]) == ARGV[1] then
-        return redis.call('DEL', KEYS[1])
-    end
-    return 0
-"""
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -297,11 +241,38 @@ async def release_2fa_resend_cooldown(app: web.Application, cooldown: ResendCool
     if cooldown.token is None:
         return
     redis_client = get_redis_validation_code_client(app)
-    release = redis_client.register_script(_COOLDOWN_RELEASE_SCRIPT)
+    release = redis_client.register_script(RELEASE_COOLDOWN_SCRIPT)
     await release(
         keys=[_resend_cooldown_key(channel=cooldown.channel, user_email=cooldown.user_email)],
         args=[cooldown.token],
     )
+
+
+@asynccontextmanager
+async def resend_cooldown(
+    app: web.Application, *, user_email: str, channel: str, cooldown_in_seconds: int
+) -> AsyncGenerator[ResendCooldown]:
+    """Arms the resend cooldown and releases the window again when the body fails
+
+    ::
+
+        async with resend_cooldown(app, ...) as cooldown:
+            if cooldown.retry_after_s is not None:
+                raise <429 with Retry-After>
+            <deliver the code>
+
+    A body that raises (delivery failed, request rejected) releases the window
+    this request armed, so an account is not charged for a delivery that never
+    happened. A successful body keeps the window armed for its full duration.
+    """
+    cooldown = await start_2fa_resend_cooldown(
+        app, user_email=user_email, channel=channel, cooldown_in_seconds=cooldown_in_seconds
+    )
+    try:
+        yield cooldown
+    except BaseException:  # pylint: disable=broad-except
+        await release_2fa_resend_cooldown(app, cooldown)
+        raise
 
 
 #

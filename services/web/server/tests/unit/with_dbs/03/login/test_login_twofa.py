@@ -5,7 +5,6 @@
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
 from http.cookies import SimpleCookie
 from unittest.mock import AsyncMock
@@ -59,6 +58,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
+pytestmark = pytest.mark.usefixtures("clean_2fa_redis_state")
+
 
 @pytest.fixture
 def postgres_db(postgres_db_with_2fa_enabled_for_osparc: sa.engine.Engine) -> sa.engine.Engine:
@@ -84,17 +85,6 @@ def mocked_twilio_service(mocker: MockerFixture) -> dict[str, MockType]:
         "send_sms_code_for_registration": mock,
         "send_sms_code_for_login": mock_same_submodule,
     }
-
-
-@pytest.fixture(autouse=True)
-async def clean_2fa_redis_state(client: TestClient) -> AsyncIterator[None]:
-    """2FA codes, trial counters and resend cooldowns are keyed by email and
-    tests reuse the deterministic faker emails, so this state must not
-    outlive the test that created it
-    """
-    assert client.app
-    yield
-    await get_redis_validation_code_client(client.app).flushdb()
 
 
 async def test_2fa_code_operations(client: TestClient):

@@ -69,17 +69,17 @@ async def resend_2fa_code(request: web.Request):
             raise web.HTTPBadRequest(text=user_message("User does not have a phone number registered"))
 
     # at most one code per account and channel per cooldown window; the check
-    # runs before the current code is deleted, so a rejected resend leaves it intact
-    cooldown = await _twofa_service.start_2fa_resend_cooldown(
+    # runs before the current code is deleted, so a rejected resend leaves it
+    # intact, and a failed delivery releases the window this request armed
+    async with _twofa_service.resend_cooldown(
         request.app,
         user_email=trusted.email,
         channel=resend_2fa_.via,
         cooldown_in_seconds=settings.LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC,
-    )
-    if cooldown.retry_after_s is not None:
-        raise create_resend_cooldown_error(cooldown.retry_after_s)
+    ) as cooldown:
+        if cooldown.retry_after_s is not None:
+            raise create_resend_cooldown_error(cooldown.retry_after_s)
 
-    try:
         # Already a code?
         if await _twofa_service.has_2fa_code(request.app, user_email=trusted.email):
             await _twofa_service.delete_2fa_code(request.app, user_email=trusted.email)
@@ -149,10 +149,5 @@ async def resend_2fa_code(request: web.Request):
                 },
                 status=status.HTTP_200_OK,
             )
-    except Exception:  # pylint: disable=broad-except
-        # no delivery happened: release the window this request armed so the
-        # retry is not charged for a code that was never sent
-        await _twofa_service.release_2fa_resend_cooldown(request.app, cooldown)
-        raise
 
     return response
