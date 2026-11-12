@@ -65,6 +65,8 @@ def docker_images_exclusive(
     `pytestmark = pytest.mark.usefixtures("docker_images_exclusive")`.
 
     Module-scoped on purpose: the store stays free for the other workers' modules that do not opt in.
+    Opt in from any module that changes images by name, including indirectly through the registry
+    injector fixtures of `pytest_simcore.docker_registry`, which pull `repo:tag` into this same store.
     No-op outside xdist.
     """
     if not is_xdist_worker(request):

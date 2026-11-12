@@ -5,9 +5,10 @@ import asyncio
 import json
 import logging
 import os
+import tempfile
 import time
 from collections.abc import Awaitable, Callable, Iterator
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
@@ -220,18 +221,34 @@ def _get_worker_registry_namespace(request: pytest.FixtureRequest) -> str:
     push different content to the same repository:tag (an injector with an `owner_email` relabels
     the image), so the last push would win for every worker. Empty outside xdist, so a serial run keeps
     the repository paths it has always used.
+
+    The namespace covers the push only. Injecting still pulls and tags `pull_key:tag` in the daemon's
+    one image store, so a module requesting an injector fixture must opt into
+    `docker_images_exclusive` (pytest_simcore.xdist_docker_daemon) like the modules that pull or
+    delete those same images by name.
     """
     if not is_xdist_worker(request):
         return ""
     return f"{get_worker_id(request)}/"
 
 
-def _dockerfile_path() -> Path:
-    """The Dockerfile written next to the pytest process.
+def _get_local_tag_suffix(request: pytest.FixtureRequest) -> str:
+    """Suffix for the intermediate local tag of `_pull_push_service`, unique per xdist worker"""
+    return get_worker_id(request)
 
-    `Path.resolve` is blocking, so it stays out of the async caller (ruff ASYNC240).
+
+@contextmanager
+def _owned_build_context(pull_key: str, tag: str, suffix: str) -> Iterator[tuple[str, str]]:
+    """Yields `(build context, local tag)` for a rebuild that overrides the image labels.
+
+    The `Dockerfile` goes in a private directory instead of the pytest CWD, which every xdist
+    worker shares: it would otherwise be written concurrently and removed by the first worker to
+    finish while another is still uploading its build context. The local tag is unique per call so
+    a concurrent rebuild cannot move it onto another worker's image before the push reads it back.
     """
-    return Path("Dockerfile").resolve()
+    with tempfile.TemporaryDirectory(prefix="pytest-docker-build-") as context:
+        (Path(context) / "Dockerfile").write_text(f"FROM {pull_key}:{tag}")
+        yield context, f"{tag}-owned-{suffix}"
 
 
 async def _pull_push_service(
@@ -241,6 +258,7 @@ async def _pull_push_service(
     node_meta_schema: dict,
     owner_email: str | None = None,
     registry_namespace: str = "",
+    local_tag_suffix: str = "local",
 ) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
@@ -270,17 +288,11 @@ async def _pull_push_service(
                 }
             )
 
-            df_path = _dockerfile_path()
-            df_path.write_text(f"FROM {pull_key}:{tag}")
-
-            try:
+            with _owned_build_context(pull_key, tag, local_tag_suffix) as (build_context, owned_tag):
                 # Rebuild to override image labels AND re-tag
-                image2, _ = client.images.build(path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned")
+                image2, _ = client.images.build(path=build_context, labels=image_labels, tag=owned_tag)
                 print(json.dumps(image2.labels, indent=2))
                 image = image2
-
-            finally:
-                df_path.unlink()
 
     assert image_labels
     io_simcore_labels = {
@@ -326,6 +338,7 @@ def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
 ) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
     registry_namespace = _get_worker_registry_namespace(request)
+    local_tag_suffix = _get_local_tag_suffix(request)
 
     def inject_image(source_image_repo: str, source_image_tag: str, owner_email: str | None = None):
         return _pull_push_service(
@@ -335,6 +348,7 @@ def docker_registry_image_injector(
             node_meta_schema,
             owner_email,
             registry_namespace=registry_namespace,
+            local_tag_suffix=local_tag_suffix,
         )
 
     return inject_image
@@ -345,6 +359,7 @@ def existing_docker_registry_image_injector(
     node_meta_schema: dict, request: pytest.FixtureRequest
 ) -> Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]]:
     registry_namespace = _get_worker_registry_namespace(request)
+    local_tag_suffix = _get_local_tag_suffix(request)
 
     def inject_image(
         docker_registry: str, source_image_repo: str, source_image_tag: str, owner_email: str | None = None
@@ -356,6 +371,7 @@ def existing_docker_registry_image_injector(
             node_meta_schema,
             owner_email,
             registry_namespace=registry_namespace,
+            local_tag_suffix=local_tag_suffix,
         )
 
     return inject_image
@@ -374,6 +390,7 @@ async def osparc_service(
         docker_registry,
         node_meta_schema,
         registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
@@ -388,6 +405,7 @@ async def sleeper_service(
         docker_registry,
         node_meta_schema,
         registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
@@ -402,6 +420,7 @@ async def jupyter_service(
         docker_registry,
         node_meta_schema,
         registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
@@ -427,6 +446,7 @@ async def dy_static_file_server_service(
         docker_registry,
         node_meta_schema,
         registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
@@ -447,6 +467,7 @@ async def dy_static_file_server_dynamic_sidecar_service(
         docker_registry,
         node_meta_schema,
         registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 

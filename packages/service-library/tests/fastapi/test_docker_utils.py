@@ -50,10 +50,13 @@ pytestmark = pytest.mark.usefixtures("docker_images_exclusive")
 async def test_retrieve_image_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     registry_settings: RegistrySettings,
+    external_registry_settings: RegistrySettings | None,
     osparc_service: dict[str, Any],
     service_repo: str,
     service_tag: str,
 ):
+    if external_registry_settings is not None:
+        pytest.skip("the injected image is only in the local pytest registry, not in the external one")
     # clean first
     image_name = f"{service_repo}:{service_tag}"
     if "sha256" in service_tag:
