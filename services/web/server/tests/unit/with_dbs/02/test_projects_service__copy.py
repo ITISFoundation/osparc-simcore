@@ -903,7 +903,7 @@ async def test_clone_project_data_copies_pricing_links_and_sizes_unlinked_comp_n
     # SETUP: source comp node is linked to a non-default unit and sized
     _, sourced_resources = await _price_and_size_one_comp_node(client.app, sqlalchemy_async_engine, source_uuid)
 
-    # RUT knows the source's non-default unit (copy validation asks for it)
+    # the resource-usage-tracker knows the source's non-default unit (copy validation asks for it)
     settings = get_rut_plugin_settings(client.app)
     aioresponses_mocker.get(
         regex_for_rut_pricing_unit(f"{settings.api_base_url}", _PRICING_PLAN_ID, _PRICING_UNIT_ID),
@@ -1009,8 +1009,8 @@ async def test_copy_pricing_links_asks_rut_once_per_unit_and_copies_what_it_can(
     with_billed_product: None,
 ):
     """Several nodes of a project typically share one pricing unit: the copy asks the
-    resource-usage tracker (RUT) about every distinct plan/unit once, not once per node,
-    which an unreachable RUT would otherwise pay for with one timeout per node. A unit the
+    resource-usage-tracker about every distinct plan/unit once, not once per node,
+    which an unreachable one would otherwise pay for with one timeout per node. A unit the
     product does not know is not copied (the caller links the destination's default
     instead); one it could not confirm is copied rather than lost, and the copy succeeds
     either way.
@@ -1065,7 +1065,7 @@ async def test_copy_pricing_links_copies_nothing_in_a_product_that_does_not_bill
 ):
     """Copying in a product that does not pay for computational resources copies no
     pricing link, which is what keeps the copied nodes' resources writable through
-    `PUT .../nodes/{node_id}/resources`. RUT is not asked about anything.
+    `PUT .../nodes/{node_id}/resources`. The resource-usage-tracker is not asked.
     """
     assert client.app
     nodes_map: NodesMap = {
@@ -1113,7 +1113,7 @@ async def test_a_link_copied_during_a_rut_outage_is_repaired_on_the_next_billed_
     mocked_director_v2_node_sizing: MockType,
     with_billed_product: None,
 ):
-    """Copying while RUT is unreachable keeps the source's link and the resources
+    """Copying while the resource-usage-tracker is unreachable keeps the source's link and the resources
     sized for it, so the copy costs nothing it cannot recover. If that link turns out not
     to exist in the destination product, the next billed start replaces it with the
     destination's default unit and sizes the node for it, instead of leaving the node

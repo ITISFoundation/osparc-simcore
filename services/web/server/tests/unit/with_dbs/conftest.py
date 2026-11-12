@@ -617,7 +617,8 @@ def with_billed_product(mark_product_billed: Callable[[], None]) -> None:
 
 @pytest.fixture
 def mock_rut_default_pricing_unit(client: TestClient, aioresponses_mocker: AioResponsesMock) -> RutPricingUnitGet:
-    """RUT: the service's default plan/unit is unit 1 (t3.medium, non-zero cost)."""
+    """The resource-usage-tracker's default plan/unit for the service is unit 1
+    (t3.medium, non-zero cost)."""
     assert client.app
     settings = get_rut_plugin_settings(client.app)
     default_unit = make_pricing_unit(

@@ -1038,8 +1038,8 @@ async def _link_pricing_unit_and_size_node(
 
     The service's DEFAULT unit is linked when the node has no link, or when its link is
     one the resource-usage-tracker does not know in this product (a link copied from
-    another product's template while the tracker was unreachable), so that such a link
-    does not stay unusable forever.
+    another product's template while it was unreachable), so that such a link does not
+    stay unusable forever.
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
@@ -1213,10 +1213,10 @@ async def copy_pricing_links(
     """Copies the source project's pricing links onto the copied nodes.
 
     A link is dropped when the resource-usage-tracker does not know that plan/unit in the
-    destination product (e.g. cross-product template instantiation); when the tracker
-    cannot be reached, the link is copied unvalidated rather than lost. Only the tracker
-    is best-effort here: a database error fails the copy, as it does every other step of
-    it, and the project created by the copy is removed again.
+    destination product (e.g. cross-product template instantiation); when it cannot be
+    reached, the link is copied unvalidated rather than lost. Only the
+    resource-usage-tracker is best-effort here: a database error fails the copy, as it
+    does every other step of it, and the project created by the copy is removed again.
     """
     if not _is_product_billed(app, product_name):
         # the product does not pay for these nodes: the copy keeps their resources
@@ -1225,8 +1225,8 @@ async def copy_pricing_links(
 
     db = ProjectDBAPI.get_from_app_context(app)
 
-    # one tracker call per distinct plan/unit, not per node: several nodes typically share
-    # a unit, and an unreachable tracker would otherwise cost one timeout per node
+    # one resource-usage-tracker call per distinct plan/unit, not per node: several nodes typically share
+    # a unit, and an unreachable one would otherwise cost one timeout per node
     validated: dict[PricingPlanAndUnitIdsTuple, bool | None] = {}
 
     for mapped_source_node_id, destination_node_id in nodes_map.items():
@@ -1262,8 +1262,8 @@ async def _validate_pricing_link_for_copy(
     link: PricingPlanAndUnitIdsTuple,
     product_name: str,
 ) -> bool | None:
-    """True when the tracker knows ``link`` in this product, False when it does not and
-    None when it could not be asked."""
+    """True when the resource-usage-tracker knows ``link`` in this product, False when it
+    does not and None when it could not be asked."""
     pricing_plan_id, pricing_unit_id = link
     try:
         await rut_api.get_pricing_plan_unit(app, product_name, pricing_plan_id, pricing_unit_id)
