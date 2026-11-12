@@ -8,7 +8,7 @@ import random
 from collections import deque
 from dataclasses import dataclass
 from time import time
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from faker import Faker
@@ -19,6 +19,7 @@ from servicelib.async_utils import (
 
 RETRIES = 10
 DIFFERENT_CONTEXTS_COUNT = 10
+DISPATCH_BATCH_SIZE: Final[int] = 100
 
 
 @pytest.fixture
@@ -108,6 +109,8 @@ async def test_context_aware_dispatch(
 
         task = asyncio.get_event_loop().create_task(orderly(**params))
         tasks.append(task)
+        if (control + 1) % DISPATCH_BATCH_SIZE == 0:
+            await asyncio.sleep(0)
 
     await asyncio.wait_for(asyncio.gather(*tasks), timeout=30)
 
