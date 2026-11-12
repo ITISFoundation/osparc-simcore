@@ -1,9 +1,9 @@
 {{- define "simcore-service.name" -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- .Release.Name -}}
 {{- end -}}
 
 {{- define "simcore-service.envSecretName" -}}
-{{- printf "%s-env" (include "simcore-service.name" . | trunc 58 | trimSuffix "-") -}}
+{{- printf "%s-env" (include "simcore-service.name" . | trimSuffix "-") -}}
 {{- end -}}
 
 {{- define "simcore-service.labels" -}}
