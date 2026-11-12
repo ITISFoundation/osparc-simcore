@@ -250,7 +250,7 @@ multidict==6.9.1
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   aiohttp
     #   yarl
-openpyxl==3.0.9
+openpyxl==3.1.5
     # via -r requirements/_base.in
 opentelemetry-api==1.45.1
     # via
