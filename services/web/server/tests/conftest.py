@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 import pytest
@@ -226,6 +227,20 @@ def monkeypatch_setenv_from_app_config(
         return setenvs_from_dict(monkeypatch, envs)
 
     return _patch
+
+
+def _comparable_field(project: dict[str, Any], key: str) -> Any:
+    """`project[key]` as a project creation request can compare it
+
+    A project the web-server returns carries the `state` it computed for every node, which
+    the workbench sent in the request cannot know.
+    """
+    if key != "workbench":
+        return project[key]
+    return {
+        node_id: {field: value for field, value in node.items() if field != "state"}
+        for node_id, node in project[key].items()
+    }
 
 
 @pytest.fixture
@@ -468,7 +483,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
 
             for key in expected_data:
                 if key not in modified_fields:
-                    assert expected_data[key] == new_project[key]
+                    assert _comparable_field(expected_data, key) == _comparable_field(new_project, key)
 
         created_project_uuids.append(new_project["uuid"])
         used_clients.append(client)
