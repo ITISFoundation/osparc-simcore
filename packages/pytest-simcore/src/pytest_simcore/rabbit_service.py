@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 from base64 import b64encode
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from dataclasses import dataclass
 from typing import Annotated, Any, Final
 from urllib.parse import quote
 
@@ -41,6 +42,19 @@ _MGMT_API_RETRY_MAX_WAIT_S: Final[
 _MGMT_API_RETRY_TIMEOUT_S: Final[
     Annotated[int, doc("time budget to ride out a transient broker stall before failing")]
 ] = 120
+
+
+@dataclass(frozen=True, kw_only=True)
+class RabbitWorkerPrincipal:
+    """Credentials and vhost a test's RabbitMQ clients must use
+
+    Under xdist these are private to the worker, which keeps its queues and exchanges apart and
+    names it in the broker's log lines; outside xdist they are the stack's own.
+    """
+
+    vhost: str
+    user: str
+    password: str
 
 
 def _get_management_port(stack_name: str) -> int:
@@ -118,17 +132,20 @@ def _management_api_get(url: str, user: str, password: str) -> dict[str, Any]:
         raise
 
 
+def _grant_vhost_permissions(management_url: str, vhost: str, user: str, admin_user: str, admin_password: str) -> None:
+    _management_api_request(
+        "PUT",
+        f"{management_url}/api/permissions/{quote(vhost, safe='')}/{quote(user, safe='')}",
+        admin_user,
+        admin_password,
+        body={"configure": ".*", "write": ".*", "read": ".*"},
+    )
+
+
 def _create_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
     with log_context(logging.INFO, f"creating RabbitMQ vhost '{vhost}' on {management_url}", logger=_logger):
-        quoted_vhost = quote(vhost, safe="")
-        _management_api_request("PUT", f"{management_url}/api/vhosts/{quoted_vhost}", user, password)
-        _management_api_request(
-            "PUT",
-            f"{management_url}/api/permissions/{quoted_vhost}/{user}",
-            user,
-            password,
-            body={"configure": ".*", "write": ".*", "read": ".*"},
-        )
+        _management_api_request("PUT", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
+        _grant_vhost_permissions(management_url, vhost, user, user, password)
 
 
 def _delete_vhost(management_url: str, vhost: str, user: str, password: str) -> None:
@@ -136,33 +153,65 @@ def _delete_vhost(management_url: str, vhost: str, user: str, password: str) -> 
         _management_api_request("DELETE", f"{management_url}/api/vhosts/{quote(vhost, safe='')}", user, password)
 
 
+def _create_user(management_url: str, user: str, password: str, admin_user: str, admin_password: str) -> None:
+    """Creates a user that can use the AMQP and the management APIs of its own vhost
+
+    The `management` tag keeps the API scoped to the vhosts the user has permissions on, which is
+    what `tests/rabbitmq/test_rabbitmq_connection.py` relies on when it inspects its own connections.
+    """
+    with log_context(logging.INFO, f"creating RabbitMQ user '{user}' on {management_url}", logger=_logger):
+        _management_api_request(
+            "PUT",
+            f"{management_url}/api/users/{quote(user, safe='')}",
+            admin_user,
+            admin_password,
+            body={"name": user, "password": password, "tags": "management"},
+        )
+
+
+def _delete_user(management_url: str, user: str, admin_user: str, admin_password: str) -> None:
+    with log_context(logging.INFO, f"deleting RabbitMQ user '{user}' on {management_url}", logger=_logger):
+        url = f"{management_url}/api/users/{quote(user, safe='')}"
+        _management_api_request("DELETE", url, admin_user, admin_password)
+
+
 @pytest.fixture(scope="module")
-def _rabbit_worker_vhost(
+def rabbit_worker_principal(
     docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, request: pytest.FixtureRequest
-) -> Iterator[str]:
-    """Isolates each xdist worker's RabbitMQ traffic in its own vhost on the SAME shared
+) -> Iterator[RabbitWorkerPrincipal]:
+    """Isolates each xdist worker's RabbitMQ traffic in its own vhost AND user on the SAME shared
     broker: some exchanges/queues (e.g. comp_scheduler broadcasts, `aio_pika`'s own hardcoded
     "rpc.dlx" RPC exchange) use fixed, non-worker-scoped names, so concurrent workers sharing
-    the default vhost cross-talk. No-op (default vhost "/") when not running under xdist.
+    the default vhost cross-talk. Naming the worker in both also makes the broker's log lines
+    attributable, which is what lets a test still fail on a warning/error it caused.
+    No-op (default vhost "/" and the stack's own user) when not running under xdist.
 
     NOTE: module-scoped (not session-scoped) to match `docker_stack`'s scope: a fixture cannot
     depend on one with a narrower scope.
     """
+    admin_user = env_vars_for_docker_compose["RABBIT_USER"]
+    admin_password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
     if not is_xdist_worker(request):
-        yield "/"
+        yield RabbitWorkerPrincipal(vhost="/", user=admin_user, password=admin_password)
         return
 
     worker_id = get_worker_id(request)
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
     management_url = _get_management_url(prefix)
-    user = env_vars_for_docker_compose["RABBIT_USER"]
-    password = env_vars_for_docker_compose["RABBIT_PASSWORD"]
-    vhost = f"pytest_{worker_id}"
+    principal = RabbitWorkerPrincipal(
+        vhost=f"pytest_{worker_id}", user=f"pytest_{worker_id}", password=f"pytest-{worker_id}-password"
+    )
 
-    _create_vhost(management_url, vhost, user, password)
-    yield vhost
-    _delete_vhost(management_url, vhost, user, password)
+    _create_vhost(management_url, principal.vhost, admin_user, admin_password)
+    _create_user(management_url, principal.user, principal.password, admin_user, admin_password)
+    _grant_vhost_permissions(management_url, principal.vhost, principal.user, admin_user, admin_password)
+    try:
+        yield principal
+    finally:
+        # deleting the user also drops its permissions on the vhost
+        _delete_user(management_url, principal.user, admin_user, admin_password)
+        _delete_vhost(management_url, principal.vhost, admin_user, admin_password)
 
 
 @pytest.fixture(scope="module")
@@ -243,7 +292,7 @@ def wait_till_rabbit_client_is_connected() -> Callable[[RabbitMQClient], Awaitab
 def rabbit_env_vars_dict(
     docker_stack: dict,
     env_vars_for_docker_compose: EnvVarsDict,
-    _rabbit_worker_vhost: str,
+    rabbit_worker_principal: RabbitWorkerPrincipal,
 ) -> EnvVarsDict:
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
@@ -251,12 +300,12 @@ def rabbit_env_vars_dict(
     port = get_service_published_port("rabbit", int(env_vars_for_docker_compose["RABBIT_PORT"]), stack_name=prefix)
 
     return {
-        "RABBIT_USER": env_vars_for_docker_compose["RABBIT_USER"],
-        "RABBIT_PASSWORD": env_vars_for_docker_compose["RABBIT_PASSWORD"],
+        "RABBIT_USER": rabbit_worker_principal.user,
+        "RABBIT_PASSWORD": rabbit_worker_principal.password,
         "RABBIT_HOST": get_localhost_ip(),
         "RABBIT_PORT": f"{port}",
         "RABBIT_SECURE": env_vars_for_docker_compose["RABBIT_SECURE"],
-        "RABBIT_VHOST": _rabbit_worker_vhost,
+        "RABBIT_VHOST": rabbit_worker_principal.vhost,
     }
 
 
