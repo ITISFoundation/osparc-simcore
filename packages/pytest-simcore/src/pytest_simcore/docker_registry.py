@@ -4,12 +4,10 @@
 import asyncio
 import json
 import logging
-import os
 import tempfile
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager, suppress
-from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Final
@@ -121,23 +119,24 @@ def _docker_registry_impl(
             private_image = docker_client.images.pull(repo)
             docker_client.images.remove(image=private_image.id)
 
-    # provide os.environs
-    # NOTE: monkey-patching the settings instead would scope them to the test using them
-    old = deepcopy(os.environ)
-    os.environ["REGISTRY_SSL"] = "False"
-    os.environ["REGISTRY_AUTH"] = "False"
+    # provide os.environs: the settings of the code under test read the registry from the process
+    # environment (e.g. `RegistrySettings.create_from_envs`), so they must hold for the whole session.
+    # The function-scoped `monkeypatch` fixture cannot be requested by a session-scoped fixture, hence
+    # the class-based API (same as `simcore_services._monkeypatch_module`)
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setenv("REGISTRY_SSL", "False")
+    monkeypatch.setenv("REGISTRY_AUTH", "False")
     # the registry URL is how to access from the container (e.g. for accessing the API)
-    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:{port}"
+    monkeypatch.setenv("REGISTRY_URL", f"{get_localhost_ip()}:{port}")
     # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
-    os.environ["REGISTRY_PATH"] = f"127.0.0.1:{port}"
-    os.environ["REGISTRY_USER"] = "simcore"
-    os.environ["REGISTRY_PW"] = ""
+    monkeypatch.setenv("REGISTRY_PATH", f"127.0.0.1:{port}")
+    monkeypatch.setenv("REGISTRY_USER", "simcore")
+    monkeypatch.setenv("REGISTRY_PW", "")
 
-    yield url
-
-    # restore environs
-    os.environ.clear()
-    os.environ.update(old)
+    try:
+        yield url
+    finally:
+        monkeypatch.undo()
 
     # under xdist the controller removes the container at session end (see `pytest_sessionfinish`):
     # removing it here would take the registry away from the workers still running
