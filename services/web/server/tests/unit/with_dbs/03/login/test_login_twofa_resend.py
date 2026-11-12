@@ -5,6 +5,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator, Callable
+from datetime import timedelta
 
 import pytest
 import sqlalchemy as sa
@@ -159,16 +160,22 @@ async def test_resend_2fa_workflow(
 
 
 @pytest.fixture
-def set_resend_cooldown_secs(client: TestClient) -> Callable[[int], None]:
+def with_2fa_code_resend_cooldown_secs(
+    client: TestClient,
+) -> Callable[[timedelta], None]:
     """Overrides the per-product resend cooldown on the app settings, where
-    both the resend and the register-phone handler read it
+    both the resend and the register-phone handler read it.
+
+    Tests express the cooldown as a `timedelta` for readability: it is a
+    duration, not a bare number. It is converted to seconds here only because
+    the setting (`LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC`) is stored as an int
     """
 
-    def _set(seconds: int) -> None:
+    def _set(cooldown: timedelta) -> None:
         assert client.app
         product_settings = client.app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY]["osparc"]
         client.app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY]["osparc"] = product_settings.model_copy(
-            update={"LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC": seconds}
+            update={"LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC": int(cooldown.total_seconds())}
         )
 
     return _set
@@ -201,7 +208,7 @@ async def test_resend_2fa_cooldown_blocks_repeat_within_window(
     client: TestClient,
     registered_user: UserInfoDict,
     mocker: MockFixture,
-    set_resend_cooldown_secs: Callable[[int], None],
+    with_2fa_code_resend_cooldown_secs: Callable[[timedelta], None],
 ):
     """The cooldown between resends is kept server-side per account and
     channel: the server refuses repeats within the window, and repeated
@@ -218,7 +225,7 @@ async def test_resend_2fa_cooldown_blocks_repeat_within_window(
         "simcore_service_webserver.login._twofa_service.send_email_code",
         autospec=True,
     )
-    set_resend_cooldown_secs(30)
+    with_2fa_code_resend_cooldown_secs(timedelta(seconds=30))
 
     await _login(client, registered_user)
 
@@ -244,7 +251,7 @@ async def test_resend_2fa_cooldown_expires_after_the_window(
     client: TestClient,
     registered_user: UserInfoDict,
     mocker: MockFixture,
-    set_resend_cooldown_secs: Callable[[int], None],
+    with_2fa_code_resend_cooldown_secs: Callable[[timedelta], None],
 ):
     """Once the window elapsed, resending via the same channel is granted again"""
     assert client.app
@@ -253,7 +260,7 @@ async def test_resend_2fa_cooldown_expires_after_the_window(
         "simcore_service_webserver.login._twofa_service.send_sms_code",
         autospec=True,
     )
-    set_resend_cooldown_secs(1)
+    with_2fa_code_resend_cooldown_secs(timedelta(seconds=1))
 
     await _login(client, registered_user)
 
@@ -273,7 +280,7 @@ async def test_resend_2fa_send_failure_releases_the_cooldown(
     client: TestClient,
     registered_user: UserInfoDict,
     mocker: MockFixture,
-    set_resend_cooldown_secs: Callable[[int], None],
+    with_2fa_code_resend_cooldown_secs: Callable[[timedelta], None],
 ):
     """A resend whose delivery failed sent no code: the retry must not be
     charged for a window that delivered nothing
@@ -288,7 +295,7 @@ async def test_resend_2fa_send_failure_releases_the_cooldown(
         "simcore_service_webserver.login._twofa_service.send_sms_code",
         autospec=True,
     )
-    set_resend_cooldown_secs(60)
+    with_2fa_code_resend_cooldown_secs(timedelta(seconds=60))
 
     await _login(client, registered_user)
 
