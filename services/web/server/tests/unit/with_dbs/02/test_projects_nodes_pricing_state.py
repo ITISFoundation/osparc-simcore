@@ -652,22 +652,29 @@ async def test_repair_asks_rut_once_per_distinct_pricing_unit(
     per distinct plan/unit instead of one per node.
     """
     assert client.app
-    # two nodes linked to the same unit
+    # creation in a billed product already links both computational nodes to one unit
     project = await create_project("repair-dedupe-project", _TWO_COMP_NODES_WORKBENCH)
     project_id = project["uuid"]
+    # stale resources: the repair has to size both nodes again
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
-        await set_node_pricing_link(
+        await set_node_required_resources(
             sqlalchemy_async_engine,
             project_id,
-            NodeID(node_id),
-            pricing_plan_id=_DEFAULT_PRICING_PLAN_ID,
-            pricing_unit_id=_DEFAULT_PRICING_UNIT_ID,
+            node_id,
+            single_container_required_resources(_TWO_COMP_NODES_WORKBENCH[node_id]["key"], cpu=0.1),
         )
     link_lookup = mocker.spy(_projects_service.rut_api, "get_pricing_plan_unit")
 
     await _repair(client, logged_user, project_id, osparc_product_name)
 
     assert link_lookup.call_count == 1
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
+    for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
+        node_state = state[NodeID(node_id)]
+        assert node_state.required_resources
+        assert node_state.required_resources["container"]["resources"] == resources_limits(
+            cpu=1.9, ram_bytes=3865470566
+        )
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
