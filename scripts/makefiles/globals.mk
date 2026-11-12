@@ -55,6 +55,19 @@ IGNORE_DIR=.ignore
 $(IGNORE_DIR): # Used to produce .ignore folders which are auto excluded from version control (see .gitignore)
 	mkdir -p $(IGNORE_DIR)
 
+# $(1) command, $(2) expected version, $(3) version command
+define verify_tool_installation
+	@if ! command -v $(1) >/dev/null 2>&1; then \
+		echo "'$(1)' is not installed. Install version $(2) to continue."; \
+		exit 1; \
+	fi
+	@if ! $(3) | grep -q "$(2)"; then \
+		echo "WARNING: installed $(1) version does not match" >&2; \
+		echo "Expected $(1) version:'$(2)'. Please, update!" >&2; \
+		sleep 3s; \
+	fi
+endef
+
 #
 # SHORTCUTS
 #
