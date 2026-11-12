@@ -1,7 +1,7 @@
 """groups_extra_properties created and modified to timestamptz
 
 Revision ID: 8bef29afe495
-Revises: 3cf44b945687
+Revises: 666829812f35
 Create Date: 2026-11-12 13:44:26.973520+00:00
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "8bef29afe495"
-down_revision: str | None = "3cf44b945687"
+down_revision: str | None = "666829812f35"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
