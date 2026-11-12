@@ -284,7 +284,7 @@ class ProjectDBAPI(BaseProjectDB):
             insert_values["uuid"] = f"{uuid1()}"
 
         # extract workbench nodes
-        workbench: dict[str, Any] = insert_values.pop("workbench", {})
+        workbench: dict[str, dict[str, Any]] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
         insert_values.pop("access_rights", None)
 
@@ -293,11 +293,11 @@ class ProjectDBAPI(BaseProjectDB):
         # Build ProjectNodeCreate from workbench JSON (camelCase → snake_case)
         workbench_nodes: dict[NodeID, ProjectNodeCreate] = {}
         for node_id_str, node_data in workbench.items():
-            create_kwargs: dict[str, Any] = {
+            create_kwargs = {
                 WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k): v
                 for k, v in node_data.items()
                 if WORKBENCH_NODE_ALIAS_TO_COLUMN.get(k, k) in valid_fields
-            }  # pyright: ignore[reportAssignmentType]
+            }
             workbench_nodes[NodeID(node_id_str)] = ProjectNodeCreate(node_id=NodeID(node_id_str), **create_kwargs)
 
         # Caller-provided nodes take precedence (e.g. richer metadata from cloning)
