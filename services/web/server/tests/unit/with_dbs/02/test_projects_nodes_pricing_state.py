@@ -305,7 +305,7 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
 # The repair that a billed start runs (see test_director_v2_handlers.py): links the
 # nodes that have no usable link and sizes them. It runs on EVERY start, so it must be
 # cheap for the nodes it already brought up to date, must never lose a node when
-# director-v2 or the resource-usage tracker (RUT) is unreachable, and must not keep a node
+# director-v2 or the resource-usage-tracker is unreachable, and must not keep a node
 # stuck on a link that is unusable in this product.
 #
 
@@ -363,10 +363,10 @@ async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
     mocked_director_v2_node_sizing: mock.AsyncMock,
     with_billed_product: None,
 ):
-    """A node linked to a plan/unit that RUT does not know in this
-    product (e.g. a link copied from another product's template while RUT was
-    unreachable) is re-linked to the DEFAULT unit and sized for its machine, instead of
-    staying unusable for every future run.
+    """A node linked to a plan/unit that the resource-usage-tracker does not know in this
+    product (e.g. a link copied from another product's template while it was unreachable)
+    is re-linked to the DEFAULT unit and sized for its machine, instead of staying
+    unusable for every future run.
     """
     assert client.app
     project_id = user_project["uuid"]
@@ -549,7 +549,7 @@ async def test_project_creation_asks_rut_once_per_service(
     mocker: MockerFixture,
 ):
     """Two nodes of the same service share the answer about its DEFAULT pricing unit:
-    creation asks the resource-usage tracker (RUT) once per distinct service, not per node,
+    creation asks the resource-usage-tracker once per distinct service, not per node,
     and still sizes every node.
     """
     assert client.app
@@ -642,8 +642,8 @@ async def test_repair_asks_rut_once_per_distinct_pricing_unit(
     with_billed_product: None,
 ):
     """Every node of a start is repaired concurrently: nodes sharing a pricing unit share
-    one request to RUT, so an unreachable RUT costs one request
-    per distinct plan/unit instead of one per node.
+    one request to the resource-usage-tracker, so an unreachable one costs one per
+    distinct plan/unit instead of one per node.
     """
     assert client.app
     # creation in a billed product already links both computational nodes to one unit

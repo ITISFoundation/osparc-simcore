@@ -602,7 +602,7 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
     """A run fetches the requester's wallet when it has billable services, and repairs
     the nodes' pricing state only when the product pays for them.
 
-    Hand-computed t3.medium sizes for the default RUT unit: dask-worker 1.9 CPU /
+    Hand-computed t3.medium sizes for the resource-usage-tracker default unit: dask-worker 1.9 CPU /
     3865470566 B, dynamic-sidecar 0.6 CPU / 2791728742 B. Frontend nodes are never
     linked. `assert_called_once` pins the number of wallet fetches per run.
     """
