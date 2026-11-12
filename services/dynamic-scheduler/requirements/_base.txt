@@ -612,7 +612,7 @@ uvicorn==0.53.0
     #   fastapi-cli
     #   fastapi-cloud-cli
     #   nicegui
-uvloop==0.22.1
+uvloop==0.23.0
     # via uvicorn
 watchfiles==1.1.1
     # via

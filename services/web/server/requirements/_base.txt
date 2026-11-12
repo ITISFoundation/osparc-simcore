@@ -628,7 +628,7 @@ urllib3==2.8.0
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
-uvloop==0.22.1
+uvloop==0.23.0
     # via -r requirements/_base.in
 vine==5.1.0
     # via
