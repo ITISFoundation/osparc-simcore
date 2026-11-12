@@ -592,16 +592,26 @@ def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
 
 
 @pytest.fixture
-def with_billed_product(client: TestClient, osparc_product_name: ProductName) -> None:
+def mark_product_billed(client: TestClient, osparc_product_name: ProductName) -> Callable[[], None]:
     """Marks the test's product as one that pays for computational resources.
 
     Only for such a product does the web-server take ownership of a node's pricing state
     (its pricing link and the sizing of its resources). Products are cached per app, so
     this also covers the code paths that run outside a request.
     """
-    assert client.app
-    products = client.app[PRODUCTS_APPKEY]
-    products[osparc_product_name] = products[osparc_product_name].model_copy(update={"is_payment_enabled": True})
+
+    def _mark() -> None:
+        assert client.app
+        products = client.app[PRODUCTS_APPKEY]
+        products[osparc_product_name] = products[osparc_product_name].model_copy(update={"is_payment_enabled": True})
+
+    return _mark
+
+
+@pytest.fixture
+def with_billed_product(mark_product_billed: Callable[[], None]) -> None:
+    """Marks the test's product as one that pays for computational resources"""
+    mark_product_billed()
 
 
 @pytest.fixture
