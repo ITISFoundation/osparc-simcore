@@ -4,6 +4,7 @@
 
 
 import base64
+from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 from unittest import mock
@@ -596,14 +597,14 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
     wallet_info_expected: WalletInfo | None,
     mock_rut_default_pricing_unit: None,
     mocked_director_v2_node_sizing: mock.AsyncMock,
+    mark_product_billed: Callable[[], None],
 ):
-    """Starting a computation forwards `wallet_info` to director-v2. When the product
-    bills for resources (wallet resolved), the web-server first repairs the pricing state of
-    every runnable node: unlinked comp and dynamic nodes get the default unit and are sized
-    for its machine (hand-computed t3.medium: dask-worker 1.9 CPU / 3865470566 B,
-    dynamic-sidecar 0.6 CPU / 2791728742 B). Frontend nodes are never linked. When the
-    product does not bill, the web-server writes nothing to `projects_nodes` or
-    `projects_node_to_pricing_unit`.
+    """A run fetches the requester's wallet when it has billable services, and repairs
+    the nodes' pricing state only when the product pays for them.
+
+    Hand-computed t3.medium sizes for the default RUT unit: dask-worker 1.9 CPU /
+    3865470566 B, dynamic-sidecar 0.6 CPU / 2791728742 B. Frontend nodes are never
+    linked. `assert_called_once` pins the number of wallet fetches per run.
     """
     assert client.app
 
@@ -618,6 +619,10 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
         autospec=True,
         return_value=(user_project["uuid"], status.HTTP_201_CREATED),
     )
+
+    if wallet_info_expected is not None:
+        # a product takes ownership of its nodes' pricing state only when it says so
+        mark_product_billed()
 
     state_before = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     assert state_before, "the test project must have nodes"
@@ -687,8 +692,8 @@ async def test_start_computation_forwards_every_runnable_project(
     director-v2 per project, all of them with the same `wallet_info`, and still answers with
     the pipeline_id of the project the user started.
 
-    The pricing repair done before forwarding is best-effort (RUT is not mocked here) and
-    does not change the forwarding asserted below.
+    The pricing repair before forwarding writes nothing here: this test's product does not
+    bill for resources.
     """
     assert client.app
 
