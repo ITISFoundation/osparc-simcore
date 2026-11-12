@@ -4,12 +4,13 @@
 import asyncio
 import json
 import logging
-import os
+import tempfile
 import time
 from collections.abc import Awaitable, Callable, Iterator
-from copy import deepcopy
+from contextlib import contextmanager, suppress
+from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 import aiodocker
 import docker
@@ -17,29 +18,53 @@ import jsonschema
 import pytest
 import pytest_asyncio
 import tenacity
+from common_library.json_serialization import json_dumps
+from docker.errors import DockerException, NotFound
 from settings_library.docker_registry import RegistrySettings
 
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 from .helpers.host import get_localhost_ip
+from .helpers.xdist import (
+    get_worker_id,
+    is_xdist_controller,
+    is_xdist_worker,
+    read_shared_resources,
+    record_shared_resource,
+    run_once_across_workers,
+)
 
 _logger = logging.getLogger(__name__)
 
+# upper bound on the first worker's setup (pulls `hello-world` and pushes it to the local registry)
+_REGISTRY_SETUP_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
+
 
 @pytest.fixture(scope="session")
-def docker_registry(keep_docker_up: bool) -> Iterator[str]:
+def docker_registry(
+    keep_docker_up: bool, request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
-    yield from _docker_registry_impl(keep_docker_up, registry_version="3")
+    yield from _docker_registry_impl(
+        keep_docker_up, registry_version="3", request=request, tmp_path_factory=tmp_path_factory
+    )
 
 
 @pytest.fixture(scope="session")
-def docker_registry_v2() -> Iterator[str]:
+def docker_registry_v2(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     """sets up and runs a docker registry v2 container locally and returns its URL"""
-    yield from _docker_registry_impl(keep_docker_up=False, registry_version="2")
+    yield from _docker_registry_impl(
+        keep_docker_up=False, registry_version="2", request=request, tmp_path_factory=tmp_path_factory
+    )
 
 
-def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterator[str]:
+def _docker_registry_impl(
+    keep_docker_up: bool,
+    registry_version: str,
+    request: pytest.FixtureRequest,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
     # run the registry outside of the stack
     docker_client = docker.from_env()
@@ -50,65 +75,110 @@ def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterat
     container_name = f"pytest_registry_v{registry_version}"
     volume_name = f"pytest_registry_v{registry_version}_data"
 
-    container = None
-    try:
-        docker_client.login(registry=url, username="simcore")
-        container = docker_client.containers.list(filters={"name": container_name})[0]
-        print("Warning: docker registry is already up!")
-    except Exception:  # pylint: disable=broad-except
-        container = docker_client.containers.run(
-            f"registry:{registry_version}",
-            ports={"5000": port},
-            name=container_name,
-            environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
-            restart_policy={"Name": "always"},
-            volumes={volume_name: {"bind": "/var/lib/registry", "mode": "rw"}},
-            detach=True,
-        )
+    with run_once_across_workers(
+        request,
+        tmp_path_factory,
+        f"docker_registry_{container_name}",
+        timeout=_REGISTRY_SETUP_TIMEOUT,
+    ) as is_first:
+        if is_first:
+            try:
+                docker_client.login(registry=url, username="simcore")
+                print("Warning: docker registry is already up!")
+            except Exception:  # pylint: disable=broad-except
+                docker_client.containers.run(
+                    f"registry:{registry_version}",
+                    ports={"5000": port},
+                    name=container_name,
+                    environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
+                    restart_policy={"Name": "always"},
+                    volumes={volume_name: {"bind": "/var/lib/registry", "mode": "rw"}},
+                    detach=True,
+                )
+                # Wait until we can connect
+                assert wait_till_registry_is_responsive(url)
 
-        # Wait until we can connect
-        assert wait_till_registry_is_responsive(url)
+            # recorded whatever the outcome of the login attempt: a registry the run took over is
+            # also removed by it, like a non-xdist run would. Recorded before seeding the image so
+            # that a failure while seeding cannot leave this container behind unrecorded
+            record_shared_resource(request, tmp_path_factory, kind="registry", name=container_name)
 
-    # get the hello world example from docker hub
-    hello_world_image = docker_client.images.pull("hello-world", "latest")
-    # login to private registry
-    docker_client.login(registry=url, username="simcore")
-    # tag the image
-    repo = url + "/hello-world:dev"
-    assert hello_world_image.tag(repo)
-    # push the image to the private registry
-    docker_client.images.push(repo)
-    # wipe the images
-    docker_client.images.remove(image="hello-world:latest")
-    docker_client.images.remove(image=hello_world_image.id)
-    # pull the image from the private registry
-    private_image = docker_client.images.pull(repo)
-    docker_client.images.remove(image=private_image.id)
+            # get the hello world example from docker hub
+            hello_world_image = docker_client.images.pull("hello-world", "latest")
+            # login to private registry
+            docker_client.login(registry=url, username="simcore")
+            # tag the image
+            repo = url + "/hello-world:dev"
+            assert hello_world_image.tag(repo)
+            # push the image to the private registry
+            docker_client.images.push(repo)
+            # wipe the images
+            docker_client.images.remove(image="hello-world:latest")
+            docker_client.images.remove(image=hello_world_image.id)
+            # pull the image from the private registry
+            private_image = docker_client.images.pull(repo)
+            docker_client.images.remove(image=private_image.id)
 
-    # provide os.environs
-    # TODO: use monkey-patch
-    old = deepcopy(os.environ)
-    os.environ["REGISTRY_SSL"] = "False"
-    os.environ["REGISTRY_AUTH"] = "False"
+    # provide os.environs: the settings of the code under test read the registry from the process
+    # environment (e.g. `RegistrySettings.create_from_envs`), so they must hold for the whole session.
+    # The function-scoped `monkeypatch` fixture cannot be requested by a session-scoped fixture, hence
+    # the class-based API (same as `simcore_services._monkeypatch_module`)
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setenv("REGISTRY_SSL", "False")
+    monkeypatch.setenv("REGISTRY_AUTH", "False")
     # the registry URL is how to access from the container (e.g. for accessing the API)
-    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:{port}"
+    monkeypatch.setenv("REGISTRY_URL", f"{get_localhost_ip()}:{port}")
     # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
-    os.environ["REGISTRY_PATH"] = f"127.0.0.1:{port}"
-    os.environ["REGISTRY_USER"] = "simcore"
-    os.environ["REGISTRY_PW"] = ""
+    monkeypatch.setenv("REGISTRY_PATH", f"127.0.0.1:{port}")
+    monkeypatch.setenv("REGISTRY_USER", "simcore")
+    monkeypatch.setenv("REGISTRY_PW", "")
 
-    yield url
+    try:
+        yield url
+    finally:
+        monkeypatch.undo()
 
-    # restore environs
-    os.environ = old
+    # under xdist the controller removes the container at session end (see `pytest_sessionfinish`):
+    # removing it here would take the registry away from the workers still running
+    if not keep_docker_up and not is_xdist_worker(request):
+        _remove_registry_container(docker_client, container_name)
 
-    # remove registry
-    if not keep_docker_up:
+
+def _remove_registry_container(docker_client: docker.DockerClient, container_name: str) -> None:
+    """Stops and removes the registry container, if still there, and waits until it is gone"""
+    with suppress(NotFound):
+        container = docker_client.containers.get(container_name)
         container.stop()
         container.remove(force=True)
 
-        while docker_client.containers.list(filters={"name": container.name}):
+        while docker_client.containers.list(filters={"name": container_name}):
             time.sleep(1)
+
+
+def pytest_sessionfinish(session: pytest.Session) -> None:
+    """Removes at session end the registry containers the xdist workers recorded"""
+    config = session.config
+    if getattr(config, "workerinput", None) is not None or not is_xdist_controller(config):
+        return  # an xdist worker's controller removes them, and a non-xdist session did it already
+
+    if bool(config.getoption("--keep-docker-up", default=False)):
+        return
+
+    names = [resource["name"] for resource in read_shared_resources(config) if resource["kind"] == "registry"]
+    if not names:
+        return
+
+    try:
+        docker_client = docker.from_env()
+    except DockerException:
+        _logger.warning("docker daemon is not reachable: skipping session registry cleanup")
+        return
+
+    try:
+        for name in names:
+            _remove_registry_container(docker_client, name)
+    finally:
+        docker_client.close()
 
 
 @pytest.fixture
@@ -143,12 +213,51 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 # ********************************************************* Services ***************************************
 
 
+def _get_worker_registry_namespace(request: pytest.FixtureRequest) -> str:
+    """Repository path prefix that makes this xdist worker's injected images its own, e.g. "gw0/".
+
+    The workers share one registry, and injecting the same image from two workers would make them
+    push different content to the same repository:tag (an injector with an `owner_email` relabels
+    the image), so the last push would win for every worker. Empty outside xdist, so a serial run keeps
+    the repository paths it has always used.
+
+    The namespace covers the push only. Injecting still pulls and tags `pull_key:tag` in the daemon's
+    one image store, so a module requesting an injector fixture must opt into
+    `docker_images_exclusive` (pytest_simcore.xdist_docker_daemon) like the modules that pull or
+    delete those same images by name.
+    """
+    if not is_xdist_worker(request):
+        return ""
+    return f"{get_worker_id(request)}/"
+
+
+def _get_local_tag_suffix(request: pytest.FixtureRequest) -> str:
+    """Suffix for the intermediate local tag of `_pull_push_service`, unique per xdist worker"""
+    return get_worker_id(request)
+
+
+@contextmanager
+def _owned_build_context(pull_key: str, tag: str, suffix: str) -> Iterator[tuple[str, str]]:
+    """Yields `(build context, local tag)` for a rebuild that overrides the image labels.
+
+    The `Dockerfile` goes in a private directory instead of the pytest CWD, which every xdist
+    worker shares: it would otherwise be written concurrently and removed by the first worker to
+    finish while another is still uploading its build context. The local tag is unique per call so
+    a concurrent rebuild cannot move it onto another worker's image before the push reads it back.
+    """
+    with tempfile.TemporaryDirectory(prefix="pytest-docker-build-") as context:
+        (Path(context) / "Dockerfile").write_text(f"FROM {pull_key}:{tag}")
+        yield context, f"{tag}-owned-{suffix}"
+
+
 async def _pull_push_service(
     pull_key: str,
     tag: str,
     new_registry: str,
     node_meta_schema: dict,
     owner_email: str | None = None,
+    registry_namespace: str = "",
+    local_tag_suffix: str = "local",
 ) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
@@ -168,25 +277,21 @@ async def _pull_push_service(
             # and the catalog service automatically gives full access rights for testing it
             # otherwise it does not even get read rights
 
-            image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
             image_labels.update(
                 {
-                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
+                    "io.simcore.contact": json_dumps({"contact": owner_email}),
+                    "io.simcore.authors": json_dumps(
+                        {"authors": [{"name": "Tester", "email": owner_email, "affiliation": "IT'IS Foundation"}]}
+                    ),
+                    "maintainer": owner_email,
                 }
             )
-            image_labels.update({"maintainer": f"{owner_email}"})
 
-            df_path = Path("Dockerfile").resolve()
-            df_path.write_text(f"FROM {pull_key}:{tag}")
-
-            try:
+            with _owned_build_context(pull_key, tag, local_tag_suffix) as (build_context, owned_tag):
                 # Rebuild to override image labels AND re-tag
-                image2, _ = client.images.build(path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned")
+                image2, _ = client.images.build(path=build_context, labels=image_labels, tag=owned_tag)
                 print(json.dumps(image2.labels, indent=2))
                 image = image2
-
-            finally:
-                df_path.unlink()
 
     assert image_labels
     io_simcore_labels = {
@@ -200,7 +305,7 @@ async def _pull_push_service(
     jsonschema.validate(io_simcore_labels, node_meta_schema)
 
     # tag image
-    new_image_tag = f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
+    new_image_tag = f"{new_registry}/{registry_namespace}{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     assert image.tag(new_image_tag)
 
     # push the image to the new location
@@ -217,16 +322,23 @@ async def _pull_push_service(
     return {
         "schema": io_simcore_labels,
         "image": {
+            # the oSparc service key, as the services and the registry's consumers refer to it
             "name": f"{io_simcore_labels['key']}",
             "tag": io_simcore_labels["version"],
+            # the repository path as the registry knows it: `name` under this worker's namespace
+            # (see `_get_worker_registry_namespace`), which is what a pull must use
+            "registry_name": f"{registry_namespace}{io_simcore_labels['key']}",
         },
     }
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")  # pyright: ignore[reportArgumentType]
 def docker_registry_image_injector(
-    docker_registry: str, node_meta_schema: dict
+    docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
 ) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
+    registry_namespace = _get_worker_registry_namespace(request)
+    local_tag_suffix = _get_local_tag_suffix(request)
+
     def inject_image(source_image_repo: str, source_image_tag: str, owner_email: str | None = None):
         return _pull_push_service(
             source_image_repo,
@@ -234,15 +346,20 @@ def docker_registry_image_injector(
             docker_registry,
             node_meta_schema,
             owner_email,
+            registry_namespace=registry_namespace,
+            local_tag_suffix=local_tag_suffix,
         )
 
     return inject_image
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")  # pyright: ignore[reportArgumentType]
 def existing_docker_registry_image_injector(
-    node_meta_schema: dict,
+    node_meta_schema: dict, request: pytest.FixtureRequest
 ) -> Callable[[str, str, str, str | None], Awaitable[dict[str, Any]]]:
+    registry_namespace = _get_worker_registry_namespace(request)
+    local_tag_suffix = _get_local_tag_suffix(request)
+
     def inject_image(
         docker_registry: str, source_image_repo: str, source_image_tag: str, owner_email: str | None = None
     ):
@@ -252,6 +369,8 @@ def existing_docker_registry_image_injector(
             docker_registry,
             node_meta_schema,
             owner_email,
+            registry_namespace=registry_namespace,
+            local_tag_suffix=local_tag_suffix,
         )
 
     return inject_image
@@ -259,28 +378,48 @@ def existing_docker_registry_image_injector(
 
 @pytest.fixture
 async def osparc_service(
-    docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
+    docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str, request: pytest.FixtureRequest
 ) -> dict[str, Any]:
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
     NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
-    return await _pull_push_service(service_repo, service_tag, docker_registry, node_meta_schema)
+    return await _pull_push_service(
+        service_repo,
+        service_tag,
+        docker_registry,
+        node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
+    )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def sleeper_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+async def sleeper_service(
+    docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
+) -> dict[str, Any]:
     """Adds a itisfoundation/sleeper in docker registry"""
-    return await _pull_push_service("itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema)
+    return await _pull_push_service(
+        "itisfoundation/sleeper",
+        "1.0.0",
+        docker_registry,
+        node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
+    )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+async def jupyter_service(
+    docker_registry: str, node_meta_schema: dict, request: pytest.FixtureRequest
+) -> dict[str, Any]:
     """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
     return await _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
         "2.13.0",
         docker_registry,
         node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
@@ -291,7 +430,10 @@ def dy_static_file_server_version(request: pytest.FixtureRequest):
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_service(
-    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+    docker_registry: str,
+    node_meta_schema: dict,
+    dy_static_file_server_version: str,
+    request: pytest.FixtureRequest,
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
@@ -302,12 +444,17 @@ async def dy_static_file_server_service(
         dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_dynamic_sidecar_service(
-    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+    docker_registry: str,
+    node_meta_schema: dict,
+    dy_static_file_server_version: str,
+    request: pytest.FixtureRequest,
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
@@ -318,12 +465,17 @@ async def dy_static_file_server_dynamic_sidecar_service(
         dy_static_file_server_version,
         docker_registry,
         node_meta_schema,
+        registry_namespace=_get_worker_registry_namespace(request),
+        local_tag_suffix=_get_local_tag_suffix(request),
     )
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_dynamic_sidecar_compose_spec_service(
-    docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
+    docker_registry: str,
+    node_meta_schema: dict,
+    dy_static_file_server_version: str,
+    request: pytest.FixtureRequest,
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
