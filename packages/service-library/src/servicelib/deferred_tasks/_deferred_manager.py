@@ -3,7 +3,7 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable, Iterable
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Final
 
 import arrow
@@ -48,7 +48,7 @@ _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS: Final[NonNegativeInt] = 100
 _DEFAULT_DELAY_BEFORE_NACK: Final[timedelta] = timedelta(seconds=1)
 
 
-class _FastStreamRabbitQueue(str, Enum):
+class _FastStreamRabbitQueue(StrEnum):
     SCHEDULED = "SCHEDULED"
     SUBMIT_TASK = "SUBMIT_TASK"
     WORKER = "WORKER"
@@ -627,4 +627,4 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
     async def shutdown(self) -> None:
         self.un_patch_base_deferred_handlers()
-        await self.broker.close()
+        await self.broker.stop()
