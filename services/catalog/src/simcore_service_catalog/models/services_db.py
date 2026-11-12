@@ -12,6 +12,7 @@ from models_library.services_enums import ServiceType
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -95,14 +96,14 @@ def _httpurl_to_str(value: HttpUrl | str | None) -> str | None:
 
 
 def _as_utc(value: datetime | None) -> datetime | None:
-    # the `deprecated` column is a `timestamptz`; naive values would be encoded
-    # by asyncpg with the host local timezone, so pin them to UTC (the timezone
-    # of the historical stored values)
     if value is None:
         return None
     if value.tzinfo is None:
         return value.replace(tzinfo=UTC)
     return value.astimezone(UTC)
+
+
+type _UtcDateTime = Annotated[datetime | None, AfterValidator(_as_utc)]
 
 
 class ServiceMetaDataDBCreate(BaseModel):
@@ -129,12 +130,7 @@ class ServiceMetaDataDBCreate(BaseModel):
     release_notes_url: str | None = None
 
     # lifecycle
-    deprecated: datetime | None = None
-
-    @field_validator("deprecated")
-    @classmethod
-    def _normalize_deprecated(cls, value: datetime | None) -> datetime | None:
-        return _as_utc(value)
+    deprecated: _UtcDateTime = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -179,12 +175,7 @@ class ServiceMetaDataDBPatch(BaseModel):
     release_notes_url: str | None = None
 
     # lifecycle
-    deprecated: datetime | None = None
-
-    @field_validator("deprecated")
-    @classmethod
-    def _normalize_deprecated(cls, value: datetime | None) -> datetime | None:
-        return _as_utc(value)
+    deprecated: _UtcDateTime = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
