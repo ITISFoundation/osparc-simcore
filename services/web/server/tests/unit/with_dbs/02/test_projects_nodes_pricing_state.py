@@ -21,12 +21,13 @@ pipeline update" behaviors (D1-D6) are exercised from the director-v2 side in
 `services/director-v2/tests/unit/with_dbs`.
 """
 
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import Annotated, Any, Final
 from unittest import mock
-from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
+from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingUnitGet,
 )
@@ -52,7 +53,6 @@ from pytest_simcore.helpers.project_nodes_pricing import (
 )
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from servicelib.long_running_tasks.models import TaskStatus
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _projects_service
 from simcore_service_webserver.projects._projects_repository_legacy import ProjectDBAPI
@@ -62,21 +62,12 @@ from simcore_service_webserver.resource_usage.settings import (
     get_plugin_settings as get_rut_plugin_settings,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
-from tenacity.asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
-# Hand-computed expectation (t3.medium = 2 CPU / 4 GiB, dask-worker formula):
-#   cpu = max(0.1, 2.0 - 0.1) = 1.9
-#   ram = int(4294967296 * 0.9) = 3865470566
-#
+_FILE_PICKER_NODE_ID: Final[str] = "106bfd6b-4b94-4e9e-9cd4-2f8e446f9a9e"
+_COMP_NODE_ID: Final[str] = "0e5cc0cf-0b75-4b17-b995-899cb95a5eeb"
+_DYNAMIC_NODE_ID: Final[str] = "b18cc951-4e0a-4f1f-9f2d-98b1d1ba72a1"
 
-_FILE_PICKER_NODE_ID = "106bfd6b-4b94-4e9e-9cd4-2f8e446f9a9e"
-_COMP_NODE_ID = "0e5cc0cf-0b75-4b17-b995-899cb95a5eeb"
-_DYNAMIC_NODE_ID = "b18cc951-4e0a-4f1f-9f2d-98b1d1ba72a1"
-
-_WORKBENCH: dict[str, Any] = {
+_WORKBENCH: Final[dict[str, Any]] = {
     _FILE_PICKER_NODE_ID: {
         "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
@@ -107,34 +98,33 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-async def _create_project(client: TestClient, name: str, workbench: dict[str, Any]) -> ProjectDict:
+@pytest.fixture
+def create_project(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    primary_group: dict[str, str],
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+) -> Callable[[str, dict[str, Any]], Awaitable[ProjectDict]]:
     """Creates a project through the endpoint and waits for the long-running task"""
-    assert client.app
-    create_url = client.app.router["create_project"].url_for()
-    resp = await client.post(f"{create_url}", json={"name": name, "workbench": workbench, "accessRights": {}})
-    data, _ = await assert_status(resp, status.HTTP_202_ACCEPTED)
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(60),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            rsp = await client.get(urlparse(data["status_href"]).path)
-            status_data, _ = await assert_status(rsp, status.HTTP_200_OK)
-            task_status = TaskStatus.model_validate(status_data)
-            assert task_status.done, f"creation task not done: {task_status}"
+    async def _create(name: str, workbench: dict[str, Any]) -> ProjectDict:
+        return await request_create_project(
+            client,
+            status.HTTP_202_ACCEPTED,
+            status.HTTP_201_CREATED,
+            logged_user,
+            primary_group,
+            project={"name": name, "workbench": workbench},
+        )
 
-    rsp = await client.get(urlparse(data["result_href"]).path)
-    new_project, _ = await assert_status(rsp, status.HTTP_201_CREATED)
-    return new_project
+    return _create
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_project_creation_in_a_non_billed_product_leaves_the_resources_to_the_user(
     *,
     client: TestClient,
+    create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
     logged_user: UserInfoDict,
     sqlalchemy_async_engine: AsyncEngine,
     project_db_cleaner: None,
@@ -152,7 +142,7 @@ async def test_project_creation_in_a_non_billed_product_leaves_the_resources_to_
     pricing link (see `test_replace_node_resources_raises_409_if_pricing_unit_is_connected`).
     """
     assert client.app
-    new_project = await _create_project(client, "non-billed-project", _WORKBENCH)
+    new_project = await create_project("non-billed-project", _WORKBENCH)
 
     # nothing is sized, nothing is linked, and every node keeps the catalog's resources
     mocked_director_v2_node_sizing.assert_not_called()
@@ -175,9 +165,10 @@ async def test_project_creation_in_a_non_billed_product_leaves_the_resources_to_
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_project_creation_links_default_unit_and_sizes_computational_nodes(
+async def test_project_creation_links_default_unit_and_sizes_only_comp_nodes(
     *,
     client: TestClient,
+    create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
     logged_user: UserInfoDict,
     sqlalchemy_async_engine: AsyncEngine,
     project_db_cleaner: None,
@@ -187,28 +178,31 @@ async def test_project_creation_links_default_unit_and_sizes_computational_nodes
     mock_service_resources: ServiceResourcesDict,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
-    billed_product: None,
+    with_billed_product: None,
 ):
-    """W5: creating a new project (POST /v0/projects) in a BILLED product links the
-    DEFAULT pricing unit and sizes every COMPUTATIONAL node right away, while dynamic
-    and frontend nodes get NO link at creation (copy/template cloning is characterized in
-    test_projects_service__copy.py; api-server jobs use this same creation path).
+    """Creating a new project (POST /v0/projects) in a billed product links the default
+    pricing unit and sizes every node with a `simcore/services/comp` key, at creation.
+    Dynamic and frontend nodes get no link there: a dynamic node is linked when it starts
+    (below), a frontend node never. Copy and template cloning is characterized in
+    test_projects_service__copy.py; api-server jobs use this same creation path.
     """
     assert client.app
 
-    new_project = await _create_project(client, "w5-project", _WORKBENCH)
+    new_project = await create_project("billed-project", _WORKBENCH)
 
-    # only the computational node is sized at creation: exactly one RPC call
+    # only the comp node is sized at creation: exactly one RPC call
     mocked_director_v2_node_sizing.assert_called_once()
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, new_project["uuid"])
     assert len(state) == len(_WORKBENCH)
 
-    # computational node: linked to the default plan/unit and dask-sized
+    # comp node: linked to the default plan/unit and sized with the dask-worker formula
     comp_state = state[NodeID(_COMP_NODE_ID)]
     assert comp_state.pricing_plan_id == _DEFAULT_PRICING_PLAN_ID
     assert comp_state.pricing_unit_id == mock_rut_default_pricing_unit.pricing_unit_id
     assert comp_state.required_resources
+    # hand-computed from t3.medium (2 CPU / 4 GiB) with the dask-worker formula:
+    # cpu = max(0.1, 2.0 - 0.1) = 1.9, ram = int(4294967296 * 0.9) = 3865470566
     comp_resources = comp_state.required_resources["container"]["resources"]
     assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
     assert comp_resources["RAM"]["limit"] == 3865470566
@@ -223,24 +217,17 @@ async def test_project_creation_links_default_unit_and_sizes_computational_nodes
 
 
 #
-# W2b: starting a dynamic service in a BILLED product, on a node with no pricing link
-# (dynamic nodes are never linked at creation, so this path always fires for them).
+# starting a dynamic service in a billed product, on a node with no pricing link
+# (dynamic nodes are never linked at creation, so this path always fires for them)
 #
 # Hand-computed expectation (t3.medium = 2 CPU / 4 GiB, dynamic-sidecar formula):
 #   cpu = max(0.5, 2.0 - 1.4) = 0.6
 #   ram = int(4294967296 - 0.1*4294967296 - 1 GiB) = 2791728742
 #
 
-_DEFAULT_PRICING_PLAN_ID = 1
-_DEFAULT_PRICING_UNIT_ID = 1  # the default one, on t3.medium
-_PROJECT_WALLET_ID = WalletID(7)
-
-
-@pytest.fixture
-def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
-    # the wallet/pricing/hardware block of the dynamic start is gated on this flag
-    monkeypatch.setenv("WEBSERVER_CREDIT_COMPUTATION_ENABLED", "1")
-    return app_environment | {"WEBSERVER_CREDIT_COMPUTATION_ENABLED": "1"}
+_DEFAULT_PRICING_PLAN_ID: Final[int] = 1
+_DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the product default, on t3.medium")]] = 1
+_PROJECT_WALLET_ID: Final[WalletID] = WalletID(7)
 
 
 @pytest.fixture
@@ -268,7 +255,7 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     sqlalchemy_async_engine: AsyncEngine,
-    billed_product: None,
+    with_billed_product: None,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mock_project_wallet_with_credits: None,
     mocked_director_v2_node_sizing: mock.AsyncMock,
@@ -324,12 +311,12 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
 # The repair that a billed start runs (see test_director_v2_handlers.py): links the
 # nodes that have no usable link and sizes them. It runs on EVERY start, so it must be
 # cheap for the nodes it already brought up to date, must never lose a node when
-# director-v2 or the resource-usage-tracker is unreachable, and must not keep a node
+# director-v2 or the resource-usage tracker (RUT) is unreachable, and must not keep a node
 # stuck on a link that is unusable in this product.
 #
 
-_UNKNOWN_PRICING_PLAN_ID = 66
-_UNKNOWN_PRICING_UNIT_ID = 77
+_UNKNOWN_PRICING_PLAN_ID: Final[Annotated[int, doc("a plan the product does not know")]] = 66
+_UNKNOWN_PRICING_UNIT_ID: Final[Annotated[int, doc("a unit of the known plan that does not exist")]] = 77
 
 
 def _comp_node_id(user_project: ProjectDict) -> NodeID:
@@ -356,8 +343,8 @@ async def test_repair_replaces_a_link_that_is_unknown_in_the_product(
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
-    """A node linked to a plan/unit the resource-usage-tracker does not know in this
-    product (e.g. a link copied from another product's template while the tracker was
+    """A node linked to a plan/unit that RUT does not know in this
+    product (e.g. a link copied from another product's template while RUT was
     unreachable) is re-linked to the DEFAULT unit and sized for its machine, instead of
     staying unusable for every future run.
     """
@@ -507,10 +494,11 @@ async def test_repair_keeps_link_and_resources_when_sizing_fails_and_completes_l
     assert resources["RAM"]["limit"] == 3865470566
 
 
-_SECOND_COMP_NODE_ID = "5b2af27d-b4a4-4a4b-9c9c-42ce9dd3a5f1"
+_SECOND_COMP_NODE_ID: Final[str] = "5b2af27d-b4a4-4a4b-9c9c-42ce9dd3a5f1"
 
-# the same service as `_COMP_NODE_ID`: a project's nodes typically share one service
-_TWO_COMP_NODES_WORKBENCH = _WORKBENCH | {
+_TWO_COMP_NODES_WORKBENCH: Final[
+    Annotated[dict[str, Any], doc("same service as _COMP_NODE_ID: a project's nodes typically share one")]
+] = _WORKBENCH | {
     _SECOND_COMP_NODE_ID: {
         "key": _WORKBENCH[_COMP_NODE_ID]["key"],
         "version": _WORKBENCH[_COMP_NODE_ID]["version"],
@@ -522,9 +510,10 @@ _TWO_COMP_NODES_WORKBENCH = _WORKBENCH | {
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_project_creation_asks_the_tracker_once_per_service(
+async def test_project_creation_asks_rut_once_per_service(
     *,
     client: TestClient,
+    create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
     logged_user: UserInfoDict,
     sqlalchemy_async_engine: AsyncEngine,
     project_db_cleaner: None,
@@ -534,17 +523,17 @@ async def test_project_creation_asks_the_tracker_once_per_service(
     mock_service_resources: ServiceResourcesDict,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
-    billed_product: None,
+    with_billed_product: None,
     mocker: MockerFixture,
 ):
     """Two nodes of the same service share the answer about its DEFAULT pricing unit:
-    creation asks the resource-usage-tracker once per distinct service, not once per node,
+    creation asks the resource-usage tracker (RUT) once per distinct service, not per node,
     and still sizes every node.
     """
     assert client.app
     default_plan_lookup = mocker.spy(_projects_service.rut_api, "get_default_service_pricing_plan")
 
-    new_project = await _create_project(client, "dedupe-project", _TWO_COMP_NODES_WORKBENCH)
+    new_project = await create_project("dedupe-project", _TWO_COMP_NODES_WORKBENCH)
 
     assert default_plan_lookup.call_count == 1
     # sizing is per node: both computational nodes get their own request
@@ -575,7 +564,7 @@ async def test_node_creation_links_default_unit_and_sizes_it(
     mock_service_resources: ServiceResourcesDict,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
-    billed_product: None,
+    with_billed_product: None,
 ):
     """Adding a computational node to a project of a BILLED product links the DEFAULT
     unit and sizes it right away. An unreachable director-v2 leaves the link in place and
@@ -613,9 +602,10 @@ async def test_node_creation_links_default_unit_and_sizes_it(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_repair_asks_the_tracker_once_per_distinct_pricing_unit(
+async def test_repair_asks_rut_once_per_distinct_pricing_unit(
     *,
     client: TestClient,
+    create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     sqlalchemy_async_engine: AsyncEngine,
@@ -629,13 +619,13 @@ async def test_repair_asks_the_tracker_once_per_distinct_pricing_unit(
     mocker: MockerFixture,
 ):
     """Every node of a start is repaired concurrently: nodes sharing a pricing unit share
-    one request to the resource-usage-tracker, so an unreachable tracker costs one request
+    one request to RUT, so an unreachable RUT costs one request
     per distinct plan/unit instead of one per node.
     """
     assert client.app
     # created unlinked (this product does not bill here), then linked by hand to the same
     # unit: what a copy from another product leaves behind
-    project = await _create_project(client, "repair-dedupe-project", _TWO_COMP_NODES_WORKBENCH)
+    project = await create_project("repair-dedupe-project", _TWO_COMP_NODES_WORKBENCH)
     project_id = project["uuid"]
     for node_id in (_COMP_NODE_ID, _SECOND_COMP_NODE_ID):
         await set_node_pricing_link(
@@ -655,6 +645,7 @@ async def test_repair_asks_the_tracker_once_per_distinct_pricing_unit(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_project_creation_keeps_the_default_links_when_sizing_fails(
     client: TestClient,
+    create_project: Callable[[str, dict[str, Any]], Awaitable[ProjectDict]],
     logged_user: UserInfoDict,
     sqlalchemy_async_engine: AsyncEngine,
     project_db_cleaner: None,
@@ -664,7 +655,7 @@ async def test_project_creation_keeps_the_default_links_when_sizing_fails(
     mock_service_resources: ServiceResourcesDict,
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
-    billed_product: None,
+    with_billed_product: None,
 ):
     """An unreachable director-v2 must not break project creation: every computational
     node keeps the DEFAULT unit it was linked to (the link is written before the sizing),
@@ -675,7 +666,7 @@ async def test_project_creation_keeps_the_default_links_when_sizing_fails(
     assert client.app
     mocked_director_v2_node_sizing.side_effect = TimeoutError("director-v2 unreachable")
 
-    new_project = await _create_project(client, "sizing-failure-project", _TWO_COMP_NODES_WORKBENCH)
+    new_project = await create_project("sizing-failure-project", _TWO_COMP_NODES_WORKBENCH)
 
     state = await get_node_pricing_state(sqlalchemy_async_engine, new_project["uuid"])
     # both computational nodes are linked to the default unit despite the failures, and

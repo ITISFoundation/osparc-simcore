@@ -597,13 +597,13 @@ async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_b
     mock_rut_default_pricing_unit: None,
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
-    """W8/W9: starting a computation forwards `wallet_info` to director-v2. When
-    the product is BILLED (wallet resolved), the web-server first REPAIRS the
-    pricing state of every runnable node: unlinked computational/dynamic nodes get
-    the DEFAULT unit and are sized for its machine (hand-computed t3.medium:
-    dask 1.9 CPU / 3865470566 B, dynamic-sidecar 0.6 CPU / 2791728742 B).
-    Frontend nodes are never linked. When NOT billed, the web-server writes
-    NOTHING to `projects_nodes` or `projects_node_to_pricing_unit`.
+    """Starting a computation forwards `wallet_info` to director-v2. When the product
+    bills for resources (wallet resolved), the web-server first repairs the pricing state of
+    every runnable node: unlinked comp and dynamic nodes get the default unit and are sized
+    for its machine (hand-computed t3.medium: dask-worker 1.9 CPU / 3865470566 B,
+    dynamic-sidecar 0.6 CPU / 2791728742 B). Frontend nodes are never linked. When the
+    product does not bill, the web-server writes nothing to `projects_nodes` or
+    `projects_node_to_pricing_unit`.
     """
     assert client.app
 
@@ -682,13 +682,13 @@ async def test_start_computation_forwards_every_runnable_project(
     mocker: MockerFixture,
     faker: Faker,
 ):
-    """W11: when the product's run policy returns several runnable projects (e.g. a
-    project that must be forked per variant), the web-server forwards ONE start request
-    to director-v2 per project, all of them with the SAME wallet_info, and still answers
-    with the pipeline_id of the project the user started.
+    """When the product's run policy returns several runnable projects (e.g. a project
+    that must be forked per variant), the web-server forwards one start request to
+    director-v2 per project, all of them with the same `wallet_info`, and still answers with
+    the pipeline_id of the project the user started.
 
-    The pricing repair done before forwarding is best-effort (the resource-usage
-    tracker is not mocked here) and does not change the forwarding asserted below.
+    The pricing repair done before forwarding is best-effort (RUT is not mocked here) and
+    does not change the forwarding asserted below.
     """
     assert client.app
 
