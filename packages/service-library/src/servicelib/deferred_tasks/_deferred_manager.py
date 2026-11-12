@@ -3,7 +3,7 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable, Iterable
 from datetime import datetime, timedelta
-from enum import StrEnum
+from enum import auto
 from typing import Any, Final
 
 import arrow
@@ -18,6 +18,7 @@ from faststream.rabbit import (
     RabbitQueue,
     RabbitRouter,
 )
+from models_library.utils.enums import StrAutoEnum
 from pydantic import NonNegativeInt
 from settings_library.rabbit import RabbitSettings
 
@@ -48,16 +49,16 @@ _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS: Final[NonNegativeInt] = 100
 _DEFAULT_DELAY_BEFORE_NACK: Final[timedelta] = timedelta(seconds=1)
 
 
-class _FastStreamRabbitQueue(StrEnum):
-    SCHEDULED = "SCHEDULED"
-    SUBMIT_TASK = "SUBMIT_TASK"
-    WORKER = "WORKER"
+class _FastStreamRabbitQueue(StrAutoEnum):
+    SCHEDULED = auto()
+    SUBMIT_TASK = auto()
+    WORKER = auto()
 
-    ERROR_RESULT = "ERROR_RESULT"
+    ERROR_RESULT = auto()
 
-    FINISHED_WITH_ERROR = "FINISHED_WITH_ERROR"
-    DEFERRED_RESULT = "DEFERRED_RESULT"
-    MANUALLY_CANCELLED = "MANUALLY_CANCELLED"
+    FINISHED_WITH_ERROR = auto()
+    DEFERRED_RESULT = auto()
+    MANUALLY_CANCELLED = auto()
 
 
 def _get_queue_from_state(task_state: TaskState) -> _FastStreamRabbitQueue:
