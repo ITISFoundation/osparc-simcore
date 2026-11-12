@@ -305,6 +305,30 @@ async def test_connect_pricing_unit_to_project_node_if_not_linked_keeps_an_exist
     )
 
 
+async def test_connect_pricing_unit_of_unknown_node_raises(
+    asyncpg_connection: AsyncConnection,
+    projects_nodes_repo: ProjectNodesRepo,
+):
+    """The table's project_node_id is a foreign key: an unknown node must not reach it"""
+    unknown_node_id = uuid.uuid4()
+
+    with pytest.raises(ProjectNodesNodeNotFoundError):
+        await projects_nodes_repo.connect_pricing_unit_to_project_node(
+            asyncpg_connection,
+            node_uuid=unknown_node_id,
+            pricing_plan_id=1,
+            pricing_unit_id=1,
+        )
+
+    with pytest.raises(ProjectNodesNodeNotFoundError):
+        await projects_nodes_repo.connect_pricing_unit_to_project_node_if_not_linked(
+            asyncpg_connection,
+            node_uuid=unknown_node_id,
+            pricing_plan_id=1,
+            pricing_unit_id=1,
+        )
+
+
 async def test_delete_invalid_node_does_nothing(
     asyncpg_connection: AsyncConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,

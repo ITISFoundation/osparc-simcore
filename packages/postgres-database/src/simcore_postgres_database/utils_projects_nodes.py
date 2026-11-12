@@ -290,15 +290,23 @@ class ProjectNodesRepo:
         pricing_plan_id: int,
         pricing_unit_id: int,
     ) -> Insert:
-        result = await connection.scalar(
+        """The statement linking a pricing unit to this project's node
+
+        Raises:
+            ProjectNodesNodeNotFoundError: the node is not in this project
+        """
+        project_node_id = await connection.scalar(
             sqlalchemy.select(projects_nodes.c.project_node_id).where(
                 (projects_nodes.c.project_uuid == f"{self.project_uuid}") & (projects_nodes.c.node_id == f"{node_uuid}")
             )
         )
-        project_node_id = int(result) if result else 0
+        if project_node_id is None:
+            # project_node_id is a foreign key to projects_nodes: linking an unknown node
+            # would fail with an IntegrityError on it instead of naming the missing node
+            raise ProjectNodesNodeNotFoundError(node_id=node_uuid, project_uuid=self.project_uuid)
 
         return pg_insert(projects_node_to_pricing_unit).values(
-            project_node_id=project_node_id,
+            project_node_id=int(project_node_id),
             pricing_plan_id=pricing_plan_id,
             pricing_unit_id=pricing_unit_id,
             created=sqlalchemy.func.now(),
@@ -351,12 +359,13 @@ class ProjectNodesRepo:
         on_nothing_stmt = insert_stmt.on_conflict_do_nothing(  # NOSONAR
             index_elements=[projects_node_to_pricing_unit.c.project_node_id],
         )
-        await connection.execute(on_nothing_stmt)
-        link = await self.get_project_node_pricing_unit_id(connection, node_uuid=node_uuid)
-        if link is None:
-            # the insert above landed on the 0 sentinel: this project has no such node
-            raise ProjectNodesNodeNotFoundError(node_id=node_uuid, project_uuid=self.project_uuid)
-        return link
+        result = await connection.execute(on_nothing_stmt)
+        if result.rowcount == 0:
+            # the node was linked while this ran: keep that link
+            link = await self.get_project_node_pricing_unit_id(connection, node_uuid=node_uuid)
+            assert link is not None  # nosec
+            return link
+        return (pricing_plan_id, pricing_unit_id)
 
     @staticmethod
     async def get_project_id_from_node_id(connection: AsyncConnection, *, node_id: uuid.UUID) -> uuid.UUID:
