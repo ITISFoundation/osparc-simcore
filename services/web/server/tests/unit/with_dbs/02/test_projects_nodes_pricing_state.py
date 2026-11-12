@@ -9,15 +9,9 @@
 - `projects_nodes.required_resources`
 - `projects_node_to_pricing_unit`
 
-These tests describe the STATE produced by project creation, not the code that
-produces it, so they keep passing while the responsibility for writing that state
-moves from director-v2 to the web-server (pricing/resources ownership rework).
-Tests marked `@pytest.mark.epic(...)` assert TODAY's behaviour and name, in their
-docstring, the PR of the epic intended to change them (`flips_in`).
-
-The dynamic-node "linked + sized with the dynamic formula at dynamic start" (W2b,
-below) and the computational-node "linked to the default unit + sized on the first
-pipeline update" behaviors (D1-D6) are exercised from the director-v2 side in
+They describe the STATE a request leaves behind, not the code that writes it, so they
+keep passing while the responsibility for that state moves between services. A node's
+link and sizing are also exercised from the director-v2 side in
 `services/director-v2/tests/unit/with_dbs`.
 """
 
@@ -136,8 +130,8 @@ async def test_project_creation_in_a_non_billed_product_leaves_the_resources_to_
     mocked_director_v2_node_sizing: mock.AsyncMock,
     with_permitted_override_services_specifications: None,
 ):
-    """Creating a project in a product that does not pay for computational resources
-    links nothing and sizes nothing, which is what keeps
+    """Creating a project in a product that does not pay for node resources links
+    nothing and sizes nothing, which is what keeps
     `PUT .../nodes/{node_id}/resources` usable: it answers 409 on a node that has a
     pricing link (see `test_replace_node_resources_raises_409_if_pricing_unit_is_connected`).
     """
@@ -261,7 +255,7 @@ async def test_start_dynamic_service_links_default_unit_and_sizes_with_dynamic_f
     mocked_director_v2_node_sizing: mock.AsyncMock,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
 ):
-    """W2b: starting a dynamic service in a billed product, on a node without any
+    """Starting a dynamic service in a billed product, on a node without any
     pricing link, links the DEFAULT plan/unit of the service and resizes
     `required_resources` with the DYNAMIC-SIDECAR formula of that unit's machine
     (the sizing is computed by director-v2). Dynamic nodes are never linked at
@@ -343,7 +337,7 @@ async def test_repair_writes_nothing_in_a_non_billed_product(
     mock_rut_default_pricing_unit: RutPricingUnitGet,
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
-    """A start in a product that does not pay for computational resources repairs
+    """A start in a product that does not pay for node resources repairs
     nothing: no link, no sizing, which is what keeps
     `PUT .../nodes/{node_id}/resources` usable on those nodes.
     """
