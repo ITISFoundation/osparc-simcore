@@ -317,6 +317,12 @@ async def _compose_project_data(
     new_project: ProjectDict,
     predefined_project: ProjectDict,
 ) -> tuple[ProjectDict, dict[NodeID, ProjectNodeCreate] | None]:
+    """Applies the request body on top of ``new_project``
+
+    Returns the project fields and the nodes it declares, or None as nodes when the body
+    only overrides fields of a copy (its name, e.g.): that says nothing about the nodes,
+    so the caller keeps the ones it already prepared.
+    """
     project_nodes: dict[NodeID, ProjectNodeCreate] | None = None
     if new_project:  # creates from a copy, just override fields
         # when predefined_project is ProjectCopyOverride
@@ -480,8 +486,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
                 if override_project_nodes is not None:
                     project_nodes = override_project_nodes
-                # else: overriding fields of a copy (e.g. its name) says nothing about the
-                # nodes, so the ones prepared from the source project are kept
 
             # 3.1 save new project in DB
             new_project = await _projects_repository_legacy.insert_project(
