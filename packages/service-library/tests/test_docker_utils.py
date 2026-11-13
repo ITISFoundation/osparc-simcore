@@ -7,7 +7,8 @@ import pytest
 from servicelib.docker_utils import DOCKER_HUB_HOST, get_image_complete_url, to_datetime
 from settings_library.docker_registry import RegistrySettings
 
-NOW = datetime.now(tz=UTC)
+# fixed instant: datetime.now() would give each xdist worker different parametrized ids
+NOW = datetime(2024, 6, 1, 12, 30, 15, 123456, tzinfo=UTC)
 
 
 @pytest.fixture

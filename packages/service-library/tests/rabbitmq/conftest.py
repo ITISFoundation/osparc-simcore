@@ -1,11 +1,17 @@
+# pylint: disable=redefined-outer-name
+
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
-from typing import cast
+from typing import Any, cast
 
 import aiodocker
 import arrow
 import pytest
 from faker import Faker
 from models_library.rabbitmq_basic_types import RPCNamespace
+from pytest_simcore.helpers.rabbitmq_logs import attribute_log_lines
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.xdist import is_xdist_worker
+from pytest_simcore.rabbit_service import RabbitWorkerPrincipal
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
@@ -21,6 +27,22 @@ def namespace() -> RPCNamespace:
     return RPCNamespace.from_entries({f"test{i}": f"test{i}" for i in range(8)})
 
 
+def _rabbit_container_filters(stack_name: str) -> dict[str, Any]:
+    """aiodocker filters selecting the `rabbit` container of this run's stack only
+
+    A name-only filter also matches the rabbits of other checkouts sharing the daemon.
+    """
+    return {
+        "name": ["rabbit"],
+        "label": [f"com.docker.stack.namespace={stack_name}"],
+    }
+
+
+@pytest.fixture
+def stack_rabbit_container_filters(env_vars_for_docker_compose: EnvVarsDict) -> dict[str, Any]:
+    return _rabbit_container_filters(env_vars_for_docker_compose["SWARM_STACK_NAME"])
+
+
 @pytest.fixture(autouse=True)
 async def cleanup_check_rabbitmq_server_has_no_errors(
     request: pytest.FixtureRequest,
@@ -29,12 +51,25 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
     yield
     if "no_cleanup_check_rabbitmq_server_has_no_errors" in request.keywords:
         return
-    print("--> checking for errors/warnings in rabbitmq logs...")
-    async with aiodocker.Docker() as docker_client:
-        containers = await docker_client.containers.list(filters=({"name": ["rabbit"]}))
-        assert len(containers) == 1, "missing rabbit container!"
-        rabbit_container = containers[0]
+    if "rabbit_worker_principal" not in request.fixturenames:
+        # the test talks to no broker of its own, e.g. the modules here that only test the client
+        # logic, so there are no broker logs of this stack to attribute to it
+        return
+    # looked up here instead of declared as parameters: parameters resolve during setup, which would
+    # pull the docker stack fixtures (and their service-selection assertion) into the modules of this
+    # directory that deploy no stack. Any test requesting the principal already has the other two set
+    # up, and only an already-set-up fixture can be fetched during teardown
+    env_vars: EnvVarsDict = request.getfixturevalue("env_vars_for_docker_compose")
+    principal: RabbitWorkerPrincipal = request.getfixturevalue("rabbit_worker_principal")
+    container_filters = _rabbit_container_filters(env_vars["SWARM_STACK_NAME"])
 
+    print("--> checking for errors/warnings in rabbitmq logs...")
+    shared_broker = is_xdist_worker(request)
+    async with aiodocker.Docker() as docker_client:
+        containers = await docker_client.containers.list(filters=container_filters)
+        assert len(containers) == 1, "missing rabbit container!"
+
+        rabbit_container = containers[0]
         all_logs = await cast(
             Coroutine,
             rabbit_container.log(
@@ -45,15 +80,29 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
             ),
         )
 
-    warning_logs = [log for log in all_logs if "warning" in log]
-    error_logs = [log for log in all_logs if "error" in log]
+    attribution = attribute_log_lines(
+        all_logs,
+        worker_user=principal.user,
+        worker_vhost=principal.vhost,
+    )
+    if not shared_broker:
+        # nothing else talks to this broker, so every line is this test's
+        lines_to_check = attribution.mine + attribution.others + attribution.unattributed
+    else:
+        lines_to_check = list(attribution.mine)
+        if "docker_exclusive" in request.keywords:
+            # this test held the broker alone, so an unattributable line cannot be another worker's
+            lines_to_check.extend(attribution.unattributed)
+
+    warning_logs = [log for log in lines_to_check if "warning" in log]
+    error_logs = [log for log in lines_to_check if "error" in log]
     RABBIT_SKIPPED_WARNINGS = [
         "rebuilding indices from scratch",
     ]
     filtered_warning_logs = [log for log in warning_logs if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)]
     assert not filtered_warning_logs, f"warning(s) found in rabbitmq logs for {request.function}"
     assert not error_logs, f"error(s) found in rabbitmq logs for {request.function}"
-    print("<-- no error founds in rabbitmq server logs, that's great. good job!")
+    print("<-- no error found in rabbitmq server logs")
 
 
 @pytest.fixture
