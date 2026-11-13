@@ -1,7 +1,7 @@
 """services_meta_data created modified deprecated to timestamptz
 
 Revision ID: 0dbbba5fcbcb
-Revises: 8bef29afe495
+Revises: a8ce1dff59e6
 Create Date: 2026-11-12 14:09:26.569096+00:00
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "0dbbba5fcbcb"
-down_revision: str | None = "8bef29afe495"
+down_revision: str | None = "a8ce1dff59e6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
