@@ -13,6 +13,7 @@ Flow:
        Access is trusted from the controller; no redundant re-check here.
 """
 
+import asyncio
 import logging
 from functools import lru_cache
 from uuid import UUID, uuid5
@@ -21,6 +22,7 @@ from aiohttp import web
 from common_library.json_serialization import json_dumps
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.logging_utils import log_catch
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -33,6 +35,7 @@ from ..projects.api import (
     get_project_dict_and_type,
 )
 from ..projects.exceptions import ProjectNotFoundError
+from ..projects.projects_trash_service import delete_project_as_admin
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users.users_service import get_user
 
@@ -84,23 +87,34 @@ async def _clone_study_with_gc_lock(
     except ProjectNotFoundError:
         # New project cloned from template
         await progress.update(message="cloning study document...", percent=0.05)
+        try:
+            new_project = await clone_project_data(
+                app,
+                source_project=template_project,
+                forced_copy_project_id=ProjectID(project_uuid),
+                user_id=user_id,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
+                task_progress=progress,
+                template_parameters=template_parameters,
+            )
 
-        new_project = await clone_project_data(
-            app,
-            source_project=template_project,
-            forced_copy_project_id=ProjectID(project_uuid),
-            user_id=user_id,
-            product_name=product_name,
-            product_api_base_url=product_api_base_url,
-            task_progress=progress,
-            template_parameters=template_parameters,
-        )
-
-        await copy_allow_guests_to_push_states_and_output_ports(
-            app,
-            from_project_uuid=template_project["uuid"],
-            to_project_uuid=new_project["uuid"],
-        )
+            await copy_allow_guests_to_push_states_and_output_ports(
+                app,
+                from_project_uuid=template_project["uuid"],
+                to_project_uuid=new_project["uuid"],
+            )
+        except Exception, asyncio.CancelledError:
+            # `clone_project_data` commits the copy before its later steps, and its uuid is
+            # deterministic: the existence check above would take a partial copy for a
+            # finished clone, so removing it is what lets the next dispatch clone again
+            with log_catch(_logger, reraise=False):
+                await delete_project_as_admin(
+                    app,
+                    project_uuid=ProjectID(project_uuid),
+                    product_name=product_name,
+                )
+            raise
 
 
 async def dispatch_study(  # pylint: disable=too-many-arguments
