@@ -17,7 +17,8 @@ from ..products.models import Product
 from ..security import security_service
 from . import _login_service
 from .constants import MSG_UNKNOWN_EMAIL
-from .errors import WrongPasswordError
+from .errors import WeakPasswordError, WrongPasswordError
+from .settings import LoginSettingsForProduct
 
 
 @functools.cache
@@ -177,6 +178,11 @@ async def check_authorized_user_in_product(
         app, user_email=user_email, group_id=product_group_id
     ):
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
+
+
+def check_password_length_or_raise(new_password: str, settings: LoginSettingsForProduct) -> None:
+    if len(new_password) < settings.LOGIN_PASSWORD_MIN_LENGTH:
+        raise WeakPasswordError(LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH)
 
 
 async def update_user_password(

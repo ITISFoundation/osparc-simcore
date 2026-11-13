@@ -181,7 +181,11 @@ async def initiate_reset_password(_body: ResetPasswordBody): ...
         status.HTTP_401_UNAUTHORIZED: {
             "model": EnvelopedError,
             "description": "Invalid token code",
-        }
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "model": EnvelopedError,
+            "description": "new password is shorter than the minimum length",
+        },
     },
 )
 async def complete_reset_password(code: str, _body: ResetPasswordConfirmation): ...
@@ -237,7 +241,7 @@ class PasswordCheckSchema(BaseModel):
         },
         status.HTTP_422_UNPROCESSABLE_CONTENT: {
             "model": EnvelopedError,
-            "description": "current password is invalid",
+            "description": "current password is invalid or new password is shorter than the minimum length",
         },
     },
 )

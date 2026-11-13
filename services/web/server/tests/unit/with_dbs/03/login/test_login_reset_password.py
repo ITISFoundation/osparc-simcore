@@ -14,6 +14,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import NewUser, parse_test_marks
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from servicelib.rest_responses import unwrap_envelope
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_product_group
@@ -24,8 +25,9 @@ from simcore_service_webserver.login.constants import (
     MSG_PASSWORD_CHANGED,
     MSG_USER_BANNED,
     MSG_USER_EXPIRED,
+    MSG_WEAK_PASSWORD,
 )
-from simcore_service_webserver.login.settings import LoginOptions
+from simcore_service_webserver.login.settings import LoginOptions, get_plugin_settings
 from simcore_service_webserver.users import users_service
 from yarl import URL
 
@@ -96,7 +98,7 @@ async def test_two_steps_action_confirmation_workflow(
         # Emulates FRONT-END:
         # SEE api/specs/webserver/v0/components/schemas/auth.yaml#/ResetPasswordForm
         complete_reset_password_url = client.app.router["complete_reset_password"].url_for(code=code)
-        new_password = generate_password(10)
+        new_password = generate_password(12)  # above LoginSettings.LOGIN_PASSWORD_MIN_LENGTH
         response = await client.post(
             f"{complete_reset_password_url}",
             json={
@@ -126,6 +128,62 @@ async def test_two_steps_action_confirmation_workflow(
 
         # Ensure there are no warnings
         assert not any(record.levelname == "WARNING" for record in caplog.records), "Unexpected warnings found"
+
+
+async def test_weak_new_password_does_not_consume_confirmation_code(
+    client: TestClient,
+    default_product_name: ProductName,
+    fake_weak_password: str,
+    mocked_notifications_service_send_message_from_template: MockType,
+):
+    assert client.app
+
+    async with NewUser(app=client.app) as user:
+        reset_url = client.app.router["initiate_reset_password"].url_for()
+        response = await client.post(
+            f"{reset_url}",
+            json={
+                "email": user["email"],
+            },
+        )
+        await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
+
+        notification_context = mocked_notifications_service_send_message_from_template.call_args.kwargs["context"]
+        code = URL(notification_context["link"]).parts[-1]
+
+        complete_reset_password_url = client.app.router["complete_reset_password"].url_for(code=code)
+        min_length = get_plugin_settings(client.app, product_name=default_product_name).LOGIN_PASSWORD_MIN_LENGTH
+        response = await client.post(
+            f"{complete_reset_password_url}",
+            json={
+                "password": fake_weak_password,
+                "confirm": fake_weak_password,
+            },
+        )
+        assert response.status == status.HTTP_422_UNPROCESSABLE_CONTENT
+        _, error = unwrap_envelope(await response.json())
+        assert error["message"] == MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=min_length)
+
+        # the same code can still complete the reset with a long-enough password
+        new_password = generate_password(min_length)
+        response = await client.post(
+            f"{complete_reset_password_url}",
+            json={
+                "password": new_password,
+                "confirm": new_password,
+            },
+        )
+        await assert_status(response, status.HTTP_200_OK, MSG_PASSWORD_CHANGED)
+
+        login_url = client.app.router["auth_login"].url_for()
+        response = await client.post(
+            f"{login_url}",
+            json={
+                "email": user["email"],
+                "password": new_password,
+            },
+        )
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
 
 
 async def test_unknown_email(

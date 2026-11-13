@@ -51,6 +51,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .confirmation_schemas import (
     CodePathParam,
@@ -229,6 +230,7 @@ async def phone_confirmation(request: web.Request):
 
 @routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+@handle_rest_requests_exceptions
 async def complete_reset_password(request: web.Request):
     """Last of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
@@ -236,10 +238,15 @@ async def complete_reset_password(request: web.Request):
     - Code is provided via email by calling first initiate_reset_password
     """
     product: Product = products_web.get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     confirmation_service = get_confirmation_service(request.app)
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
+
+    _auth_service.check_password_length_or_raise(
+        new_password=request_body.password.get_secret_value(), settings=settings
+    )
 
     confirmation = await confirmation_service.validate_confirmation_code(code=path_params.code.get_secret_value())
 

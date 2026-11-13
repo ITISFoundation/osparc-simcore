@@ -30,7 +30,9 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...errors import WrongPasswordError
+from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 from .change_schemas import ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
@@ -213,9 +215,14 @@ async def initiate_reset_password(request: web.Request):
 
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
 @login_required
+@handle_rest_requests_exceptions
 async def change_password(request: web.Request):
     passwords = await parse_request_body_as(ChangePasswordBody, request)
     user_id = request[RQT_USERID_KEY]
+    product: Product = products_web.get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
+    _auth_service.check_password_length_or_raise(new_password=passwords.new.get_secret_value(), settings=settings)
+
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
 
     try:
@@ -223,7 +230,7 @@ async def change_password(request: web.Request):
             request.app,
             user=user,
             password=passwords.current.get_secret_value(),
-            product=products_web.get_current_product(request),
+            product=product,
         )
     except WrongPasswordError as err:
         raise web.HTTPUnprocessableEntity(text=MSG_WRONG_PASSWORD) from err
