@@ -35,9 +35,9 @@ class ApiKeysRepository(BaseRepository):
         api_key: str,
         api_secret: str,
     ) -> UserAndProductTuple | None:
-        """Validates API key and secret, returning user info if valid otherwise None.
+        """Validates API key, secret, and expiry, returning user info if valid otherwise None.
 
-        WARNING: Cached for 120s TTL - secret validation occurs every 2 minutes.
+        WARNING: Cached for 120s TTL - expiry and secret validation occur at most every 2 minutes.
         NOTE: to disable caching set AIOCACHE_DISABLE=1
         """
 
@@ -47,6 +47,7 @@ class ApiKeysRepository(BaseRepository):
         ).where(
             (auth_api_keys_table.c.api_key == api_key)  # NOTE: keep order, api_key is indexed
             & (auth_api_keys_table.c.api_secret == sa.func.crypt(api_secret, auth_api_keys_table.c.api_secret))
+            & (auth_api_keys_table.c.expires_at.is_(None) | (auth_api_keys_table.c.expires_at > sa.func.now())),
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             result = await conn.execute(stmt)
