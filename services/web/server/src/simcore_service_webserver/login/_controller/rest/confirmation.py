@@ -50,7 +50,6 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
-from ._password_policy import check_password_length_or_raise
 from ._rest_dependencies import get_confirmation_service
 from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .confirmation_schemas import (
@@ -247,7 +246,9 @@ async def complete_reset_password(request: web.Request):
 
     # checked before the code is validated so the link from the e-mail stays
     # usable with a stronger password
-    check_password_length_or_raise(new_password=request_body.password.get_secret_value(), settings=settings)
+    _auth_service.check_password_length_or_raise(
+        new_password=request_body.password.get_secret_value(), settings=settings
+    )
 
     confirmation = await confirmation_service.validate_confirmation_code(code=path_params.code.get_secret_value())
 

@@ -31,7 +31,6 @@ from ...constants import (
 from ...decorators import login_required
 from ...errors import WrongPasswordError
 from ...settings import LoginSettingsForProduct, get_plugin_settings
-from ._password_policy import check_password_length_or_raise
 from ._rest_dependencies import get_confirmation_service
 from .change_schemas import ChangePasswordBody, ResetPasswordBody
 
@@ -220,7 +219,7 @@ async def change_password(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     product: Product = products_web.get_current_product(request)
     settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
-    check_password_length_or_raise(new_password=passwords.new.get_secret_value(), settings=settings)
+    _auth_service.check_password_length_or_raise(new_password=passwords.new.get_secret_value(), settings=settings)
 
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
 

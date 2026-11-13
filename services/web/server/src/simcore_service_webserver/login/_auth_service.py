@@ -16,8 +16,9 @@ from ..groups.groups_service import is_user_by_email_in_group
 from ..products.models import Product
 from ..security import security_service
 from . import _login_service
-from .constants import MSG_UNKNOWN_EMAIL
+from .constants import MSG_UNKNOWN_EMAIL, MSG_WEAK_PASSWORD
 from .errors import WrongPasswordError
+from .settings import LoginSettingsForProduct
 
 
 @functools.cache
@@ -177,6 +178,14 @@ async def check_authorized_user_in_product(
         app, user_email=user_email, group_id=product_group_id
     ):
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
+
+
+def check_password_length_or_raise(new_password: str, settings: LoginSettingsForProduct) -> None:
+    if len(new_password) < settings.LOGIN_PASSWORD_MIN_LENGTH:
+        raise web.HTTPUnprocessableEntity(
+            text=MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH),
+            content_type=MIMETYPE_APPLICATION_JSON,
+        )
 
 
 async def update_user_password(
