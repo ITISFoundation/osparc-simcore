@@ -16,7 +16,7 @@ from ....locale import get_locale_or_none, translate_message
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_web
-from ....session.access_policies import (
+from ....session.access_policies_web import (
     on_success_grant_session_access_to,
     session_access_required,
 )
@@ -226,18 +226,20 @@ async def login_2fa(request: web.Request):
 
     trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA)
 
-    # validates code
-    if not await _twofa_service.has_2fa_code(request.app, trusted.email):
-        raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
-    if not await _twofa_service.verify_2fa_code(
+    # validates code, consuming a trial of the stored generation
+    trial = await _twofa_service.check_2fa_code(
         request.app, user_email=trusted.email, code=login_2fa_.code.get_secret_value()
+    )
+    if trial in (
+        _twofa_service.TrialOutcome.NO_CODE,
+        _twofa_service.TrialOutcome.TRIALS_EXHAUSTED,
     ):
+        raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
+    if trial is _twofa_service.TrialOutcome.INVALID:
         raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
     user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))
 
-    # dispose since code was used
-    await _twofa_service.delete_2fa_code(request.app, trusted.email)
     await clear_pending_2fa_email(request)
 
     return await _security_service.login_granted_response(request, user=user)
