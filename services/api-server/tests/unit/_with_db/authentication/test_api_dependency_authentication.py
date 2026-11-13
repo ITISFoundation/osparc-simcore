@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import hashlib
 import time
 
 import pytest
@@ -86,7 +87,8 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     execute_spy.reset_mock()
 
     # Verify cache was used
-    api_key_cache_key = f"api_auth:{api_key_in_db.api_key}"
+    credentials_digest = hashlib.sha256(f"{api_key_in_db.api_key}:{api_key_in_db.api_secret}".encode()).hexdigest()
+    api_key_cache_key = f"api_auth:{credentials_digest}"
     user_cache_key = f"user_email:{api_key_in_db.user_id}"
 
     assert await api_keys_cache.exists(api_key_cache_key), "API key should be cached"
