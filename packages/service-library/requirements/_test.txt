@@ -272,7 +272,7 @@ types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
 types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20261008
+types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
 types-tqdm==4.70.0.20260906
     # via -r requirements/_test.in

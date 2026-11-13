@@ -187,9 +187,9 @@ sqlalchemy==2.0.51
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-types-psycopg2==2.9.21.20261008
+types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

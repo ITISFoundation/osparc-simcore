@@ -322,7 +322,7 @@ truststore==0.10.5
     #   -c requirements/_base.txt
     #   httpcore2
     #   httpx2
-types-requests==2.33.0.20261006
+types-requests==2.33.0.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
