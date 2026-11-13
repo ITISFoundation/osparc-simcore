@@ -133,6 +133,8 @@ async def test_2fa_trial_budget_and_resend_cooldown(client: TestClient):
     stored = await get_redis_validation_code_client(client.app).get(email)
     wrong_code = "000000" if code != "000000" else "111111"
 
+    # the code above belongs to `email`: another account stores nothing, so
+    # this check reports NO_CODE rather than charging a trial
     assert await check_2fa_code(client.app, user_email="nobody@bar.com", code=code) is TrialOutcome.NO_CODE
 
     for _ in range(MAX_2FA_CODE_TRIALS):

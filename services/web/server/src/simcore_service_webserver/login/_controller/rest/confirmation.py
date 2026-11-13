@@ -16,7 +16,7 @@ from yarl import URL
 from ....locale import translate_message
 from ....products import products_web
 from ....products.models import Product
-from ....session.access_policies import session_access_required
+from ....session.access_policies_web import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route

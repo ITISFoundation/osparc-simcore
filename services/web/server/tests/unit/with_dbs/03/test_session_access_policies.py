@@ -22,7 +22,7 @@ from simcore_service_webserver.login.constants import (
     MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
-from simcore_service_webserver.session.access_policies import (
+from simcore_service_webserver.session.access_policies_web import (
     on_success_grant_session_access_to,
     session_access_required,
 )

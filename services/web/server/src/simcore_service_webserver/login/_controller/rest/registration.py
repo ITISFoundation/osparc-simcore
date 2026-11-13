@@ -18,7 +18,7 @@ from ....notifications import notifications_service
 from ....notifications._models import EmailContact
 from ....products import products_web
 from ....products.models import Product
-from ....session.access_policies import (
+from ....session.access_policies_web import (
     on_success_grant_session_access_to,
     session_access_required,
 )

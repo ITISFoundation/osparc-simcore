@@ -104,7 +104,7 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
 
 
 # Server-side 2FA attempt and resend state. The session-cookie counters in
-# session.access_policies can be reset by replaying an old cookie, so these
+# session.access_policies_web can be reset by replaying an old cookie, so these
 # limits are kept in Redis.
 
 _ATTEMPTS_KEY: Final[
@@ -143,15 +143,15 @@ _CODE_ALREADY_GONE: Final[int] = 0
 _CODE_CONSUMED: Final[int] = 1
 
 
-def _attempts_prefix(*, user_email: str) -> str:
+def _get_attempts_prefix(*, user_email: str) -> str:
     return f"{_ATTEMPTS_KEY}:{user_email}:"
 
 
-def _attempts_key(*, user_email: str, generation: str) -> str:
-    return f"{_attempts_prefix(user_email=user_email)}{generation}"
+def _get_attempts_key(*, user_email: str, generation: str) -> str:
+    return f"{_get_attempts_prefix(user_email=user_email)}{generation}"
 
 
-def _resend_cooldown_key(*, channel: str, user_email: str) -> str:
+def _get_resend_cooldown_key(*, channel: str, user_email: str) -> str:
     return f"{_RESEND_COOLDOWN_KEY}:{channel}:{user_email}"
 
 
@@ -174,7 +174,7 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
 
     consume_trial = redis_client.register_script(CONSUME_TRIAL_SCRIPT)
     admitted = await consume_trial(
-        keys=[user_email, _attempts_prefix(user_email=user_email)],
+        keys=[user_email, _get_attempts_prefix(user_email=user_email)],
         args=[MAX_2FA_CODE_TRIALS, _STORED_CODE_LENGTH, _CODE_GENERATION_LENGTH],
     )
     assert isinstance(admitted, list)  # nosec
@@ -192,7 +192,7 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
     generation = stored_value[:_CODE_GENERATION_LENGTH]
     consume_code = redis_client.register_script(CONSUME_MATCHED_CODE_SCRIPT)
     consumed = await consume_code(
-        keys=[user_email, _attempts_key(user_email=user_email, generation=generation)],
+        keys=[user_email, _get_attempts_key(user_email=user_email, generation=generation)],
         args=[stored_value],
     )
     if consumed == _CODE_CONSUMED:
@@ -227,7 +227,7 @@ async def start_2fa_resend_cooldown(
     nothing.
     """
     redis_client = get_redis_validation_code_client(app)
-    key = _resend_cooldown_key(channel=channel, user_email=user_email)
+    key = _get_resend_cooldown_key(channel=channel, user_email=user_email)
     token = secrets.token_hex(16)
     if await redis_client.set(key, token, ex=cooldown_in_seconds, nx=True):
         return ResendCooldown(user_email=user_email, channel=channel, token=token)
@@ -243,7 +243,7 @@ async def release_2fa_resend_cooldown(app: web.Application, cooldown: ResendCool
     redis_client = get_redis_validation_code_client(app)
     release = redis_client.register_script(RELEASE_COOLDOWN_SCRIPT)
     await release(
-        keys=[_resend_cooldown_key(channel=cooldown.channel, user_email=cooldown.user_email)],
+        keys=[_get_resend_cooldown_key(channel=cooldown.channel, user_email=cooldown.user_email)],
         args=[cooldown.token],
     )
 
