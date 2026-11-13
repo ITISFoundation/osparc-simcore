@@ -48,6 +48,12 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       apply: "__applyInvitationUrl",
     },
 
+    extraCreditsInUsd: {
+      check: "Number",
+      nullable: true,
+      init: null,
+    },
+
     subject: {
       check: "String",
       nullable: false,
@@ -246,6 +252,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           email,
           bccEmails,
           invitationUrl,
+          extraCreditsInUsd: this.getExtraCreditsInUsd(),
           messageContent: {
             subject,
             bodyHtml,
@@ -296,6 +303,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
         data: {
           email,
           invitationUrl,
+          extraCreditsInUsd: this.getExtraCreditsInUsd(),
           messageContent: null, // this is the trick not to send email
         }
       };

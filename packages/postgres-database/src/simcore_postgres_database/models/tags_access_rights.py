@@ -62,7 +62,7 @@ tags_access_rights = sa.Table(
         "A value of 'True' allows the group to remove the tag.",
     ),
     # TIME STAMPS ----
-    column_created_datetime(timezone=False),
-    column_modified_datetime(timezone=False),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.UniqueConstraint("tag_id", "group_id"),
 )

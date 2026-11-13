@@ -18,6 +18,7 @@ SEE https://docs.pydantic.dev/usage/validators/#reuse-validators
 import enum
 import functools
 import operator
+from datetime import UTC, datetime
 from typing import Any, Final
 
 from common_library.json_serialization import json_loads
@@ -38,6 +39,14 @@ def trim_string_before(max_length: int) -> BeforeValidator:
         return value
 
     return BeforeValidator(_trim)
+
+
+def as_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def empty_str_to_none_pre_validator(value: Any):

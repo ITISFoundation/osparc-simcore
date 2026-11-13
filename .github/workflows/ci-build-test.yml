@@ -264,6 +264,7 @@ jobs:
               - 'scripts/mypy/*'
               - 'mypy.ini'
             static-webserver:
+              - '.github/workflows/ci-build-test.yml'
               - 'services/static-webserver/**'
               - 'services/docker-compose*'
             storage:
@@ -1395,7 +1396,8 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        # ARM runners have 4 vCPUs (vs 2 on x64)
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
@@ -1507,6 +1509,23 @@ jobs:
           files: packages/simcore-sdk/junit.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  unit-test-static-webserver:
+    needs: changes
+    if: ${{ needs.changes.outputs.static-webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 10
+    name: "[unit] static-webserver"
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Test
+        working-directory: services/static-webserver/client/tests
+        run: node --test
 
   unit-test-storage-01:
     needs: changes
@@ -1778,6 +1797,7 @@ jobs:
         unit-test-service-library,
         unit-test-settings-library,
         unit-test-simcore-sdk,
+        unit-test-static-webserver,
         unit-test-storage-01,
         unit-test-storage-02,
         unit-test-webserver-01,
