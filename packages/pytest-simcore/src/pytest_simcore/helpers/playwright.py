@@ -873,7 +873,7 @@ def _check_service_endpoint(
         except PlaywrightTimeoutError, TimeoutError:
             logger.exception(
                 "❌ Timed-out requesting service endpoint after %ds ❌",
-                _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
+                _SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds(),
             )
         except PlaywrightError:
             logger.exception("Failed to request service endpoint")
