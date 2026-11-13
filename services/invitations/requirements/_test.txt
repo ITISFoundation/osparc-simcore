@@ -8,7 +8,7 @@ faker==40.38.0
     # via -r requirements/_test.in
 filelock==4.2.7
     # via -r requirements/_test.in
-hypothesis==6.170.12
+hypothesis==6.170.14
     # via -r requirements/_test.in
 iniconfig==2.3.0
     # via pytest
