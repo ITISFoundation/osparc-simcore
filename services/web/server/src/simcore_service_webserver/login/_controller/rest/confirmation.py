@@ -246,8 +246,6 @@ async def complete_reset_password(request: web.Request):
     path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    # checked before the code is validated so the link from the e-mail stays
-    # usable with a stronger password
     _auth_service.check_password_length_or_raise(
         new_password=request_body.password.get_secret_value(), settings=settings
     )
