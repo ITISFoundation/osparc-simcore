@@ -543,6 +543,8 @@ async def clone_project_data(
 
     NOTE: this does not handle predefined-project overrides, workspace/folder linking,
     parent-node ancestry or response building — those remain the caller's responsibility.
+    Neither does it remove the copy when a step after its insertion fails: a caller that
+    identifies the copy by a deterministic uuid has to do that itself.
 
     Raises:
         ProjectCopyingTrashedProjectError: if `source_project` is trashed
