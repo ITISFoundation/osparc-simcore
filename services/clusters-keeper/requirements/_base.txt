@@ -135,7 +135,7 @@ email-validator==2.3.0
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   fastapi
     #   pydantic
-fast-depends==3.0.8
+fast-depends==3.0.11
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   faststream
@@ -154,7 +154,7 @@ fastapi-lifespan-manager==0.1.4
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastar==0.11.0
     # via fastapi
-faststream==0.6.7
+faststream==0.7.8
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -668,7 +668,7 @@ uvicorn==0.53.0
     #   fastapi
     #   fastapi-cli
     #   fastapi-cloud-cli
-uvloop==0.22.1
+uvloop==0.23.0
     # via uvicorn
 watchfiles==1.1.1
     # via uvicorn

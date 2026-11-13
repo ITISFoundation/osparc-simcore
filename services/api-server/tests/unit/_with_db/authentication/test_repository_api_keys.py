@@ -34,3 +34,14 @@ async def test_get_user_with_invalid_credentials(
 
     # Assert
     assert result is None
+
+
+async def test_cached_success_is_not_replayed_for_a_different_secret(
+    api_key_in_db: ApiKeyInDB,
+    api_key_repo: ApiKeysRepository,
+):
+    result = await api_key_repo.get_user(api_key=api_key_in_db.api_key, api_secret=api_key_in_db.api_secret)
+    assert result is not None
+
+    replay = await api_key_repo.get_user(api_key=api_key_in_db.api_key, api_secret="wrong_secret")  # noqa: S106
+    assert replay is None
