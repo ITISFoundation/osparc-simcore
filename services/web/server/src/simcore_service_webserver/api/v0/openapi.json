@@ -5005,6 +5005,12 @@
                 }
               }
             }
+          },
+          "403": {
+            "description": "Insufficient access rights on the project"
+          },
+          "404": {
+            "description": "Project not found"
           }
         }
       }
@@ -5063,6 +5069,9 @@
           "402": {
             "description": "Insufficient credits to run computation"
           },
+          "403": {
+            "description": "Insufficient access rights on the project"
+          },
           "404": {
             "description": "Project/wallet/pricing/cluster details were not found"
           },
@@ -5098,6 +5107,12 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "403": {
+            "description": "Insufficient access rights on the project"
+          },
+          "404": {
+            "description": "Project not found"
           }
         }
       }

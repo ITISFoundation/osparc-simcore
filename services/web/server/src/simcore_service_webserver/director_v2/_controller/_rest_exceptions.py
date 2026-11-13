@@ -18,8 +18,10 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from ...projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ...users.errors import UserDefaultWalletNotFoundError
 from ...wallets.errors import WalletNotEnoughCreditsError
+from ...workspaces.errors import WorkspaceAccessForbiddenError
 from ..exceptions import DirectorV2ServiceError
 
 _exceptions_handlers_map: ExceptionHandlersMap = {}
@@ -77,6 +79,21 @@ _exceptions_handlers_map[DirectorV2ServiceError] = _handler_director_service_err
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    ProjectInvalidRightsError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        user_message(
+            "You do not have sufficient access rights to perform this action on project {project_uuid}.",
+            _version=1,
+        ),
+    ),
+    ProjectNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("Project {project_uuid} could not be found.", _version=1),
+    ),
+    WorkspaceAccessForbiddenError: HttpErrorInfo(
+        status.HTTP_403_FORBIDDEN,
+        user_message("Access to this workspace is forbidden: {details}", _version=1),
+    ),
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
