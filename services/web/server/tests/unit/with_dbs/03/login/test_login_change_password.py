@@ -117,11 +117,9 @@ async def test_weak_new_password_is_rejected(
                 "confirm": fake_weak_password,
             },
         )
-        await assert_status(
-            response,
-            status.HTTP_422_UNPROCESSABLE_CONTENT,
-            MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=min_length),
-        )
+        assert response.status == status.HTTP_422_UNPROCESSABLE_CONTENT
+        _, error = unwrap_envelope(await response.json())
+        assert error["message"] == MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=min_length)
 
         # the account keeps working with the original password
         response = await client.post(

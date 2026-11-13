@@ -32,6 +32,7 @@ from ...decorators import login_required
 from ...errors import WrongPasswordError
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 from .change_schemas import ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
@@ -214,6 +215,7 @@ async def initiate_reset_password(request: web.Request):
 
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
 @login_required
+@handle_rest_requests_exceptions
 async def change_password(request: web.Request):
     passwords = await parse_request_body_as(ChangePasswordBody, request)
     user_id = request[RQT_USERID_KEY]

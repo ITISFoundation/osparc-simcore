@@ -21,11 +21,13 @@ from ....users.errors import AlreadyPreRegisteredError
 from ...constants import (
     MSG_2FA_UNAVAILABLE,
     MSG_INVALID_CREDENTIALS,
+    MSG_WEAK_PASSWORD,
     MSG_WRONG_PASSWORD_MERGED_ACCOUNTS,
 )
 from ...errors import (
     SendingVerificationEmailError,
     SendingVerificationSmsError,
+    WeakPasswordError,
     WrongPasswordError,
 )
 
@@ -47,6 +49,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     SendingVerificationEmailError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         MSG_2FA_UNAVAILABLE,
+    ),
+    WeakPasswordError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        MSG_WEAK_PASSWORD,
     ),
 }
 

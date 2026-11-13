@@ -51,6 +51,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .confirmation_schemas import (
     CodePathParam,
@@ -231,6 +232,7 @@ async def phone_confirmation(request: web.Request):
 
 @routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+@handle_rest_requests_exceptions
 async def complete_reset_password(request: web.Request):
     """Last of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
