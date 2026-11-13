@@ -33,6 +33,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: find branch name
         shell: bash
         run: echo "BRANCH_NAME=$(git name-rev --refs="refs/remotes/origin/master" --refs="refs/remotes/origin/hotfix_v*" --refs="refs/remotes/origin/hotfix_staging_*" --name-only ${GITHUB_SHA})" >> $GITHUB_ENV

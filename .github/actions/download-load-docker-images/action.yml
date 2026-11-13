@@ -31,4 +31,6 @@ runs:
 
     - name: load docker images
       shell: bash
-      run: make load-images local-src=${{ inputs.download-path }}
+      run: make load-images local-src="${INPUTS_DOWNLOAD_PATH}"
+      env:
+        INPUTS_DOWNLOAD_PATH: ${{ inputs.download-path }}

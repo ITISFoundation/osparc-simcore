@@ -14,6 +14,7 @@ name: Chore Rerun Flaky Jobs
 # start this workflow manually with the failed CI Build Test run ID; the same
 # flakiness guards apply, only the once-per-commit rule is bypassed.
 on:
+  # zizmor: ignore[dangerous-triggers] Uses the default-branch script and reruns jobs through the API; no PR code is checked out.
   workflow_run:
     workflows:
       - CI Build Test
@@ -56,6 +57,8 @@ jobs:
       # the workflow_run event runs against the default branch, so this checks
       # out master, where the script lives once this workflow is merged
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Put RUN_ID, HEAD_SHA, CI_EVENT and the PR head into the job environment
       # for both trigger kinds, so the rerun step below has one env source. On a
