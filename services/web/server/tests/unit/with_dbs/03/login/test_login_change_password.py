@@ -5,6 +5,7 @@
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from servicelib.aiohttp import status
@@ -13,9 +14,10 @@ from simcore_service_webserver.login.constants import (
     MSG_LOGGED_IN,
     MSG_PASSWORD_CHANGED,
     MSG_PASSWORD_MISMATCH,
+    MSG_WEAK_PASSWORD,
     MSG_WRONG_PASSWORD,
 )
-from simcore_service_webserver.login.settings import LoginOptions
+from simcore_service_webserver.login.settings import LoginOptions, get_plugin_settings
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -93,6 +95,43 @@ async def test_wrong_confirm_pass(client: TestClient, new_password: str):
             ],
             "message": "Invalid field/s 'confirm' in request body",
         }
+
+
+async def test_weak_new_password_is_rejected(
+    client: TestClient,
+    default_product_name: ProductName,
+    fake_weak_password: str,
+):
+    assert client.app
+    url_change_password = client.app.router["auth_change_password"].url_for()
+    url_login = client.app.router["auth_login"].url_for()
+
+    min_length = get_plugin_settings(client.app, default_product_name).LOGIN_PASSWORD_MIN_LENGTH
+
+    async with LoggedUser(client) as user:
+        response = await client.post(
+            f"{url_change_password}",
+            json={
+                "current": user["raw_password"],
+                "new": fake_weak_password,
+                "confirm": fake_weak_password,
+            },
+        )
+        await assert_status(
+            response,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=min_length),
+        )
+
+        # the account keeps working with the original password
+        response = await client.post(
+            f"{url_login}",
+            json={
+                "email": user["email"],
+                "password": user["raw_password"],
+            },
+        )
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
 
 
 async def test_success(client: TestClient, new_password: str):
