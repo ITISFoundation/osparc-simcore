@@ -65,7 +65,6 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
-    "redis",
     "static-webserver",
     "storage",
     "webserver",

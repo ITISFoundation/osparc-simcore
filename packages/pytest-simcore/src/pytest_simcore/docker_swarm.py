@@ -135,7 +135,13 @@ def assert_service_is_running(service) -> None:
     _logger.info("%s is up and running!!", service_name)
 
 
-def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_title: str) -> None:
+def _fetch_and_print_services(
+    docker_client: docker.client.DockerClient,
+    extra_title: str,
+    *,
+    static_webserver_stack_name: str | None = None,
+    static_webserver_diagnostics_path: Path | None = None,
+) -> None:
     _logger.info(HEADER_STR.format(f"docker services running {extra_title}"))
 
     for service_obj in docker_client.services.list():
@@ -174,6 +180,99 @@ def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_t
 
         _logger.info(HEADER_STR.format(service_obj.name))  # type: ignore
         _logger.debug(json.dumps({"service": service, "tasks": tasks}, indent=1))
+
+    if static_webserver_stack_name:
+        _log_static_webserver_dns_diagnostics(
+            docker_client,
+            static_webserver_stack_name,
+            diagnostics_path=static_webserver_diagnostics_path,
+        )
+
+
+def _log_static_webserver_dns_diagnostics(
+    docker_client: docker.client.DockerClient,
+    stack_name: str,
+    *,
+    diagnostics_path: Path | None = None,
+) -> None:
+    service_networks: dict[str, dict[str, list[str]]] = {}
+    report: dict[str, Any] = {
+        "configured_host": "static-webserver",
+        "stack_name": stack_name,
+        "services": {},
+    }
+
+    for compose_service_name in ("webserver", "static-webserver"):
+        swarm_service_name = f"{stack_name}_{compose_service_name}"
+        try:
+            service = docker_client.services.get(swarm_service_name)
+        except docker.errors.NotFound:
+            report["services"][compose_service_name] = {
+                "swarm_service_name": swarm_service_name,
+                "status": "missing",
+            }
+            _logger.warning(
+                "Static-webserver DNS diagnostic: expected Swarm service is missing: stack=%s service=%s",
+                stack_name,
+                swarm_service_name,
+            )
+            continue
+
+        attributes = service.attrs
+        task_networks = attributes.get("Spec", {}).get("TaskTemplate", {}).get("Networks", [])
+        aliases_by_network = {
+            network.get("Target", ""): sorted(network.get("Aliases", [])) for network in task_networks
+        }
+        service_networks[compose_service_name] = aliases_by_network
+
+        task_states = [task.get("Status", {}).get("State", "unknown") for task in service.tasks()]
+        virtual_ips = attributes.get("Endpoint", {}).get("VirtualIPs", [])
+        report["services"][compose_service_name] = {
+            "swarm_service_name": swarm_service_name,
+            "expected_compose_dns_alias": compose_service_name,
+            "network_aliases": aliases_by_network,
+            "virtual_ips": virtual_ips,
+            "task_states": task_states,
+        }
+        _logger.info(
+            "Static-webserver DNS diagnostic: stack=%s compose_service=%s expected_compose_dns_alias=%s "
+            "swarm_service=%s network_aliases=%s virtual_ips=%s task_states=%s",
+            stack_name,
+            compose_service_name,
+            compose_service_name,
+            swarm_service_name,
+            aliases_by_network,
+            virtual_ips,
+            task_states,
+        )
+
+    webserver_networks = service_networks.get("webserver", {})
+    static_webserver_networks = service_networks.get("static-webserver", {})
+    network_ids = webserver_networks.keys() | static_webserver_networks.keys()
+    network_names: dict[str, str] = {}
+    for network_id in network_ids:
+        try:
+            network_names[network_id] = docker_client.networks.get(network_id).name or network_id
+        except docker.errors.APIError as err:
+            network_names[network_id] = f"<lookup failed: {err}>"
+
+    shared_network_ids = webserver_networks.keys() & static_webserver_networks.keys()
+    shared_networks = sorted(network_names.get(network_id, network_id) for network_id in shared_network_ids)
+    report["shared_networks"] = shared_networks
+    report["webserver_networks"] = {network_names.get(key, key): value for key, value in webserver_networks.items()}
+    report["static_webserver_networks"] = {
+        network_names.get(key, key): value for key, value in static_webserver_networks.items()
+    }
+    _logger.info(
+        "Static-webserver DNS diagnostic: configured_host=static-webserver shared_networks=%s "
+        "webserver_networks=%s static_webserver_networks=%s",
+        shared_networks,
+        {network_names.get(key, key): value for key, value in webserver_networks.items()},
+        {network_names.get(key, key): value for key, value in static_webserver_networks.items()},
+    )
+    if diagnostics_path:
+        diagnostics_path.parent.mkdir(parents=True, exist_ok=True)
+        diagnostics_path.write_text(f"{json.dumps(report, indent=2)}\n")
 
 
 @pytest.fixture(scope="session")
@@ -650,7 +749,20 @@ async def docker_stack(  # noqa: C901
             try:
                 await _check_all_services_are_running()
             finally:
-                _fetch_and_print_services(docker_client, "[BEFORE TEST]")
+                _fetch_and_print_services(
+                    docker_client,
+                    "[BEFORE TEST]",
+                    static_webserver_stack_name=(
+                        core_stack_name
+                        if "static-webserver" in _collected_services_union(FIXTURE_CONFIG_CORE_SERVICES_SELECTION)
+                        else None
+                    ),
+                    static_webserver_diagnostics_path=(
+                        Path(request.config.rootpath) / "test_failures" / "static_webserver_dns_diagnostics.json"
+                        if "static-webserver" in _collected_services_union(FIXTURE_CONFIG_CORE_SERVICES_SELECTION)
+                        else None
+                    ),
+                )
 
     yield {
         "stacks": {
