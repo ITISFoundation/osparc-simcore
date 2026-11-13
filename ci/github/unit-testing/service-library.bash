@@ -21,7 +21,9 @@ test_all() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/service-library
-  make "test-ci[all]"
+  # NOTE: workers share one docker stack, so tests pausing or restarting its rabbit/valkey
+  # containers are marked `docker_exclusive` and run alone (pytest_simcore.xdist_docker_daemon)
+  make "test-ci[all]" pytest-parameters="--numprocesses=auto"
   popd
 }
 

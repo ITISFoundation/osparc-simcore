@@ -116,8 +116,8 @@ users_pre_registration_details = sa.Table(
     ),
     # Other related users
     column_created_by_user(users_table=users, required=False),
-    column_created_datetime(timezone=False),
-    column_modified_datetime(timezone=False),
+    column_created_datetime(),
+    column_modified_datetime(),
     # CONSTRAINTS:
     # Composite unique constraint to ensure a user can only have one pre-registration per product
     sa.UniqueConstraint(
