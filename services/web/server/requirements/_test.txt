@@ -440,7 +440,7 @@ types-openpyxl==3.1.5.20261017
     # via -r requirements/_test.in
 types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

@@ -179,7 +179,7 @@ types-pyasn1==0.6.0.20250914
     # via types-python-jose
 types-python-jose==3.5.0.20260408
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

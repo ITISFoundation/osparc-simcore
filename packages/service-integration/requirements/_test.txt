@@ -58,9 +58,9 @@ types-docker==7.2.0.20261006
     # via -r requirements/_test.in
 types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20260906
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
-types-requests==2.33.0.20261006
+types-requests==2.33.0.20261030
     # via types-docker
 urllib3==2.8.0
     # via
