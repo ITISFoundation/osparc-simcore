@@ -11,7 +11,7 @@ from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.services import ServiceInput
 
-_CET: Final = timezone(timedelta(hours=2))
+_CET: Final[timezone] = timezone(timedelta(hours=2))
 
 
 def test_service_port_with_file():
