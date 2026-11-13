@@ -95,7 +95,6 @@ async def resend_2fa_code(request: web.Request):
             user_email=user["email"],
             expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
         )
-        # sends via SMS
         if resend_2fa_.via == "SMS":
             assert user_phone_number  # nosec
             await _twofa_service.send_sms_code(
@@ -123,7 +122,6 @@ async def resend_2fa_code(request: web.Request):
                 status=status.HTTP_200_OK,
             )
 
-        # sends via Email
         else:
             assert resend_2fa_.via == "Email"  # nosec
             await _twofa_service.send_email_code(

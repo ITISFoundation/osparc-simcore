@@ -103,9 +103,8 @@ async def delete_2fa_code(app: web.Application, user_email: str) -> None:
     await redis_client.delete(hash_key)
 
 
-# Server-side 2FA attempt and resend state. The session-cookie counters in
-# session.access_policies_web can be reset by replaying an old cookie, so these
-# limits are kept in Redis.
+# Server-side 2FA limits. The session-cookie counters in access_policies_web
+# reset when an old cookie is replayed, so these are kept in Redis.
 
 _ATTEMPTS_KEY: Final[
     Annotated[str, doc("namespace for the trial counters, kept apart from the bare-email code keys")]
@@ -125,8 +124,6 @@ _STORED_CODE_LENGTH: Final[
 
 
 class TrialOutcome(StrEnum):
-    """Result of consuming one verification trial of the account's current code"""
-
     NO_CODE = auto()
     TRIALS_EXHAUSTED = auto()
     INVALID = auto()
@@ -159,19 +156,17 @@ def _get_resend_cooldown_key(*, channel: str, user_email: str) -> str:
 async def check_2fa_code(app: web.Application, *, user_email: str, code: str) -> TrialOutcome:
     """Consumes one trial of the account's current code and verifies against it
 
-    The trial, the comparison and the destruction on a match are bound to one
-    code generation, read atomically: late bookkeeping can neither verify nor
-    delete a replacement, and the budget is spent before the comparison, so at
-    most MAX_2FA_CODE_TRIALS verifications reach one code.
-
     Returns NO_CODE when no code is stored, TRIALS_EXHAUSTED when its budget is
     spent (then nothing is compared), INVALID when a trial was consumed by a
-    wrong code, and VALID only when this call consumed the code, so concurrent
-    submissions of the same code authenticate at most once.
+    wrong code, and VALID only when this call consumed the code.
     """
     redis_client = get_redis_validation_code_client(app)
     candidate_digest = _hash_2fa_code(app, code=code)
 
+    # the trial is charged before the comparison and both are read atomically
+    # from the stored code: at most MAX_2FA_CODE_TRIALS verifications reach one
+    # code, and a code replaced in the meantime is never verified against the
+    # old bookkeeping
     consume_trial = redis_client.register_script(CONSUME_TRIAL_SCRIPT)
     admitted = await consume_trial(
         keys=[user_email, _get_attempts_prefix(user_email=user_email)],
@@ -190,6 +185,8 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
         return TrialOutcome.INVALID
 
     generation = stored_value[:_CODE_GENERATION_LENGTH]
+    # consumes the code only while it is still the one compared above, so
+    # concurrent submissions of the same code authenticate at most once
     consume_code = redis_client.register_script(CONSUME_MATCHED_CODE_SCRIPT)
     consumed = await consume_code(
         keys=[user_email, _get_attempts_key(user_email=user_email, generation=generation)],
@@ -202,11 +199,11 @@ async def check_2fa_code(app: web.Application, *, user_email: str, code: str) ->
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class ResendCooldown:
-    """Outcome of arming the per-account resend cooldown.
+    """Outcome of requesting the per-account resend cooldown
 
-    When retry_after_s is set, the window belongs to another request and this
-    one must wait. Otherwise this request armed the window with its token and
-    can release it again when the code turns out not to be sent.
+    retry_after_s is set when another request already holds the cooldown; token
+    is set when this request holds it and can give it back through
+    release_2fa_resend_cooldown.
     """
 
     user_email: str
@@ -219,16 +216,13 @@ class ResendCooldown:
 async def start_2fa_resend_cooldown(
     app: web.Application, *, user_email: str, channel: str, cooldown_in_seconds: int
 ) -> ResendCooldown:
-    """Arms the per-account resend cooldown, or reports the remaining wait
-
-    Arms atomically with SET NX, so concurrent resends race for one delivery.
-    A request that does not send the code releases the window it armed, so a
-    failed delivery does not lock the account out for a window that sent
-    nothing.
-    """
+    """Starts the resend cooldown for one account, or reports the remaining wait"""
     redis_client = get_redis_validation_code_client(app)
     key = _get_resend_cooldown_key(channel=channel, user_email=user_email)
     token = secrets.token_hex(16)
+    # SET NX elects one sender among concurrent resends: the winner holds the
+    # cooldown and may give it back if the code cannot be sent, the losers are
+    # told how long to wait
     if await redis_client.set(key, token, ex=cooldown_in_seconds, nx=True):
         return ResendCooldown(user_email=user_email, channel=channel, token=token)
     remaining: int = await redis_client.ttl(key)
@@ -237,7 +231,7 @@ async def start_2fa_resend_cooldown(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def release_2fa_resend_cooldown(app: web.Application, cooldown: ResendCooldown) -> None:
-    """Deletes a cooldown this request armed, leaving a re-armed window in place"""
+    """Deletes the cooldown only if this request started it, leaving a new one in place"""
     if cooldown.token is None:
         return
     redis_client = get_redis_validation_code_client(app)
@@ -252,7 +246,7 @@ async def release_2fa_resend_cooldown(app: web.Application, cooldown: ResendCool
 async def resend_cooldown(
     app: web.Application, *, user_email: str, channel: str, cooldown_in_seconds: int
 ) -> AsyncGenerator[ResendCooldown]:
-    """Arms the resend cooldown and releases the window again when the body fails
+    """Starts the resend cooldown and gives it back when the body fails
 
     ::
 
@@ -261,9 +255,9 @@ async def resend_cooldown(
                 raise <429 with Retry-After>
             <deliver the code>
 
-    A body that raises (delivery failed, request rejected) releases the window
-    this request armed, so an account is not charged for a delivery that never
-    happened. A successful body keeps the window armed for its full duration.
+    A body that raises (delivery failed, request rejected) gives the cooldown
+    back, so an account is not kept waiting after a delivery that never
+    happened. A successful body keeps the cooldown for its full duration.
     """
     cooldown = await start_2fa_resend_cooldown(
         app, user_email=user_email, channel=channel, cooldown_in_seconds=cooldown_in_seconds
