@@ -13,6 +13,7 @@ from simcore_sdk.node_ports_common.r_clone_utils import (
     _RCloneSyncTransferCompletedMessage,
     _RCloneSyncTransferringMessage,
     _RCloneSyncUpdatedMessage,
+    _sanitize_rclone_command,
     overwrite_command,
 )
 
@@ -158,3 +159,130 @@ _SOURCE_COMMAND: Final[list[str]] = [
 )
 def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expected_command: list[str]) -> None:
     assert overwrite_command(_SOURCE_COMMAND, edit=edit, remove=remove) == expected_command
+
+
+@pytest.mark.parametrize(
+    "command,expected_sanitized",
+    [
+        pytest.param(
+            [
+                "rclone",
+                "--config",
+                "/path/to/config",
+                "--transfers",
+                "16",
+            ],
+            [
+                "rclone",
+                "--config",
+                "/path/to/config",
+                "--transfers",
+                "16",
+            ],
+            id="no-sensitive-data",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--pass",
+                "my-secret-password",
+                "sync",
+                "source",
+                "dest",
+            ],
+            [
+                "rclone",
+                "--pass",
+                "********",
+                "sync",
+                "source",
+                "dest",
+            ],
+            id="mask-pass-flag",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--password=my-secret-password",
+                "sync",
+            ],
+            [
+                "rclone",
+                "--password=********",
+                "sync",
+            ],
+            id="mask-password-embedded",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--secret-access-key",
+                "AKIA1234567890ABCDEF",
+                "--access-key-id",
+                "AKIAIOSFODNN7EXAMPLE",
+            ],
+            [
+                "rclone",
+                "--secret-access-key",
+                "********",
+                "--access-key-id",
+                "********",
+            ],
+            id="mask-aws-credentials",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--api-key",
+                "sk_test_123456789",
+                "--bearer-token=some_token_value",
+            ],
+            [
+                "rclone",
+                "--api-key",
+                "********",
+                "--bearer-token=********",
+            ],
+            id="mask-api-keys",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--auth",
+                "user:password",
+                "--client-secret",
+                "client_secret_value",
+                "--config",
+                "/etc/rclone.conf",
+            ],
+            [
+                "rclone",
+                "--auth",
+                "********",
+                "--client-secret",
+                "********",
+                "--config",
+                "/etc/rclone.conf",
+            ],
+            id="mask-auth-and-client-secret",
+        ),
+        pytest.param(
+            [
+                "rclone",
+                "--client-id=my_id",
+                "--pass=secret",
+                "sync",
+            ],
+            [
+                "rclone",
+                "--client-id=********",
+                "--pass=********",
+                "sync",
+            ],
+            id="mask-multiple-embedded-flags",
+        ),
+    ],
+)
+def test_sanitize_rclone_command(command: list[str], expected_sanitized: list[str]) -> None:
+    """Test that sensitive data in rclone commands is properly masked."""
+    assert _sanitize_rclone_command(command) == expected_sanitized
