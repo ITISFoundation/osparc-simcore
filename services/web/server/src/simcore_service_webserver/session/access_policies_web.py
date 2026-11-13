@@ -15,6 +15,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
 from .api import get_session
+from .errors import HTTPRefundableTooManyRequests
 from .settings import SessionSettings, get_plugin_settings
 
 _SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
@@ -41,7 +42,7 @@ def _is_valid(token) -> bool:
     # were not deserialized as AccessToken dicts
     try:
         return token["count"] > 0 and not _is_expired(token)
-    except (KeyError, TypeError):
+    except KeyError, TypeError:
         return False
 
 
@@ -119,7 +120,19 @@ def session_access_required(
                 access_tokens[name] = access
 
             # Access granted to this handler
-            response = await handler(request)
+            try:
+                response = await handler(request)
+            except HTTPRefundableTooManyRequests:
+                # the cooldown rejected this request without using the step:
+                # refund the access so the retry after Retry-After works. if
+                # this request consumed the last access, the cleanup above
+                # pruned the token before the handler ran, so restore the
+                # captured one
+                with _access_tokens_cleanup_ctx(session) as access_tokens:
+                    refund = access_tokens.get(name) or access
+                    refund["count"] += 1
+                    access_tokens[name] = refund
+                raise
 
             if response.status < _HTTP_400_BAD_REQUEST:  # success
                 with _access_tokens_cleanup_ctx(session) as access_tokens:

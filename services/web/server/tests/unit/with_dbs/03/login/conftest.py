@@ -5,7 +5,7 @@
 
 import json
 import uuid
-from collections.abc import AsyncIterable, Iterator
+from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -27,6 +27,7 @@ from simcore_service_webserver.login._confirmation_repository import (
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.notifications import notifications_service
+from simcore_service_webserver.redis import get_redis_validation_code_client
 
 
 @pytest.fixture
@@ -106,6 +107,17 @@ def login_options(client: TestClient) -> LoginOptions:
     cfg: LoginOptions = get_plugin_options(client.app)
     assert cfg
     return cfg
+
+
+@pytest.fixture
+async def clean_2fa_redis_state(client: TestClient) -> AsyncIterator[None]:
+    """2FA codes, trial counters and resend cooldowns are keyed by email and
+    tests reuse the deterministic faker emails, so this state must not
+    outlive the test that created it
+    """
+    assert client.app
+    yield
+    await get_redis_validation_code_client(client.app).flushdb()
 
 
 @pytest.fixture
