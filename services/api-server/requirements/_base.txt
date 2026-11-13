@@ -92,7 +92,7 @@ attrs==26.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-billiard==4.2.1
+billiard==4.3.2
     # via celery
 boto3==1.40.61
     # via
@@ -106,7 +106,7 @@ botocore==1.40.61
     #   s3transfer
 botocore-stubs==1.43.14
     # via types-aiobotocore
-celery==5.6.3
+celery==5.7.0
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
 certifi==2026.10.23
     # via
@@ -134,7 +134,7 @@ click-didyoumean==0.3.1
     # via celery
 click-plugins==1.1.1.2
     # via celery
-click-repl==0.3.0
+click-repl==0.4.1
     # via celery
 cryptography==50.0.2
     # via
@@ -658,6 +658,7 @@ typing-extensions==4.16.0
     #   aiodebug
     #   alembic
     #   anyio
+    #   click-repl
     #   fast-depends
     #   fastapi
     #   fastapi-pagination
