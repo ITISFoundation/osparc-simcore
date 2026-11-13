@@ -2,6 +2,8 @@ image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/webserver
   tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
 
+replicaCount: 2
+
 # entrypoint.sh runs update-ca-certificates, which needs a writable /etc
 containerSecurityContext:
   readOnlyRootFilesystem: false
