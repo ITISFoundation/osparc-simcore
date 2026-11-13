@@ -44,8 +44,8 @@ class ApiKeysRepository(BaseRepository):
     ) -> UserAndProductTuple | None:
         """Validates API key, secret, and expiry, returning user info if valid otherwise None.
 
-        WARNING: Cached for 120s TTL, keyed on both api_key and api_secret: a cached success is
-        only replayed for the same credential pair. Expiry and secret validation occur at most every 2 minutes.
+        WARNING: Cached for 120s TTL, keyed on both api_key and api_secret: a
+        cached success is only replayed for the same credential pair.
         NOTE: to disable caching set AIOCACHE_DISABLE=1
         """
 
