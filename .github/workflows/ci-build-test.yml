@@ -1798,7 +1798,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: "backend"
+          artifact-name-pattern: "*"
       - name: Debug Webserver image revision
         run: |
           echo "Expected revision: ${GITHUB_SHA}"
