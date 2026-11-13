@@ -1,0 +1,61 @@
+{{- $connections := list -}}
+{{- range $db, $label := list "resources" "locks" "validation_codes" "scheduled_maintenance" "user_notifications" "announcements" "long_running_tasks" "deferred_tasks" "dynamic_services" "celery_tasks" "documents" "aiocache" "chatbox_usage" -}}
+{{- $connections = append $connections (dict "label" $label "host" "redis" "port" 6379 "password" $.Values.password "dbIndex" $db) -}}
+{{- end }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-commander
+type: Opaque
+stringData:
+  local.json: {{ dict "connections" $connections | toJson | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-commander
+spec:
+  type: NodePort
+  ports:
+    - port: 8081
+      targetPort: 8081
+      nodePort: 31881
+  selector:
+    app: redis-commander
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-commander
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-commander
+  template:
+    metadata:
+      labels:
+        app: redis-commander
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: redis-commander
+          image: ghcr.io/joeferner/redis-commander:latest
+          env:
+            - name: K8S_SIGTERM
+              value: "1"
+          ports:
+            - containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /favicon.png
+              port: 8081
+          volumeMounts:
+            - name: config
+              mountPath: /redis-commander/config/local.json
+              subPath: local.json
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: redis-commander

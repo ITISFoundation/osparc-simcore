@@ -1,0 +1,71 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+nodes:
+  - role: control-plane
+    extraMounts: # some simcore service require socket
+    - hostPath: /var/run/docker.sock
+      containerPath: /var/run/docker.sock
+    - hostPath: ../
+      containerPath: /osparc-simcore
+    # listenAddress (0.0.0.0) and protocol (TCP) use kind defaults
+    extraPortMappings:
+      #
+      # OPS
+      #
+      - { containerPort: 30432, hostPort: 5432 }   # postgres
+      - { containerPort: 30379, hostPort: 6379 }   # redis
+      - { containerPort: 31881, hostPort: 18081 }  # redis-commander
+      - { containerPort: 30672, hostPort: 5672 }   # rabbit AMQP
+      - { containerPort: 31672, hostPort: 15672 }  # rabbit management UI
+      - { containerPort: 30080, hostPort: 9000 }   # headlamp
+      - { containerPort: 31808, hostPort: 18080 }  # adminer
+      - { containerPort: 30555, hostPort: 5555 }   # flower
+      - { containerPort: 31025, hostPort: 1025 }   # mailpit SMTP
+      - { containerPort: 31825, hostPort: 8025 }   # mailpit web UI
+      - { containerPort: 32000, hostPort: 9001 }   # rustfs S3 API
+      - { containerPort: 32001, hostPort: 9090 }   # rustfs console
+      - { containerPort: 31686, hostPort: 16686 }  # jaeger UI
+      - { containerPort: 31417, hostPort: 43017 }  # jaeger OTLP gRPC
+      - { containerPort: 31418, hostPort: 43018 }  # jaeger OTLP HTTP
+      - { containerPort: 31431, hostPort: 4318 }   # OpenTelemetry Collector OTLP HTTP
+      #
+      # Simcore (local environment for development)
+      #
+      - { containerPort: 30006, hostPort: 8006 }   # api-server http
+      - { containerPort: 32006, hostPort: 3006 }   # api-server debug
+      - { containerPort: 32025, hostPort: 3025 }   # api-worker debug
+      - { containerPort: 30007, hostPort: 8007 }   # autoscaling http
+      - { containerPort: 32012, hostPort: 3012 }   # autoscaling debug
+      - { containerPort: 30005, hostPort: 8005 }   # catalog http
+      - { containerPort: 32005, hostPort: 3005 }   # catalog debug
+      - { containerPort: 30010, hostPort: 8010 }   # clusters-keeper http
+      - { containerPort: 32015, hostPort: 3015 }   # clusters-keeper debug
+      - { containerPort: 30786, hostPort: 8786 }   # dask-scheduler API
+      - { containerPort: 30787, hostPort: 8787 }   # dask-scheduler dashboard UI
+      - { containerPort: 32010, hostPort: 3010 }   # datcore-adapter debug
+      - { containerPort: 32004, hostPort: 3004 }   # director debug
+      - { containerPort: 32009, hostPort: 3009 }   # director-v2 debug
+      - { containerPort: 30014, hostPort: 8014 }   # docker-api-proxy http
+      - { containerPort: 30012, hostPort: 8012 }   # dynamic-scheduler http
+      - { containerPort: 32016, hostPort: 3016 }   # dynamic-scheduler debug
+      - { containerPort: 30008, hostPort: 8008 }   # invitations http
+      - { containerPort: 32017, hostPort: 3017 }   # invitations debug
+      - { containerPort: 30015, hostPort: 8015 }   # notifications http
+      - { containerPort: 32023, hostPort: 3023 }   # notifications debug
+      - { containerPort: 32026, hostPort: 3026 }   # notifications-worker debug
+      - { containerPort: 30011, hostPort: 8011 }   # payments http
+      - { containerPort: 32018, hostPort: 3018 }   # payments debug
+      - { containerPort: 30009, hostPort: 8009 }   # resource-usage-tracker http
+      - { containerPort: 32014, hostPort: 3014 }   # resource-usage-tracker debug
+      - { containerPort: 32003, hostPort: 3003 }   # storage debug
+      - { containerPort: 32021, hostPort: 3021 }   # sto-worker debug
+      - { containerPort: 32022, hostPort: 3022 }   # sto-worker-cpu-bound debug
+      - { containerPort: 31001, hostPort: 3001 }   # webserver debug
+      - { containerPort: 32024, hostPort: 3024 }   # wb-auth debug
+      - { containerPort: 32019, hostPort: 3019 }   # wb-api-server debug
+      - { containerPort: 32013, hostPort: 3013 }   # wb-db-event-listener debug
+      - { containerPort: 32011, hostPort: 3011 }   # wb-garbage-collector debug
+      - { containerPort: 30081, hostPort: 9081 }   # traefik http entrypoint
+      - { containerPort: 31081, hostPort: 10081 }  # traefik simcoreapi entrypoint
+      - { containerPort: 30880, hostPort: 8080 }   # traefik dashboard

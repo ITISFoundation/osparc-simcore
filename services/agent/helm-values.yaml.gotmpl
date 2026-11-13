@@ -1,0 +1,57 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/agent
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh adds scu to the docker socket's group, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  AGENT_DOCKER_NODE_ID:
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  AGENT_LOGLEVEL: {{ requiredEnv "AGENT_LOGLEVEL" | quote }}
+  AGENT_TRACING: {{ requiredEnv "AGENT_TRACING" | quote }}
+  AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: {{ requiredEnv "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY" | quote }}
+  AGENT_VOLUMES_CLEANUP_S3_BUCKET: {{ requiredEnv "AGENT_VOLUMES_CLEANUP_S3_BUCKET" | quote }}
+  AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: {{ requiredEnv "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT" | quote }}
+  AGENT_VOLUMES_CLEANUP_S3_PROVIDER: {{ requiredEnv "AGENT_VOLUMES_CLEANUP_S3_PROVIDER" | quote }}
+  AGENT_VOLUMES_CLEANUP_S3_REGION: {{ requiredEnv "AGENT_VOLUMES_CLEANUP_S3_REGION" | quote }}
+  AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: {{ env "SWARM_STACK_NAME" | default "simcore_local" | quote }}
+
+secretEnv:
+  AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: {{ requiredEnv "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY" | quote }}
+
+# the image's HEALTHCHECK probes /health, not /
+probes:
+  startup:
+    httpGet:
+      path: /health
+      port: http
+  readiness:
+    httpGet:
+      path: /health
+      port: http
+  liveness:
+    httpGet:
+      path: /health
+      port: http

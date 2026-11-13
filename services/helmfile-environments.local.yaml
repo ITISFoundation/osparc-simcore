@@ -1,0 +1,134 @@
+agent:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - agent/helm-values.local.yaml.gotmpl
+
+api_server:
+  extra_values_files:
+    - api-server/helm-values.local.yaml.gotmpl
+
+api_worker:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - api-server/helm-values.local.api-worker.yaml.gotmpl
+
+autoscaling:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - autoscaling/helm-values.local.yaml.gotmpl
+
+catalog:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - catalog/helm-values.local.yaml.gotmpl
+
+clusters_keeper:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - clusters-keeper/helm-values.local.yaml.gotmpl
+
+dask_sidecar:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - dask-sidecar/helm-values.local.yaml.gotmpl
+
+dask_scheduler:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - dask-sidecar/helm-values.local.dask-scheduler.yaml.gotmpl
+
+datcore_adapter:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - datcore-adapter/helm-values.local.yaml.gotmpl
+
+director:
+  extra_values_files:
+    - director/helm-values.local.yaml.gotmpl
+
+director_v2:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - director-v2/helm-values.local.yaml.gotmpl
+
+docker_api_proxy:
+  extra_values_files:
+    - docker-api-proxy/helm-values.local.yaml.gotmpl
+
+dynamic_scheduler:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - dynamic-scheduler/helm-values.local.yaml.gotmpl
+
+invitations:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - invitations/helm-values.local.yaml.gotmpl
+
+notifications:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - notifications/helm-values.local.yaml.gotmpl
+
+notifications_worker:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - notifications/helm-values.local.notifications-worker.yaml.gotmpl
+
+payments:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - payments/helm-values.local.yaml.gotmpl
+
+resource_usage_tracker:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - resource-usage-tracker/helm-values.local.yaml.gotmpl
+
+static_webserver:
+  extra_values_files:
+    - static-webserver/helm-values.local.yaml.gotmpl
+
+storage:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - storage/helm-values.local.yaml.gotmpl
+
+sto_worker:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - storage/helm-values.local.sto-worker.yaml.gotmpl
+
+sto_worker_cpu_bound:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - storage/helm-values.local.sto-worker-cpu-bound.yaml.gotmpl
+
+traefik:
+  extra_values_files:
+    - traefik/helm-values.local.yaml.gotmpl
+
+webserver:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - web/helm-values.local.yaml.gotmpl
+
+wb_auth:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - web/helm-values.local.wb-auth.yaml.gotmpl
+
+wb_api_server:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - web/helm-values.local.wb-api-server.yaml.gotmpl
+
+wb_db_event_listener:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - web/helm-values.local.wb-db-event-listener.yaml.gotmpl
+
+wb_garbage_collector:
+  extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
+    - web/helm-values.local.wb-garbage-collector.yaml.gotmpl

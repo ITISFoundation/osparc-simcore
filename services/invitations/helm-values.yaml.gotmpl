@@ -1,0 +1,23 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/invitations
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  INVITATIONS_DEFAULT_PRODUCT: {{ requiredEnv "INVITATIONS_DEFAULT_PRODUCT" | quote }}
+  INVITATIONS_LOGLEVEL: {{ requiredEnv "INVITATIONS_LOGLEVEL" | quote }}
+  INVITATIONS_OSPARC_URL: {{ requiredEnv "INVITATIONS_OSPARC_URL" | quote }}
+  INVITATIONS_SWAGGER_API_DOC_ENABLED: {{ requiredEnv "INVITATIONS_SWAGGER_API_DOC_ENABLED" | quote }}
+  INVITATIONS_TRACING: {{ requiredEnv "INVITATIONS_TRACING" | quote }}
+  INVITATIONS_USERNAME: {{ requiredEnv "INVITATIONS_USERNAME" | quote }}
+
+secretEnv:
+  INVITATIONS_PASSWORD: {{ requiredEnv "INVITATIONS_PASSWORD" | quote }}
+  INVITATIONS_SECRET_KEY: {{ requiredEnv "INVITATIONS_SECRET_KEY" | quote }}

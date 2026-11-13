@@ -1,0 +1,21 @@
+{{- $sharedFolder := env "SIDECAR_COMP_SERVICES_SHARED_FOLDER" | default "/home/scu/computational_shared_data" -}}
+
+service:
+  enabled: false
+
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: computational-shared-data
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: computational-shared-data
+    mountPath: {{ $sharedFolder | quote }}
+
+env:
+  DASK_SCHEDULER_URL: tcp://{{ requiredEnv "DASK_SCHEDULER_HOST" }}:8786

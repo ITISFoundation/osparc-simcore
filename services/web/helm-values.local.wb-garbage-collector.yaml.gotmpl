@@ -1,0 +1,43 @@
+image:
+  repository: local/webserver
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+
+service:
+  type: NodePort
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32011
+
+env:
+  WEBSERVER_FUNCTIONS: {{ requiredEnv "WEBSERVER_FUNCTIONS" | quote }}
+  WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
+  WEBSERVER_LOGLEVEL: DEBUG
+  WEBSERVER_PROFILING: {{ requiredEnv "WEBSERVER_PROFILING" | quote }}
+  RESOURCE_MANAGER_RESOURCE_TTL_S: 15
+  DEBUG: "1"
+
+extraVolumes:
+  - name: webserver-src
+    hostPath:
+      path: /osparc-simcore/services/web/server
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: webserver-src
+    mountPath: /devel/services/web/server
+  - name: packages-src
+    mountPath: /devel/packages

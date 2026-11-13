@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flower
+type: Opaque
+stringData:
+  CELERY_BROKER_URL: {{ printf "amqp://%s:%s@rabbit:5672//" (.Values.user | urlquery) (.Values.password | urlquery) | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+spec:
+  type: NodePort
+  ports:
+    - port: 5555
+      targetPort: 5555
+      nodePort: 30555
+  selector:
+    app: flower
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flower
+  template:
+    metadata:
+      labels:
+        app: flower
+    spec:
+      # Kubernetes injects FLOWER_PORT from this Service, but Flower expects a numeric value.
+      enableServiceLinks: false
+      containers:
+        - name: flower
+          image: mher/flower:2.0.1
+          envFrom:
+            - secretRef:
+                name: flower
+          ports:
+            - containerPort: 5555
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5555

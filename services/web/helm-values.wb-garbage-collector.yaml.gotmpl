@@ -1,0 +1,77 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/webserver
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh runs update-ca-certificates, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+# gunicorn binds 8080 (services/web/server/docker/boot.sh)
+containerPort: {{ requiredEnv "WEBSERVER_PORT" | quote }}
+service:
+  port: {{ requiredEnv "WEBSERVER_PORT" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  GUNICORN_CMD_ARGS: {{ requiredEnv "WEBSERVER_GUNICORN_CMD_ARGS" | quote }}
+  LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: "gc"
+  RESOURCE_MANAGER_RESOURCE_TTL_S: {{ requiredEnv "WB_GC_RESOURCE_MANAGER_RESOURCE_TTL_S" | quote }}
+  REST_SWAGGER_API_DOC_ENABLED: {{ requiredEnv "WB_GC_REST_SWAGGER_API_DOC_ENABLED" | quote }}
+  SWARM_STACK_NAME: {{ requiredEnv "SWARM_STACK_NAME" | quote }}
+  TRASH_RETENTION_DAYS: {{ requiredEnv "TRASH_RETENTION_DAYS" | quote }}
+  WEBSERVER_ACTIVITY: {{ requiredEnv "WB_GC_ACTIVITY" | quote }}
+  WEBSERVER_ANNOUNCEMENTS: {{ requiredEnv "WB_GC_ANNOUNCEMENTS" | quote }}
+  WEBSERVER_CATALOG: {{ requiredEnv "WB_GC_CATALOG" | quote }}
+  WEBSERVER_CHATBOT: "null"
+  WEBSERVER_CONVERSATIONS: "false"
+  WEBSERVER_DB_LISTENER: {{ requiredEnv "WB_GC_DB_LISTENER" | quote }}
+  WEBSERVER_DIAGNOSTICS: {{ requiredEnv "WB_GC_DIAGNOSTICS" | quote }}
+  WEBSERVER_EXPORTER: {{ requiredEnv "WB_GC_EXPORTER" | quote }}
+  WEBSERVER_FOGBUGZ: "null"
+  WEBSERVER_FOLDERS: {{ requiredEnv "WB_GC_FOLDERS" | quote }}
+  WEBSERVER_FRONTEND: {{ requiredEnv "WB_GC_FRONTEND" | quote }}
+  WEBSERVER_FUNCTIONS: "0"
+  WEBSERVER_GARBAGE_COLLECTOR: {{ requiredEnv "WB_GC_GARBAGE_COLLECTOR" | quote }}
+  WEBSERVER_GROUPS: {{ requiredEnv "WB_GC_GROUPS" | quote }}
+  WEBSERVER_HOST: {{ requiredEnv "WEBSERVER_HOST" | quote }}
+  WEBSERVER_INVITATIONS: {{ requiredEnv "WB_GC_INVITATIONS" | quote }}
+  WEBSERVER_LICENSES: "null"
+  WEBSERVER_LOCALIZED_MESSAGES_ENABLED: {{ requiredEnv "WEBSERVER_LOCALIZED_MESSAGES_ENABLED" | quote }}
+  WEBSERVER_LOGIN: {{ requiredEnv "WB_GC_LOGIN" | quote }}
+  WEBSERVER_LOGLEVEL: {{ requiredEnv "WB_GC_LOGLEVEL" | quote }}
+  WEBSERVER_NOTIFICATIONS: {{ requiredEnv "WB_GC_NOTIFICATIONS" | quote }}
+  WEBSERVER_PAYMENTS: {{ requiredEnv "WB_GC_PAYMENTS" | quote }}
+  WEBSERVER_PORT: {{ requiredEnv "WEBSERVER_PORT" | quote }}
+  WEBSERVER_PRODUCTS: {{ requiredEnv "WB_GC_PRODUCTS" | quote }}
+  WEBSERVER_PROJECTS: {{ requiredEnv "WB_GC_PROJECTS" | quote }}
+  WEBSERVER_RPC_NAMESPACE: "webserver"
+  WEBSERVER_SCICRUNCH: {{ requiredEnv "WB_GC_SCICRUNCH" | quote }}
+  WEBSERVER_SOCKETIO: {{ requiredEnv "WB_GC_SOCKETIO" | quote }}
+  WEBSERVER_STATICWEB: {{ requiredEnv "WB_GC_STATICWEB" | quote }}
+  WEBSERVER_STUDIES_DISPATCHER: {{ requiredEnv "WB_GC_STUDIES_DISPATCHER" | quote }}
+  WEBSERVER_TAGS: {{ requiredEnv "WB_GC_TAGS" | quote }}
+  WEBSERVER_TRACING: {{ requiredEnv "WB_GC_TRACING" | quote }}
+  WEBSERVER_USERS: {{ requiredEnv "WB_GC_USERS" | quote }}
+  WEBSERVER_WALLETS: {{ requiredEnv "WB_GC_WALLETS" | quote }}
+
+secretEnv:
+  SESSION_SECRET_KEY: {{ requiredEnv "WEBSERVER_SESSION_SECRET_KEY" | quote }}
+
+# the image's HEALTHCHECK probes /v0/health
+probes:
+  startup:
+    httpGet:
+      path: /v0/health
+  readiness:
+    httpGet:
+      path: /v0/health
+  liveness:
+    httpGet:
+      path: /v0/health

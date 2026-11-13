@@ -1,0 +1,31 @@
+# image of both api-server releases: api-worker includes this file and runs the same image
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/api-server
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  API_SERVER_CHATBOT: {{ env "API_SERVER_CHATBOT" | default "null" | quote }}
+  API_SERVER_DEV_FEATURES_ENABLED: {{ requiredEnv "API_SERVER_DEV_FEATURES_ENABLED" | quote }}
+  API_SERVER_KMS: {{ requiredEnv "API_SERVER_KMS" | quote }}
+  API_SERVER_LOCALIZED_MESSAGES_ENABLED: {{ requiredEnv "API_SERVER_LOCALIZED_MESSAGES_ENABLED" | quote }}
+  API_SERVER_LOG_FILTER_MAPPING: {{ requiredEnv "LOG_FILTER_MAPPING" | quote }}
+  API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  API_SERVER_LOGLEVEL: {{ requiredEnv "API_SERVER_LOGLEVEL" | quote }}
+  API_SERVER_PROFILING: {{ requiredEnv "API_SERVER_PROFILING" | quote }}
+  API_SERVER_TRACING: {{ requiredEnv "API_SERVER_TRACING" | quote }}
+  API_SERVER_WORKER_MODE: "false"
+  WEBSERVER_HOST: {{ requiredEnv "WB_API_WEBSERVER_HOST" | quote }}
+  WEBSERVER_PORT: {{ requiredEnv "WB_API_WEBSERVER_PORT" | quote }}
+  WEBSERVER_RPC_NAMESPACE: {{ requiredEnv "WB_API_WEBSERVER_HOST" | quote }}
+
+secretEnv:
+  API_SERVER_CHATBOX_USAGE_LIMITS: {{ env "API_SERVER_CHATBOX_USAGE_LIMITS" | default "null" | quote }}
+  WEBSERVER_SESSION_SECRET_KEY: {{ requiredEnv "WEBSERVER_SESSION_SECRET_KEY" | quote }}

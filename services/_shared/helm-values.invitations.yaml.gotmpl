@@ -1,0 +1,9 @@
+env:
+  INVITATIONS_HOST: {{ requiredEnv "INVITATIONS_HOST" | quote }}
+  INVITATIONS_OSPARC_URL: {{ requiredEnv "INVITATIONS_OSPARC_URL" | quote }}
+  INVITATIONS_PORT: {{ requiredEnv "INVITATIONS_PORT" | quote }}
+  INVITATIONS_USERNAME: {{ requiredEnv "INVITATIONS_USERNAME" | quote }}
+
+secretEnv:
+  INVITATIONS_PASSWORD: {{ requiredEnv "INVITATIONS_PASSWORD" | quote }}
+  INVITATIONS_SECRET_KEY: {{ requiredEnv "INVITATIONS_SECRET_KEY" | quote }}

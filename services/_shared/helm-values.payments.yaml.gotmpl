@@ -1,0 +1,7 @@
+env:
+  PAYMENTS_HOST: {{ requiredEnv "PAYMENTS_HOST" | quote }}
+  PAYMENTS_PORT: {{ requiredEnv "PAYMENTS_PORT" | quote }}
+  PAYMENTS_USERNAME: {{ requiredEnv "PAYMENTS_USERNAME" | quote }}
+
+secretEnv:
+  PAYMENTS_PASSWORD: {{ requiredEnv "PAYMENTS_PASSWORD" | quote }}

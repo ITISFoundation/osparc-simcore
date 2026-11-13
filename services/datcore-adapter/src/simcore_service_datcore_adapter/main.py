@@ -8,10 +8,9 @@ from fastapi import FastAPI
 from servicelib import tracing
 from servicelib.fastapi.logging_lifespan import create_logging_lifespan
 
+from simcore_service_datcore_adapter._meta import APP_NAME
 from simcore_service_datcore_adapter.core.application import create_app
 from simcore_service_datcore_adapter.core.settings import ApplicationSettings
-
-from ._meta import APP_NAME
 
 _logger = logging.getLogger(__name__)
 

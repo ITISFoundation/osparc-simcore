@@ -1,0 +1,44 @@
+image:
+  repository: local/notifications
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  nodePort: 30015
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32023
+
+env:
+  NOTIFICATIONS_REMOTE_DEBUGGING_PORT: 3000
+  NOTIFICATIONS_LOGLEVEL: DEBUG
+  # not in .env-devel, empty there as in the Compose setup
+  NOTIFICATIONS_PROFILING: {{ env "NOTIFICATIONS_PROFILING" | quote }}
+
+extraVolumes:
+  - name: notifications-src
+    hostPath:
+      path: /osparc-simcore/services/notifications
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: notifications-src
+    mountPath: /devel/services/notifications
+  - name: packages-src
+    mountPath: /devel/packages

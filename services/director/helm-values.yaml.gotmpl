@@ -1,0 +1,68 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/director
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+# entrypoint.sh adds scu to the docker socket's group, which needs a writable /etc
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+extraVolumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+
+extraVolumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  DIRECTOR_DEFAULT_MAX_MEMORY: {{ requiredEnv "DIRECTOR_DEFAULT_MAX_MEMORY" | quote }}
+  DIRECTOR_DEFAULT_MAX_NANO_CPUS: {{ requiredEnv "DIRECTOR_DEFAULT_MAX_NANO_CPUS" | quote }}
+  DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: {{ requiredEnv "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS" | quote }}
+  DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: {{ requiredEnv "LOG_FORMAT_LOCAL_DEV_ENABLED" | quote }}
+  DIRECTOR_LOGLEVEL: {{ requiredEnv "DIRECTOR_LOGLEVEL" | quote }}
+  DIRECTOR_MONITORING_ENABLED: {{ requiredEnv "DIRECTOR_MONITORING_ENABLED" | quote }}
+  DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: {{ requiredEnv "DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS" | quote }}
+  DIRECTOR_PUBLISHED_HOST_NAME: {{ requiredEnv "DIRECTOR_PUBLISHED_HOST_NAME" | quote }}
+  DIRECTOR_REGISTRY_CACHING: {{ requiredEnv "DIRECTOR_REGISTRY_CACHING" | quote }}
+  DIRECTOR_REGISTRY_CACHING_TTL: {{ requiredEnv "DIRECTOR_REGISTRY_CACHING_TTL" | quote }}
+  DIRECTOR_SERVICES_CUSTOM_LABELS: {{ requiredEnv "DIRECTOR_SERVICES_CUSTOM_LABELS" | quote }}
+  DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: {{ requiredEnv "DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS" | quote }}
+  DIRECTOR_TRACING: {{ requiredEnv "DIRECTOR_TRACING" | quote }}
+  SIMCORE_SERVICES_NETWORK_NAME: {{ env "SIMCORE_SERVICES_NETWORK_NAME" | default "interactive_services_subnet" | quote }}
+  STORAGE_ENDPOINT: {{ requiredEnv "STORAGE_ENDPOINT" | quote }}
+  SWARM_STACK_NAME: {{ requiredEnv "SWARM_STACK_NAME" | quote }}
+  TRAEFIK_SIMCORE_ZONE: {{ requiredEnv "TRAEFIK_SIMCORE_ZONE" | quote }}
+
+# no route served at "/", the image's HEALTHCHECK probes /v0/
+probes:
+  startup:
+    httpGet:
+      path: /v0/
+      port: http
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 24
+  readiness:
+    httpGet:
+      path: /v0/
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /v0/
+      port: http
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5

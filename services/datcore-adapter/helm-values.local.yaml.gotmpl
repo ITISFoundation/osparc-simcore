@@ -1,0 +1,41 @@
+image:
+  repository: local/datcore-adapter
+  tag: development
+
+containerSecurityContext:
+  readOnlyRootFilesystem: false
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+service:
+  type: NodePort
+  extraServicePorts:
+    - name: debug
+      port: 3000
+      nodePort: 32010
+
+env:
+  DATCORE_ADAPTER_REMOTE_DEBUG_PORT: 3000
+  DATCORE_ADAPTER_LOGLEVEL: DEBUG
+
+extraVolumes:
+  - name: datcore-adapter-src
+    hostPath:
+      path: /osparc-simcore/services/datcore-adapter
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: datcore-adapter-src
+    mountPath: /devel/services/datcore-adapter
+  - name: packages-src
+    mountPath: /devel/packages

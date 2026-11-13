@@ -1,0 +1,41 @@
+image:
+  repository: local/webserver
+  tag: development
+
+resources:
+  limits:
+    memory: 2Gi
+
+probes:
+  startup:
+    failureThreshold: 120
+
+
+service:
+  type: NodePort
+  extraServicePorts:
+    # NodePort 32001 is taken by the rustfs console in kind-config
+    - name: debug
+      port: 3000
+      nodePort: 31001
+
+env:
+  WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
+  WEBSERVER_LOGLEVEL: DEBUG
+  DEBUG: "1"
+
+extraVolumes:
+  - name: webserver-src
+    hostPath:
+      path: /osparc-simcore/services/web/server
+      type: Directory
+  - name: packages-src
+    hostPath:
+      path: /osparc-simcore/packages
+      type: Directory
+
+extraVolumeMounts:
+  - name: webserver-src
+    mountPath: /devel/services/web/server
+  - name: packages-src
+    mountPath: /devel/packages

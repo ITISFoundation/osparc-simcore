@@ -1,0 +1,43 @@
+image:
+  repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/dynamic-scheduler
+  tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 100Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+env:
+  DOCKER_API_PROXY_HOST: {{ requiredEnv "DOCKER_API_PROXY_HOST" | quote }}
+  DOCKER_API_PROXY_PORT: {{ requiredEnv "DOCKER_API_PROXY_PORT" | quote }}
+  DOCKER_API_PROXY_SECURE: {{ requiredEnv "DOCKER_API_PROXY_SECURE" | quote }}
+  DOCKER_API_PROXY_USER: {{ requiredEnv "DOCKER_API_PROXY_USER" | quote }}
+  DYNAMIC_SCHEDULER_LOGLEVEL: {{ requiredEnv "DYNAMIC_SCHEDULER_LOGLEVEL" | quote }}
+  DYNAMIC_SCHEDULER_PROFILING: {{ requiredEnv "DYNAMIC_SCHEDULER_PROFILING" | quote }}
+  DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: {{ requiredEnv "DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT" | quote }}
+  DYNAMIC_SCHEDULER_TRACING: {{ requiredEnv "DYNAMIC_SCHEDULER_TRACING" | quote }}
+  DYNAMIC_SCHEDULER_UI_MOUNT_PATH: "/"
+  DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: {{ requiredEnv "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER" | quote }}
+  DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: {{ requiredEnv "DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT" | quote }}
+
+secretEnv:
+  DOCKER_API_PROXY_PASSWORD: {{ requiredEnv "DOCKER_API_PROXY_PASSWORD" | quote }}
+  DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: {{ requiredEnv "DYNAMIC_SCHEDULER_UI_STORAGE_SECRET" | quote }}
+
+# the image's HEALTHCHECK probes /health, not /
+probes:
+  startup:
+    httpGet:
+      path: /health
+      port: http
+  readiness:
+    httpGet:
+      path: /health
+      port: http
+  liveness:
+    httpGet:
+      path: /health
+      port: http
