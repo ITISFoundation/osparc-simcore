@@ -19,7 +19,7 @@ from ....groups import groups_service
 from ....locale import translate_message
 from ....products import products_service, products_web
 from ....products.errors import ProductNotFoundError
-from ....session.access_policies import HTTPRefundableTooManyRequests
+from ....session.errors import HTTPRefundableTooManyRequests
 from ....users.errors import AlreadyPreRegisteredError
 from ....utils_rate_limiting import MSG_TOO_MANY_REQUESTS
 from ...constants import (

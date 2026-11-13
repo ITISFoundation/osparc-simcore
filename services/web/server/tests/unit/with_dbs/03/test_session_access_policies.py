@@ -23,10 +23,10 @@ from simcore_service_webserver.login.constants import (
     MSG_UNAUTHORIZED_REGISTER_PHONE,
 )
 from simcore_service_webserver.session.access_policies import (
-    HTTPRefundableTooManyRequests,
     on_success_grant_session_access_to,
     session_access_required,
 )
+from simcore_service_webserver.session.errors import HTTPRefundableTooManyRequests
 from simcore_service_webserver.session.plugin import setup_session
 
 pytest_simcore_core_services_selection = [

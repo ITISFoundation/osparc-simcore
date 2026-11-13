@@ -15,6 +15,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
 from .api import get_session
+from .errors import HTTPRefundableTooManyRequests
 from .settings import SessionSettings, get_plugin_settings
 
 _SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
@@ -23,16 +24,6 @@ _SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = f"{__name__}._SESSION_GRANTED_ACCESS
 _HTTP_400_BAD_REQUEST: Final = status.HTTP_400_BAD_REQUEST
 
 _logger = logging.getLogger(__name__)
-
-
-class HTTPRefundableTooManyRequests(web.HTTPTooManyRequests):  # pylint: disable=too-many-ancestors
-    """429 raised from inside a session_access_required-guarded handler
-
-    The guard refunds the access this request consumed, so waiting for
-    Retry-After and retrying does not run the session out of authorization.
-    Only this error refunds: any other 429 (e.g. route rate limiting, which
-    runs outside the guard) keeps its cost.
-    """
 
 
 class _AccessToken(TypedDict, total=True):
