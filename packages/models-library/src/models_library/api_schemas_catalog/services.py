@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Any, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
-from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
+from pydantic import AfterValidator, ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
 
 from models_library.rpc_pagination import PageRpc
@@ -25,6 +25,7 @@ from ..services_metadata_published import (
 from ..services_resources import ServiceResourcesDict
 from ..services_types import ServiceKey, ServiceVersion
 from ..utils.change_case import snake_to_camel
+from ..utils.common_validators import as_utc
 from ._base import CatalogInputSchema, CatalogOutputSchema
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
@@ -381,7 +382,7 @@ class ServiceUpdateV2(CatalogInputSchema):
     description_ui: bool = False
     version_display: str | None = None
 
-    deprecated: datetime | None = None
+    deprecated: Annotated[datetime | None, AfterValidator(as_utc)] = None
 
     classifiers: list[str] | None = None
     quality: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY

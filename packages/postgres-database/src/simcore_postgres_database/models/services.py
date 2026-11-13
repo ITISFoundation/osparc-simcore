@@ -105,24 +105,11 @@ services_meta_data = sa.Table(
         doc="URL to external release notes page for this service (editable)",
     ),
     # LIFECYCLE ----------------------------
-    sa.Column(
-        "created",
-        sa.DateTime(),
-        nullable=False,
-        server_default=sa.func.now(),
-        doc="Timestamp on creation",
-    ),
-    sa.Column(
-        "modified",
-        sa.DateTime(),
-        nullable=False,
-        server_default=sa.func.now(),
-        onupdate=sa.func.now(),
-        doc="Timestamp with last update",
-    ),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.Column(
         "deprecated",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=True,
         server_default=sa.null(),
         doc="Timestamp when the service is retired (editable)."
