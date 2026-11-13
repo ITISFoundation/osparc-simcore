@@ -2,7 +2,8 @@
 Do not allow users to create new objects in the public schema
 
 Must be executed against every created database (e.g. for simcore, for metabase, ...)
-(as long as we use Postgres 14 or earlier)
+New databases created with PostgreSQL 15+ no longer grant this privilege to PUBLIC.
+Restored databases may retain older grants, which this statement also revokes.
 
 Sources:
 * https://wiki.postgresql.org/wiki/A_Guide_to_CVE-2018-1058:_Protect_Your_Search_Path
