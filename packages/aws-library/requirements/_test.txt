@@ -170,7 +170,7 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via moto
-opentelemetry-api==1.45.1
+opentelemetry-api==1.45.2
     # via
     #   -c requirements/_base.txt
     #   fastapi
