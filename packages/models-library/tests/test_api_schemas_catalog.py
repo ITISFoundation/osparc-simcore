@@ -4,13 +4,14 @@
 
 
 from datetime import UTC, datetime, timedelta, timezone
+from typing import Final
 
 import pytest
 from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.services import ServiceInput
 
-_CET = timezone(timedelta(hours=2))
+_CET: Final = timezone(timedelta(hours=2))
 
 
 def test_service_port_with_file():
@@ -43,7 +44,8 @@ def test_service_port_with_boolean():
         {
             "displayOrder": 3,
             "label": "Same title and description is more usual than you might think",
-            "description": "Same title and description is more usual than you might think",  # <- same label and description!
+            "description": "Same title and description is more usual than you might think",
+            # <- same label and description!
             "type": "boolean",
             "defaultValue": False,  # <- has a default
         }
