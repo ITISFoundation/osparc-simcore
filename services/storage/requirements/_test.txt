@@ -43,7 +43,7 @@ aws-sam-translator==1.103.0
     # via cfn-lint
 aws-xray-sdk==2.15.0
     # via moto
-billiard==4.2.1
+billiard==4.3.2
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -63,7 +63,7 @@ botocore==1.40.61
     #   boto3
     #   moto
     #   s3transfer
-celery==5.6.3
+celery==5.7.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -95,11 +95,11 @@ click-didyoumean==0.3.1
     # via
     #   -c requirements/_base.txt
     #   celery
-click-plugins==1.1.1
+click-plugins==1.1.1.2
     # via
     #   -c requirements/_base.txt
     #   celery
-click-repl==0.3.0
+click-repl==0.4.1
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -411,6 +411,7 @@ typing-extensions==4.16.0
     #   asyncpg-stubs
     #   aws-sam-translator
     #   cfn-lint
+    #   click-repl
     #   mypy
     #   pydantic
     #   pydantic-core

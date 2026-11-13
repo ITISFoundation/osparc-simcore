@@ -8,11 +8,11 @@ anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx2
-billiard==4.2.4
+billiard==4.3.2
     # via
     #   -c requirements/_base.txt
     #   celery
-celery==5.6.3
+celery==5.7.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -40,7 +40,7 @@ click-plugins==1.1.1.2
     # via
     #   -c requirements/_base.txt
     #   celery
-click-repl==0.3.0
+click-repl==0.4.1
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -195,6 +195,7 @@ typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
     #   anyio
+    #   click-repl
     #   flexcache
     #   flexparser
     #   pint

@@ -85,6 +85,11 @@ repos:
     hooks:
       - id: zizmor
         args: [--offline]
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v2.6.0
+    hooks:
+      - id: stylua-github
+        name: lua-formatter
   - repo: local
     hooks:
       - id: ensure-lychee-version-argument-matches-rev
