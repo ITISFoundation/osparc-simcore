@@ -40,14 +40,12 @@ certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   httpcore
     #   httpx
     #   requests
 charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   requests
 coverage==7.17.0
     # via
@@ -78,16 +76,12 @@ greenlet==3.5.6
 h11==0.16.0
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   httpcore
 httpcore==1.0.9
-    # via
-    #   -c requirements/_fastapi.txt
-    #   httpx
+    # via httpx
 httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_fastapi.txt
     #   respx
 icdiff==2.0.10
     # via pytest-icdiff
@@ -169,7 +163,6 @@ py-cpuinfo2==10.1.1
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   pytest
 pyleak==0.2.0
     # via -r requirements/_test.in
@@ -214,13 +207,11 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   -r requirements/_test.in
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   jsonschema-path
 redis==7.4.1
     # via
@@ -237,7 +228,6 @@ referencing==0.35.1
 requests==2.34.2
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   docker
     #   jsonschema-path
 respx==0.22.0
@@ -288,14 +278,11 @@ urllib3==2.8.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
     #   botocore
     #   docker
     #   requests
 uvloop==0.23.0
-    # via
-    #   -c requirements/_fastapi.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 yarl==1.25.1
     # via
     #   -c requirements/_aiohttp.txt

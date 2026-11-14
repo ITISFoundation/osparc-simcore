@@ -109,7 +109,7 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.4.1
     # via celery
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   email-validator

@@ -140,7 +140,7 @@ cryptography==50.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   email-validator
