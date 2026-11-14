@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: "postgres:14.23@sha256:2f439458ab6a57a925825ae14f9d06910e4fe4a41c8d4a0ae06397e65b707e1b"
+    image: "postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42"
     init: true
     environment:
       POSTGRES_USER: test
