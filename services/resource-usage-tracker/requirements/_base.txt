@@ -266,7 +266,7 @@ multidict==6.9.1
     #   aiobotocore
     #   aiohttp
     #   yarl
-numpy==2.3.4
+numpy==2.5.4
     # via
     #   contourpy
     #   matplotlib

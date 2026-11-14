@@ -190,7 +190,7 @@ multidict==6.9.1
     #   yarl
 narwhals==2.11.0
     # via bokeh
-numpy==2.5.2
+numpy==2.5.4
     # via bokeh
 opentelemetry-api==1.45.2
     # via
