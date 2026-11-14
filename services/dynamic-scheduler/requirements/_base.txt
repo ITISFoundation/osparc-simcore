@@ -59,6 +59,7 @@ anyio==4.15.1
     #   faststream
     #   httpx
     #   httpx2
+    #   nicegui
     #   starlette
     #   watchfiles
 arrow==1.4.0
@@ -238,8 +239,9 @@ multidict==6.9.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   aiohttp
+    #   nicegui
     #   yarl
-nicegui==3.16.0
+nicegui==3.18.0
     # via -r requirements/_base.in
 opentelemetry-api==1.45.2
     # via
@@ -463,9 +465,7 @@ python-dotenv==1.2.4
     #   pydantic-settings
     #   uvicorn
 python-engineio==4.13.5
-    # via
-    #   nicegui
-    #   python-socketio
+    # via python-socketio
 python-multipart==0.0.32
     # via
     #   fastapi
@@ -615,9 +615,7 @@ uvicorn==0.53.0
 uvloop==0.23.0
     # via uvicorn
 watchfiles==1.1.1
-    # via
-    #   nicegui
-    #   uvicorn
+    # via uvicorn
 webencodings==0.6.1
     # via tinycss2
 websockets==17.1
