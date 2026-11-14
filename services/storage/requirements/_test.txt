@@ -238,7 +238,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-networkx==3.6.1
+networkx==3.7
     # via cfn-lint
 numpy==2.4.3
     # via pandas
