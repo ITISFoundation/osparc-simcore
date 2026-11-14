@@ -272,7 +272,7 @@ multidict==6.9.1
     #   yarl
 networkx==3.7
     # via -r requirements/_base.in
-numpy==2.5.2
+numpy==2.5.4
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 opentelemetry-api==1.45.2
     # via
