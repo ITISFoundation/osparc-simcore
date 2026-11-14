@@ -117,7 +117,7 @@ distributed==2026.8.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   email-validator

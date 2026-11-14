@@ -120,7 +120,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via prometheus-api-client
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   email-validator

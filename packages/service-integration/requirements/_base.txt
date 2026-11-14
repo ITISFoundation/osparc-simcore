@@ -27,7 +27,7 @@ click==8.5.0
     #   cookiecutter
 cookiecutter==2.7.1
     # via -r requirements/_base.in
-dnspython==2.9.0
+dnspython==2.9.2
     # via email-validator
 docker==7.2.0
     # via -r requirements/_base.in
