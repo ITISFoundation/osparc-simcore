@@ -249,7 +249,7 @@ toolz==1.2.0
     #   dask
     #   distributed
     #   partd
-tornado==6.6
+tornado==6.6.1
     # via
     #   -c requirements/_base.txt
     #   bokeh
