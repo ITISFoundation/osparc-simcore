@@ -4,8 +4,10 @@
 
 
 import base64
+from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
@@ -32,6 +34,7 @@ from models_library.api_schemas_webserver.computations import (
     ComputationTaskRestGet,
 )
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.wallets import WalletID, WalletInfo
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
@@ -574,7 +577,6 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
 #
 
 
-@pytest.mark.epic("sanderegg/9851", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
     "wallet_info_expected",
@@ -585,7 +587,7 @@ async def test_list_computation_collection_runs_tasks_with_different_names(
         pytest.param(None, id="not_billed"),
     ],
 )
-async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_projects_nodes(
+async def test_start_computation_forwards_wallet_info_and_repairs_pricing_when_billed(
     director_v2_service_mock: AioResponsesMock,
     client: TestClient,
     logged_user: LoggedUser,
@@ -593,14 +595,16 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     mocker: MockerFixture,
     sqlalchemy_async_engine: AsyncEngine,
     wallet_info_expected: WalletInfo | None,
+    mock_rut_default_pricing_unit: None,
+    mocked_director_v2_node_sizing: mock.AsyncMock,
+    mark_product_billed: Callable[[], None],
 ):
-    """W8/W9: starting a computation forwards `wallet_info` to director-v2 and the
-    web-server itself writes NOTHING to `projects_nodes` or
-    `projects_node_to_pricing_unit`.
+    """A run fetches the requester's wallet when it has billable services, and repairs
+    the nodes' pricing state only when the product pays for them.
 
-    ⚠️ In the pricing/resources ownership rework (PR 2), starting a billed project
-    will additionally REPAIR missing/stale pricing links and node resources here;
-    the "not_billed" case must keep writing nothing.
+    Hand-computed t3.medium sizes for the resource-usage-tracker default unit: dask-worker 1.9 CPU /
+    3865470566 B, dynamic-sidecar 0.6 CPU / 2791728742 B. Frontend nodes are never
+    linked. `assert_called_once` pins the number of wallet fetches per run.
     """
     assert client.app
 
@@ -616,8 +620,13 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
         return_value=(user_project["uuid"], status.HTTP_201_CREATED),
     )
 
+    if wallet_info_expected is not None:
+        # a product takes ownership of its nodes' pricing state only when it says so
+        mark_product_billed()
+
     state_before = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     assert state_before, "the test project must have nodes"
+    assert all(node_state.pricing_unit_id is None for node_state in state_before.values())
 
     url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
     rsp = await client.post(f"{url}")
@@ -629,13 +638,46 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     assert mocked_start.call_count == 1
     assert mocked_start.call_args.kwargs["wallet_info"] == wallet_info_expected
 
-    # the web-server wrote nothing to the nodes' pricing state
     state_after = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
-    assert state_after == state_before
-    assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
+
+    if wallet_info_expected is None:
+        # not billed: the web-server wrote nothing to the nodes' pricing state
+        assert state_after == state_before
+        assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
+        mocked_director_v2_node_sizing.assert_not_called()
+        return
+
+    # billed: computational and dynamic nodes are linked to the default unit and
+    # sized for its machine, frontend nodes are untouched
+    comp_node_id = next(
+        NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/comp/" in node["key"]
+    )
+    dynamic_node_id = next(
+        NodeID(node_id) for node_id, node in user_project["workbench"].items() if "/dynamic/" in node["key"]
+    )
+    for node_id in (comp_node_id, dynamic_node_id):
+        assert state_after[node_id].pricing_plan_id == 1
+        assert state_after[node_id].pricing_unit_id == 1
+
+    comp_node_resources = state_after[comp_node_id].required_resources
+    assert comp_node_resources
+    comp_resources = comp_node_resources["container"]["resources"]
+    assert comp_resources["CPU"]["limit"] == pytest.approx(1.9)
+    assert comp_resources["RAM"]["limit"] == 3865470566
+
+    dynamic_node_resources = state_after[dynamic_node_id].required_resources
+    assert dynamic_node_resources
+    dynamic_resources = dynamic_node_resources["container"]["resources"]
+    assert dynamic_resources["CPU"]["limit"] == pytest.approx(0.6)
+    assert dynamic_resources["RAM"]["limit"] == 2791728742
+
+    for node_id, node_state in state_after.items():
+        if node_id not in (comp_node_id, dynamic_node_id):
+            assert node_state == state_before[node_id]
+
+    assert mocked_director_v2_node_sizing.call_count == 2
 
 
-@pytest.mark.epic("sanderegg/T2", flips_in="PR2")
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_start_computation_forwards_every_runnable_project(
     director_v2_service_mock: AioResponsesMock,
@@ -645,15 +687,13 @@ async def test_start_computation_forwards_every_runnable_project(
     mocker: MockerFixture,
     faker: Faker,
 ):
-    """W11: when the product's run policy returns several runnable projects (e.g. a
-    project that must be forked per variant), the web-server forwards ONE start request
-    to director-v2 per project, all of them with the SAME wallet_info, and still answers
-    with the pipeline_id of the project the user started.
+    """When the product's run policy returns several runnable projects (e.g. a project
+    that must be forked per variant), the web-server forwards one start request to
+    director-v2 per project, all of them with the same `wallet_info`, and still answers with
+    the pipeline_id of the project the user started.
 
-    ⚠️ The pricing/resources ownership rework (PR 2) keeps the one-request-per-runnable-
-    project forwarding and identical wallet_info asserted here, but additionally
-    repairs each project's pricing links/resources before forwarding, so extra
-    interactions may appear around these calls.
+    The pricing repair before forwarding writes nothing here: this test's product does not
+    bill for resources.
     """
     assert client.app
 
@@ -665,8 +705,9 @@ async def test_start_computation_forwards_every_runnable_project(
     )
 
     # the run policy yields 2 runnable variants: the caller project and a fork
-    forked_project_id = f"{faker.uuid4()}"
-    runnable_project_ids = [user_project["uuid"], forked_project_id]
+    # (a run policy always answers with ProjectIDs, which is what the repair below receives)
+    forked_project_id = ProjectID(f"{faker.uuid4()}")
+    runnable_project_ids: list[ProjectID] = [ProjectID(user_project["uuid"]), forked_project_id]
     run_policy = mocker.Mock()
     run_policy.get_or_create_runnable_projects = mocker.AsyncMock(return_value=(runnable_project_ids, []))
     mocker.patch(

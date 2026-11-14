@@ -284,7 +284,7 @@ class ProjectDBAPI(BaseProjectDB):
             insert_values["uuid"] = f"{uuid1()}"
 
         # extract workbench nodes
-        workbench: dict[str, Any] = insert_values.pop("workbench", {})
+        workbench: dict[str, dict[str, Any]] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
         insert_values.pop("access_rights", None)
 
@@ -974,6 +974,28 @@ class ProjectDBAPI(BaseProjectDB):
                 pricing_plan_id=pricing_plan_id,
                 pricing_unit_id=pricing_unit_id,
             )
+
+    async def connect_pricing_unit_to_project_node_if_not_linked(
+        self,
+        project_uuid: ProjectID,
+        node_uuid: NodeID,
+        pricing_plan_id: PricingPlanId,
+        pricing_unit_id: PricingUnitId,
+    ) -> PricingPlanAndUnitIdsTuple:
+        """Links a pricing unit only when the node has none, and returns the link that
+        is in place afterwards: a link set concurrently is kept, not overwritten."""
+        async with self.engine.begin() as conn:
+            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+            (
+                linked_plan_id,
+                linked_unit_id,
+            ) = await project_nodes_repo.connect_pricing_unit_to_project_node_if_not_linked(
+                conn,
+                node_uuid=node_uuid,
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+            )
+            return PricingPlanAndUnitIdsTuple(linked_plan_id, linked_unit_id)
 
     #
     # Project TAGS

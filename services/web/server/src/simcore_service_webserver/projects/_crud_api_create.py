@@ -132,7 +132,7 @@ async def _prepare_project_copy(
     as_template: bool,
     deep_copy: bool,
     task_progress: TaskProgress,
-) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
+) -> tuple[ProjectDict, NodesMap, CopyProjectNodesCoro | None, CopyFileCoro | None]:
     """
     Raises:
         ProjectCopyingTrashedProjectError: if the source project is trashed
@@ -189,7 +189,7 @@ async def _prepare_project_copy(
             product_name,
             task_progress,
         )
-    return new_project, copy_project_nodes_coro, copy_file_coro
+    return new_project, nodes_map, copy_project_nodes_coro, copy_file_coro
 
 
 # Fields to clear when copying without data (snake_case names matching ProjectNodeCreate)
@@ -317,6 +317,12 @@ async def _compose_project_data(
     new_project: ProjectDict,
     predefined_project: ProjectDict,
 ) -> tuple[ProjectDict, dict[NodeID, ProjectNodeCreate] | None]:
+    """Applies the request body on top of ``new_project``
+
+    Returns the project fields and the nodes it declares, or None as nodes when the body
+    only overrides fields of a copy (its name, e.g.): that says nothing about the nodes,
+    so the caller keeps the ones it already prepared.
+    """
     project_nodes: dict[NodeID, ProjectNodeCreate] | None = None
     if new_project:  # creates from a copy, just override fields
         # when predefined_project is ProjectCopyOverride
@@ -398,6 +404,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
+    nodes_map: NodesMap | None = None
     # Any failure raised after the project row has been inserted (signalled via
     # ``cleanup_ctx.mark_inserted(...)``) triggers a centralized cleanup,
     # so we never leave a half-created project behind.
@@ -436,6 +443,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 # 1.1 prepare copy
                 (
                     new_project,
+                    nodes_map,
                     project_node_coro,
                     copy_file_coro,
                 ) = await _prepare_project_copy(
@@ -469,13 +477,15 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
             if predefined_project:
                 # 2. overrides with optional body and re-validate
-                new_project, project_nodes = await _compose_project_data(
+                new_project, override_project_nodes = await _compose_project_data(
                     app,
                     user_id=user_id,
                     product_name=product_name,
                     new_project=new_project,
                     predefined_project=predefined_project,
                 )
+                if override_project_nodes is not None:
+                    project_nodes = override_project_nodes
 
             # 3.1 save new project in DB
             new_project = await _projects_repository_legacy.insert_project(
@@ -498,6 +508,23 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 parent_node_id=parent_node_id,
             )
             await progress.update()
+
+            # 3.1.bis pricing/resources: keep the source project's pricing choices
+            # (when copying) and link + size every remaining computational node
+            if from_study is not None and nodes_map is not None:
+                await _projects_service.copy_pricing_links(
+                    app,
+                    source_project_id=from_study,
+                    destination_project_id=ProjectID(new_project["uuid"]),
+                    nodes_map=nodes_map,
+                    product_name=product_name,
+                )
+            await _projects_service.link_default_pricing_units_and_size_computational_nodes(
+                app,
+                user_id=user_id,
+                project_id=ProjectID(new_project["uuid"]),
+                product_name=product_name,
+            )
 
             # 3.2 move project to proper folder
             if folder_id:

@@ -28,7 +28,6 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 
-from ..application_settings import get_application_settings
 from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..products.models import Product
@@ -222,8 +221,7 @@ async def get_wallet_info(
     product_name: ProductName,
     check_user_wallet_permission: bool = True,
 ) -> WalletInfo | None:
-    app_settings = get_application_settings(app)
-    if not (product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED):
+    if not products_service.is_credit_computation_enabled(app, product=product):
         return None
     project_wallet = await projects_wallets_service.get_project_wallet(app, project_id=project_id)
     if project_wallet is None:

@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ._application_keys import PRODUCTS_APPKEY
 from ._models import CreditResult, Product, ProductStripeInfo
 from ._repository import ProductRepository
@@ -105,6 +106,20 @@ async def get_credit_amount(
 async def is_product_billable(app: web.Application, *, product_name: ProductName) -> bool:
     repo = ProductRepository.create_from_app(app)
     return await repo.is_product_billable(product_name=product_name)
+
+
+def is_credit_computation_enabled(app: web.Application, *, product: Product) -> bool:
+    """True when credits must be computed and consumed for this product's tasks.
+
+    The product opts in through ``is_payment_enabled``, and the web-server-wide switch
+    lets a deployment turn computation off without touching the products table.
+
+    The settings are read through ``APP_SETTINGS_APPKEY`` rather than
+    ``get_application_settings``: that module imports every plugin, and one of them
+    (``fogbugz``) imports this package back.
+    """
+    credit_computation_enabled = app[APP_SETTINGS_APPKEY].WEBSERVER_CREDIT_COMPUTATION_ENABLED
+    return bool(product.is_payment_enabled and credit_computation_enabled)
 
 
 async def get_product_stripe_info(app: web.Application, *, product_name: ProductName) -> ProductStripeInfo:

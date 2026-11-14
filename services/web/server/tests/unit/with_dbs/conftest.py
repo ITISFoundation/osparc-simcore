@@ -5,6 +5,7 @@
 # pylint: disable=protected-access
 
 import random
+import re
 import textwrap
 import uuid
 from collections.abc import (
@@ -18,6 +19,7 @@ from collections.abc import (
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
+from typing import Annotated, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -27,21 +29,34 @@ import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from annotated_types import doc  # pyright: ignore[reportAttributeAccessIssue]
 from celery_library.async_jobs import (
     AsyncJobResultUpdate,
 )
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    RutPricingPlanGet,
+    RutPricingUnitGet,
+)
 from models_library.notifications.rpc._message import SendMessageResponse
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.project_nodes_pricing import (
+    T3_MEDIUM_NAME,
+    fake_compute_node_resources_for_hardware,
+    make_pricing_unit,
+    regex_for_rut_pricing_unit,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
@@ -71,8 +86,12 @@ from simcore_service_webserver.constants import (
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.director_v2 import director_v2_service
 from simcore_service_webserver.notifications import _service
+from simcore_service_webserver.products._application_keys import PRODUCTS_APPKEY
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.resource_usage.settings import (
+    get_plugin_settings as get_rut_plugin_settings,
+)
 from simcore_service_webserver.statics._constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
@@ -548,6 +567,77 @@ def mocked_conditionally_unsubscribe_project_logs(
         "conditionally_unsubscribe_project_logs_across_replicas",
         autospec=True,
     )
+
+
+#
+# pricing/resources characterization helpers (shared by with_dbs/01 and 02)
+#
+
+DEFAULT_PRICING_PLAN_ID: Final[int] = 1
+DEFAULT_PRICING_UNIT_ID: Final[Annotated[int, doc("the unit's machine is t3.medium")]] = 1
+
+
+@pytest.fixture
+def mocked_director_v2_node_sizing(mocker: MockerFixture) -> mock.AsyncMock:
+    """director-v2's sizing RPC answers with FIXED machine types (see
+    `pytest_simcore.helpers.project_nodes_pricing`) so sizing assertions are
+    deterministic. The real RPC implementation is pinned by director-v2's own tests."""
+
+    mocked = mocker.patch(
+        "servicelib.rabbitmq.rpc_interfaces.director_v2.resources.compute_node_resources_for_hardware",
+        autospec=True,
+    )
+    mocked.side_effect = fake_compute_node_resources_for_hardware
+    return mocked
+
+
+@pytest.fixture
+def mark_product_billed(client: TestClient, osparc_product_name: ProductName) -> Callable[[], None]:
+    """Marks the test's product as one that pays for the resources its nodes use, be they
+    computational or dynamic.
+
+    Only for such a product does the web-server take ownership of a node's pricing state
+    (its pricing link and the sizing of its resources). Products are cached per app, so
+    this also covers the code paths that run outside a request.
+    """
+
+    def _mark() -> None:
+        assert client.app
+        products = client.app[PRODUCTS_APPKEY]
+        products[osparc_product_name] = products[osparc_product_name].model_copy(update={"is_payment_enabled": True})
+
+    return _mark
+
+
+@pytest.fixture
+def with_billed_product(mark_product_billed: Callable[[], None]) -> None:
+    """Marks the test's product as one that pays for the resources its nodes use"""
+    mark_product_billed()
+
+
+@pytest.fixture
+def mock_rut_default_pricing_unit(client: TestClient, aioresponses_mocker: AioResponsesMock) -> RutPricingUnitGet:
+    """The resource-usage-tracker's default plan/unit for the service is unit 1
+    (t3.medium, non-zero cost)."""
+    assert client.app
+    settings = get_rut_plugin_settings(client.app)
+    default_unit = make_pricing_unit(
+        pricing_unit_id=DEFAULT_PRICING_UNIT_ID, default=True, aws_ec2_instance=T3_MEDIUM_NAME
+    )
+    default_plan = RutPricingPlanGet.model_validate(RutPricingPlanGet.model_json_schema()["examples"][0]).model_copy(
+        update={"pricing_plan_id": DEFAULT_PRICING_PLAN_ID, "pricing_units": [default_unit]}
+    )
+    aioresponses_mocker.get(
+        re.compile(rf"^{re.escape(f'{settings.api_base_url}')}/services/[^/]+/[^/]+/pricing-plan.*$"),
+        payload=jsonable_encoder(default_plan),
+        repeat=True,
+    )
+    aioresponses_mocker.get(
+        regex_for_rut_pricing_unit(f"{settings.api_base_url}", DEFAULT_PRICING_PLAN_ID, DEFAULT_PRICING_UNIT_ID),
+        payload=jsonable_encoder(default_unit),
+        repeat=True,
+    )
+    return default_unit
 
 
 @pytest.fixture
