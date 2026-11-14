@@ -1,113 +1,32 @@
-from typing import Any, ClassVar, Final
-
 from aiohttp import web
-from models_library.authentication import TwoFactorAuthenticationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
+    BillingCenterUsageColumnOrderFrontendUserPreference,
+    ConfirmationBackToDashboardFrontendUserPreference,
+    ConfirmationDeleteNodeFrontendUserPreference,
+    ConfirmationDeleteStudyFrontendUserPreference,
+    ConfirmationStopNodeFrontendUserPreference,
+    ConnectPortsAutomaticallyFrontendUserPreference,
+    CreditsWarningThresholdFrontendUserPreference,
+    DoNotShowAnnouncementsFrontendUserPreference,
+    JobConcurrencyLimitFrontendUserPreference,
+    LastVcsRefUIFrontendUserPreference,
+    PreferredWalletIdFrontendUserPreference,
+    ServicesFrontendUserPreference,
+    SnapNodeToGridFrontendUserPreference,
+    TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
+    ThemeNameFrontendUserPreference,
+    TwoFAFrontendUserPreference,
+    UserInactivityThresholdFrontendUserPreference,
+    WalletIndicatorVisibilityFrontendUserPreference,
 )
 from models_library.user_preferences import (
     FrontendUserPreference,
     PreferenceIdentifier,
     PreferenceName,
 )
-from pydantic import Field, NonNegativeInt
 
 from ..users.settings import UsersSettings, get_plugin_settings
-
-_MINUTE: Final[NonNegativeInt] = 60
-_HOUR: Final[NonNegativeInt] = 60 * _MINUTE
-
-
-class ConfirmationBackToDashboardFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "confirmBackToDashboard"
-    value: bool = True
-
-
-class ConfirmationDeleteStudyFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "confirmDeleteStudy"
-    value: bool = True
-
-
-class ConfirmationDeleteNodeFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "confirmDeleteNode"
-    value: bool = True
-
-
-class ConfirmationStopNodeFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "confirmStopNode"
-    value: bool = True
-
-
-class SnapNodeToGridFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "snapNodeToGrid"
-    value: bool = True
-
-
-class ConnectPortsAutomaticallyFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "autoConnectPorts"
-    value: bool = True
-
-
-class DoNotShowAnnouncementsFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "dontShowAnnouncements"
-    value: list = Field(default_factory=list)
-
-
-class ServicesFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "services"
-    value: dict = Field(default_factory=dict)
-
-
-class ThemeNameFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "themeName"
-    value: str | None = None
-
-
-class LastVcsRefUIFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "lastVcsRefUI"
-    value: str | None = None
-
-
-class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "preferredWalletId"
-    value: int | None = None
-
-
-class CreditsWarningThresholdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "creditsWarningThreshold"
-    value: int = 200
-
-
-class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "walletIndicatorVisibility"
-    value: str | None = "warning"
-
-
-class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "userInactivityThreshold"
-    value: int = 30 * _MINUTE  # in seconds
-    value_constraints: ClassVar[dict[str, Any]] = {"ge": 1 * _MINUTE, "le": 3 * _HOUR}
-
-
-class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "jobConcurrencyLimit"
-    value: int | None = 1
-
-
-class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "lowDiskSpaceThreshold"
-    value: int = 5  # in gigabytes
-
-
-class TwoFAFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "twoFAPreference"
-    value: TwoFactorAuthenticationMethod = TwoFactorAuthenticationMethod.SMS
-
-
-class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
-    preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
-    value: list[int] | None = None
-
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,

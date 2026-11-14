@@ -235,6 +235,38 @@ async def test_409_response(
     assert "must be unique" in response.text
 
 
+async def test_dynamic_scheduler_tasks_are_unique_per_node_uuid(
+    mock_apply_observation_cycle: None,
+    mock_scheduler_service_shutdown_tasks: None,
+    client: TestClient,
+    observed_service: SchedulerData,
+    dynamic_service_create: DynamicServiceCreate,
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
+    simcore_service_labels: SimcoreServiceLabels,
+    dynamic_sidecar_port: PortInt,
+    request_dns: str,
+    request_scheme: str,
+    can_save: bool,
+):
+    alternative_node_uuid = "123e4567-e89b-12d3-a456-426614174001"
+    alternative_service = dynamic_service_create.model_copy(update={"node_uuid": alternative_node_uuid})
+    await dynamic_sidecar_scheduler.add_service(
+        service=alternative_service,
+        simcore_service_labels=simcore_service_labels,
+        port=dynamic_sidecar_port,
+        request_dns=request_dns,
+        request_scheme=request_scheme,
+        request_simcore_user_agent="",
+        can_save=can_save,
+    )
+
+    response = client.post(f"/v2/dynamic_scheduler/services/{observed_service.node_uuid}/outputs:push")
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    response = client.post(f"/v2/dynamic_scheduler/services/{alternative_node_uuid}/outputs:push")
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+
 async def test_free_reserved_disk_space(
     mock_apply_observation_cycle: None,
     mock_free_reserved_disk_space: None,

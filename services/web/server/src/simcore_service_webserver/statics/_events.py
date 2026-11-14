@@ -14,13 +14,14 @@ from servicelib.aiohttp.client_session import get_client_session
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..application_settings import ApplicationSettings, get_application_settings
 from ..products.models import Product
 from ..products.products_web import PRODUCTS_APPKEY
+from ..utils import MINUTE
 from ._constants import (
     FRONTEND_APPS_AVAILABLE,
     FRONTEND_CACHED_INDEXES_APPKEY,
@@ -45,8 +46,8 @@ _logger = logging.getLogger(__name__)
 #
 #
 _STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY: Final[dict[str, Any]] = {
-    "stop": stop_after_attempt(5),
-    "wait": wait_fixed(1.5),
+    "stop": stop_after_delay(2 * MINUTE),
+    "wait": wait_random_exponential(multiplier=1, max=10),
     "before": before_log(_logger, logging.WARNING),
     "retry": retry_if_exception_type(ClientConnectionError),
     "reraise": True,
