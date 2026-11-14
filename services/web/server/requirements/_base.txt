@@ -519,7 +519,7 @@ redis==7.4.1
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   kombu
-referencing==0.35.1
+referencing==0.37.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/_base.txt
     #   jsonschema
