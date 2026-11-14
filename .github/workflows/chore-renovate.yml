@@ -53,6 +53,7 @@ on:
     # update, retry, ...) gets a run right away instead of waiting for the night
     types:
       - edited
+  # zizmor: ignore[dangerous-triggers] Gated to Renovate-owned PR edits; never checks out PR code.
   pull_request_target:
     # renovate: the "rebase/retry" box of a Renovate PR. pull_request_target (not
     # pull_request) so that no code of the PR is ever run

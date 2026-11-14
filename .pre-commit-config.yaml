@@ -74,6 +74,17 @@ repos:
     hooks:
       - id: actionlint
         name: actionlint
+        # actionlint does not yet parse GitHub's $/ self-repository syntax.
+        args:
+          - -ignore
+          - 'specifying action "\$/[^"]*" in invalid format'
+          - -ignore
+          - 'reusable workflow call "\$/[^"]*" at "uses" is not following the format'
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.32.0
+    hooks:
+      - id: zizmor
+        args: [--offline]
   - repo: https://github.com/JohnnyMorganz/StyLua
     rev: v2.6.0
     hooks:
