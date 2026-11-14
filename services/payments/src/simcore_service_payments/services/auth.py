@@ -15,11 +15,13 @@ from ..core.settings import ApplicationSettings
 from ..models.auth import SessionData
 
 
-def authenticate_user(username: str, password: str, settings: ApplicationSettings):
-    return are_secrets_equal(
-        username + password,
-        expected=settings.PAYMENTS_USERNAME + settings.PAYMENTS_PASSWORD.get_secret_value(),
+def authenticate_user(username: str, password: str, settings: ApplicationSettings) -> bool:
+    username_matches = are_secrets_equal(username, expected=settings.PAYMENTS_USERNAME)
+    password_matches = are_secrets_equal(
+        password,
+        expected=settings.PAYMENTS_PASSWORD.get_secret_value(),
     )
+    return username_matches and password_matches
 
 
 #
@@ -68,7 +70,7 @@ class _HTTPExceptionKwargs(TypedDict):
     headers: dict
 
 
-_credencial_401_unauthorized_exception_kwargs: _HTTPExceptionKwargs = {
+_credential_401_unauthorized_exception_kwargs: _HTTPExceptionKwargs = {
     "status_code": status.HTTP_401_UNAUTHORIZED,
     "detail": "Invalid authentication credentials",
     "headers": {"WWW-Authenticate": "Bearer"},
@@ -84,9 +86,9 @@ def get_session_data(token: str, settings: ApplicationSettings) -> SessionData:
     try:
         username = decode_access_token(token, settings)
     except JWTError as err:
-        raise HTTPException(**_credencial_401_unauthorized_exception_kwargs) from err
+        raise HTTPException(**_credential_401_unauthorized_exception_kwargs) from err
 
     if username is None:
-        raise HTTPException(**_credencial_401_unauthorized_exception_kwargs)
+        raise HTTPException(**_credential_401_unauthorized_exception_kwargs)
 
     return SessionData(username=username)
