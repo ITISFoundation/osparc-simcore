@@ -270,7 +270,7 @@ multidict==6.9.1
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   aiohttp
     #   yarl
-networkx==3.5
+networkx==3.7
     # via -r requirements/_base.in
 numpy==2.5.2
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt

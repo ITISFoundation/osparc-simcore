@@ -164,7 +164,7 @@ moto==5.2.5
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-networkx==3.6.1
+networkx==3.7
     # via cfn-lint
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator

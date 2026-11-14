@@ -180,7 +180,7 @@ multidict==6.9.1
     #   aiobotocore
     #   aiohttp
     #   yarl
-networkx==3.6.1
+networkx==3.7
     # via cfn-lint
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator
