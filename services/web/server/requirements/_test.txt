@@ -46,6 +46,7 @@ attrs==26.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
+    #   jsonschema-path
     #   referencing
 certifi==2026.10.23
     # via
@@ -173,7 +174,7 @@ jsonschema==4.26.0
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.4
+jsonschema-path==0.5.0
     # via openapi-spec-validator
 jsonschema-specifications==2025.9.1
     # via
@@ -213,9 +214,9 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-openapi-schema-validator==0.6.3
+openapi-schema-validator==0.9.0
     # via openapi-spec-validator
-openapi-spec-validator==0.7.2
+openapi-spec-validator==0.9.0
     # via -r requirements/_test.in
 opentelemetry-api==1.45.2
     # via
@@ -261,7 +262,7 @@ packaging==26.3
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest
-pathable==0.4.4
+pathable==0.6.0
     # via jsonschema-path
 pathspec==1.0.4
     # via mypy
@@ -290,6 +291,8 @@ pydantic==2.14.3
     #   fastapi
     #   fastapi-cloud-cli
     #   fastapi-pagination
+    #   openapi-schema-validator
+    #   openapi-spec-validator
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.50.4
@@ -304,6 +307,8 @@ pydantic-settings==2.14.2
     # via
     #   -c requirements/_base.txt
     #   fastapi
+    #   openapi-schema-validator
+    #   openapi-spec-validator
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -358,18 +363,18 @@ redis==7.4.1
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   fakeredis
-referencing==0.35.1
+referencing==0.37.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
+    #   openapi-schema-validator
     #   types-jsonschema
 requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
-    #   jsonschema-path
     #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-http
 respx==0.22.0

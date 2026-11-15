@@ -38,6 +38,7 @@ attrs==26.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
+    #   jsonschema-path
     #   referencing
 aws-sam-translator==1.103.0
     # via cfn-lint
@@ -201,7 +202,7 @@ jsonschema==4.26.0
     #   aws-sam-translator
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-path==0.3.4
+jsonschema-path==0.5.0
     # via openapi-spec-validator
 jsonschema-specifications==2025.9.1
     # via
@@ -242,9 +243,9 @@ networkx==3.7
     # via cfn-lint
 numpy==2.5.4
     # via pandas
-openapi-schema-validator==0.6.3
+openapi-schema-validator==0.9.0
     # via openapi-spec-validator
-openapi-spec-validator==0.7.2
+openapi-spec-validator==0.9.0
     # via moto
 packaging==26.3
     # via
@@ -252,7 +253,7 @@ packaging==26.3
     #   pytest
 pandas==3.0.6
     # via -r requirements/_test.in
-pathable==0.4.4
+pathable==0.6.0
     # via jsonschema-path
 pathspec==1.0.4
     # via mypy
@@ -283,10 +284,18 @@ pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
+    #   openapi-schema-validator
+    #   openapi-spec-validator
+    #   pydantic-settings
 pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pydantic-settings==2.14.2
+    # via
+    #   -c requirements/_base.txt
+    #   openapi-schema-validator
+    #   openapi-spec-validator
 pygments==2.21.0
     # via
     #   -c requirements/_base.txt
@@ -335,6 +344,7 @@ python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+    #   pydantic-settings
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -348,19 +358,19 @@ redis==7.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
-referencing==0.35.1
+referencing==0.37.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
+    #   openapi-schema-validator
 regex==2026.2.28
     # via cfn-lint
 requests==2.34.2
     # via
     #   -c requirements/_base.txt
     #   docker
-    #   jsonschema-path
     #   moto
     #   responses
 responses==0.26.0
@@ -421,6 +431,7 @@ typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   pydantic
+    #   pydantic-settings
 tzlocal==5.3.1
     # via
     #   -c requirements/_base.txt

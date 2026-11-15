@@ -554,7 +554,7 @@ redis==7.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   kombu
-referencing==0.35.1
+referencing==0.37.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   jsonschema
