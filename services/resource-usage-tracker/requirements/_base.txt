@@ -514,7 +514,7 @@ python-dotenv==1.2.4
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.32
+python-multipart==0.0.33
     # via fastapi
 pytz==2024.1
     # via dateparser

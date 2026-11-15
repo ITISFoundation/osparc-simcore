@@ -461,7 +461,7 @@ python-engineio==4.13.5
     # via python-socketio
 python-magic==0.4.27
     # via -r requirements/_base.in
-python-multipart==0.0.32
+python-multipart==0.0.33
     # via fastapi
 python-socketio==5.16.4
     # via -r requirements/_base.in
