@@ -466,7 +466,7 @@ python-dotenv==1.2.4
     #   uvicorn
 python-engineio==4.13.5
     # via python-socketio
-python-multipart==0.0.32
+python-multipart==0.0.33
     # via
     #   fastapi
     #   nicegui
