@@ -257,9 +257,9 @@ packaging==26.3
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest
-pact-python==3.2.1
+pact-python==3.4.1
     # via -r requirements/_test.in
-pact-python-ffi==0.4.28.2
+pact-python-ffi==0.5.12.1
     # via pact-python
 pathable==0.4.4
     # via jsonschema-path
