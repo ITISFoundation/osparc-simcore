@@ -254,7 +254,7 @@ tornado==6.6.1
     #   -c requirements/_base.txt
     #   bokeh
     #   distributed
-types-networkx==3.6.1.20261029
+types-networkx==3.6.1.20261031
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
