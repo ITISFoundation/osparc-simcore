@@ -344,7 +344,7 @@ python-dotenv==1.2.4
     #   -r requirements/_test.in
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.32
+python-multipart==0.0.33
     # via fastapi
 pyyaml==6.0.3
     # via
