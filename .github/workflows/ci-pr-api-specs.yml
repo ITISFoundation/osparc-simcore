@@ -40,8 +40,10 @@ jobs:
     steps:
       - name: checkout source branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           setup-docker: 'false'
           expose-github-runtime: 'false'
@@ -66,6 +68,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: check for api-server changes
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: changes
@@ -75,7 +79,7 @@ jobs:
               - 'services/api-server/**'
       - name: Setup environment
         if: steps.changes.outputs.api-server == 'true'
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           setup-docker: 'false'
           expose-github-runtime: 'false'
@@ -106,15 +110,19 @@ jobs:
           python-version: "3.14"
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
             echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
           else
-            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
-            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+            echo "REPO=${GITHUB_EVENT_PULL_REQUEST_BASE_REPO_FULL_NAME}" >> $GITHUB_ENV
+            echo "BRANCH=${GITHUB_BASE_REF}" >> $GITHUB_ENV
           fi
+        env:
+          GITHUB_EVENT_PULL_REQUEST_BASE_REPO_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
       - name: check api-server backwards compatibility
         run: |
           ./scripts/openapi-diff.bash breaking --fail-on ERR\
@@ -134,15 +142,19 @@ jobs:
           python-version: "3.14"
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "REPO=${{ inputs.target_repo }}" >> $GITHUB_ENV
             echo "BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
           else
-            echo "REPO=${{ github.event.pull_request.base.repo.full_name }}" >> $GITHUB_ENV
-            echo "BRANCH=${{ github.base_ref }}" >> $GITHUB_ENV
+            echo "REPO=${GITHUB_EVENT_PULL_REQUEST_BASE_REPO_FULL_NAME}" >> $GITHUB_ENV
+            echo "BRANCH=${GITHUB_BASE_REF}" >> $GITHUB_ENV
           fi
+        env:
+          GITHUB_EVENT_PULL_REQUEST_BASE_REPO_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
       - name: Check openapi-specs backwards compatibility
         run: |
           ./ci/github/helpers/openapi-specs-diff.bash breaking \
