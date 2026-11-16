@@ -749,7 +749,7 @@ async def _assert_push_non_file_outputs(
     task_client = HttpClient(
         app=initialized_app,
         async_client=director_v2_client,
-        base_url=str(TypeAdapter(AnyHttpUrl).validate_python(director_v2_client.base_url)),
+        base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
     )
     try:
         async with periodic_task_result(

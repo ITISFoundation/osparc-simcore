@@ -112,7 +112,7 @@ class HttpClient:
     status, result and/or cancel of a long running task.
     """
 
-    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: str):
+    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: str | AnyHttpUrl):
         """
         `app`: used byte the `Client` to recover the `ClientConfiguration`
         `async_client`: an AsyncClient instance used by `Client`
@@ -129,7 +129,7 @@ class HttpClient:
 
     def _get_url(self, path: str) -> str:
         url_path = f"{self._client_configuration.router_prefix}{path}".lstrip("/")
-        url = TypeAdapter(AnyHttpUrl).validate_python(f"{self.base_url.rstrip('/')}/{url_path}")
+        url = TypeAdapter(AnyHttpUrl).validate_python(f"{str(self.base_url).rstrip('/')}/{url_path}")
         return f"{url}"
 
     @retry_on_http_errors
