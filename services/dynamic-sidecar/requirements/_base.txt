@@ -99,7 +99,7 @@ click==8.5.0
     # via
     #   rich-toolkit
     #   uvicorn
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   email-validator
