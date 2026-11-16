@@ -433,6 +433,35 @@ def _assert_sampling_completed(
     assert status == "complete", "Sampling is still running"
 
 
+_PROJECT_UNLOCK_TIMEOUT_SECONDS: Final[int] = 60
+_PROJECT_UNLOCK_POLL_SECONDS: Final[int] = 1
+
+
+class _ProjectStillLockedError(Exception):
+    pass
+
+
+@retry(
+    retry=retry_if_exception_type(_ProjectStillLockedError),
+    wait=wait_fixed(_PROJECT_UNLOCK_POLL_SECONDS),
+    stop=stop_after_delay(_PROJECT_UNLOCK_TIMEOUT_SECONDS),
+    reraise=True,
+)
+def _wait_for_project_unlocked(
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
+    project_uuid: str,
+) -> None:
+    # closing a project keeps it locked, which blocks copying it
+    response = api_request_context.get(f"{product_url}v0/projects/{project_uuid}/state")
+    assert response.ok, f"Failed to get state of {project_uuid=}: {response.status} {response.text()}"
+    data = response.json()["data"]
+    share_state = data.get("shareState") or data["share_state"]
+    if share_state["locked"]:
+        msg = f"Project {project_uuid} is still locked: status={share_state['status']}"
+        raise _ProjectStillLockedError(msg)
+
+
 @pytest.fixture
 def create_function_from_project(
     api_request_context: APIRequestContext,
@@ -451,6 +480,7 @@ def create_function_from_project(
             logging.INFO,
             f"Convert {project_uuid=} / {_STUDY_FUNCTION_NAME} to a function",
         ) as ctx:
+            _wait_for_project_unlocked(api_request_context, product_url, project_uuid)
             with page.expect_response(re.compile(rf"/projects/{project_uuid}")):
                 page.get_by_test_id(f"studyBrowserListItem_{project_uuid}").click()
             page.get_by_text("create function").first.wait_for(state="visible", timeout=10 * SECOND)
