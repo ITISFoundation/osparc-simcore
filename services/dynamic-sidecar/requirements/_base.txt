@@ -381,7 +381,7 @@ pamqp==5.0.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   aiormq
-pint==0.25
+pint==0.26.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.13.5
     # via pint

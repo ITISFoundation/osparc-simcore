@@ -438,7 +438,7 @@ partd==1.4.2
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-pint==0.25.2
+pint==0.26.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.5.0
     # via pint

@@ -217,7 +217,7 @@ packaging==26.3
     #   opentelemetry-instrumentation-sqlalchemy
 pamqp==5.0.0
     # via aiormq
-pint==0.25.2
+pint==0.26.2
     # via -r requirements/_base.in
 platformdirs==4.9.4
     # via pint
