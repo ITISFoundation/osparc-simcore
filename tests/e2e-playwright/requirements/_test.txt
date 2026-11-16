@@ -91,7 +91,7 @@ pydantic-core==2.50.4
     #   pydantic
 pydantic-extra-types==2.11.1
     # via -r requirements/_test_wo_playwright.txt
-pydantic-settings==2.16.1
+pydantic-settings==2.16.2
     # via -r requirements/_test_wo_playwright.txt
 pyee==14.0.0
     # via playwright

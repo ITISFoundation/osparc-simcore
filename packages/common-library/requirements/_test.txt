@@ -34,7 +34,7 @@ pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
-pydantic-settings==2.14.2
+pydantic-settings==2.16.2
     # via -r requirements/_test.in
 pygments==2.21.0
     # via pytest
@@ -74,6 +74,7 @@ typing-extensions==4.16.0
     #   -c requirements/_base.txt
     #   pydantic
     #   pydantic-core
+    #   pydantic-settings
     #   typing-inspection
 typing-inspection==0.4.5
     # via
