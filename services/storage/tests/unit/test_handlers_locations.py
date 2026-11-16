@@ -5,7 +5,7 @@
 # pylint:disable=no-name-in-module
 
 
-import httpx
+import httpx2
 from fastapi import FastAPI, status
 from models_library.api_schemas_storage.storage_schemas import FileLocation
 from models_library.users import UserID
@@ -20,7 +20,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 
 async def test_locations(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     fake_datcore_tokens: tuple[str, str],
 ):
@@ -41,7 +41,7 @@ async def test_locations(
 
 async def test_locations_without_tokens(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
 ):
     url = url_from_operation_id(client, initialized_app, "list_storage_locations").with_query(user_id=user_id)

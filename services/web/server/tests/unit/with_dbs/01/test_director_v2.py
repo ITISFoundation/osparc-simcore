@@ -20,6 +20,12 @@ from simcore_service_webserver.director_v2.exceptions import (
     DirectorV2PipelineStatesRetrievalError,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture()
 async def mocked_director_v2(

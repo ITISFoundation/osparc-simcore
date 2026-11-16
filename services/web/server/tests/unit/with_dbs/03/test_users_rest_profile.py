@@ -33,6 +33,12 @@ from simcore_service_webserver.user_preferences._service import (
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
@@ -595,7 +601,7 @@ async def user_pre_registration(
         create_user_pre_registration,
     )
 
-    asyncpg_engine = get_asyncpg_engine(client.app)
+    sqlalchemy_async_engine = get_asyncpg_engine(client.app)
 
     # Create pre-registration data for the logged user
     pre_registration_details = {
@@ -610,7 +616,7 @@ async def user_pre_registration(
     }
 
     pre_registration_id = await create_user_pre_registration(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email=logged_user["email"],
         created_by=None,  # Self-registration
         product_name="osparc",
@@ -622,7 +628,7 @@ async def user_pre_registration(
         yield pre_registration_id
     finally:
         # Clean up pre-registration data
-        async with asyncpg_engine.connect() as conn:
+        async with sqlalchemy_async_engine.connect() as conn:
             await conn.execute(
                 sa.delete(users_pre_registration_details).where(
                     users_pre_registration_details.c.id == pre_registration_id
@@ -698,11 +704,11 @@ async def test_get_profile_user_without_pre_registration(
         search_merged_pre_and_registered_users,
     )
 
-    asyncpg_engine = get_asyncpg_engine(client.app)
+    sqlalchemy_async_engine = get_asyncpg_engine(client.app)
 
     # Verify user has no pre-registration data
     pre_reg_users = await search_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         filter_by_email_like=logged_user["email"],
         product_name="osparc",
     )

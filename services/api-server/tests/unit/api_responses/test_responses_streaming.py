@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 import respx
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.task_manager import TaskManager

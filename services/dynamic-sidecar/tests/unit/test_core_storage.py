@@ -10,7 +10,7 @@ import pytest
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import TypeAdapter
 from settings_library.node_ports import StorageAuthSettings
 from simcore_service_dynamic_sidecar.core.storage import (

@@ -20,6 +20,7 @@ from servicelib.utils_secrets import (
     generate_token_secret_key,
     mask_sensitive_data,
     secure_randint,
+    validate_credentials,
 )
 
 
@@ -133,3 +134,45 @@ def test_mask_sensitive_data_masks_explicit_secret_values():
             "raw_bytes": _PLACEHOLDER,
         },
     }
+
+
+@pytest.mark.parametrize(
+    "username,password,expected",
+    [
+        ("testuser", "testpass", True),
+        ("wronguser", "testpass", False),
+        ("testuser", "wrongpass", False),
+        ("wronguser", "wrongpass", False),
+        ("", "testpass", False),
+        ("testuser", "", False),
+        ("", "", False),
+        ("TestUser", "testpass", False),
+        ("testuser", "TestPass", False),
+    ],
+)
+def test_validate_credentials(username: str, password: str, expected: bool):
+    result = validate_credentials(
+        username,
+        password,
+        expected_username="testuser",
+        expected_password="testpass",  # noqa: S106
+    )
+    assert result is expected
+
+
+def test_validate_credentials_boundary_collision_prevention():
+    result = validate_credentials(
+        "test",
+        "userpass",
+        expected_username="testuser",
+        expected_password="pass",  # noqa: S106
+    )
+    assert result is False
+
+    result = validate_credentials(
+        "testuser",
+        "pass",
+        expected_username="testuser",
+        expected_password="pass",  # noqa: S106
+    )
+    assert result is True

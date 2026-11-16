@@ -14,6 +14,12 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.products import products_web
 from simcore_service_webserver.products.plugin import setup_products
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def setup_products_mocked(mocker: MockerFixture) -> MockType:

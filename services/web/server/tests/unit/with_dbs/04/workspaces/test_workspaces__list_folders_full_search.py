@@ -15,6 +15,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_workspaces__list_folders_full_search(

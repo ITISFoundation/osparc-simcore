@@ -20,6 +20,12 @@ from simcore_service_webserver.licenses._itis_vip_models import (
     _feature_descriptor_to_dict,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def test_pre_validator_feature_descriptor_to_dict():
     # Makes sure the regex used here, which is vulnerable to polynomial runtime due to backtracking, cannot lead to denial of service.

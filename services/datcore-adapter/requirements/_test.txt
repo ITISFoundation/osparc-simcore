@@ -8,22 +8,24 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-boto3-stubs==1.42.70
+boto3-stubs==1.42.97
     # via -r requirements/_test.in
 botocore-stubs==1.42.41
     # via
     #   -r requirements/_test.in
     #   boto3-stubs
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.3.2
-    # via requests
-coverage==7.16.0
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -31,7 +33,7 @@ execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 h11==0.16.0
     # via
@@ -80,7 +82,7 @@ pytest==9.1.1
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
@@ -88,7 +90,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -97,7 +99,9 @@ pytest-sugar==1.1.1
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
 requests==2.34.2
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 respx==0.22.0
     # via -r requirements/_test.in
 sniffio==1.3.1

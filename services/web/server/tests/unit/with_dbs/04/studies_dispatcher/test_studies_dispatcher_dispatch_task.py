@@ -49,6 +49,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

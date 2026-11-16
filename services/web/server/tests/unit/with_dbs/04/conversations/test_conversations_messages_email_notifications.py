@@ -25,6 +25,12 @@ from simcore_service_webserver.conversations._conversation_message_service impor
     users_service,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _MODULE_UNDER_TEST: Final[str] = "simcore_service_webserver.conversations._conversation_message_service"
 
 

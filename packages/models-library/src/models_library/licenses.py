@@ -15,14 +15,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
 
-from models_library.resource_tracker import PricingPlanId
-
 from .products import ProductName
 from .resource_tracker import PricingPlanId
 from .utils.enums import StrAutoEnum
 
-LicensedItemID: TypeAlias = UUID
-LicensedResourceID: TypeAlias = UUID
+LicensedItemID: TypeAlias = UUID  # noqa: UP040
+LicensedResourceID: TypeAlias = UUID  # noqa: UP040
 
 LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
 LicensedItemKey = NewType("LicensedItemKey", str)
@@ -114,6 +112,7 @@ class LicensedResourceDB(BaseModel):
     licensed_resource_type: LicensedResourceType
     licensed_resource_data: dict[str, Any] | None
     priority: int
+    is_hidden_on_market: bool
 
     # states
     created: datetime
@@ -127,6 +126,7 @@ class LicensedResourcePatchDB(BaseModel):
     display_name: str | None = None
     licensed_resource_name: str | None = None
     trash: bool | None = None
+    is_hidden_on_market: bool | None = None
 
 
 class LicensedItem(BaseModel):
@@ -159,6 +159,7 @@ class LicensedItem(BaseModel):
                                     "category_id": "HumanWholeBody",
                                     "category_display": "Humans",
                                     "source": VIP_DETAILS_EXAMPLE,
+                                    "is_hidden_on_market": False,
                                 },
                             )
                         ],

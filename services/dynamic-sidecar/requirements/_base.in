@@ -28,6 +28,7 @@
 aio-pika
 aiodocker
 aiofiles
+httpx2 # storage connection check
 psutil
 pydantic
 python-magic # file type identification library. See 'magic.from_file(...)' NOTE: requires `libmagic`` installed

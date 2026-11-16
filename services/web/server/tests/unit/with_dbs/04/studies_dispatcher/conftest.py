@@ -295,7 +295,7 @@ def services_access_rights_in_db(
 
 @pytest.fixture
 async def studies_dispatcher_enabled(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     osparc_product_name: str,
     request: pytest.FixtureRequest,
 ) -> AsyncIterator[bool]:
@@ -309,7 +309,7 @@ async def studies_dispatcher_enabled(
     """
     enabled_value = request.param if hasattr(request, "param") else True
 
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         # Store old value
         old_value = await conn.scalar(
             sa.select(products.c.studies_dispatcher_enabled).where(products.c.name == osparc_product_name)
@@ -329,7 +329,7 @@ async def studies_dispatcher_enabled(
     yield enabled_value
 
     # Restore old value
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             sa.update(products)
             .values(studies_dispatcher_enabled=old_value)

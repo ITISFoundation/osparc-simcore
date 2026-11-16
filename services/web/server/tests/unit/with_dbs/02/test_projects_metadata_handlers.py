@@ -35,6 +35,8 @@ from simcore_service_webserver.trash import trash_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
@@ -112,7 +114,7 @@ async def test_new_project_with_parent_project_node(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """this is new way of setting parents by using request headers"""
     parent_project = await request_create_project(
@@ -139,7 +141,7 @@ async def test_new_project_with_parent_project_node(
         parent_node_id=parent_node_id,
     )
     assert child_project
-    async with asyncpg_engine.connect() as connection:
+    async with sqlalchemy_async_engine.connect() as connection:
         project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid == parent_project_uuid
         assert project_db_metadata.parent_node_id == parent_node_id
@@ -161,7 +163,7 @@ async def test_new_project_with_parent_project_node(
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
     # check child project has parent unchanged
-    async with asyncpg_engine.connect() as connection:
+    async with sqlalchemy_async_engine.connect() as connection:
         project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid == parent_project_uuid
         assert project_db_metadata.parent_node_id == parent_node_id
@@ -179,7 +181,7 @@ async def test_new_project_with_invalid_parent_project_node(
     user_project: ProjectDict,
     expected: ExpectedResponse,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     faker: Faker,
 ):
     """this is new way of setting parents by using request headers"""
@@ -261,7 +263,7 @@ async def test_set_project_parent_backward_compatibility(
     user_project: ProjectDict,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     expected: ExpectedResponse,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """backwards compatibility with sim4life.io runs like so
     - create a project
@@ -299,7 +301,7 @@ async def test_set_project_parent_backward_compatibility(
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
     # check child project has parent set correctly
-    async with asyncpg_engine.connect() as connection:
+    async with sqlalchemy_async_engine.connect() as connection:
         project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid == ProjectID(parent_project["uuid"])
         assert f"{project_db_metadata.parent_node_id}" in parent_project["workbench"]
@@ -315,7 +317,7 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: ExpectedResponse,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
 
@@ -343,7 +345,7 @@ async def test_update_project_metadata_backward_compatibility_with_same_project_
     await assert_status(response, expected_status_code=expected.ok)
 
     # check project has no parent
-    async with asyncpg_engine.connect() as connection:
+    async with sqlalchemy_async_engine.connect() as connection:
         project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid is None
         assert project_db_metadata.parent_node_id is None
@@ -361,7 +363,7 @@ async def test_update_project_metadata_s4lacad_backward_compatibility_passing_ni
     user_project: ProjectDict,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     expected: ExpectedResponse,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
 
@@ -388,7 +390,7 @@ async def test_update_project_metadata_s4lacad_backward_compatibility_passing_ni
     assert ProjectMetadataGet.model_validate(data).custom == custom_metadata
 
     # check project has no parent
-    async with asyncpg_engine.connect() as connection:
+    async with sqlalchemy_async_engine.connect() as connection:
         project_db_metadata = await get_db_project_metadata(connection, child_project["uuid"])
         assert project_db_metadata.parent_project_uuid is None
         assert project_db_metadata.parent_node_id is None

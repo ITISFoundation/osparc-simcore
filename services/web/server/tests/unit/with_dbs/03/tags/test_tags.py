@@ -35,6 +35,12 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.products._service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def _clean_tags_table(postgres_db: sa.engine.Engine) -> Iterator[None]:

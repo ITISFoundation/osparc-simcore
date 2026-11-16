@@ -4,12 +4,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
 
+import asyncio
 import contextlib
 import json
 import logging
 import re
 import threading
+import time
 import typing
+import weakref
 from collections import defaultdict
 from collections.abc import Generator
 from dataclasses import dataclass, field
@@ -26,7 +29,6 @@ from models_library.rabbitmq_messages import ProgressType
 from playwright._impl._sync_base import EventContextManager, EventInfo
 from playwright.sync_api import (
     APIRequestContext,
-    ElementHandle,
     FrameLocator,
     Locator,
     Page,
@@ -104,12 +106,107 @@ SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
 _WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 _SOCKET_CLOSED_ERROR_MESSAGE: Final[str] = "Socket closed"
 _MAX_REATTACH_ATTEMPTS: Final[int] = 100
+_WEBSOCKET_CREATION_WAIT_SLICE: Final[int] = 3 * SECOND
+
+_TRACKED_WEBSOCKETS: weakref.WeakKeyDictionary[Page, list[_TrackedWebSocket]] = weakref.WeakKeyDictionary()
 
 
-@dataclass
+@dataclass(slots=True)
+class _TrackedWebSocket:
+    socket: WebSocket
+    frames_received: bool = False
+
+
+def start_websocket_tracking(page: Page) -> None:
+    """Records every websocket ``page`` creates from now on, including the ones its frames create.
+
+    ``page.expect_websocket`` resolves for sockets created *after* it is entered, so a connection
+    that the browser's socket.io client re-establishes on its own stays invisible to a waiter that
+    started later. Recording the sockets here lets `RobustWebSocket` adopt an already connected
+    socket instead of waiting for an event that was delivered before it started listening.
+
+    Calling this again on the same page does nothing. Tracking must therefore start as early as the
+    page exists.
+    """
+    if page in _TRACKED_WEBSOCKETS:
+        return
+
+    tracked: list[_TrackedWebSocket] = []
+    _TRACKED_WEBSOCKETS[page] = tracked
+
+    def on_websocket(socket: WebSocket) -> None:
+        entry = _TrackedWebSocket(socket=socket)
+        tracked.append(entry)
+        # NOTE: a received frame proves the handshake completed, which the socket's mere existence
+        # does not: a socket.io connection refused by a cold-starting service still creates one.
+        socket.on("framereceived", lambda _: setattr(entry, "frames_received", True))
+
+    page.on("websocket", on_websocket)
+
+    # NOTE: `RobustWebSocket` listeners on a tracked socket reference the page back, and the registry
+    # references the socket, so the weak key alone would keep the whole chain alive after a test ends.
+    # Forgetting the page on close drops the strong side of that cycle.
+    def _forget(_page: Page) -> None:
+        _TRACKED_WEBSOCKETS.pop(page, None)
+
+    page.on("close", _forget)
+
+
+def _websocket_endpoint(socket: WebSocket) -> str:
+    """The websocket URL without its query, which socket.io fills with per-attempt parameters."""
+    return socket.url.split("?", maxsplit=1)[0]
+
+
+def _tracked_entries_newest_first(page: Page, stop_at: WebSocket | None = None) -> list[_TrackedWebSocket]:
+    """The sockets recorded for ``page``, newest first, stopping before ``stop_at``.
+
+    A reconnection is recorded after the socket it replaces, so scanning past ``stop_at`` could
+    only reach sockets that predate it: stale halves of its own session, or an independent session
+    whose events this waiter must not consume.
+    """
+    tracked = _TRACKED_WEBSOCKETS.get(page, ())
+    for index, entry in enumerate(reversed(tracked)):
+        if entry.socket is stop_at:
+            return list(reversed(tracked[len(tracked) - index :]))
+    return list(reversed(tracked))
+
+
+def _find_live_websocket(
+    page: Page, *, exclude: WebSocket | None = None, ws_predicate: typing.Callable[[WebSocket], bool] | None = None
+) -> WebSocket | None:
+    """Returns the most recently created socket of ``page`` that is open and proved its handshake.
+
+    A socket is adopted only after it received a frame: Playwright emits its ``websocket`` event when
+    the request is sent, before the handshake completes, so a frameless socket may still be connecting
+    or have failed. The engine.io protocol answers an accepted connection with an ``open`` packet, so a
+    connected socket.io socket receives a frame shortly after the upgrade.
+    Searching newest first, and not past ``exclude``: a reconnection is always recorded after the socket
+    it replaces.
+    Without ``ws_predicate``, only a socket on the same endpoint as ``exclude`` qualifies, so that an
+    unrelated connection is never mistaken for the reconnection of another one.
+    Returns None when the page is not tracked or no socket qualifies.
+    """
+    for entry in _tracked_entries_newest_first(page, stop_at=exclude):
+        socket = entry.socket
+        if socket is exclude or not entry.frames_received or socket.is_closed():
+            continue
+        if ws_predicate is not None:
+            if not ws_predicate(socket):
+                continue
+        elif exclude is not None and _websocket_endpoint(socket) != _websocket_endpoint(exclude):
+            continue
+        return socket
+    return None
+
+
+@dataclass(eq=False)  # identity-hashed: instances are held in a `WeakSet`
 class _ReconnectableEventWaiter:
     """Wraps `WebSocket.expect_event()` so a pending wait survives `RobustWebSocket`
     reconnections instead of raising a stale ``Socket closed`` error.
+
+    `RobustWebSocket` calls `reattach_on_reconnection` on the waiters it registered when it
+    adopts a socket, which keeps the wait listening before the caller gets a chance to send
+    anything on the new connection.
     """
 
     robust_websocket: RobustWebSocket
@@ -119,6 +216,8 @@ class _ReconnectableEventWaiter:
 
     _deadline: datetime | None = field(init=False, default=None)
     _reattach_attempts: int = field(init=False, default=0)
+    _failed_reattachment: PlaywrightError | None = field(init=False, default=None)
+    _closed: bool = field(init=False, default=False)
 
     _ctx: EventContextManager | None = field(init=False, default=None)
     _event_info: EventInfo | None = field(init=False, default=None)
@@ -138,26 +237,44 @@ class _ReconnectableEventWaiter:
         # NOTE: This pattern avoids `Error: Socked closed` from being raised.
         # If nothing went wrong, read `.value` here so a dropped connection is retried
         # even if the caller never reads `.value` themselves.
-        if exc_val is not None:
-            if self._ctx is not None:
-                self._ctx.__exit__(exc_type, exc_val, exc_tb)
-        elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
-            # The predicate saw its event but could not report it as a match at the time (e.g. its
-            # project uuid was still unknown): cancel the pending wait.
-            if self._ctx is not None:
-                self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
-        else:
-            _ = self.value
+        try:
+            if exc_val is not None:
+                if self._ctx is not None:
+                    self._ctx.__exit__(exc_type, exc_val, exc_tb)
+            elif (is_done := getattr(self.predicate, "is_done", None)) is not None and is_done():
+                # The predicate saw its event but could not report it as a match at the time (e.g. its
+                # project uuid was still unknown): cancel the pending wait.
+                if self._ctx is not None:
+                    self._ctx.__exit__(PlaywrightError, PlaywrightError("wait already satisfied"), None)
+            else:
+                _ = self.value
+        finally:
+            # only closed once the wait is over: a reconnection happening while `.value` above is
+            # still blocked must move the wait to the new socket
+            self._closed = True
 
     @property
     def value(self) -> typing.Any:
         """returns the same value as `EventInfo.value` making the result of `socket.expect_event` behave similarly"""
 
-        assert self._event_info is not None  # nosec
         while True:
+            if self._failed_reattachment is not None:
+                raise self._failed_reattachment
+            assert self._event_info is not None  # nosec
+            event_info = self._event_info
             try:
-                return self._event_info.value
-            except PlaywrightError as exc:
+                return event_info.value
+            except (PlaywrightError, asyncio.CancelledError) as exc:
+                if self._failed_reattachment is not None:
+                    # a move attempt failed, which is also what cancelled this pending read on the
+                    # old socket: report why moving the wait failed, not the stale error raised by
+                    # the connection that died
+                    raise self._failed_reattachment from exc
+                if self._event_info is not event_info:
+                    # a reconnection moved this wait to another connection while the read above was
+                    # blocked on the socket that died (moving it cancels this pending event), so read
+                    # the pending event of the connection that replaced it
+                    continue
                 if _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}" or self.robust_websocket.ws is self._bound_ws:
                     raise
 
@@ -168,7 +285,42 @@ class _ReconnectableEventWaiter:
                 ):
                     self._attach()
 
-    def _enforce_reattach_limit(self, exc: PlaywrightError) -> None:
+    def reattach_on_reconnection(self) -> None:
+        """Moves a pending wait to the websocket `RobustWebSocket` just adopted.
+
+        `expect_event` only reports the frames that arrive after it is attached, so leaving the
+        wait on the dead socket until `.value` raises `Socket closed` loses whatever the new
+        connection delivered in the meantime.
+        """
+        if self._closed or self._ctx is None or self._bound_ws is self.robust_websocket.ws:
+            return
+        if self._event_info is not None and self._event_info.is_done():
+            try:
+                # The frame landed before the connection changed: re-arming would cancel the
+                # pending read and throw its value away. A settled event is read without waiting.
+                _ = self._event_info.value
+            except (PlaywrightError, asyncio.CancelledError) as exc:
+                if not isinstance(exc, asyncio.CancelledError) and _SOCKET_CLOSED_ERROR_MESSAGE not in f"{exc}":
+                    # The wait settled with its own error (e.g. Playwright's per-call timeout): that
+                    # is the error the caller must read, and re-arming would restart an expired wait
+                    return
+                # The pending event was rejected instead (closing the socket rejects everything it
+                # was still waiting for), so this wait is pending on a connection that is gone
+            else:
+                return
+        with log_context(logging.INFO, msg=f"Moving wait for {self.event!r} to the reconnected websocket") as ctx:
+            try:
+                # moving a wait is a reattachment like the one `.value` does when it notices the
+                # socket was replaced, so it counts against the same limit
+                self._enforce_reattach_limit(None)
+                self._attach()
+            except PlaywrightError as exc:  # the deadline may have expired while disconnected
+                self._failed_reattachment = exc
+                ctx.logger.warning("could not move the wait for %s: %s", self.event, exc)
+            else:
+                self._failed_reattachment = None
+
+    def _enforce_reattach_limit(self, exc: BaseException | None) -> None:
         self._reattach_attempts += 1
         if self._reattach_attempts > _MAX_REATTACH_ATTEMPTS:
             msg = (
@@ -212,8 +364,14 @@ class RobustWebSocket:
     _reconnect_lock: threading.Lock = field(init=False, repr=False, default_factory=threading.Lock)
     _reconnect_handled: set[int] = field(init=False, repr=False, default_factory=set)
     _frames_received_on: set[int] = field(init=False, repr=False, default_factory=set)
+    _adopted_unproven: set[int] = field(init=False, repr=False, default_factory=set)
+    # waits still in flight, dropped as soon as the caller releases them
+    _pending_event_waiters: weakref.WeakSet[_ReconnectableEventWaiter] = field(
+        init=False, repr=False, default_factory=weakref.WeakSet
+    )
 
     def __post_init__(self) -> None:
+        start_websocket_tracking(self.page)
         self._configure_websocket_events()
         if self.ws.is_closed():
             if not self.auto_reconnect:
@@ -235,6 +393,24 @@ class RobustWebSocket:
     def _mark_connected(self, socket: WebSocket) -> None:
         self._frames_received_on.add(id(socket))
 
+    def _drop_unproven_reconnection(self, socket: WebSocket, logger: logging.Logger) -> None:
+        """Un-counts an adopted socket that died before receiving any frame.
+
+        A socket adopted by `_attempt_reconnect` can still fail its handshake, since
+        `page.expect_websocket` resolves as soon as the browser creates it. Its first frame is what
+        tells a reconnection apart from such a failed attempt, so the count is only kept once it
+        arrives.
+        """
+        if id(socket) not in self._adopted_unproven:
+            return
+        self._adopted_unproven.discard(id(socket))
+        self._num_reconnections = max(0, self._num_reconnections - 1)
+        logger.info(
+            "%s❌ Dropped WebSocket adopted while reconnecting. Number of reconnections: %s",
+            self.log_prefix,
+            self._num_reconnections,
+        )
+
     def _configure_websocket_events(self) -> None:
         # NOTE: bind the current socket in the closure: the 'socketerror' event only carries the
         # error message, so the socket must be identified through the closure instead.
@@ -252,6 +428,7 @@ class RobustWebSocket:
                 # NOTE: receiving a frame is the proof that this socket's handshake succeeded
                 # (a socket.io server sends its 'open' packet immediately on connect)
                 self._frames_received_on.add(id(socket))
+                self._adopted_unproven.discard(id(socket))
                 ctx.logger.debug("%s⬆️ Frame received: %s", self.log_prefix, payload)
 
             def _trigger_reconnect(reason: str) -> None:
@@ -270,6 +447,7 @@ class RobustWebSocket:
                 # the stale proof, `wait_until_connected` would return immediately on the
                 # dead socket while its (event-dispatched) reconnection has not completed yet.
                 self._frames_received_on.discard(id(socket))
+                self._drop_unproven_reconnection(socket, ctx.logger)
                 if not self.auto_reconnect:
                     ctx.logger.info("%s WebSocket closed.", self.log_prefix)
                     return
@@ -277,6 +455,7 @@ class RobustWebSocket:
 
             def on_socketerror(error_msg: str) -> None:
                 self._frames_received_on.discard(id(socket))
+                self._drop_unproven_reconnection(socket, ctx.logger)
                 if not self.auto_reconnect:
                     ctx.logger.error("%s❌ WebSocket error: %s", self.log_prefix, error_msg)
                     return
@@ -306,23 +485,84 @@ class RobustWebSocket:
         """
 
         def _accept(new_websocket: WebSocket) -> bool:
-            if self.ws_predicate is not None and not self.ws_predicate(new_websocket):
+            if new_websocket.is_closed():
                 return False
-            return not new_websocket.is_closed()
+            if self.ws_predicate is not None:
+                return self.ws_predicate(new_websocket)
+            # a reconnection replaces the socket it reconnects: same endpoint, as in
+            # `_find_live_websocket`, so that an unrelated connection is never adopted
+            return _websocket_endpoint(new_websocket) == _websocket_endpoint(self.ws)
 
-        with self.page.expect_websocket(_accept, timeout=self.reconnect_timeout) as ws_info:
-            assert not ws_info.value.is_closed()
+        already_connected = _find_live_websocket(self.page, exclude=self.ws, ws_predicate=self.ws_predicate)
+        if already_connected is not None:
+            # NOTE: the socket.io client may have finished reconnecting before this wait started;
+            # adopt it instead of waiting for a `websocket` event that was already delivered
+            self._use_websocket(already_connected, logger, source="already connected")
+            return
 
-        self.ws = ws_info.value
+        # NOTE: `expect_websocket` only resolves for sockets created after it is entered, so a socket
+        # created just before this loop -- or during one of its slices -- can never satisfy it: its
+        # handshake may complete while the slice is running, and no further creation event follows.
+        # Waiting in slices and re-checking the registry between them bounds that stall to one slice.
+        deadline = time.monotonic() + self.reconnect_timeout / SECOND
+        while True:
+            remaining = (deadline - time.monotonic()) * SECOND
+            if remaining <= 0:
+                msg = (
+                    f"Timeout {self.reconnect_timeout}ms exceeded while waiting for a websocket "
+                    f"on {self.ws.url} to reconnect."
+                )
+                raise PlaywrightTimeoutError(msg)
+            try:
+                with self.page.expect_websocket(
+                    _accept, timeout=min(_WEBSOCKET_CREATION_WAIT_SLICE, remaining)
+                ) as ws_info:
+                    assert not ws_info.value.is_closed()
+            except PlaywrightTimeoutError:
+                if reconnecting := _find_live_websocket(self.page, exclude=self.ws, ws_predicate=self.ws_predicate):
+                    self._use_websocket(reconnecting, logger, source="already connected")
+                    return
+            else:
+                self._use_websocket(ws_info.value, logger, source="reconnected")
+                return
+
+    def _use_websocket(self, socket: WebSocket, logger: logging.Logger, *, source: str) -> None:
+        """Switches to ``socket`` and re-attaches the event listeners to it."""
+        self.ws = socket
         self._num_reconnections += 1
-        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even
-        # if its first frame raced ahead of the listeners attached below (same as in __post_init__)
+        # NOTE: `_accept` guaranteed this socket's handshake completed, so it is connected even if
+        # its first frame raced ahead of the listeners attached below (same as in __post_init__).
+        # The browser also creates a websocket for a connection attempt whose handshake then fails
+        # (the socket.io client retries on its own while offline), so this socket must still receive
+        # a frame before its reconnection counts: see `_drop_unproven_reconnection`.
+        self._adopted_unproven.add(id(self.ws))
         self._mark_connected(self.ws)
         logger.info(
-            "🔄 Reconnected to WebSocket successfully. Number of reconnections: %s",
+            "🔄 WebSocket %s successfully (%s). Number of reconnections: %s",
+            source,
+            self.ws.url,
             self._num_reconnections,
         )
         self._configure_websocket_events()
+        # NOTE: a wait left on the socket that just died cannot see what this connection delivers,
+        # so it is moved here instead of when the caller happens to read it. A moved wait starts at
+        # the frames this connection receives from now on, which includes whatever a protocol
+        # handshake still sends on it: a caller that must not mistake one of those for its answer
+        # filters them with a predicate.
+        self._reattach_pending_event_waiters()
+
+    def _reattach_pending_event_waiters(self) -> None:
+        """Moves the waits left on the socket this one replaced onto this socket."""
+        for waiter in list(self._pending_event_waiters):
+            try:
+                waiter.reattach_on_reconnection()
+            except Exception:  # nosec  # pylint: disable=broad-except
+                # one wait that cannot be moved must not abort the reconnection of all the others
+                _logger.exception(
+                    "%sCould not move the wait for %s to the reconnected websocket",
+                    self.log_prefix,
+                    waiter.event,
+                )
 
     def expect_event(
         self,
@@ -334,7 +574,17 @@ class RobustWebSocket:
         """
         Register an event listener that keeps waiting across reconnections.
         """
-        return _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
+        waiter = _ReconnectableEventWaiter(robust_websocket=self, event=event, predicate=predicate, timeout=timeout)
+        self._pending_event_waiters.add(waiter)
+        return waiter
+
+    def expect_project_closed(self, project_uuid: str, *, timeout: timedelta) -> _ReconnectableEventWaiter:
+        """Register a listener that waits until `project_uuid` is closed (and unlocked)"""
+        return self.expect_event(
+            "framereceived",
+            SocketIOProjectClosedWaiter(project_uuid=project_uuid),
+            timeout=timeout.total_seconds() * SECOND,
+        )
 
     def wait_until_connected(self, *, timeout: float) -> None:
         """
@@ -631,7 +881,7 @@ def _check_service_endpoint(
         except PlaywrightTimeoutError, TimeoutError:
             logger.exception(
                 "❌ Timed-out requesting service endpoint after %ds ❌",
-                _SERVICE_ROOT_POINT_STATUS_TIMEOUT,
+                _SERVICE_ROOT_POINT_STATUS_TIMEOUT.total_seconds(),
             )
         except PlaywrightError:
             logger.exception("Failed to request service endpoint")
@@ -1050,75 +1300,109 @@ def _service_iframe_locator(page: Page, node_id: str) -> FrameLocator:
     return page.frame_locator(iframe_selector).first
 
 
-_SERVICE_IFRAME_SRC_TIMEOUT: Final[
+_SERVICE_IFRAME_NAVIGATION_TIMEOUT: Final[
     Annotated[
         timedelta,
-        doc("the UI navigates the service iframe to its service URL only once the service became ready"),
+        doc("grace given to the UI to navigate the service iframe itself before this helper forces it"),
     ]
-] = timedelta(seconds=10)
+] = timedelta(seconds=30)
 _SERVICE_FRAME_ATTACH_TIMEOUT: Final[
     Annotated[timedelta, doc("grace window for the driver to attach an in-flight iframe navigation")]
 ] = timedelta(seconds=10)
 _SERVICE_FRAME_POLL_INTERVAL: Final[timedelta] = timedelta(milliseconds=250)
 
 
-def _service_frame_attached(iframe_element: ElementHandle, node_id: str) -> bool:
-    """Whether the driver attached the content frame of the given iframe element.
+def _service_frame_attached(page: Page, node_id: str) -> bool:
+    """Whether the driver attached the content frame of the service iframe of ``node_id``.
 
-    Only the service frame URL carries the node id, so the stale frame left by
-    the iframe's previous navigation (e.g. ``about:blank``) counts as unattached.
+    Only the frame URL carries the node id, so the stale frame left by the iframe's previous
+    navigation (e.g. ``about:blank``) counts as unattached, and the first iframe of a duplicate
+    pair is checked on its own instead of through any attached duplicate.
+    Checking the iframe's ``src`` attribute is not an option: the UI navigates the service iframe
+    through ``qx.bom.Iframe.setSource``, which calls ``location.replace`` on the content window and
+    therefore never writes the attribute.
+    A failed read returns False instead of raising.
     """
-    content_frame = iframe_element.content_frame()
+    try:
+        # NOTE: unlike `Locator`, `query_selector` does not auto-wait, keeping each poll short
+        iframe_element = page.query_selector(_service_iframe_selector(node_id))
+        if iframe_element is None:
+            return False
+        content_frame = iframe_element.content_frame()
+    except PlaywrightError:
+        return False
     return content_frame is not None and node_id in content_frame.url
 
 
-def _ensure_service_iframe_attached(page: Page, node_id: str) -> None:
-    """Re-navigates the service iframe when the driver never attached its content frame.
+def _wait_service_frame_attached(page: Page, node_id: str, timeout: timedelta) -> bool:
+    poller = Retrying(
+        stop=stop_after_delay(timeout.total_seconds()),
+        wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
+        retry=retry_if_result(lambda attached: not attached),
+        before_sleep=before_sleep_log(_logger, logging.DEBUG),
+    )
+    try:
+        return bool(poller(lambda: _service_frame_attached(page, node_id)))
+    except RetryError:
+        return False
+
+
+def _ensure_service_iframe_attached(page: Page, node_id: str, service_url: AnyUrl, *, is_legacy_service: bool) -> None:
+    """Navigates the service iframe when the UI did not, or the driver never attached its frame.
 
     Firefox intermittently does not attach the content frame of a rendered
     cross-origin iframe (microsoft/playwright#43007), which makes every query on
     its ``FrameLocator`` hang until timeout even though the service UI is fully
-    shown. Re-setting the iframe source reloads it and re-triggers the frame
+    shown. Setting the iframe source navigates it and re-triggers the frame
     lifecycle events the driver needs to attach the content frame.
 
-    Best-effort: it first waits for the UI to navigate the iframe and for the
-    driver to attach its content frame, and only then re-navigates the iframe
-    once. Playwright errors are logged and swallowed, so that the caller still
-    fails with its own original error.
+    The UI navigates the iframe on its own, shortly after its readiness polling
+    has seen the service, so this waits for that navigation before forcing one:
+    navigating an iframe that is already loading would restart it. The service
+    endpoint has already replied at this point, so navigating to its URL here is
+    a valid fallback for an iframe the UI left on ``about:blank``.
+
+    Best-effort: failed reads while polling are retried, the iframe is
+    navigated at most once, and Playwright errors are logged and swallowed,
+    so that the caller still fails with its own original error.
     """
     try:
-        page.wait_for_function(
-            """nodeId => {
-                const iframe = document.querySelector(`[osparc-test-id="iframe_${nodeId}"]`);
-                return !!iframe && iframe.src.includes(nodeId);
-            }""",
-            arg=node_id,
-            timeout=int(_SERVICE_IFRAME_SRC_TIMEOUT.total_seconds() * SECOND),
-        )
-
-        iframe_element = page.locator(_service_iframe_selector(node_id)).first.element_handle()
-        if iframe_element is None:
+        if _wait_service_frame_attached(page, node_id, _SERVICE_IFRAME_NAVIGATION_TIMEOUT):
             return
 
-        frame_attached = Retrying(
-            stop=stop_after_delay(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds()),
-            wait=wait_fixed(_SERVICE_FRAME_POLL_INTERVAL.total_seconds()),
-            retry=retry_if_result(lambda attached: not attached),
-            before_sleep=before_sleep_log(_logger, logging.DEBUG),
-        )
-        try:
-            attached = frame_attached(lambda: _service_frame_attached(iframe_element, node_id))
-        except RetryError:
-            attached = False
-        if attached:
+        if is_legacy_service:
+            # NOTE: a legacy service's iframe URL is its `service_basepath` plus the optional
+            # `entry_point` (see `osparc.utils.Utils.computeServiceModelData` in the frontend), while
+            # `service_url` here is only the `/x/<node_id>` path. Navigating would load a different
+            # page than the UI intended, so leave the iframe alone and let the caller fail with its
+            # own original error.
+            _logger.warning(
+                "Service iframe content frame of node %s did not attach within %s: not navigating it "
+                "because its full URL is not known for a legacy service",
+                node_id,
+                _SERVICE_IFRAME_NAVIGATION_TIMEOUT,
+            )
             return
 
         _logger.warning(
-            "Service iframe content frame of node %s is not attached: "
-            "re-navigating the iframe to force the driver to attach it",
+            "Service iframe content frame of node %s did not attach within %s: navigating it to %s",
             node_id,
+            _SERVICE_IFRAME_NAVIGATION_TIMEOUT,
+            service_url,
         )
-        page.locator(_service_iframe_selector(node_id)).first.evaluate("el => { el.src = el.src; }")
+        page.locator(_service_iframe_selector(node_id)).first.evaluate(
+            "(element, url) => { element.src = url; }",
+            f"{service_url}",
+            timeout=int(_SERVICE_FRAME_ATTACH_TIMEOUT.total_seconds() * SECOND),
+        )
+        if _wait_service_frame_attached(page, node_id, _SERVICE_FRAME_ATTACH_TIMEOUT):
+            _logger.info("Service iframe content frame of node %s attached after navigating it", node_id)
+        else:
+            _logger.warning(
+                "Service iframe content frame of node %s is still not attached after navigating it to %s",
+                node_id,
+                service_url,
+            )
     except PlaywrightError:
         _logger.exception(
             "Could not ensure the service iframe content frame of node %s is attached; "
@@ -1178,7 +1462,12 @@ def expected_service_running(
             int(_MIN_TIMEOUT_WAITING_FOR_SERVICE_ENDPOINT.total_seconds() * SECOND),
         ),
     )
-    _ensure_service_iframe_attached(page, node_id)
+    _ensure_service_iframe_attached(
+        page,
+        node_id,
+        _get_service_url(node_id, product_url, is_legacy_service=is_service_legacy),
+        is_legacy_service=is_service_legacy,
+    )
     service_running.iframe_locator = _service_iframe_locator(page, node_id)
 
 
@@ -1235,7 +1524,12 @@ def wait_for_service_running(
         ),
     )
 
-    _ensure_service_iframe_attached(page, node_id)
+    _ensure_service_iframe_attached(
+        page,
+        node_id,
+        _get_service_url(node_id, product_url, is_legacy_service=is_service_legacy),
+        is_legacy_service=is_service_legacy,
+    )
     return _service_iframe_locator(page, node_id)
 
 

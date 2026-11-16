@@ -25,6 +25,8 @@ from simcore_service_webserver.payments.settings import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

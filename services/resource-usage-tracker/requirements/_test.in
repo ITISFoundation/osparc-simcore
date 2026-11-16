@@ -16,7 +16,7 @@ coverage
 docker
 faker
 filelock
-httpx
+httpx2
 fakeredis[lua]
 moto[server]
 pytest

@@ -5,8 +5,9 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncGenerator, Callable
+from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
@@ -146,8 +147,9 @@ async def create_fake_api_keys(
     async_engine: AsyncEngine,
     create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt]],
     create_product_names: Callable[[PositiveInt], AsyncGenerator[str]],
-) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]]]:
-    async def _generate_fake_api_key(n: PositiveInt):
+) -> AsyncGenerator[Callable[..., AsyncGenerator[ApiKeyInDB]]]:
+    async def _generate_fake_api_key(n: PositiveInt, **overrides: Any):
+        """Creates n API keys; overrides are forwarded to random_api_auth, e.g. expires_at"""
         users, products = create_user_ids(n), create_product_names(n)
         excluded_column = "api_secret"
         returning_cols = [col for col in api_keys.c if col.name != excluded_column]
@@ -156,7 +158,7 @@ async def create_fake_api_keys(
             product = await anext(products)
             user = await anext(users)
 
-            api_auth = random_api_auth(product, user)
+            api_auth = random_api_auth(product, user, **overrides)
             plain_api_secret = api_auth.pop("api_secret")
 
             async with async_engine.begin() as conn:
@@ -185,8 +187,8 @@ async def create_fake_api_keys(
 @pytest.fixture
 async def auth(
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
-) -> httpx.BasicAuth:
+) -> httpx2.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):
-        return httpx.BasicAuth(key.api_key, key.api_secret)
+        return httpx2.BasicAuth(key.api_key, key.api_secret)
     pytest.fail("Did not generate authentication")

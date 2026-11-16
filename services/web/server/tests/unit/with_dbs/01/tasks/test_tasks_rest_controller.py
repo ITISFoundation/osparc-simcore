@@ -31,6 +31,12 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.tasks import _tasks_service
 from simcore_service_webserver.tasks._controller import _rest
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_VERSION = "v0"
 
 

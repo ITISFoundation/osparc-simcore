@@ -87,6 +87,6 @@ groups_extra_properties = sa.Table(
     ),
     sa.PrimaryKeyConstraint("group_id", "product_name", name="group_id_product_name_pk"),
     # TIME STAMPS ----
-    column_created_datetime(timezone=False),
-    column_modified_datetime(timezone=False),
+    column_created_datetime(),
+    column_modified_datetime(),
 )

@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 import aiodocker
-import httpx
+import httpx2
 from fastapi import FastAPI
 from models_library.basic_types import PortInt
 from models_library.products import ProductName
@@ -285,25 +285,25 @@ async def _get_service_resources(
 ) -> ServiceResourcesDict:
     encoded_key = urllib.parse.quote_plus(service_key)
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         response = await client.get(f"{url}", headers={X_PRODUCT_NAME_HEADER: product_name})
         return TypeAdapter[ServiceResourcesDict](ServiceResourcesDict).validate_python(response.json())
 
 
-async def _handle_redirection(redirection_response: httpx.Response, *, method: str, **kwargs) -> httpx.Response:
+async def _handle_redirection(redirection_response: httpx2.Response, *, method: str, **kwargs) -> httpx2.Response:
     """since we are in a test environment with a test server,
     a real client must be used in order to get to an external server
     i.e. the async_client used with the director test server is unable to follow redirects
     """
     assert redirection_response.next_request, f"no redirection set in {redirection_response}"
-    async with httpx.AsyncClient() as real_client:
+    async with httpx2.AsyncClient() as real_client:
         response = await real_client.request(method, f"{redirection_response.next_request.url}", **kwargs)
         response.raise_for_status()
         return response
 
 
 async def assert_start_service(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     product_name: str,
     product_api_base_url: str,
     user_id: UserID,
@@ -348,31 +348,31 @@ async def assert_start_service(
         timeout=30,
     )
 
-    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+    if response.status_code == httpx2.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(response, method="POST", json=data, headers=headers, timeout=30)
     response.raise_for_status()
 
-    assert response.status_code == httpx.codes.CREATED, response.text
+    assert response.status_code == httpx2.codes.CREATED, response.text
 
 
 async def get_service_data(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     service_uuid: str,
     node_data: Node,
 ) -> dict[str, Any]:
     # result =
     response = await director_v2_client.get(f"/v2/dynamic_services/{service_uuid}", follow_redirects=False)
 
-    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+    if response.status_code == httpx2.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(response, method="GET")
     response.raise_for_status()
-    assert response.status_code == httpx.codes.OK, response.text
+    assert response.status_code == httpx2.codes.OK, response.text
     payload = response.json()
     return payload["data"] if is_legacy(node_data) else payload
 
 
 async def _get_service_state(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     service_uuid: str,
     node_data: Node,
 ) -> str:
@@ -382,7 +382,7 @@ async def _get_service_state(
 
 
 async def assert_all_services_running(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     workbench: NodesDict,
 ) -> None:
     async for attempt in AsyncRetrying(
@@ -407,7 +407,7 @@ async def assert_all_services_running(
             print("--> all services are up and running!")
 
 
-async def assert_retrieve_service(director_v2_client: httpx.AsyncClient, service_uuid: str) -> None:
+async def assert_retrieve_service(director_v2_client: httpx2.AsyncClient, service_uuid: str) -> None:
     headers = {
         X_DYNAMIC_SIDECAR_REQUEST_DNS: director_v2_client.base_url.host,
         X_DYNAMIC_SIDECAR_REQUEST_SCHEME: director_v2_client.base_url.scheme,
@@ -420,7 +420,7 @@ async def assert_retrieve_service(director_v2_client: httpx.AsyncClient, service
         headers=headers,
         follow_redirects=False,
     )
-    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+    if response.status_code == httpx2.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(
             response,
             method="POST",
@@ -428,7 +428,7 @@ async def assert_retrieve_service(director_v2_client: httpx.AsyncClient, service
             headers=headers,
         )
     response.raise_for_status()
-    assert response.status_code == httpx.codes.OK, response.text
+    assert response.status_code == httpx2.codes.OK, response.text
     json_result = response.json()
     print(f"{service_uuid}:retrieve result ", json_result)
 
@@ -437,11 +437,11 @@ async def assert_retrieve_service(director_v2_client: httpx.AsyncClient, service
     assert isinstance(size_bytes, int)
 
 
-async def assert_stop_service(director_v2_client: httpx.AsyncClient, service_uuid: str) -> None:
+async def assert_stop_service(director_v2_client: httpx2.AsyncClient, service_uuid: str) -> None:
     response = await director_v2_client.delete(f"/v2/dynamic_services/{service_uuid}", follow_redirects=False)
-    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+    if response.status_code == httpx2.codes.TEMPORARY_REDIRECT:
         response = await _handle_redirection(response, method="DELETE")
-    assert response.status_code == httpx.codes.NO_CONTENT
+    assert response.status_code == httpx2.codes.NO_CONTENT
     assert response.text == ""
 
 
@@ -522,15 +522,15 @@ async def assert_service_is_ready(  # pylint: disable=redefined-outer-name
 
     async for attempt in AsyncRetrying(wait=wait_fixed(1), stop=stop_after_attempt(60), reraise=True):
         with attempt:
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 response = await client.get(service_address)
                 print(f"{SEPARATOR}\nAttempt={attempt.retry_state.attempt_number}")
                 print(f"Body:\n{response.text}\nHeaders={response.headers}\n{SEPARATOR}")
-                assert response.status_code == httpx.codes.OK, response.text
+                assert response.status_code == httpx2.codes.OK, response.text
 
 
 async def assert_services_reply_200(
-    director_v2_client: httpx.AsyncClient,
+    director_v2_client: httpx2.AsyncClient,
     workbench: NodesDict,
 ) -> None:
     print("Giving dy-proxies some time to start")

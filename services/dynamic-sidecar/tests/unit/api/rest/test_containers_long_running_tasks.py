@@ -20,7 +20,7 @@ from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
     ContainersCreate,

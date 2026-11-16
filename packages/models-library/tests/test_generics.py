@@ -4,12 +4,14 @@
 # pylint: disable=unused-variable
 
 
+import pickle
 from pathlib import Path
 from typing import Any
 
 import pytest
 from faker import Faker
 from models_library.generics import DictModel, Envelope
+from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import BaseModel, ValidationError
 from pydantic.version import version_short
 
@@ -133,3 +135,12 @@ def test_enveloped_data_list():
     enveloped = Envelope[list](data=[])
     assert enveloped.data == []
     assert enveloped.error is None
+
+
+def test_list_model_alias_is_picklable():
+    # `SimcoreServiceSettingsLabel` is parametrized in a module other than `generics`, and service
+    # labels get pickled with the node's settings. `pickle` looks the class up in its `__module__`,
+    # where pydantic 2.14.0 and 2.14.1 did not register it.
+    # SEE https://github.com/pydantic/pydantic/issues/13991
+    pickled = pickle.dumps(SimcoreServiceSettingsLabel)
+    assert pickle.loads(pickled) is SimcoreServiceSettingsLabel  # noqa: S301

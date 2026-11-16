@@ -47,6 +47,8 @@ from tenacity.wait import wait_fixed
 API_PREFIX = "/" + api_version_prefix
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

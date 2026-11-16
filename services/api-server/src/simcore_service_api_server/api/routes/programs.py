@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
 from fastapi_pagination import create_page
-from httpx import HTTPStatusError
+from httpx2 import HTTPStatusError
 from models_library.api_schemas_storage.storage_schemas import LinkType
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID

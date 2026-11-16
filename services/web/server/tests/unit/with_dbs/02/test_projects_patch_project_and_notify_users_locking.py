@@ -28,6 +28,12 @@ from simcore_service_webserver.projects._projects_service import (
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.redis import get_redis_document_manager_client_sdk
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def concurrent_patch_data_list(faker: Faker) -> list[dict[str, Any]]:

@@ -1,5 +1,5 @@
 import arrow
-import httpx
+import httpx2
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
@@ -68,7 +68,7 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
                 confirm_dialog.close()
 
                 url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}:stop"
-                async with httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
+                async with httpx2.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
                     await client.get(f"{url}")
 
                 ui.notify(f"Submitted stop request for {node_id}. Please give the service some time to stop!")

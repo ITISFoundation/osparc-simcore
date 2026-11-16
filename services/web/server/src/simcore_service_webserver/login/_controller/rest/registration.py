@@ -18,7 +18,7 @@ from ....notifications import notifications_service
 from ....notifications._models import EmailContact
 from ....products import products_web
 from ....products.models import Product
-from ....session.access_policies import (
+from ....session.access_policies_web import (
     on_success_grant_session_access_to,
     session_access_required,
 )
@@ -30,7 +30,6 @@ from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response
 from ... import (
     _auth_service,
-    _registration_service,
     _security_service,
     _twofa_service,
 )
@@ -45,6 +44,7 @@ from ...constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
+    MSG_PHONE_REGISTER_2FA_REQUIRED,
     MSG_REGISTRATION_SUCCESS,
     MSG_UNAUTHORIZED_REGISTER_PHONE,
     MSG_WEAK_PASSWORD,
@@ -53,7 +53,8 @@ from ...settings import (
     LoginSettingsForProduct,
     get_plugin_settings,
 )
-from ._rest_exceptions import handle_rest_requests_exceptions
+from ._rest_exceptions import create_resend_cooldown_error, handle_rest_requests_exceptions
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
@@ -158,8 +159,7 @@ async def register(request: web.Request):
             app=request.app,
         )
         if invitation.trial_account_days:
-            # NOTE: expires_at is currently set as offset-naive
-            account_expires_at = (datetime.now(UTC) + timedelta(invitation.trial_account_days)).replace(tzinfo=None)
+            account_expires_at = datetime.now(UTC) + timedelta(invitation.trial_account_days)
 
     #  get authorized user or create new
     user = await _auth_service.get_user_or_none(request.app, email=registration.email)
@@ -229,6 +229,9 @@ async def register(request: web.Request):
         # Don't fail registration if email fails to send
 
     # NOTE: Account is created directly (no confirmation step): user does not need to type its password.
+    # an abandoned earlier login may have left a pending email: drop it so
+    # that it cannot shadow this new account
+    await clear_pending_2fa_email(request)
     return await _security_service.login_granted_response(
         request,
         user=user,
@@ -267,6 +270,18 @@ async def register_phone(request: web.Request):
 
     registration = await parse_request_body_as(RegisterPhoneBody, request)
 
+    trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_REGISTER_PHONE)
+    user = await _auth_service.get_user_or_none(request.app, email=trusted.email)
+    if user is None:
+        raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED_REGISTER_PHONE)
+
+    if not trusted.fully_authenticated and (user["phone"] or not trusted.phone_registration_allowed):
+        # a login that has not passed 2FA may register a phone number only when
+        # auth_login asked for one (SMS account without a phone number); changing
+        # an existing phone number, or moving an email-2FA account to SMS, first
+        # requires the second factor
+        raise web.HTTPUnauthorized(text=MSG_PHONE_REGISTER_2FA_REQUIRED)
+
     assert settings.LOGIN_2FA_REQUIRED  # nosec
     assert settings.LOGIN_TWILIO  # nosec
     if not product.twilio_messaging_sid:
@@ -279,56 +294,71 @@ async def register_phone(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    try:
-        code = await _twofa_service.create_2fa_code(
-            app=request.app,
-            user_email=registration.email,
-            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-        )
-        await _twofa_service.send_sms_code(
-            request.app,
-            phone_number=registration.phone,
-            code=code,
-            twilio_auth=settings.LOGIN_TWILIO,
-            twilio_messaging_sid=product.twilio_messaging_sid,
-            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=_registration_service.get_user_name_from_email(registration.email),
-            locale=get_locale_or_none(request),
-        )
+    # register_phone sends the SMS through the same per-account cooldown as
+    # the code resend, since both deliver an SMS to this account; a failed
+    # delivery releases the window this request armed
+    async with _twofa_service.resend_cooldown(
+        request.app,
+        user_email=trusted.email,
+        channel="SMS",
+        cooldown_in_seconds=settings.LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC,
+    ) as cooldown:
+        if cooldown.retry_after_s is not None:
+            raise create_resend_cooldown_error(cooldown.retry_after_s)
 
-        return envelope_response(
-            # RegisterPhoneNextPage
-            data={
-                "name": CODE_2FA_SMS_CODE_REQUIRED,
-                "parameters": {
-                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-                },
-                "message": MSG_2FA_CODE_SENT.format(phone_number=_twofa_service.mask_phone_number(registration.phone)),
-                "level": "INFO",
-                "logger": "user",
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
-
-    except web.HTTPException:
-        raise
-
-    except Exception as err:  # pylint: disable=broad-except
-        # Unhandled errors -> 503
-        error_code = create_error_code(err)
-        user_error_msg = "Currently we cannot register phone numbers"
-
-        _logger.exception(
-            **create_troubleshooting_log_kwargs(
-                user_error_msg,
-                error=err,
-                error_code=error_code,
-                error_context={"request": request, "registration": registration},
-                tip="Phone registration failed",
+        try:
+            code = await _twofa_service.create_2fa_code(
+                app=request.app,
+                user_email=trusted.email,
+                expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             )
-        )
+            await _twofa_service.send_sms_code(
+                request.app,
+                phone_number=registration.phone,
+                code=code,
+                twilio_auth=settings.LOGIN_TWILIO,
+                twilio_messaging_sid=product.twilio_messaging_sid,
+                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+                first_name=user["first_name"] or user["name"],
+                locale=get_locale_or_none(request),
+            )
 
-        raise web.HTTPServiceUnavailable(
-            text=user_error_msg,
-            content_type=MIMETYPE_APPLICATION_JSON,
-        ) from err
+            return envelope_response(
+                # RegisterPhoneNextPage
+                data={
+                    "name": CODE_2FA_SMS_CODE_REQUIRED,
+                    "parameters": {
+                        "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    },
+                    "message": MSG_2FA_CODE_SENT.format(
+                        phone_number=_twofa_service.mask_phone_number(registration.phone)
+                    ),
+                    "level": "INFO",
+                    "logger": "user",
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        except web.HTTPException:
+            # keep its status; the cooldown context releases the window
+            raise
+
+        except Exception as err:  # pylint: disable=broad-except
+            # Unhandled errors -> 503; the cooldown context releases the window
+            error_code = create_error_code(err)
+            user_error_msg = "Currently we cannot register phone numbers"
+
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context={"request": request, "registration": registration},
+                    tip="Check Twilio status and product's twilio_messaging_sid",
+                )
+            )
+
+            raise web.HTTPServiceUnavailable(
+                text=user_error_msg,
+                content_type=MIMETYPE_APPLICATION_JSON,
+            ) from err

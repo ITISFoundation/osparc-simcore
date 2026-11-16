@@ -39,6 +39,12 @@ from simcore_service_webserver.security import security_service
 from simcore_service_webserver.session.settings import get_plugin_settings
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_check_auth(client: TestClient, logged_user: UserInfoDict):

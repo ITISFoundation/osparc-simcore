@@ -18,13 +18,14 @@ See https://github.com/ITISFoundation/private-issues/issues/669
 
 import asyncio
 from collections.abc import Sequence
-from typing import Any, Final
+from typing import Annotated, Any, Final
 from unittest import mock
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
+from annotated_types import doc
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -35,8 +36,23 @@ from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncConnection
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _TIMEOUT_S: Final[float] = 30.0
-_SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[str] = "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'"
+
+_SOMEONE_WAITS_FOR_A_LOCK_SQL: Final[
+    Annotated[
+        str,
+        doc(
+            "scoped to the current database: pg_stat_activity also lists the backends of the databases"
+            " the other pytest-xdist workers run against"
+        ),
+    ]
+] = "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()"
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

@@ -25,6 +25,12 @@ from simcore_service_webserver.db.models import projects as projects_table
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @dataclasses.dataclass(frozen=True)
 class _ProjectDeletionMocks:
@@ -266,7 +272,7 @@ async def test_workspaces_deletion_with_more_than_one_page_of_root_projects(
     fake_project: ProjectDict,
     workspaces_clean_db: None,
     mock_project_deletion_side_effects: _ProjectDeletionMocks,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Regression test for https://github.com/ITISFoundation/osparc-simcore/pull/9510:
     `delete_workspace_with_all_content` had the same multi-page pagination bug as
@@ -306,7 +312,7 @@ async def test_workspaces_deletion_with_more_than_one_page_of_root_projects(
     resp = await client.get(f"/v0/workspaces/{added_workspace.workspace_id}")
     await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = await conn.execute(
             sa.select(projects_table.c.uuid).where(projects_table.c.uuid.in_(created_project_ids))
         )

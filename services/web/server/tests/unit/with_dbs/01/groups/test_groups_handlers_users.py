@@ -35,6 +35,12 @@ from simcore_service_webserver.groups._groups_service import (
 from simcore_service_webserver.groups.groups_service import auto_add_user_to_groups
 from simcore_service_webserver.security import security_service
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def _assert_group(group: dict[str, str]):
     return GroupGet.model_validate(group)
@@ -368,7 +374,7 @@ async def test_group_access_rights(
         resp = await client.post(f"{add_group_user_url}", json={"uid": users[0]["id"]})
         await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
-        # as a member I cannot DELETE the grouop
+        # as a member I cannot DELETE the group
         url = client.app.router["delete_group"].url_for(gid=f"{group_id}")
         resp = await client.delete(f"{url}")
         await assert_status(resp, status.HTTP_403_FORBIDDEN)

@@ -19,6 +19,12 @@ from simcore_service_webserver.studies_dispatcher.settings import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def studies_dispatcher_settings() -> StudiesDispatcherSettings:
@@ -26,7 +32,7 @@ def studies_dispatcher_settings() -> StudiesDispatcherSettings:
 
 
 async def test_iter_latest_product_services(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     studies_dispatcher_settings: StudiesDispatcherSettings,
     service_metadata_in_db: dict,
     service_access_rights_in_db: dict,
@@ -36,7 +42,7 @@ async def test_iter_latest_product_services(
     # Act
     services = []
     async for service in iter_latest_product_services(
-        studies_dispatcher_settings, asyncpg_engine, product_name="osparc"
+        studies_dispatcher_settings, sqlalchemy_async_engine, product_name="osparc"
     ):
         services.append(service)
 
@@ -52,7 +58,7 @@ async def test_iter_latest_product_services(
 
 
 async def test_iter_latest_product_services_with_pagination(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     studies_dispatcher_settings: StudiesDispatcherSettings,
     service_metadata_in_db: dict,
     service_access_rights_in_db: dict,
@@ -62,7 +68,7 @@ async def test_iter_latest_product_services_with_pagination(
     services = []
     async for service in iter_latest_product_services(
         studies_dispatcher_settings,
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name="osparc",
         page_number=1,
         page_size=1,
@@ -74,14 +80,14 @@ async def test_iter_latest_product_services_with_pagination(
 
 
 async def test_validate_requested_service_success(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     service_metadata_in_db: dict,
     consume_filetypes_in_db: dict,
 ):
     """Test validating a service that exists and is valid."""
     # Act
     valid_service = await validate_requested_service(
-        engine=asyncpg_engine,
+        engine=sqlalchemy_async_engine,
         service_key=ServiceKey(service_metadata_in_db["key"]),
         service_version=ServiceVersion(service_metadata_in_db["version"]),
     )
@@ -96,13 +102,13 @@ async def test_validate_requested_service_success(
 
 
 async def test_validate_requested_service_not_found(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Test validating a service that doesn't exist."""
     # Act & Assert
     with pytest.raises(ServiceNotFoundError) as exc_info:
         await validate_requested_service(
-            asyncpg_engine,
+            sqlalchemy_async_engine,
             service_key=ServiceKey("simcore/services/dynamic/nonexistent"),
             service_version=ServiceVersion("1.0.0"),
         )

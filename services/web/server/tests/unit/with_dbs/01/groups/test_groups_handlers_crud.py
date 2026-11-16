@@ -27,6 +27,12 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_groups_access_rights(
@@ -210,7 +216,7 @@ async def test_list_user_groups_includes_other_product_support_group(
     client: TestClient,
     user_role: UserRole,
     logged_user: UserInfoDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
     assert logged_user["role"] == user_role
@@ -218,7 +224,7 @@ async def test_list_user_groups_includes_other_product_support_group(
     async with AsyncExitStack() as stack:
         other_product_group = await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=groups,
                 values={
                     "name": "other-product-membership-group",
@@ -232,7 +238,7 @@ async def test_list_user_groups_includes_other_product_support_group(
 
         other_product_support_group = await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=groups,
                 values={
                     "name": "other-product-support-group",
@@ -246,7 +252,7 @@ async def test_list_user_groups_includes_other_product_support_group(
 
         await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=user_to_groups,
                 values={
                     "uid": logged_user["id"],
@@ -265,7 +271,7 @@ async def test_list_user_groups_includes_other_product_support_group(
         )
         await stack.enter_async_context(
             insert_and_get_row_lifespan(
-                asyncpg_engine,
+                sqlalchemy_async_engine,
                 table=products,
                 values=other_product_data,
                 pk_col=products.c.name,

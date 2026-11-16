@@ -2,6 +2,7 @@ import logging
 import re
 from copy import deepcopy
 from re import Match
+from typing import Any
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
@@ -89,6 +90,72 @@ def clone_project_document(
             for field in _FIELDS_TO_DELETE:
                 node_data.pop(field, None)
     return project_copy, nodes_map
+
+
+def remap_file_link_paths(
+    io_values: dict[str, Any] | None,
+    *,
+    source_project_uuid: str,
+    destination_project_uuid: str,
+    nodes_map: NodesMap,
+) -> dict[str, Any] | None:
+    """Rewrite SimCoreFileLink paths inside a node's port values to the copy's identifiers.
+
+    A SimCoreFileLink stores ``store`` and a ``path`` formatted as
+    ``{project_uuid}/{node_id}/{remainder}``. A path is rewritten only when both its
+    project and node belong to the copied source, which is exactly what the storage
+    data-copy relocates to ``{destination_project_uuid}/{nodes_map[node_id]}/{remainder}``.
+    Anything else (other projects, external or datcore links, non-file values) is
+    returned unchanged.
+    """
+    if not io_values:
+        return io_values
+
+    source_prefix = f"{source_project_uuid}/"
+
+    def _rewrite_path(path: str) -> str:
+        if not path.startswith(source_prefix):
+            return path
+        # a path without remainder (fewer than the 3 sections) is left unchanged
+        node_part, separator, remainder = path.removeprefix(source_prefix).partition("/")
+        new_node = nodes_map.get(node_part) if separator else None
+        if new_node is None:
+            return path
+        return f"{destination_project_uuid}/{new_node}/{remainder}"
+
+    def _remap_value(value: Any) -> Any:
+        if isinstance(value, list):
+            return [_remap_value(item) for item in value]
+        if isinstance(value, dict):
+            store = value.get("store")
+            path = value.get("path")
+            if isinstance(path, str) and store in (0, "0"):
+                return {**value, "path": _rewrite_path(path)}
+        return value
+
+    return {port_key: _remap_value(port_value) for port_key, port_value in io_values.items()}
+
+
+def remap_file_link_paths_in_node_io(
+    node_data: dict[str, Any],
+    *,
+    source_project_uuid: str,
+    destination_project_uuid: str,
+    nodes_map: NodesMap,
+) -> None:
+    """Rewrites the file links in a node row's ``inputs``/``outputs`` in place.
+
+    Used when copying a project's node rows, where both port columns must be kept
+    in sync with the storage data-copy relocation.
+    """
+    for io_field in ("inputs", "outputs"):
+        if node_data.get(io_field):
+            node_data[io_field] = remap_file_link_paths(
+                node_data[io_field],
+                source_project_uuid=source_project_uuid,
+                destination_project_uuid=destination_project_uuid,
+                nodes_map=nodes_map,
+            )
 
 
 @safe_return(if_fails_return=False, logger=_logger)

@@ -24,7 +24,7 @@ charset-normalizer==3.5.1
     # via requests
 docker==7.2.0
     # via -r requirements/requirements.in
-fastapi==0.141.1
+fastapi==0.162.0
     # via -r requirements/requirements.in
 frozenlist==1.8.0
     # via
@@ -39,13 +39,15 @@ multidict==6.9.1
     # via
     #   aiohttp
     #   yarl
+opentelemetry-api==1.45.2
+    # via fastapi
 propcache==0.5.2
     # via
     #   aiohttp
     #   yarl
-pydantic==2.13.5
+pydantic==2.14.3
     # via fastapi
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via pydantic
 requests==2.34.2
     # via docker
@@ -57,6 +59,7 @@ typing-extensions==4.16.0
     # via
     #   anyio
     #   fastapi
+    #   opentelemetry-api
     #   pydantic
     #   pydantic-core
     #   typing-inspection

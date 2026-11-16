@@ -34,6 +34,12 @@ from simcore_service_webserver.projects import _projects_service as projects_ser
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 
@@ -514,7 +520,7 @@ async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """a real PATCH must queue behind the parent project row instead of deadlocking with it"""
     project_uuid = user_project["uuid"]
@@ -527,7 +533,7 @@ async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row
         assert resp.status == expected, f"PATCH returned {resp.status}"
 
     # what a graph mutation does: lock the parent project row first, then write the node rows
-    async with asyncpg_engine.connect() as conn, conn.begin():
+    async with sqlalchemy_async_engine.connect() as conn, conn.begin():
         await projects_repository._lock_project_graph(conn, project_uuid=project_uuid)  # noqa: SLF001
         holder = await get_backend_pid(conn)
 
@@ -541,7 +547,7 @@ async def test_patch_project_node_does_not_deadlock_with_a_concurrent_parent_row
             # awaited patch_task below surfaces as the real error
             if patch_task.done():
                 return True
-            return await count_lock_waiters_behind(asyncpg_engine, holder) > 0
+            return await count_lock_waiters_behind(sqlalchemy_async_engine, holder) > 0
 
         await wait_until(_patch_is_done_or_behind_me, "the PATCH neither failed nor queued behind the parent lock")
 

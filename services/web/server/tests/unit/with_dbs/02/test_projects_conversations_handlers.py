@@ -30,6 +30,12 @@ from simcore_service_webserver.projects._groups_repository import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 

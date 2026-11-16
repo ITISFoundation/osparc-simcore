@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import importlib.util
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -10,6 +12,11 @@ from typing import Final
 
 import pytest
 from packaging.specifiers import SpecifierSet
+
+# Matches the allowedCommands array of the admin configuration, which is json5 and
+# therefore not parseable as a whole here.
+_RE_ALLOWED_COMMANDS: Final = re.compile(r"allowedCommands: \[([^\]]*)\]")
+
 
 # Stands in for `make -C <dir> reqs upgrade="<...>"` and answers like uv for a
 # virtualenv update that needs packaging>=26.3: the update only resolves once packaging
@@ -71,6 +78,25 @@ if ! grep -q "msgish==$new" services/zzz/requirements/_base.txt; then
   exit 1
 fi
 printf 'msgish==%s\\n' "$new" >"$dir/_base.txt"
+"""
+
+# Answers like uv for a directory that resolves only once its `packaging==25.2` may rise,
+# and no further than `packaging<=26.1`: the version another directory here pins, which is
+# the ceiling the resync is expected to pass.
+_FAKE_MAKE_CAPS_THE_BLAMED_PIN: Final[str] = """#!/bin/bash
+dir="$2"
+upgrade="${4#upgrade=}"
+echo "$upgrade" >>"$FAKE_MAKE_CALLS"
+if [[ " $upgrade " != *" packaging<=26.1 "* ]]; then
+  echo "Resolved 3 packages in 1ms"
+  echo "error: No solution found when resolving dependencies"
+  echo "  cause: Because virtualenv==21.14.10 depends on packaging>=25.3 and packaging==25.2,"
+  echo "         we can conclude that virtualenv==21.14.10 cannot be used."
+  echo "make: *** [requirements.mk:58: _tools.txt] Error 1"
+  exit 1
+fi
+printf 'click==8.1.0\\npackaging==26.1\\n' >"$dir/_base.txt"
+printf 'click==8.1.0\\npackaging==26.1\\nvirtualenv==21.14.10\\n' >"$dir/_tools.txt"
 """
 
 
@@ -196,12 +222,39 @@ def test_resync_lockfiles_lets_only_the_blocking_pin_move(
         sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=git_repo_behind_on_virtualenv, env=env
     )
 
-    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed
+    # no re-resolve from scratch: the second attempt adds exactly the pin uv blamed, and
+    # frees it outright -- nothing here pins packaging newer than the blocking 26.0, so a
+    # cap could not resolve anything new (the capped path is the test below)
     assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging"]
     lockfiles = git_repo_behind_on_virtualenv / "requirements"
     assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.3\nvirtualenv==21.14.10\n"
     assert "these packages had to move too: requirements (packaging)" in result.stderr
     assert not (git_repo_behind_on_virtualenv / "renovate-resync-report.md").exists()
+
+
+def test_resync_lockfiles_caps_a_freed_pin_at_the_highest_version_pinned_here(
+    resync_lockfiles_script: Path, tmp_path: Path
+):
+    # the ceiling comes from another directory's pin (26.1), not from uv's newest release
+    repo = tmp_path / "repo"
+    (repo / "requirements").mkdir(parents=True)
+    (repo / "requirements/_base.txt").write_text("click==8.1.0\npackaging==25.2\n")
+    (repo / "requirements/_tools.txt").write_text("click==8.1.0\npackaging==25.2\nvirtualenv==21.14.5\n")
+    (repo / "packages/other/requirements").mkdir(parents=True)
+    (repo / "packages/other/requirements/_base.txt").write_text("packaging==26.1\n")
+    _init_git_repo(repo)
+
+    env = _fake_make_env(tmp_path, _FAKE_MAKE_CAPS_THE_BLAMED_PIN)
+    pins_file = repo / "pins.txt"
+    pins_file.write_text("virtualenv==21.14.10\n")
+
+    result = _run(sys.executable, f"{resync_lockfiles_script}", f"{pins_file}", cwd=repo, env=env)
+
+    assert _make_calls(env) == ["virtualenv==21.14.10", "virtualenv==21.14.10 packaging<=26.1"]
+    lockfiles = repo / "requirements"
+    assert (lockfiles / "_tools.txt").read_text() == "click==8.1.0\npackaging==26.1\nvirtualenv==21.14.10\n"
+    # the warning names the cap, so a reviewer sees what bounded the move
+    assert "these packages had to move too: requirements (packaging<=26.1)" in result.stderr
 
 
 def test_resync_lockfiles_leaves_an_unresolvable_directory_as_renovate_produced_it(
@@ -301,10 +354,45 @@ def test_resync_lockfiles_blames_a_blocking_pin_with_extras(resync_lockfiles_scr
         pytest.param("# comment\nnot-a-pin\n", [], id="no valid pin"),
         pytest.param("uvicorn[standard]==1.2.0\n", ["uvicorn[standard]==1.2.0"], id="extras kept verbatim"),
         # a security branch can list one package at two versions: uv cannot satisfy two
-        # exact pins, so only the highest (sort -V style: 3.14.10 > 3.14.9) survives
+        # exact pins, so only the highest (PEP 440: 3.14.10 > 3.14.9) survives
         pytest.param("a==3.14.9\nA==3.14.10\n", ["A==3.14.10"], id="highest of same name"),
+        # PEP 440 ranks a pre-release below the release it leads, which a digit-by-digit
+        # comparison of the version strings gets the other way round
+        pytest.param("otel==0.66b1\notel==0.66\n", ["otel==0.66"], id="release over pre-release"),
         pytest.param("b==1.0\na==2.0\n", ["a==2.0", "b==1.0"], id="sorted by normalized name"),
     ],
 )
 def test_parse_pins(resync_module, text: str, expected: list[str]):
     assert resync_module.parse_pins(text) == expected
+
+
+def test_no_lockfile_resync_left_behind(osparc_simcore_root_dir: Path):
+    # `renovate/artifacts` fails both for a directory the resync could not regenerate and
+    # for a lockfile compiled while its parent layer still pins the old version, so this
+    # test gates the fast lane on the report the resync leaves behind (see docs/renovate.md)
+    report = osparc_simcore_root_dir / "renovate-resync-report.md"
+    assert not report.exists(), (
+        "the lockfile resync failed for at least one directory, which left its"
+        f" requirements pinned at the old version. Details in {report}"
+    )
+
+
+def test_the_post_upgrade_task_runs_the_script_bare_and_is_allowed(
+    osparc_simcore_root_dir: Path,
+):
+    # Renovate skips a post-upgrade command that does not match allowedCommands in the
+    # admin configuration, and that shows up as a failing renovate/artifacts check rather
+    # than as a configuration error, so the two files are checked against each other here
+    renovaterc = (osparc_simcore_root_dir / ".renovaterc.jsonc").read_text()
+    post_upgrade = renovaterc[renovaterc.index('"postUpgradeTasks"') :]
+    (command,) = re.findall(r'"([^"]*resync_lockfiles\.py)"', post_upgrade)
+    assert command == "./.github/renovate/resync_lockfiles.py", (
+        "name the script bare: its PEP 723 header picks the interpreter and installs"
+        " packaging, so the command must not wrap it in a `uv run` invocation"
+    )
+
+    admin = (osparc_simcore_root_dir / ".github/renovate/global-config.json5").read_text()
+    patterns = _RE_ALLOWED_COMMANDS.search(admin)
+    assert patterns is not None, "no allowedCommands array in the admin configuration"
+    allowed = json.loads(f"[{patterns.group(1)}]")
+    assert any(re.search(pattern, command) for pattern in allowed)

@@ -44,6 +44,10 @@ types live in [`pytest-simcore`](../../packages/pytest-simcore).
   collaborators can be replaced through their public API.
 - Extract repeated, meaningful setup into a named fixture or factory. Keep small
   setup inline when a fixture would hide it.
+- Name a fixture that returns a callable which creates or performs something
+  (a callback-style fixture) with a `create_` prefix, e.g.
+  `create_running_service_task`, so call sites read as actions. Do not name it
+  after the created object alone.
 - Put fixtures shared within a project in its nearest `conftest.py`, and ones
   useful across projects in `pytest-simcore`.
 - Fixtures must not leak mutable state, files, network resources, database

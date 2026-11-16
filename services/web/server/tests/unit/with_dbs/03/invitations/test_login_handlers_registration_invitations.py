@@ -25,6 +25,12 @@ from simcore_service_webserver.login._controller.rest.registration import (
 from simcore_service_webserver.login.settings import LoginSettingsForProduct
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_check_registration_invitation_when_not_required(
     client: TestClient,

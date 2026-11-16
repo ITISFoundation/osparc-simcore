@@ -16,6 +16,12 @@ from simcore_service_webserver.login.constants import (
 from simcore_service_webserver.login.settings import LoginOptions
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def new_email(user_email: str) -> str:

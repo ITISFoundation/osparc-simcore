@@ -63,6 +63,12 @@ from simcore_service_webserver.tasks._tasks_service import (
 )
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_VERSION = "v0"
 
 

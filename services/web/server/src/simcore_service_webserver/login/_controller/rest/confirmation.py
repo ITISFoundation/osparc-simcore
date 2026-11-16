@@ -16,7 +16,7 @@ from yarl import URL
 from ....locale import translate_message
 from ....products import products_web
 from ....products.models import Product
-from ....session.access_policies import session_access_required
+from ....session.access_policies_web import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route
@@ -51,6 +51,8 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
+from ._session_trusted_identity import clear_pending_2fa_email, get_trusted_login_email
 from .confirmation_schemas import (
     CodePathParam,
     PhoneConfirmationBody,
@@ -208,26 +210,27 @@ async def phone_confirmation(request: web.Request):
 
     request_body = await parse_request_body_as(PhoneConfirmationBody, request)
 
-    if await _twofa_service.verify_2fa_code(
-        request.app, user_email=request_body.email, code=request_body.code.get_secret_value()
-    ):
-        # consumes code
-        await _twofa_service.delete_2fa_code(request.app, request_body.email)
+    trusted = await get_trusted_login_email(request, unauthorized_reason=MSG_UNAUTHORIZED_PHONE_CONFIRMATION)
 
-        user = _auth_service.check_not_null_user(
-            await _auth_service.get_user_or_none(request.app, email=request_body.email)
-        )
+    # validates code, consuming a trial of the stored generation
+    trial = await _twofa_service.check_2fa_code(
+        request.app, user_email=trusted.email, code=request_body.code.get_secret_value()
+    )
+    if trial is _twofa_service.TrialOutcome.VALID:
+        user = _auth_service.check_not_null_user(await _auth_service.get_user_or_none(request.app, email=trusted.email))
 
         await _registration_service.register_user_phone(request.app, user_id=user["id"], user_phone=request_body.phone)
 
+        await clear_pending_2fa_email(request)
+
         return await _security_service.login_granted_response(request, user=user)
 
-    # fails because of invalid or no code
     raise web.HTTPUnauthorized(text="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
+@handle_rest_requests_exceptions
 async def complete_reset_password(request: web.Request):
     """Last of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
@@ -235,10 +238,15 @@ async def complete_reset_password(request: web.Request):
     - Code is provided via email by calling first initiate_reset_password
     """
     product: Product = products_web.get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(request.app, product_name=product.name)
     confirmation_service = get_confirmation_service(request.app)
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
+
+    _auth_service.check_password_length_or_raise(
+        new_password=request_body.password.get_secret_value(), settings=settings
+    )
 
     confirmation = await confirmation_service.validate_confirmation_code(code=path_params.code.get_secret_value())
 

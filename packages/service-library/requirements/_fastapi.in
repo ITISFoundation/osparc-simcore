@@ -5,6 +5,8 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
 
+--constraint _base.txt
+
 asgi-lifespan
 fastapi[standard]
 fastapi-lifespan-manager

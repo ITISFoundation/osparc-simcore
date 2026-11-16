@@ -84,10 +84,13 @@ jobs:
       storage: ${{ steps.filter.outputs.storage }}
       webserver: ${{ steps.filter.outputs.webserver }}
       anything: ${{ steps.filter.outputs.anything }}
-      anything-py: ${{ steps.filter.outputs.anything-py }}
       anything-js: ${{ steps.filter.outputs.anything-js }}
+      anything-lint-env: ${{ steps.filter.outputs.anything-lint-env }}
+      anything-py: ${{ steps.filter.outputs.anything-py }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
@@ -261,6 +264,7 @@ jobs:
               - 'scripts/mypy/*'
               - 'mypy.ini'
             static-webserver:
+              - '.github/workflows/ci-build-test.yml'
               - 'services/static-webserver/**'
               - 'services/docker-compose*'
             storage:
@@ -285,6 +289,11 @@ jobs:
               - 'mypy.ini'
             anything-js:
               - '**/*.js'
+            anything-lint-env:
+              - 'requirements/**'
+              - '**/requirements/**'
+              - 'ci/helpers/install_pylint.bash'
+              - '.pylintrc'
   deploy-vars:
     name: compute deploy variables
     needs: changes
@@ -328,7 +337,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.deploy-vars.outputs.build-matrix) }}
-    uses: ./.github/workflows/_reusable-build-images.yml
+    uses: $/.github/workflows/_reusable-build-images.yml
     secrets:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
@@ -357,8 +366,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/agent/requirements/ci.txt"
@@ -397,8 +408,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/api/requirements/ci.txt"
@@ -433,8 +446,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/api-server/requirements/ci.txt"
@@ -468,13 +483,15 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
@@ -511,8 +528,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/aws-library/requirements/ci.txt"
@@ -550,8 +569,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/catalog/requirements/ci.txt"
@@ -594,8 +615,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/celery-library/requirements/ci.txt"
@@ -632,8 +655,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
@@ -681,8 +706,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/common-library/requirements/ci.txt"
@@ -719,8 +746,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
@@ -757,8 +786,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
@@ -795,8 +826,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
@@ -839,8 +872,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director/requirements/ci.txt"
@@ -884,8 +919,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
@@ -928,8 +965,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
@@ -967,8 +1006,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
@@ -1005,8 +1046,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/invitations/requirements/ci.txt"
@@ -1043,8 +1086,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/models-library/requirements/ci.txt"
@@ -1081,8 +1126,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/notifications/requirements/ci.txt"
@@ -1119,8 +1166,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/payments/requirements/ci.txt"
@@ -1157,8 +1206,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
@@ -1195,8 +1246,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/pytest-simcore/requirements/ci.txt"
@@ -1219,7 +1272,7 @@ jobs:
 
   unit-test-python-linting:
     needs: changes
-    if: ${{ needs.changes.outputs.anything-py == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.anything-lint-env == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
     timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] python-linting"
     runs-on: ${{ matrix.os }}
@@ -1232,8 +1285,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/pylint/requirements/ci.txt"
@@ -1256,8 +1311,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
@@ -1304,8 +1361,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/service-integration/requirements/ci.txt"
@@ -1337,13 +1396,16 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        # ARM runners have 4 vCPUs (vs 2 on x64)
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/service-library/requirements/ci.txt"
@@ -1380,8 +1442,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/settings-library/requirements/ci.txt"
@@ -1418,8 +1482,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
@@ -1444,6 +1510,23 @@ jobs:
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  unit-test-static-webserver:
+    needs: changes
+    if: ${{ needs.changes.outputs.static-webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 10
+    name: "[unit] static-webserver"
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Test
+        working-directory: services/static-webserver/client/tests
+        run: node --test
+
   unit-test-storage-01:
     needs: changes
     if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1459,8 +1542,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/storage/requirements/ci.txt"
@@ -1498,8 +1583,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/storage/requirements/ci.txt"
@@ -1531,13 +1618,15 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
@@ -1558,7 +1647,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml,services/web/server/junit-isolated.xml
+          files: services/web/server/junit-01.xml,services/web/server/junit-isolated.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1571,13 +1660,15 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
@@ -1594,7 +1685,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit-02.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1607,13 +1698,15 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
@@ -1630,7 +1723,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit-03.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1643,13 +1736,15 @@ jobs:
     strategy:
       matrix:
         python: ["3.14"]
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
@@ -1666,7 +1761,7 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           report_type: test_results
-          files: services/web/server/junit.xml
+          files: services/web/server/junit-04.xml
           flags: unittests # optional
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1702,6 +1797,7 @@ jobs:
         unit-test-service-library,
         unit-test-settings-library,
         unit-test-simcore-sdk,
+        unit-test-static-webserver,
         unit-test-storage-01,
         unit-test-storage-02,
         unit-test-webserver-01,
@@ -1733,13 +1829,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "backend"
       - name: install
@@ -1784,13 +1882,15 @@ jobs:
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "backend"
       - name: install rclone
@@ -1833,13 +1933,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "backend"
       - name: install
@@ -1880,13 +1982,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "backend"
       - name: install rclone
@@ -1929,15 +2033,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "backend"
       - name: install
@@ -1978,13 +2084,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "backend"
       - name: install
@@ -2052,13 +2160,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "*"
       - name: setup
@@ -2098,8 +2208,10 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
@@ -2121,13 +2233,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
       - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
+        uses: $/.github/actions/download-load-docker-images
         with:
           artifact-name-pattern: "*"
       - name: install
@@ -2157,6 +2271,7 @@ jobs:
 
   system-tests:
     # NOTE: this is a github required status check!
+    # NOTE: the renovate-fast queue in .github/mergify.yml requires it by name
     if: ${{ always() }}
     needs:
       [
@@ -2200,6 +2315,8 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup docker buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: set owner variable

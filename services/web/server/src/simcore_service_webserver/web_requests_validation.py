@@ -84,4 +84,4 @@ async def parse_request_body_as(  # noqa: UP047
             assert issubclass(model_schema_cls, BaseModel)  # nosec
             return model_schema_cls.model_validate(body)
 
-        return TypeAdapter(model_schema_cls).validate_python(body)  # type: ignore[no-any-return]
+        return TypeAdapter(model_schema_cls).validate_python(body)

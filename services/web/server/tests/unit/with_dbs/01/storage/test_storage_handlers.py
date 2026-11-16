@@ -22,6 +22,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from simcore_postgres_database.models.users import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:

@@ -36,6 +36,12 @@ from tenacity import (
     wait_fixed,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 async def fake_api_key_factory(

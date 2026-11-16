@@ -26,6 +26,8 @@ from simcore_service_webserver.trash import trash_service
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 
