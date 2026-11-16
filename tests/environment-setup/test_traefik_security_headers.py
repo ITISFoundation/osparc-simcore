@@ -17,40 +17,48 @@ _ROUTERS_WITH_SECURITY_HEADERS: Final[list[str]] = [
 
 
 @pytest.fixture(scope="module")
-def traefik_labels(osparc_simcore_root_dir: Path) -> dict[str, str]:
+def traefik_labels_per_service(osparc_simcore_root_dir: Path) -> dict[str, dict[str, str]]:
     specs = yaml.safe_load((osparc_simcore_root_dir / "services" / "docker-compose.yml").read_text())
 
-    labels: dict[str, str] = {}
-    for service in specs["services"].values():
+    labels_per_service: dict[str, dict[str, str]] = {}
+    for name, service in specs["services"].items():
+        labels: dict[str, str] = {}
         for label in service.get("deploy", {}).get("labels", []):
             key, _, value = label.partition("=")
             if key.startswith("traefik."):
                 labels[key] = value
-    return labels
+        labels_per_service[name] = labels
+    return labels_per_service
 
 
-def test_security_headers_middleware_definition(traefik_labels: dict[str, str]):
-    prefix = f"traefik.http.middlewares.{_SECURITY_HEADERS_MIDDLEWARE}.headers"
-
-    assert traefik_labels[f"{prefix}.referrerpolicy"] == "strict-origin-when-cross-origin"
-    # an empty value makes traefik drop the header from the response
-    assert traefik_labels[f"{prefix}.customresponseheaders.Server"] == ""
+def _router_middlewares(labels: dict[str, str], router: str) -> list[str]:
+    value = labels.get(f"traefik.http.routers.{router}.middlewares", "")
+    return [m.strip() for m in value.split(",")]
 
 
 @pytest.mark.parametrize("router", _ROUTERS_WITH_SECURITY_HEADERS)
-def test_security_headers_middleware_is_attached_to_router(traefik_labels: dict[str, str], router: str):
-    middlewares = [m.strip() for m in traefik_labels[f"traefik.http.routers.{router}.middlewares"].split(",")]
-
-    assert f"{_SECURITY_HEADERS_MIDDLEWARE}@swarm" in middlewares
-
-
-def test_referenced_security_headers_middleware_is_defined(traefik_labels: dict[str, str]):
-    referenced = [
-        router_label
-        for router_label, value in traefik_labels.items()
-        if router_label.endswith(".middlewares") and f"{_SECURITY_HEADERS_MIDDLEWARE}@" in value
+def test_security_headers_middleware_is_attached_to_router(
+    traefik_labels_per_service: dict[str, dict[str, str]], router: str
+):
+    owners = [
+        labels for labels in traefik_labels_per_service.values() if f"traefik.http.routers.{router}.rule" in labels
     ]
-    defined = any(key.startswith(f"traefik.http.middlewares.{_SECURITY_HEADERS_MIDDLEWARE}.") for key in traefik_labels)
+    assert len(owners) == 1
 
-    assert referenced
-    assert defined
+    assert f"{_SECURITY_HEADERS_MIDDLEWARE}@swarm" in _router_middlewares(owners[0], router)
+
+
+@pytest.mark.parametrize("router", _ROUTERS_WITH_SECURITY_HEADERS)
+def test_security_headers_middleware_is_defined_in_the_service_using_it(
+    traefik_labels_per_service: dict[str, dict[str, str]], router: str
+):
+    # each service must be self-sufficient: the router is dropped by traefik
+    # if a referenced middleware is missing (e.g. other service not deployed)
+    (labels,) = [
+        labels for labels in traefik_labels_per_service.values() if f"traefik.http.routers.{router}.rule" in labels
+    ]
+    prefix = f"traefik.http.middlewares.{_SECURITY_HEADERS_MIDDLEWARE}.headers"
+
+    assert labels[f"{prefix}.referrerpolicy"] == "strict-origin-when-cross-origin"
+    # an empty value makes traefik drop the header from the response
+    assert labels[f"{prefix}.customresponseheaders.Server"] == ""

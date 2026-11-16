@@ -684,6 +684,9 @@ services:
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.http.middlewares.${SWARM_STACK_NAME}_gzip.compress=true
+        # response headers: no referrer leaks across origins, no server version disclosure
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_security_headers.headers.referrerpolicy=strict-origin-when-cross-origin
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_security_headers.headers.customresponseheaders.Server=
         - traefik.enable=true
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.server.port=8000
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.path=/
