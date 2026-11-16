@@ -19,7 +19,7 @@ def clone_project_data(
 
     # Workbench nodes shall be unique within the project context
     def _create_new_node_uuid(old_uuid: NodeIDStr) -> NodeIDStr:
-        return str(uuidlib.uuid5(project_copy_uuid, old_uuid))
+        return NodeIDStr(uuidlib.uuid5(project_copy_uuid, old_uuid))
 
     nodes_map = {}
     for node_uuid in project.get("workbench", {}):
@@ -33,10 +33,11 @@ def clone_project_data(
         elif isinstance(node, dict):
             _frozen_items = tuple(node.items())
             for key, value in _frozen_items:
-                mapped_key = nodes_map.get(key, key)
-                if mapped_key != key:
-                    node[mapped_key] = node.pop(key)
-                node[mapped_key] = _replace_uuids(value)
+                if key in nodes_map:
+                    new_key = nodes_map[key]
+                    node[new_key] = node.pop(key)
+                    key = new_key
+                node[key] = _replace_uuids(value)
         return node
 
     project_copy["workbench"] = _replace_uuids(project_copy.get("workbench", {}))
