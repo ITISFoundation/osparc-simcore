@@ -179,7 +179,8 @@ async def test_copy_folders_from_empty_project(
     # check there is nothing in the dst project
     async with sqlalchemy_async_engine.connect() as conn:
         num_entries = await conn.scalar(
-            sa.select(sa.func.count())
+            sa
+            .select(sa.func.count())
             .select_from(file_meta_data)
             .where(file_meta_data.c.project_id == dst_project["uuid"])
         )
@@ -431,7 +432,7 @@ def mock_datcore_download(mocker: MockerFixture, client: httpx2.AsyncClient) -> 
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
         with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
-            Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")  # noqa: ASYNC240
+            Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")
 
     mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.download_to_file_or_raise",
@@ -478,22 +479,20 @@ async def test_create_and_delete_folders_from_project(
 ):
     project_in_db, _ = project_with_seeded_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
-    await asyncio.gather(
-        *[
-            _create_and_delete_folders_from_project(
-                task_manager,
-                client,
-                user_id,
-                product_name,
-                project_in_db,
-                initialized_app,
-                create_project,
-                check_list_files=False,
-                stop_after=timedelta(seconds=300),
-            )
-            for _ in range(num_concurrent_calls)
-        ]
-    )
+    await asyncio.gather(*[
+        _create_and_delete_folders_from_project(
+            task_manager,
+            client,
+            user_id,
+            product_name,
+            project_in_db,
+            initialized_app,
+            create_project,
+            check_list_files=False,
+            stop_after=timedelta(seconds=300),
+        )
+        for _ in range(num_concurrent_calls)
+    ])
 
 
 async def _request_start_export_data(
@@ -645,7 +644,7 @@ async def test_start_export_data_access_error(
         )
 
     assert isinstance(exc.value, JobError)
-    assert exc.value.exc_type == "AccessRightError"  # pyright: ignore[reportAttributeAccessIssue]
+    assert exc.value.exc_type == "AccessRightError"
     assert f" {user_id} " in f"{exc.value}"
     assert f" {path_to_export} " in f"{exc.value}"
 
@@ -670,4 +669,4 @@ async def test_start_export_invalid_export_format(
             stop_after=timedelta(seconds=60),
         )
 
-    assert exc.value.exc_type == "NotRegistered"  # pyright: ignore[reportAttributeAccessIssue]
+    assert exc.value.exc_type == "NotRegistered"
