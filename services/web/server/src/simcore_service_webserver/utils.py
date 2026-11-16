@@ -24,13 +24,16 @@ DAY: int = 24 * HOUR  # sec
 
 
 def now() -> datetime:
-    utc_now = datetime.now(tz=UTC).replace(tzinfo=None)
+    utc_now = datetime.now(tz=UTC)
     # Truncate to millisecond precision to match format_datetime's timespec="milliseconds"
     return utc_now.replace(microsecond=utc_now.microsecond // 1000 * 1000)
 
 
 def format_datetime(snapshot: datetime) -> str:
-    # FIXME: ensure snapshot is ZULU time!
+    # renders the UTC instants of `timestamptz` columns in the Zulu format kept
+    # by the API; a naive value is taken as UTC already
+    if snapshot.tzinfo is not None:
+        snapshot = snapshot.astimezone(UTC).replace(tzinfo=None)
     return "{}Z".format(snapshot.isoformat(timespec="milliseconds"))
 
 
@@ -40,7 +43,8 @@ def now_str() -> str:
 
 
 def to_datetime(snapshot: str) -> datetime:
-    return datetime.strptime(snapshot, DATETIME_FORMAT)
+    # Zulu strings carry their offset already; bind it instead of dropping it
+    return datetime.strptime(snapshot, DATETIME_FORMAT).replace(tzinfo=UTC)
 
 
 # -----------------------------------------------

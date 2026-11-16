@@ -3,6 +3,7 @@
 import enum
 
 import sqlalchemy as sa
+from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression, func
 
@@ -16,7 +17,7 @@ class ProjectType(enum.Enum):
     STANDARD = "STANDARD"
 
 
-class ProjectTemplateType(str, enum.Enum):
+class ProjectTemplateType(enum.StrEnum):
     TEMPLATE = "TEMPLATE"
     TUTORIAL = "TUTORIAL"
     HYPERTOOL = "HYPERTOOL"
@@ -126,14 +127,14 @@ projects = sa.Table(
     # LIFECYCLE ----------------------------
     sa.Column(
         "creation_date",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
         doc="Timestamp on creation",
     ),
     sa.Column(
         "last_change_date",
-        sa.DateTime(),
+        sa.DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
@@ -220,7 +221,8 @@ BEGIN
 
     IF group_id IS NOT NULL THEN
         IF TG_OP = 'INSERT' THEN
-            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete") VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
+            INSERT INTO "project_to_groups" ("gid", "project_uuid", "read", "write", "delete")
+            VALUES (group_id, NEW.uuid, TRUE, TRUE, TRUE);
         END IF;
     END IF;
     RETURN NULL;
@@ -228,8 +230,8 @@ END; $$ LANGUAGE 'plpgsql';
     """
 )
 
-sa.event.listen(projects, "after_create", assign_project_access_rights_to_owner_group_procedure)
-sa.event.listen(
+event.listen(projects, "after_create", assign_project_access_rights_to_owner_group_procedure)
+event.listen(
     projects,
     "after_create",
     new_project_trigger,
