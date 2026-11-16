@@ -1,10 +1,12 @@
 """Projects table"""
 
+from datetime import UTC, datetime
 from enum import Enum, StrEnum
 
 import sqlalchemy as sa
 from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.engine.interfaces import Dialect
 from sqlalchemy.sql import expression, func
 
 from ._common import RefActions, column_trashed_by_user, column_trashed_datetime
@@ -21,6 +23,32 @@ class ProjectTemplateType(StrEnum):
     TEMPLATE = "TEMPLATE"
     TUTORIAL = "TUTORIAL"
     HYPERTOOL = "HYPERTOOL"
+
+
+class TimestamptzAsNaiveUTC(sa.TypeDecorator):
+    """A `timestamptz` column that reads back as naive UTC, as the column did
+    before it became `timestamptz`.
+
+    Every consumer of these columns (webserver API rendering, storage service,
+    celery payloads) treats them as naive UTC; handing out aware datetimes
+    would change the strings they serialize. A naive bind value is taken as
+    UTC, since asyncpg stores `timestamptz` parameters from their offset.
+
+    Drop this type once consumers handle aware datetimes.
+    """
+
+    impl = sa.DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if isinstance(value, datetime) and value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
+        if value is not None and value.tzinfo is not None:
+            return value.astimezone(UTC).replace(tzinfo=None)
+        return value
 
 
 projects = sa.Table(
@@ -127,14 +155,14 @@ projects = sa.Table(
     # LIFECYCLE ----------------------------
     sa.Column(
         "creation_date",
-        sa.DateTime(timezone=True),
+        TimestamptzAsNaiveUTC(),
         nullable=False,
         server_default=func.now(),
         doc="Timestamp on creation",
     ),
     sa.Column(
         "last_change_date",
-        sa.DateTime(timezone=True),
+        TimestamptzAsNaiveUTC(),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),

@@ -1,26 +1,8 @@
-import datetime
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Any, Final
+from typing import Any
 
 from models_library.projects_nodes_io import NodeIDStr
-
-_PROJECT_DATETIME_COLUMNS: Final = frozenset({"creation_date", "last_change_date"})
-
-
-def parse_project_dates(project: dict[str, Any]) -> dict[str, Any]:
-    """Returns `project` with the `projects` table date columns parsed to datetimes.
-
-    Service results render aware datetimes with a `Z` suffix and `jsonable_encoder`
-    renders them with `+00:00`; parsing both sides of a comparison to datetimes
-    compares the instants instead of their string renderings.
-    """
-    parsed = {**project}
-    for column in _PROJECT_DATETIME_COLUMNS & project.keys():
-        value = parsed[column]
-        if isinstance(value, str):
-            parsed[column] = datetime.datetime.fromisoformat(value)
-    return parsed
 
 
 def clone_project_data(

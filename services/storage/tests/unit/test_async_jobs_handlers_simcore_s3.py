@@ -53,7 +53,7 @@ from pytest_simcore.helpers.storage_utils import (
 from pytest_simcore.helpers.storage_utils_file_meta_data import (
     assert_file_meta_data_in_db,
 )
-from pytest_simcore.helpers.storage_utils_project import clone_project_data, parse_project_dates
+from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.celery.async_jobs.storage.paths import DELETE_PATHS_TASK_NAME, submit_delete_paths_task
@@ -175,7 +175,7 @@ async def test_copy_folders_from_empty_project(
         dst_project,
         nodes_map={},
     )
-    assert parse_project_dates(data) == parse_project_dates(jsonable_encoder(dst_project))
+    assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
     async with sqlalchemy_async_engine.connect() as conn:
         num_entries = await conn.scalar(
@@ -236,9 +236,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert parse_project_dates(data) == parse_project_dates(
-        jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
-    )
+    assert data == jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
         dst_node_id = nodes_map.get(TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}"))
@@ -317,9 +315,7 @@ async def test_copy_folders_from_valid_project(
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert parse_project_dates(data) == parse_project_dates(
-        jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
-    )
+    assert data == jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
 
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
@@ -372,9 +368,8 @@ async def _create_and_delete_folders_from_project(
     )
 
     # data should be equal to the destination project, and all store entries should point to simcore.s3
-    # NOTE: data is jsonized where destination project is not! Dates are parsed
-    # because the two sides render the same instants differently (`Z` vs `+00:00`)
-    assert parse_project_dates(jsonable_encoder(destination_project)) == parse_project_dates(data)
+    # NOTE: data is jsonized where destination project is not!
+    assert jsonable_encoder(destination_project) == data
 
     project_id = data["uuid"]
 
