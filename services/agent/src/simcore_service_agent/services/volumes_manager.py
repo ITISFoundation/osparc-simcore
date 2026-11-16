@@ -100,8 +100,6 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
                 requires_backup = False
                 break
 
-        # NOTE: to avoid race conditions only one volume can be removed
-        # also avoids issues with accessing the docker API in parallel
         async with self.removal_lock:
             await remove_volume(
                 self.app,
@@ -118,6 +116,7 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
                 if volume_inactive_since > self.remove_volumes_inactive_for:
                     volumes_to_remove.add(volume_name)
 
+            # NOTE: serial removal avoids volume races and parallel docker API access
             for volume in volumes_to_remove:
                 await self._remove_volume_safe(volume_name=volume, requires_backup=True)
 

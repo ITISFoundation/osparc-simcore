@@ -255,12 +255,15 @@ class RCloneMountManager:
     async def ensure_unmounted(self, local_mount_path: Path, index: NonNegativeInt) -> None:
         with log_context(_logger, logging.INFO, f"unmounting {local_mount_path=}"):
             mount_id = get_mount_id(local_mount_path, index)
-            tracked_mount = self._tracked_mounts.pop(mount_id)
-            self._reverse_path_search.pop(mount_id)
+            tracked_mount = self._tracked_mounts[mount_id]
 
             await tracked_mount.wait_for_all_transfers_to_complete()
 
             await tracked_mount.stop_mount()
+
+            # untrack only after the stop, so a failed wait leaves a retry path
+            self._tracked_mounts.pop(mount_id, None)
+            self._reverse_path_search.pop(mount_id, None)
 
     async def refresh_path(self, remote_path: StorageFileID, *, recursive: bool = False) -> None:
         # NOTE: always refreshes the containing directory, unless it's the top level directory if
@@ -332,10 +335,13 @@ class RCloneMountManager:
         if self._task_ensure_mounts_working is not None:
             await cancel_wait_task(self._task_ensure_mounts_working)
 
-        await asyncio.gather(
-            *[
-                self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
-                for tracked_mount in self._tracked_mounts.values()
-            ]
-        )
+        for tracked_mount in list(self._tracked_mounts.values()):
+            try:
+                await self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
+            except Exception:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    "failed to unmount '%s', mount container may require external cleanup",
+                    tracked_mount.local_mount_path,
+                    exc_info=True,
+                )
         self._tracked_mounts.clear()

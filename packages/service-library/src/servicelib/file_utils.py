@@ -20,7 +20,8 @@ CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8MiB")  # 8m
 
 
 class AsyncStream(Protocol):
-    async def read(self, size: int = -1) -> bytes: ...
+    # aiofiles declares read position-only; keyword-allowing here rejects its handles
+    async def read(self, size: int = -1, /) -> bytes: ...
 
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
@@ -39,7 +40,7 @@ async def _rm(path: Path, *, ignore_errors: bool):
 async def remove_directory(path: Path, *, only_children: bool = False, ignore_errors: bool = False) -> None:
     """Optional parameter allows to remove all children and keep directory"""
     if only_children:
-        await asyncio.gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")])
+        await asyncio.gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")])  # noqa: ASYNC240
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
@@ -61,7 +62,7 @@ async def create_sha256_checksum(async_stream: AsyncStream, *, chunk_size: ByteS
 
 async def _eval_hash_async(
     async_stream: AsyncStream,
-    hasher: "hashlib._Hash",
+    hasher: hashlib._Hash,
     chunk_size: ByteSize,
 ) -> str:
     while chunk := await async_stream.read(chunk_size):
