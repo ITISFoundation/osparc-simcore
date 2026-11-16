@@ -416,7 +416,7 @@ phonenumbers==9.0.42
     # via -r requirements/_base.in
 pillow==13.0.0
     # via captcha
-pint==0.25
+pint==0.26.2
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in

@@ -20,7 +20,7 @@ packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
-pint==0.25.2
+pint==0.26.2
     # via -r requirements/_test.in
 platformdirs==4.9.4
     # via pint
