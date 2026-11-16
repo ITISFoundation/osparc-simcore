@@ -27,6 +27,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Setup helmfile
         uses: helmfile/helmfile-action@1f44bcb43e5fb17ecb2685d8b6081ec5f6aa5fcf # v2.4.7
         with:
@@ -34,7 +37,9 @@ jobs:
           helm-version: v3.20.2 # keep in sync with scripts/makefiles/k8s.mk
           helmfile-auto-init: "false" # avoid https://github.com/helmfile/helmfile-action/issues/816
           helmfile-args: --version
+
       - name: helmfile-lint
         run: make -C k8s helmfile-lint
+
       - name: helmfile-template
         run: make -C k8s helmfile-template
