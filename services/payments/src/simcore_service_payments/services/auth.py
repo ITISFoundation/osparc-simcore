@@ -9,19 +9,19 @@ from typing import TypedDict
 import arrow
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
-from servicelib.utils_secrets import are_secrets_equal
+from servicelib.utils_secrets import validate_username_password
 
 from ..core.settings import ApplicationSettings
 from ..models.auth import SessionData
 
 
 def authenticate_user(username: str, password: str, settings: ApplicationSettings) -> bool:
-    username_matches = are_secrets_equal(username, expected=settings.PAYMENTS_USERNAME)
-    password_matches = are_secrets_equal(
+    return validate_username_password(
+        username,
         password,
-        expected=settings.PAYMENTS_PASSWORD.get_secret_value(),
+        expected_username=settings.PAYMENTS_USERNAME,
+        expected_password=settings.PAYMENTS_PASSWORD.get_secret_value(),
     )
-    return username_matches and password_matches
 
 
 #

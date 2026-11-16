@@ -48,6 +48,17 @@ def are_secrets_equal(got: str, expected: str) -> bool:
     return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))
 
 
+def validate_username_password(username: str, password: str, expected_username: str, expected_password: str) -> bool:
+    """Validate username and password with constant-time comparison.
+
+    Compares username and password separately to prevent boundary collision attacks
+    where different username/password combinations could produce identical concatenated results.
+    """
+    username_matches = are_secrets_equal(username, expected=expected_username)
+    password_matches = are_secrets_equal(password, expected=expected_password)
+    return username_matches and password_matches
+
+
 @validate_call
 def secure_randint(start: StrictInt, end: StrictInt) -> int:
     """Generate a random integer between start (inclusive) and end (exclusive)."""
