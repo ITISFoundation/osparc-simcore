@@ -28,7 +28,13 @@ from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, wait_for_service_running
+from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
+    RobustWebSocket,
+    SocketIOProjectClosedWaiter,
+    wait_for_service_running,
+)
 from tenacity import (
     RetryError,
     before_sleep_log,
@@ -39,6 +45,7 @@ from tenacity import (
     wait_fixed,
 )
 
+_PROJECT_CLOSING_TIMEOUT: Final[int] = 2 * MINUTE
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_function_job_collections_for_functionid")
@@ -433,37 +440,6 @@ def _assert_sampling_completed(
     assert status == "complete", "Sampling is still running"
 
 
-_PROJECT_UNLOCK_TIMEOUT_SECONDS: Final[int] = 60
-_PROJECT_UNLOCK_POLL_SECONDS: Final[int] = 1
-# statuses of the lock that is held while the project is being closed, opened, copied, ...
-_PROJECT_LOCK_STATUSES: Final[frozenset[str]] = frozenset({"CLOSING", "OPENING", "CLONING", "EXPORTING", "MAINTAINING"})
-
-
-class _ProjectStillLockedError(Exception):
-    pass
-
-
-@retry(
-    retry=retry_if_exception_type(_ProjectStillLockedError),
-    wait=wait_fixed(_PROJECT_UNLOCK_POLL_SECONDS),
-    stop=stop_after_delay(_PROJECT_UNLOCK_TIMEOUT_SECONDS),
-    reraise=True,
-)
-def _wait_for_project_unlocked(
-    api_request_context: APIRequestContext,
-    product_url: AnyUrl,
-    project_uuid: str,
-) -> None:
-    # the "locked" flag can be false while the lock is held, so the status is checked instead
-    response = api_request_context.get(f"{product_url}v0/projects/{project_uuid}/state")
-    assert response.ok, f"Failed to get state of {project_uuid=}: {response.status} {response.text()}"
-    data = response.json()["data"]
-    share_state = data.get("shareState") or data["share_state"]
-    if share_state["status"] in _PROJECT_LOCK_STATUSES:
-        msg = f"Project {project_uuid} is still locked: status={share_state['status']}"
-        raise _ProjectStillLockedError(msg)
-
-
 @pytest.fixture
 def create_function_from_project(
     api_request_context: APIRequestContext,
@@ -482,7 +458,6 @@ def create_function_from_project(
             logging.INFO,
             f"Convert {project_uuid=} / {_STUDY_FUNCTION_NAME} to a function",
         ) as ctx:
-            _wait_for_project_unlocked(api_request_context, product_url, project_uuid)
             with page.expect_response(re.compile(rf"/projects/{project_uuid}")):
                 page.get_by_test_id(f"studyBrowserListItem_{project_uuid}").click()
             page.get_by_text("create function").first.wait_for(state="visible", timeout=10 * SECOND)
@@ -696,6 +671,11 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     with (
         log_context(logging.INFO, "Go back to dashboard"),
         page.expect_response(re.compile(r"/projects\?.+")) as list_projects_response,
+        log_in_and_out.expect_event(
+            "framereceived",
+            SocketIOProjectClosedWaiter(project_uuid=jsonifier_prj_uuid),
+            timeout=_PROJECT_CLOSING_TIMEOUT,
+        ),
     ):
         page.get_by_test_id("dashboardBtn").click()
         page.get_by_test_id("confirmDashboardBtn").click()
