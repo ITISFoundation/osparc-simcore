@@ -6,6 +6,10 @@ DEFAULT_SESSION_COOKIE_NAME: Final[str] = "osparc-sc2"
 _32_BYTES_LENGTH: Final[int] = 32
 
 
+class InvalidSessionSecretKeyError(RuntimeError):
+    pass
+
+
 class MixinSessionSettings:
     @classmethod
     def do_check_valid_fernet_key(cls, v):
@@ -18,12 +22,12 @@ class MixinSessionSettings:
             key_b64decode = base64.urlsafe_b64decode(value)
         except binascii.Error as exc:
             msg = f"Invalid session key: {exc}"
-            raise ValueError(msg) from exc
+            raise InvalidSessionSecretKeyError(msg) from exc
         if len(key_b64decode) != _32_BYTES_LENGTH:
             msg = (
                 "Invalid session secret: must be 32 url-safe base64-encoded bytes, "
                 f"got {len(key_b64decode)=}. "
                 'TIP: create new key with python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"'
             )
-            raise ValueError(msg)
+            raise InvalidSessionSecretKeyError(msg)
         return v
