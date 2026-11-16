@@ -41,8 +41,11 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_service_webserver.projects import _projects_repository as projects_repository
+from simcore_service_webserver.projects.exceptions import ProjectDeleteError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
+from simcore_service_webserver.studies_dispatcher import _dispatch_task as dispatch_task
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -486,16 +489,14 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     mocks_on_projects_api: None,
     redis_locks_client: AsyncIterator[aioredis.Redis],
     mocker: MockerFixture,
+    osparc_product_name: str,
 ):
     """The clone fails and so does the deletion of its copy (e.g. director-v2 is down).
 
-    The copy must then be stamped for the garbage-collector, which retries its deletion, and the
-    next dispatch must not take it for a finished clone.
+    The copy must then be stamped for the garbage-collector, which owns its deletion: a dispatch
+    meanwhile must neither take it for a finished clone nor delete it, since the collector deletes
+    by uuid without the guest-user lock and would remove the clone recreated under that uuid.
     """
-    import simcore_service_webserver.projects._projects_repository as projects_repository  # noqa: PLC0415
-    import simcore_service_webserver.studies_dispatcher._dispatch_task as dispatch_task  # noqa: PLC0415
-    from simcore_service_webserver.projects.exceptions import ProjectDeleteError  # noqa: PLC0415
-
     assert client.app
 
     study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
@@ -528,10 +529,89 @@ async def test_dispatch_recovers_from_a_clone_whose_cleanup_failed(
     assert copy.trashed is not None
     assert await _get_user_projects(client) == []
 
-    # director-v2 is back: the next dispatch removes the stamped copy and clones again
+    # director-v2 is back, but the stamped copy belongs to the garbage-collector: the dispatch
+    # asks to retry and leaves the copy, and the clone, alone
     delete_project.side_effect = original_delete_project
     create_pipeline.side_effect = None
     create_pipeline.reset_mock()
+
+    resp = await client.post(dispatch_url)
+    assert resp.status == status.HTTP_202_ACCEPTED
+    task_data = (await resp.json()).get("data") or (await resp.json())
+    await _poll_lr_task_until_done(client, task_data["status_href"])
+    result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
+    assert result_resp.status == status.HTTP_503_SERVICE_UNAVAILABLE
+    delete_project.assert_called_once()
+    create_pipeline.assert_not_called()
+    assert (await projects_repository.get_project(client.app, project_uuid=copy_id)).trashed is not None
+
+    # once the collector removed the copy, the next dispatch clones again under the same uuid
+    await original_delete_project(client.app, project_uuid=copy_id, product_name=osparc_product_name)
+
+    resp = await client.post(dispatch_url)
+    assert resp.status == status.HTTP_202_ACCEPTED
+    task_data = (await resp.json()).get("data") or (await resp.json())
+    await _poll_lr_task_until_done(client, task_data["status_href"])
+    result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
+    result = (await result_resp.json()).get("data") or (await result_resp.json())
+    assert result_resp.status == status.HTTP_200_OK, result
+    assert result["project_id"] == f"{copy_id}"
+    assert [project["uuid"] for project in await _get_user_projects(client)] == [result["project_id"]]
+    create_pipeline.assert_called_once()
+
+
+# Phase 0 — Test: a hidden copy nobody stamped is deleted by the dispatch, which clones again
+async def test_dispatch_deletes_a_hidden_copy_that_is_not_stamped_and_clones_again(
+    studies_dispatcher_enabled: bool,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
+    client: TestClient,
+    published_project: ProjectDict,
+    storage_subsystem_mock_override: None,
+    mock_dynamic_scheduler: None,
+    director_v2_service_mock: AioResponsesMock,
+    mocks_on_projects_api: None,
+    redis_locks_client: AsyncIterator[aioredis.Redis],
+    mocker: MockerFixture,
+):
+    """The clone fails, its deletion fails after hiding the copy and so does stamping it.
+
+    Nothing else owns that copy, so the next dispatch deletes it itself and clones again.
+    """
+    assert client.app
+
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
+    await client.get(f"{study_url}")
+    assert _is_user_authenticated(client.session)
+
+    create_pipeline = mocked_dynamic_services_interface["director_v2.api.create_or_update_pipeline"]
+    delete_pipeline = mocked_dynamic_services_interface["director_v2.api.delete_pipeline"]
+    create_pipeline.side_effect = OSError("director-v2 is down")
+    delete_pipeline.side_effect = OSError("director-v2 is down")
+    mocker.patch.object(
+        dispatch_task,
+        "trash_project_for_immediate_deletion",
+        autospec=True,
+        side_effect=OSError("database is down"),
+    )
+    dispatch_url = _dispatch_url(client, published_project["uuid"])
+
+    resp = await client.post(dispatch_url)
+    assert resp.status == status.HTTP_202_ACCEPTED
+    task_data = (await resp.json()).get("data") or (await resp.json())
+    await _poll_lr_task_until_done(client, task_data["status_href"])
+    result_resp = await client.get(urllib.parse.urlparse(task_data["result_href"]).path)
+    assert result_resp.status != status.HTTP_200_OK
+
+    # hidden by the failed deletion and not stamped, so not shown and not waiting for the collector
+    assert await _get_user_projects(client) == []
+    copy_id = create_pipeline.call_args.args[2]
+    copy = await projects_repository.get_project(client.app, project_uuid=copy_id)
+    assert copy.hidden
+    assert copy.trashed is None
+
+    create_pipeline.side_effect = None
+    create_pipeline.reset_mock()
+    delete_pipeline.side_effect = None
 
     resp = await client.post(dispatch_url)
     assert resp.status == status.HTTP_202_ACCEPTED

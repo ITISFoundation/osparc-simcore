@@ -91,14 +91,23 @@ async def _is_copy_finished(app: web.Application, *, project_uuid: str, user_id:
     """Tells whether the copy exists and is a complete clone.
 
     A hidden copy is one whose deletion started (and did not complete) after its clone failed.
-    It is deleted here so that the clone can start over under the same uuid.
+    It is deleted here so that the clone can start over under the same uuid, unless it is also
+    stamped as trashed: the garbage-collector then owns its deletion. It deletes by uuid without
+    taking the guest-user lock, so recreating the copy meanwhile would let it delete the new one.
+
+    Raises:
+        web.HTTPServiceUnavailable: the copy is waiting for the garbage-collector to delete it
     """
     try:
-        await get_project_dict_and_type(app, project_uuid)
+        project, _ = await get_project_dict_and_type(app, project_uuid)
     except ProjectNotFoundError:
         return False
 
     if await is_project_hidden(app, ProjectID(project_uuid)):
+        if project.get("trashed") is not None:
+            raise web.HTTPServiceUnavailable(
+                reason="A previous clone of this study is being cleaned up, try again shortly"
+            )
         await _delete_copy_or_leave_it_to_gc(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name)
         return False
     return True
@@ -171,6 +180,7 @@ async def dispatch_study(  # pylint: disable=too-many-arguments
 
     Raises:
         web.HTTPNotFound: if the study was deleted between controller check and task execution
+        web.HTTPServiceUnavailable: if a copy left by a failed clone is waiting for the garbage-collector
     """
     await progress.update(message="loading study...")
 
@@ -219,6 +229,7 @@ def register_dispatch_study_task(app: web.Application) -> None:
             web.HTTPNotFound,
             web.HTTPForbidden,
             web.HTTPBadRequest,
+            web.HTTPServiceUnavailable,
         ),
         app=app,
     )
