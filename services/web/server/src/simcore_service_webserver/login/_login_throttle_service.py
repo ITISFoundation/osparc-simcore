@@ -31,12 +31,19 @@ _LOGIN_ATTEMPT_LOCK_WAIT_SEC = 3  # below _REDIS_TIMEOUT_SEC
 type ClientIP = ipaddress.IPv4Address | ipaddress.IPv6Address
 
 
-def parse_client_ip(x_forwarded_for: str | None) -> ClientIP | None:
-    """The first X-Forwarded-For entry, or None if missing or malformed"""
+def parse_client_ip(x_forwarded_for: str | None, *, settings: LoginThrottleSettings) -> ClientIP | None:
+    """The X-Forwarded-For entry at LOGIN_THROTTLE_CLIENT_IP_DEPTH from the right, or None if absent or malformed
+
+    Entries to the left of it can be forged by the client
+    """
     if not x_forwarded_for:
         return None
+    entries = x_forwarded_for.split(",")
+    depth = settings.LOGIN_THROTTLE_CLIENT_IP_DEPTH
+    if len(entries) < depth:
+        return None
     try:
-        return ipaddress.ip_address(x_forwarded_for.split(",")[0].strip())
+        return ipaddress.ip_address(entries[-depth].strip())
     except ValueError:
         return None
 

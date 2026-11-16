@@ -50,8 +50,9 @@ async def login_guard(request: web.Request) -> web.Response:
     """
     body = await parse_request_body_as(LoginBody, request)
 
-    client_ip = login_service.parse_client_ip(request.headers.get(X_FORWARDED_FOR))
-    if not login_service.is_trusted_client(client_ip, settings=request.app[LOGIN_THROTTLE_SETTINGS_APPKEY]):
+    throttle_settings = request.app[LOGIN_THROTTLE_SETTINGS_APPKEY]
+    client_ip = login_service.parse_client_ip(request.headers.get(X_FORWARDED_FOR), settings=throttle_settings)
+    if not login_service.is_trusted_client(client_ip, settings=throttle_settings):
         await login_service.raise_if_login_throttled(request.app, email=body.email)
 
     return web.Response(status=status.HTTP_204_NO_CONTENT)

@@ -171,7 +171,9 @@ async def register(request: web.Request):
             email=registration.email,
             password=registration.password.get_secret_value(),
             product=product,
-            client_ip=_login_throttle_service.parse_client_ip(request.headers.get(X_FORWARDED_FOR)),
+            client_ip=_login_throttle_service.parse_client_ip(
+                request.headers.get(X_FORWARDED_FOR), settings=settings.LOGIN_THROTTLE
+            ),
         )
     else:
         user = await _auth_service.create_user(

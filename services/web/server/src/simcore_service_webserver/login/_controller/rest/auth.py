@@ -81,7 +81,9 @@ async def login(request: web.Request):
         email=login_data.email,
         password=login_data.password.get_secret_value(),
         product=product,
-        client_ip=_login_throttle_service.parse_client_ip(request.headers.get(X_FORWARDED_FOR)),
+        client_ip=_login_throttle_service.parse_client_ip(
+            request.headers.get(X_FORWARDED_FOR), settings=settings.LOGIN_THROTTLE
+        ),
     )
     await _auth_service.check_authorized_user_in_product(request.app, user_email=user["email"], product=product)
 

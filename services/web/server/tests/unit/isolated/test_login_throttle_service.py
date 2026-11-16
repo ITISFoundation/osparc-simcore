@@ -342,14 +342,18 @@ async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
     [
         (None, None),
         ("", None),
-        ("not-an-ip", None),
-        ("203.0.113.7", "203.0.113.7"),
-        (" 203.0.113.7 , 10.0.0.1", "203.0.113.7"),
-        ("2001:db8::1", "2001:db8::1"),
+        ("203.0.113.7", None),
+        ("not-an-ip, 172.18.0.5", None),
+        ("203.0.113.7, 172.18.0.5", "203.0.113.7"),
+        (" 203.0.113.7 , 172.18.0.5 ", "203.0.113.7"),
+        ("10.1.2.3, 203.0.113.7, 172.18.0.5", "203.0.113.7"),
+        ("2001:db8::1, 172.18.0.5", "2001:db8::1"),
     ],
 )
-def test_parse_client_ip_takes_the_first_x_forwarded_for_entry(x_forwarded_for: str | None, expected: str | None):
-    client_ip = parse_client_ip(x_forwarded_for)
+def test_parse_client_ip_takes_the_second_x_forwarded_for_entry_from_the_right(
+    x_forwarded_for: str | None, expected: str | None
+):
+    client_ip = parse_client_ip(x_forwarded_for, settings=LoginThrottleSettings())
 
     assert (None if client_ip is None else str(client_ip)) == expected
 
@@ -358,18 +362,24 @@ def test_parse_client_ip_takes_the_first_x_forwarded_for_entry(x_forwarded_for: 
     "x_forwarded_for,expected",
     [
         (None, False),
-        ("10.1.2.3", True),
-        ("203.0.113.7", False),
-        ("2001:db8::5", True),
-        ("2001:db9::5", False),
+        ("10.1.2.3, 172.18.0.5", True),
+        ("203.0.113.7, 172.18.0.5", False),
+        ("2001:db8::5, 172.18.0.5", True),
+        ("2001:db9::5, 172.18.0.5", False),
+        ("10.1.2.3", False),
+        ("10.1.2.3, 203.0.113.7, 172.18.0.5", False),
     ],
 )
 def test_is_trusted_client(throttle_settings: LoginThrottleSettings, x_forwarded_for: str | None, expected: bool):
-    assert is_trusted_client(parse_client_ip(x_forwarded_for), settings=throttle_settings) is expected
+    assert (
+        is_trusted_client(parse_client_ip(x_forwarded_for, settings=throttle_settings), settings=throttle_settings)
+        is expected
+    )
 
 
 def test_no_client_is_trusted_by_default():
-    assert not is_trusted_client(parse_client_ip("10.1.2.3"), settings=LoginThrottleSettings())
+    settings = LoginThrottleSettings()
+    assert not is_trusted_client(parse_client_ip("10.1.2.3, 172.18.0.5", settings=settings), settings=settings)
 
 
 def test_trusted_networks_are_read_from_the_environment(monkeypatch: pytest.MonkeyPatch):
@@ -377,8 +387,8 @@ def test_trusted_networks_are_read_from_the_environment(monkeypatch: pytest.Monk
 
     settings = LoginThrottleSettings.create_from_envs()
 
-    assert is_trusted_client(parse_client_ip("192.168.1.9"), settings=settings)
-    assert not is_trusted_client(parse_client_ip("192.168.2.9"), settings=settings)
+    assert is_trusted_client(parse_client_ip("192.168.1.9, 172.18.0.5", settings=settings), settings=settings)
+    assert not is_trusted_client(parse_client_ip("192.168.2.9, 172.18.0.5", settings=settings), settings=settings)
 
 
 async def test_login_guard_lets_trusted_clients_through_during_back_off(
@@ -390,12 +400,16 @@ async def test_login_guard_lets_trusted_clients_through_during_back_off(
         await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
     body = {"email": _EMAIL, "password": "x"}
 
-    untrusted = await guard_client.post("/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "203.0.113.7"})
-    trusted = await guard_client.post("/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "10.1.2.3"})
-    forged_tail = await guard_client.post(
-        "/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "203.0.113.7, 10.1.2.3"}
+    untrusted = await guard_client.post(
+        "/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "203.0.113.7, 172.18.0.5"}
+    )
+    trusted = await guard_client.post(
+        "/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "10.1.2.3, 172.18.0.5"}
+    )
+    forged_head = await guard_client.post(
+        "/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "10.1.2.3, 203.0.113.7, 172.18.0.5"}
     )
 
     assert untrusted.status == 429
     assert trusted.status == 204
-    assert forged_tail.status == 429
+    assert forged_head.status == 429

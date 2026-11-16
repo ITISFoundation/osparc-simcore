@@ -42,13 +42,19 @@ class LoginThrottleSettings(BaseCustomSettings):
         Field(description="Failed logins are forgotten after this time [sec] without new failures"),
     ] = 3600
 
+    LOGIN_THROTTLE_CLIENT_IP_DEPTH: Annotated[
+        PositiveInt,
+        Field(
+            description=(
+                "The client IP is the N-th X-Forwarded-For entry counted from the right (1 = last), "
+                "i.e. the number of trusted proxies in front of the webserver plus one"
+            )
+        ),
+    ] = 2
+
     LOGIN_THROTTLE_TRUSTED_NETWORKS: list[IPv4Network | IPv6Network] = Field(
         default_factory=list,
-        description=(
-            "Clients in these networks (JSON list of CIDRs) are never throttled. "
-            "The client is the first X-Forwarded-For entry, so Traefik must only accept that header "
-            "from trusted proxies"
-        ),
+        description="Clients in these networks (JSON list of CIDRs) are never throttled",
     )
 
     @model_validator(mode="after")
