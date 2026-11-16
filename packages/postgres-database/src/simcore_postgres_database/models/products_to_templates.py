@@ -36,8 +36,8 @@ products_to_templates = sa.Table(
         doc="Custom jinja2 template",
     ),
     # TIME STAMPS ----
-    column_created_datetime(timezone=False),
-    column_modified_datetime(timezone=False),
+    column_created_datetime(),
+    column_modified_datetime(),
     sa.UniqueConstraint("product_name", "template_name"),
 )
 

@@ -64,6 +64,12 @@
     // through the fast lane (see the addLabels above and docs/renovate.md)
     "vulnerabilityFixStrategy": "highest"
   },
+  // releases still inside their minimumReleaseAge cool-down (the "14 days" rules per
+  // manager below) are filtered out as candidates. With the default "none", Renovate
+  // opens a PR for the freshest release anyway and leaves it as a draft behind a pending
+  // renovate/stability-days check for the rest of the cool-down, and those drafts then
+  // fill the concurrent slots
+  "internalChecksFilter": "strict",
   // regular PRs: at most 2 new ones per hour and at most 4 open at a time, so the
   // next ones wait until one of them is merged or closed
   "prHourlyLimit": 2,

@@ -17,6 +17,7 @@ from faker import Faker
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import AnyUrl
+from pytest_simcore.helpers.valkey_tools import flush_databases
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from servicelib.tracing import TracingConfig, _current_tracing_config
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -39,6 +40,7 @@ pytest_plugins = [
     "pytest_simcore.respx_mocks",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.xdist_docker_daemon",
 ]
 
 
@@ -98,8 +100,7 @@ async def _get_redis_client_sdk(
             await asyncio.wait_for(client.shutdown(), timeout=5.0)
 
     async def _cleanup_redis_data(clients_manager: RedisClientsManager) -> None:
-        for db in RedisDatabase:
-            await clients_manager.client(db).redis.flushall()
+        await flush_databases(*[clients_manager.client(db).redis for db in RedisDatabase])
 
     async with RedisClientsManager(
         {RedisManagerDBConfig(database=db) for db in RedisDatabase},

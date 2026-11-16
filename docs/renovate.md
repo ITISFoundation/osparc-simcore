@@ -269,9 +269,14 @@ stops following `master`. Instead:
    ```
 
    The push prints a link that opens the comparison with `master`. Open your
-   pull request there, and copy the description of Renovate's across: its update
-   type and its changelog and release-note links are what a reviewer reads
-   first. Then close Renovate's with a comment `replaced by #<number>`: the
+   pull request there and fill `.github/PULL_REQUEST_TEMPLATE.md` like any
+   hand-written pull request, with the takeover in the `## Goal` sentence and
+   `## Related issue/s` reading `replaces #<number> (Renovate's release notes
+   are there)`. Reference those notes instead of pasting them: a copied
+   description truncates at platform limits. The title keeps Renovate's, appends
+   `(taken over from #<number>)`, and carries the `⬆️` gitmoji. [PR
+   #10037](https://github.com/ITISFoundation/osparc-simcore/pull/10037) is an
+   example. Then close Renovate's with a comment `replaced by #<number>`: the
    reference is the traceable link, and it reads as a handover rather than a
    declined version. Bring the fix along with the update, because closing hands
    the update over: Renovate matches a pull

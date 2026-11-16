@@ -24,7 +24,7 @@ from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
 from .helpers.logging_tools import log_context
 from .helpers.typing_env import EnvVarsDict
-from .helpers.valkey_tools import get_valkey_databases_count
+from .helpers.valkey_tools import flush_databases, get_valkey_databases_count
 from .helpers.xdist import get_worker_id, is_xdist_worker
 
 log = logging.getLogger(__name__)
@@ -134,8 +134,7 @@ async def redis_client(
 
     yield client
 
-    # NOTE: flushdb (not flushall) - only clears the db actually used by this fixture/worker
-    await client.flushdb()
+    await flush_databases(client)
     await client.aclose(close_connection_pool=True)
 
 
@@ -152,8 +151,7 @@ async def redis_locks_client(
 
     yield client
 
-    # NOTE: flushdb (not flushall) - only clears the db actually used by this fixture/worker
-    await client.flushdb()
+    await flush_databases(client)
     await client.aclose(close_connection_pool=True)
 
 

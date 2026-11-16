@@ -69,14 +69,20 @@ class _RemoteProcess:
         self.pid = None
 
 
+def _get_app_to_start() -> Path:
+    """example_app.py next to this module"""
+    current_module_path = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+    app_to_start = current_module_path / "example_app.py"
+    assert app_to_start.exists()
+    return app_to_start
+
+
 @pytest.fixture
 async def get_remote_process(
     redis_client_sdk_deferred_tasks: RedisClientSDK,
 ) -> AsyncIterable[Callable[[], Awaitable[_RemoteProcess]]]:
     python_interpreter = sys.executable
-    current_module_path = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-    app_to_start = current_module_path / "example_app.py"
-    assert app_to_start.exists()
+    app_to_start = _get_app_to_start()
 
     started_processes: list[_RemoteProcess] = []
 
@@ -328,6 +334,7 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.mark.docker_exclusive(reason="pauses the shared 'rabbit'/'redis' containers of the whole stack")
 @pytest.mark.parametrize("max_workers", [10])
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize("service", ["rabbit", "redis"])
