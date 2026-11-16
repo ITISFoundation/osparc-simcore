@@ -21,7 +21,7 @@ tracing:
     enabled: true
     http:
       enabled: true
-      endpoint: {{ printf "%s:%s/v1/tracing" (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT") (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT") | quote }}
+      endpoint: {{ printf "%s:%s/v1/traces" (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT") (requiredEnv "TRACING_OPENTELEMETRY_COLLECTOR_PORT") | quote }}
 
 service:
   type: ClusterIP

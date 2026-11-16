@@ -2,6 +2,16 @@ image:
   repository: local/dynamic-scheduler
   tag: development
 
+replicaCount: 2
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    # count only pods of the same rollout revision, not the ones being replaced
+    matchLabelKeys:
+      - pod-template-hash
+
 containerSecurityContext:
   readOnlyRootFilesystem: false
 

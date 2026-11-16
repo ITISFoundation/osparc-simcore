@@ -1,5 +1,7 @@
 {{- $sharedFolder := env "SIDECAR_COMP_SERVICES_SHARED_FOLDER" | default "/home/scu/computational_shared_data" -}}
 
+kind: DaemonSet
+
 service:
   enabled: false
 

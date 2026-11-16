@@ -1,3 +1,4 @@
+{{- $healthcheck := dict "path" "/" "port" "web" -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -42,6 +43,8 @@ spec:
             - name: web
               containerPort: 8025
           readinessProbe:
-            httpGet:
-              path: /
-              port: web
+            httpGet: {{ $healthcheck | toJson }}
+          livenessProbe:
+            httpGet: {{ $healthcheck | toJson }}
+            periodSeconds: 10
+            failureThreshold: 6

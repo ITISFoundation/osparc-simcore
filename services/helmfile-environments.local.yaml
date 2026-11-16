@@ -5,6 +5,7 @@ agent:
 
 api_server:
   extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
     - api-server/helm-values.local.yaml.gotmpl
 
 api_worker:
@@ -44,6 +45,7 @@ datcore_adapter:
 
 director:
   extra_values_files:
+    - _shared/helm-values.devel.yaml.gotmpl
     - director/helm-values.local.yaml.gotmpl
 
 director_v2:

@@ -2,6 +2,16 @@ image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/webserver
   tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}
 
+replicaCount: 2
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    # count only pods of the same rollout revision, not the ones being replaced
+    matchLabelKeys:
+      - pod-template-hash
+
 # entrypoint.sh runs update-ca-certificates, which needs a writable /etc
 containerSecurityContext:
   readOnlyRootFilesystem: false
@@ -63,7 +73,7 @@ env:
   WEBSERVER_ANNOUNCEMENTS: {{ requiredEnv "WEBSERVER_ANNOUNCEMENTS" | quote }}
   WEBSERVER_CATALOG: {{ requiredEnv "WEBSERVER_CATALOG" | quote }}
   WEBSERVER_CHATBOT: {{ requiredEnv "WEBSERVER_CHATBOT" | quote }}
-  WEBSERVER_CONVERSATIONS: {{ env "WEBSERVER_CONVERSATIONS" | default "true" | quote }}
+  WEBSERVER_CONVERSATIONS: "true"
   WEBSERVER_CREDIT_COMPUTATION_ENABLED: {{ requiredEnv "WEBSERVER_CREDIT_COMPUTATION_ENABLED" | quote }}
   WEBSERVER_DB_LISTENER: {{ requiredEnv "WEBSERVER_DB_LISTENER" | quote }}
   WEBSERVER_DEV_FEATURES_ENABLED: {{ requiredEnv "WEBSERVER_DEV_FEATURES_ENABLED" | quote }}

@@ -1,10 +1,10 @@
+{{- $healthcheck := list "rabbitmq-diagnostics" "-q" "ping" -}}
 apiVersion: v1
 kind: Secret
 metadata:
   name: rabbit
 type: Opaque
 stringData:
-  RABBITMQ_DEFAULT_USER: {{ .Values.user | quote }}
   RABBITMQ_DEFAULT_PASS: {{ .Values.password | quote }}
 ---
 apiVersion: v1
@@ -43,16 +43,22 @@ spec:
       containers:
         - name: rabbit
           image: itisfoundation/rabbitmq:4.1.6-management
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: {{ .Values.user | quote }}
           envFrom:
             - secretRef:
                 name: rabbit
           readinessProbe:
             exec:
-              command:
-                - rabbitmq-diagnostics
-                - -q
-                - ping
+              command: {{ $healthcheck | toJson }}
             periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: {{ $healthcheck | toJson }}
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq

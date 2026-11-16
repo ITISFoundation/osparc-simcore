@@ -24,7 +24,10 @@ requested on its own:
   commented, each with what carried the new version, edited in place on later runs.
 
 `renovate/artifacts` is not part of the fail decision: it reports a lockfile the
-post-upgrade resync settles, and docs/renovate.md explains why it fails at all.
+post-upgrade resync settles, and docs/renovate.md explains why it fails at all. A check
+Renovate reports itself does not decide that a pull request needs a human either:
+`renovate/stability-days` is pending while the release is inside its minimumReleaseAge
+cool-down, which keeps a green draft a draft but must not hide checks that already fail.
 moved_pins parses the `# via` blocks of pip-compile.
 
 Required environment: REPO, BOT, FAIL_COOLDOWN_HOURS, plus GH_TOKEN of the Renovate App
@@ -46,7 +49,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from itertools import count
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Final
+from typing import TYPE_CHECKING, Annotated, Final, Literal
 
 if TYPE_CHECKING:
     # documentation metadata only, and `annotated-types` is not a dependency of this
@@ -78,6 +81,17 @@ ARTIFACT_CHECK: Final[
         ),
     ]
 ] = "renovate/artifacts"
+
+RENOVATE_CHECK: Final[
+    Annotated[
+        re.Pattern[str],
+        doc(
+            "A check Renovate reports itself, `renovate/stability-days` above all, which stays pending while the"
+            " release is inside its minimumReleaseAge cool-down. Renovate settles these on its own, so they never"
+            " decide that a pull request needs a human"
+        ),
+    ]
+] = re.compile(r"^renovate/")
 
 _HEADLINE_VERSION: Final[
     Annotated[
@@ -134,6 +148,32 @@ class Check:
 
     name: str
     bucket: str
+
+
+# only `failing` and `done` take a draft on to gate_draft
+type Verdict = Literal["no-checks", "waiting", "failing", "cooling-down", "done"]
+
+
+def external_checks(checks: Iterable[Check]) -> list[Check]:
+    """The checks not reported by Renovate, which are the ones saying whether a pull
+    request needs a human"""
+    return [check for check in checks if not RENOVATE_CHECK.match(check.name)]
+
+
+def decide(checks: Iterable[Check]) -> Verdict:
+    """What one poll concludes from a draft's checks: nothing reported yet, checks still
+    running, checks failing, kept a draft by the release-age cool-down, or done"""
+    reported = tuple(checks)
+    if not reported:
+        return "no-checks"
+    external = external_checks(reported)
+    if any(check.bucket == "pending" for check in external):
+        return "waiting"
+    if any(check.bucket == "fail" for check in external):
+        return "failing"
+    if any(check.bucket == "pending" for check in reported):
+        return "cooling-down"
+    return "done"
 
 
 @dataclass(slots=True)
@@ -534,7 +574,7 @@ def open_drafts(repo: str, bot: str) -> list[int]:
 
 def gate_draft(pr: PullRequest, fail_cooldown_hours: int, drift_list_limit: int) -> None:
     """What the poll does with one draft pull request whose checks are all done"""
-    if failing := [check.name for check in pr.checks if check.bucket == "fail"]:
+    if failing := [check.name for check in external_checks(pr.checks) if check.bucket == "fail"]:
         # Renovate pushes fixes itself; request a review only once it stops trying
         age_hours = pr.age_hours()
         if age_hours < fail_cooldown_hours:
@@ -578,11 +618,15 @@ def run(repo: str, bot: str, fail_cooldown_hours: int, drift_list_limit: int) ->
             print(f"PR #{pr.number}: draft with reviewers, left to them")
             continue
         pr.read()
-        if not pr.checks:
+        verdict = decide(pr.checks)
+        if verdict == "no-checks":
             print(f"PR #{pr.number}: no checks reported yet")
             continue
-        if any(check.bucket == "pending" for check in pr.checks):
+        if verdict == "waiting":
             print(f"PR #{pr.number}: checks still pending")
+            continue
+        if verdict == "cooling-down":
+            print(f"PR #{pr.number}: checks passed, waiting out the release-age cool-down")
             continue
         gate_draft(pr, fail_cooldown_hours, drift_list_limit)
 

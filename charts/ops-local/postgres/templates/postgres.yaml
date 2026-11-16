@@ -1,11 +1,10 @@
+{{- $healthcheck := list "sh" "-c" `pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"` -}}
 apiVersion: v1
 kind: Secret
 metadata:
   name: postgres
 type: Opaque
 stringData:
-  POSTGRES_DB: {{ .Values.db | quote }}
-  POSTGRES_USER: {{ .Values.user | quote }}
   POSTGRES_PASSWORD: {{ .Values.password | quote }}
 ---
 apiVersion: v1
@@ -49,16 +48,24 @@ spec:
             - shared_preload_libraries=pg_stat_statements
             - -c
             - statement_timeout=120000
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.db | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.user | quote }}
           envFrom:
             - secretRef:
                 name: postgres
           readinessProbe:
             exec:
-              command:
-                - sh
-                - -c
-                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+              command: {{ $healthcheck | toJson }}
             periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: {{ $healthcheck | toJson }}
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data

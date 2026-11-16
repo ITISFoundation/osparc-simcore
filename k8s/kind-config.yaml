@@ -6,6 +6,9 @@ nodes:
     extraMounts: # some simcore service require socket
     - hostPath: /var/run/docker.sock
       containerPath: /var/run/docker.sock
+    # relative to CWD where `kind cluster create` is being executed
+    # expects to be run only from `./k8s` directory, i.e.
+    # cd ./k8s && kind cluster create ...
     - hostPath: ../
       containerPath: /osparc-simcore
     # listenAddress (0.0.0.0) and protocol (TCP) use kind defaults

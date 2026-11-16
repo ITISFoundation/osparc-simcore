@@ -43,6 +43,13 @@ class LoginSettings(BaseCustomSettings):
         Field(description="Expiration time for code [sec]"),
     ] = 120
 
+    LOGIN_2FA_CODE_RESEND_COOLDOWN_SEC: Annotated[
+        PositiveInt,
+        Field(
+            description="Minimum seconds between 2FA code deliveries to the same account and channel",
+        ),
+    ] = 60
+
     LOGIN_2FA_REQUIRED: Annotated[
         bool,
         Field(
@@ -92,7 +99,7 @@ class LoginSettingsForProduct(LoginSettings):
         cls,
         app_login_settings: LoginSettings,
         product_login_settings: ProductLoginSettingsDict,
-    ) -> "LoginSettingsForProduct":
+    ) -> LoginSettingsForProduct:
         """
         For the LoginSettings, product-specific settings override app-specifics settings
         """

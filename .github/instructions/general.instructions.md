@@ -86,6 +86,11 @@ that file type or service over a general rule.
 ## Pull request descriptions
 
 - Follow the structure of [PULL_REQUEST_TEMPLATE.md](../PULL_REQUEST_TEMPLATE.md).
+- A pull request taking over a Renovate one fills the same template: Renovate's
+  release notes stay in its pull request, linked from `## Related issue/s` as
+  `replaces #<number> (Renovate's release notes are there)`, and the title keeps
+  Renovate's with `(taken over from #<number>)` appended. The handover steps are
+  in [docs/renovate.md](../../docs/renovate.md#fixing-a-failing-renovate-pull-request).
 - Always unslop before posting, whoever drafted the text. Run it through
   [`unslop`](../skills/unslop/SKILL.md) so the description carries only what
   changed and why.

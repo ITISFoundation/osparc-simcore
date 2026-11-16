@@ -1,3 +1,5 @@
+# Deployment or DaemonSet (one pod per node, replicaCount is ignored)
+kind: Deployment
 replicaCount: 1
 
 image:
@@ -77,3 +79,11 @@ networkPolicy:
   egress: []
 
 resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+# labelSelector defaults to the release's selector labels
+topologySpreadConstraints: []

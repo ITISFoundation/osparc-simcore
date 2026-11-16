@@ -1,3 +1,4 @@
+{{- $healthcheck := list "sh" "-c" `valkey-cli --no-auth-warning --pass "$REDIS_PASSWORD" ping` -}}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -46,11 +47,14 @@ spec:
                 name: redis
           readinessProbe:
             exec:
-              command:
-                - sh
-                - -c
-                - valkey-cli --no-auth-warning --pass "$REDIS_PASSWORD" ping
+              command: {{ $healthcheck | toJson }}
             periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: {{ $healthcheck | toJson }}
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
           volumeMounts:
             - name: data
               mountPath: /data

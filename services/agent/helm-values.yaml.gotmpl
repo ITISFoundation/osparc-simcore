@@ -1,3 +1,6 @@
+# manages the docker volumes of the node it runs on, so it runs on every node
+kind: DaemonSet
+
 image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/agent
   tag: {{ env "DOCKER_IMAGE_TAG" | default "master-github-latest" | quote }}

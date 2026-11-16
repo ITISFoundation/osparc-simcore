@@ -31,7 +31,7 @@ jobs:
         uses: helmfile/helmfile-action@1f44bcb43e5fb17ecb2685d8b6081ec5f6aa5fcf # v2.4.7
         with:
           helmfile-version: v1.1.6 # keep in sync with scripts/makefiles/k8s.mk
-          helm-version: v3.20.1 # keep in sync with scripts/makefiles/k8s.mk
+          helm-version: v3.20.2 # keep in sync with scripts/makefiles/k8s.mk
           helmfile-auto-init: "false" # avoid https://github.com/helmfile/helmfile-action/issues/816
           helmfile-args: --version
       - name: helmfile-lint

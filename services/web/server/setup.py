@@ -51,6 +51,7 @@ SETUP = {
         "": [
             "api/v0/openapi.json",
             "api/v0/schemas/*.json",
+            "login/lua/*.lua",
         ]
     },
     "entry_points": {

@@ -1,5 +1,7 @@
 {{- $port := 8888 -}}
-{{- $basicAuth := printf "%s:%s" (requiredEnv "DOCKER_API_PROXY_USER") (requiredEnv "DOCKER_API_PROXY_PASSWORD") | b64enc -}}
+{{- $healthcheck := printf "curl --fail-with-body --user \"$DOCKER_API_PROXY_USER:$DOCKER_API_PROXY_PASSWORD\" http://localhost:%d/version" $port -}}
+
+kind: DaemonSet
 
 image:
   repository: {{ env "DOCKER_REGISTRY" | default "itisfoundation" }}/docker-api-proxy
@@ -47,38 +49,28 @@ env:
 secretEnv:
   DOCKER_API_PROXY_PASSWORD: {{ requiredEnv "DOCKER_API_PROXY_PASSWORD" | quote }}
 
-# caddy puts basic auth on every route, so probe /version with credentials as the image's HEALTHCHECK does
+# caddy puts basic auth on every route, so the probe sends credentials like the image's HEALTHCHECK does.
+# exec, not httpGet: k8s expands $(VAR) only in env/command/args, so an httpGet header would bake the
+# base64 password into the Deployment spec, readable by anyone who can get this DaemonSet
 probes:
   startup:
-    exec: null
-    httpGet:
-      path: /version
-      port: http
-      httpHeaders:
-        - name: Authorization
-          value: Basic {{ $basicAuth }}
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", {{ $healthcheck | quote }}]
     periodSeconds: 5
     timeoutSeconds: 5
     failureThreshold: 24
   readiness:
-    exec: null
-    httpGet:
-      path: /version
-      port: http
-      httpHeaders:
-        - name: Authorization
-          value: Basic {{ $basicAuth }}
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", {{ $healthcheck | quote }}]
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   liveness:
-    exec: null
-    httpGet:
-      path: /version
-      port: http
-      httpHeaders:
-        - name: Authorization
-          value: Basic {{ $basicAuth }}
+    httpGet: null
+    exec:
+      command: ["/bin/sh", "-c", {{ $healthcheck | quote }}]
     periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 5

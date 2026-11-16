@@ -1,5 +1,5 @@
 ---
-applyTo: '**/*.yaml.gotmpl'
+applyTo: '**/*.yaml.gotmpl,**/*.yml.gotmpl'
 ---
 
 # Helmfile Go Templates instructions

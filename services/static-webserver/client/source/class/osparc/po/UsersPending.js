@@ -20,7 +20,7 @@ qx.Class.define("osparc.po.UsersPending", {
   extend: osparc.po.BaseView,
 
   statics: {
-    createInvitationForm: function(withEmail = false) {
+    createInvitationForm: function(withEmail = false, withExpiration = true) {
       const form = new qx.ui.form.Form();
 
       if (withEmail) {
@@ -39,20 +39,22 @@ qx.Class.define("osparc.po.UsersPending", {
       });
       form.add(extraCreditsInUsd, qx.locale.Manager.tr("Welcome Credits (USD)"), null, "credits");
 
-      const withExpiration = new qx.ui.form.CheckBox().set({
-        value: false
-      });
-      form.add(withExpiration, qx.locale.Manager.tr("With expiration"), null, "withExpiration");
+      if (withExpiration) {
+        const expiration = new qx.ui.form.CheckBox().set({
+          value: false
+        });
+        form.add(expiration, qx.locale.Manager.tr("With expiration"), null, "withExpiration");
 
-      const trialDays = new qx.ui.form.Spinner().set({
-        minimum: 1,
-        maximum: 1000,
-        value: 1
-      });
-      withExpiration.bind("value", trialDays, "visibility", {
-        converter: val => val ? "visible" : "excluded"
-      });
-      form.add(trialDays, qx.locale.Manager.tr("Trial Days"), null, "trialDays");
+        const trialDays = new qx.ui.form.Spinner().set({
+          minimum: 1,
+          maximum: 1000,
+          value: 1
+        });
+        expiration.bind("value", trialDays, "visibility", {
+          converter: val => val ? "visible" : "excluded"
+        });
+        form.add(trialDays, qx.locale.Manager.tr("Trial Days"), null, "trialDays");
+      }
 
       return form;
     },
@@ -398,14 +400,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __openApproveDialog: function(pendingUser) {
       const email = pendingUser.email;
-      if (pendingUser.registered) {
-        // Already has an account (e.g. requesting access to an additional product):
-        // skip the invitation altogether, they keep using their existing password.
-        this.__previewApproval(email, {});
-        return;
-      }
-
-      const form = this.self().createInvitationForm(false);
+      const form = this.self().createInvitationForm(false, !pendingUser.registered);
       const approveBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Preview Approve")).set({
         appearance: "form-button"
       });
@@ -420,14 +415,14 @@ qx.Class.define("osparc.po.UsersPending", {
       });
       win.open();
       approveBtn.addListener("execute", () => {
-        if (osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
+        if (pendingUser.registered || osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
           if (form.validate()) {
             const invitationData = {};
             const extraCreditsInUsd = form.getItems()["credits"].getValue();
             if (extraCreditsInUsd > 0) {
               invitationData["extraCreditsInUsd"] = extraCreditsInUsd;
             }
-            if (form.getItems()["withExpiration"].getValue()) {
+            if (!pendingUser.registered && form.getItems()["withExpiration"].getValue()) {
               invitationData["trialAccountDays"] = form.getItems()["trialDays"].getValue();
             }
             win.close();
@@ -450,15 +445,16 @@ qx.Class.define("osparc.po.UsersPending", {
           // nullable property rejects `undefined`, only `null` is accepted
           const invitationUrl = data["invitationUrl"] || null;
           const messageContent = data["messageContent"];
-          this.__openApprovalPreview(email, invitationUrl, messageContent);
+          this.__openApprovalPreview(email, invitationUrl, messageContent, invitationData.extraCreditsInUsd);
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __openApprovalPreview: function(email, invitationUrl, messageContent) {
+    __openApprovalPreview: function(email, invitationUrl, messageContent, extraCreditsInUsd) {
       const previewApproval = new osparc.po.PreviewApprovalRejection();
       previewApproval.set({
         invitationUrl,
+        extraCreditsInUsd: invitationUrl ? null : (extraCreditsInUsd || null),
         email,
         subject: messageContent["subject"],
         bodyHtml: messageContent["bodyHtml"],
