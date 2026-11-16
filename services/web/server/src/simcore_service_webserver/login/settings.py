@@ -1,4 +1,5 @@
 from datetime import timedelta
+from ipaddress import IPv4Network, IPv6Network
 from typing import Annotated, Final, Literal
 
 from aiohttp import web
@@ -40,6 +41,15 @@ class LoginThrottleSettings(BaseCustomSettings):
         PositiveInt,
         Field(description="Failed logins are forgotten after this time [sec] without new failures"),
     ] = 3600
+
+    LOGIN_THROTTLE_TRUSTED_NETWORKS: list[IPv4Network | IPv6Network] = Field(
+        default_factory=list,
+        description=(
+            "Clients in these networks (JSON list of CIDRs) are never throttled. "
+            "The client is the first X-Forwarded-For entry, so Traefik must only accept that header "
+            "from trusted proxies"
+        ),
+    )
 
     @model_validator(mode="after")
     def _max_delay_not_below_base(self):

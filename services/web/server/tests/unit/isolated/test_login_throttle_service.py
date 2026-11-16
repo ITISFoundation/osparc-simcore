@@ -5,6 +5,7 @@
 import asyncio
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable
+from ipaddress import ip_network
 from types import SimpleNamespace
 
 import pytest
@@ -19,6 +20,8 @@ from simcore_service_webserver.login._login_throttle_service import (
     clear_failed_logins,
     compute_delay_sec,
     get_login_retry_after_sec,
+    is_trusted_client,
+    parse_client_ip,
     raise_if_login_throttled,
     register_failed_login,
 )
@@ -32,6 +35,7 @@ from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
 
 _EMAIL = Faker().email()
+_TRUSTED_NETWORKS = [ip_network("10.0.0.0/8"), ip_network("2001:db8::/32")]
 
 
 @pytest.fixture
@@ -41,6 +45,7 @@ def throttle_settings() -> LoginThrottleSettings:
         LOGIN_THROTTLE_BASE_DELAY_SEC=2,
         LOGIN_THROTTLE_MAX_DELAY_SEC=60,
         LOGIN_THROTTLE_WINDOW_SEC=3600,
+        LOGIN_THROTTLE_TRUSTED_NETWORKS=_TRUSTED_NETWORKS,
     )
 
 
@@ -155,8 +160,10 @@ async def test_emails_are_not_stored_in_clear_text(
 async def guard_client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     fake_redis: FakeAsyncRedis,
+    throttle_settings: LoginThrottleSettings,
 ) -> TestClient:
     app = web.Application()
+    app[login_auth_controller.LOGIN_THROTTLE_SETTINGS_APPKEY] = throttle_settings
     app.add_routes(login_auth_controller.routes)
     return await aiohttp_client(app)
 
@@ -331,3 +338,67 @@ async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
         await _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # type: ignore[arg-type]  # noqa: S106
 
     assert not wrong_password_checks
+
+
+@pytest.mark.parametrize(
+    "x_forwarded_for,expected",
+    [
+        (None, None),
+        ("", None),
+        ("not-an-ip", None),
+        ("203.0.113.7", "203.0.113.7"),
+        (" 203.0.113.7 , 10.0.0.1", "203.0.113.7"),
+        ("2001:db8::1", "2001:db8::1"),
+    ],
+)
+def test_parse_client_ip_takes_the_first_x_forwarded_for_entry(x_forwarded_for: str | None, expected: str | None):
+    client_ip = parse_client_ip(x_forwarded_for)
+
+    assert (None if client_ip is None else str(client_ip)) == expected
+
+
+@pytest.mark.parametrize(
+    "x_forwarded_for,expected",
+    [
+        (None, False),
+        ("10.1.2.3", True),
+        ("203.0.113.7", False),
+        ("2001:db8::5", True),
+        ("2001:db9::5", False),
+    ],
+)
+def test_is_trusted_client(throttle_settings: LoginThrottleSettings, x_forwarded_for: str | None, expected: bool):
+    assert is_trusted_client(parse_client_ip(x_forwarded_for), settings=throttle_settings) is expected
+
+
+def test_no_client_is_trusted_by_default():
+    assert not is_trusted_client(parse_client_ip("10.1.2.3"), settings=LoginThrottleSettings())
+
+
+def test_trusted_networks_are_read_from_the_environment(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LOGIN_THROTTLE_TRUSTED_NETWORKS", '["10.0.0.0/8", "192.168.1.0/24"]')
+
+    settings = LoginThrottleSettings.create_from_envs()
+
+    assert is_trusted_client(parse_client_ip("192.168.1.9"), settings=settings)
+    assert not is_trusted_client(parse_client_ip("192.168.2.9"), settings=settings)
+
+
+async def test_login_guard_lets_trusted_clients_through_during_back_off(
+    guard_client: TestClient, throttle_settings: LoginThrottleSettings
+):
+    app = guard_client.app
+    assert app
+    for _ in range(throttle_settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS + 1):
+        await register_failed_login(app, email=_EMAIL, settings=throttle_settings)
+    body = {"email": _EMAIL, "password": "x"}
+
+    untrusted = await guard_client.post("/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "203.0.113.7"})
+    trusted = await guard_client.post("/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "10.1.2.3"})
+    forged_tail = await guard_client.post(
+        "/v0/auth:login-guard", json=body, headers={"X-Forwarded-For": "203.0.113.7, 10.1.2.3"}
+    )
+
+    assert untrusted.status == 429
+    assert trusted.status == 204
+    assert forged_tail.status == 429

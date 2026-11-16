@@ -4,6 +4,7 @@
 
 import contextlib
 import re
+from ipaddress import ip_address, ip_network
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -20,6 +21,7 @@ from simcore_postgres_database.models.products import (
 )
 from simcore_service_webserver.login import _auth_service, _login_throttle_service
 from simcore_service_webserver.login.errors import LoginThrottledError, WrongPasswordError
+from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.products.models import Product
 
 
@@ -139,3 +141,84 @@ async def test_authenticate_user_does_not_check_credentials_while_throttled(
     mock_get_user.assert_not_called()
     mock_check.assert_not_called()
     mock_throttle["register_failed_login"].assert_not_awaited()
+
+
+@pytest.fixture
+def mock_trusted_login_settings(mocker: MockerFixture) -> MagicMock:
+    return mocker.patch.object(
+        _auth_service,
+        "get_plugin_settings",
+        return_value=MagicMock(
+            LOGIN_THROTTLE=LoginThrottleSettings(LOGIN_THROTTLE_TRUSTED_NETWORKS=[ip_network("10.0.0.0/8")])
+        ),
+    )
+
+
+async def test_authenticate_user_does_not_throttle_trusted_clients(
+    mocker: MockerFixture,
+    faker: Faker,
+    product: Product,
+    mock_throttle: dict[str, AsyncMock],
+    mock_trusted_login_settings: MagicMock,
+):
+    mocker.patch.object(_auth_service, "get_user_or_none", return_value=None)
+    mocker.patch.object(_auth_service, "check_authorized_user_credentials", side_effect=WrongPasswordError(user_id=1))
+
+    with pytest.raises(WrongPasswordError):
+        await _auth_service.authenticate_user(
+            MagicMock(),
+            email=faker.email(),
+            password="wrong-password",  # noqa: S106
+            product=product,
+            client_ip=ip_address("10.1.2.3"),
+        )
+
+    mock_throttle["raise_if_login_throttled"].assert_not_awaited()
+    mock_throttle["register_failed_login"].assert_not_awaited()
+
+
+async def test_authenticate_user_trusted_client_success_clears_failures(
+    mocker: MockerFixture,
+    faker: Faker,
+    product: Product,
+    mock_throttle: dict[str, AsyncMock],
+    mock_trusted_login_settings: MagicMock,
+):
+    expected_user = {"id": 1, "email": faker.email()}
+    mocker.patch.object(_auth_service, "get_user_or_none", return_value=expected_user)
+    mocker.patch.object(_auth_service, "check_authorized_user_credentials", return_value=expected_user)
+
+    user = await _auth_service.authenticate_user(
+        MagicMock(),
+        email=expected_user["email"],
+        password="correct-password",  # noqa: S106
+        product=product,
+        client_ip=ip_address("10.1.2.3"),
+    )
+
+    assert user == expected_user
+    mock_throttle["raise_if_login_throttled"].assert_not_awaited()
+    mock_throttle["clear_failed_logins"].assert_awaited_once()
+
+
+async def test_authenticate_user_throttles_clients_outside_the_trusted_networks(
+    mocker: MockerFixture,
+    faker: Faker,
+    product: Product,
+    mock_throttle: dict[str, AsyncMock],
+    mock_trusted_login_settings: MagicMock,
+):
+    mocker.patch.object(_auth_service, "get_user_or_none", return_value=None)
+    mocker.patch.object(_auth_service, "check_authorized_user_credentials", side_effect=WrongPasswordError(user_id=1))
+
+    with pytest.raises(WrongPasswordError):
+        await _auth_service.authenticate_user(
+            MagicMock(),
+            email=faker.email(),
+            password="wrong-password",  # noqa: S106
+            product=product,
+            client_ip=ip_address("203.0.113.7"),
+        )
+
+    mock_throttle["raise_if_login_throttled"].assert_awaited_once()
+    mock_throttle["register_failed_login"].assert_awaited_once()

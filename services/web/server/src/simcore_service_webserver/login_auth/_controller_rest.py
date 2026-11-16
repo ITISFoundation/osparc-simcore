@@ -1,20 +1,25 @@
 import logging
+from typing import Final
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.common_headers import X_FORWARDED_FOR
 
 from .._meta import API_VTAG
 from ..login import login_service
 from ..login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
 from ..login._controller.rest.auth_schemas import LoginBody
+from ..login.settings import LoginThrottleSettings
 from .decorators import login_required
 
 _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
+
+LOGIN_THROTTLE_SETTINGS_APPKEY: Final = web.AppKey("LOGIN_THROTTLE_SETTINGS", LoginThrottleSettings)
 
 
 @routes.get(f"/{API_VTAG}/auth:check", name="check_auth")
@@ -45,6 +50,8 @@ async def login_guard(request: web.Request) -> web.Response:
     """
     body = await parse_request_body_as(LoginBody, request)
 
-    await login_service.raise_if_login_throttled(request.app, email=body.email)
+    client_ip = login_service.parse_client_ip(request.headers.get(X_FORWARDED_FOR))
+    if not login_service.is_trusted_client(client_ip, settings=request.app[LOGIN_THROTTLE_SETTINGS_APPKEY]):
+        await login_service.raise_if_login_throttled(request.app, email=body.email)
 
     return web.Response(status=status.HTTP_204_NO_CONTENT)

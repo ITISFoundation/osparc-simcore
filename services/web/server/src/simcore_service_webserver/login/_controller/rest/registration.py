@@ -8,6 +8,7 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from common_library.user_messages import user_message
 from models_library.notifications import Channel
 from servicelib.aiohttp import status
+from servicelib.common_headers import X_FORWARDED_FOR
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
@@ -30,6 +31,7 @@ from ....web_requests_validation import parse_request_body_as
 from ....web_utils import envelope_response
 from ... import (
     _auth_service,
+    _login_throttle_service,
     _security_service,
     _twofa_service,
 )
@@ -169,6 +171,7 @@ async def register(request: web.Request):
             email=registration.email,
             password=registration.password.get_secret_value(),
             product=product,
+            client_ip=_login_throttle_service.parse_client_ip(request.headers.get(X_FORWARDED_FOR)),
         )
     else:
         user = await _auth_service.create_user(

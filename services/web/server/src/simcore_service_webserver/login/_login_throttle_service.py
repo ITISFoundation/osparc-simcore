@@ -7,6 +7,7 @@ the back-off does not reveal which emails are registered.
 import asyncio
 import contextlib
 import hashlib
+import ipaddress
 import logging
 import math
 from collections.abc import AsyncIterator
@@ -26,6 +27,22 @@ _MAX_BACKOFF_EXPONENT = 32
 _REDIS_TIMEOUT_SEC = 5
 _LOGIN_ATTEMPT_LOCK_TTL_SEC = 30
 _LOGIN_ATTEMPT_LOCK_WAIT_SEC = 3  # below _REDIS_TIMEOUT_SEC
+
+type ClientIP = ipaddress.IPv4Address | ipaddress.IPv6Address
+
+
+def parse_client_ip(x_forwarded_for: str | None) -> ClientIP | None:
+    """The first X-Forwarded-For entry, or None if missing or malformed"""
+    if not x_forwarded_for:
+        return None
+    try:
+        return ipaddress.ip_address(x_forwarded_for.split(",")[0].strip())
+    except ValueError:
+        return None
+
+
+def is_trusted_client(client_ip: ClientIP | None, *, settings: LoginThrottleSettings) -> bool:
+    return client_ip is not None and any(client_ip in network for network in settings.LOGIN_THROTTLE_TRUSTED_NETWORKS)
 
 
 @contextlib.asynccontextmanager
