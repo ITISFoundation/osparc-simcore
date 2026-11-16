@@ -33,9 +33,10 @@ from ..projects.api import (
     clone_project_data,
     copy_allow_guests_to_push_states_and_output_ports,
     get_project_dict_and_type,
+    is_project_hidden,
 )
 from ..projects.exceptions import ProjectNotFoundError
-from ..projects.projects_trash_service import delete_project_as_admin
+from ..projects.projects_trash_service import delete_project_as_admin, trash_project_for_immediate_deletion
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users.users_service import get_user
 
@@ -65,6 +66,44 @@ def _lock_key(_app: web.Application, user_name: str, *_args, **_kwargs) -> str:
     return GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_name)
 
 
+async def _delete_copy_or_leave_it_to_gc(
+    app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str
+) -> None:
+    """Deletes a copy whose clone did not finish.
+
+    If the deletion fails (e.g. director-v2 or storage are down), the copy is stamped as trashed
+    so that the garbage-collector keeps retrying it, and the deletion error is raised.
+    """
+    try:
+        await delete_project_as_admin(app, project_uuid=ProjectID(project_uuid), product_name=product_name)
+    except Exception, asyncio.CancelledError:
+        with log_catch(_logger, reraise=False):
+            await trash_project_for_immediate_deletion(
+                app,
+                product_name=product_name,
+                user_id=user_id,
+                project_id=ProjectID(project_uuid),
+            )
+        raise
+
+
+async def _is_copy_finished(app: web.Application, *, project_uuid: str, user_id: UserID, product_name: str) -> bool:
+    """Tells whether the copy exists and is a complete clone.
+
+    A hidden copy is one whose deletion started (and did not complete) after its clone failed.
+    It is deleted here so that the clone can start over under the same uuid.
+    """
+    try:
+        await get_project_dict_and_type(app, project_uuid)
+    except ProjectNotFoundError:
+        return False
+
+    if await is_project_hidden(app, ProjectID(project_uuid)):
+        await _delete_copy_or_leave_it_to_gc(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name)
+        return False
+    return True
+
+
 @exclusive(_lock_redis_client, lock_key=_lock_key)
 async def _clone_study_with_gc_lock(
     app: web.Application,
@@ -79,42 +118,38 @@ async def _clone_study_with_gc_lock(
     product_api_base_url: str,
 ) -> None:
     """Performs the actual clone while holding the guest-user GC lock."""
-    try:
-        # Check if copy already exists (idempotent) — access already validated by the controller
-        await get_project_dict_and_type(app, project_uuid)
+    # Check if copy already exists (idempotent) — access already validated by the controller
+    if await _is_copy_finished(app, project_uuid=project_uuid, user_id=user_id, product_name=product_name):
         _logger.debug("Study copy %s already exists for user %s, skipping clone", project_uuid, user_id)
+        return
 
-    except ProjectNotFoundError:
-        # New project cloned from template
-        await progress.update(message="cloning study document...", percent=0.05)
-        try:
-            new_project = await clone_project_data(
-                app,
-                source_project=template_project,
-                forced_copy_project_id=ProjectID(project_uuid),
-                user_id=user_id,
-                product_name=product_name,
-                product_api_base_url=product_api_base_url,
-                task_progress=progress,
-                template_parameters=template_parameters,
-            )
+    # New project cloned from template
+    await progress.update(message="cloning study document...", percent=0.05)
+    try:
+        new_project = await clone_project_data(
+            app,
+            source_project=template_project,
+            forced_copy_project_id=ProjectID(project_uuid),
+            user_id=user_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            task_progress=progress,
+            template_parameters=template_parameters,
+        )
 
-            await copy_allow_guests_to_push_states_and_output_ports(
-                app,
-                from_project_uuid=template_project["uuid"],
-                to_project_uuid=new_project["uuid"],
+        await copy_allow_guests_to_push_states_and_output_ports(
+            app,
+            from_project_uuid=template_project["uuid"],
+            to_project_uuid=new_project["uuid"],
+        )
+    except Exception, asyncio.CancelledError:
+        # `clone_project_data` commits the copy before its later steps and its uuid is
+        # deterministic: a partial copy would be taken for a finished clone by the next dispatch
+        with log_catch(_logger, reraise=False):
+            await _delete_copy_or_leave_it_to_gc(
+                app, project_uuid=project_uuid, user_id=user_id, product_name=product_name
             )
-        except Exception, asyncio.CancelledError:
-            # `clone_project_data` commits the copy before its later steps, and its uuid is
-            # deterministic: the existence check above would take a partial copy for a
-            # finished clone, so removing it is what lets the next dispatch clone again
-            with log_catch(_logger, reraise=False):
-                await delete_project_as_admin(
-                    app,
-                    project_uuid=ProjectID(project_uuid),
-                    product_name=product_name,
-                )
-            raise
+        raise
 
 
 async def dispatch_study(  # pylint: disable=too-many-arguments
