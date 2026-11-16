@@ -435,6 +435,8 @@ def _assert_sampling_completed(
 
 _PROJECT_UNLOCK_TIMEOUT_SECONDS: Final[int] = 60
 _PROJECT_UNLOCK_POLL_SECONDS: Final[int] = 1
+# statuses of the lock that is held while the project is being closed, opened, copied, ...
+_PROJECT_LOCK_STATUSES: Final[frozenset[str]] = frozenset({"CLOSING", "OPENING", "CLONING", "EXPORTING", "MAINTAINING"})
 
 
 class _ProjectStillLockedError(Exception):
@@ -452,12 +454,12 @@ def _wait_for_project_unlocked(
     product_url: AnyUrl,
     project_uuid: str,
 ) -> None:
-    # closing a project keeps it locked, which blocks copying it
+    # the "locked" flag can be false while the lock is held, so the status is checked instead
     response = api_request_context.get(f"{product_url}v0/projects/{project_uuid}/state")
     assert response.ok, f"Failed to get state of {project_uuid=}: {response.status} {response.text()}"
     data = response.json()["data"]
     share_state = data.get("shareState") or data["share_state"]
-    if share_state["locked"]:
+    if share_state["status"] in _PROJECT_LOCK_STATUSES:
         msg = f"Project {project_uuid} is still locked: status={share_state['status']}"
         raise _ProjectStillLockedError(msg)
 
