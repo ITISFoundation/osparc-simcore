@@ -114,7 +114,8 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
 
 
 def test_now_is_bound_to_utc():
-    # `now()` feeds inserts into `timestamptz` columns, so it must never be naive
+    """`now()` feeds inserts into `timestamptz` columns, so it must never be naive."""
+
     assert utils.now().tzinfo is datetime.UTC
 
 
