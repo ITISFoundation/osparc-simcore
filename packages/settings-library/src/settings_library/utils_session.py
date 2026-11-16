@@ -17,11 +17,12 @@ class MixinSessionSettings:
             # NOTE: len(v) cannot be 1 more than a multiple of 4
             key_b64decode = base64.urlsafe_b64decode(value)
         except binascii.Error as exc:
-            msg = f"Invalid session key {value=}: {exc}"
+            msg = f"Invalid session key: {exc}"
             raise ValueError(msg) from exc
         if len(key_b64decode) != _32_BYTES_LENGTH:
             msg = (
-                f"Invalid session secret {value=} must be 32 url-safe base64-encoded bytes, got {len(key_b64decode)=}."
+                "Invalid session secret: must be 32 url-safe base64-encoded bytes, "
+                f"got {len(key_b64decode)=}. "
                 'TIP: create new key with python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"'
             )
             raise ValueError(msg)
