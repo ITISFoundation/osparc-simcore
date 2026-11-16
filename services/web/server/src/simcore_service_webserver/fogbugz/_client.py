@@ -90,7 +90,6 @@ class FogbugzRestClient:
             response_data: dict[str, Any] = response.json()
             return response_data
         except Exception:
-            # cmd_payload carries no credential: the token is added in _request
             _logger.exception("Failed to make API request to Fogbugz with payload: %s", cmd_payload)
             raise
 
