@@ -20,7 +20,7 @@ from servicelib.utils_secrets import (
     generate_token_secret_key,
     mask_sensitive_data,
     secure_randint,
-    validate_username_password,
+    validate_credentials,
 )
 
 
@@ -150,8 +150,8 @@ def test_mask_sensitive_data_masks_explicit_secret_values():
         ("testuser", "TestPass", False),
     ],
 )
-def test_validate_username_password(username: str, password: str, expected: bool):
-    result = validate_username_password(
+def test_validate_credentials(username: str, password: str, expected: bool):
+    result = validate_credentials(
         username,
         password,
         expected_username="testuser",
@@ -160,13 +160,19 @@ def test_validate_username_password(username: str, password: str, expected: bool
     assert result is expected
 
 
-def test_validate_username_password_boundary_collision_prevention():
-    result = validate_username_password(
-        "test", "userpass", expected_username="testuser", expected_password="pass"  # noqa: S106
+def test_validate_credentials_boundary_collision_prevention():
+    result = validate_credentials(
+        "test",
+        "userpass",
+        expected_username="testuser",
+        expected_password="pass",  # noqa: S106
     )
     assert result is False
 
-    result = validate_username_password(
-        "testuser", "pass", expected_username="testuser", expected_password="pass"  # noqa: S106
+    result = validate_credentials(
+        "testuser",
+        "pass",
+        expected_username="testuser",
+        expected_password="pass",  # noqa: S106
     )
     assert result is True

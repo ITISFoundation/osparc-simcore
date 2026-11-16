@@ -9,14 +9,14 @@ from typing import TypedDict
 import arrow
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
-from servicelib.utils_secrets import validate_username_password
+from servicelib.utils_secrets import validate_credentials
 
 from ..core.settings import ApplicationSettings
 from ..models.auth import SessionData
 
 
 def authenticate_user(username: str, password: str, settings: ApplicationSettings) -> bool:
-    return validate_username_password(
+    return validate_credentials(
         username,
         password,
         expected_username=settings.PAYMENTS_USERNAME,

@@ -48,10 +48,10 @@ def are_secrets_equal(got: str, expected: str) -> bool:
     return secrets.compare_digest(got.encode("utf8"), expected.encode("utf8"))
 
 
-def validate_username_password(username: str, password: str, expected_username: str, expected_password: str) -> bool:
+def validate_credentials(username: str, password: str, expected_username: str, expected_password: str) -> bool:
     """Validate username and password with constant-time comparison.
 
-    Compares username and password separately to prevent boundary collision attacks
+    Compares username and password separately to prevent boundary collision
     where different username/password combinations could produce identical concatenated results.
     """
     username_matches = are_secrets_equal(username, expected=expected_username)
