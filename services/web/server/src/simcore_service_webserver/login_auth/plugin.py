@@ -3,11 +3,11 @@ import logging
 from aiohttp import web
 
 from ..application_setup import ensure_single_setup
-from ..login.settings import LoginThrottleSettings
 from ..products.plugin import setup_products_without_rpc
 from ..rest.plugin import setup_rest
 from ..security.plugin import setup_security
 from . import _controller_rest
+from .settings import LoginAuthSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -18,5 +18,5 @@ def setup_login_auth(app: web.Application):
     setup_security(app)
     setup_rest(app)
 
-    app[_controller_rest.LOGIN_THROTTLE_SETTINGS_APPKEY] = LoginThrottleSettings.create_from_envs()
+    app[_controller_rest.LOGIN_THROTTLE_SETTINGS_APPKEY] = LoginAuthSettings.create_from_envs().LOGIN_THROTTLE
     app.add_routes(_controller_rest.routes)

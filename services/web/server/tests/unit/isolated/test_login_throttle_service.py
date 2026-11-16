@@ -33,6 +33,7 @@ from simcore_service_webserver.login.errors import (
 )
 from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
+from simcore_service_webserver.login_auth.settings import LoginAuthSettings
 from simcore_service_webserver.products.models import Product
 
 _EMAIL = Faker().email()
@@ -389,6 +390,15 @@ def test_trusted_networks_are_read_from_the_environment(monkeypatch: pytest.Monk
 
     assert is_trusted_client(parse_client_ip("192.168.1.9, 172.18.0.5", settings=settings), settings=settings)
     assert not is_trusted_client(parse_client_ip("192.168.2.9, 172.18.0.5", settings=settings), settings=settings)
+
+
+def test_login_auth_settings_are_read_from_the_json_environment_variable(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LOGIN_THROTTLE", '{"LOGIN_THROTTLE_CLIENT_IP_DEPTH": 3}')
+
+    settings = LoginAuthSettings.create_from_envs().LOGIN_THROTTLE
+
+    assert settings.LOGIN_THROTTLE_CLIENT_IP_DEPTH == 3
+    assert settings.LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS == LoginThrottleSettings().LOGIN_THROTTLE_FREE_FAILED_ATTEMPTS
 
 
 async def test_login_guard_lets_trusted_clients_through_during_back_off(
