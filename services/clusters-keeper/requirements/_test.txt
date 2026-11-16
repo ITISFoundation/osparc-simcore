@@ -212,7 +212,7 @@ packaging==26.3
     # via
     #   -c requirements/_base.txt
     #   pytest
-parse==1.21.1
+parse==1.22.4
     # via -r requirements/_test.in
 pathable==0.4.4
     # via jsonschema-path
