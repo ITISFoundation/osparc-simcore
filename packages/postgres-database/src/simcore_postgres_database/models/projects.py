@@ -1,6 +1,6 @@
 """Projects table"""
 
-import enum
+from enum import Enum, StrEnum
 
 import sqlalchemy as sa
 from sqlalchemy import event
@@ -12,12 +12,12 @@ from .base import metadata
 from .users import users
 
 
-class ProjectType(enum.Enum):
+class ProjectType(Enum):
     TEMPLATE = "TEMPLATE"
     STANDARD = "STANDARD"
 
 
-class ProjectTemplateType(enum.StrEnum):
+class ProjectTemplateType(StrEnum):
     TEMPLATE = "TEMPLATE"
     TUTORIAL = "TUTORIAL"
     HYPERTOOL = "HYPERTOOL"
