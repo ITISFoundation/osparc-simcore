@@ -25,9 +25,11 @@ jobs:
     steps:
       - name: checkout source branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # setup-simcore-env installs Python 3.13 + uv (version from requirements/UV_VERSION)
       - name: Setup environment
-        uses: ./.github/actions/setup-simcore-env
+        uses: $/.github/actions/setup-simcore-env
         with:
           setup-docker: 'false'
           expose-github-runtime: 'false'
