@@ -41,10 +41,7 @@ def test_fernet_key_not_leaked_in_settings_validation():
         def _check_valid_fernet_key(cls, v: SecretStr) -> SecretStr:
             return cls.do_check_valid_fernet_key(v)
 
-    # not wrapped in pydantic's ValidationError, which would echo the raw
-    # input_value (the key) in its repr
     with pytest.raises(InvalidSessionSecretKeyError) as exc_info:
-        # str input, as when the value comes from the environment
         _SessionSettings(SESSION_SECRET_KEY=_INVALID_LENGTH_KEY)  # pyright: ignore[reportArgumentType]
 
     rendered_traceback = "".join(traceback.format_exception(exc_info.value))
