@@ -274,7 +274,7 @@ types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
-types-tqdm==4.70.0.20260906
+types-tqdm==4.70.0.20261102
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
