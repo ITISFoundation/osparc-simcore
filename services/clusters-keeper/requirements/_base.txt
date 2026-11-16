@@ -507,7 +507,7 @@ python-dotenv==1.2.4
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.32
+python-multipart==0.0.33
     # via fastapi
 pyyaml==6.0.3
     # via
@@ -596,7 +596,7 @@ toolz==1.2.0
     #   dask
     #   distributed
     #   partd
-tornado==6.6
+tornado==6.6.1
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
