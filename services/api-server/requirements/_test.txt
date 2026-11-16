@@ -246,7 +246,7 @@ mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-networkx==3.6.1
+networkx==3.7
     # via cfn-lint
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator
@@ -257,9 +257,9 @@ packaging==26.3
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest
-pact-python==3.2.1
+pact-python==3.4.1
     # via -r requirements/_test.in
-pact-python-ffi==0.4.28.2
+pact-python-ffi==0.5.12.1
     # via pact-python
 pathable==0.4.4
     # via jsonschema-path
@@ -313,7 +313,7 @@ pytest==9.1.1
     #   pytest-cov
     #   pytest-docker-tools
     #   pytest-mock
-pytest-asyncio==1.4.1
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-celery==1.3.0
     # via -r requirements/_test.in
