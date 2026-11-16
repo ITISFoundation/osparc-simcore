@@ -30,8 +30,11 @@ def now() -> datetime:
 
 
 def format_datetime(snapshot: datetime) -> str:
-    # renders the UTC instants of `timestamptz` columns in the Zulu format kept
-    # by the API; a naive value is taken as UTC already
+    """Renders the instant of `snapshot` in the API's Zulu format.
+
+    Aware values are converted to UTC; a naive value is taken as UTC already.
+    """
+
     if snapshot.tzinfo is not None:
         snapshot = snapshot.astimezone(UTC).replace(tzinfo=None)
     return "{}Z".format(snapshot.isoformat(timespec="milliseconds"))
@@ -43,7 +46,8 @@ def now_str() -> str:
 
 
 def to_datetime(snapshot: str) -> datetime:
-    # Zulu strings carry their offset already; bind it instead of dropping it
+    """Parses a Zulu snapshot and returns it bound to UTC."""
+
     return datetime.strptime(snapshot, DATETIME_FORMAT).replace(tzinfo=UTC)
 
 
