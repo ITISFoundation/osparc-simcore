@@ -6,7 +6,9 @@
     "config:recommended",
     "helpers:pinGitHubActionDigests"
   ],
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true
+  },
   // Renovate never merges: Mergify queues its pull requests (see .github/mergify.yml)
   "automerge": false,
   // PRs open as drafts, so GitHub does not auto-request the code owners until the
@@ -318,10 +320,10 @@
       "matchManagers": [
         "pip-compile"
       ],
-      "matchPackagePatterns": [
-        "^types[-_]aiobotocore"
-      ],
-      "allowedVersions": "<3.9.0"
+      "allowedVersions": "<3.9.0",
+      "matchPackageNames": [
+        "/^types[-_]aiobotocore/"
+      ]
     },
     {
       "description": "Renovate recompiles each lockfile on its own and never moves a pin in a parent layer (_base -> _test -> _tools). A lockfile that takes its parent layer as --constraint therefore fails to compile while that parent still pins the old version, and that failure is what the renovate/artifacts check reports (see docs/renovate.md). Before committing, re-run `make reqs` with the chosen versions in every requirements/ directory that is touched or pins those packages at another version. Allowed by allowedCommands in .github/renovate/global-config.json5",
