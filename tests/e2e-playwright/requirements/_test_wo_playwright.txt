@@ -17,8 +17,10 @@ certifi==2026.10.23
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
-dnspython==2.9.0
-    # via email-validator
+dnspython==2.9.2
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   email-validator
 email-validator==2.3.0
     # via pydantic
 faker==40.43.0

@@ -104,8 +104,10 @@ dask==2026.8.0
     #   distributed
 distributed==2026.8.0
     # via dask
-dnspython==2.9.0
-    # via email-validator
+dnspython==2.9.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   email-validator
 email-validator==2.3.0
     # via pydantic
 fast-depends==3.0.11

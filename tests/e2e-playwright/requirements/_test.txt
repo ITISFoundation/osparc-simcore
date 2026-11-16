@@ -20,7 +20,7 @@ certifi==2026.10.23
     #   -r requirements/_test_wo_playwright.txt
     #   httpcore
     #   httpx
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   email-validator
