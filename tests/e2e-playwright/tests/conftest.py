@@ -35,7 +35,6 @@ from pytest_simcore.helpers.playwright import (
     RobustWebSocket,
     RunningState,
     SocketIOEvent,
-    SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
 )
@@ -45,11 +44,11 @@ from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_afte
 
 __all__ = ["context", "page"]  # re-exported pytest fixtures
 
-_PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
+_PROJECT_CLOSING_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(minutes=10)
 _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
 _OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
-_LANDING_PAGE_MAX_WAIT_TIME: Final[int] = 5 * MINUTE
-_LANDING_PAGE_RETRY_INTERVAL: Final[int] = 15 * SECOND
+_LANDING_PAGE_MAX_WAIT_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=5)
+_LANDING_PAGE_RETRY_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=15)
 
 
 class _LandingPageNotReadyError(Exception):
@@ -59,8 +58,8 @@ class _LandingPageNotReadyError(Exception):
 @retry(
     # services restarting during a redeploy abort or reject the page load
     retry=retry_if_exception_type((PlaywrightError, _LandingPageNotReadyError)),
-    wait=wait_fixed(_LANDING_PAGE_RETRY_INTERVAL / SECOND),
-    stop=stop_after_delay(_LANDING_PAGE_MAX_WAIT_TIME / SECOND),
+    wait=wait_fixed(_LANDING_PAGE_RETRY_INTERVAL),
+    stop=stop_after_delay(_LANDING_PAGE_MAX_WAIT_TIME),
     before_sleep=before_sleep_log(logging.getLogger(__name__), logging.WARNING),
     reraise=True,
 )
@@ -680,11 +679,7 @@ def create_new_project_and_delete(
                 for project_uuid in created_project_uuids:
                     stack.enter_context(log_context(logging.INFO, f"Wait for closed project {project_uuid=}"))
                     stack.enter_context(
-                        log_in_and_out.expect_event(
-                            "framereceived",
-                            SocketIOProjectClosedWaiter(project_uuid=project_uuid),
-                            timeout=_PROJECT_CLOSING_TIMEOUT,
-                        )
+                        log_in_and_out.expect_project_closed(project_uuid, timeout=_PROJECT_CLOSING_TIMEOUT)
                     )
                 if created_project_uuids:
                     page.get_by_test_id("dashboardBtn").click()
