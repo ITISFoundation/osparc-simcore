@@ -159,6 +159,26 @@ def http_client(bg_task_app: FastAPI, async_client: AsyncClient) -> HttpClient:
     return HttpClient(app=bg_task_app, async_client=async_client, base_url=f"{url}")
 
 
+async def test_task_result_with_base_url_without_trailing_slash(
+    bg_task_app: FastAPI,
+    async_client: AsyncClient,
+) -> None:
+    task_id = await _create_and_get_taskid(async_client, endpoint="success")
+    http_client = HttpClient(
+        app=bg_task_app,
+        async_client=async_client,
+        base_url="http://background.testserver.io",
+    )
+
+    async with periodic_task_result(
+        http_client,
+        task_id,
+        task_timeout=10,
+        status_poll_interval=TASK_SLEEP_INTERVAL / 3,
+    ) as result:
+        assert result == 42
+
+
 async def _create_and_get_taskid(async_client: AsyncClient, *, endpoint: str) -> TaskId:
     result = await async_client.get(f"/api/{endpoint}")
     assert result.status_code == status.HTTP_200_OK, result.text

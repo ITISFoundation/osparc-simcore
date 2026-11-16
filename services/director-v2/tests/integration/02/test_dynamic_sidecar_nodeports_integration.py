@@ -44,7 +44,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -749,7 +749,7 @@ async def _assert_push_non_file_outputs(
     task_client = HttpClient(
         app=initialized_app,
         async_client=director_v2_client,
-        base_url=str(director_v2_client.base_url),
+        base_url=str(TypeAdapter(AnyHttpUrl).validate_python(director_v2_client.base_url)),
     )
     try:
         async with periodic_task_result(
@@ -763,18 +763,17 @@ async def _assert_push_non_file_outputs(
             return result
     except TaskExceptionError:
         configuration = initialized_app.state.long_running_client_configuration
-        task_status_routes = [
-            f"{getattr(route, 'name', None)}: {getattr(route, 'path', None)}"
+        registered_routes = [
+            f"{type(route).__name__}(name={getattr(route, 'name', None)!r}, path={getattr(route, 'path', None)!r})"
             for route in initialized_app.routes
-            if getattr(route, "name", None) == "get_task_status"
         ]
         logger.exception(
             "Long-running task status diagnostic: task_id=%s base_url=%s requested_path=/task/{task_id} "
-            "router_prefix=%r registered_status_routes=%s",
+            "router_prefix=%r registered_routes=%s",
             task_id,
             director_v2_client.base_url,
             configuration.router_prefix,
-            task_status_routes,
+            registered_routes,
         )
         raise
 
