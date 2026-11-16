@@ -500,7 +500,7 @@ pydantic-extra-types==2.11.1
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   fastapi
-pydantic-settings==2.14.2
+pydantic-settings==2.16.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -657,6 +657,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   pydantic-settings
     #   rich-toolkit
     #   sqlalchemy
     #   typing-inspection

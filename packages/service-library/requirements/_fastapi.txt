@@ -194,7 +194,7 @@ pydantic-extra-types==2.11.1
     # via
     #   -c requirements/_base.txt
     #   fastapi
-pydantic-settings==2.14.2
+pydantic-settings==2.16.2
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -264,6 +264,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   pydantic-settings
     #   rich-toolkit
     #   typing-inspection
 typing-inspection==0.4.5
