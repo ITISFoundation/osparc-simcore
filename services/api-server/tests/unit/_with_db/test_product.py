@@ -8,7 +8,10 @@ import datetime
 from collections.abc import AsyncGenerator, Callable
 from decimal import Decimal
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import respx
 from faker import Faker
 from fastapi import status
@@ -28,7 +31,7 @@ pytest_simcore_core_services_selection = ["postgres"]
 
 
 async def test_product_webserver(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
     faker: Faker,
@@ -72,14 +75,14 @@ async def test_product_webserver(
     for wallet_id, api_key in wallet_to_api_keys_map.items():
         response = await client.get(
             f"{API_VTAG}/wallets/{wallet_id}",
-            auth=httpx.BasicAuth(api_key.api_key, api_key.api_secret),
+            auth=httpx2.BasicAuth(api_key.api_key, api_key.api_secret),
         )
         assert response.status_code == status.HTTP_200_OK
     assert wallet_get_mock.call_count == len(wallet_to_api_keys_map)
 
 
 async def test_product_catalog(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
     create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
 ):
@@ -91,7 +94,7 @@ async def test_product_catalog(
     for api_auth in valid_api_auths:
         await client.get(
             f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
-            auth=httpx.BasicAuth(api_auth.api_key, api_auth.api_secret),
+            auth=httpx2.BasicAuth(api_auth.api_key, api_auth.api_secret),
         )
 
     assert mocked_catalog_rpc_api["get_service"].called

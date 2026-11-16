@@ -12,7 +12,7 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
-from httpx import Response
+from httpx2 import Response
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.basic_types import PortInt
 from models_library.service_settings_labels import SimcoreServiceLabels

@@ -11,7 +11,10 @@ from pathlib import Path
 from typing import Any, TypedDict
 from uuid import UUID
 
+# NOTE: respx only accepts plain httpx.Response values (it repacks them for httpx2
+# clients) — see https://github.com/ITISFoundation/osparc-simcore/issues/9927
 import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import status
@@ -77,8 +80,8 @@ def mocked_backend(
 
 @pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177")
 async def test_studies_read_workflow(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_backend: MockedBackendApiDict,
 ):
     study_id = StudyID("25531b1a-2565-11ee-ab43-02420a000031")
@@ -123,8 +126,8 @@ async def test_studies_read_workflow(
 
 
 async def test_list_study_ports(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     mocked_webserver_rest_api_base: MockRouter,
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
@@ -151,8 +154,8 @@ async def test_list_study_ports(
     [(_faker.uuid4(), _faker.uuid4()), (None, None)],
 )
 async def test_clone_study(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     study_id: StudyID,
     mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
@@ -209,8 +212,8 @@ async def test_clone_study(
     ],
 )
 async def test_clone_study_with_title(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     study_id: StudyID,
     mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
@@ -294,8 +297,8 @@ async def test_clone_study_with_title(
 
 
 async def test_clone_study_not_found(
-    client: httpx.AsyncClient,
-    auth: httpx.BasicAuth,
+    client: httpx2.AsyncClient,
+    auth: httpx2.BasicAuth,
     faker: Faker,
     mocked_webserver_rest_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],

@@ -25,6 +25,12 @@ from simcore_service_webserver.products.errors import (
 )
 from simcore_service_webserver.products.models import Product
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app(

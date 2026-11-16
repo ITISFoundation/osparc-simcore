@@ -22,6 +22,12 @@ from simcore_service_webserver.user_preferences._models import (
     ALL_FRONTEND_PREFERENCES,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:

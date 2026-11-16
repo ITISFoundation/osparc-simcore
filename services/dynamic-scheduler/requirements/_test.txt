@@ -8,26 +8,28 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.1
-    # via requests
-coverage==7.16.0
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -59,7 +61,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-hypercorn==0.17.3
+hypercorn==0.18.0
     # via -r requirements/_test.in
 hyperframe==6.1.0
     # via
@@ -89,7 +91,7 @@ packaging==26.3
     #   pytest
 pathspec==1.0.4
     # via mypy
-playwright==1.58.0
+playwright==1.64.1
     # via -r requirements/_test.in
 pluggy==1.6.0
     # via
@@ -113,29 +115,31 @@ pytest==9.1.1
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
 requests==2.34.2
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.22.0
     # via -r requirements/_test.in
 sniffio==1.3.1
@@ -151,7 +155,7 @@ sqlalchemy==2.0.51
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
-types-psycopg2==2.9.21.20260223
+types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

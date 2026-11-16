@@ -40,6 +40,12 @@ from simcore_service_webserver.user_preferences.errors import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
@@ -128,9 +134,9 @@ async def test__get_frontend_user_preferences_list_defaults(
 
 
 @pytest.fixture
-async def enable_all_frontend_preferences(asyncpg_engine: AsyncEngine, product_name: ProductName) -> None:
+async def enable_all_frontend_preferences(sqlalchemy_async_engine: AsyncEngine, product_name: ProductName) -> None:
     # NOTE: upserts the EVERYONE group (gid=1) row instead of relying on one being pre-seeded
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             pg_insert(groups_extra_properties)
             .values(group_id=1, product_name=product_name, enable_telemetry=True)
@@ -215,13 +221,13 @@ _HOUR: Final[int] = 60 * _MINUTE
 
 @pytest.fixture
 async def set_inactivity_constraints(
-    asyncpg_engine: AsyncEngine, product_name: ProductName
+    sqlalchemy_async_engine: AsyncEngine, product_name: ProductName
 ) -> Callable[[Any], Awaitable[None]]:
     # NOTE: upserts the EVERYONE group (gid=1) row instead of relying on one being pre-seeded,
     # so this fixture is unaffected by other tests deleting group extra properties beforehand
     async def _(constraints: Any) -> None:
         frontend_preferences_constraints = {_INACTIVITY_IDENTIFIER: constraints} if constraints else {}
-        async with asyncpg_engine.begin() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(
                 pg_insert(groups_extra_properties)
                 .values(
@@ -239,8 +245,8 @@ async def set_inactivity_constraints(
 
 
 @pytest.fixture
-async def drop_all_group_extra_properties(asyncpg_engine: AsyncEngine, product_name: ProductName) -> None:
-    async with asyncpg_engine.begin() as conn:
+async def drop_all_group_extra_properties(sqlalchemy_async_engine: AsyncEngine, product_name: ProductName) -> None:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
             groups_extra_properties.delete().where(groups_extra_properties.c.product_name == product_name)
         )

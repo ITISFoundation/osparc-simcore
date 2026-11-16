@@ -25,7 +25,11 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 
-pytest_simcore_core_services_selection = ["rabbit"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 async def _list_functions_and_validate(

@@ -9,6 +9,12 @@ from pytest_simcore.helpers.webserver_users import SortingUserTestData
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.users import _accounts_repository
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_list_merged_users_sorting_default(
     app: web.Application,
@@ -16,10 +22,10 @@ async def test_list_merged_users_sorting_default(
     sorting_user_data: SortingUserTestData,
 ):
     """When no sort_by is provided, results should be ordered by email ASC (the default)."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,
@@ -40,10 +46,10 @@ async def test_list_merged_users_sorting_single_field_asc(
     sorting_user_data: SortingUserTestData,
 ):
     """Sort by first_name ASC: Alice < Bob < Zoe."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,
@@ -62,10 +68,10 @@ async def test_list_merged_users_sorting_single_field_desc(
     sorting_user_data: SortingUserTestData,
 ):
     """Sort by email DESC: zeta > middle > alpha."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,
@@ -84,10 +90,10 @@ async def test_list_merged_users_sorting_multiple_fields(
     sorting_user_data: SortingUserTestData,
 ):
     """Sort by status ASC then email DESC — all same status, so email DESC is the tiebreaker."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,
@@ -110,17 +116,17 @@ async def test_list_merged_users_sorting_by_name_differs_from_email(
     sorting_user_data: SortingUserTestData,
 ):
     """Sorting by first_name produces a different order than sorting by email."""
-    asyncpg_engine = get_asyncpg_engine(app)
+    sqlalchemy_async_engine = get_asyncpg_engine(app)
 
     users_by_name, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,
         sort_by=[OrderClause(field="first_name", direction=OrderDirection.ASC)],
     )
     users_by_email, _ = await _accounts_repository.list_merged_pre_and_registered_users(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         product_name=product_name,
         filter_any_account_request_status=[AccountRequestStatus.PENDING],
         filter_include_deleted=False,

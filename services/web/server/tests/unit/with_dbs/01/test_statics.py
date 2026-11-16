@@ -27,6 +27,12 @@ from simcore_service_webserver.statics._events import (
 )
 from simcore_service_webserver.statics.plugin import setup_statics
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, vcs_release_tag: str) -> EnvVarsDict:

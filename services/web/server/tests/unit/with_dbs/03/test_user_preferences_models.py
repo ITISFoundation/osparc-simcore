@@ -24,6 +24,12 @@ from simcore_service_webserver.user_preferences._models import (
     overwrite_user_preferences_defaults,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def test_get_preference_name_and_get_preference_identifier():
     preference_name: PreferenceName = TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_name()

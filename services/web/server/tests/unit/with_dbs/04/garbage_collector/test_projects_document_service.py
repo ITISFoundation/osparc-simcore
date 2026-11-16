@@ -23,7 +23,9 @@ from simcore_service_webserver.projects._project_document_service import (
 from simcore_service_webserver.socketio._utils import get_socket_server
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "redis",
+    "rabbit",
 ]
 
 pytest_simcore_ops_services_selection = [

@@ -20,6 +20,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
     LicensedItemCheckoutGet.model_config["json_schema_extra"]["examples"][0]
 )

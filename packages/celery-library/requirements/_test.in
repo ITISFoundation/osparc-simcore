@@ -13,7 +13,7 @@ coverage
 faker
 fakeredis[lua]
 filelock
-httpx
+httpx2
 pint
 pytest
 pytest-asyncio

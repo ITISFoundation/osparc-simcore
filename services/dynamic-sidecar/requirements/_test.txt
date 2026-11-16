@@ -8,7 +8,7 @@ aiofiles==25.1.0
     # via
     #   -c requirements/_base.txt
     #   aioboto3
-aiohappyeyeballs==2.5.0
+aiohappyeyeballs==2.6.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -29,39 +29,44 @@ asgi-lifespan==2.1.0
     #   -r requirements/_test.in
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
-attrs==25.1.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
 boto3==1.40.61
-    # via aiobotocore
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
 botocore==1.40.61
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   aiobotocore
     #   boto3
     #   s3transfer
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-charset-normalizer==3.4.1
-    # via requests
-coverage==7.16.0
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+coverage==7.17.0
     # via pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.40.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
-frozenlist==1.5.0
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -107,7 +112,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-propcache==0.3.0
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -123,11 +128,11 @@ pytest==9.1.1
     #   pytest-cov
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
@@ -136,21 +141,24 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   aiobotocore
     #   botocore
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-redis==7.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fakeredis
 requests==2.34.2
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 s3transfer==0.14.0
-    # via boto3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   boto3
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -166,13 +174,13 @@ sqlalchemy==2.0.51
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-types-aiobotocore-s3==3.2.1
+types-aiobotocore-s3==3.8.0
     # via -r requirements/_test.in
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
-types-psutil==7.2.2.20260130
+types-psutil==7.2.2.20260906
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
@@ -186,7 +194,7 @@ urllib3==2.8.0
     #   botocore
     #   docker
     #   requests
-wrapt==1.17.2
+wrapt==1.17.3
     # via
     #   -c requirements/_base.txt
     #   aiobotocore

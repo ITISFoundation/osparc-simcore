@@ -59,7 +59,6 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
             "alias": field_info.alias,
             "title": field_info.title,
             "description": field_info.description,
-            "metadata": field_info.metadata,
             "json_schema_extra": field_info.json_schema_extra,
         }
 

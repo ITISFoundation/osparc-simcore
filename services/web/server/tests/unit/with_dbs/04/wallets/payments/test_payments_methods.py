@@ -44,6 +44,12 @@ from simcore_service_webserver.payments.settings import (
     get_plugin_settings as get_payments_plugin_settings,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_get_wallet_autorecharge_reports_tip_threshold(
     client: TestClient,

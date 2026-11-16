@@ -11,7 +11,7 @@ import respx
 from celery.contrib.testing.worker import TestWorkController  # type: ignore # pylint: disable=no-name-in-module
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx2 import AsyncClient, BasicAuth
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.responses import (
     ResponseObject,

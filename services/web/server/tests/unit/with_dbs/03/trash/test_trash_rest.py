@@ -34,6 +34,12 @@ from simcore_service_webserver.trash import trash_service
 from tenacity import AsyncRetrying, stop_after_attempt, wait_fixed
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role() -> UserRole:

@@ -22,6 +22,12 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "method,entrypoint,request_params",

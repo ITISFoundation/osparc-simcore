@@ -6,7 +6,7 @@
 
 import pytest
 from fastapi import FastAPI, status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from respx import MockRouter
@@ -41,7 +41,7 @@ async def test_oec_139646582688800_missing_ctx_values_for_msg_template(
     #     response.raise_for_status()
     #   File "/home/scu/.venv/lib/python3.10/site-packages/httpx/_models.py", line 761, in raise_for_status
     #     raise HTTPStatusError(message, request=request, response=self)
-    # httpx.HTTPStatusError: Client error '404 Not Found' for url '/v2/computations/c7ad07d3-513f-4368-bcf0-354143b6a048?user_id=94'
+    # httpx2.HTTPStatusError: Client error '404 Not Found' for url '/v2/computations/c7ad07d3-513f-4368-bcf0-354143b6a048?user_id=94'
 
     for method in ("GET", "POST", "DELETE"):
         mocked_directorv2_rest_api_base.request(

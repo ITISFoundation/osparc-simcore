@@ -71,19 +71,6 @@ async def get_licensed_items(
     return licensed_item_get_page
 
 
-@router.expose(reraise_if_error_type=(NotImplementedError,))
-async def get_available_licensed_items_for_wallet(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    wallet_id: WalletID,
-    offset: int,
-    limit: int,
-) -> LicensedItemRpcGetPage:
-    raise NotImplementedError
-
-
 @router.expose(
     reraise_if_error_type=(
         NotEnoughAvailableSeatsError,

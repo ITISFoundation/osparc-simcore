@@ -22,6 +22,12 @@ from simcore_service_webserver.projects import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _SEARCH_NAME_1 = "Quantum Solutions"
 _SEARCH_NAME_2 = "Orion solution"
 _SEARCH_NAME_3 = "Skyline solutions"

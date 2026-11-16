@@ -33,6 +33,12 @@ from simcore_service_webserver.director_v2.settings import (
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def fake_project(fake_project: ProjectDict, workbench_db_column: dict[str, Any]) -> ProjectDict:

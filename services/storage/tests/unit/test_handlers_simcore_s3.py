@@ -9,7 +9,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Literal
 
-import httpx
+import httpx2
 import pytest
 from faker import Faker
 from fastapi import FastAPI
@@ -34,7 +34,7 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, client: httpx.AsyncClient):
+async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, client: httpx2.AsyncClient):
     url = url_from_operation_id(client, initialized_app, "get_or_create_temporary_s3_access").with_query(user_id=1)
 
     response = await client.post(f"{url}")
@@ -58,7 +58,7 @@ async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, clien
 async def test_connect_to_external(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
     project_id: ProjectID,
@@ -119,7 +119,7 @@ async def search_files_query_params(query_params_choice: str, user_id: UserID) -
 @pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
 async def test_search_files_request(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     uploaded_file_ids: list[SimcoreS3FileID],
     query_params_choice: str,
@@ -154,7 +154,7 @@ async def test_search_files_request(
 @pytest.mark.parametrize("kind", ["owned", "read", None])
 async def test_search_files(
     initialized_app: FastAPI,
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     user_id: UserID,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,

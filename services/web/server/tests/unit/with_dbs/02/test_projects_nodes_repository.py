@@ -12,6 +12,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.projects import _projects_nodes_repository
 from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role() -> UserRole:

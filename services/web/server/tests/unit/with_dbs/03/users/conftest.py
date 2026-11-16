@@ -51,7 +51,7 @@ def app(web_server: TestServer) -> web.Application:
 
 
 @pytest.fixture
-def asyncpg_engine(
+def sqlalchemy_async_engine(
     app: web.Application,
 ) -> AsyncEngine:
     """Returns the asyncpg engine ready to be used against postgres"""
@@ -73,12 +73,12 @@ async def pre_registration_details_db_cleanup(
 
 @pytest.fixture
 async def product_owner_user(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterable[dict[str, Any]]:
     """A PO user in the database"""
 
     async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         email="po-user@email.com",
         name="po-user-fixture",
         role=UserRole.PRODUCT_OWNER,

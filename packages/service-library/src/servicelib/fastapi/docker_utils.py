@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Final
 
-import httpx
+import httpx2
 from models_library.docker import DockerGenericTag
 from pydantic import ByteSize, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
@@ -31,11 +31,11 @@ async def retrieve_image_layer_information(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ) -> DockerImageManifestsV2 | None:
     with log_catch(_logger, reraise=False):
-        async with httpx.AsyncClient(verify=get_shared_ssl_context()) as client:
+        async with httpx2.AsyncClient(verify=get_shared_ssl_context()) as client:
             image_complete_url = get_image_complete_url(image, registry_settings)
             auth = None
             if registry_settings.REGISTRY_URL in f"{image_complete_url}":
-                auth = httpx.BasicAuth(
+                auth = httpx2.BasicAuth(
                     username=registry_settings.REGISTRY_USER,
                     password=registry_settings.REGISTRY_PW.get_secret_value(),
                 )

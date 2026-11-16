@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock
 import aiodocker
 import pytest
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
+from dask_task_models_library.resource_constraints import DaskTaskResources
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
@@ -32,6 +33,7 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_autoscaling.models import DaskTask
+from simcore_service_autoscaling.modules.rabbitmq import get_rabbitmq_client
 from simcore_service_autoscaling.utils.rabbitmq import (
     post_tasks_log_message,
     post_tasks_progress_message,
@@ -68,41 +70,49 @@ pytest_simcore_ops_services_selection = []
 @pytest.fixture
 async def logs_rabbitmq_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    rabbit_settings: RabbitSettings,
+    wait_till_queue_has_consumer: Callable[[str, str], Awaitable[None]],
     mocker: MockerFixture,
 ) -> AsyncMock:
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
+    queue_name, _ = await client.subscribe(
         LoggerRabbitMessage.get_channel_name(),
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS],
     )
+    await wait_till_queue_has_consumer(queue_name, rabbit_settings.RABBIT_VHOST)
     return mocked_message_handler
 
 
 @pytest.fixture
 async def progress_rabbitmq_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    rabbit_settings: RabbitSettings,
+    wait_till_queue_has_consumer: Callable[[str, str], Awaitable[None]],
     mocker: MockerFixture,
 ) -> AsyncMock:
     mocked_message_handler = mocker.AsyncMock(return_value=True)
     client = create_rabbitmq_client("pytest_consumer")
-    await client.subscribe(
+    queue_name, _ = await client.subscribe(
         ProgressRabbitMessageNode.get_channel_name(),
         mocked_message_handler,
         topics=[BIND_TO_ALL_TOPICS],
     )
+    await wait_till_queue_has_consumer(queue_name, rabbit_settings.RABBIT_VHOST)
     return mocked_message_handler
 
 
 @pytest.fixture
-async def running_service_tasks(
+async def create_running_service_task(
     create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     async_docker_client: aiodocker.Docker,
-) -> Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]]:
-    async def _(labels: dict[DockerLabelKey, str]) -> list[Task]:
-        # Simulate a running service
+) -> Callable[[dict[DockerLabelKey, str]], Awaitable[Task]]:
+    async def _(labels: dict[DockerLabelKey, str]) -> Task:
+        """Returns the service's newest task (by swarm object index): concurrent xdist workers
+        draining the shared node make swarm reschedule and leave stale tasks around.
+        """
         service = await create_service(
             task_template,
             labels,
@@ -114,8 +124,7 @@ async def running_service_tasks(
             await async_docker_client.tasks.list(filters={"service": service.spec.name})
         )
         assert docker_tasks
-        assert len(docker_tasks) == 1
-        return docker_tasks
+        return max(docker_tasks, key=lambda task: (task.version.index or 0) if task.version else 0)
 
     return _
 
@@ -132,7 +141,7 @@ def dask_task(
     dask_key = generate_dask_job_id(
         service_key, service_version, user_id, project_id, node_id, run_id=faker.pyint(min_value=1)
     )
-    return DaskTask(task_id=dask_key, required_resources={})
+    return DaskTask(task_id=dask_key, required_resources=DaskTaskResources(CPU=1, RAM=1024**3, threads=1))
 
 
 @pytest.fixture
@@ -140,7 +149,7 @@ def dask_task_with_invalid_key(
     faker: Faker,
 ) -> DaskTask:
     dask_key = faker.pystr()
-    return DaskTask(task_id=dask_key, required_resources={})
+    return DaskTask(task_id=dask_key, required_resources=DaskTaskResources(CPU=1, RAM=1024**3, threads=1))
 
 
 async def test_post_task_empty_tasks(
@@ -183,15 +192,17 @@ async def test_post_task_log_message_docker(
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
+    create_running_service_task: Callable[[dict[DockerLabelKey, str]], Awaitable[Task]],
     osparc_docker_label_keys: SimcoreContainerLabels,
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
-    docker_tasks = await running_service_tasks(osparc_docker_label_keys.to_simcore_runtime_docker_labels())
-    assert len(docker_tasks) == 1
+    docker_task = await create_running_service_task(osparc_docker_label_keys.to_simcore_runtime_docker_labels())
     log_message = faker.pystr()
-    await post_tasks_log_message(initialized_app, tasks=docker_tasks, message=log_message, level=0)
+    # publishing while the app is still reconnecting to the broker loses the message, so publish once connected
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
+    await post_tasks_log_message(initialized_app, tasks=[docker_task], message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -227,8 +238,10 @@ async def test_post_task_log_message_dask(
     node_id: NodeID,
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
     log_message = faker.pystr()
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_log_message(initialized_app, tasks=[dask_task], message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -259,20 +272,21 @@ async def test_post_task_progress_message_docker(
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
+    create_running_service_task: Callable[[dict[DockerLabelKey, str]], Awaitable[Task]],
     osparc_docker_label_keys: SimcoreContainerLabels,
     faker: Faker,
     progress_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
-    docker_tasks = await running_service_tasks(
+    docker_task = await create_running_service_task(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
     )
-    assert len(docker_tasks) == 1
 
     progress_value = faker.pyfloat(min_value=0)
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_progress_message(
         initialized_app,
-        tasks=docker_tasks,
+        tasks=[docker_task],
         progress=progress_value,
         progress_type=ProgressType.CLUSTER_UP_SCALING,
     )
@@ -311,8 +325,10 @@ async def test_post_task_progress_message_dask(
     node_id: NodeID,
     faker: Faker,
     progress_rabbitmq_consumer: AsyncMock,
+    wait_till_rabbit_client_is_connected: Callable[[RabbitMQClient], Awaitable[None]],
 ):
     progress_value = faker.pyfloat(min_value=0)
+    await wait_till_rabbit_client_is_connected(get_rabbitmq_client(initialized_app))
     await post_tasks_progress_message(
         initialized_app,
         tasks=[dask_task],
@@ -348,18 +364,17 @@ async def test_post_task_messages_does_not_raise_if_service_has_no_labels(
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-    running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
+    create_running_service_task: Callable[[dict[DockerLabelKey, str]], Awaitable[Task]],
     faker: Faker,
 ):
-    docker_tasks = await running_service_tasks({})
-    assert len(docker_tasks) == 1
+    docker_task = await create_running_service_task({})
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
-    await post_tasks_log_message(initialized_app, tasks=docker_tasks, message=faker.pystr(), level=0)
+    await post_tasks_log_message(initialized_app, tasks=[docker_task], message=faker.pystr(), level=0)
     await post_tasks_progress_message(
         initialized_app,
-        tasks=docker_tasks,
+        tasks=[docker_task],
         progress=faker.pyfloat(min_value=0),
         progress_type=ProgressType.CLUSTER_UP_SCALING,
     )

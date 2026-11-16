@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from httpx import HTTPError
+from httpx2 import HTTPError
 from servicelib.fastapi.long_running_tasks._client import retry_on_http_errors
 
 

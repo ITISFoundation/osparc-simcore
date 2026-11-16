@@ -35,6 +35,12 @@ from tenacity import (
     wait_fixed,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _TENACITY_ASSERT_RETRY = {
     "reraise": True,
     "retry": retry_if_exception_type(AssertionError),

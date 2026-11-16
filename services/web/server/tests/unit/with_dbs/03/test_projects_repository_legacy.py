@@ -34,6 +34,12 @@ from simcore_service_webserver.projects._projects_repository_legacy import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture()
 def db_api(
@@ -45,7 +51,7 @@ def db_api(
 
 @pytest.fixture
 async def insert_project_in_db(
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     db_api: ProjectDBAPI,
     osparc_product_name: str,
     client: TestClient,
@@ -80,7 +86,7 @@ async def insert_project_in_db(
     yield _inserter
 
     # Cleanup inserted projects
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(projects.delete().where(projects.c.uuid.in_(inserted_projects)))
 
 
@@ -168,7 +174,7 @@ async def test_get_project_dict_and_type_only_templates_bug4(
     db_api: ProjectDBAPI,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
     fake_project: dict[str, Any],
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     """Bug 4: published_project_read_condition compares enum column with .value string.
     Reproduces via get_project_dict_and_type with only_templates=True, only_published=True.
@@ -176,7 +182,7 @@ async def test_get_project_dict_and_type_only_templates_bug4(
     # Insert as template (no user_id)
     project = await insert_project_in_db(deepcopy(fake_project))
     # Mark as published
-    async with asyncpg_engine.begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(projects.update().where(projects.c.uuid == project["uuid"]).values(published=True))
     project_dict, project_type = await db_api.get_project_dict_and_type(
         project["uuid"],

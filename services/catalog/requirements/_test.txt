@@ -13,7 +13,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.15.1
+alembic==1.20.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -25,36 +25,38 @@ asgi-lifespan==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-attrs==25.2.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==3.4.1
-    # via requests
-click==8.2.1
+charset-normalizer==3.5.2
+    # via
+    #   -c requirements/_base.txt
+    #   requests
+click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.16.0
+coverage==7.17.0
     # via pytest-cov
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
 execnet==2.1.2
     # via pytest-xdist
 faker==40.38.0
     # via -r requirements/_test.in
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
-frozenlist==1.5.0
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -89,7 +91,7 @@ jsonschema==4.26.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.9.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -123,7 +125,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-propcache==0.3.0
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -147,13 +149,13 @@ pytest==9.1.1
     #   pytest-xdist
 pytest-aiohttp==1.1.1
     # via -r requirements/_test.in
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via pytest-aiohttp
-pytest-benchmark==5.3.0
+pytest-benchmark==5.3.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -165,10 +167,12 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-specifications
 requests==2.34.2
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.22.0
     # via -r requirements/_test.in
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -183,9 +187,9 @@ sqlalchemy==2.0.51
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-types-psycopg2==2.9.21.20260223
+types-psycopg2==2.9.21.20261030
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via

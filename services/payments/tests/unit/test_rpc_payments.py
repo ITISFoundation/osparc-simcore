@@ -94,7 +94,7 @@ async def test_rpc_init_payment_fail(
 
     error = exc_info.value
     assert isinstance(error, RPCServerError)
-    assert error.exc_type == "httpx.ConnectError"
+    assert error.exc_type == "httpx2.ConnectError"
     assert error.method_name == "init_payment"
     assert error.exc_message
     assert error.traceback

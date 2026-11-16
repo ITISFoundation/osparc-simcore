@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytest
 from fastapi import status
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 

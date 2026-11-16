@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from threading import Thread
 from unittest.mock import AsyncMock
 
-import httpx
+import httpx2
 import pytest
 import uvicorn
 import uvloop
@@ -110,7 +110,7 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
 
         @retry(wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True)
         def wait_for_server_ready() -> None:
-            response = httpx.get(f"{server_url}/")
+            response = httpx2.get(f"{server_url}/")
             assert response.is_success, f"Server did not start successfully: {response.status_code} {response.text}"
 
         wait_for_server_ready()
@@ -131,7 +131,7 @@ async def test_server_cancels_when_client_disconnects(
     # Implementation of RequestCancellationMiddleware is under test here
     assert isinstance(asyncio.get_running_loop(), uvloop.Loop)
 
-    async with httpx.AsyncClient(base_url=f"{uvicorn_server}") as client:
+    async with httpx2.AsyncClient(base_url=f"{uvicorn_server}") as client:
         # 1. check standard call still complete as expected
         with log_context(logging.INFO, msg="client calling endpoint"):
             response = await client.get("/sleep", params={"sleep_time": 0.1})
@@ -144,7 +144,7 @@ async def test_server_cancels_when_client_disconnects(
 
         # 2. check slow call get cancelled
         with log_context(logging.INFO, msg="client calling endpoint for cancellation") as ctx:
-            with pytest.raises(httpx.ReadTimeout):
+            with pytest.raises(httpx2.ReadTimeout):
                 await client.get(
                     "/sleep",
                     params={"sleep_time": 10},

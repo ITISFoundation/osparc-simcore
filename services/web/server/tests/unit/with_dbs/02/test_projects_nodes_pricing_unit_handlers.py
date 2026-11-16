@@ -39,6 +39,12 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 
@@ -244,7 +250,7 @@ async def test_connect_pricing_unit_persists_link_and_sizes_node(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     mock_rut_fixed_pricing_units: dict[int, RutPricingUnitGet],
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
@@ -261,14 +267,14 @@ async def test_connect_pricing_unit_persists_link_and_sizes_node(
 
     # make the sizing deterministic: a single-container resource spec on the node
     await set_node_required_resources(
-        asyncpg_engine,
+        sqlalchemy_async_engine,
         project_id,
         node_id,
         single_container_required_resources(user_project["workbench"][node_id]["key"]),
     )
 
     # no link yet
-    state = await get_node_pricing_state(asyncpg_engine, project_id)
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     assert state[NodeID(node_id)].pricing_unit_id is None
 
     # ACT: connect the NON-default pricing unit (r5.4xlarge: 16 CPU / 128 GiB)
@@ -282,7 +288,7 @@ async def test_connect_pricing_unit_persists_link_and_sizes_node(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # ASSERT: DB state
-    state = await get_node_pricing_state(asyncpg_engine, project_id)
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     node_state = state[NodeID(node_id)]
     assert node_state.pricing_plan_id == _PRICING_PLAN_ID
     assert node_state.pricing_unit_id == _PRICING_UNIT_ID_2
@@ -300,7 +306,7 @@ async def test_connect_pricing_unit_to_frontend_node_does_not_size_it(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     mock_rut_fixed_pricing_units: dict[int, RutPricingUnitGet],
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):
@@ -312,7 +318,7 @@ async def test_connect_pricing_unit_to_frontend_node_does_not_size_it(
     project_id = user_project["uuid"]
 
     initial_resources = single_container_required_resources(user_project["workbench"][node_id]["key"])
-    await set_node_required_resources(asyncpg_engine, project_id, node_id, initial_resources)
+    await set_node_required_resources(sqlalchemy_async_engine, project_id, node_id, initial_resources)
 
     base_url = client.app.router["connect_pricing_unit_to_project_node"].url_for(
         project_id=project_id,
@@ -325,7 +331,7 @@ async def test_connect_pricing_unit_to_frontend_node_does_not_size_it(
 
     mocked_director_v2_node_sizing.assert_not_called()
 
-    state = await get_node_pricing_state(asyncpg_engine, project_id)
+    state = await get_node_pricing_state(sqlalchemy_async_engine, project_id)
     node_state = state[NodeID(node_id)]
     assert node_state.pricing_unit_id == _PRICING_UNIT_ID_2
     assert node_state.required_resources == initial_resources
@@ -336,7 +342,7 @@ async def test_connect_pricing_unit_with_unknown_ec2_type_fails_as_422(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     mock_rut_fixed_pricing_units: dict[int, RutPricingUnitGet],
     mocked_director_v2_node_sizing: mock.AsyncMock,
 ):

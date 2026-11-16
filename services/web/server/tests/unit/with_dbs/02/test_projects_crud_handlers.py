@@ -55,6 +55,8 @@ from simcore_service_webserver.utils import to_datetime
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

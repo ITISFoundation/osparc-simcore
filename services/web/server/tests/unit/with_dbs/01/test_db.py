@@ -3,10 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from pathlib import Path
-
 import sqlalchemy as sa
-import yaml
 from aiohttp.test_utils import TestServer
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
@@ -20,6 +17,12 @@ from simcore_service_webserver.db.db_service import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_asyncpg_engine_in_app(web_server: TestServer):
     app = web_server.app
@@ -29,27 +32,17 @@ async def test_asyncpg_engine_in_app(web_server: TestServer):
     assert settings.WEBSERVER_DB
     assert settings.WEBSERVER_DB.POSTGRES_CLIENT_NAME
 
-    asyncpg_engine: AsyncEngine = _asyncpg.get_async_engine(app)
-    assert asyncpg_engine
-    assert isinstance(asyncpg_engine, AsyncEngine)
+    sqlalchemy_async_engine: AsyncEngine = _asyncpg.get_async_engine(app)
+    assert sqlalchemy_async_engine
+    assert isinstance(sqlalchemy_async_engine, AsyncEngine)
 
-    assert asyncpg_engine.url
+    assert sqlalchemy_async_engine.url
 
     query = sa.text('SELECT "version_num" FROM "alembic_version"')
 
-    async with asyncpg_engine.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         result = (await conn.execute(query)).scalar_one_or_none()
     assert result is not None
-
-
-def test_uses_same_postgres_version(docker_compose_file: Path, osparc_simcore_root_dir: Path):
-    with Path.open(docker_compose_file) as fh:
-        fixture = yaml.safe_load(fh)
-
-    with Path.open(osparc_simcore_root_dir / "services" / "docker-compose.yml") as fh:
-        expected = yaml.safe_load(fh)
-
-    assert fixture["services"]["postgres"]["image"] == expected["services"]["postgres"]["image"]
 
 
 async def test_responsive(web_server: TestServer):

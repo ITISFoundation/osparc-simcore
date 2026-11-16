@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Final
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager
 from settings_library.tracing import TracingSettings
@@ -63,11 +63,11 @@ class ChatbotSession:
             stream_options=ChatStreamOptions() if stream else None,
         )
 
-    def _request_timeout(self) -> httpx.Timeout:
+    def _request_timeout(self) -> httpx2.Timeout:
         # a short connect timeout fails fast on unreachable hosts, while the (potentially
         # long) configured budget is still fully available for the model to respond
         total_seconds = self._chatbot_settings.CHATBOT_REQUEST_TIMEOUT_SECONDS.total_seconds()
-        return httpx.Timeout(total_seconds, connect=min(_CONNECT_TIMEOUT_SECONDS, total_seconds))
+        return httpx2.Timeout(total_seconds, connect=min(_CONNECT_TIMEOUT_SECONDS, total_seconds))
 
     async def create_chat_completion(
         self,
@@ -105,7 +105,7 @@ class ChatbotSession:
         temperature: Temperature,
         top_p: TopP,
         response_format: ChatResponseFormat | None = None,
-    ) -> httpx.Response:
+    ) -> httpx2.Response:
         """Opens a streamed chat completion. Headers/status are already available on return,
         but the body is not yet consumed: the caller must iterate `response.aiter_bytes()`
         and call `response.aclose()` once done (e.g. via an `SseStreamingResponse`)."""
@@ -127,7 +127,7 @@ class ChatbotSession:
         response = await self._api.client.send(http_request, stream=True)
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError:
+        except httpx2.HTTPStatusError:
             # read the body before closing so callers can inspect/relay the downstream error detail
             await response.aread()
             await response.aclose()

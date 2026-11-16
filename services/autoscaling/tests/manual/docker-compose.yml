@@ -19,7 +19,7 @@ services:
       start_period: 5s
 
   redis:
-    image: "valkey/valkey:7.2.14@sha256:ef0f9fb533b1f06fb7aba6478d758ca1c077d49e2bcb2b4365a4ea7f50b6d42e"
+    image: "valkey/valkey:7.2.15@sha256:828b1cbb1c258e02b9cd9588063fa997e097444e610d3f3c00d43e21400e2b8d"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     # ports:

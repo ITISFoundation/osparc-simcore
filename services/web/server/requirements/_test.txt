@@ -15,11 +15,11 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.8.1
+alembic==1.20.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-annotated-doc==0.0.5
+annotated-doc==0.0.4
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -32,6 +32,7 @@ anyio==4.15.1
     # via
     #   -c requirements/_base.txt
     #   httpx
+    #   httpx2
     #   starlette
     #   watchfiles
 asyncpg==0.32.0
@@ -40,14 +41,13 @@ asyncpg==0.32.0
     #   asyncpg-stubs
 asyncpg-stubs==0.32.0
     # via -r requirements/_test.in
-attrs==25.4.0
+attrs==26.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
-    #   pytest-docker
     #   referencing
-certifi==2026.10.19
+certifi==2026.10.23
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -55,17 +55,17 @@ certifi==2026.10.19
     #   httpx
     #   requests
     #   sentry-sdk
-charset-normalizer==2.0.12
+charset-normalizer==3.5.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.2.1
+click==8.5.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   rich-toolkit
     #   uvicorn
-coverage==7.16.0
+coverage==7.17.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -73,9 +73,9 @@ dnspython==2.9.0
     # via
     #   -c requirements/_base.txt
     #   email-validator
-docker==7.1.0
+docker==7.2.0
     # via -r requirements/_test.in
-email-validator==2.2.0
+email-validator==2.3.0
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -86,9 +86,9 @@ faker==40.38.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-fakeredis==2.34.1
+fakeredis==2.40.0
     # via -r requirements/_test.in
-fastapi==0.141.1
+fastapi==0.162.0
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
@@ -96,21 +96,25 @@ fastapi-cli==0.0.32
     # via fastapi
 fastapi-cloud-cli==0.15.0
     # via fastapi-cli
-fastapi-pagination==0.15.16
+fastapi-pagination==0.16.1
     # via -r requirements/_test.in
 fastar==0.11.0
     # via
     #   fastapi
     #   fastapi-cloud-cli
-filelock==4.2.4
+filelock==4.2.7
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
-frozenlist==1.4.1
+frozenlist==1.8.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+googleapis-common-protos==1.73.0
+    # via
+    #   -c requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-http
 greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
@@ -119,21 +123,27 @@ h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
+    #   httpcore2
     #   uvicorn
 httpcore==1.0.9
+    # via httpx
+httpcore2==2.16.0
     # via
     #   -c requirements/_base.txt
-    #   httpx
+    #   httpx2
 httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-cloud-cli
     #   respx
-hypothesis==6.151.9
+httpx2==2.16.0
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+hypothesis==6.170.14
     # via -r requirements/_test.in
 icdiff==2.0.10
     # via pytest-icdiff
@@ -143,6 +153,7 @@ idna==3.19
     #   anyio
     #   email-validator
     #   httpx
+    #   httpx2
     #   requests
     #   yarl
 iniconfig==2.3.0
@@ -180,7 +191,7 @@ mako==1.4.3
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-markdown-it-py==3.0.0
+markdown-it-py==4.0.0
     # via
     #   -c requirements/_base.txt
     #   rich
@@ -206,6 +217,45 @@ openapi-schema-validator==0.6.3
     # via openapi-spec-validator
 openapi-spec-validator==0.7.2
     # via -r requirements/_test.in
+opentelemetry-api==1.45.2
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-exporter-http-transport==0.66b2
+    # via
+    #   -c requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-common==0.66b2
+    # via
+    #   -c requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-common==1.45.2
+    # via
+    #   -c requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.45.2
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+opentelemetry-proto==1.45.2
+    # via
+    #   -c requirements/_base.txt
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.45.2
+    # via
+    #   -c requirements/_base.txt
+    #   fastapi
+    #   opentelemetry-exporter-otlp-common
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-semantic-conventions==0.66b2
+    # via
+    #   -c requirements/_base.txt
+    #   opentelemetry-sdk
 packaging==26.3
     # via
     #   -c requirements/_base.txt
@@ -221,14 +271,20 @@ pluggy==1.6.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-propcache==0.3.1
+propcache==0.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
+protobuf==6.33.5
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   googleapis-common-protos
+    #   opentelemetry-proto
 py-cpuinfo2==10.1.1
     # via pytest-benchmark
-pydantic==2.13.5
+pydantic==2.14.3
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -236,7 +292,7 @@ pydantic==2.13.5
     #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.4
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -259,25 +315,22 @@ pytest==9.1.1
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
-    #   pytest-docker
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1.post1
     # via -r requirements/_test.in
-pytest-benchmark==5.3.0
+pytest-benchmark==5.3.1
     # via -r requirements/_test.in
 pytest-cov==7.1.0
-    # via -r requirements/_test.in
-pytest-docker==3.2.5
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.15.1
+pytest-mock==3.17.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -285,13 +338,13 @@ pytest-sugar==1.1.1
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.32
+python-multipart==0.0.33
     # via fastapi
 pyyaml==6.0.3
     # via
@@ -299,7 +352,7 @@ pyyaml==6.0.3
     #   -c requirements/_base.txt
     #   jsonschema-path
     #   uvicorn
-redis==6.4.0
+redis==7.4.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -317,11 +370,13 @@ requests==2.34.2
     #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
+    #   opentelemetry-exporter-http-transport
+    #   opentelemetry-exporter-otlp-proto-http
 respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rich==14.1.0
+rich==14.3.4
     # via
     #   -c requirements/_base.txt
     #   rich-toolkit
@@ -332,7 +387,7 @@ rich-toolkit==0.19.7
     #   fastapi-cloud-cli
 rignore==0.7.6
     # via fastapi-cloud-cli
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -343,7 +398,7 @@ shellingham==1.5.4
     # via
     #   -c requirements/_base.txt
     #   typer
-six==1.16.0
+six==1.17.0
     # via
     #   -c requirements/_base.txt
     #   rfc3339-validator
@@ -361,42 +416,52 @@ starlette==1.6.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   fastapi
-tenacity==8.5.0
+tenacity==9.1.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 termcolor==3.3.0
     # via pytest-sugar
+truststore==0.10.5
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore2
+    #   httpx2
 typer==0.27.3
     # via
     #   -c requirements/_base.txt
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiofiles==25.1.0.20251011
+types-aiofiles==25.1.0.20260518
     # via -r requirements/_test.in
-types-jsonschema==4.26.0.20260202
+types-jsonschema==4.26.0.20261006
     # via -r requirements/_test.in
-types-openpyxl==3.1.5.20260316
+types-openpyxl==3.1.5.20261017
     # via -r requirements/_test.in
 types-passlib==1.7.7.20260211
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20261030
     # via -r requirements/_test.in
 typing-extensions==4.16.0
     # via
     #   -c requirements/_base.txt
+    #   alembic
     #   anyio
     #   asyncpg-stubs
     #   fastapi
     #   fastapi-pagination
     #   mypy
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
     #   sqlalchemy
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.5
     # via
     #   -c requirements/_base.txt
     #   fastapi
@@ -414,7 +479,7 @@ uvicorn==0.53.0
     #   fastapi
     #   fastapi-cli
     #   fastapi-cloud-cli
-uvloop==0.22.1
+uvloop==0.23.0
     # via
     #   -c requirements/_base.txt
     #   uvicorn

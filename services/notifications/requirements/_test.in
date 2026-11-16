@@ -17,7 +17,6 @@ docker
 faker
 fakeredis
 filelock
-httpx
 pytest
 pytest-asyncio
 pytest-celery

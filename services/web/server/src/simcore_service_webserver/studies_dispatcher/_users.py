@@ -108,8 +108,7 @@ async def create_temporary_guest_user(request: web.Request):
     email: LowerCaseEmailStr = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
     password_hash = await asyncio.to_thread(security_service.encrypt_password, password)
-    # NOTE: expires_at is currently set as offset-naive
-    expires_at = (datetime.now(UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME).replace(tzinfo=None)
+    expires_at = datetime.now(UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     user_id: UserID | None = None
 

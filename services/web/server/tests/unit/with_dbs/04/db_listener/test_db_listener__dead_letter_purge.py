@@ -16,6 +16,12 @@ from simcore_service_webserver.db_listener._repository import EVENTS_MAX_ATTEMPT
 from simcore_service_webserver.db_listener._service import _DEAD_LETTER_RETENTION, purge_dead_letters
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 _MODIFIER_TRIGGER = "auto_update_modified_timestamp"
 
 

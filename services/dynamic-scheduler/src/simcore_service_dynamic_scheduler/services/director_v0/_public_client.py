@@ -1,7 +1,7 @@
 import logging
 from typing import Any, ClassVar, cast
 
-import httpx
+import httpx2
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
@@ -17,7 +17,7 @@ from ._thin_client import DirectorV0ThinClient
 logger = logging.getLogger(__name__)
 
 
-def _unenvelope_or_raise_error(resp: httpx.Response) -> dict | list:
+def _unenvelope_or_raise_error(resp: httpx2.Response) -> dict | list:
     """
     Director responses are enveloped
     If successful response, we un-envelop it and return data as a dict

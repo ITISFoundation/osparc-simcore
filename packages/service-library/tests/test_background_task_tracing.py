@@ -91,7 +91,7 @@ async def test_periodic_ticks_do_not_chain_onto_one_trace(
     three_ticks_ran = asyncio.Event()
     tick_count = 0
 
-    # Instrumentors (redis, aio_pika, httpx) parent their spans on the ambient context
+    # Instrumentors (redis, aio_pika, httpx2) parent their spans on the ambient context
     # as-is. They do not get the stale-span protection that `traced_operation` applies,
     # so the tick below reproduces an instrumented call.
     instrumented_tracer = trace.get_tracer("test", tracer_provider=tracing_config.tracer_provider)

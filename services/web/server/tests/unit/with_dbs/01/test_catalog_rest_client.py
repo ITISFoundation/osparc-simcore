@@ -21,6 +21,12 @@ from simcore_service_webserver.catalog.catalog_service import (
     is_catalog_service_responsive,
 )
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "user_role",

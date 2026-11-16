@@ -10,7 +10,6 @@ from fastapi_pagination import create_page
 from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -139,24 +138,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     ) -> Page[LicensedItemGet]:
         licensed_items_page = await self._rpc_client.licenses.get_licensed_items(
             product_name=product_name,
-            offset=page_params.offset,
-            limit=page_params.limit,
-        )
-        return _create_licensed_items_get_page(licensed_items_page=licensed_items_page, page_params=page_params)
-
-    @_exception_mapper(rpc_exception_map={})
-    async def get_available_licensed_items_for_wallet(
-        self,
-        *,
-        product_name: ProductName,
-        wallet_id: WalletID,
-        user_id: UserID,
-        page_params: PaginationParams,
-    ) -> Page[LicensedItemGet]:
-        licensed_items_page = await self._rpc_client.licenses.get_available_licensed_items_for_wallet(
-            product_name=product_name,
-            wallet_id=wallet_id,
-            user_id=user_id,
             offset=page_params.offset,
             limit=page_params.limit,
         )
@@ -419,21 +400,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filters=filters,
-        )
-
-    async def run_function(
-        self,
-        *,
-        user_id: UserID,
-        product_name: ProductName,
-        function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> RegisteredFunctionJob:
-        return await self._rpc_client.functions.run_function(
-            user_id=user_id,
-            product_name=product_name,
-            function_id=function_id,
-            inputs=inputs,
         )
 
     async def get_function_job(

@@ -29,6 +29,12 @@ from simcore_service_webserver.conversations import _conversation_message_reposi
 from simcore_service_webserver.db.models import UserRole
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.fixture
 def user_role() -> UserRole:
@@ -49,7 +55,7 @@ async def _create_conversation(client: TestClient, name: str) -> ConversationID:
 @pytest.fixture
 async def conversation_with_two_messages(
     client: TestClient,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[ConversationID]:
     conversation_id = await _create_conversation(client, "Repo contract")
@@ -58,7 +64,7 @@ async def conversation_with_two_messages(
         for i in range(_NUMBER_OF_MESSAGES):
             await stack.enter_async_context(
                 insert_and_get_row_lifespan(
-                    asyncpg_engine,
+                    sqlalchemy_async_engine,
                     table=conversation_messages,
                     values={
                         "conversation_id": conversation_id,

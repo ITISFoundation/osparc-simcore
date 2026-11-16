@@ -51,6 +51,12 @@ from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 from simcore_service_webserver.projects.models import ProjectDict
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def _first_schema_example(model_cls: type[BaseModel]) -> dict[str, Any]:
     """The first JSON-schema example of a model, as a fresh dict (test fixtures mutate it)."""
@@ -585,7 +591,7 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     logged_user: LoggedUser,
     user_project: ProjectDict,
     mocker: MockerFixture,
-    asyncpg_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine,
     wallet_info_expected: WalletInfo | None,
 ):
     """W8/W9: starting a computation forwards `wallet_info` to director-v2 and the
@@ -610,7 +616,7 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
         return_value=(user_project["uuid"], status.HTTP_201_CREATED),
     )
 
-    state_before = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+    state_before = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     assert state_before, "the test project must have nodes"
 
     url = client.app.router["start_computation"].url_for(project_id=user_project["uuid"])
@@ -624,7 +630,7 @@ async def test_start_computation_forwards_wallet_info_and_writes_nothing_to_proj
     assert mocked_start.call_args.kwargs["wallet_info"] == wallet_info_expected
 
     # the web-server wrote nothing to the nodes' pricing state
-    state_after = await get_node_pricing_state(asyncpg_engine, user_project["uuid"])
+    state_after = await get_node_pricing_state(sqlalchemy_async_engine, user_project["uuid"])
     assert state_after == state_before
     assert all(node_state.pricing_unit_id is None for node_state in state_after.values())
 

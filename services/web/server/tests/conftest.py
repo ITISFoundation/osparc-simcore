@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectStateOutputSchema,
 )
+from models_library.groups import GroupIDAdapter
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
@@ -97,6 +98,8 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
+    "pytest_simcore.xdist_docker_daemon",
+    "pytest_simcore.xdist_unused_tcp_ports",
 ]
 
 
@@ -153,7 +156,7 @@ def fake_data_dir(tests_data_dir: Path) -> Path:
 @pytest.fixture
 def fake_project(tests_data_dir: Path) -> ProjectDict:
     """fake data for a project in a response body of GET /project/{uuid} (see tests/data/fake-project.json)"""
-    # TODO: rename as fake_project_data since it does not produce a BaseModel but its **data
+    # NOTE: rename as fake_project_data since it does not produce a BaseModel but its **data
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())
@@ -205,7 +208,7 @@ async def logged_user(
 def monkeypatch_setenv_from_app_config(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[AppConfigDict], EnvVarsDict]:
-    # TODO: Change signature to be analogous to
+    # NOTE: change signature to be analogous to
     # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
     # That solution is more flexible e.g. for context manager with monkeypatch
     def _patch(app_config: dict) -> EnvVarsDict:
@@ -398,7 +401,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 await update_or_insert_project_group(
                     client.app,
                     project_id=data["uuid"],
-                    group_id=int(group_id),
+                    group_id=GroupIDAdapter.validate_python(group_id),
                     read=permissions["read"],
                     write=permissions["write"],
                     delete=permissions["delete"],

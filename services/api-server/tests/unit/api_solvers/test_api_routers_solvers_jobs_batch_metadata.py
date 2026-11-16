@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-import httpx
+import httpx2
 import pytest
 from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.projects import ProjectID
@@ -74,8 +74,8 @@ def job_ids() -> list[ProjectID]:
 
 
 async def test_batch_get_jobs_custom_metadata_success(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     solver_key: str,
     solver_version: str,
@@ -137,8 +137,8 @@ async def test_batch_get_jobs_custom_metadata_success(
 
 
 async def test_batch_get_jobs_custom_metadata_job_not_found(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     solver_key: str,
     solver_version: str,
@@ -189,8 +189,8 @@ async def test_batch_get_jobs_custom_metadata_job_not_found(
 
 
 async def test_batch_get_jobs_custom_metadata_rpc_project_not_found(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     job_ids: list[ProjectID],
 ):
@@ -209,8 +209,8 @@ async def test_batch_get_jobs_custom_metadata_rpc_project_not_found(
 
 
 async def test_batch_get_jobs_custom_metadata_rpc_project_forbidden(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     job_ids: list[ProjectID],
 ):
@@ -229,8 +229,8 @@ async def test_batch_get_jobs_custom_metadata_rpc_project_forbidden(
 
 
 async def test_batch_get_jobs_custom_metadata_max_ids(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     solver_key: str,
     solver_version: str,
@@ -279,8 +279,8 @@ async def test_batch_get_jobs_custom_metadata_max_ids(
 
 
 async def test_batch_get_jobs_custom_metadata_exceeds_max_ids(
-    auth: httpx.BasicAuth,
-    client: httpx.AsyncClient,
+    auth: httpx2.BasicAuth,
+    client: httpx2.AsyncClient,
     mocked_webserver_rpc_api: dict[str, MockType],
 ):
     """Test that the endpoint returns 422 when more than _BATCH_GET_MAX_IDS job ids are passed."""

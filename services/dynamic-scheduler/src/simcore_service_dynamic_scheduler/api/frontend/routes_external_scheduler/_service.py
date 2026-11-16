@@ -1,4 +1,4 @@
-import httpx
+import httpx2
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import DynamicServiceStop
 from models_library.projects_nodes_io import NodeID
@@ -22,7 +22,7 @@ def _render_remove_from_tracking(node_id):
             confirm_dialog.close()
 
             url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}/tracker:remove"
-            async with httpx.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
+            async with httpx2.AsyncClient(timeout=10, verify=get_shared_ssl_context()) as client:
                 await client.get(f"{url}")
 
             ui.notify(f"Service {node_id} removed from tracking")

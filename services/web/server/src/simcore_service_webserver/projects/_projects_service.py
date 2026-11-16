@@ -200,6 +200,7 @@ from .utils import (
     NodesMap,
     clone_project_document,
     extract_dns_without_default_port,
+    remap_file_link_paths_in_node_io,
     substitute_parameterized_inputs,
 )
 
@@ -486,6 +487,8 @@ async def _clone_project_nodes(
     app: web.Application,
     source_project: ProjectDict,
     nodes_map: NodesMap,
+    *,
+    destination_project_uuid: str,
 ) -> dict[NodeID, ProjectNodeCreate]:
     db = ProjectDBAPI.get_from_app_context(app)
     valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
@@ -497,6 +500,12 @@ async def _clone_project_nodes(
             node_data["inputs"] = _remap_port_links_in_inputs(node_data["inputs"], nodes_map)
         if node_data.get("input_nodes"):
             node_data["input_nodes"] = [nodes_map.get(f"{nid}", f"{nid}") for nid in node_data["input_nodes"]]
+        remap_file_link_paths_in_node_io(
+            node_data,
+            source_project_uuid=f"{source_project['uuid']}",
+            destination_project_uuid=destination_project_uuid,
+            nodes_map=nodes_map,
+        )
         new_node_id = NodeID(nodes_map[f"{node.node_id}"])
         result[new_node_id] = ProjectNodeCreate(node_id=new_node_id, **node_data)
     return result
@@ -552,7 +561,9 @@ async def clone_project_data(
     if template_parameters:
         new_project = substitute_parameterized_inputs(new_project, template_parameters) or new_project
 
-    project_nodes = await _clone_project_nodes(app, source_project, nodes_map)
+    project_nodes = await _clone_project_nodes(
+        app, source_project, nodes_map, destination_project_uuid=new_project["uuid"]
+    )
 
     if template_parameters:
         # `insert_project` lets caller-provided `project_nodes` override the workbench-derived

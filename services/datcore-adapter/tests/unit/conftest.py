@@ -9,7 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 import faker
-import httpx
+import httpx2
 import pytest
 import respx
 import simcore_service_datcore_adapter
@@ -100,9 +100,9 @@ async def initialized_app(app_environment: None, minimal_app: FastAPI) -> AsyncI
 
 
 @pytest.fixture
-async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=initialized_app),
+async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=initialized_app),
         base_url="http://datcore-adapter.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:

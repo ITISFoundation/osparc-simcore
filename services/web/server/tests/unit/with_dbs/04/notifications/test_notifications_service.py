@@ -30,7 +30,11 @@ from simcore_service_webserver.notifications.notifications_service import (
     send_message_from_template,
 )
 
-pytest_simcore_core_services_selection = []
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.fixture(params=[UserRole.USER])

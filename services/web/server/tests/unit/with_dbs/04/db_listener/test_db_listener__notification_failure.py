@@ -42,6 +42,12 @@ from simcore_service_webserver.db_listener.models import ClaimOutcome
 from simcore_service_webserver.projects import _projects_service
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def _get_outbox_events_for_task(engine: AsyncEngine, task_id: int) -> list[dict]:
     async with engine.connect() as conn:

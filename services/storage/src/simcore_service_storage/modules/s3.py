@@ -22,6 +22,10 @@ from ..exceptions.errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
 
+# NOTE: `us-east-1` is not part of `BucketLocationConstraintType` because S3 accepts it as the
+# empty string, and aiobotocore's literals module only lists the constrained regions.
+type BucketLocationConstraintOrUsEast = BucketLocationConstraintType | Literal["us-east-1"]
+
 
 @retry(
     wait=wait_random_exponential(),
@@ -38,9 +42,7 @@ async def _ensure_s3_bucket(client: SimcoreS3API, settings: ApplicationSettings)
         return
     await client.create_bucket(
         bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
-        region=TypeAdapter(BucketLocationConstraintType | Literal["us-east-1"]).validate_python(
-            settings.STORAGE_S3.S3_REGION
-        ),
+        region=TypeAdapter(BucketLocationConstraintOrUsEast).validate_python(settings.STORAGE_S3.S3_REGION),
     )
 
 

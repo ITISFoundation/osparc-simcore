@@ -15,6 +15,8 @@ from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas i
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
     "rabbit",
 ]
 

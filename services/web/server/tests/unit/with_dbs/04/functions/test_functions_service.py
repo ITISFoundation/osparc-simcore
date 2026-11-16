@@ -15,7 +15,11 @@ from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.functions import _functions_service
 
-pytest_simcore_core_services_selection = ["rabbit"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
 
 
 @pytest.mark.parametrize(

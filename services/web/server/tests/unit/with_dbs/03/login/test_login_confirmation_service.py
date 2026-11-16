@@ -7,6 +7,12 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.login import _confirmation_web
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 async def test_confirmation_token_workflow(
     confirmation_service: ConfirmationService,

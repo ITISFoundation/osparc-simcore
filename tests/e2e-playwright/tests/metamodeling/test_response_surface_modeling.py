@@ -19,6 +19,7 @@ import json
 import logging
 import re
 from collections.abc import Callable, Iterator
+from datetime import timedelta
 from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
@@ -28,7 +29,12 @@ from playwright.sync_api import APIRequestContext, Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.playwright import MINUTE, SECOND, RobustWebSocket, wait_for_service_running
+from pytest_simcore.helpers.playwright import (
+    MINUTE,
+    SECOND,
+    RobustWebSocket,
+    wait_for_service_running,
+)
 from tenacity import (
     RetryError,
     before_sleep_log,
@@ -39,6 +45,7 @@ from tenacity import (
     wait_fixed,
 )
 
+_PROJECT_CLOSING_TIMEOUT: Final[timedelta] = timedelta(minutes=2)
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 _WAITING_FOR_SERVICE_TO_APPEAR: Final[int] = 2 * MINUTE
 _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(r"/flask/list_function_job_collections_for_functionid")
@@ -664,6 +671,7 @@ def test_response_surface_modeling(  # noqa: PLR0912, PLR0915, C901
     with (
         log_context(logging.INFO, "Go back to dashboard"),
         page.expect_response(re.compile(r"/projects\?.+")) as list_projects_response,
+        log_in_and_out.expect_project_closed(jsonifier_prj_uuid, timeout=_PROJECT_CLOSING_TIMEOUT),
     ):
         page.get_by_test_id("dashboardBtn").click()
         page.get_by_test_id("confirmDashboardBtn").click()

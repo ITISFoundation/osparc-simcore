@@ -20,7 +20,7 @@ import pytest
 from asgi_lifespan import LifespanManager as ASGILifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_lifespan_manager import LifespanManager
-from httpx import AsyncClient
+from httpx2 import AsyncClient
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context

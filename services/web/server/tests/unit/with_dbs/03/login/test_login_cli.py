@@ -5,6 +5,12 @@ from pytest_mock import MockerFixture
 from simcore_service_webserver.login.cli import invitations
 from yarl import URL
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 def test_invitations(mocker: MockerFixture):
     base_url = "http://example.com"

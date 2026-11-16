@@ -8,6 +8,12 @@ from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_service_webserver.db_listener._utils import convert_state_from_db
 
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+    "rabbit",
+]
+
 
 @pytest.mark.parametrize(
     "db_state, expected_state",
