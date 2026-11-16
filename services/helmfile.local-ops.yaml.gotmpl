@@ -160,6 +160,10 @@ releases:
           rustfs:
             access_key: {{ requiredEnv "S3_ACCESS_KEY" | quote }}
             secret_key: {{ requiredEnv "S3_SECRET_KEY" | quote }}
+        extraEnv:
+          # avoid cors problems in browser
+          - name: RUSTFS_CORS_ALLOWED_ORIGINS
+            value: "*"
 
   - name: headlamp # Portainer alternative for Kubernetes
     namespace: ops
