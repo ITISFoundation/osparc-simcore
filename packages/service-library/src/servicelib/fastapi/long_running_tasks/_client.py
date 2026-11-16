@@ -31,7 +31,7 @@ def _before_sleep_log(
 ) -> Callable[[RetryCallState], None]:
     """Before call strategy that logs to some logger the attempt."""
 
-    def log_it(retry_state: "RetryCallState") -> None:
+    def log_it(retry_state: RetryCallState) -> None:
         assert retry_state.outcome  # nosec
         if retry_state.outcome.failed:
             ex = retry_state.outcome.exception()
@@ -88,7 +88,7 @@ def retry_on_http_errors(
     assert inspect.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: "HttpClient", *args, **kwargs) -> Any:
+    async def request_wrapper(zelf: HttpClient, *args, **kwargs) -> Any:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(max_attempt_number=3),
             wait=wait_exponential(min=1),
@@ -145,6 +145,12 @@ class HttpClient:
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
+            logger.error(
+                "Long-running task status request failed: task_id=%s url=%s status=%s",
+                task_id,
+                result.request.url,
+                result.status_code,
+            )
             raise GenericClientError(
                 action="getting_status",
                 task_id=task_id,
