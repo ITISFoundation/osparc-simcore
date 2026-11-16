@@ -333,7 +333,6 @@ async def key_version_expected(
     return results
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_start_status_stop(
     director_v2_client: _TestClient,
     node_uuid: str,
@@ -361,6 +360,7 @@ async def test_start_status_stop(
     )
     assert response.status_code == 201, response.text
     assert isinstance(director_v2_client.application, FastAPI)
+    # This is failing
     await patch_dynamic_service_url(app=director_v2_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running

@@ -53,6 +53,7 @@ from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
     periodic_task_result,
 )
+from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
     ProgressPercent,
@@ -745,19 +746,36 @@ async def _assert_push_non_file_outputs(
     ) -> None:
         logger.debug("%s: %.2f %s", task_id, percent, message)
 
-    async with periodic_task_result(
-        HttpClient(
-            app=initialized_app,
-            async_client=director_v2_client,
-            base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
-        ),
-        task_id,
-        task_timeout=60,
-        status_poll_interval=1,
-        progress_callback=_debug_progress_callback,
-    ) as result:
-        logger.debug("Task %s finished", task_id)
-        return result
+    task_client = HttpClient(
+        app=initialized_app,
+        async_client=director_v2_client,
+        base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
+    )
+    try:
+        async with periodic_task_result(
+            task_client,
+            task_id,
+            task_timeout=60,
+            status_poll_interval=1,
+            progress_callback=_debug_progress_callback,
+        ) as result:
+            logger.debug("Task %s finished", task_id)
+            return result
+    except TaskExceptionError:
+        configuration = initialized_app.state.long_running_client_configuration
+        registered_routes = [
+            f"{type(route).__name__}(name={getattr(route, 'name', None)!r}, path={getattr(route, 'path', None)!r})"
+            for route in initialized_app.routes
+        ]
+        logger.exception(
+            "Long-running task status diagnostic: task_id=%s base_url=%s requested_path=/task/{task_id} "
+            "router_prefix=%r registered_routes=%s",
+            task_id,
+            director_v2_client.base_url,
+            configuration.router_prefix,
+            registered_routes,
+        )
+        raise
 
 
 async def _assert_retrieve_completed(
