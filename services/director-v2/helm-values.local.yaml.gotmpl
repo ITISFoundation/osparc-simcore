@@ -22,7 +22,6 @@ env:
   DIRECTOR_V2_REMOTE_DEBUGGING_PORT: 3000
   DIRECTOR_V2_LOGLEVEL: DEBUG
   DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: "{}"
-  # compose: ${PWD}/services/dynamic-sidecar, the repo is mounted at /osparc-simcore in the kind node
   DYNAMIC_SIDECAR_MOUNT_PATH_DEV: /osparc-simcore/services/dynamic-sidecar
 
 # re-declares the base docker-socket volume: Helm replaces lists
