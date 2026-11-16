@@ -38,7 +38,6 @@ from simcore_service_webserver.login.constants import (
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,
-    LoginThrottleSettings,
     get_plugin_settings,
 )
 
@@ -207,13 +206,12 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     mocker.patch(
         f"{registration.__name__}.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
-            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -293,13 +291,12 @@ async def test_registration_with_invalid_confirmation_code(
     mocker.patch(
         "simcore_service_webserver.login.settings.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
-            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -324,13 +321,12 @@ async def test_registration_without_confirmation(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
-            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -386,13 +382,12 @@ async def test_registration_with_invitation(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
-            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 
@@ -447,13 +442,12 @@ async def test_registraton_with_invitation_for_trial_account(
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
-        return_value=LoginSettingsForProduct(
+        return_value=LoginSettingsForProduct.create_from_envs(
             LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
             LOGIN_2FA_REQUIRED=False,
             LOGIN_PASSWORD_MIN_LENGTH=12,
-            LOGIN_THROTTLE=LoginThrottleSettings(),
         ),
     )
 

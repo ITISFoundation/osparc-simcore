@@ -24,6 +24,7 @@ from typing import Any
 
 import pytest
 from aiohttp import web
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.observer import (
     emit,
@@ -70,10 +71,9 @@ _OBSERVER_SETUPS: list[tuple[Callable[[web.Application], Any], str]] = [
 
 
 @pytest.fixture
-def app() -> web.Application:
-    _app = web.Application()
-    setup_observer_registry(_app)
-    return _app
+def app(app: web.Application) -> web.Application:
+    setup_observer_registry(app)
+    return app
 
 
 @pytest.mark.parametrize("constant", sorted(_EXPECTED_WIRE_VALUES))
@@ -138,10 +138,11 @@ async def test_notify_user_logout_emits_under_shared_signal(app: web.Application
     probe = mocker.AsyncMock(return_value=None)
     register_observer(app, probe, SIGNAL_USER_LOGOUT)
 
-    await notify_user_logout(app, user_id=42, client_session_id="sess-1")
+    await notify_user_logout(app, user_id=UserID(42), client_session_id="sess-1")
 
     probe.assert_awaited_once()
     # positional payload contract: (user_id, client_session_id, app)
+    assert probe.await_args
     args = probe.await_args.args
     assert args[0] == 42
     assert args[1] == "sess-1"
@@ -154,10 +155,11 @@ async def test_notify_user_confirmation_emits_under_shared_signal(app: web.Appli
     probe = mocker.AsyncMock(return_value=None)
     register_observer(app, probe, SIGNAL_ON_USER_CONFIRMATION)
 
-    await notify_user_confirmation(app, user_id=7, product_name="osparc", extra_credits_in_usd=10)
+    await notify_user_confirmation(app, user_id=UserID(7), product_name="osparc", extra_credits_in_usd=10)
 
     probe.assert_awaited_once()
     # keyword payload contract
+    assert probe.await_args
     assert probe.await_args.kwargs == {
         "user_id": 7,
         "product_name": "osparc",

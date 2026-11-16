@@ -6,7 +6,7 @@ import asyncio
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from ipaddress import ip_network
-from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
@@ -33,6 +33,7 @@ from simcore_service_webserver.login.errors import (
 )
 from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.login_auth import _controller_rest as login_auth_controller
+from simcore_service_webserver.products.models import Product
 
 _EMAIL = Faker().email()
 _TRUSTED_NETWORKS = [ip_network("10.0.0.0/8"), ip_network("2001:db8::/32")]
@@ -55,11 +56,6 @@ async def fake_redis(mocker: MockerFixture) -> AsyncIterator[FakeAsyncRedis]:
     mocker.patch.object(_login_throttle_repository, "get_redis_login_throttle_client", return_value=redis_client)
     yield redis_client
     await redis_client.aclose()
-
-
-@pytest.fixture
-def app() -> web.Application:
-    return web.Application()
 
 
 @pytest.mark.parametrize(
@@ -295,9 +291,7 @@ def wrong_password_checks(mocker: MockerFixture, throttle_settings: LoginThrottl
 
     mocker.patch.object(_auth_service, "get_user_or_none", return_value=None)
     mocker.patch.object(_auth_service, "check_authorized_user_credentials", side_effect=_wrong_password)
-    mocker.patch.object(
-        _auth_service, "get_plugin_settings", return_value=SimpleNamespace(LOGIN_THROTTLE=throttle_settings)
-    )
+    mocker.patch.object(_auth_service, "get_plugin_settings", return_value=MagicMock(LOGIN_THROTTLE=throttle_settings))
     return calls
 
 
@@ -306,13 +300,13 @@ async def test_concurrent_attempts_cannot_exceed_the_free_attempts(
     fake_redis: FakeAsyncRedis,
     throttle_settings: LoginThrottleSettings,
     wrong_password_checks: list[None],
+    product: Product,
 ):
     num_attempts = 20
-    product = SimpleNamespace(name="osparc")
 
     results = await asyncio.gather(
         *(
-            _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # type: ignore[arg-type]  # noqa: S106
+            _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # noqa: S106
             for _ in range(num_attempts)
         ),
         return_exceptions=True,
@@ -325,17 +319,20 @@ async def test_concurrent_attempts_cannot_exceed_the_free_attempts(
 
 
 async def test_attempt_is_rejected_when_the_email_lock_is_not_released_in_time(
-    app: web.Application, fake_redis: FakeAsyncRedis, wrong_password_checks: list[None], mocker: MockerFixture
+    app: web.Application,
+    fake_redis: FakeAsyncRedis,
+    wrong_password_checks: list[None],
+    mocker: MockerFixture,
+    product: Product,
 ):
     mocker.patch.object(_login_throttle_service, "_LOGIN_ATTEMPT_LOCK_WAIT_SEC", 0.2)
     held = _login_throttle_repository.get_login_attempt_lock(
         app, digest=hashlib.sha256(_EMAIL.encode()).hexdigest(), ttl_sec=30, wait_sec=1
     )
     assert await held.acquire()
-    product = SimpleNamespace(name="osparc")
 
     with pytest.raises(LoginThrottledError):
-        await _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # type: ignore[arg-type]  # noqa: S106
+        await _auth_service.authenticate_user(app, email=_EMAIL, password="x", product=product)  # noqa: S106
 
     assert not wrong_password_checks
 

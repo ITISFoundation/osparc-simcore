@@ -3,42 +3,16 @@
 # pylint: disable=unused-argument
 
 import contextlib
-import re
 from ipaddress import ip_address, ip_network
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from faker import Faker
-from models_library.products import ProductName
-from pydantic import HttpUrl
 from pytest_mock import MockerFixture
-from simcore_postgres_database.models.products import (
-    LOGIN_SETTINGS_DEFAULT,
-)
-from simcore_postgres_database.models.products import (
-    products as products_table,
-)
 from simcore_service_webserver.login import _auth_service, _login_throttle_service
 from simcore_service_webserver.login.errors import LoginThrottledError, WrongPasswordError
 from simcore_service_webserver.login.settings import LoginThrottleSettings
 from simcore_service_webserver.products.models import Product
-
-
-@pytest.fixture
-def product(faker: Faker, product_name: ProductName) -> Product:
-    column_defaults: dict[str, Any] = {
-        c.name: f"{c.server_default.arg}"  # type: ignore[attr-defined]
-        for c in products_table.columns
-        if c.server_default
-    }
-    column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
-    return Product(
-        name=product_name,
-        host_regex=re.compile(faker.word()),
-        base_url=HttpUrl(faker.url()),
-        **column_defaults,
-    )
 
 
 async def test_unknown_user_is_verified_against_dummy_hash_and_rejected(mocker: MockerFixture, product: Product):
