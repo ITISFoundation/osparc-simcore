@@ -544,8 +544,6 @@ async def clone_project_data(
 
     NOTE: this does not handle predefined-project overrides, workspace/folder linking,
     parent-node ancestry or response building — those remain the caller's responsibility.
-    Neither does it remove the copy when a step after its insertion fails: a caller that
-    identifies the copy by a deterministic uuid has to do that itself.
 
     Raises:
         ProjectCopyingTrashedProjectError: if `source_project` is trashed
@@ -1227,7 +1225,8 @@ async def copy_pricing_links(
     destination product (e.g. cross-product template instantiation); when it cannot be
     reached, the link is copied unvalidated rather than lost. Only the
     resource-usage-tracker is best-effort here: a database error fails the copy, as it
-    does every other step of it, and the project created by the copy is removed again.
+    does every other step of it. Removing the project the copy already created is the
+    caller's job.
     """
     if not _is_product_billed(app, product_name):
         # the product does not pay for these nodes: the copy keeps their resources
